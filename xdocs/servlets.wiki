@@ -1,7 +1,7 @@
 1 Groovlets: Writing Servlets in Groovy
 
 You can write normal Java servlets in Groovy. 
-There is also a {link:GroovyServlet|} which automatically compile your .groovy
+There is also a {link:GroovyServlet|http://groovy.codehaus.org/apidocs/groovy/servlet/GroovyServlet.html} which automatically compile your .groovy
 source files, turn them into bytecode, load the Class and cache it until you
 change the source file. 
 
