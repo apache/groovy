@@ -142,6 +142,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
     MethodCaller compareNotEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareNotEqual");
+    MethodCaller findRegexMethod = MethodCaller.newStatic(InvokerHelper.class, "findRegex");
+    MethodCaller matchRegexMethod = MethodCaller.newStatic(InvokerHelper.class, "matchRegex");
     MethodCaller compareLessThanMethod = MethodCaller.newStatic(InvokerHelper.class, "compareLessThan");
     MethodCaller compareLessThanEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareLessThanEqual");
     MethodCaller compareGreaterThanMethod = MethodCaller.newStatic(InvokerHelper.class, "compareGreaterThan");
@@ -658,6 +660,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression(compareNotEqualMethod, expression);
                 break;
 
+            case Token.FIND_REGEX :
+               	evaluateBinaryExpression(findRegexMethod, expression);
+               	break;
+                	
+            case Token.MATCH_REGEX :
+               	evaluateBinaryExpression(matchRegexMethod, expression);
+               	break;
+                	
             case Token.COMPARE_GREATER_THAN :
                 evaluateBinaryExpression(compareGreaterThanMethod, expression);
                 break;
@@ -1522,6 +1532,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             BinaryExpression binExpr = (BinaryExpression) expression;
             switch (binExpr.getOperation().getType()) {
                 case Token.COMPARE_EQUAL :
+                case Token.MATCH_REGEX :
                 case Token.COMPARE_GREATER_THAN :
                 case Token.COMPARE_GREATER_THAN_EQUAL :
                 case Token.COMPARE_LESS_THAN :

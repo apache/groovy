@@ -923,6 +923,8 @@ public class Parser
             case ( Token.COMPARE_LESS_THAN_EQUAL ):
             case ( Token.COMPARE_GREATER_THAN ):
             case ( Token.COMPARE_GREATER_THAN_EQUAL ):
+            case ( Token.FIND_REGEX ):
+            case ( Token.MATCH_REGEX ):
             case ( Token.KEYWORD_INSTANCEOF ):
             {
                 expr = rootNode( lt(),
