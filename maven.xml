@@ -42,11 +42,11 @@
     <mkdir dir="${basedir}/target/test-classes"/>
     <copy todir="${basedir}/target/test-classes">
       <fileset dir="${basedir}/src/test">
-<!--
-        <include name="**/groovy/Closure*.groovy"/>
--->
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
+<!--
+        <include name="**/groovy/Little*.groovy"/>
+-->
       </fileset>
     </copy>
     <touch>

@@ -4,7 +4,7 @@ class MetaClassTest extends GroovyTestCase {
     
     void testMetaClass() {
         test(this)
-        test {|i| i.print() }
+        test {i| i.print() }
     }
     
     protected test(object) {

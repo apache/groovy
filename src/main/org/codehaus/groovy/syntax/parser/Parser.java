@@ -1076,9 +1076,7 @@ public class Parser
              &&
              ( lt() == Token.LEFT_PARENTHESIS
                ||
-               ( lt() == Token.LEFT_CURLY_BRACE
-                 &&
-                 lt( 2 ) == Token.PIPE ) ) )
+               lt() == Token.LEFT_CURLY_BRACE ) )
         {
             if ( expr == identifier )
             {
@@ -1146,7 +1144,7 @@ public class Parser
             consume( Token.RIGHT_PARENTHESIS );
         }
 
-        if ( isClosure() )
+        if ( lt() == Token.LEFT_CURLY_BRACE )
         {
             if ( methodExpr == null )
             {
@@ -1219,20 +1217,10 @@ public class Parser
         return expr;
     }
 
-    protected boolean isClosure()
-        throws IOException, SyntaxException
-    {
-        return ( lt() == Token.LEFT_CURLY_BRACE
-                 &&
-                 lt( 2 ) == Token.PIPE );
-    }
-
     protected CSTNode closureExpression()
         throws IOException, SyntaxException
     {
         CSTNode expr = rootNode( Token.LEFT_CURLY_BRACE );
-
-        consume( Token.PIPE );
 
         boolean pipeRequired = false;
 

@@ -7,7 +7,7 @@ class ClosureSugarTest
     {
         count = 11;
 
-        sugar {|
+        sugar {
              count = 20;
         }
 
@@ -18,7 +18,7 @@ class ClosureSugarTest
     {
         count = 11;
 
-        mixedSugar (5){|a|
+        mixedSugar (5){a|
              count = count + a;
         }
 
