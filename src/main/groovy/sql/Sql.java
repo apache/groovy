@@ -735,6 +735,7 @@ public class Sql {
 			log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
 		}
     }
+
     public void rollback() {
     	try {
 			this.useConnection.rollback();
@@ -742,10 +743,22 @@ public class Sql {
 			log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
 		}
     }
+
     /**
      * @return Returns the updateCount.
      */
     public int getUpdateCount() {
     	return updateCount;
+    }
+
+    /**
+     * If this instance was created with a single Connection then the connection
+     * is returned. Otherwise if this instance was created with a DataSource then
+     * this method returns null
+     *
+     * @return the connection wired into this object, or null if this object uses a DataSource
+     */
+    public Connection getConnection() {
+        return useConnection;
     }
 }
