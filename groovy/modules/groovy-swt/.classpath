@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/main"/>
+	<classpathentry kind="src" path="src/examples"/>
+	<classpathentry output="target/test-classes" kind="src" path="src/test"/>
+	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
+	<classpathentry sourcepath="JRE_SRC" kind="var" path="JRE_LIB"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.4.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.4.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/groovy/jars/groovy-1.0-beta-4-snapshot.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/swt-win32-3.0m7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/jface-3.0m7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/forms-3.0m7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/runtime-3.0m7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/osgi-3.0m7.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

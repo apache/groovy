@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project>
+	<pomVersion>3</pomVersion>
+	<name>groovy-swt</name>
+	<groupId>groovy-swt</groupId>
+	<id>groovy-swt</id>
+	<currentVersion>0.1-dev</currentVersion>
+	<organization>
+		<name>The Codehaus</name>
+		<url>http://codehaus.org</url>
+		<logo>http://codehaus.org/codehaus-small.gif</logo>
+	</organization>
+	<inceptionYear>2004</inceptionYear>
+	<package>groovy.swt, groovy.jface</package>
+	
+	<description>groovy-swt</description>
+	
+	<url>http://groovy.codehaus.org/</url>
+	
+	<siteAddress>groovy.codehaus.org</siteAddress>
+	<siteDirectory>/www/groovy.codehaus.org</siteDirectory>
+	<issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
+	
+	<repository>
+		<connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy/modules/groovy-swt</connection>
+		<developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/modules/groovy-swt</developerConnection>
+		<url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/groovy-swt</url>
+	</repository>
+	
+	<versions />
+	
+	<developers>
+		<developer>
+			<name>Christiaan ten Klooster</name>
+			<id>ckl</id>
+			<email>ckl@dacelo.nl</email>
+			<organization>Dacelo WebDevelopment</organization>
+			<roles>
+				<role>Founder</role>
+				<role>Developer</role>
+			</roles>
+		</developer>
+	</developers>
+	
+	<dependencies>
+		<!-- groovy dependencies -->
+		<dependency>
+			<id>asm</id>
+			<version>1.4.1</version>
+			<url>http://asm.objectweb.org/</url>
+		</dependency>
+		<dependency>
+			<id>asm+util</id>
+			<version>1.4.1</version>
+			<url>http://asm.objectweb.org/</url>
+		</dependency>
+		<dependency>
+			<id>asm+attrs</id>
+			<version>1.4.1</version>
+			<url>http://asm.objectweb.org/</url>
+		</dependency>
+		<dependency>
+			<id>commons-collections</id>
+			<version>3.0</version>
+		</dependency>
+		<dependency>
+			<id>commons-logging</id>
+			<version>1.0.3</version>
+		</dependency>
+		<dependency>
+			<id>groovy</id>
+			<version>1.0-beta-4-snapshot</version>
+		</dependency>
+  	
+		<!-- swt libs -->
+		<dependency>
+			<id>swt-${platform}</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>
+		<dependency>
+			<id>jface</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>
+		<dependency>
+			<id>forms</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>
+		<dependency>
+			<id>runtime</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>
+		<dependency>
+			<id>osgi</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>           
+		<!-- swt-gtk dependencies , disabled by default -->
+		<!-- dependency>
+			<id>swt-gtk-pi</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency>
+		<dependency>
+			<id>swt-mozilla</id>
+			<groupId>swt</groupId>
+			<version>3.0m7</version>
+		</dependency -->       
+  
+		<!-- only used for testing/demos -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+		</dependency>
+	
+	</dependencies>
+
+	
+	<build>
+		<nagEmailAddress>groovy-scm@lists.codehaus.org</nagEmailAddress>
+		<sourceDirectory>src/main</sourceDirectory>
+		<unitTestSourceDirectory>src/test</unitTestSourceDirectory>
+		<aspectSourceDirectory/>
+		
+		<unitTest>
+			<resources>
+				<resource>
+					<directory>src/test</directory>
+					<includes>
+						<include>**/*.properties</include>
+						<include>**/*.xml</include>
+					</includes>
+				</resource>
+			</resources>
+			
+			<includes>
+				<include>**/*Test.*</include>
+				<include>**/*Bug.*</include>
+			</includes>
+		
+		</unitTest>
+		
+		<resources>
+			<resource>
+				<directory>src/main</directory>
+				<includes>
+					<include>**/*.properties</include>
+					<include>**/*.xml</include>
+				</includes>
+			</resource>
+		</resources>
+	
+	</build>
+	
+	<reports>
+		<report>maven-license-plugin</report>
+		<report>maven-checkstyle-plugin</report>
+		<report>maven-pmd-plugin</report>
+		<report>maven-jdepend-plugin</report>
+		<report>maven-changelog-plugin</report>
+		<!-- report>maven-statcvs-plugin</report -->
+		<report>maven-file-activity-plugin</report>
+		<report>maven-developer-activity-plugin</report>
+		<report>maven-jxr-plugin</report>
+		<report>maven-javadoc-plugin</report>
+		<report>maven-junit-report-plugin</report>
+		<report>maven-faq-plugin</report>
+		<report>maven-clover-plugin</report>
+		<report>maven-changes-plugin</report>
+	</reports>
+
+</project>
