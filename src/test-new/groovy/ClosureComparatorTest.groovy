@@ -82,7 +82,7 @@
 }
 
 class ComparableFoo {
-  long value
+  @Property long value
 
   public ComparableFoo(long theValue) {
     this.value = theValue
