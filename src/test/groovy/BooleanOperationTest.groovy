@@ -35,13 +35,13 @@ class BooleanOperationTest extends GroovyTestCase {
         x = false;
         r = false;
         
-        /** @todo parser - seems to hang the parser
         if x {
             // ignore
         }
         else {
             r = true;
         }
+
         assert r;
         
         x = true;
@@ -55,6 +55,7 @@ class BooleanOperationTest extends GroovyTestCase {
         }
         assert r;
         
+        /** @todo parser 
         if !x {
             r = false;
         }
