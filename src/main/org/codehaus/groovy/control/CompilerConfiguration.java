@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import org.codehaus.groovy.control.io.NullWriter;
 import org.codehaus.groovy.control.messages.WarningMessage;
 
 
@@ -88,15 +89,36 @@ public class CompilerConfiguration
     
     public CompilerConfiguration()
     {
-        try { setWarningLevel( WarningMessage.LIKELY_ERRORS );                      } catch( Exception e ) {}
-        try { setSourceEncoding( System.getProperty("file.encoding") );             } catch( Exception e ) {}
+        //
+        // Set in safe defaults
+        
+        setWarningLevel( WarningMessage.LIKELY_ERRORS );
+        setSourceEncoding( "US-ASCII" );
+        setOutput( null );
+        setTargetDirectory( (File)null );
+        setClasspath( "" );
+        setVerbose( false );
+        setDebug( false );
+        setTolerance( 10 );
+        setScriptBaseClass( null );
+
+        
+        //
+        // Try for better defaults, ignore errors.
+        
+        try { setSourceEncoding( System.getProperty("file.encoding", "US-ASCII") ); } catch( Exception e ) {}
         try { setOutput( new PrintWriter(System.err) );                             } catch( Exception e ) {}
-        try { setTargetDirectory( System.getProperty("groovy.target.directory") );  } catch( Exception e ) {}
         try { setClasspath( System.getProperty("java.class.path") );                } catch( Exception e ) {}
-        try { setVerbose( false );                                                  } catch( Exception e ) {}
-        try { setDebug( false );                                                    } catch( Exception e ) {}
-        try { setTolerance( 10 );                                                   } catch( Exception e ) {}
-        try { setScriptBaseClass( null );                                           } catch( Exception e ) {}
+
+        try 
+        { 
+            String target = System.getProperty( "groovy.target.directory" );
+            if( target != null )
+            {
+                setTargetDirectory( target );
+            }
+        } 
+        catch( Exception e ) {}
     }
     
    
@@ -107,13 +129,16 @@ public class CompilerConfiguration
     
     public CompilerConfiguration( Properties configuration ) throws ConfigurationException
     {
+        this();
+        
         String text    = null;
         int    numeric = 0;
+
         
         //
         // Warning level
         
-        numeric = WarningMessage.LIKELY_ERRORS;
+        numeric = getWarningLevel();
         try
         {
             text    = configuration.getProperty( "groovy.warnings", "likely errors" );
@@ -149,55 +174,50 @@ public class CompilerConfiguration
         //
         // Source file encoding
         
-        text = configuration.getProperty( "groovy.source.encoding", System.getProperty("file.encoding") );
-        setSourceEncoding( text );
-        
-        
-        //
-        // Output handling
-        
-        setOutput( null );
+        text = configuration.getProperty( "groovy.source.encoding" );
+        if( text != null )
+        {
+            setSourceEncoding( text );
+        }
         
         
         //
         // Target directory for classes
         
-        text = configuration.getProperty( "groovy.target.directory", System.getProperty("user.dir") );
-        setTargetDirectory( text );
+        text = configuration.getProperty( "groovy.target.directory" );
+        if( text != null )
+        {
+            setTargetDirectory( text );
+        }
         
         
         //
         // Classpath
         
-        text = configuration.getProperty( "groovy.classpath", System.getProperty("java.class.path") );
-        setClasspath( text );
+        text = configuration.getProperty( "groovy.classpath" );
+        if( text != null )
+        {
+            setClasspath( text );
+        }
             
         
         //
         // Verbosity
         
-        text = configuration.getProperty( "groovy.output.verbose", "false" );
-        if( text.equals("true") )
+        text = configuration.getProperty( "groovy.output.verbose" );
+        if( text != null && text.equals("true") )
         {
             setVerbose( true );
-        }
-        else
-        {
-            setVerbose( false );
         }
         
         
         //
         // Debugging
         
-        text = configuration.getProperty( "groovy.output.debug", "false" );
-        if( text.equals("true") )
+        text = configuration.getProperty( "groovy.output.debug" );
+        if( text != null && text.equals("true") )
         {
             setDebug( true );
-        }
-        else
-        {
-            setDebug( false );
         }
         
         
@@ -222,7 +242,7 @@ public class CompilerConfiguration
         //
         // Script Base Class
         
-        text = configuration.getProperty( "groovy.script.base", null );
+        text = configuration.getProperty( "groovy.script.base" );
         setScriptBaseClass( text );
     }
 
@@ -296,7 +316,7 @@ public class CompilerConfiguration
     {
         if( this.output == null )
         {
-            this.output = new PrintWriter( System.err );
+            this.output = new PrintWriter( NullWriter.DEFAULT );
         }
         else
         {
@@ -322,9 +342,16 @@ public class CompilerConfiguration
     
     public void setTargetDirectory( String directory )
     {
-        setTargetDirectory( new File(directory) );
+        if( directory != null && directory.length() > 0 )
+        {
+            this.targetDirectory = new File( directory );
+        }
+        else
+        {
+            this.targetDirectory = null;
+        }
     }
-    
+
     
    /**
     *  Sets the target directory.
@@ -335,6 +362,8 @@ public class CompilerConfiguration
         this.targetDirectory = directory;
     }
     
+    
+
     
 
    /**
