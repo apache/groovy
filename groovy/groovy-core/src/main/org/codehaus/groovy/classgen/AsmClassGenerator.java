@@ -1811,6 +1811,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
             cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(field.getType()));
+            if (!leftHandExpression) {
+                if (BytecodeHelper.isPrimitiveType(field.getType())) {
+                    helper.box(field.getType());
+                }
+            }
         }
 
         else {
