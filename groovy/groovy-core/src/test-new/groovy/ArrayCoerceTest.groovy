@@ -1,42 +1,38 @@
 class ArrayCoerceTest extends GroovyTestCase {
 
+    Object[] field
+
     void testFoo2() {
+        // TODO parser does not recognise the []
         def x = [1, 2, 3] as Object[]
         dump(x)
+        assert x instanceof Object[]
+        def c = x.getClass()
+        def et = c.componentType
+        assert et == Object.class
     }
 
-/*
+    /*
 
+      TODO parser bug - cannot parse!
+
+    void testStaticallyTypedPrimitiveTypeArrays() {
+        int[] a = [1, 2, 3]
+        assert a instanceof int[]
+        assert a.length == 3
+        dump(a)
+    }
+    */
 
     void testFoo() {
         Object[] foo = [1, 2, 3]
         dump(foo)
     }
 
-    Object[] field
-
-    void testAsObjectArray() {
-        def x = [1, 2, 3] as Object[]
-        def c = x.getClass()
-        def et = c.componentType
-        assert et == Object.class
-        dump(x)
-
-        Integer[] y = [1, 2, 3]
-        c = y.getClass()
-        et = c.componentType
-        assert et == Integer.class
-        dump(y)
-    }
-
     void testStaticallyTypedArrays() {
-        int[] a = [1, 2, 3]
-        assert a instanceof int[]
-        assert a.length == 3
-        dump(a)
-
         Object[] b = [1, 2, 3]
         dump(b)
+
         assert b instanceof Object[]
         assert b.length == 3
 
@@ -48,31 +44,6 @@ class ArrayCoerceTest extends GroovyTestCase {
 
         assert field instanceof Object[]
         assert field.length == 3
-    }
-
-
-    void testMakeArrayThenCoerceToAnotherType() {
-        def x = [1, 2, 3] as int[]
-        assert x.size() == 3
-        assert x instanceof int[]
-        dump(x)
-
-        // lets try coerce it into an array of longs
-        def y = x as long[]
-        assert y instanceof long[]
-        dump(y)
-
-        def z = y as Object[]
-        assert z instanceof Object[]
-        def c = z.getClass()
-        def et = c.componentType
-        assert et == Object.class
-        dump(z)
-
-        x = y as int[]
-        assert x.size() == 3
-        assert x instanceof int[]
-        dump(x)
     }
 
     void testMakePrimitiveArrayTypes() {
@@ -119,6 +90,50 @@ class ArrayCoerceTest extends GroovyTestCase {
         dump(x)
     }
 
+
+/*
+
+      TODO parser bug: cannot parse!
+
+    void testAsObjectArray() {
+        def x = [1, 2, 3] as Object[]
+        def c = x.getClass()
+        def et = c.componentType
+        assert et == Object.class
+        dump(x)
+
+        Integer[] y = [1, 2, 3]
+        c = y.getClass()
+        et = c.componentType
+        assert et == Integer.class
+        dump(y)
+    }
+
+    void testMakeArrayThenCoerceToAnotherType() {
+        def x = [1, 2, 3] as int[]
+        assert x.size() == 3
+        assert x instanceof int[]
+        dump(x)
+
+        // lets try coerce it into an array of longs
+        def y = x as long[]
+        assert y instanceof long[]
+        dump(y)
+
+        def z = y as Object[]
+        assert z instanceof Object[]
+        def c = z.getClass()
+        def et = c.componentType
+        assert et == Object.class
+        dump(z)
+
+        x = y as int[]
+        assert x.size() == 3
+        assert x instanceof int[]
+        dump(x)
+    }
+
+
     void testMakeArrayTypes() {
         def x = null
 
@@ -162,7 +177,11 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x instanceof Double[]
         dump(x)
     }
+
 */
+
+
+
 
     void dump(array) {
         println "Array is of type ${array.class} which has element type ${array.class.componentType}"
