@@ -78,6 +78,9 @@ public class ObjectRange extends AbstractList implements Range {
         if (that instanceof ObjectRange) {
             return equals((ObjectRange) that);
         }
+        else if (that instanceof List) {
+            return equals((List) that);
+        }
         return false;
     }
 
@@ -85,6 +88,18 @@ public class ObjectRange extends AbstractList implements Range {
         return InvokerHelper.compareEqual(this.from, that.from) && InvokerHelper.compareEqual(this.to, that.to);
     }
 
+    public boolean equals(List that) {
+        int size = size();
+        if (that.size() == size) {
+            for (int i = 0; i < size; i++ ) {
+                if (! InvokerHelper.compareEqual(get(i), that.get(i))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
     public Comparable getFrom() {
         return from;
     }
