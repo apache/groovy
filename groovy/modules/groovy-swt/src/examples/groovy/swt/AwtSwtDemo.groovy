@@ -14,8 +14,14 @@ class AwtSwtDemo {
         shell = swt.shell ( text:'The AwtSwt Demo' ) {
          	fillLayout()
          	
-         	swing.current = awtFrame()
-			swing.tree()
+         	label( text:"this is a swt label" )
+         	
+         	composite ( style:"border, embedded" ) {
+         		fillLayout()
+         	
+	         	swing.current = awtFrame()
+				swing.tree()
+			}
         }
         
 		shell.open()
