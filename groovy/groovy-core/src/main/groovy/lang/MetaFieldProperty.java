@@ -79,7 +79,7 @@ public class MetaFieldProperty extends MetaProperty {
                 field.set(object, InvokerHelper.asType(newValue, field.getType()));
             }
             catch (Exception ex) {
-                throw new TypeMissMatchException( "'" + toName(object.getClass()) + "." + field.getName()
+                throw new TypeMismatchException( "'" + toName(object.getClass()) + "." + field.getName()
                                                   + "' can not refer to the value '"
                                                   + newValue + "' (type " + toName(newValue.getClass())
                                                   + "), because it is of the type " + toName(field.getType()) );
