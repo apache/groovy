@@ -8,13 +8,18 @@ import org.codehaus.groovy.GroovyTestCase;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-class MapTest extends GroovyTestCase {
+class MapConstructionTest extends GroovyTestCase {
 
     void testMap() {
-        /** @todo parser
         m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ];
-        assertMap(m);
-        */
+
+        //System.err.println( m );
+
+        mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ];
+
+        System.err.println( mtoo );
+
+        //assertMap(m);
     }
 
     /** @todo parser
@@ -31,21 +36,24 @@ class MapTest extends GroovyTestCase {
     }
 
 
+    */
     
     protected assertMap(m) {
-        assert m instanceof Map;
+        //assert m instanceof Map;
+        assertEquals( "java.util.HashMap", m.getClass() );
         
+/*
         result = 0;
         text = "";
         for e in m {
             result += e.key;
             text += e.value;
         }
+*/
 	    
         assertEquals(result, 6);
         assertEquals(text, "abcdefxyz");
         assertEquals(s.size(), 3);
-        assertEquals(s[2], 'def');
+        // assertEquals(s[2], 'def');
     }
-    */
 }

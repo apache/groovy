@@ -21,6 +21,8 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
+import org.codehaus.groovy.ast.MapExpression;
+import org.codehaus.groovy.ast.MapEntryExpression;
 import org.codehaus.groovy.ast.ListExpression;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
@@ -565,9 +567,13 @@ public class ASTBuilder
             {
                 return propertyExpression( expressionRoot );
             }
-            case ( Token.LEFT_SQUARE_BRACKET ):
+            case ( Token.SYNTH_LIST ):
             {
                 return listExpression( expressionRoot );
+            }
+            case ( Token.SYNTH_MAP ):
+            {
+                return mapExpression( expressionRoot );
             }
             case ( Token.LEFT_PARENTHESIS ):
             {
@@ -640,6 +646,25 @@ public class ASTBuilder
         }
 
         return listExpression;
+    }
+
+    protected MapExpression mapExpression(CSTNode expressionRoot)
+    {
+        MapExpression mapExpression = new MapExpression();
+
+        CSTNode[] entryRoots = expressionRoot.getChildren();
+
+        for ( int i = 0 ; i < entryRoots.length ; ++i )
+        {
+            Expression keyExpression   = expression( entryRoots[ i ].getChild( 0 ) );
+            Expression valueExpression = expression( entryRoots[ i ].getChild( 1 ) );
+
+            MapEntryExpression entryExpression = new MapEntryExpression( keyExpression,
+                                                                         valueExpression );
+            mapExpression.addMapEntryExpression( entryExpression );
+        }
+
+        return mapExpression;
     }
 
     protected RangeExpression rangeExpression(CSTNode expressionRoot)

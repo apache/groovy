@@ -234,6 +234,8 @@ public class Token
 
     public static final int SYNTH_METHOD = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
+    public static final int SYNTH_LIST = 802;
+    public static final int SYNTH_MAP = 803;
 
     private static final Map KEYWORDS = new HashMap();
 
@@ -1236,6 +1238,22 @@ public class Token
     public static Token syntheticParameterDeclaration()
     {
         return newToken( SYNTH_PARAMETER_DECLARATION,
+                         "<synthetic>",
+                         -1,
+                         -1 );
+    }
+
+    public static Token syntheticMap()
+    {
+        return newToken( SYNTH_MAP,
+                         "<synthetic>",
+                         -1,
+                         -1 );
+    }
+
+    public static Token syntheticList()
+    {
+        return newToken( SYNTH_LIST,
                          "<synthetic>",
                          -1,
                          -1 );

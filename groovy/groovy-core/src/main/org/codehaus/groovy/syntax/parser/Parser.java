@@ -970,6 +970,7 @@ public class Parser
                              Token.IDENTIFIER );
                 }
 
+                // TODO fix the whole method invocation stuff.
                 if ( lt() == Token.LEFT_PARENTHESIS )
                 {
                     // foo.bar.baz()
@@ -1006,6 +1007,10 @@ public class Parser
                         {
                             break;
                         }
+                        default:
+                        {
+                            break;
+                        }
                     }
 
                     cur.addChild( argumentList() );
@@ -1026,7 +1031,7 @@ public class Parser
             }
             case ( Token.LEFT_SQUARE_BRACKET ):
             {
-                expr = listExpression();
+                expr = listOrMapExpression();
                 break;
             }
             case ( Token.LEFT_CURLY_BRACE ):
@@ -1059,6 +1064,94 @@ public class Parser
         return expr;
     }
 
+    protected CSTNode listOrMapExpression()
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = null;
+
+        consume( Token.LEFT_SQUARE_BRACKET );
+
+        if ( lt() == Token.COLON )
+        {
+            // it is an empty map
+            consume( Token.COLON );
+            expr = new CSTNode( Token.syntheticMap() );
+        }
+        else if ( lt() == Token.RIGHT_SQUARE_BRACKET )
+        {
+            // it is an empty list
+            expr = new CSTNode( Token.syntheticList() );
+        }
+        else
+        {
+            CSTNode firstExpr = expression();
+
+            if ( lt() == Token.COLON )
+            {
+                expr = mapExpression( firstExpr );
+            }
+            else
+            {
+                expr = listExpression( firstExpr );
+            }
+        }
+
+        consume( Token.RIGHT_SQUARE_BRACKET );
+
+        return expr;
+    }
+
+    protected CSTNode mapExpression(CSTNode key)
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = new CSTNode( Token.syntheticMap() );
+
+        CSTNode entry = rootNode( Token.COLON,
+                                  key );
+
+        CSTNode value = expression();
+
+        entry.addChild( value );
+
+        expr.addChild( entry );
+
+        while ( lt() == Token.COMMA )
+        {
+            consume( Token.COMMA );
+
+            key = expression();
+
+            entry = rootNode( Token.COLON,
+                              key );
+
+            entry.addChild( expression() );
+
+            expr.addChild( entry );
+        }
+
+        return expr;
+    }
+
+    protected CSTNode listExpression(CSTNode entry)
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = new CSTNode( Token.syntheticList() );
+
+        expr.addChild( entry );
+
+        while ( lt() == Token.COMMA )
+        {
+            consume( Token.COMMA );
+
+            entry = expression();
+
+            expr.addChild( entry );
+        }
+
+        return expr;
+    }
+    
+    /*
     protected CSTNode listExpression()
         throws IOException, SyntaxException
     {
@@ -1082,6 +1175,7 @@ public class Parser
 
         return expr;
     }
+    */
 
     protected CSTNode argumentList()
         throws IOException, SyntaxException
