@@ -81,7 +81,7 @@ and output a dynamic XML document containing the results in a custom format usin
 xml = new NodeBuilder()
 xml.customers() {
 	loc = 'London'
-	sql.queryEach ("select * from customer where location = ${loc}) {
+	sql.eachRow("select * from customer where location = ${loc}) {
 
 		// lets process each row by emitting some markup
 		xml.customer(id:it.id, type:'Customer', foo:someVariable)) {

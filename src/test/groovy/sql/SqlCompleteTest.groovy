@@ -11,7 +11,7 @@ class SqlCompleteTest extends TestHelper {
         sql = createSql()     
         
         results = [:]
-        sql.queryEach("select * from PERSON") { results.put(it.firstname, it.lastname) }
+        sql.eachRow("select * from PERSON") { results.put(it.firstname, it.lastname) }
         
         expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
 					
@@ -23,7 +23,7 @@ class SqlCompleteTest extends TestHelper {
         
         foo = "drink"
         results = []
-        sql.queryEach("select * from FOOD where type=${foo}") { results.add(it.name) }
+        sql.eachRow("select * from FOOD where type=${foo}") { results.add(it.name) }
         
         expected = ["beer", "coffee"]
         assert results == expected
@@ -35,7 +35,7 @@ class SqlCompleteTest extends TestHelper {
         foo = "cheese"
         bar = "edam"
         results = []
-        sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
+        sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
         
         expected = ["brie", "cheddar"]
         assert results == expected
@@ -45,7 +45,7 @@ class SqlCompleteTest extends TestHelper {
         sql = createSql()     
         
         results = []
-        sql.queryEach("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
+        sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
         
         expected = ["brie", "cheddar"]
         assert results == expected

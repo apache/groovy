@@ -150,7 +150,7 @@ public class DataSet extends Sql {
     }
 
     public void each(Closure closure) throws SQLException {
-        queryEach(getSql(), getParameters(), closure);
+        eachRow(getSql(), getParameters(), closure);
     }
 
     public String getSql() {
