@@ -31,13 +31,7 @@ public class FloatingPointMath extends NumberMath {
 		return new Double(left.doubleValue() / right.doubleValue());
 	}
 	protected int compareToImpl(Number left, Number right) {
-		double diff = left.doubleValue() - right.doubleValue();
-		if (diff == 0) {
-			return 0;
-		}
-		else {
-			return (diff > 0) ? 1 : -1;
-		}
+		return Double.compare(left.doubleValue(), right.doubleValue());
 	}
     
     protected Number modImpl(Number left, Number right) {

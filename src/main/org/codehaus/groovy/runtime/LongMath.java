@@ -36,13 +36,9 @@ public class LongMath extends NumberMath {
 	}
 	
 	protected int compareToImpl(Number left, Number right) {
-		long diff = left.longValue() - right.longValue();
-		if (diff == 0) {
-			return 0;
-		}
-		else {
-			return (diff > 0) ? 1 : -1;
-		}
+		long leftVal = left.longValue();
+		long rightVal = right.longValue();
+		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
 	}
 
     protected Number andImpl(Number left, Number right) {
