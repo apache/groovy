@@ -53,10 +53,12 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.CompositeStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -378,6 +380,16 @@ public class Interpreter implements GroovyCodeVisitor {
             values[idx++] = evaluate((Expression) iter.next());
         }
         pushExpressionValue(InvokerHelper.createTuple(values));
+    }
+
+    public void visitArrayExpression(ArrayExpression expression) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitCompositeStringExpression(CompositeStringExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitListExpression(ListExpression expression) {

@@ -47,16 +47,22 @@ package groovy.lang;
 
 
 /**
- * Represents a dynamic text expression with embedded values
+ * Represents a String which contains embedded values such as 
+ * "hello there ${user} how are you?"
+ * which can be evaluated lazily.
+ * Advanced users can iterate over the text and values to perform
+ * special processing, such as for performing SQL operations, the
+ * values can be substituted for ? and the actual value objects
+ * can be bound to a JDBC statement.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TextExpression implements GroovyObject {
+public abstract class CompositeString implements GroovyObject {
 
     private Object[] values;
 
-    public TextExpression(Object[] values) {
+    public CompositeString(Object[] values) {
         this.values = values;
     }
     

@@ -63,10 +63,12 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.CompositeStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -583,7 +585,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Expression expression = statement.getExpression();
         expression.visit(this);
 
-        if (expression instanceof MethodCallExpression && !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression)) {
+        if (expression instanceof MethodCallExpression
+            && !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression)) {
             cv.visitInsn(POP);
         }
     }
@@ -669,7 +672,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitVarInsn(ALOAD, 0);
 
         }
-        
+
         if (innerClass.getSuperClass().equals("groovy/lang/Closure")) {
             cv.visitVarInsn(ALOAD, 0);
         }
@@ -1074,6 +1077,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         createTupleMethod.call(cv);
     }
 
+    public void visitArrayExpression(ArrayExpression expression) {
+        // TODO Auto-generated method stub
+
+    }
+
     public void visitListExpression(ListExpression expression) {
         int size = expression.getExpressions().size();
         pushConstant(size);
@@ -1087,6 +1095,27 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitInsn(AASTORE);
         }
         createListMethod.call(cv);
+    }
+
+    public void visitCompositeStringExpression(CompositeStringExpression expression) {
+        int size = expression.getValues().size();
+        pushConstant(size);
+
+        cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
+
+        for (int i = 0; i < size; i++) {
+            cv.visitInsn(DUP);
+            pushConstant(i);
+            expression.getValue(i).visit(this);
+            cv.visitInsn(AASTORE);
+        }
+        
+        ClassNode innerClass = createCompositeStringClass(expression);
+        innerClasses.add(innerClass);
+        String innerClassinternalName = getClassInternalName(innerClass.getName());
+
+        cv.visitTypeInsn(NEW, innerClassinternalName);
+        cv.visitInsn(DUP);
     }
 
     // Implementation methods
@@ -1119,7 +1148,43 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     new FieldExpression(field),
                     Token.equal(-1, -1),
                     new VariableExpression("outerInstance"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "outerInstance"), new Parameter("java/lang/Object", "delegate")};
+        Parameter[] contructorParams =
+            new Parameter[] {
+                new Parameter(outerClassName, "outerInstance"),
+                new Parameter("java/lang/Object", "delegate")};
+        answer.addConstructor(ACC_PUBLIC, contructorParams, block);
+        return answer;
+    }
+
+    protected ClassNode createCompositeStringClass(CompositeStringExpression expression) {
+        ClassNode owner = classNode;
+        if (owner instanceof InnerClassNode) {
+            owner = owner.getOuterClass();
+        }
+        String outerClassName = owner.getName();
+        String name = outerClassName + "$" + context.getNextInnerClassIdx();
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy/lang/CompositeStringExpression");
+
+        FieldNode stringsField =
+            answer.addField(
+                "strings",
+                ACC_PRIVATE | ACC_STATIC,
+                "java/lang/String[]",
+                new ArrayExpression(expression.getStrings()));
+
+        answer.addMethod(
+            "getStrings",
+            ACC_PUBLIC | ACC_STATIC,
+            "java/lang/String[]",
+            Parameter.EMPTY_ARRAY,
+            new ReturnStatement(new FieldExpression(stringsField)));
+
+        // lets make the constructor
+        BlockStatement block = new BlockStatement();
+        block.addStatement(
+            new ExpressionStatement(
+                new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
+        Parameter[] contructorParams = new Parameter[] { new Parameter("java/lang/Object", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
