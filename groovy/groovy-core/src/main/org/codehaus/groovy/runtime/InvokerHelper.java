@@ -658,7 +658,8 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new byte[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number) ia[i]).byteValue();
+                if (ia[i] != null)
+                    ans[i] = ((Number) ia[i]).byteValue();
             }
         }
         return ans;
