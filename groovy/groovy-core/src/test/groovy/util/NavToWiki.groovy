@@ -8,18 +8,18 @@ else {
     println "About to parse ${file}"
     doc = new XmlParser().parse(file)
 
-    println "
+    println """
 QuickLinks page
 -------------------------------
 
 
-"
+"""
     links = doc.body.links.item
     println links.collect {
         return "{link:" + it['@name'] + "|" + it['@href'] + "}"
     }.join(" | ")
 
-    println "
+    println """
 
 
 
@@ -27,7 +27,7 @@ Navigation page
 -------------------------------
 
 
-"
+"""
     menus = doc.body.menu
     menus.each {
         println "h3:${it['@name']}"
