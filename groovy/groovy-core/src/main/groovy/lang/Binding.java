@@ -85,7 +85,8 @@ public class Binding extends GroovyObjectSupport {
         Object result = variables.get(name);
         
         if (result == null && !variables.containsKey(name)) {
-        		throw new MissingPropertyException(name, Binding.class);
+            throw new MissingPropertyException("The property '" + name + "' is missing from the binding.",
+                                               name, Binding.class);
         }
         
         return result;
