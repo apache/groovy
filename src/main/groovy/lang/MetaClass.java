@@ -80,11 +80,12 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
 import org.codehaus.groovy.runtime.MethodKey;
-import org.codehaus.groovy.runtime.NewStaticMetaMethod;
+import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
+import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -163,7 +164,7 @@ public class MetaClass {
         MetaClass.useReflection = useReflection;
     }
 
-    private void addInheritendMethods(Class theClass) {
+    private void addInheritedMethods(Class theClass) {
         // lets add all the base class methods
         Class c = theClass;
         if (c != Object.class) {
@@ -226,18 +227,33 @@ public class MetaClass {
      * 
      * @param method
      */
-    protected void addNewStaticInstanceMethod(Method method) {
+    protected void addNewInstanceMethod(Method method) {
+        if (initialised) {
+            throw new RuntimeException("Already initialized, cannot add new method: " + method);
+        }
+        else {
+            NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
+            addMethod(newMethod);
+            addNewInstanceMethod(newMethod);
+        }
+    }
+
+    protected void addNewInstanceMethod(MetaMethod method) {
+        newGroovyMethodsList.add(method);
+    }
+
+    protected void addNewStaticMethod(Method method) {
         if (initialised) {
             throw new RuntimeException("Already initialized, cannot add new method: " + method);
         }
         else {
             NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
             addMethod(newMethod);
-            addNewStaticInstanceMethod(newMethod);
+            addNewStaticMethod(newMethod);
         }
     }
 
-    protected void addNewStaticInstanceMethod(MetaMethod method) {
+    protected void addNewStaticMethod(MetaMethod method) {
         newGroovyMethodsList.add(method);
     }
 
@@ -1342,7 +1358,7 @@ public class MetaClass {
         return false;
     }
 
-    protected void registerStaticMethods() {
+    private void registerMethods(boolean instanceMethods) {
         Method[] methods = theClass.getMethods();
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
@@ -1350,10 +1366,22 @@ public class MetaClass {
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     Class owner = paramTypes[0];
-                    registry.lookup(owner).addNewStaticInstanceMethod(method);
+                    if (instanceMethods) {
+                        registry.lookup(owner).addNewInstanceMethod(method);
+                    } else {
+                        registry.lookup(owner).addNewStaticMethod(method);
+                    }
                 }
             }
         }
+    }
+
+    protected void registerStaticMethods() {
+        registerMethods(false);
+    }
+
+    protected void registerInstanceMethods() {
+        registerMethods(true);
     }
 
     protected String capitalize(String property) {
@@ -1372,7 +1400,7 @@ public class MetaClass {
     protected synchronized void checkInitialised() {
         if (!initialised) {
             initialised = true;
-            addInheritendMethods(theClass);
+            addInheritedMethods(theClass);
         }
         if (reflector == null) {
             generateReflector();

@@ -59,7 +59,7 @@ public class NewStaticMetaMethodTest extends TestCase {
         Method method = getClass().getMethod("dummyMethod", new Class[] { String.class, String.class });
         assertTrue("Should have found a method", method != null);
 
-        NewStaticMetaMethod metaMethod = createNewMetaMethod(method);
+        NewInstanceMetaMethod metaMethod = createNewMetaMethod(method);
 
         Object answer = metaMethod.invoke("abc", new Object[] { "xyz" });
         assertEquals("def", answer);
@@ -71,7 +71,7 @@ public class NewStaticMetaMethodTest extends TestCase {
         Method method = DefaultGroovyMethods.class.getMethod("plus", new Class[] { String.class, Object.class });
         assertTrue("Should have found a method", method != null);
 
-        NewStaticMetaMethod metaMethod = createNewMetaMethod(method);
+        NewInstanceMetaMethod metaMethod = createNewMetaMethod(method);
 
         Object answer = metaMethod.invoke("abc", new Object[] { "123" });
         assertEquals("abc123", answer);
@@ -92,7 +92,7 @@ public class NewStaticMetaMethodTest extends TestCase {
         return "def";
     }
 
-    protected NewStaticMetaMethod createNewMetaMethod(Method method) {
-        return new NewStaticMetaMethod(new ReflectionMetaMethod(method));
+    protected NewInstanceMetaMethod createNewMetaMethod(Method method) {
+        return new NewInstanceMetaMethod(new ReflectionMetaMethod(method));
     }
 }

@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 
 /**
  * A registery of MetaClass instances which caches introspection & 
@@ -80,7 +81,8 @@ public class MetaClassRegistry {
         this.useAccessible = useAccessible;
 
         // lets register the default methods
-        lookup(DefaultGroovyMethods.class).registerStaticMethods();
+        lookup(DefaultGroovyMethods.class).registerInstanceMethods();
+        lookup(DefaultGroovyStaticMethods.class).registerStaticMethods();
         checkInitialised();
     }
 
