@@ -63,6 +63,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -70,13 +71,14 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
-
 /**
  * Verifies the AST node and adds any defaulted AST code before
  * bytecode generation occurs.
@@ -102,18 +104,32 @@ public class Verifier implements GroovyClassVisitor, Constants {
         node.addInterface(GroovyObject.class.getName());
 
         // lets add a new field for the metaclass
+        StaticMethodCallExpression initMetaClassCall =
+            new StaticMethodCallExpression(
+                InvokerHelper.class.getName(),
+                "getMetaClass",
+                VariableExpression.THIS_EXPRESSION);
+
         PropertyNode metaClassProperty =
-            node.addProperty(
-                "metaClass",
-                ACC_PUBLIC,
-                MetaClass.class.getName(),
-                new StaticMethodCallExpression(
-                    InvokerHelper.class.getName(),
-                    "getMetaClass",
-                    VariableExpression.THIS_EXPRESSION),
-                null,
-                null);
+            node.addProperty("metaClass", ACC_PUBLIC, MetaClass.class.getName(), initMetaClassCall, null, null);
         FieldNode metaClassField = metaClassProperty.getField();
+        metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
+
+        FieldExpression metaClassVar = new FieldExpression(metaClassField);
+        IfStatement initMetaClassField =
+            new IfStatement(
+                new BooleanExpression(
+                    new BinaryExpression(metaClassVar, Token.compareEqual(-1, -1), ConstantExpression.NULL)),
+                new ExpressionStatement(new BinaryExpression(metaClassVar, Token.equal(-1, -1), initMetaClassCall)),
+                EmptyStatement.INSTANCE);
+
+        node.addMethod(
+            "getMetaClass",
+            ACC_PUBLIC,
+            MetaClass.class.getName(),
+            Parameter.EMPTY_ARRAY,
+            new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)}));
+
         // lets add the invokeMethod implementation
         boolean addDelegateObject =
             node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
@@ -127,15 +143,19 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 new Parameter[] {
                     new Parameter(String.class.getName(), "method"),
                     new Parameter(Object.class.getName(), "arguments")},
-                new ReturnStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(metaClassField),
-                        "invokeMethod",
-                        new ArgumentListExpression(
-                            new Expression[] {
-                                VariableExpression.THIS_EXPRESSION,
-                                new VariableExpression("method"),
-                                new VariableExpression("arguments")}))));
+                new BlockStatement(
+                    new Statement[] {
+                        initMetaClassField,
+                        new ReturnStatement(
+                            new MethodCallExpression(
+                                metaClassVar,
+                                "invokeMethod",
+                                new ArgumentListExpression(
+                                    new Expression[] {
+                                        VariableExpression.THIS_EXPRESSION,
+                                        new VariableExpression("method"),
+                                        new VariableExpression("arguments")})))
+            }));
 
             if (!node.getSuperClass().equals(Script.class.getName())) {
                 node.addMethod(
@@ -143,14 +163,18 @@ public class Verifier implements GroovyClassVisitor, Constants {
                     ACC_PUBLIC,
                     Object.class.getName(),
                     new Parameter[] { new Parameter(String.class.getName(), "property")},
-                    new ReturnStatement(
-                        new MethodCallExpression(
-                            new FieldExpression(metaClassField),
-                            "getProperty",
-                            new ArgumentListExpression(
-                                new Expression[] {
-                                    VariableExpression.THIS_EXPRESSION,
-                                    new VariableExpression("property")}))));
+                    new BlockStatement(
+                        new Statement[] {
+                            initMetaClassField,
+                            new ReturnStatement(
+                                new MethodCallExpression(
+                                    metaClassVar,
+                                    "getProperty",
+                                    new ArgumentListExpression(
+                                        new Expression[] {
+                                            VariableExpression.THIS_EXPRESSION,
+                                            new VariableExpression("property")})))
+                }));
 
                 node.addMethod(
                     "setProperty",
@@ -159,21 +183,47 @@ public class Verifier implements GroovyClassVisitor, Constants {
                     new Parameter[] {
                         new Parameter(String.class.getName(), "property"),
                         new Parameter(Object.class.getName(), "value")},
-                    new ExpressionStatement(
-                        new MethodCallExpression(
-                            new FieldExpression(metaClassField),
-                            "setProperty",
-                            new ArgumentListExpression(
-                                new Expression[] {
-                                    VariableExpression.THIS_EXPRESSION,
-                                    new VariableExpression("property"),
-                                    new VariableExpression("value")}))));
+                    new BlockStatement(
+                        new Statement[] {
+                            initMetaClassField,
+                            new ExpressionStatement(
+                                new MethodCallExpression(
+                                    metaClassVar,
+                                    "setProperty",
+                                    new ArgumentListExpression(
+                                        new Expression[] {
+                                            VariableExpression.THIS_EXPRESSION,
+                                            new VariableExpression("property"),
+                                            new VariableExpression("value")})))
+                }));
             }
         }
 
         if (node.getConstructors().isEmpty()) {
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
+
+        // lets check that we don't have a serialization method
+        /*
+        if (node.getMethod("") == null) {
+        node.addMethod(
+                "invokeMethod",
+                ACC_PUBLIC,
+                Object.class.getName(),
+                new Parameter[] {
+                              new Parameter(String.class.getName(), "method"),
+                                      new Parameter(Object.class.getName(), "arguments")},
+                                      new ReturnStatement(
+                                              new MethodCallExpression(
+                                                      getMetaClass,
+                                                      "invokeMethod",
+                                                      new ArgumentListExpression(
+                                                              new Expression[] {
+                                                                             VariableExpression.THIS_EXPRESSION,
+                                                                                     new VariableExpression("method"),
+                                                                             new VariableExpression("arguments")}))));
+        }
+        */
 
         addFieldInitialization(node);
 
