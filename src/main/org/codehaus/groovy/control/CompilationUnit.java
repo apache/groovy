@@ -106,6 +106,7 @@ public class CompilationUnit extends ProcessingUnit
     protected boolean     configured; // Set true after the first configure() operation
     
     protected ClassgenCallback classgenCallback;  // A callback for use during classgen()
+    protected ProgressCallback progressCallback;  // A callback for use during compile()
 
     
 
@@ -406,6 +407,33 @@ public class CompilationUnit extends ProcessingUnit
     
     
 
+   /**
+    *  A callback interface you can use to get a callback after every
+    *  unit of the compile process.  You will be called-back with a 
+    *  ProcessingUnit and a phase indicator.  Use setProgressCallback()
+    *  before running compile() to set your callback.
+    */
+     
+    public static abstract class ProgressCallback
+    {
+        public abstract void call( ProcessingUnit context, int phase ) throws CompilationFailedException;
+    }
+    
+    
+    
+   /**
+    *  Sets a ProgressCallback.  You can have only one, and setting
+    *  it to null removes any existing setting.
+    */
+    
+    public void setProgressCallback( ProgressCallback callback )
+    {
+        this.progressCallback = callback;
+    }
+    
+    
+    
+
   //---------------------------------------------------------------------------
   // ACTIONS
     
@@ -493,6 +521,11 @@ public class CompilationUnit extends ProcessingUnit
         public void call( SourceUnit source ) throws CompilationFailedException 
         { 
             source.parse();    
+            
+            if( CompilationUnit.this.progressCallback != null )
+            {
+                CompilationUnit.this.progressCallback.call( source, CompilationUnit.this.phase );
+            }
         } 
     };
 
@@ -526,7 +559,12 @@ public class CompilationUnit extends ProcessingUnit
         public void call( SourceUnit source ) throws CompilationFailedException 
         { 
             source.convert();
-            /* this. */ast.addModule( source.getAST() );
+            CompilationUnit.this.ast.addModule( source.getAST() );
+
+            if( CompilationUnit.this.progressCallback != null )
+            {
+                CompilationUnit.this.progressCallback.call( source, CompilationUnit.this.phase );
+            }
         } 
     };
 
@@ -549,6 +587,16 @@ public class CompilationUnit extends ProcessingUnit
 
         completePhase();
         applyToSourceUnits( mark );
+
+
+        //
+        // Callback progress, if necessary
+
+        if( this.progressCallback != null )
+        {
+            this.progressCallback.call( this, CompilationUnit.this.phase );
+        }
+
     }
     
     
@@ -599,7 +647,7 @@ public class CompilationUnit extends ProcessingUnit
             //
             // Handle any callback that's been set
             
-            if( /* this. */ classgenCallback != null )
+            if( CompilationUnit.this.classgenCallback != null )
             {
                 if( debug )
                 {
@@ -700,6 +748,15 @@ public class CompilationUnit extends ProcessingUnit
         
         completePhase();
         applyToSourceUnits( mark );
+
+
+        //
+        // Callback progress, if necessary
+
+        if( CompilationUnit.this.progressCallback != null )
+        {
+            CompilationUnit.this.progressCallback.call( this, this.phase );
+        }
     }
     
     
