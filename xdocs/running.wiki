@@ -1,0 +1,93 @@
+Running Groovy scripts 
+
+
+
+1 Running Groovy scripts
+
+Groovy scripts are a number of statements and class declarations in a text file.
+Groovy scripts can be used similarly to other scripting languages.
+There are various ways of running Groovy scripts... 
+
+1.1 Using the interactive console
+
+Groovy has a Swing interactive console that allows you to type in commmands and execute them
+rather like using an SQL query tool. History is available and such like so you can move forwards
+and backwards through commands etc. 
+
+If you {link:install|install.html} a binary distribution of Groovy then you can run the
+Groovy Swing console by typing this on the command line. 
+
+{code:groovysh}
+groovyConsole
+{code}
+
+For a command line interactive shell type 
+
+{code:groovysh}
+groovysh
+{code}
+
+To run the Swing Groovy console from a source distribution type... 
+
+{code:groovysh}
+maven console
+{code}
+
+1.1 Running Groovy scripts from your IDE
+
+There is a helper class called {link:GroovyShell|apidocs/groovy/lang/GroovyShell.html} which 
+has a main(String[]) method for running any Groovy script. 
+You can run any groovy script as follows 
+
+{code:groovysh}
+java groovy.lang.GroovyShell foo/MyScript.groovy [arguments]
+{code}
+
+You can then run the above Groovy main() in your IDE to run or debug any Groovy script. 
+
+1.1 Running Groovy scripts from the command line
+
+There are shell scripts called 'groovy' or 'groovy.bat' depending on your platform
+which is part of the Groovy runtime.
+Once the runtime is {link:installed|install.html} you can just run groovy like any other script... 
+
+{code:groovysh}
+groovy foo/MyScript.groovy [arguments]
+{code}
+
+To work from the latest and greatest Groovy, do a cvs checkout and then type 
+
+{code:groovysh}
+maven groovy:make-install
+{code}
+
+You'll then have a full binary distribution made for you in groovy/target/install.
+You can then add groovy/target/install/bin to your path and you can then run groovy scripts
+easily from the command line. 
+
+1.1 Creating Unix scripts with Groovy
+
+You can write unix scripts with Groovy and execute them directly on the command line as 
+if they were normal unix shell scripts. Providing you have installed the Groovy binary
+distribution (see above) and 'groovy' is on your PATH then the following should work.
+There now follows a sample script which is {link:in CVS|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/script/helloWorld?rev=HEAD} . 
+Save it as helloWorld. 
+
+{code:groovysh}
+#!/usr/bin/env groovy
+println("Hello world")
+for (a in this.args) {
+  println("Argument: " + a)
+}
+{code}
+
+Then to run the script from the command line, just make sure the script is executable then you 
+can call it 
+
+{code:groovysh}
+chmod +x helloWorld
+./helloWorld
+{code}
+
+
+

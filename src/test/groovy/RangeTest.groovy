@@ -55,4 +55,10 @@ class RangeTest extends GroovyTestCase {
 	    text = list.inspect()
 	    assert text == "[1, 4..10, 9]"
 	}
+	
+	void testRangeSize() {
+	    range = 1..10
+		s = range.size()
+	    assert s == 10
+	}
 }

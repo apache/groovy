@@ -72,5 +72,15 @@ public class RunBugsTest extends TestSupport {
     public void testGuillaumesMapBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/GuillaumesMapBug.groovy");
         object.invokeMethod("testBug", null);
-    }    
+    } 
+    
+    public void testUseClosureInScript() throws Exception {
+        GroovyObject object = compile("src/test/groovy/script/UseClosureInScript.groovy");
+        object.invokeMethod("run", null);
+    } 
+    
+    public void testUseStaticInClosure() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/UseStaticInClosureBug.groovy");
+        object.invokeMethod("testBug2", null);
+    } 
 }

@@ -58,7 +58,7 @@ import java.lang.reflect.InvocationTargetException;
 public class InvokerInvocationException extends GroovyRuntimeException {
 
     public InvokerInvocationException(InvocationTargetException e) {
-        super(e.getTargetException().getMessage(), e.getTargetException());
+        super(e.getTargetException().toString(), e.getTargetException());
     }
 
 }

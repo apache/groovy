@@ -26,6 +26,13 @@
    <attainGoal name="dist:deploy-src"/>
    <attainGoal name="jar:deploy"/>
   </goal>
+
+  <goal name="groovy:test-wiki" description="Generates the test cases for the wiki and runs the tests">
+   <attainGoal name="clean"/>
+   <attainGoal name="groovy:compile"/>
+   <j:set var="testcase" value="org.codehaus.groovy.wiki.RunWikiTest"/>
+   <attainGoal name="test:single"/>
+  </goal>
   
   <postGoal name="dist:prepare-bin-filesystem">
   	<attainGoal name="groovy:make-install"/>
@@ -91,11 +98,14 @@
 
 
   <preGoal name="xdoc:jelly-transform">
+    <mkdir dir="${maven.html2xdoc.dir}"/>
+  	<!--
     <copy toDir="${maven.html2xdoc.dir}">
       <fileset dir="${basedir}/xdocs">
         <include name="**/*.html"/>
       </fileset>
   	</copy>
+  	-->
   	
   	<!-- now lets run the wiki plugin -->
   	<attainGoal name="java:compile"/>

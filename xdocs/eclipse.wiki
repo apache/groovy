@@ -1,0 +1,17 @@
+Groovy Eclipse 
+
+
+
+1 Groovy Eclipse
+
+There is a Groovy Eclipse plugin avaiable for editing and running groovy scripts
+from inside Eclipse. Its currently in the {link:groovy-eclipse|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-eclipse/} CVS module. 
+
+The plugin provides a Groovy editor for editing scripts or classes in Groovy. 
+You can also use the editor as a kind of shell / scrapbook. If you install the 
+plugin and associate it with *.groovy files, then you can right click on any groovy
+file and run it as Groovy directly from the menu. Or you can type in some groovy, 
+highlight it in the editor and right click -> Evaluate Groovy. 
+
+
+

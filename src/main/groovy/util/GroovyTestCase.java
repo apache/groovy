@@ -45,7 +45,10 @@
  */
 package groovy.util;
 
+import java.util.logging.Logger;
+
 import groovy.lang.Closure;
+import groovy.lang.GroovyShell;
 import junit.framework.TestCase;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -61,6 +64,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class GroovyTestCase extends TestCase {
 
+    protected Logger log = Logger.getLogger(getClass().getName());
+    
     public GroovyTestCase() {
     }
 
@@ -157,6 +162,17 @@ public class GroovyTestCase extends TestCase {
         assertEquals("inspect() on value: " + value, expected, console);
     }
     
+    /**
+     * Asserts that the script runs without any exceptions
+     * @param script
+     */
+    protected void assertScript(String script) throws Exception {
+        log.info("About to execute script");
+        log.info(script);
+        
+        GroovyShell shell = new GroovyShell();
+        shell.evaluate(script, "TestScript.groovy");
+    }
     
     /**
      * Asserts that the given code closure fails when it is evaluated

@@ -1,0 +1,38 @@
+Groovlets: Writing Servlets in Groovy 
+
+
+
+1 Groovlets: Writing Servlets in Groovy
+
+You can write normal Java servlets in Groovy. 
+There is also a {link:GroovyServlet|} which automatically compile your .groovy
+source files, turn them into bytecode, load the Class and cache it until you
+change the source file. 
+
+Here's a simple example to show you the kind of thing you can do from a Groovlet.
+Notice the use of implicit variables to access the session, output & request. 
+
+{code:groovysh}
+import java.util.Date
+
+if (session.counter == null) {
+session.counter = 1
+}
+
+out.println(<<<EOS
+<html>
+<head>
+<title>Groovy Servlet</title>
+</head>
+<body>
+Hello, ${request.remoteHost}: ${session.counter}! ${new Date()} 
+<br>src
+</body>
+</html>
+EOS)
+
+session.counter = session.counter + 1
+{code}
+
+
+

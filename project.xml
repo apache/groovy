@@ -320,6 +320,11 @@
       <id>radeox+oro</id>
       <version>0.9</version>
     </dependency>
+  <!-- only used for the HTML to Wiki script -->
+    <dependency>
+      <id>nekohtml</id>
+      <version>0.7.7</version>
+    </dependency>
   
   </dependencies>
 

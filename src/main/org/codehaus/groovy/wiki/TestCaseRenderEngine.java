@@ -58,6 +58,7 @@ import org.radeox.api.engine.context.RenderContext;
  */
 public class TestCaseRenderEngine implements RenderEngine {
     Pattern groovyCodePattern = Pattern.compile("\\{code:groovy\\}");
+    Pattern groovyShellPattern = Pattern.compile("\\{code:groovysh\\}");
     Pattern codePattern = Pattern.compile("\\{code\\}");
     
     public TestCaseRenderEngine() {
@@ -84,19 +85,57 @@ public class TestCaseRenderEngine implements RenderEngine {
         String[] parts = groovyCodePattern.split(content);
         
         buf.append( "package wiki\nclass " + name + " extends GroovyTestCase {\n\n");
-        buf.append("void testDummy() {\n// this is a dummy test case\n}\n\n");
         buf.append("/*\n");
-        buf.append(parts[0]);
+        buf.append(processShellScripts(parts[0]));
 
-        int count = 1;
-        for (int i = 1; i < parts.length; i++ ) {
-            buf.append("*/ \n\n  void testCase" + (count++) + "() {\n");
+        for (int count = 1; count < parts.length; count++ ) {
+            buf.append("*/ \n\n  void testCase" + count + "() {\n");
             
-            buf.append(removeCloseCode(parts[i]));
+            buf.append(processShellScripts(removeCloseCode(parts[count])));
         }
        
-        buf.append("\n*/\n\n}\n");
+        buf.append("\n*/\n\n");
+        buf.append("void testDummy() {\n// this is a dummy test case\n}\n\n}\n");
         
+        return buf.toString();
+    }
+
+    /**
+     * Splits the comment block extracting any scripts that need to be tested
+     * @param text
+     * @return
+     */
+    protected String processShellScripts(String text) {
+        StringBuffer buf = new StringBuffer();
+
+        String[] parts = groovyShellPattern.split(text);
+        
+        buf.append(parts[0]);
+
+        for (int count = 1; count < parts.length; count++ ) {
+            buf.append("*/ \n\n  void testScript" + count + "() {\n");
+            buf.append("    assertScript( <<<SCRIPT_EOF" + count + "\n");
+            
+            String code = parts[count].replaceFirst("\\{code\\}", "\nSCRIPT_EOF" + count + " )\n}    \n\n /*");
+            
+            // lets escape ${foo} expressions
+            StringBuffer temp = new StringBuffer(code);
+            for (int idx = 0; true; idx++) {
+                idx = temp.indexOf("$", idx);
+                if (idx >= 0) {
+                    String next = temp.substring(++idx, idx+1);
+                    if (next.equals("{")) {
+                        temp.insert(idx, "$");
+                        idx++;
+                    }
+                }
+                else {
+                    break;
+                }
+            }
+            
+            buf.append(temp.toString());
+        }
         return buf.toString();
     }
 

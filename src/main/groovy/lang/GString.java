@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * Represents a String which contains embedded values such as "hello there
  * ${user} how are you?" which can be evaluated lazily. Advanced users can
@@ -65,6 +67,21 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     // will be static in an instance
     public abstract String[] getStrings();
+
+    /**
+     * Overloaded to implement duck typing for Strings 
+     * so that any method that can't be evaluated on this
+     * object will be forwarded to the toString() object instead.
+     */
+    public Object invokeMethod(String name, Object args) {
+        try {
+            return super.invokeMethod(name, args);
+        }
+        catch (MissingMethodException e) {
+            // lets try invoke the method on the real String
+            return InvokerHelper.invokeMethod(toString(), name, args);
+        }
+    }
 
     public Object[] getValues() {
         return values;

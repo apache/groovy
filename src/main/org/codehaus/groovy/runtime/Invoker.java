@@ -136,7 +136,7 @@ public class Invoker {
     }
 
     public Object invokeConstructor(String type, Object arguments) {
-        System.out.println("Invoking constructor of type: " + type);
+        //System.out.println("Invoking constructor of type: " + type);
         return invokeConstructorOf(loadClass(type), arguments);
     }
 
@@ -269,15 +269,14 @@ public class Invoker {
      */
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
-
-        if (left instanceof Float)
-            left = new Double(((Float) left).doubleValue());
-        if (right instanceof Float)
-            right = new Double(((Float) left).doubleValue());
-
         if (left instanceof Comparable) {
-            Comparable comparable = (Comparable) left;
-            return comparable.compareTo(right);
+            if (left instanceof Number) {
+                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
+            }
+            else {
+                Comparable comparable = (Comparable) left;
+                return comparable.compareTo(right);
+            }
         }
         /** todo we might wanna do some type conversion here */
         throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + " right");
@@ -316,7 +315,7 @@ public class Invoker {
     public String inspect(Object self) {
         return format(self, true);
     }
-    
+
     /**
      * A helper method to provide some better toString() behaviour such as turning arrays
      * into tuples
@@ -324,7 +323,7 @@ public class Invoker {
     public String toString(Object arguments) {
         return format(arguments, false);
     }
-    
+
     protected String format(Object arguments, boolean verbose) {
         if (arguments == null) {
             return "null";
@@ -400,8 +399,6 @@ public class Invoker {
         }
     }
 
-
-    
     /**
      * Sets the property on the given object
      * 
@@ -457,6 +454,18 @@ public class Invoker {
             return n.intValue();
         }
         throw new GroovyRuntimeException("Could not convert object: " + value + " into an int");
+    }
+
+    public Number asNumber(Object value) {
+        if (value instanceof Number) {
+            return (Number) value;
+        }
+        else if (value instanceof String) {
+            return Double.valueOf((String) value);
+        }
+        else {
+            throw new GroovyRuntimeException("Could not convert object: " + value + " into a Number");
+        }
     }
 
     /**

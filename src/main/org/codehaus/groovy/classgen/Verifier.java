@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.Closure;
+import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.Script;
@@ -130,9 +132,13 @@ public class Verifier implements GroovyClassVisitor, Constants {
             Parameter.EMPTY_ARRAY,
             new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)}));
 
+        // @todo we should check if the base class implements the invokeMethod method
+
         // lets add the invokeMethod implementation
+        String superClass = node.getSuperClass();
         boolean addDelegateObject =
-            node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
+            (node instanceof InnerClassNode && superClass.equals(Closure.class.getName()))
+                || superClass.equals(GString.class.getName());
 
         // don't do anything as the base class implements the invokeMethod
         if (!addDelegateObject) {
@@ -157,7 +163,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                                         new VariableExpression("arguments")})))
             }));
 
-            if (!node.getSuperClass().equals(Script.class.getName())) {
+            if (!superClass.equals(Script.class.getName())) {
                 node.addMethod(
                     "getProperty",
                     ACC_PUBLIC,

@@ -291,7 +291,20 @@ public class InvokerHelper {
     public static Script createScript(Class scriptClass, Binding context) {
         try {
             Constructor constructor = scriptClass.getConstructor(new Class[] {});
-            Script script = (Script) constructor.newInstance(new Object[] {});
+            final GroovyObject object = (GroovyObject) constructor.newInstance(new Object[] {});
+            Script script = null;
+            if (object instanceof Script) {
+                script = (Script) object;
+            }
+            else {
+                // it could just be a class, so lets wrap it in a Script wrapper
+                // though the bindings will be ignored
+                script = new Script() {
+                    public Object run() {
+                        object.invokeMethod("main", new Object[] { new String[0] });
+                        return null;
+                    } };
+            }
             Method setBindings = script.getClass().getMethod("setBindings", new Class[] { Binding.class });
             setBindings.invoke(script, new Object[] { context });
             return script;

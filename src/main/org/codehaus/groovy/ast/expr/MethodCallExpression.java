@@ -59,6 +59,7 @@ public class MethodCallExpression extends Expression {
     private String method;
     private Expression arguments;
     private boolean safe;
+    private boolean implicitThis;
 
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this.objectExpression = objectExpression;
@@ -103,6 +104,19 @@ public class MethodCallExpression extends Expression {
 
     public void setSafe(boolean safe) {
         this.safe = safe;
+    }
+
+    /**
+     * @return true if no object expression was specified otherwise if 
+     * some expression was specified for the object on which to evaluate
+     * the method then return false
+     */
+    public boolean isImplicitThis() {
+        return implicitThis;
+    }
+
+    public void setImplicitThis(boolean implicitThis) {
+        this.implicitThis = implicitThis;
     }
 
     public String toString() {
