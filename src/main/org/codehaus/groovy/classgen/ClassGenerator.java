@@ -1513,7 +1513,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExp = (BinaryExpression) expression;
-            return binExp.getOperation().getType() != Token.EQUAL;
+            switch (binExp.getOperation().getType()) {
+                case Token.EQUAL :
+                case Token.PLUS_EQUAL :
+                case Token.MINUS_EQUAL :
+                case Token.MULTIPLY_EQUAL :
+                case Token.DIVIDE_EQUAL :
+                case Token.MOD_EQUAL :
+                    return false;
+            }
         }
         return true;
     }
