@@ -244,11 +244,11 @@ public class ModuleNode extends ASTNode implements Constants {
         }
         // new lets trip the path separators
         idx = answer.lastIndexOf('/');
-        if (idx > 0) {
+        if (idx >= 0) {
             answer = answer.substring(idx + 1);
         }
         idx = answer.lastIndexOf(File.separatorChar);
-        if (idx > 0) {
+        if (idx >= 0) {
             answer = answer.substring(idx + 1);
         }
         return answer;
