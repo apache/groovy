@@ -236,6 +236,25 @@ public class Invoker {
         if (value instanceof Iterator) {
             return (Iterator) value;
         }
+        else if (value instanceof Enumeration) {
+            final Enumeration enumeration = (Enumeration) value;
+            return new Iterator() {
+                private Object last;
+
+                public boolean hasNext() {
+                    return enumeration.hasMoreElements();
+                }
+
+                public Object next() {
+                    last = enumeration.nextElement();
+                    return last;
+                }
+
+                public void remove() {
+                    throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+                }
+            };
+        }
         else if (value instanceof Matcher) {
             final Matcher matcher = (Matcher) value;
             return new Iterator() {
@@ -269,9 +288,7 @@ public class Invoker {
     }
 
     /**
-     * @param left
-     * @param right
-     * @return
+     * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
@@ -305,23 +322,14 @@ public class Invoker {
             return true;
         }
         if (left != null) {
+            if (right == null) {
+                return false;
+            }
+            if (left instanceof Number) {
+                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right)) == 0;
+            }
             if (left.equals(right)) {
                 return true;
-            }
-            if (left instanceof Number && right instanceof Number) {
-                Number leftNumber = (Number) left;
-                Number rightNumber = (Number) right;
-                if (leftNumber.byteValue() != rightNumber.byteValue()
-                    || leftNumber.intValue() != rightNumber.intValue()
-                    || leftNumber.shortValue() != rightNumber.shortValue()
-                    || leftNumber.longValue() != rightNumber.longValue()
-                    || leftNumber.floatValue() != rightNumber.floatValue()
-                    || leftNumber.doubleValue() != rightNumber.doubleValue()) {
-                    return false;
-                }
-                else {
-                    return true;
-                }
             }
         }
         return false;

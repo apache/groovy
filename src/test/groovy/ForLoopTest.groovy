@@ -1,5 +1,7 @@
 import groovy.bugs.TestSupport
 
+import java.util.Vector
+
 class ForLoopTest extends GroovyTestCase {
 
 	property x
@@ -61,5 +63,16 @@ class ForLoopTest extends GroovyTestCase {
         }
         
         assert list == ["a", "b", "c"]
+    }
+    
+    void testVector() {
+        vector = new Vector()
+        vector.addAll( [1, 2, 3] )
+        
+        answer = []
+        for (i in vector.elements()) {
+            answer << i
+        }
+        assert answer == [1, 2, 3]
     }
 }
