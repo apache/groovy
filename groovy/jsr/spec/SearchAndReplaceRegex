@@ -29,4 +29,8 @@ The following regexes are replaced with the regex immediately following
 
 <blockquote class="blockquote">$2</blockquote>
 
+1.1 \*(.*?)\*
+
+<b>$1</b>
+
 1.1 ***END***

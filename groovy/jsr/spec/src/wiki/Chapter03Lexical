@@ -31,7 +31,7 @@ Here are some examples that suggest some of the changes that pertain to newlines
       +(buff? "bells": "bies"))
   String how /* sneaky
       newline */ = "real"
-  println "how.length is $how.length."
+  println "value of \\\$how.length is '$how.length'."
   println "It's been $how.";
 {code}
 
@@ -39,7 +39,7 @@ Here are some examples that suggest some of the changes that pertain to newlines
 h2. 3.3 Unicode Escapes
 (Cf. ??[JLS. &#167;3.3|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100850]??.)
 
-TO DO: Some implementations do not support '\uXXXX' escapes, except in strings.  Mandate them anyway?
+TO DO: Some implementations do not support '\\\uXXXX' escapes, except in strings.  Mandate them anyway?
 
 {anchor:3.4}
 h2. 3.4 Line Terminators
@@ -114,6 +114,16 @@ The production {{IntegerTypeSuffix: g G}} is added, allowing {{BigInteger}} cons
 
 TO DO:  123i allowed?  Other literal syntaxes?
 
+Because numbers are objects in Groovy,
+numeric literals are not allowed to begin or end with adecimal point.
+Java floating point literals such as {{.01}}, {{1.f}}, and {{1.e10}} must be padded with zero digits,
+as in {{0.01}}, {{1.0f}}, and {{1.0e10}}.
+
+{code}
+assert '123' == 123.toString
+assert '1.23' == 1.23.toString
+{code}
+
 {anchor:3.10.2}
 h3. 3.10.2 Floating-Point Literals
 (Cf. ??[JLS. &#167;3.10.2|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#232095]??.)
@@ -143,7 +153,7 @@ Indeed, a string constructor is really an expression composed of a number of tok
 
 Independently, the quote marks may be tripled, allowing the string to span multiple lines.  If the quote marks are used singly, the string may not contain a line terminator.
 
-Regardless of the spelling of a line terminator found inside a string literal or constructor, it is always equivalent to an escaped newline '\n'.
+Regardless of the spelling of a line terminator found inside a string literal or constructor, it is always equivalent to an escaped newline '\\\n'.
 
 (Note:  The grammar of single-quoted and triple-quoted strings differs only in their processing of line terminators.
 We express this by means of a grammatical parameter {{LT}}, which is true if line terminators are allowed.)
@@ -156,19 +166,18 @@ StringLiteral:
   \"\"\" (DStringCharacter[LT=true])*  \"\"\"
 
 CStringCharacter[LT]:
-  InputCharacter but not a closing quote or \\
+  InputCharacter but not a closing quote or \\\
   EscapeSequence[LT]
   LineTerminator  when(LT)
 
 DStringCharacter[LT]:
-  InputCharacter but not a closing quote or \\ or \$
+  InputCharacter but not a closing quote or \\\ or \$
   EscapeSequence[LT]
   LineTerminator  when(LT)
 
-EscapeSequence[LT]:
-  _(same as Java, plus escapes for dollar and ignored newline...)_
-  \\ \$
-  \\ LineTerminator  when(LT)
+EscapeSequence[LT]:  (add the following new productions)
+  \\\ \$
+  \\\ LineTerminator  when(LT)
 {code}
 
 Note that a triple-quoted string may contain isolated single or double occurrences of its close-quote.
@@ -196,7 +205,7 @@ The end of a value part is determined either by eagerly parsing a series of dot-
   assert x == "$x"
   assert x == "${x}"
   assert "XoX" == "${x}o$x"
-  assert '$'+'x' == "\$x"
+  assert '$'+'x' == "\\\$x"
   assert "1" == "$x.length"
   assert "1." == "$x.length."
   assert "1()" == "$x.length()"
@@ -292,7 +301,7 @@ h3. 3.10.6 Escape Sequences for Character and String Literals
 
 (Same as in Java.)
 
-In all strings, the escape sequence \$ is legal, and stands for the ASCII dollar character.
+In all strings, the escape sequence '\\\$' is legal, and stands for the ASCII dollar character.
 (Such an escaped dollar does not introduce a string constructor value part.)
 
 {anchor:3.10.7}
