@@ -58,6 +58,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -433,12 +434,10 @@ public class MetaClass {
                 }
             }
         }
-        StringBuffer argBuf = new StringBuffer();
-        for (int i = 0; i < arguments.length; i++) {
-        	if (i>0)argBuf.append(",");
-			argBuf.append(arguments == null?"null":arguments[i].getClass().getName());
-		}
-        throw new GroovyRuntimeException("Could not find matching constructor for: " + theClass.getName()+ "("+argBuf+")");
+        throw new GroovyRuntimeException(
+        			"Could not find matching constructor for: "
+        				+ theClass.getName()
+						+ "("+InvokerHelper.toTypeString(arguments)+")");
     }
 
     /**
@@ -1379,7 +1378,7 @@ public class MetaClass {
                     return value instanceof Integer;
                 }
                 else if (type == double.class) {
-                    return value instanceof Double || value instanceof Float || value instanceof Integer;
+                    return value instanceof Double || value instanceof Float || value instanceof Integer || value instanceof BigDecimal;
                 }
                 else if (type == boolean.class) {
                     return value instanceof Boolean;

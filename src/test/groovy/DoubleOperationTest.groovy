@@ -54,4 +54,27 @@ class DoubleOperationTest extends GroovyTestCase {
         y = x / 2
         assert y == 10.0 : "y = " + y     
     }
+
+    void testMethodNotFound() {
+    	try {
+    		println( Math.sin("foo", 7) );
+	    	fail("Should catch a MissingMethodException");
+    	} catch (MissingMethodException mme) {
+    	}
+    }
+        
+    void testCoerce() {
+    	xyz = Math.sin(1.1);
+    	assert xyz instanceof Double;
+    	assert xyz == Math.sin(1.1D);
+    	
+        //Note that (7.3F).doubleValue() != 7.3D
+    	x = Math.sin(7.3F);
+    	assert x instanceof Double;
+    	assert x == Math.sin((7.3F).doubleValue());
+
+    	x = Math.sin(7);
+    	assert x instanceof Double;
+    	assert x == Math.sin(7.0D);
+    }
 }

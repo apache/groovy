@@ -40,6 +40,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.util.GroovyTestCase;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -261,6 +262,17 @@ public class InvokeMethodTest extends GroovyTestCase {
         };
         Object value = invoke("test", "getBytes", new Object[] { param });
         assertEquals("converted GString to string", "test".getBytes("US-ASCII").getClass(), value.getClass());
+    }
+
+    public void testBadBDToDoubleCoerce() throws Throwable {
+        try {
+            Object value = invoke(Math.class, "floor", new BigDecimal("1.7E309"));
+        } catch (GroovyRuntimeException e) {
+            assertTrue("Math.floor(1.7E309) should fail because it is out of range for a Double. "
+                    +e,e.getMessage().indexOf("out of range") > 0);
+            return;
+        }
+        fail("Math.floor(1.7E309) should fail because it is out of range for a Double.");        
     }
 
     public void testClassMethod() throws Throwable {

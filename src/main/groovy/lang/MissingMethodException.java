@@ -62,16 +62,18 @@ public class MissingMethodException extends GroovyRuntimeException {
     private Class type;
 
     public MissingMethodException(String method, Class type, Object[] arguments) {
-        super(
-            "No such method: "
-                + method
-                + " for class: "
-                + type.getName()
-                + " with arguments: "
-                + InvokerHelper.toString(arguments));
-        this.method = method;
-        this.type = type;
-    }
+	    super(
+	        "No signature of method "
+	    		+ type.getName()
+				+ "."
+	            + method
+				+ "() is applicable for argument types: ("
+				+ InvokerHelper.toTypeString(arguments)
+	            + ") values: "
+				+ InvokerHelper.toString(arguments));
+	    this.method = method;
+	    this.type = type;
+	}
 
     /**
      * @return the name of the method that could not be found
