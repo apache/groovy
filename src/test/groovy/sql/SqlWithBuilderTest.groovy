@@ -2,9 +2,6 @@ package groovy.sql
 
 import groovy.xml.MarkupBuilder 
 
-/** @todo bug - should not need this line */
-import groovy.sql.TestHelper
-
 /**
  * @author Brian McCallister
  * @version $Revision$

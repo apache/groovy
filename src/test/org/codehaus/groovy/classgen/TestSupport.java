@@ -47,6 +47,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.Binding;
+import groovy.lang.CompilerConfig;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.Script;
@@ -63,7 +64,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -81,10 +84,14 @@ public class TestSupport extends GroovyTestCase implements Constants {
 
     protected static boolean DUMP_CLASS = false;
 
+    // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
     ClassLoader parentLoader = getClass().getClassLoader();
     protected GroovyClassLoader loader = (DUMP_CLASS) ? new DumpingClassLoader(parentLoader): new GroovyClassLoader(parentLoader);
+    CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfig());
+    ModuleNode module = new ModuleNode(unit);
     
     protected Class loadClass(ClassNode classNode) {
+        classNode.setModule(module);
         Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy");
         return fooClass;
     }

@@ -248,6 +248,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             this.classNode = classNode;
             this.outermostClass = null;
             this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getName());
+            
+            // lets check that the classes are all valid
+            classNode.setSuperClass(checkValidType(classNode.getSuperClass(), classNode, "Must be a valid base class"));
+            String[] interfaces = classNode.getInterfaces();
+            for (int i = 0; i < interfaces.length; i++ ) {
+                interfaces[i] = checkValidType(interfaces[i], classNode, "Must be a valid interface name");
+            }
+            
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(

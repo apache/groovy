@@ -90,6 +90,10 @@ public class ModuleNode extends ASTNode implements Constants {
     public ModuleNode() {
     }
 
+    public ModuleNode(CompileUnit unit) {
+        this.unit = unit;
+    }
+
     public BlockStatement getStatementBlock() {
         return statementBlock;
     }
