@@ -409,5 +409,3 @@ foo.invokeMethod(method, args);
 * could code generate the MetaClass with very efficient dynamic dispatch
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
-
-
