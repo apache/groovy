@@ -1567,7 +1567,8 @@ public class MetaClass {
 	}
 
     protected boolean isValidReflectorMethod(MetaMethod method) {
-        if (method.isPrivate() || method.isProtected()) {
+        // We cannot use a reflector if the method is private, protected, or package accessible only.
+        if (!method.isPublic()) {
             return false;
         }
         Class declaringClass = method.getDeclaringClass();

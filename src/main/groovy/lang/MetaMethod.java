@@ -209,8 +209,12 @@ public class MetaMethod implements Cloneable {
         return (modifiers & Modifier.PROTECTED) != 0;
     }
 
+    public boolean isPublic() {
+        return (modifiers & Modifier.PUBLIC) != 0;
+    }
+
     /**
-     * @return true if the given method has the same name, parameters, return type 
+     * @return true if the given method has the same name, parameters, return type
      * and modifiers but may be defined on another type
      */
     public boolean isSame(MetaMethod method) {
