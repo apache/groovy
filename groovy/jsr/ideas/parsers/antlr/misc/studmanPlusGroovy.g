@@ -6,11 +6,11 @@
  *  I have taken java.g for Java1.5 from Michael Studman (1.22.4)
  *  and have begun applying the groovy.diff from java.g (1.22)
  *  back onto the new root (1.22.4)
- *  (by hand, as 'patch' won't be enough)
  *
  *  for a map of the task see... 
  *     http://groovy.javanicus.com/java-g.png
  * 
+ *  18 Jan 2005 - Initial port finished - some generation issues to resolve JRR
  *  10 Jan 2005 - Porting begun JRR
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  *
@@ -18,8 +18,6 @@
  *
  * [The -showtree option pops up a Swing frame that shows
  *  the AST constructed from the parser.]
- *
- * Run 'java Main <directory full of java files>'
  *
  * Contributing authors:
  *		John Mitchell		johnm@non.net
@@ -282,11 +280,11 @@ importStatement
 // TODO REMOVE
 // Protected type definitions production for reuse in other productions
 //protected typeDefinitionInternal[AST mods]
-//	:	classDefinition[#mods]		// inner class
-//	|	interfaceDefinition[#mods]	// inner interface
-//	|	enumDefinition[#mods]		// inner enum
-//	|	annotationDefinition[#mods]	// inner annotation
-//	;
+	//:	classDefinition[#mods]		// inner class
+	//|	interfaceDefinition[#mods]	// inner interface
+	//|	enumDefinition[#mods]		// inner enum
+	//|	annotationDefinition[#mods]	// inner annotation
+	//;
 
 /** A declaration is the creation of a reference or primitive-type variable,
  *  or (if arguments are present) of a method.
@@ -2499,14 +2497,13 @@ NLS     :
                 }
         ;
 
-// TODO - GOT TO HERE JRR ---->
-
 // Single-line comments
 SL_COMMENT
-	:	"//"
-		(~('\n'|'\r'))* ('\n'|'\r'('\n')?)
-		{$setType(Token.SKIP); newline();}
-	;
+        :       "//"
+                (~('\n'|'\r'))*
+                {$setType(Token.SKIP);}
+                ONE_NL
+        ;
 
 // multiple-line comments
 ML_COMMENT
@@ -2522,10 +2519,10 @@ ML_COMMENT
 				generateAmbigWarnings=false;
 			}
 		:
-			{ LA(2)!='/' }? '*'
-		|	'\r' '\n'		{newline();}
-		|	'\r'			{newline();}
-		|	'\n'			{newline();}
+			( '*' ~'/' ) => '*'
+		|	'\r' '\n'		{newlineCheck();}
+		|	'\r'			{newlineCheck();}
+		|	'\n'			{newlineCheck();}
 		|	~('*'|'\n'|'\r')
 		)*
 		"*/"
@@ -2533,16 +2530,69 @@ ML_COMMENT
 	;
 
 
-// character literals
-CHAR_LITERAL
-	:	'\'' ( ESC | ~('\''|'\n'|'\r'|'\\') ) '\''
-	;
-
 // string literals
 STRING_LITERAL
-	:	'"' (ESC|~('"'|'\\'|'\n'|'\r'))* '"'
-	;
+                {int tt=0;}
+        :   ("'''") =>  //...shut off ambiguity warning
+                "'''"!
+                (   STRING_CH | ESC | '"' | '$'
+                |       ('\'' (~'\'' | '\'' ~'\'')) => '\''  // allow 1 or 2 close quotes
+                )*
+                "'''"!
+        |       '\''!
+                                        {++suppressNewline;}
+                (   STRING_CH | ESC | '"' | '$'  )*
+                                        {--suppressNewline;}
+                '\''!
+        |   ("\"\"\"") =>  //...shut off ambiguity warning
+                "\"\"\""!
+                tt=STRING_CTOR_END[true, /*tripleQuote:*/ true]
+                {$setType(tt);}
+        |       '"'!
+                                        {++suppressNewline;}
+                tt=STRING_CTOR_END[true, /*tripleQuote:*/ false]
+                {$setType(tt);}
+        ;
 
+protected
+STRING_CTOR_END[boolean fromStart, boolean tripleQuote]
+returns [int tt=STRING_CTOR_END]
+        :
+                (
+                        options {  greedy = true;  }:
+                    STRING_CH | ESC | '\''
+                |   ('"' (~'"' | '"' ~'"'))=> {tripleQuote}? '"'  // allow 1 or 2 close quotes
+                )*
+                (       (   { !tripleQuote }? "\""!
+                        |   {  tripleQuote }? "\"\"\""!
+                        )
+                        {
+                                if (fromStart)      tt = STRING_LITERAL;  // plain string literal!
+                                if (!tripleQuote)       {--suppressNewline;}
+                                // done with string constructor!
+                                //assert(stringCtorState == 0);
+                        }
+                |   '$'!
+                        {
+                                // (('*')? ('{' | LETTER)) =>
+                                int k = 1;
+                                char lc = LA(k);
+                                if (lc == '*')  lc = LA(++k);
+                                require(lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)),
+                                                "illegal string body character after dollar sign",
+                                                "either escape a literal dollar sign \"\\$5\" or bracket the value expression \"${5}\"");
+                                // Yes, it's a string constructor, and we've got a value part.
+                                tt = (fromStart ? STRING_CTOR_START : STRING_CTOR_MIDDLE);
+                                stringCtorState = SCS_VAL + (tripleQuote? SCS_TRIPLE: 0);
+                        }
+                )
+                {   $setType(tt);  }
+        ;
+
+protected
+STRING_CH
+        :   ~('"'|'\''|'\\'|'$'|'\n'|'\r')
+        ;
 
 // escape sequence -- note that this is protected; it can only be called
 // from another lexer rule -- it will not ever directly return a token to
@@ -2554,16 +2604,19 @@ STRING_LITERAL
 // the FOLLOW ambig warnings.
 protected
 ESC
-	:	'\\'
-		(	'n'
-		|	'r'
-		|	't'
-		|	'b'
-		|	'f'
+	:	'\\'!
+		(	'n'     {$setText("\n");}
+		|	'r'     {$setText("\r");}
+		|	't'     {$setText("\t");}
+		|	'b'     {$setText("\b");}
+		|	'f'     {$setText("\f");}
 		|	'"'
 		|	'\''
 		|	'\\'
-		|	('u')+ HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+		|	'$'	//escape Groovy $ operator uniformly also
+		|	('u')+ {$setText("");}
+					HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+					{char ch = (char)Integer.parseInt($getText,16); $setText(ch);}
 		|	'0'..'3'
 			(
 				options {
@@ -2577,6 +2630,7 @@ ESC
 				:	'0'..'7'
 				)?
 			)?
+					{char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
 		|	'4'..'7'
 			(
 				options {
@@ -2584,7 +2638,10 @@ ESC
 				}
 			:	'0'..'7'
 			)?
+				{char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
 		)
+	|!      '\\' ONE_NL
+        |!      ONE_NL          { $setText('\n'); }             // always normalize to newline
 	;
 
 
@@ -2608,8 +2665,30 @@ VOCAB
 // if it's a literal or really an identifer
 IDENT
 	options {testLiterals=true;}
-	:	('a'..'z'|'A'..'Z'|'_'|'$') ('a'..'z'|'A'..'Z'|'_'|'0'..'9'|'$')*
+	:	LETTER(LETTER|DIGIT)*
 		{
+			if (stringCtorState != 0) {
+                                if (LA(1) == '.' && LA(2) != '$' &&
+                                                Character.isJavaIdentifierStart(LA(2))) {
+                                        // pick up another name component before going literal again:
+                                        restartStringCtor(false);
+                                } else {
+                                        // go back to the string
+                                        restartStringCtor(true);
+                                }
+                        }
+                        int ttype = testLiteralsTable(IDENT);
+                        if (ttype != IDENT && lastToken.getType() == DOT) {
+                                // A few keywords can follow a dot:
+                                switch (ttype) {
+                                case LITERAL_this: case LITERAL_super: case LITERAL_class:
+                                        break;
+                                default:
+                                        ttype = LITERAL_in;  // the poster child for bad dotted names
+                                }
+                        }
+                        $setType(ttype);
+
 			// check if "assert" keyword is enabled
 			if (assertEnabled && "assert".equals($getText)) {
 				$setType(LITERAL_assert); // set token type for the rule in the parser
@@ -2621,11 +2700,24 @@ IDENT
 		}
 	;
 
+protected
+LETTER
+        :   'a'..'z'|'A'..'Z'|'_'
+        // TO DO:  Recognize all the Java identifier starts here (except '$').
+        ;
+
+protected
+DIGIT
+        :   '0'..'9'
+        // TO DO:  Recognize all the Java identifier parts here (except '$').
+        ;
 
 // a numeric literal
 NUM_INT
 	{boolean isDecimal=false; Token t=null;}
-	:	'.' {_ttype = DOT;}
+	:
+/*OBS*
+		'.' {_ttype = DOT;}
 			(
 				(('0'..'9')+ (EXPONENT)? (f1:FLOAT_SUFFIX {t=f1;})?
 				{
@@ -2640,8 +2732,10 @@ NUM_INT
 				// JDK 1.5 token for variable length arguments
 				(".." {_ttype = TRIPLE_DOT;})
 			)?
-
-	|	(	'0' {isDecimal = true;} // special case for just '0'
+	|
+*OBS*/
+	// TO DO:  This complex pattern seems wrong.  Verify or fix.
+	(	'0' {isDecimal = true;} // special case for just '0'
 			(	('x'|'X')
 				(											// hex
 					// the 'e'|'E' and float suffix stuff look
@@ -2657,27 +2751,31 @@ NUM_INT
 
 			|	//float or double with leading zero
 				(('0'..'9')+ ('.'|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
+				{isDecimal=true;}
 
 			|	('0'..'7')+									// octal
 			)?
 		|	('1'..'9') ('0'..'9')*  {isDecimal=true;}		// non-zero decimal
 		)
 		(	('l'|'L') { _ttype = NUM_LONG; }
+		|	BIG_SUFFIX { _ttype = NUM_BIG_INT; }
 
 		// only check to see if it's a float if looks like decimal so far
 		|	{isDecimal}?
-			(	'.' ('0'..'9')* (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;})?
-			|	EXPONENT (f3:FLOAT_SUFFIX {t=f3;})?
+			(	'.' ('0'..'9')* (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;} | g2:BIG_SUFFIX {t=g2;})?
+			|	EXPONENT (f3:FLOAT_SUFFIX {t=f3;} | g3:BIG_SUFFIX {t=g3;})?
 			|	f4:FLOAT_SUFFIX {t=f4;}
 			)
 			{
-			if (t != null && t.getText().toUpperCase() .indexOf('F') >= 0) {
-				_ttype = NUM_FLOAT;
-			}
-			else {
-				_ttype = NUM_DOUBLE; // assume double
-			}
-			}
+                                String txt = (t == null ? "" : t.getText().toUpperCase());
+                                if (txt.indexOf('F') >= 0) {
+                                        _ttype = NUM_FLOAT;
+                                } else if (txt.indexOf('G') >= 0) {
+                                        _ttype = NUM_BIG_DECIMAL;
+                                } else {
+                                        _ttype = NUM_DOUBLE; // assume double
+                                }
+                        }
 		)?
 	;
 
@@ -2697,3 +2795,14 @@ protected
 FLOAT_SUFFIX
 	:	'f'|'F'|'d'|'D'
 	;
+
+protected
+BIG_SUFFIX
+        :       'g'|'G'
+        ;
+
+// Here's a little hint for you, Emacs:
+// Local Variables:
+// mode: java
+// tab-width: 4
+// End:
