@@ -65,7 +65,12 @@ if not "%OS%" == "Windows_NT" goto win9xME_args
 if "%eval[2+2]" == "4" goto 4NT_args
 
 @rem Regular WinNT shell
-set CMD_LINE_ARGS=%*
+set CP=
+if "x%1" == "x-cp" set CP=%2
+if "x%1" == "x-classpath" set CP=%2
+if not "x" == "x%CP%" shift /1
+if not "x" == "x%CP%" shift /1
+set CMD_LINE_ARGS=%1 %2 %3 %4 %5 %6 %7 %8 %9
 goto execute
 
 :win9xME_args
@@ -85,6 +90,8 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 set CLASSWORLDS_CLASSPATH=%GROOVY_HOME%\lib\classworlds-%CLASSWORLDS_VERSION%.jar
+if "x" == "x%CP%" set CP=%CLASSWORLDS_CLASSPATH%
+if not "x" == "x%CP%" set CP=%CLASSWORLDS_CLASSPATH%;%CP%
 set CLASSWORLDS_MAIN_CLASS=org.codehaus.classworlds.Launcher
 set CLASSWORLDS_CONF=%GROOVY_HOME%\conf\groovy-classworlds.conf
 
@@ -98,7 +105,7 @@ set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dclassworlds.conf="%CLASSWORLDS_CONF%"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %JAVA_OPTS% -classpath "%CLASSWORLDS_CLASSPATH%" %CLASSWORLDS_MAIN_CLASS% %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JAVA_OPTS% -classpath "%CP%" %CLASSWORLDS_MAIN_CLASS% %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
