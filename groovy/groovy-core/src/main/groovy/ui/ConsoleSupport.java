@@ -99,6 +99,10 @@ public abstract class ConsoleSupport {
         return promptStyle;
     }
 
+    public GroovyShell getShell() {
+        return shell;
+    }
+
     protected Object evaluate(String text) {
         System.out.println("Evaluating: " + text);
         
