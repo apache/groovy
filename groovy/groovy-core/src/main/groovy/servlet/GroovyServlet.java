@@ -32,6 +32,7 @@
 package groovy.servlet;
 
 import groovy.lang.Binding;
+import groovy.lang.MetaClass;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
@@ -84,6 +85,9 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 	}
 
 	public void init(ServletConfig config) {
+	    // Use reflection, some containers don't load classes properly
+	    MetaClass.setUseReflection(true);
+	    
 		// Get the servlet context
 		sc = config.getServletContext();
 		sc.log("Groovy servlet initialized");
@@ -120,8 +124,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 		final HttpServletRequest httpRequest = (HttpServletRequest) request;
 		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-		// Get the name of the Groovy script (intern the name so that we can
-		// lock on it)
+		// Get the name of the Groovy script
 		int contextLength = httpRequest.getContextPath().length();
 		String scriptFilename = httpRequest.getRequestURI().substring(contextLength).substring(1);
 
