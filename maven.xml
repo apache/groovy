@@ -21,15 +21,19 @@
    <attainGoal name="groovy:make-install"/>
   </goal>
   
-  <goal name="groovy:release" description="Performs a release of the source, binary and jar distros">
-   <attainGoal name="site"/>
-   <attainGoal name="dist:deploy-bin"/>
-   
+  <goal name="groovy:release" prereqs="clean, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
+  	description="Performs a release of the source, binary and jar distros">
+  </goal>
+
+  <goal name="groovy:disable-unittests" description="Disables the running of the unit test cases">
    <!-- we've run the tests by now once already, lets avoid it again -->
    <j:set var="maven.test.skip" value="true"/>
-   <attainGoal name="dist:deploy-src"/>
-   <attainGoal name="jar:deploy"/>
   </goal>
+
+  <preGoal name="groovy:release">
+   <!-- we've run the tests by now once already, lets avoid it again -->
+   <j:set var="maven.test.skip" value="true"/>
+  </preGoal>
 
   <goal name="groovy:test-wiki" description="Generates the test cases for the wiki and runs the tests">
    <attainGoal name="clean"/>
