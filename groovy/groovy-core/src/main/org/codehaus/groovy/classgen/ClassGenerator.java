@@ -642,15 +642,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitClosureExpression(ClosureExpression expression) {
         ClassNode innerClass = createClosureClass(expression);
         innerClasses.add(innerClass);
-
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         cv.visitVarInsn(ALOAD, 0);
 
-        // we may need to pass in some other constructors
+        if (classNode instanceof InnerClassNode) {
+            ClassNode owner = classNode.getOuterClass();
+            
+            // lets load the outer this
+            cv.visitFieldInsn(GETFIELD, getClassInternalName(owner.getName()), "__outerInstance", getTypeDescription(owner.getName()));
+        }        
 
+        // we may need to pass in some other constructors
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + internalClassName + ";)V");
     }
 
@@ -1000,11 +1005,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
-        String outerClassName = classNode.getName();
+        ClassNode owner = classNode;
+        if (owner instanceof InnerClassNode) {
+            owner = owner.getOuterClass();
+        }
+        String outerClassName = owner.getName();
         String name = outerClassName + "$" + (innerClasses.size() + 1);
         Parameter[] parameters = expression.getParameters();
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, ACC_PUBLIC, "groovy/lang/Closure");
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy/lang/Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java/lang/Object", parameters, expression.getCode());
         FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
 

@@ -1,11 +1,11 @@
 Core Groovy Tasks
 =================
 
-* allow test cases to not require void return type
-	this requires a clever static method when we generate the
-	bytecode which can instantiate a special kind of TestSuite
-	unless there's another way?
-	
+* test closure with no argument
+
+* test tree builder - calling of nested methods
+
+
 * integer.times() method?
 
 * validator for things like - undeclared variables
@@ -121,8 +121,9 @@ JUNIT WORK
 ==========
 
 * patch GroovyTestCase so that methods which return Object are included in the test. This avoids us having to
-specify void for method return types.
-
+specify void for method return types.This requires a clever static method when we generate the
+	bytecode which can instantiate a special kind of TestSuite
+	unless there's another way?
 
 OTHER STUFF
 ===========
