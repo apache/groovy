@@ -2,6 +2,9 @@ package org.codehaus.groovy.syntax.parser;
 
 import groovy.util.GroovyTestCase;
 
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.SourceUnit;
+
 /*
 import org.codehaus.groovy.syntax.lexer.CharStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;
@@ -14,9 +17,28 @@ import org.codehaus.groovy.tools.ExceptionCollector;
 
 public class ParserTest extends GroovyTestCase {
 
-   public void testNothing() 
-   {
-   }
+   private int tolerance = 0;
+
+
+   /**
+    * This test case performs the same logic as the interactive shell to
+    * decide if a statement is complete or not
+    */
+   public void testParserThrowsTheRightException() throws Exception {
+        String code = "class Cheese {";
+        SourceUnit parser = null;
+
+        try {
+            parser = SourceUnit.create("groovysh script", code, tolerance);
+            parser.parse();
+            parser.getCST();
+        }
+        catch (CompilationFailedException e) {
+            assertTrue("Parser should have failed with Unexpected EOF flag", parser.failedWithUnexpectedEOF());
+            assertTrue("Parser should have an error count of 1 or less", parser.getErrorCount() <= 1);
+        }
+    }
+
 
 /*
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
