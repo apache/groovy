@@ -19,4 +19,22 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         }
         closure.call(321)
 	}
+
+     void testInnerVariablesVisibleInOuterScope() {
+        
+        closure = { z = 456 } 
+        closure.call(321)
+        
+        assert z == 456
+    }
+    
+    void testModifyingOuterVariable() {
+        
+        m = 123
+        
+        closure = { m = 456 } 
+        closure.call(321)
+        
+        assert m == 456
+    }
 }

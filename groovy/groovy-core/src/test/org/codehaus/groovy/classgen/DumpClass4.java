@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.Reference;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -91,5 +93,11 @@ public class DumpClass4 {
                 x = "default";
         }
         System.out.println(x);
+    }
+
+    public Object createReferenceTest() {
+        Reference foo = new Reference();
+        foo.set(new Integer(12));
+        return foo.get();
     }
 }

@@ -49,6 +49,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -65,6 +66,8 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     private Set declaredVariables = new HashSet();
     private Set referencedVariables = new HashSet();
+    private VariableScopeCodeVisitor closureVisitor;
+    private Set parameterSet = new HashSet();
 
     public VariableScopeCodeVisitor() {
     }
@@ -77,11 +80,21 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         return referencedVariables;
     }
 
+    public VariableScopeCodeVisitor getClosureVisitor() {
+        if (closureVisitor == null) {
+            closureVisitor = new VariableScopeCodeVisitor();
+        }
+        return closureVisitor;
+    }
+
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (expression.getOperation().getType() == Token.EQUAL && leftExpression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) leftExpression;
-            declaredVariables.add(varExp.getVariable());
+            String variable = varExp.getVariable();
+            if (!parameterSet.contains(variable)) {
+                declaredVariables.add(variable);
+            }
         }
         else {
             leftExpression.visit(this);
@@ -90,11 +103,22 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        // lets not walk into closures
+        getClosureVisitor().setParameters(expression.getParameters());
+        expression.getCode().visit(getClosureVisitor());
     }
-    
+
     public void visitVariableExpression(VariableExpression expression) {
         // check for undeclared variables?
-        referencedVariables.add(expression.getVariable());
+        String variable = expression.getVariable();
+        if (!parameterSet.contains(variable)) {
+            referencedVariables.add(variable);
+        }
+    }
+
+    protected void setParameters(Parameter[] parameters) {
+        parameterSet.clear();
+        for (int i = 0; i < parameters.length; i++) {
+            parameterSet.add(parameters[i].getName());
+        }
     }
 }
