@@ -105,6 +105,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
     public void visitClass(ClassNode node) {
         this.classNode = node;
 
+        addDefaultParameterMethods(node);
+        
         if (!node.isDerivedFromGroovyObject()) {
             node.addInterface(GroovyObject.class.getName());
 
@@ -318,7 +320,32 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     // Implementation methods
+    //-------------------------------------------------------------------------
+    
+    protected void addDefaultParameterMethods(ClassNode node) {
+        /*
+        for (Iterator iter = node.getMethods().iterator(); iter.hasNext(); ) {
+            MethodNode method = (MethodNode) iter.next();
+            Parameter[] parameters = method.getParameters();
+            int size = parameters.length;
+            for (int i = 0; i < size; i++ ) {
+                Parameter parameter = parameters[i];
+                Expression exp = parameter.getDefaultValue();
+                if (exp != null) {
+                    // lets create a method using this expression
+                    Parameter[] newParams = new Parameter[i];
+                    System.arraycopy(parameters, 0, newParams, 0, i);
+                    
+                    MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName()), )
+                    node.addMethod(method.getName(), method.getReturnType(), newParams, )
+                    System.out.println("Creating defaultParam method for param: " + parameter);
+                }
+            }
+        }
+        */
+    }
 
+    
     protected void addClosureCode(InnerClassNode node) {
         // add a new invoke
     }

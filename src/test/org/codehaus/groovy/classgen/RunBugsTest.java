@@ -110,9 +110,16 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    */
     public void testOverloadInvokeMethodBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/OverloadInvokeMethodBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    */
+    
+    
+    
+    public void testClosureTypedVariableBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ClosureTypedVariableBug.groovy");
         object.invokeMethod("testBug", null);
     }
         
