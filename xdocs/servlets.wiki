@@ -1,7 +1,3 @@
-Groovlets: Writing Servlets in Groovy 
-
-
-
 1 Groovlets: Writing Servlets in Groovy
 
 You can write normal Java servlets in Groovy. 

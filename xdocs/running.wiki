@@ -1,7 +1,3 @@
-Running Groovy scripts 
-
-
-
 1 Running Groovy scripts
 
 Groovy scripts are a number of statements and class declarations in a text file.

@@ -1,7 +1,3 @@
-Groovy Eclipse 
-
-
-
 1 Groovy Eclipse
 
 There is a Groovy Eclipse plugin avaiable for editing and running groovy scripts

@@ -1,7 +1,3 @@
-Unit Testing with Groovy 
-
-
-
 1 Unit Testing with Groovy
 
 By default Groovy unit test cases generate java bytecode and so are just the same
@@ -33,7 +29,7 @@ run your Ant / Maven build.
 
 The {link:GroovyTestSuite|apidocs/groovy/util/GroovyTestSuite.html} class 
 is a JUnit TestSuite which will compile and run a GroovyUnit test case
-from a command line argument (when run as an application) or from the ~~~test~~~ system property
+from a command line argument (when run as an application) or from the __test__ system property
 when run as a JUnit test suite. 
 
 To run the GroovyUnitTest as an application, just do the equivalent of this in your IDE 

@@ -1,8 +1,4 @@
-Groovy language for the JVM 
-
-
-
-1 Introduction
+1 Introduction to Groovy
 
 Groovy is a powerful new high level dynamic language for the JVM combining lots of great features from languages like Python, Ruby and Smalltalk 
 and making them available to the Java developers using a Java-like syntax. 
@@ -15,18 +11,18 @@ or it can be used dynamically as an alternative language such as for writing scr
 
 1.1 Features
 
-- {link:Closure support|closures.html} 
-- {link:Native syntax for Lists and Maps|http://wiki.codehaus.org/groovy/SyntaxForTuplesListsMaps} 
-- {link:Groovy Markup|markup.html} 
-- {link:Groovy Path expression language|http://wiki.codehaus.org/groovy/PathExpressionLanguage} 
-- {link:Groovlets|servlets.html} for implementing Servlets easily in simple Groovy scripts 
-- {link:Groovy SQL|sql.html} for making SQL more Groovy 
-- {link:Ant Scripting|ant.html} 
-- {link:Regex|regex.html} syntax for neater scripting with regular expressions 
-- {link:Groovy Beans|beans.html} for simpler syntax for working with beans 
-- {link:Operator Overloading|operators.html} to simplify working with datatypes Collections and Maps 
-- Polymorphic iteration and Autoboxing 
-- Compiles straight to Java bytecode & works cleanly with all existing Java objects & libraries 
+* {link:Closure support|closures.html} 
+* {link:Native syntax for Lists and Maps|http://wiki.codehaus.org/groovy/SyntaxForTuplesListsMaps} 
+* {link:Groovy Markup|markup.html} 
+* {link:Groovy Path expression language|http://wiki.codehaus.org/groovy/PathExpressionLanguage} 
+* {link:Groovlets|servlets.html} for implementing Servlets easily in simple Groovy scripts 
+* {link:Groovy SQL|sql.html} for making SQL more Groovy 
+* {link:Ant Scripting|ant.html} 
+* {link:Regex|regex.html} syntax for neater scripting with regular expressions 
+* {link:Groovy Beans|beans.html} for simpler syntax for working with beans 
+* {link:Operator Overloading|operators.html} to simplify working with datatypes Collections and Maps 
+* Polymorphic iteration and Autoboxing 
+* Compiles straight to Java bytecode & works cleanly with all existing Java objects & libraries 
 
 
 1.1 Examples

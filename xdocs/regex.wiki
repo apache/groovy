@@ -1,7 +1,3 @@
-Regular Expressions in Groovy 
-
-
-
 1 Regular Expressions in Groovy
 
 Groovy supports regular expressions natively using the ~~~"..."~~ expression. Plus

@@ -1,7 +1,3 @@
-GroovyMarkup 
-
-
-
 1 GroovyMarkup
 
 Groovy has native support for various markup languages from XML, HTML,
@@ -21,8 +17,8 @@ someBuilder.people(kind:'folks', groovy:true) {
 
 Whichever kind of builder object is used, the syntax is the same. What
 the above means is that the someBuilder object has a method called
-'people' invoked with 2 parameters... - a Map of arguments ['kind':'folks', 'groovy':true] 
-- a Closure object which when invoked will call 2 methods on the
+'people' invoked with 2 parameters... * a Map of arguments ['kind':'folks', 'groovy':true] 
+* a Closure object which when invoked will call 2 methods on the
 builder called 'person', each taking 2 parameters, a map of values and
 a closure... 
 
@@ -58,15 +54,15 @@ etc. Whats more since its just normal method invocations it can
 naturally map to SAX event processing too.
 
 Out of the box Groovy comes with a few different markup builders you
-can use - NodeBuilder - creates a tree of Node instances which can be
+can use * NodeBuilder - creates a tree of Node instances which can be
 easily navigated in Groovy using an XPath-like syntax 
-- DOMBuilder - creates a W3C DOM document from the markup its given 
-- SAXBuilder - fires SAX events into a given SAX ContentHandler 
-- MarkupBuilder - outputs XML / HTML markup to some PrintWriter for
+* DOMBuilder - creates a W3C DOM document from the markup its given 
+* SAXBuilder - fires SAX events into a given SAX ContentHandler 
+* MarkupBuilder - outputs XML / HTML markup to some PrintWriter for
 things like implementing servlets or code generation 
-- AntBuilder - fires off Ant tasks using familiar markup for
+* AntBuilder - fires off Ant tasks using familiar markup for
 processing build tasks 
-- SwingBuilder - creates rich Swing user interfaces using a simple markup 
+* SwingBuilder - creates rich Swing user interfaces using a simple markup 
 
 
 1.1 Examples
@@ -100,9 +96,9 @@ The use of GroovyMarkup means developers can hide the XML plumbing and focus on 
 
 To see more examples of using GroovyMarkup try looking at our unit test cases 
 
-- {link:XML unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/xml/} 
-- {link:Ant unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/ant/} 
-- {link:Swing demos|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/} 
+* {link:XML unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/xml/} 
+* {link:Ant unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/ant/} 
+* {link:Swing demos|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/} 
 
 
 There is more {link:detail on markup here|http://wiki.codehaus.org/groovy/TreeBasedSyntax} . 

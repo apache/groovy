@@ -1,7 +1,3 @@
-GroovySql 
-
-
-
 1 GroovySql: Making SQL more Groovy
 
 Groovy supports a few neat ways to work with SQL more easily. 
