@@ -848,7 +848,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
             else {
                 if (isValidTypeForCast(returnType) && !returnType.equals(c.getName())) {
-                    doCast(returnType);
+                    doConvertAndCast(returnType);
                 }
                 cv.visitInsn(ARETURN);
             }
