@@ -31,6 +31,17 @@ class HelloWorld extends GroovyTestCase {
         println "Now the answer is $answer"
     }
 
+    void testIf() {
+        def x = 123
+        def y = 1
+        if (x > 100) {
+            y = 2
+        }
+        else { // TODO remove this when the parser works!
+        }
+        assert y == 2
+    }
+
     String foo(a, b) {
         return a + b
     }

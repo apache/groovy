@@ -35,6 +35,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -309,16 +310,56 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     block.addStatement(variableDef(node));
                     break;
 
-                case LITERAL_assert:
-                    block.addStatement(assertStatement(node));
-                    break;
-
                 case SLIST:
                     block.addStatement(statement(code));
                     break;
 
+                case LITERAL_assert:
+                    block.addStatement(assertStatement(node));
+                    break;
+
+                case LITERAL_break:
+                    block.addStatement(breakStatement(node));
+                    break;
+
+                case LITERAL_continue:
+                    block.addStatement(continueStatement(node));
+                    break;
+
+                case LITERAL_if:
+                    block.addStatement(ifStatement(node));
+                    break;
+
+                case LITERAL_for:
+                    block.addStatement(forStatement(node));
+                    break;
+
                 case LITERAL_return:
                     block.addStatement(returnStatement(node));
+                    break;
+
+                case LITERAL_synchronized:
+                    block.addStatement(synchronizedStatement(node));
+                    break;
+
+                case LITERAL_switch:
+                    block.addStatement(switchStatement(node));
+                    break;
+
+                case LITERAL_with:
+                    block.addStatement(withStatement(node));
+                    break;
+
+                case LITERAL_try:
+                    block.addStatement(tryStatement(node));
+                    break;
+
+                case LITERAL_throw:
+                    block.addStatement(throwStatement(node));
+                    break;
+
+                case LITERAL_while:
+                    block.addStatement(whileStatement(node));
                     break;
 
                 default:
@@ -328,6 +369,68 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         // TODO check for dumb expression rule
         return block;
+    }
+
+    protected Statement breakStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement continueStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement synchronizedStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement withStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement throwStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement tryStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement switchStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement whileStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement forStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement ifStatement(AST ifNode) {
+        AST node = ifNode.getFirstChild();
+        assertNodeType(EXPR, node);
+        BooleanExpression booleanExpression = booleanExpression(node);
+
+        node = node.getNextSibling();
+        assertNodeType(SLIST, node);
+        Statement ifBlock = statement(node);
+
+        Statement elseBlock = null;
+        node = node.getNextSibling();
+        if (isType(SLIST, node)) {
+            elseBlock = statement(node);
+        }
+        return new IfStatement(booleanExpression, ifBlock, elseBlock);
     }
 
     protected Statement methodCall(AST code) {
@@ -358,7 +461,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return new ExpressionStatement(new BinaryExpression(leftExpression, token, rightExpression));
     }
 
-    private Token makeToken(int typeCode, AST node) {
+    protected Token makeToken(int typeCode, AST node) {
         return Token.newSymbol(typeCode, node.getLine(), node.getColumn());
     }
 
@@ -573,7 +676,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return expression;
     }
 
-    private Expression gstring(AST expression) {
+    protected Expression gstring(AST expression) {
         List strings = new ArrayList();
         List values = new ArrayList();
 
@@ -632,12 +735,20 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             throw new RuntimeException("No child node available in AST when expecting type: " + type);
         }
         if (node.getType() != type) {
-            throw new RuntimeException("Unexpected node type: " + node.getType() + " found at node: " + node + " at line: " + ast.getLine() + " column: " + ast.getColumn());
+            throw new RuntimeException("Unexpected node type: " + node.getType() + " found " + description(node));
         }
     }
 
-    protected void onUnknownAST(AST ast) {
-        throw new RuntimeException("Unknown type: " + ast.getType() + " at node: " + ast + " at line: " + ast.getLine() + " column: " + ast.getColumn());
+    protected void notImplementedYet(AST node) {
+        throw new RuntimeException("AST node not implemented yet for type: " + node.getType() + description(node));
+    }
+
+    protected void onUnknownAST(AST node) {
+        throw new RuntimeException("Unknown type: " + node.getType() + description(node));
+    }
+
+    protected String description(AST node) {
+        return " at node: " + node + " at line: " + node.getLine() + " column: " + node.getColumn();
     }
 
     protected void dumpTree(AST ast) {
