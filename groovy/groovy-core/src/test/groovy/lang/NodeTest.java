@@ -62,10 +62,10 @@ public class NodeTest extends GroovyTestCase {
 
     public void testSimpleAttribute() {
         Node attribute = new Node(null, "transactional");
-        assertEquals("name", "transactional", attribute.getName());
-        assertEquals("attributes", 0, attribute.getAttributes().size());
-        assertEquals("value", 0, attribute.getChildren().size());
-        assertEquals("text", "", attribute.getText());
+        assertEquals("name", "transactional", attribute.name());
+        assertEquals("attributes", 0, attribute.attributes().size());
+        assertEquals("value", 0, attribute.children().size());
+        assertEquals("text", "", attribute.text());
     }
 
     public void testAttributeWithAttributes() {
@@ -73,18 +73,18 @@ public class NodeTest extends GroovyTestCase {
         attributes.put("a", "xyz");
         
         Node attribute = new Node(null, "foo", attributes);
-        assertEquals("name", "foo", attribute.getName());
-        assertEquals("attributes", 1, attribute.getAttributes().size());
-        assertEquals("value", 0, attribute.getChildren().size());
-        assertEquals("text", "", attribute.getText());
+        assertEquals("name", "foo", attribute.name());
+        assertEquals("attributes", 1, attribute.attributes().size());
+        assertEquals("value", 0, attribute.children().size());
+        assertEquals("text", "", attribute.text());
     }
 
     public void testAttributeWithText() {
         Node attribute = new Node(null, "foo", "the text");
-        assertEquals("name", "foo", attribute.getName());
-        assertEquals("attributes", 0, attribute.getAttributes().size());
-        assertEquals("value", 1, attribute.getChildren().size());
-        assertEquals("text", "the text", attribute.getText());
+        assertEquals("name", "foo", attribute.name());
+        assertEquals("attributes", 0, attribute.attributes().size());
+        assertEquals("value", 1, attribute.children().size());
+        assertEquals("text", "the text", attribute.text());
     }
 
     public void testAttributeWithAttributesAndChildren() {
@@ -97,10 +97,10 @@ public class NodeTest extends GroovyTestCase {
         children.add("someText");
         
         Node attribute = new Node(null, "foo", attributes, children);
-        assertEquals("name", "foo", attribute.getName());
-        assertEquals("attributes", 1, attribute.getAttributes().size());
-        assertEquals("value", 3, attribute.getChildren().size());
-        assertEquals("text", "someText", attribute.getText());
+        assertEquals("name", "foo", attribute.name());
+        assertEquals("attributes", 1, attribute.attributes().size());
+        assertEquals("value", 3, attribute.children().size());
+        assertEquals("text", "someText", attribute.text());
     }
 
     public void testAttributeWithAttributesAndChildrenWithMixedText() {
@@ -115,10 +115,10 @@ public class NodeTest extends GroovyTestCase {
         children.add("moreText");
         
         Node attribute = new Node(null, "foo", attributes, children);
-        assertEquals("name", "foo", attribute.getName());
-        assertEquals("attributes", 1, attribute.getAttributes().size());
-        assertEquals("value", 5, attribute.getChildren().size());
-        assertEquals("text", "someTextmoreTextmoreText", attribute.getText());
+        assertEquals("name", "foo", attribute.name());
+        assertEquals("attributes", 1, attribute.attributes().size());
+        assertEquals("value", 5, attribute.children().size());
+        assertEquals("text", "someTextmoreTextmoreText", attribute.text());
     }
 
 }

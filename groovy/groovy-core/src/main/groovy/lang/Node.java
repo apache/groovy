@@ -48,7 +48,10 @@ package groovy.lang;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents an arbitrary tree node which can be used for structured  metadata which can be any arbitrary XML-like tree.
@@ -87,7 +90,7 @@ public class Node {
         this.value = value;
     }
 
-    public String getText() {
+    public String text() {
         if (value instanceof String) {
             return (String) value;
         }
@@ -123,12 +126,12 @@ public class Node {
         return "";
     }
 
-    public Collection getChildren() {
+    public List children() {
         if (value == null) {
             return Collections.EMPTY_LIST;
         }
-        else if (value instanceof Collection) {
-            return (Collection) value;
+        else if (value instanceof List) {
+            return (List) value;
         }
         else {
             // we're probably just a String
@@ -136,15 +139,15 @@ public class Node {
         }
     }
 
-    public Map getAttributes() {
+    public Map attributes() {
         return attributes;
     }
 
-    public Object getName() {
+    public Object name() {
         return name;
     }
 
-    public Object getValue() {
+    public Object value() {
         return value;
     }
 
@@ -152,13 +155,37 @@ public class Node {
         this.value = value;
     }
 
-    public Node getParent() {
+    public Node parent() {
         return parent;
     }
+
+    public Object get(String key) {
+        if (key.charAt(0) == '@') {
+            String attributeName = key.substring(1);
+            return attributes().get(attributeName);
+        }
+        else {
+            // iterate through list looking for node with name 'key'
+            for (Iterator iter = children().iterator(); iter.hasNext();) {
+                Object child = iter.next();
+                if (child instanceof Node) {
+                    Node childNode = (Node) child;
+                    if (key.equals(childNode.name())) {
+                        return childNode;
+                    }
+                }
+            }
+            return InvokerHelper.getProperty(value, key);
+        }
+    }
+
+    /*
+        public Object get(int idx) {
+            return children().get(idx);
+        }
+    */
 
     public String toString() {
         return name + "[attributes=" + attributes + "; value=" + value + "]";
     }
-
-    
 }
