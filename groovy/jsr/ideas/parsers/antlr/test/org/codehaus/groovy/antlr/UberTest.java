@@ -17,14 +17,10 @@
  **/
 package org.codehaus.groovy.antlr;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestResult;
-import junit.framework.TestCase;
 import groovy.ui.GroovyMain;
-
-import java.io.File;
-import java.io.IOException;
+import junit.framework.Test;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
 
 /**
  * A simpler test runner to run multiple test cases straight from the groovy scripts
@@ -46,16 +42,16 @@ public class UberTest implements Test {
         //"ClosureCloneTest.groovy",            TODO parser bug: doesn't like 'it * foo' expressions
         "ClosureInClosureTest.groovy",
         "Foo.groovy",
-        //"ForLoopTest.groovy",                 TODO - fixme - AST gen bug
+        "ForLoopTest.groovy",           
         "ForLoopWithLocalVariablesTest.groovy",
-         "GStringTest.groovy",
+        "GStringTest.groovy",
         "HeredocsTest.groovy",
         "IfElseCompactTest.groovy",
         "IfElseTest.groovy",
         "IfTest.groovy",
         "ImportTest.groovy",
         "InstanceofTest.groovy",
-         //"ListTest.groovy",                   TODO parser bugs
+        //"ListTest.groovy",                   TODO parser bugs
         "LogicTest.groovy",
         "MethodCallTest.groovy",
         "MultilineStringTest.groovy",
@@ -68,7 +64,7 @@ public class UberTest implements Test {
         "StringOperationTest.groovy",
         //"SubscriptTest.groovy",               TODO array initialisers
         "ThrowTest.groovy",
-        "UnaryMinusTest.groovy",     
+        "UnaryMinusTest.groovy",
         //"WhileLoopTest.groovy",               TODO parser bug
     };
 
@@ -109,6 +105,6 @@ public class UberTest implements Test {
 
     public void run(TestResult testResult) {
         System.out.println("Running test: " + fullName);
-        GroovyMain.main(new String[] { fullName } );
+        GroovyMain.main(new String[]{fullName});
     }
 }

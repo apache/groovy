@@ -20,7 +20,7 @@ class ForLoopTest extends GroovyTestCase {
         x = 0
 
         for ( Integer i in 0..9 ) {
-            assert ij.getClass() == Integer
+            assert i.getClass() == Integer
             x = x + i
         }
 

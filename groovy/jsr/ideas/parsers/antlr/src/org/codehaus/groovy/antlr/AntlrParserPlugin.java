@@ -806,7 +806,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return dotExpression(node);
 
             case IDENT:
-                return new VariableExpression(node.getText());
+                return variableExpression(node);
 
             case LIST_CONSTRUCTOR:
                 return listExpression(node);
@@ -988,6 +988,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 unknownAST(node);
         }
         return null;
+    }
+
+    protected Expression variableExpression(AST node) {
+        String text = node.getText();
+
+        // TODO we might wanna only try to resolve the name if we are
+        // on the left hand side of an expression or before a dot?
+        String newText = resolveTypeName(text);
+        if (text.equals(newText)) {
+        return new VariableExpression(text);
+        }
+        else {
+            return new ClassExpression(newText);
+        }
     }
 
     protected Expression rangeExpression(AST rangeNode, boolean inclusive) {
