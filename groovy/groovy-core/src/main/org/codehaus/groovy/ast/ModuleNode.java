@@ -71,7 +71,7 @@ import org.objectweb.asm.Constants;
  * Represents a module, which consists typically of a class declaration
  * but could include some imports, some statements and multiple classes
  * intermixed with statements like scripts in Python or Ruby
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -88,7 +88,7 @@ public class ModuleNode extends ASTNode implements Constants {
     private String description;
     private boolean createClassForStatements = true;
     private SourceUnit context;
-    
+
 
     public ModuleNode( SourceUnit context ) {
         this.context = context;
@@ -176,7 +176,7 @@ public class ModuleNode extends ASTNode implements Constants {
     public void setPackageName(String packageName) {
         this.packageName = packageName;
     }
-    
+
     public SourceUnit getContext() {
         return context;
     }
@@ -252,14 +252,18 @@ public class ModuleNode extends ASTNode implements Constants {
             new MethodNode("run", ACC_PUBLIC, Object.class.getName(), Parameter.EMPTY_ARRAY, statementBlock));
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, new BlockStatement());
+        Statement stmt = new ExpressionStatement(
+                        new MethodCallExpression(
+                            new VariableExpression("super"),
+            				"setBinding",
+            				new ArgumentListExpression(
+                                    new Expression[] {
+                                        new VariableExpression("context")})));
+
         classNode.addConstructor(
             ACC_PUBLIC,
             new Parameter[] { new Parameter(Binding.class.getName(), "context")},
-        new ExpressionStatement(
-            new MethodCallExpression(
-                new VariableExpression("super"),
-                "<init>",
-                new VariableExpression("context"))));
+			stmt);
 
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();

@@ -32,7 +32,7 @@
  THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
  ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
  NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ FITNESS FOR AClass PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
  THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
  INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
@@ -50,7 +50,7 @@ import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Constants;
 
 /**
- * A helper class for bytecode generation
+ * AClass helper class for bytecode generation
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -306,6 +306,29 @@ public class BytecodeHelper implements Constants {
         }
         else {
             cv.visitVarInsn(ALOAD, idx);
+        }
+    }
+
+    public void store(String type, int idx) {
+        if (type.equals("double")) {
+            cv.visitVarInsn(DSTORE, idx);
+        }
+        else if (type.equals("float")) {
+            cv.visitVarInsn(FSTORE, idx);
+        }
+        else if (type.equals("long")) {
+            cv.visitVarInsn(LSTORE, idx);
+        }
+        else if (
+            type.equals("boolean")
+                || type.equals("char")
+                || type.equals("byte")
+                || type.equals("int")
+                || type.equals("short")) {
+            cv.visitVarInsn(ISTORE, idx);
+        }
+        else {
+            cv.visitVarInsn(ASTORE, idx);
         }
     }
 
