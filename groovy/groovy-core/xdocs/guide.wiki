@@ -4,10 +4,10 @@ Welcome to the Groovy User Guide. We hope you find it useful.
 
 1.1 Contents
 
-* {link:Statements      	|/statements.html}
-* {link:Strings      		|/strings.html}
-* {link:Collections      	|/collections.html}
-* {link:Classes      	    |/classes.html}
-* {link:Closures      	    |/closures.html}
-* {link:Operator Overloading|/operators.html}
+* {link:Statements      	|statements.html}
+* {link:Strings      		|strings.html}
+* {link:Collections      	|collections.html}
+* {link:Classes      	    |classes.html}
+* {link:Closures      	    |closures.html}
+* {link:Operator Overloading|operators.html}
 
