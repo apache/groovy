@@ -134,14 +134,14 @@
 
   <build>
     <nagEmailAddress>groovy-scm@lists.codehaus.org</nagEmailAddress>
-    <sourceDirectory>src/java/main</sourceDirectory>
-    <unitTestSourceDirectory>src/java/test</unitTestSourceDirectory>
+    <sourceDirectory>src/main</sourceDirectory>
+    <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
     <aspectSourceDirectory/>
 
     <unitTest>
       <resources>
         <resource>
-          <directory>src/java/test</directory>
+          <directory>src/test</directory>
           <includes>
             <include>**/*.properties</include>
           </includes>
@@ -157,7 +157,7 @@
 
     <resources>
       <resource>
-        <directory>src/java/main</directory>
+        <directory>src/main</directory>
         <includes>
           <include>**/*.properties</include>
           <include>**/*.xml</include>
