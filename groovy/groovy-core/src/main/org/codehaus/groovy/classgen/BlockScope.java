@@ -55,8 +55,12 @@ import org.objectweb.asm.Label;
  */
 public class BlockScope {
 
-    private Label breakLabel = new Label();
-    private Label continueLabel = new Label();
+
+    // new scopes for methods do not have continue and break labels
+    // for, while, dowhile need to explicitly set the lables
+	// switch can break but not continue
+    private Label breakLabel = null; //new Label();
+    private Label continueLabel = null; //new Label();
     private BlockScope parent;
     private int lastVariableIndex;
     
@@ -75,6 +79,10 @@ public class BlockScope {
     public Label getBreakLabel() {
         return breakLabel;
     }
+
+    public void setBreakLabel(Label breakLabel) {
+            this.breakLabel = breakLabel;
+        }
 
     public BlockScope getParent() {
         return parent;

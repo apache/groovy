@@ -805,7 +805,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
         statement.getExpression().visit(this);
 
-        pushBlockScope();
+        // switch does not have a continue label. use its parent's for continue
+        pushBlockScope(false, true);
+        scope.setContinueLabel(scope.getParent().getContinueLabel());
+
 
         int switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
         cv.visitVarInsn(ASTORE, switchVariableIndex);
@@ -3086,8 +3089,15 @@ public class AsmClassGenerator extends ClassGenerator {
         scope = scope.getParent();
     }
 
+
     protected void pushBlockScope() {
+        pushBlockScope(true, true);
+    }
+
+    protected void pushBlockScope(boolean canContinue, boolean canBreak) {
         scope = new BlockScope(scope);
+        scope.setContinueLabel(canContinue ? new Label() : null);
+        scope.setBreakLabel(canBreak? new Label() : null);
         scope.setLastVariableIndex(getNextVariableID());
     }
 
@@ -3124,7 +3134,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 else {
                     // using new variable inside a comparison expression
                     // so lets initialize it too
-                    if (answer.isHolder() /*&& !isInScriptBody()*/) { // br doesn't seem to need different treatment, in script or not
+                    if (answer.isHolder() && !isInScriptBody()) { // br doesn't seem to need different treatment, in script or not
                         //cv.visitVarInsn(ASTORE, lastVariableIndex + 1); // I might need this to set the reference value
 
                         cv.visitTypeInsn(NEW, "groovy/lang/Reference");

@@ -51,5 +51,25 @@ class SwitchTest extends GroovyTestCase {
         
         assert result == expected : "when calling switch with ${x}"
     }
+
+    // test the continue in switch, which should jump to the the while start
+    void testSwitchScope() {
+        i = 0
+        j = 0
+        while (true) {
+            i++;
+            switch(i) {
+                case 4:
+                    continue
+                case 5:
+                    break;
+                default:
+                    j += i;
+                    break;
+            }
+            if (i == 5) break;
+        }
+        assert j == 6
+    }
     
 }
