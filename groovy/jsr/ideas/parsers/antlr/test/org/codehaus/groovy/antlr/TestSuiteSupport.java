@@ -17,10 +17,11 @@
  **/
 package org.codehaus.groovy.antlr;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.framework.TestResult;
 import groovy.ui.GroovyMain;
+import junit.framework.Test;
+import junit.framework.TestResult;
+import junit.framework.TestSuite;
+import junit.framework.AssertionFailedError;
 
 import java.io.File;
 
@@ -29,16 +30,30 @@ import java.io.File;
  *
  * @version $Revision$
  */
-public class TestSuiteSupport implements Test{
+public class TestSuiteSupport implements Test {
     private String fullName;
 
     public int countTestCases() {
         return 1;
     }
 
-    public void run(TestResult testResult) {
-        System.out.println("Running test: " + fullName);
-        GroovyMain.main(new String[]{fullName});
+    public void run(TestResult result) {
+        result.startTest(this);
+        try {
+            System.out.println("Running test: " + fullName);
+            GroovyMain.main(new String[]{fullName});
+        }
+        catch (AssertionFailedError e) {
+            result.addFailure(this, e);
+        }
+        catch (Throwable t) {
+            result.addError(this, t);
+        }
+        result.endTest(this);
+    }
+
+    public String toString() {
+        return "testCase for: " + fullName;
     }
 
     /**
