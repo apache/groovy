@@ -49,6 +49,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -74,8 +75,9 @@ public class MetaClass {
 
     private MetaClassRegistry registry;
     private Class theClass;
-    private Map methodIndex = Collections.synchronizedMap(new HashMap());
-    private Map staticMethodIndex = Collections.synchronizedMap(new HashMap());
+    private Map methodIndex = new HashMap();
+    private Map staticMethodIndex = new HashMap();
+    private Map newStaticInstanceMethodIndex = new HashMap();
     private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
     private Method genericGetMethod;
     private Method genericSetMethod;
@@ -96,14 +98,23 @@ public class MetaClass {
                 else if (isGenericSetMethod(method)) {
                     genericSetMethod = method;
                 }
+                if (MethodHelper.isPublicStatic(method)) {
+                    List list = (List) staticMethodIndex.get(name);
+                    if (list == null) {
+                        list = new ArrayList();
+                        staticMethodIndex.put(name, list);
+                    }
+                    list.add(method);
+                }
+                else {
+                    List list = (List) methodIndex.get(name);
+                    if (list == null) {
+                        list = new ArrayList();
+                        methodIndex.put(name, list);
+                    }
+                    list.add(method);
+                }
             }
-
-            List list = (List) methodIndex.get(name);
-            if (list == null) {
-                list = new ArrayList();
-                methodIndex.put(name, list);
-            }
-            list.add(method);
         }
 
         // introspect
@@ -127,17 +138,28 @@ public class MetaClass {
     }
 
     /**
+     * @return all the normal static methods avaiable on this class for the given name
+     */
+    public List getStaticMethods(String name) {
+        List answer = (List) staticMethodIndex.get(name);
+        if (answer == null) {
+            return Collections.EMPTY_LIST;
+        }
+        return answer;
+    }
+
+    /**
      * Allows static method definitions to be added to a meta class as if it was an instance 
      * method
      * 
      * @param method
      */
-    public void addStaticMethod(Method method) {
+    public void addNewStaticInstanceMethod(Method method) {
         String name = method.getName();
-        List list = (List) staticMethodIndex.get(name);
+        List list = (List) newStaticInstanceMethodIndex.get(name);
         if (list == null) {
             list = new ArrayList();
-            staticMethodIndex.put(name, list);
+            newStaticInstanceMethodIndex.put(name, list);
         }
         list.add(method);
     }
@@ -165,13 +187,13 @@ public class MetaClass {
         }
 
         // lets see if there's a new static method we've added in groovy-land to this class
-        List staticMethods = getStaticMethods(methodName);
+        List newStaticInstanceMethods = getNewStaticInstanceMethods(methodName);
         List staticArgumentList = new ArrayList(argumentList.size() + 1);
         staticArgumentList.add(object);
         staticArgumentList.addAll(argumentList);
-        Method method = chooseMethod(staticMethods, staticArgumentList, staticArgumentList);
+        Method method = chooseMethod(newStaticInstanceMethods, staticArgumentList, staticArgumentList);
         if (method == null) {
-            method = findStaticMethod(methodName, staticArgumentList);
+            method = findNewStaticInstanceMethod(methodName, staticArgumentList);
         }
         if (method != null) {
             return doMethodInvoke(null, method, staticArgumentList.toArray());
@@ -180,15 +202,43 @@ public class MetaClass {
         throw new InvokerException("Could not find matching method called: " + methodName);
     }
 
+    public Object invokeStaticMethod(String methodName, Object arguments, List argumentList) {
+        List methods = getStaticMethods(methodName);
+
+        if (!methods.isEmpty()) {
+            Method method = chooseMethod(methods, arguments, argumentList);
+            if (method != null) {
+                return doMethodInvoke(null, method, argumentList.toArray());
+            }
+        }
+        throw new InvokerException("Could not find matching method called: " + methodName);
+    }
+
     /**
      * @return the currently registered static methods against this class
      */
-    public List getStaticMethods(String methodName) {
-        List staticMethods = (List) staticMethodIndex.get(methodName);
-        if (staticMethods == null) {
+    public List getNewStaticInstanceMethods(String methodName) {
+        List newStaticInstanceMethods = (List) newStaticInstanceMethodIndex.get(methodName);
+        if (newStaticInstanceMethods == null) {
             return Collections.EMPTY_LIST;
         }
-        return staticMethods;
+        return newStaticInstanceMethods;
+    }
+
+    /**
+     * @return the value of the static property
+     */
+    public Object getStaticProperty(String property) {
+        try {
+            Field field = theClass.getField(property);
+            if (field != null) {
+                return field.get(null);
+            }
+        }
+        catch (Exception e) {
+            throw new InvokerException("Could not evaluate property: " + property, e);
+        }
+        throw new InvokerException("No such property: " + property);
     }
 
     /**
@@ -265,22 +315,22 @@ public class MetaClass {
     /**
      * Lets walk the base class & interfaces list to see if we can find the method
      */
-    protected Method findStaticMethod(String methodName, List staticArgumentList) {
+    protected Method findNewStaticInstanceMethod(String methodName, List staticArgumentList) {
         if (theClass.equals(Object.class)) {
             return null;
         }
         MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
-        List list = superClass.getStaticMethods(methodName);
+        List list = superClass.getNewStaticInstanceMethods(methodName);
         if (!list.isEmpty()) {
             Method method = chooseMethod(list, staticArgumentList, staticArgumentList);
             if (method != null) {
                 // lets cache it for next invocation
-                addStaticMethod(method);
+                addNewStaticInstanceMethod(method);
             }
 
             return method;
         }
-        return superClass.findStaticMethod(methodName, staticArgumentList);
+        return superClass.findNewStaticInstanceMethod(methodName, staticArgumentList);
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object arguments, List argumentList) {
@@ -305,13 +355,18 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-//        System.out.println("Evaluating method: " + method);
-//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+        //        System.out.println("Evaluating method: " + method);
+        //        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
 
         try {
             return method.invoke(object, argumentArray);
         }
         catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            if (t instanceof Error) {
+                Error error = (Error) t;
+                throw error;
+            }
             throw new InvokerInvocationException(e);
         }
         catch (Exception e) {
@@ -475,4 +530,5 @@ public class MetaClass {
     protected boolean isGenericGetMethod(Method method) {
         return method.getName().equals("get") && method.getParameterTypes().length == 1;
     }
+
 }

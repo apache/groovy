@@ -94,6 +94,10 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("Result of call to closure", "Bob", result);    
     }
 
+    public void testStaticProperty() throws Exception {
+        Object value = InvokerHelper.getProperty(System.class, "out");
+        assertEquals("static property out", System.out, value);
+    }
     
     // Implementation methods
     //-------------------------------------------------------------------------

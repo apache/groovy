@@ -71,4 +71,7 @@ public class VariableExpression extends Expression {
         return variable;
     }
 
+    public String toString() {
+        return super.toString() + "[variable: " + variable + "]";
+    }
 }

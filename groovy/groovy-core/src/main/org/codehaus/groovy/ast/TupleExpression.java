@@ -99,4 +99,7 @@ public class TupleExpression extends Expression {
         return buffer.toString();
     }
 
+    public String toString() {
+        return super.toString() + expressions;
+    }
 }

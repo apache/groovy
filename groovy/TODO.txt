@@ -241,6 +241,9 @@ If we could remove the ;
 BOB's PARSER HACKING LIST
 =========================
 
+* use ClassExpression rather than VariableExpression for class names
+	e.g. for "System" in code System.out.println
+	
 * implement closures (handle ClosureExpression)
 
 * support method invocation where last parameter can be specified as a closure

@@ -43,47 +43,39 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+package org.codehaus.groovy.tools;
+
+import java.io.File;
+import java.net.URL;
+
+import org.codehaus.groovy.GroovyTestCase;
 
 /**
- * A list of statements
+ * Tests the compiling & running of GroovyTestCases
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class StatementBlock extends Statement {
+public class CompilerTest extends GroovyTestCase {
 
-    private List statements;
+    Compiler compiler = new Compiler();
     
-    public StatementBlock() {
-        this(new ArrayList());
-    }
-    
-    public StatementBlock(List statements) {
-        this.statements = statements;
-    }
-    
-    public void visit(GroovyCodeVisitor visitor) {
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
-            statement.visit(visitor);
-        }
+    public void testMethodCall() throws Exception {
+        runTest("MethodCallTest.groovy");
     }
 
-    public List getStatements() {
-        return statements;
+    protected void runTest(String name) throws Exception {
+        URL url = getClass().getClassLoader().getResource("groovy/" + name);
+        
+        File file = new File(url.getFile());
+        compiler.compile(new File[] { file });
     }
 
-    public void addStatement(Statement statement) {
-        statements.add(statement);
-    }
-
-    public String toString() {
-        return super.toString() + statements;
+    protected void setUp() throws Exception {
+        File dir = new File("target/test-generated-classes");
+        dir.mkdirs();
+        compiler.setOutputDir(dir);
     }
 
 }

@@ -67,17 +67,20 @@ public interface GroovyCodeVisitor {
     // expressions
     //-------------------------------------------------------------------------
     public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitConstantExpression(ConstantExpression expression);
     public void visitBinaryExpression(BinaryExpression expression);
     public void visitBooleanExpression(BooleanExpression expression);
+    public void visitClosureExpression(ClosureExpression expression);
+
     public void visitTupleExpression(TupleExpression expression);
     public void visitMapExpression(MapExpression expression);
     public void visitMapEntryExpression(MapEntryExpression expression);
     public void visitListExpression(ListExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
     public void visitRangeExpression(RangeExpression expression);
-    public void visitClosureExpression(ClosureExpression expression);
+    
+    public void visitConstantExpression(ConstantExpression expression);
+    public void visitClassExpression(ClassExpression expression);
+    public void visitVariableExpression(VariableExpression expression);
+    public void visitPropertyExpression(PropertyExpression expression);
+    public void visitFieldExpression(FieldExpression expression);
     public void visitRegexExpression(RegexExpression expression);
 }

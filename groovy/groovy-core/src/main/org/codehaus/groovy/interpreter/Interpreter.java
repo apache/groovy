@@ -53,6 +53,7 @@ import java.util.regex.Pattern;
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
+import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.DoWhileLoop;
@@ -305,6 +306,18 @@ public class Interpreter implements GroovyCodeVisitor {
     public void visitVariableExpression(VariableExpression expression) {
         Object value = context.getVariable(expression.getVariable());
         pushExpressionValue(value);
+    }
+
+    public void visitClassExpression(ClassExpression expression) {
+        String type = expression.getType();
+        Class theClass;
+        try {
+            theClass = getClass().getClassLoader().loadClass(type);
+        }
+        catch (ClassNotFoundException e) {
+            throw new InterpreterException("Could not find class: " + type, e);
+        }
+        pushExpressionValue(theClass);
     }
 
     public void visitConstantExpression(ConstantExpression expression) {

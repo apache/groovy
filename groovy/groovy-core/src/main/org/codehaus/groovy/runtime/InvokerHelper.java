@@ -119,15 +119,15 @@ public class InvokerHelper {
     public static boolean compareLessThan(Object left, Object right) {
         return getInstance().compareTo(left, right) < 0;
     }
-    
+
     public static boolean compareLessThanEqual(Object left, Object right) {
         return getInstance().compareTo(left, right) <= 0;
     }
-    
+
     public static boolean compareGreaterThan(Object left, Object right) {
         return getInstance().compareTo(left, right) > 0;
     }
-    
+
     public static boolean compareGreaterThanEqual(Object left, Object right) {
         return getInstance().compareTo(left, right) >= 0;
     }
@@ -146,7 +146,7 @@ public class InvokerHelper {
 
     public static Map createMap(Object[] values) {
         Map answer = new HashMap(values.length / 2);
-        int i = 0; 
+        int i = 0;
         while (i < values.length) {
             answer.put(values[i++], values[i++]);
         }
@@ -156,11 +156,11 @@ public class InvokerHelper {
     public static Range createRange(Object from, Object to) {
         return new Range(asInt(from), asInt(to));
     }
-    
+
     public static int asInt(Object value) {
         return getInstance().asInt(value);
     }
-    
+
     public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);

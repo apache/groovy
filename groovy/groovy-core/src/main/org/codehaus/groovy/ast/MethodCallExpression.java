@@ -83,5 +83,7 @@ public class MethodCallExpression extends Expression {
         return objectExpression.getText() + "." + method + arguments.getText();
     }
 
-
+    public String toString() {
+        return super.toString() + "[object: " + objectExpression + " method: " + method + " arguments: " + arguments + "]";
+    }
 }

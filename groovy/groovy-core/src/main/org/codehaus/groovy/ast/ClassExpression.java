@@ -45,45 +45,34 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 /**
- * A list of statements
+ * Represents access to a Java/Groovy class in an expression, such
+ * as when invoking a static method or accessing a static type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class StatementBlock extends Statement {
+public class ClassExpression extends Expression {
 
-    private List statements;
+    private String type;
     
-    public StatementBlock() {
-        this(new ArrayList());
-    }
-    
-    public StatementBlock(List statements) {
-        this.statements = statements;
+    public ClassExpression(String type) {
+        this.type = type;
     }
     
     public void visit(GroovyCodeVisitor visitor) {
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
-            statement.visit(visitor);
-        }
+        visitor.visitClassExpression(this);
     }
 
-    public List getStatements() {
-        return statements;
+    public String getType() {
+        return type;
     }
 
-    public void addStatement(Statement statement) {
-        statements.add(statement);
+    public String getText() {
+        return type;
     }
 
     public String toString() {
-        return super.toString() + statements;
+        return super.toString() + "[type: " + type + "]";
     }
-
 }
