@@ -524,7 +524,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Concatenates all of the items of the collection together with the given string as a separator
+     * Concatenates all of the items of the collection together with the given String as a separator
      *
      * @param self a Collection of objects
      * @param separator a String separator
@@ -542,6 +542,29 @@ public class DefaultGroovyMethods {
                 buffer.append(separator);
             }
             buffer.append(InvokerHelper.toString(value));
+        }
+        return buffer.toString();
+    }
+
+    /**
+     * Concatenates all of the elements of the array together with the given String as a separator
+     *
+     * @param self an array of Object
+     * @param separator a String separator
+     * @return the joined String
+     */
+    public static String join(Object[] self, String separator) {
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+        for (int i = 0; i < self.length; i++) {
+            String value = InvokerHelper.toString(self[i]);
+            if (first) {
+                first = false;
+            }
+            else {
+                buffer.append(separator);
+            }
+            buffer.append(value);
         }
         return buffer.toString();
     }
