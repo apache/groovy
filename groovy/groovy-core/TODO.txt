@@ -1,29 +1,22 @@
+Refactorings / Tidying things up
+=================================
+
+* refactor InvokerException & related exceptions to be groovy.lang
+	- better name for InvokerException?
+	- maybe root GroovyRuntimeException
+	
+* refactor MetaClass to GroovyClass?
+* maybe refactor ScriptContext into GroovyShell?
+* groovy.model -> groovy.mvc?
+
+
 Things to Test
 ==============
 
-* while bug - is it POP?
-
-* raise GStringTest bug, closure syntax sugar for constructors too (OrderByTest)
-
 * test GPath
 
-* add Dylan & maybe Self to wiki & background
+* test do while
 
-* refactor InvokerException to be groovy.lang
-
-* refactor MetaClass to GroovyClass?
-
-* allow if/switch to be the and of a function. i.e.
-	foo() {
-		if (x > 1) {
-			"hello"
-		}
-		else {
-			"cheese"
-		}
-	}
-	ditto for switch? i.e. make return statement optional.
-	
 * test compiler errors when
 	- duplicate methods test
 	- duplicate class in module
@@ -44,8 +37,6 @@ Things to Test
 
 * why do the try/catch tests fail when run inside an IDE?
 
-* tidy up javadoc
-
 * test date range using Range object
 
 * test max, min, sort with closure comparator
@@ -53,14 +44,6 @@ Things to Test
 		foo.max { a, b | a.length <=> b.length }
 	- ClosureComparator
 			
-* test map properties..
-
-	m = [:]
-	m.foo = ...
-	assert m.foo == ...
-	
-* test while, do while
-
 * test use of GroovyClassLoader with importing of other classes (e.g. java.lang.*)
 
 * test Button(actionPerformed:{event| event.println() }
@@ -70,6 +53,86 @@ Things to Test
 	
 Core Groovy Tasks
 =================
+
+* throw statement
+* synchronized statement
+* implement break, continue and maybe retry
+
+* Switch statement to use matches to handle classes, ranges, regexp etc		
+	- matches(object) for Range or Regexp or Class
+
+	switch(value) {
+		case "hello":
+		case 0..12:
+		case /foo|bar/:
+		case a, b, c
+		case FooClass:
+	}		
+
+* closures - handle passing in of variables from outer scope?	
+	use a Holder object for all local variables and pass holder
+	into the closure
+
+* GroovyServlet - serves up *.groovy files
+
+* new GroovyMethods	to be added
+	- Object.getMetaClass()
+	- Object.eachProperty
+	- Object.eachPropertyName { object.getProperty(it) }
+	- Object.setProperties(foo:'abc', x:123)
+	
+	- removeIf { x | x > 0 }
+	- List.first, List.last, pop
+	- List.eachWithindex { item, idx | ... }
+	- reverseEach { ... }
+	- Map.eachKey, eachValue
+	- Map.index, Map.indexes
+	- Object.display (rather than toConsoleOutput)
+	- grep(pattern)  { closure }
+		where pattern = range / regexp
+	- eval("....")
+	- gets
+	- load(...)
+	- File.eachByte
+	- configure method on beans?
+		bean.setProperties(name:'James', location:'London')
+	- some kind of Regexp iterator of strings like Ruby's scan
+	- maybe support Pythons' zip and reduce functions?
+
+		maybe add the various readonly List APIs to Object[] and *[] types
+		if we ever support the DTD / Xed style type*, type+ then we can do the same
+		there too
+
+* add doesNotUnderstand() method for catching & handling unknown methods	
+		
+* <=> for compareTo()
+
+* << for list append and for output to streams
+	maybe other optional IO methods like gets?
+
+* is there a better way to add listeners in Groovy. e.g. how to remove added listeners
+
+	listener = bean.property + { some closure }
+	bean.property - listener
+	
+* .@ support on W3C DOM trees...
+
+* BeanBuilder - builder which creates a tree of beans
+	builder.bean(class:SomeClass, x:123, b:'hello') {
+		nestedProperty(a:123)
+		nestedProperty2(class:DerivedClass, b:43)
+	}
+	using adder method as well as setter methods
+
+* MBeanBuilder?
+	builder.mlet {
+		mbean(class:SomeClass) {
+			someAttribute(value)
+		}
+		mbean(class:SomeClass, someAttribute:value) {
+			operation(1, 2)
+		}
+	}
 
 * templating - allow looping & conditionals?
 
@@ -83,6 +146,17 @@ text = "
 </table>
 "
 
+* allow if/switch to be the and of a function. i.e.
+	foo() {
+		if (x > 1) {
+			"hello"
+		}
+		else {
+			"cheese"
+		}
+	}
+	ditto for switch? i.e. make return statement optional.
+	
 
 * SQL builder
 
@@ -144,73 +218,9 @@ sql.table("users") {
 	groovy> print(x)
 	[1, 2, 3]
 	
-* UI shell (eclipse?) for evaluating groovy
-
-* throw statement
-* synchronized statement
-* switch statement
-
-* maybe refactor ScriptContext into GroovyShell?
-
-* GroovyServlet - serves up *.groovy files
-
-* new GroovyMethods	to be added
-	- Object.getMetaClass()
-	- Object.eachProperty
-	- Object.eachPropertyName { object.getProperty(it) }
-	- Object.setProperties(foo:'abc', x:123)
-	
-	- removeIf { x | x > 0 }
-	- List.first, List.last, pop
-	- List.eachWithindex { item, idx | ... }
-	- reverseEach { ... }
-	- Map.eachKey, eachValue
-	- Map.index, Map.indexes
-	- Object.display (rather than toConsoleOutput)
-	- grep(pattern)  { closure }
-		where pattern = range / regexp
-	- eval("....")
-	- gets
-	- load(...)
-	- File.eachByte
-	- configure method on beans?
-		bean.setProperties(name:'James', location:'London')
-	- some kind of Regexp iterator of strings like Ruby's scan
-	- maybe support Pythons' zip and reduce functions?
-
-		maybe add the various readonly List APIs to Object[] and *[] types
-		if we ever support the DTD / Xed style type*, type+ then we can do the same
-		there too
-		
-* BeanBuilder - builder which creates a tree of beans
-	builder.bean(class:SomeClass, x:123, b:'hello') {
-		nestedProperty(a:123)
-		nestedProperty2(class:DerivedClass, b:43)
-	}
-	using adder method as well as setter methods
-
-* MBeanBuilder?
-	builder.mlet {
-		mbean(class:SomeClass) {
-			someAttribute(value)
-		}
-		mbean(class:SomeClass, someAttribute:value) {
-			operation(1, 2)
-		}
-	}
-
-* GroovyMBean - allow iteration through properties somehow
-
 * allow constructors to have optional trailing closure...
 	new JFrame() { text = 'hello'; size = [1, 2] }
 			
-* closures - handle passing in of variables from outer scope?	
-	use a Holder object for all local variables and pass holder
-	into the closure
-			
-* Switch statement to use matches to handle classes, ranges, regexp etc		
-	- matches(object) for Range or Regexp or Class
-
 * looks like a bug on generated methods, should use param name over any field name
 	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
 	methods
@@ -220,18 +230,6 @@ sql.table("users") {
 * groovy thread...
 	foo = new GroovyThread(args) { closure }
 	
-* <=> for compareTo()
-
-* << for list append and for output to streams
-	maybe other optional IO methods like gets?
-
-* is there a better way to add listeners in Groovy. e.g. how to remove added listeners
-
-	listener = bean.property + { some closure }
-	bean.property - listener
-	
-* .@ support on W3C DOM trees...
-
 * article
 	- basics of groovy
 	- groovy swing
@@ -253,7 +251,6 @@ sql.table("users") {
 	
 	could use naming conventions to detect cardinality - e.g. addFoo(), getFoos()
 	
-	
 * generate property change listener stuff on properties
 
 * test identity -> hashCode + equals methods
@@ -270,19 +267,6 @@ sql.table("users") {
 
 * use *args in method invocation to expand a list as argument values	
 	
-* access to local variables from inside a closure
-
-* switch statements
-	switch(value) {
-		case "hello":
-		case 0..12:
-		case /foo|bar/:
-		case a, b, c
-		case FooClass:
-	}		
-
-* implement break, continue and maybe retry
-
 * go through all not-working @todo tests in src/test
 	
 * to support dynamic mixins we should use dynamic proxies to allow
@@ -443,22 +427,15 @@ UI WORK
 * create a GroovyUI
 	-> interactive script + allows scripts to be run & objects explored
 
-* groovy.model -> groovy.mvc?
-
-* delete groovytablemodel / groovytablecolumn
 
 
 
 ECLIPSE WORK
 ============
 
-We really need to start work on the Eclipse plugin. I *so* want neat Eclipse support for groovy
-
 * Run as JUnit support for Groovy! 
 
 * Refactoring support for Groovy and tie it into the Java refactoring
-
-* a WYSIWYG editor for Groovy. Though right now I've found that the Java Scrapbook editor is fine
 
 
 JUNIT WORK
@@ -468,9 +445,6 @@ JUNIT WORK
 specify void for method return types.This requires a clever static method when we generate the
 	bytecode which can instantiate a special kind of TestSuite
 	unless there's another way?
-
-OTHER STUFF
-===========
 
 
 OPTIMISATIONS
@@ -483,21 +457,3 @@ foo.invokeMethod(method, args);
 * could code generate the MetaClass with very efficient dynamic dispatch
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
-
-
-THINGS TO PONDER
-================
-
-* should we follow ruby rules where the last statement, if its an expression, then its an explicit return.
-
-e.g.
-
-foo() {
-   2 * x
-}
-
-would implicitly mean
-
-foo() {
-   return 2 * x
-}
