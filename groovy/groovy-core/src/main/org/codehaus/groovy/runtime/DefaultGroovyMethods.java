@@ -1897,4 +1897,16 @@ public class DefaultGroovyMethods {
             }
         }
     }
+
+    /**
+     * Converts the given String into a List of strings of one character
+     */
+    public static List toList(String self) {
+        int size = self.length();
+        List answer = new ArrayList(size);
+        for (int i = 0; i < size; i++ ) {
+            answer.add(self.substring(i, i+1));
+        }
+        return answer;
+    }
 }

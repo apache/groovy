@@ -51,4 +51,15 @@ class ForLoopTest extends GroovyTestCase {
 
         assert x == 15
     }
+    
+    void testString() {
+        text = "abc"
+        
+        list = []
+        for (c in text) {
+            list.add(c)
+        }
+        
+        assert list == ["a", "b", "c"]
+    }
 }
