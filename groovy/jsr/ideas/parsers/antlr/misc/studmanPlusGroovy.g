@@ -1,6 +1,20 @@
-/** Java 1.5 Recognizer
+/** JSR-241 Groovy Recognizer
  *
- * Run 'java Main [-showtree] directory-full-of-java-files'
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *  HEALTH WARNING - PORTING IN PROGRESS
+ *  WON'T COMPILE !!! WON'T GENERATE !!! WON'T WORK !!!
+ *  I have taken java.g for Java1.5 from Michael Studman (1.22.4)
+ *  and have begun applying the groovy.diff from java.g (1.22)
+ *  back onto the new root (1.22.4)
+ *  (by hand, as 'patch' won't be enough)
+ *
+ *  for a map of the task see... 
+ *     http://groovy.javanicus.com/java-g.png
+ * 
+ *  10 Jan 2005 - Porting begun JRR
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *
+ * Run 'java Main [-showtree] directory-full-of-groovy-files'
  *
  * [The -showtree option pops up a Swing frame that shows
  *  the AST constructed from the parser.]
@@ -17,6 +31,8 @@
  *		Allan Jacobs		Allan.Jacobs@eng.sun.com
  *		Steve Messick		messick@redhills.com
  *		John Pybus		john@pybus.org
+ *      John Rose           rose00@mac.com
+ *      Jeremy Rayner       groovy@ross-rayner.com
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
@@ -167,10 +183,10 @@
  * This grammar is in the PUBLIC DOMAIN
  */
 
-class JavaRecognizer extends Parser;
+class GroovyRecognizer extends Parser;
 options {
-	k = 2;							// two token lookahead
-	exportVocab=Java;				// Call its vocabulary "Java"
+	k = 3;							// three token lookahead
+	exportVocab=Groovy;				// Call its vocabulary "Groovy"
 	codeGenMakeSwitchThreshold = 2;	// Some optimizations
 	codeGenBitsetTestThreshold = 3;
 	defaultErrorHandler = false;	// Don't generate parser error handlers
@@ -178,14 +194,23 @@ options {
 }
 
 tokens {
-	BLOCK; MODIFIERS; OBJBLOCK; SLIST; CTOR_DEF; METHOD_DEF; VARIABLE_DEF;
+	BLOCK; MODIFIERS; OBJBLOCK; SLIST; METHOD_DEF; VARIABLE_DEF;
 	INSTANCE_INIT; STATIC_INIT; TYPE; CLASS_DEF; INTERFACE_DEF;
-	PACKAGE_DEF; ARRAY_DECLARATOR; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
+	PACKAGE_DEF; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
 	PARAMETERS; PARAMETER_DEF; LABELED_STAT; TYPECAST; INDEX_OP;
-	POST_INC; POST_DEC; METHOD_CALL; EXPR; ARRAY_INIT;
+	POST_INC; POST_DEC; METHOD_CALL; EXPR;
 	IMPORT; UNARY_MINUS; UNARY_PLUS; CASE_GROUP; ELIST; FOR_INIT; FOR_CONDITION;
 	FOR_ITERATOR; EMPTY_STAT; FINAL="final"; ABSTRACT="abstract";
-	STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL; VARIABLE_PARAMETER_DEF;
+    UNUSED_GOTO="goto"; UNUSED_CONST="const"; UNUSED_DO="do";
+	STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL; CTOR_IDENT; VARIABLE_PARAMETER_DEF;
+
+    STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
+    CLOSED_BLOCK; IMPLICIT_PARAMETERS; DEF="def";
+    SELECT_SLOT; REFLECT_MEMBER; DYNAMIC_MEMBER;
+    LABELED_ARG; SPREAD_ARG; OPTIONAL_ARG; SCOPE_ESCAPE;
+    LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
+    FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
+
 	STATIC_IMPORT; ENUM_DEF; ENUM_CONSTANT_DEF; FOR_EACH_CLAUSE; ANNOTATION_DEF; ANNOTATIONS;
 	ANNOTATION; ANNOTATION_MEMBER_VALUE_PAIR; ANNOTATION_FIELD_DEF; ANNOTATION_ARRAY_INIT;
 	TYPE_ARGUMENTS; TYPE_ARGUMENT; TYPE_PARAMETERS; TYPE_PARAMETER; WILDCARD_TYPE;
@@ -202,68 +227,146 @@ tokens {
 	private int ltCounter = 0;
 }
 
-// Compilation Unit: In Java, this is a single file. This is the start
+// Compilation Unit: In Groovy, this is a single file or script. This is the start
 // rule for this parser
 compilationUnit
 	:	// A compilation unit starts with an optional package definition
 		(	(annotations "package")=> packageDefinition
-		|	/* nothing */
+                // The main part of the script is a sequence of any number of statements.
+                // Semicolons and/or significant newlines serve as separators.
+                ( sep! (statement)? )*
+                EOF!
+		|   (statement)? ( sep! (statement)? )*
+            EOF!
 		)
 
 		// Next we have a series of zero or more import statements
-		( importDefinition )*
+		// TODO REMOVE ( importDefinition )*
 
 		// Wrapping things up with any number of class or interface
 		// definitions
-		( typeDefinition )*
+		// TODO REMOVE ( typeDefinition )*
 
 		EOF!
 	;
 
+/** A Groovy script or simple expression.  Can be anything legal inside {...}. */
+snippetUnit
+    :       blockBody
+    ;
+
 
 // Package statement: optional annotations followed by "package" then the package identifier.
 packageDefinition
-	options {defaultErrorHandler = true;} // let ANTLR handle errors
-	:	annotations p:"package"^ {#p.setType(PACKAGE_DEF);} identifier SEMI!
+	//TODO? options {defaultErrorHandler = true;} // let ANTLR handle errors
+	:	annotations p:"package"^ {#p.setType(PACKAGE_DEF);} identifier
 	;
 
 
 // Import statement: import followed by a package or class name
-importDefinition
-	options {defaultErrorHandler = true;}
+importStatement
+	//TODO? options {defaultErrorHandler = true;}
 	{ boolean isStatic = false; }
-	:	i:"import"^ {#i.setType(IMPORT);} ( "static"! {#i.setType(STATIC_IMPORT);} )? identifierStar SEMI!
+	:	i:"import"^ {#i.setType(IMPORT);} ( "static"! {#i.setType(STATIC_IMPORT);} )? identifierStar
 	;
 
+// TODO REMOVE
 // A type definition is either a class, interface, enum or annotation with possible additional semis.
-typeDefinition
-	options {defaultErrorHandler = true;}
-	:	m:modifiers!
-		typeDefinitionInternal[#m]
-	|	SEMI!
-	;
+//typeDefinition
+//	options {defaultErrorHandler = true;}
+//	:	m:modifiers!
+//		typeDefinitionInternal[#m]
+//	|	SEMI!
+//	;
 
+// TODO REMOVE
 // Protected type definitions production for reuse in other productions
-protected typeDefinitionInternal[AST mods]
-	:	classDefinition[#mods]		// inner class
-	|	interfaceDefinition[#mods]	// inner interface
-	|	enumDefinition[#mods]		// inner enum
-	|	annotationDefinition[#mods]	// inner annotation
-	;
+//protected typeDefinitionInternal[AST mods]
+//	:	classDefinition[#mods]		// inner class
+//	|	interfaceDefinition[#mods]	// inner interface
+//	|	enumDefinition[#mods]		// inner enum
+//	|	annotationDefinition[#mods]	// inner annotation
+//	;
 
-// A declaration is the creation of a reference or primitive-type variable
-// Create a separate Type/Var tree for each var in the var list.
+/** A declaration is the creation of a reference or primitive-type variable,
+ *  or (if arguments are present) of a method.
+ *  Generically, this is called a 'variable' definition, even in the case of a class field or method.
+ *  It may start with the keyword "def" and/or modifiers.
+ *  It may also start, more simply, with a capitalized type name.
+ *  <p>
+ *  AST effect: Create a separate Type/Var tree for each var in the var list.
+ *  Must be guarded, as in (declarationStart) => declaration.
+ */
 declaration!
-	:	m:modifiers t:typeSpec[false] v:variableDefinitions[#m,#t]
-		{#declaration = #v;}
-	;
+    :       DEF! nls!
+        (m:modifiers)? (t:typeSpec[false])?  v:variableDefinitions[#m,#t]
+        {#declaration = #v;}
+    |   m2:modifiers   (t2:typeSpec[false])? v2:variableDefinitions[#m2,#t2]
+        {#declaration = #v2;}
+    |       t3:typeSpec[false] v3:variableDefinitions[null,#t3]
+        {#declaration = #v3;}
+    ;
+
+/** A declaration with one declarator and no initialization, like a parameterDeclaration. */
+singleDeclarationNoInit!
+    :       DEF! nls!
+        (m:modifiers)? (t:typeSpec[false])?  v:singleVariable[#m,#t]
+        {#singleDeclarationNoInit = #v;}
+    |   m2:modifiers   (t2:typeSpec[false])? v2:singleVariable[#m2,#t2]
+        {#singleDeclarationNoInit = #v2;}
+    |       t3:typeSpec[false] v3:singleVariable[null,#t3]
+        {#singleDeclarationNoInit = #v3;}
+    ;
+
+singleDeclaration
+    :   sd:singleDeclarationNoInit!
+        { #singleDeclaration = #sd; }
+                varInitializer
+    ;
+
+/** Used only as a lookahead predicate, before diving in and parsing a declaration.
+ *  A declaration can be unambiguously introduced with "def" or a modifier token like "final".
+ *  It may also be introduced by a simple identifier whose first character is an uppercase letter,
+ *  as in {String x}.  A declaration can also be introduced with a built in type like 'int' or 'void'.
+ *  Brackets (array and generic) are allowed, as in {List[] x} or {int[][] y}.
+ *  Anything else is parsed as a statement of some sort (expression or command).
+ *  <p>
+ *  (In the absence of explicit method-call parens, we assume a capitalized name is a type name.
+ *  Yes, this is a little hacky.  Alternatives are to complicate the declaration or command
+ *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
+ *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
+ *  between 'println' and 'String'.)
+ */
+declarationStart!
+    :   DEF
+    |   modifier!
+    |   (   upperCaseIdent!
+        |   builtInType!
+        ) (LBRACK balancedTokens! RBRACK)* (IDENT | "it")
+    ;
+
+/** Used only as a lookahead predicate for nested type declarations. */
+typeDeclarationStart!
+    :   (modifier!)* ("class" | "interface")
+    ;
+
+/** An IDENT token whose spelling is required to start with an uppercase letter.
+ *  In the case of a simple statement {UpperID name} the identifier is taken to be a type name, not a command name.
+ */
+upperCaseIdent
+    :   {isUpperCase(LT(1))}?
+                IDENT
+    ;
 
 // A type specification is a type name with possible brackets afterwards
 // (which would make it an array type).
+// Set addImagNode true for types inside expressions, not declarations.
 typeSpec[boolean addImagNode]
 	:	classTypeSpec[addImagNode]
 	|	builtInTypeSpec[addImagNode]
 	;
+
+//TODO - URGENT - link to arrayOrTypeArgs instead of ARRAY_DECLARATOR
 
 // A class type specification is a class type with either:
 // - possible brackets afterwards
@@ -379,6 +482,8 @@ builtInTypeArraySpec[boolean addImagNode]
 		}
 	;
 
+// TODO - URGENT - decide if arrayOrTypeArgs is still needed due to above production...
+
 // A builtin type specification is a builtin type with possible brackets
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
@@ -411,19 +516,26 @@ builtInType
 	|	"float"
 	|	"long"
 	|	"double"
+    |   "any"
+    // PROPOSE:  Add "list", "map", "closure"??
 	;
 
 // A (possibly-qualified) java identifier. We start with the first IDENT
 // and expand its name by adding dots and following IDENTS
 identifier
-	:	IDENT ( DOT^ IDENT )*
-	;
+    :       IDENT
+        (   options { greedy = true; } :
+                        DOT^ nls! IDENT )*
+    ;
 
 identifierStar
-	:	IDENT
-		( DOT^ IDENT )*
-		( DOT^ STAR )?
-	;
+    :       IDENT
+        (   options { greedy = true; } :
+                        DOT^  nls! IDENT )*
+        (   DOT^  nls! STAR
+        |   "as"^ nls! IDENT
+        )?
+    ;
 
 // A list of zero or more modifiers. We could have used (modifier)* in
 // place of a call to modifiers, but I thought it was a good idea to keep
@@ -435,12 +547,12 @@ modifiers
 			//hush warnings since the semantic check for "@interface" solves the non-determinism
 			options{generateAmbigWarnings=false;}:
 
-			modifier
+			modifier nls!
 			|
 			//Semantic check that we aren't matching @interface as this is not an annotation
 			//A nicer way to do this would be nice
 			{LA(1)==AT && !LT(2).getText().equals("interface")}? annotation
-		)*
+        )+
 
 		{#modifiers = #([MODIFIERS, "MODIFIERS"], #modifiers);}
 	;
@@ -523,7 +635,9 @@ superClassClause!
 
 // Definition of a Java class
 classDefinition![AST modifiers]
-	:	"class" IDENT
+        { AST prevCurrentClass = currentClass; }
+	:	"class" IDENT nls!
+        { currentClass = #IDENT; }
 		// it _might_ have type paramaters
 		(tp:typeParameters)?
 		// it _might_ have a superclass...
@@ -534,11 +648,14 @@ classDefinition![AST modifiers]
 		cb:classBlock
 		{#classDefinition = #(#[CLASS_DEF,"CLASS_DEF"],
 								modifiers,IDENT,tp,sc,ic,cb);}
+        { currentClass = prevCurrentClass; }
 	;
+
+//TODO - where has superClassClause! production gone???
 
 // Definition of a Java Interface
 interfaceDefinition![AST modifiers]
-	:	"interface" IDENT
+	:	"interface" IDENT nls!
 		// it _might_ have type paramaters
 		(tp:typeParameters)?
 		// it might extend some other interfaces
@@ -599,7 +716,7 @@ typeParameterBounds
 // This is the body of a class. You can have classFields and extra semicolons.
 classBlock
 	:	LCURLY!
-			( classField | SEMI! )*
+            ( classField )? ( sep! ( classField )? )*
 		RCURLY!
 		{#classBlock = #([OBJBLOCK, "OBJBLOCK"], #classBlock);}
 	;
@@ -607,7 +724,7 @@ classBlock
 // This is the body of an interface. You can have interfaceField and extra semicolons.
 interfaceBlock
 	:	LCURLY!
-			( interfaceField | SEMI! )*
+            ( interfaceField )? ( sep! ( interfaceField )? )*
 		RCURLY!
 		{#interfaceBlock = #([OBJBLOCK, "OBJBLOCK"], #interfaceBlock);}
 	;
@@ -616,7 +733,7 @@ interfaceBlock
 // That's about it (until you see what an annoation field is...)
 annotationBlock
 	:	LCURLY!
-		( annotationField | SEMI! )*
+            ( annotationField )? ( sep! ( annotationField )? )*
 		RCURLY!
 		{#annotationBlock = #([OBJBLOCK, "OBJBLOCK"], #annotationBlock);}
 	;
@@ -724,8 +841,8 @@ enumConstantField!
 // An interface can extend several other interfaces...
 interfaceExtends
 	:	(
-		e:"extends"!
-		classOrInterfaceType[false] ( COMMA! classOrInterfaceType[false] )*
+		e:"extends"! nls!
+		classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
 		)?
 		{#interfaceExtends = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],
 								#interfaceExtends);}
@@ -734,11 +851,13 @@ interfaceExtends
 // A class can implement several interfaces...
 implementsClause
 	:	(
-			i:"implements"! classOrInterfaceType[false] ( COMMA! classOrInterfaceType[false] )*
+			i:"implements"! nls! classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
 		)?
 		{#implementsClause = #(#[IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE"],
 								 #implementsClause);}
 	;
+
+// TODO - JRR GOT TO HERE ---->
 
 // Now the various things that can be defined inside a class
 classField!
