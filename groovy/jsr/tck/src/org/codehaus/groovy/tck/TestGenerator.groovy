@@ -6,6 +6,8 @@ package org.codehaus.groovy.tck
 import java.io.*;
 class TestGenerator{
     public String generate(realOutputPath, targetDir, srcName,srcText) {
+        srcText = srcText.replaceAll('\\\\','\\\\\\\\') // need to escape a slash with slash slash
+
         resultWriter = new StringWriter()
         result = new PrintWriter(resultWriter)
 
@@ -102,10 +104,6 @@ class TestGenerator{
      *
      */
     List generateAlternatives(String srcText, String tag) {
-        //   [\n] becomes [\\\n]   and    [\"] becomes [\\\"]     and    ["] becomes [\"]
-        //srcText = srcText.replaceAll("\\",'FOOOOBARRRR') // need to escape a slash with slash slash
-        //srcText = srcText.replaceAll('"','\\\\"') // need to escape a double quote with slash double quote
-
         alternatives = []
         m = java.util.regex.Pattern.compile("//(.*?//\\s*" + tag + "\\S*)\\s").matcher(srcText)
         while (m.find()) {
