@@ -185,4 +185,25 @@ class ListTest extends GroovyTestCase {
         assert l == ['c']
         assert l.size() == 1
     }
+    
+    void testPop() {
+        l = []
+        l << 'a' << 'b'
+        value = l.pop()
+        assert value == 'b'
+        assert l == ['a']
+        
+        l.add('c')
+        value = l.pop()
+        assert value == 'c'
+        value = l.pop()
+        assert value == 'a'
+        try {
+            value = l.pop()
+            fail("Should have thrown an exception")
+        }
+        catch (UnsupportedOperationException e) {
+            println "Worked: caught expected exception: ${e}"
+        }
+    }
 }
