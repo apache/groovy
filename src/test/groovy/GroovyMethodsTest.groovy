@@ -194,11 +194,15 @@ class GroovyMethodsTest extends GroovyTestCase {
     	}
     }
 
-    void testMaximize() {
-        assert [-5, -3, -1, 0, 2, 4].maximize{ it * it } == -5
+    void testMax() {
+        assert [-5, -3, -1, 0, 2, 4].max{ it * it } == -5
     }
 
-    void testMinimize() {
-        assert [-5, -3, -1, 0, 2, 4].minimize{ it * it } == 0
+    void testMin() {
+        assert [-5, -3, -1, 0, 2, 4].min{ it * it } == 0
+    }
+    
+    void testSort() {
+    	assert [-5, -3, -1, 0, 2, 4].sort { it*it } == [0, -1, 2, -3, 4, -5]
     }
 }

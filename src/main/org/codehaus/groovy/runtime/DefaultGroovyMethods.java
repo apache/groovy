@@ -841,7 +841,22 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @return the minimum value
      */
     public static Object min(Collection self, Closure closure) {
-        return min(self, new ClosureComparator(closure));
+        Class[] params = closure.getParameterTypes();
+        if (params.length == 1) {
+            Object answer = null;
+            Object answer_value = null;
+            for (Iterator iter = self.iterator(); iter.hasNext();) {
+                Object item = iter.next();
+                Object value = closure.call(item);
+                if (answer == null || InvokerHelper.compareLessThan(value, answer_value)) {
+                    answer = item;
+                    answer_value = value;
+                }
+            }
+            return answer;
+        } else {
+            return min(self, new ClosureComparator(closure));
+        }
     }
 
     /**
@@ -852,49 +867,22 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @return the maximum value
      */
     public static Object max(Collection self, Closure closure) {
-        return max(self, new ClosureComparator(closure));
-    }
-
-    /**
-     * Selects the item in a collection that maximizies the given closure
-     *
-     * @param self a Collection
-     * @param c a Closure
-     * @return the maximizing item
-     */
-    public static Object maximize(Collection self, Closure c) {
-        Object answer = null;
-        Object answer_value = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object item = iter.next();
-            Object value = c.call(item);
-            if (answer == null || InvokerHelper.compareGreaterThan(value, answer_value)) {
-                answer = item;
-                answer_value = value;
+        Class[] params = closure.getParameterTypes();
+        if (params.length == 1) {
+            Object answer = null;
+            Object answer_value = null;
+            for (Iterator iter = self.iterator(); iter.hasNext();) {
+                Object item = iter.next();
+                Object value = closure.call(item);
+                if (answer == null || InvokerHelper.compareLessThan(answer_value, value)) {
+                    answer = item;
+                    answer_value = value;
+                }
             }
+            return answer;
+        } else {
+            return max(self, new ClosureComparator(closure));
         }
-        return answer;
-    }
-
-    /**
-     * Selects the item in a collection that minimizes the given closure
-     *
-     * @param self a Collection
-     * @param c a Closure
-     * @return the minimizing item
-     */
-    public static Object minimize(Collection self, Closure c) {
-        Object answer = null;
-        Object answer_value = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object item = iter.next();
-            Object value = c.call(item);
-            if (answer == null || InvokerHelper.compareLessThan(value, answer_value)) {
-                answer = item;
-                answer_value = value;
-            }
-        }
-        return answer;
     }
 
     /**
@@ -2513,11 +2501,11 @@ PropertyValue pv = (PropertyValue) itr.next();
 
     /**
      * This method is called by the ++ operator for the class String.
-     * It increments the last character in the given string. If the 
+     * It increments the last character in the given string. If the
      * character in the string is Character.MAX_VALUE a Character.MIN_VALUE
-     * will be appended. The empty string is incremented to a string 
+     * will be appended. The empty string is incremented to a string
      * consisting of the character Character.MIN_VALUE.
-     * 
+     *
      * @param self a String
      * @return an incremented String
      */
@@ -2528,7 +2516,7 @@ PropertyValue pv = (PropertyValue) itr.next();
         } else {
             char last = buffer.charAt(buffer.length()-1);
             if (last==Character.MAX_VALUE) {
-                buffer.append(Character.MIN_VALUE); 
+                buffer.append(Character.MIN_VALUE);
             } else {
                 char next = last;
                 next++;
@@ -2537,22 +2525,22 @@ PropertyValue pv = (PropertyValue) itr.next();
         }
         return buffer.toString();
     }
-    
+
     /**
      * This method is called by the -- operator for the class String.
-     * It decrements the last character in the given string. If the 
+     * It decrements the last character in the given string. If the
      * character in the string is Character.MIN_VALUE it will be deleted.
-     * The empty string can't be decremented. 
-     * 
+     * The empty string can't be decremented.
+     *
      * @param self a String
      * @return a String with a decremented digit at the end
      */
     public static String previous(String self) {
        StringBuffer buffer = new StringBuffer(self);
-       if (buffer.length()==0) throw new IllegalArgumentException("the string is empty"); 
+       if (buffer.length()==0) throw new IllegalArgumentException("the string is empty");
        char last = buffer.charAt(buffer.length()-1);
        if (last==Character.MIN_VALUE) {
-           buffer.deleteCharAt(buffer.length()-1); 
+           buffer.deleteCharAt(buffer.length()-1);
        } else {
             char next = last;
             next--;
