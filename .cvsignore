@@ -1,5 +1,5 @@
-target
 maven.log
+target
 bin
 *.properties
 velocity.log
