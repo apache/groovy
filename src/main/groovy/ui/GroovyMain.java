@@ -48,33 +48,18 @@ package groovy.ui;
 import groovy.lang.GroovyShell;
 import groovy.lang.MetaClass;
 import groovy.lang.Script;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.cli.Option;
+import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.io.*;
+import java.util.Iterator;
+import java.util.List;
+
 /**
  * A Command line to execute groovy.
- * 
+ *
  * @author Jeremy Rayner
  * @author Yuri Schimke
  * @version $Revision$
@@ -97,24 +82,26 @@ public class GroovyMain {
 
     // automatically output the result of each script
     private boolean autoOutput;
-    
+
     // process sockets
     private boolean processSockets;
-    
+
     // port to listen on when processing sockets
     private int port;
-    
+
     // backup input files with extension
     private String backupExtension;
+
+    // do you want full stack traces in script exceptions?
+    private boolean debug = false;
 
     // Compiler configuration, used to set the encodings of the scripts/classes
     private CompilerConfiguration conf = new CompilerConfiguration();
 
     /**
      * Main CLI interface.
-     * 
-     * @param args
-     *            all command line args.
+     *
+     * @param args all command line args.
      */
     public static void main(String args[]) {
         MetaClass.setUseReflection(true);
@@ -127,16 +114,16 @@ public class GroovyMain {
             if (cmd.hasOption('h')) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("groovy", options);
-            }
-            else if (cmd.hasOption('v')) {
+            } else if (cmd.hasOption('v')) {
                 String version = InvokerHelper.getVersion();
                 System.out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
+            } else {
+                // If we fail, then exit with an error so scripting frameworks can catch it
+                if (!process(cmd)) {
+                    System.exit(1);
+                }
             }
-            else {
-                process(cmd);
-            }
-        }
-        catch (ParseException pe) {
+        } catch (ParseException pe) {
             System.out.println("error: " + pe.getMessage());
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("groovy", options);
@@ -145,14 +132,11 @@ public class GroovyMain {
 
     /**
      * Parse the command line.
-     * 
-     * @param options
-     *            the options parser.
-     * @param args
-     *            the command line args.
+     *
+     * @param options the options parser.
+     * @param args    the command line args.
      * @return parsed command line.
-     * @throws ParseException
-     *             if there was a problem.
+     * @throws ParseException if there was a problem.
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new PosixParser();
@@ -161,14 +145,16 @@ public class GroovyMain {
     }
 
     /**
-     * Build the options parser.
-     * 
+     * Build the options parser.  Has to be synchronized because of the way Options are constructed.
+     *
      * @return an options parser.
      */
-    private static Options buildOptions() {
+    private static synchronized Options buildOptions() {
         Options options = new Options();
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("usage information").withLongOpt("help").create('h'));
+
+        options.addOption(OptionBuilder.hasArg(false).withDescription("debug mode will print out full stack traces").withLongOpt("debug").create('d'));
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("display the Groovy and JVM versions").withLongOpt("version").create('v'));
 
@@ -181,20 +167,18 @@ public class GroovyMain {
         options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line").create('n'));
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line and print result").create('p'));
-        
+
         options.addOption(OptionBuilder.withArgName("port").hasOptionalArg().withDescription("listen on a port and process inbound lines").create('l'));
         return options;
     }
 
     /**
      * Process the users request.
-     * 
-     * @param line
-     *            the parsed command line.
-     * @throws ParseException
-     *             if invalid options are chosen
+     *
+     * @param line the parsed command line.
+     * @throws ParseException if invalid options are chosen
      */
-    private static void process(CommandLine line) throws ParseException {
+    private static boolean process(CommandLine line) throws ParseException {
         GroovyMain main = new GroovyMain();
 
         List args = line.getArgList();
@@ -205,6 +189,7 @@ public class GroovyMain {
         }
 
         main.isScriptFile = !line.hasOption('e');
+        main.debug = line.hasOption('d');
         main.processFiles = line.hasOption('p') || line.hasOption('n');
         main.autoOutput = line.hasOption('p');
         main.editFiles = line.hasOption('i');
@@ -219,44 +204,51 @@ public class GroovyMain {
             main.script = (String) args.remove(0);
             if (main.script.endsWith(".java"))
                 throw new ParseException("error: cannot compile file with .java extension: " + main.script);
-        }
-        else {
+        } else {
             main.script = line.getOptionValue('e');
         }
-        
+
         main.processSockets = line.hasOption('l');
         if (main.processSockets) {
-            String p = line.getOptionValue('l',"1960"); // default port to listen to
+            String p = line.getOptionValue('l', "1960"); // default port to listen to
             main.port = new Integer(p).intValue();
         }
         main.args = args;
 
-        main.run();
+        return main.run();
     }
 
-    public GroovyMain() {
-    }
 
     /**
      * Run the script.
      */
-    private void run() {
+    private boolean run() {
         try {
             if (processSockets) {
                 processSockets();
             } else if (processFiles) {
                 processFiles();
-            }
-            else {
+            } else {
                 processOnce();
             }
-        }
-        catch (Exception e) {
+            return true;
+        } catch (Exception e) {
             System.out.println("Caught: " + e);
-            e.printStackTrace();
+            if (debug) {
+                e.printStackTrace();
+            } else {
+                StackTraceElement[] stackTrace = e.getStackTrace();
+                for (int i = 0; i < stackTrace.length; i++) {
+                    StackTraceElement element = stackTrace[i];
+                    if (!element.getFileName().endsWith(".java")) {
+                        System.err.println("\tat " + element);
+                    }
+                }
+            }
+            return false;
         }
     }
-    
+
     /**
      * Process Sockets.
      */
@@ -268,9 +260,9 @@ public class GroovyMain {
         } else {
             s = groovy.parse(script, "main");
         }
-        new GroovySocketServer(groovy,isScriptFile,script,autoOutput,port);
+        new GroovySocketServer(groovy, isScriptFile, script, autoOutput, port);
     }
-    
+
     /**
      * Process the input files.
      */
@@ -289,8 +281,7 @@ public class GroovyMain {
             PrintWriter writer = new PrintWriter(System.out);
 
             processReader(s, reader, writer);
-        }
-        else {
+        } else {
             Iterator i = args.iterator();
             while (i.hasNext()) {
                 String filename = (String) i.next();
@@ -302,11 +293,9 @@ public class GroovyMain {
 
     /**
      * Process a single input file.
-     * 
-     * @param s
-     *            the script to execute.
-     * @param file
-     *            the input file.
+     *
+     * @param s    the script to execute.
+     * @param file the input file.
      */
     private void processFile(Script s, File file) throws IOException {
         if (!file.exists())
@@ -318,18 +307,15 @@ public class GroovyMain {
                 PrintWriter writer = new PrintWriter(System.out);
                 processReader(s, reader, writer);
                 writer.flush();
-            }
-            finally {
+            } finally {
                 reader.close();
             }
-        }
-        else {
+        } else {
             File backup = null;
             if (backupExtension == null) {
                 backup = File.createTempFile("groovy_", ".tmp");
                 backup.deleteOnExit();
-            }
-            else {
+            } else {
                 backup = new File(file.getPath() + backupExtension);
                 backup.delete();
             }
@@ -341,12 +327,10 @@ public class GroovyMain {
                 PrintWriter writer = new PrintWriter(new FileWriter(file));
                 try {
                     processReader(s, reader, writer);
-                }
-                finally {
+                } finally {
                     writer.close();
                 }
-            }
-            finally {
+            } finally {
                 reader.close();
             }
         }
@@ -354,13 +338,10 @@ public class GroovyMain {
 
     /**
      * Process a script against a single input file.
-     * 
-     * @param s
-     *            script to execute.
-     * @param reader
-     *            input file.
-     * @param pw
-     *            output sink.
+     *
+     * @param s      script to execute.
+     * @param reader input file.
+     * @param pw     output sink.
      */
     private void processReader(Script s, BufferedReader reader, PrintWriter pw) throws IOException {
         String line = null;
