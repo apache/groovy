@@ -85,10 +85,6 @@ public abstract class ConsoleSupport {
 
         outputStyle = doc.addStyle("output", regular);
         StyleConstants.setBold(outputStyle, true);
-        
-        System.out.println("promptStyle: " + promptStyle);
-        System.out.println("commandStyle: " + commandStyle);
-        System.out.println("outputStyle: " + outputStyle);
     }
 
     public Style getCommandStyle() {

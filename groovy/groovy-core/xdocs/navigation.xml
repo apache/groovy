@@ -16,6 +16,7 @@
 
     <menu name="Groovy">
       <item name="Index"               href="/index.html"/>
+      <item name="FAQ"                 href="/faq.html"/>
       <item name="Quick Start"         href="/quickStart.html"/>
       <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
       <item name="Syntax"              href="http://wiki.codehaus.org/groovy/CoreSyntax"/>

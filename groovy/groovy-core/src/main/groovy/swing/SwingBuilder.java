@@ -139,7 +139,7 @@ public class SwingBuilder extends BuilderSupport {
             Action action = (Action) child;
             InvokerHelper.setProperty(parent, "action", action);
             Object keyStroke = action.getValue("KeyStroke");
-            System.out.println("keystroke: " + keyStroke + " for: " + action);
+            //System.out.println("keystroke: " + keyStroke + " for: " + action);
             if (parent instanceof JComponent) {
                 JComponent component = (JComponent) parent;
                 KeyStroke stroke = null;

@@ -41,9 +41,11 @@ class PersonTest extends GroovyTestCase {
     
     protected createDataSet() {
         type = Person
-
+	
         assert type != null : "failed to load Person class"
     
-	    return new DataSet(type)
+        dataSource = null
+        
+	    return new DataSet(dataSource, type)
     }
 }
