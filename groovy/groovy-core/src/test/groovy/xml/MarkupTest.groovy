@@ -33,4 +33,10 @@ class MarkupTest extends TestXmlSupport {
             }
         }
     }
+
+    void testContentAndDataInMarkup() {
+        b = new MarkupBuilder()
+
+        b.a(href:"http://groovy.codehaus.org", "groovy")
+    }
 }
