@@ -181,6 +181,20 @@ public class ASTBuilderTest extends TestParserSupport {
         System.out.println("expr: " + exp);
     }
 
+    public void testClosureWithJustIdentifierBug() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { {a} } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+
+        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
+        Expression exp = exprStmt.getExpression();
+
+        System.out.println("expr: " + exp);
+    }
+
     public void testArrayExpression() throws Exception {
         ModuleNode module = parse("class Foo { void testMethod() { foo = new String[] { 'a', 'b', 'c' }\n assert foo != null } }", "Dummy.groovy");
         BlockStatement statement = getCode(module, "testMethod");

@@ -53,7 +53,10 @@ import groovy.lang.MetaClass;
 import groovy.lang.ObjectRange;
 import groovy.lang.Script;
 import groovy.lang.Tuple;
+import groovy.lang.Writable;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -369,5 +372,21 @@ public class InvokerHelper {
             list.add(Array.get(array, i));
         }
         return list;
+    }
+
+    /**
+     * Writes the given object to the given stream
+     */
+    public static void write(Writer out, Object object) throws IOException {
+        if (object instanceof String) {
+            out.write((String) object);
+        }
+        else if (object instanceof Writable) {
+            Writable writable = (Writable) object;
+            writable.writeTo(out);
+        }
+        else {
+            out.write(toString(object));
+        }
     }
 }

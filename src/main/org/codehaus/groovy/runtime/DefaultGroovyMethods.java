@@ -38,6 +38,8 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.Range;
+import groovy.lang.StringWriterIOException;
+import groovy.lang.Writable;
 import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
@@ -54,9 +56,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -648,9 +651,9 @@ public class DefaultGroovyMethods {
             int tmp = to;
             to = from;
             from = tmp;
-            reverse = ! reverse;
+            reverse = !reverse;
         }
-        
+
         String answer = text.substring(from, to + 1);
         if (reverse) {
             answer = reverse(answer);
@@ -666,7 +669,7 @@ public class DefaultGroovyMethods {
     public static String reverse(String self) {
         int size = self.length();
         StringBuffer buffer = new StringBuffer(size);
-        for (int i = size -1 ; i >= 0; i--) {
+        for (int i = size - 1; i >= 0; i--) {
             buffer.append(self.charAt(i));
         }
         return buffer.toString();
@@ -712,7 +715,7 @@ public class DefaultGroovyMethods {
             int tmp = to;
             to = from;
             from = tmp;
-            reverse = ! reverse;
+            reverse = !reverse;
         }
         if (++to > size) {
             to = size;
@@ -1149,8 +1152,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism to add things
-     * to a list
+     * Overloads the left shift operator to provide an easy way to append 
+     * objects to a list
      */
     public static Collection leftShift(Collection self, Object value) {
         self.add(value);
@@ -1158,30 +1161,68 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Overloads the left shift operator to provide an append mechanism to add things
-     * to a String buffer
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a String
      */
-    public static StringBuffer leftShift(StringBuffer self, Object value) {
-        self.append(value);
-        return self;
+    public static StringWriter leftShift(String self, Object value) {
+        StringWriter answer = createStringWriter(self);
+        try {
+            leftShift(answer, value);
+        }
+        catch (IOException e) {
+            throw new StringWriterIOException(e);
+        }
+        return answer;
+    }
+
+    protected static StringWriter createStringWriter(String self) {
+        StringWriter answer = new StringWriter();
+        answer.write(self);
+        return answer;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a StringBuffer
+     */
+    public static StringWriter leftShift(StringBuffer self, Object value) {
+        StringWriter answer = createStringWriter(self.toString());
+        try {
+            leftShift(answer, value);
+        }
+        catch (IOException e) {
+            throw new StringWriterIOException(e);
+        }
+        return answer;
     }
 
     /**
      * Overloads the left shift operator to provide an append mechanism to add things
      * to a writer
      */
-    public static PrintWriter leftShift(PrintWriter self, Object value) {
-        self.print(value);
+    public static Writer leftShift(Writer self, Object value) throws IOException {
+        InvokerHelper.write(self, value);
         return self;
+    }
+
+    /**
+     * A helper method so that dynamic dispatch of the writer.write(object) method
+     * will always use the more efficient Writable.writeTo(writer) mechanism if the
+     * object implements the Writable interface.
+     */
+    public static void write(Writer self, Writable writable) throws IOException {
+        writable.writeTo(self);
     }
 
     /**
      * Overloads the left shift operator to provide an append mechanism to add things
      * to a stream
      */
-    public static PrintStream leftShift(PrintStream self, Object value) {
-        self.print(value);
-        return self;
+    public static Writer leftShift(OutputStream self, Object value) throws IOException {
+        OutputStreamWriter writer = new OutputStreamWriter(self);
+        leftShift(writer, value);
+        writer.flush();
+        return writer;
     }
 
     private static boolean sameType(Collection[] cols) {
@@ -1715,11 +1756,11 @@ public class DefaultGroovyMethods {
     }
 
     public static Integer toInteger(String self) {
-      return Integer.valueOf(self); 
+        return Integer.valueOf(self);
     }
 
     public static Integer toInteger(Number self) {
-      return new Integer(self.intValue()); 
+        return new Integer(self.intValue());
     }
 
     // File based methods
@@ -1732,89 +1773,89 @@ public class DefaultGroovyMethods {
         eachLine(newReader(self), closure);
     }
 
-  /**
-   * Iterates through the given reader line by line
-   */
-  public static void eachLine(Reader self, Closure closure) throws IOException {
-    BufferedReader br = null;
-    
-    if (self instanceof BufferedReader)
-      br = (BufferedReader) self;
-    else
-      br = new BufferedReader(self);
-    
-    try {
-        while (true) {
-            String line = br.readLine();
-            if (line == null) {
-                break;
-            }
-            else {
-                closure.call(line);
-            }
-        }
-      br.close();
-    }
-    catch (IOException e) {
-        if (self != null) {
-            try {
-              br.close();
-            }
-            catch (Exception e2) {
-                // ignore as we're already throwing
-            }
-            throw e;
-        }
-    }
-  }
+    /**
+     * Iterates through the given reader line by line
+     */
+    public static void eachLine(Reader self, Closure closure) throws IOException {
+        BufferedReader br = null;
 
-  /**
-   * Iterates through the given file line by line, splitting on the seperator
-   */
-  public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
-    splitEachLine(newReader(self), sep, closure);
-  }
+        if (self instanceof BufferedReader)
+            br = (BufferedReader) self;
+        else
+            br = new BufferedReader(self);
 
-  /**
-   * Iterates through the given reader line by line, splitting on the seperator
-   */
-  public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
-    BufferedReader br = null;
-    
-    if (self instanceof BufferedReader)
-      br = (BufferedReader) self;
-    else
-      br = new BufferedReader(self);
-      
-    List args = new ArrayList();
-    
-    try {
-        while (true) {
-            String line = br.readLine();
-            if (line == null) {
-                break;
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                else {
+                    closure.call(line);
+                }
             }
-            else {
-                List vals = Arrays.asList(line.split(sep));
-                args.clear();
-                args.add(vals);
-                closure.call(args);
+            br.close();
+        }
+        catch (IOException e) {
+            if (self != null) {
+                try {
+                    br.close();
+                }
+                catch (Exception e2) {
+                    // ignore as we're already throwing
+                }
+                throw e;
             }
         }
-      br.close();
     }
-    catch (IOException e) {
-        if (self != null) {
-            try {
-              br.close();
+
+    /**
+     * Iterates through the given file line by line, splitting on the seperator
+     */
+    public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
+        splitEachLine(newReader(self), sep, closure);
+    }
+
+    /**
+     * Iterates through the given reader line by line, splitting on the seperator
+     */
+    public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
+        BufferedReader br = null;
+
+        if (self instanceof BufferedReader)
+            br = (BufferedReader) self;
+        else
+            br = new BufferedReader(self);
+
+        List args = new ArrayList();
+
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                }
+                else {
+                    List vals = Arrays.asList(line.split(sep));
+                    args.clear();
+                    args.add(vals);
+                    closure.call(args);
+                }
             }
-            catch (Exception e2) {
-                // ignore as we're already throwing
+            br.close();
+        }
+        catch (IOException e) {
+            if (self != null) {
+                try {
+                    br.close();
+                }
+                catch (Exception e2) {
+                    // ignore as we're already throwing
+                }
+                throw e;
             }
-            throw e;
         }
     }
-  }
 
     /**
      * Reads the file into a list of Strings for each line
@@ -1825,14 +1866,14 @@ public class DefaultGroovyMethods {
         return closure.asList();
     }
 
-  /**
-   * Reads the reader into a list of Strings for each line
-   */
-  public static List readLines(Reader reader) throws IOException {
-      IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
-      eachLine(reader, closure);
-      return closure.asList();
-  }
+    /**
+     * Reads the reader into a list of Strings for each line
+     */
+    public static List readLines(Reader reader) throws IOException {
+        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
+        eachLine(reader, closure);
+        return closure.asList();
+    }
 
     /**
      * Invokes the closure for each file in the given directory
