@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -156,7 +157,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
-
+    
+    // inner classes created while generating bytecode
+    private LinkedList innerClasses = new LinkedList();
     private boolean definingParameters;
 
     private Set syntheticStaticFields = new HashSet();
@@ -167,6 +170,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         this.sourceFile = sourceFile;
     }
 
+    public LinkedList getInnerClasses() {
+        return innerClasses;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -175,16 +182,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
         syntheticStaticFields.clear();
+        
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
+        
+        System.out.println("Visiting class: " + classNode.getName());
+        
         cw.visit(
             classNode.getModifiers(),
             internalClassName,
             internalBaseClassName,
             getClassInternalNames(classNode.getInterfaces()),
             sourceFile);
-
+        
         ensureClassNodeHasConstructor(classNode);
 
         // now lets visit the contents of the class
@@ -205,6 +216,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
 
         createSyntheticStaticFields();
+
+        for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
+            ClassNode innerClass = (ClassNode) iter.next();
+            String innerClassName = innerClass.getName();
+            String innerClassInternalName = getClassInternalName(innerClassName);
+            cw.visitInnerClass(innerClassInternalName, internalClassName, innerClassName, innerClass.getModifiers());
+        }
 
         cw.visitEnd();
     }
@@ -607,8 +625,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        // TODO Auto-generated method stub
+        ClassNode innerClass = createClosureClass(expression);
+        innerClasses.add(innerClass);
 
+        String innerClassinternalName = getClassInternalName(innerClass.getName());
+
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitTypeInsn(NEW, innerClassinternalName);
+        cv.visitInsn(DUP);
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + internalClassName + ";)V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -709,7 +735,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         boolean left = leftHandExpression;
         // we need to clear the LHS flag to avoid "this." evaluating as ASTORE rather than ALOAD
         leftHandExpression = false;
-        int i = idx + 1;                    
+        int i = idx + 1;
 
         if (left) {
             cv.visitVarInsn(ASTORE, i);
@@ -923,6 +949,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // Implementation methods
     //-------------------------------------------------------------------------
+
+    protected ClassNode createClosureClass(ClosureExpression expression) {
+        String name = classNode.getName() + "$" + (innerClasses.size() + 1);
+        ClassNode answer = new ClassNode(name, ACC_PUBLIC, "org/codehaus/groovy/lang/Closure");
+        answer.addMethod(new MethodNode("doCall", ACC_PUBLIC, "java/lang/Object", expression.getParameters(), expression.getCode()));
+        return answer;
+    }
 
     /**
      * Adds a default constructor if there isn't one already

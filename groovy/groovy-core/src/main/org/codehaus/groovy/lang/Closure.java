@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 
 /**
  * Represents any closure object in Groovy.
@@ -52,14 +54,26 @@ package org.codehaus.groovy.lang;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface Closure {
+public abstract class Closure {
 
+    /**
+     * Invokes the closure without any parameters, returning any value if applicable.
+     * 
+     * @return the value if applicable or null if there is no return statement in the closure
+     */
+    public Object call() {
+        return call(null);
+    }
+    
     /**
      * Invokes the closure, returning any value if applicable.
      * 
      * @param arguments could be a single value or a List of values
      * @return the value if applicable or null if there is no return statement in the closure
      */
-    public Object call(Object arguments);
+    public Object call(Object arguments) {
+        /** @todo we should customize the exception message better */
+        return InvokerHelper.invokeMethod(this, "doCall", arguments);
+    }
 
 }

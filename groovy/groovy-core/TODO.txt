@@ -1,6 +1,14 @@
 Core Groovy Tasks
 =================
 
+* remove log4j dependency
+
+* test the use of closures for methods
+	foo = System.out.println;
+	foo.call("hello");
+
+* closures - handle passing in of variables
+
 * constructors with map / tuple expressions, named parameter calling
  
 * default values for parameters

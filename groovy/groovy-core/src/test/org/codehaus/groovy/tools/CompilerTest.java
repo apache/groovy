@@ -61,7 +61,7 @@ public class CompilerTest extends GroovyTestCase {
     Compiler compiler = new Compiler();
     
     public void testMethodCall() throws Exception {
-        runTest("MethodCallTest.groovy");
+        runTest("ClosureTest.groovy");
     }
 
     protected void runTest(String name) throws Exception {
