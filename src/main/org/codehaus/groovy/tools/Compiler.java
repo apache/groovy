@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -118,16 +119,14 @@ public class Compiler
 
         List results = new ArrayList();
 
+        CompileUnit unit = new CompileUnit();
+        
         for ( int i = 0 ; i < compilationUnits.length ; ++i )
         {
-            GroovyClass[] classes = stageThreeCompile( compilationUnits[ i ],
-                                                       sources[ i ] );
-                                                       
-            for ( int j = 0 ; j < classes.length ; ++j )
-            {
-                results.add( classes[ j ] );
-            }
+            stageThreeCompile( unit, compilationUnits[ i ], sources[ i ] );
         }
+         
+        stageFourCompile(results, unit);
 
         return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
     }
@@ -160,34 +159,45 @@ public class Compiler
         verifier.verify( compilationUnits );
     }
 
-    protected GroovyClass[] stageThreeCompile(CSTNode compilationUnit,
-                                              CharStream charStream )
+    /**
+     * Compiles the AST
+     */
+    protected void stageThreeCompile(CompileUnit unit, 
+                                     CSTNode compilationUnit,
+                                     CharStream charStream )
         throws Exception
     {
         ASTBuilder astBuilder = new ASTBuilder( getClassLoader() );
-
         ModuleNode module = astBuilder.build( compilationUnit );
+        module.setDescription(charStream.getDescription());
+        unit.addModule(module);
+    }
+    
 
-        List results = new ArrayList();
-
-        for ( Iterator iter = module.getClasses().iterator(); iter.hasNext(); )
+    protected void stageFourCompile(List results, 
+                                    CompileUnit unit)
+        throws Exception
+    {
+        for ( Iterator iter = unit.getModules().iterator(); iter.hasNext(); )
         {
-            ClassNode classNode = (ClassNode) iter.next();
-            if (verbose)
+            ModuleNode module = (ModuleNode) iter.next();
+            for ( Iterator iter2 = module.getClasses().iterator(); iter2.hasNext(); )
             {
-                System.out.println("Generating class: " + classNode.getName());
-            }
-            GroovyClass[] classes = generateClasses( new GeneratorContext(),
-                                                     classNode,
-                                                     charStream.getDescription() );
-
-            for ( int j = 0 ; j < classes.length ; ++j )
-            {
-                results.add( classes[ j ] );
+                ClassNode classNode = (ClassNode) iter2.next();
+                if (verbose)
+                {
+                    System.out.println("Generating class: " + classNode.getName());
+                }
+                GroovyClass[] classes = generateClasses( new GeneratorContext(unit),
+                                                         classNode, 
+                                                         module.getDescription() );
+    
+                for ( int j = 0 ; j < classes.length ; ++j )
+                {
+                    results.add( classes[ j ] );
+                }
             }
         }
-
-        return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
     }
 
     protected GroovyClass[] generateClasses(GeneratorContext context,

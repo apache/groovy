@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.classgen.CompilerFacade;
 import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -380,7 +381,12 @@ public class MetaClass {
             if (url != null) {
                 try {
                     InputStream in = url.openStream();
-                    CompilerFacade compiler = new CompilerFacade(theClass.getClassLoader()) {
+                    
+                    /** @todo there is no CompileUnit in scope so class name 
+                     * checking won't work but that mostly affects the bytecode generation
+                     * rather than viewing the AST
+                     */
+                    CompilerFacade compiler = new CompilerFacade(theClass.getClassLoader(), new CompileUnit()) {
                         protected void onClass(ClassWriter classWriter, ClassNode classNode) {
                             if (classNode.getName().equals(theClass.getName())) {
                                 //System.out.println("Found: " + classNode.getName());

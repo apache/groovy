@@ -46,8 +46,12 @@
 package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 /**
@@ -60,34 +64,78 @@ import org.codehaus.groovy.ast.stmt.Statement;
  */
 public class ModuleNode extends ASTNode {
     
-    private List items = new ArrayList();
+    private BlockStatement statements = new BlockStatement();
     private List classes = new ArrayList();
+    private Map imports = new HashMap();
+    private String packageName;
+    private String description;
+    
     
     public ModuleNode() {
     }
     
-    public List getItems() {
-        return items;
+    public BlockStatement getStatements() {
+        return statements;
     }
     
     public List getClasses() {
         return classes;
     }
 
-    public void addImport(ImportNode node) {
-        items.add(node);
+    /**
+     * @return the class name for the given alias or null if none is available
+     */
+    public String getImport(String alias) {
+        return (String) imports.get(alias);
+    }
+    
+    public void addImport(String alias, String className) {
+        imports.put(alias, className);
     }
     
     public void addStatement(Statement node) {
-        items.add(node);
+        statements.addStatement(node);
     }
     
     public void addClass(ClassNode node) {
-        items.add(node);
         classes.add(node);
     }
     
     public void visit(GroovyCodeVisitor visitor) {
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    /**
+     * @return the underlying character stream description
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
+     * Appends all of the fully qualified class names in this
+     * module into the given map
+     */
+    public void addClasses(Map classMap) {
+        for (Iterator iter = classes.iterator(); iter.hasNext(); ) {
+            ClassNode node = (ClassNode) iter.next();
+            String name = node.getName();
+            if (classMap.containsKey(name)) {
+                throw new RuntimeException("Error: duplicate class declaration for name: " + name + " and class: " + node);
+            }
+            classMap.put(name, node);
+        }
     }
 
 }

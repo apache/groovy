@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.CompileUnit;
+
 
 /**
  * A context shared across generations of a class and its inner classes
@@ -54,9 +56,18 @@ package org.codehaus.groovy.classgen;
  */
 public class GeneratorContext {
 
-    int innerClassIdx = 1;
+    private int innerClassIdx = 1;
+    private CompileUnit compileUnit;
     
+    public GeneratorContext(CompileUnit compileUnit) {
+        this.compileUnit = compileUnit;
+    }
+
     public int getNextInnerClassIdx() {
         return innerClassIdx++;
+    }
+    
+    public CompileUnit getCompileUnit() {
+        return compileUnit;
     }
 }
