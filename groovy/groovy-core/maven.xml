@@ -47,6 +47,14 @@
    <attainGoal name="test:single"/>
   </goal>
   
+
+  <goal name="groovy:test-quick" description="Tries running all the unit test cases in the same JVM">
+   <attainGoal name="clean"/>
+   <attainGoal name="groovy:compile"/>
+   <j:set var="testcase" value="org.codehaus.groovy.tools.FindAllTestsSuite"/>
+   <attainGoal name="test:single"/>
+  </goal>
+  
   <postGoal name="dist:prepare-bin-filesystem">
     <attainGoal name="groovy:make-install"/>
     <echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>

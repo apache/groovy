@@ -35,15 +35,15 @@
 package org.codehaus.groovy.tools;
 
 import groovy.lang.GroovyClassLoader;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.textui.TestRunner;
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
@@ -70,8 +70,6 @@ import java.util.List;
 public class FindAllTestsSuite extends TestSuite {
 
     protected static String testDirectory = "target/test-classes";
-
-    protected GroovyClassLoader loader = new GroovyClassLoader(FindAllTestsSuite.class.getClassLoader());
 
     public static void main(String[] args) {
         TestRunner.run(suite());
