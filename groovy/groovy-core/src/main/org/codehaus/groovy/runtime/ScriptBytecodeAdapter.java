@@ -310,6 +310,14 @@ public class ScriptBytecodeAdapter {
         }
     }
     
+    public static Object spreadList(Object value) throws Throwable {
+        try {
+            return InvokerHelper.spreadList(value);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+
     public static Object negate(Object value) throws Throwable {
         try {
             return InvokerHelper.negate(value);

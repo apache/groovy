@@ -370,10 +370,39 @@ public class InvokerHelper {
         return new Tuple(array);
     }
 
+    public static SpreadList spreadList(Object value) {
+        if (value instanceof ArrayList) {
+            // value is a list.
+            Object[] values = new Object[((ArrayList) value).size()];
+            int index = 0;
+            Iterator it = ((ArrayList) value).iterator();
+            for (; it.hasNext();) {
+                values[index++] = it.next();
+            }
+            return new SpreadList(values);
+        }
+        else {
+            throw new SpreadListEvaluatingException("Cannot spread the type " + value.getClass().getName() + ", value " + value);
+        }
+    }
+
     public static List createList(Object[] values) {
         ArrayList answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
-            answer.add(values[i]);
+            if (values[i] instanceof Spreadable) {
+                if (values[i] instanceof SpreadList) {
+                    SpreadList slist = (SpreadList) values[i];
+                    for (int j = 0; j < slist.size(); j++) {
+                        answer.add(slist.get(j));
+                    }
+                }
+                else {
+                    answer.add(values[i]);
+                }
+            }
+            else {
+                answer.add(values[i]);
+            }
         }
         return answer;
     }

@@ -230,6 +230,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getTo().visit(this);
     }
 
+    public void visitSpreadExpression(SpreadExpression expression) {
+        expression.getExpression().visit(this);
+    }
+
     public void visitNegationExpression(NegationExpression expression) {
         expression.getExpression().visit(this);
     }
@@ -271,9 +275,16 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     protected void visitListOfExpressions(List list) {
+        Expression expression, expr2, expr3;
         for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            Expression expression = (Expression) iter.next();
-            expression.visit(this);
+            expression = (Expression) iter.next();
+            if (expression instanceof SpreadExpression) {
+                expr2 = ((SpreadExpression) expression).getExpression();
+                expr2.visit(this);
+            }
+            else {
+                expression.visit(this);
+            }
         }
     }
 
