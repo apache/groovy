@@ -89,6 +89,8 @@ import java.io.BufferedOutputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
+import java.net.Socket;
+import java.net.ServerSocket;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -3382,6 +3384,65 @@ public class DefaultGroovyMethods {
         fileInputStream.close();
         return bytes;
     }
+
+    // ================================
+    // Socket and ServerSocket methods
+
+    /**
+     * Allows an InputStream and an OutputStream from a Socket to be used,
+     * calling the closure with the streams and then ensuring that the streams are closed down again
+     * irrespective of whether exceptions occur.
+     *
+     * @param socket a Socket
+     * @param closure a Closure
+     * @throws IOException
+     */
+    public static void withStreams(Socket socket, Closure closure) throws IOException {
+        InputStream input = socket.getInputStream();
+        OutputStream output = socket.getOutputStream();
+        try {
+            closure.call(new Object[]{input, output});
+        } finally {
+            try {
+                input.close();
+            } catch (IOException e) {
+                // noop
+            }
+            try {
+                output.close();
+            } catch (IOException e) {
+                // noop
+            }
+        }
+    }
+    prè
+    /**
+     * Allow to pass a Closure to the accept methods of ServerSocket
+     *
+     * @param serverSocket a ServerSocket
+     * @param closure a Closure
+     * @return a Socket
+     * @throws IOException
+     */
+    public static Socket accept(ServerSocket serverSocket, final Closure closure) throws IOException {
+        final Socket socket = serverSocket.accept();
+        new Thread(new Runnable()
+        {
+            public void run() {
+                try {
+                    closure.call(socket);
+                } finally {
+                    try {
+                        socket.close();
+                    } catch (IOException e) {
+                        // noop
+                    }
+                }
+            }
+        }).start();
+        return socket;
+    }
+
 
     /**
      * @param file a File
