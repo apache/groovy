@@ -106,6 +106,7 @@ public class GroovyEngine extends BSFEngineImpl {
      * Declare a bean
      */
     public void declareBean(BSFDeclaredBean bean) throws BSFException {
+        System.out.println("Declaring bean: " + bean.name + " value: " + bean.bean);
         shell.setVariable(bean.name, bean.bean);
     }
 

@@ -64,6 +64,7 @@ public class GroovyShell {
     };
     
     private GroovyClassLoader loader;
+    private ScriptContext context;
 
     public static void main(String args[]) {
         int length = args.length;
@@ -88,13 +89,18 @@ public class GroovyShell {
     }
 
     public GroovyShell() {
-        this(GroovyShell.class.getClassLoader());
+        this(GroovyShell.class.getClassLoader(), new ScriptContext());
     }
 
-    public GroovyShell(ClassLoader parent) {
-        loader = new GroovyClassLoader(parent);
+    public GroovyShell(ClassLoader parent, ScriptContext binding) {
+        this.loader = new GroovyClassLoader(parent);
+        this.context = binding;
     }
 
+    public ScriptContext getContext() {
+        return context;
+    }
+    
     /**
      * Runs the given script file name with the given command line arguments
      * 
@@ -129,16 +135,33 @@ public class GroovyShell {
         return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
     }
 
+    public Object getVariable(String name) {
+        return context.getVariable(name);
+    }
+    
     public void setVariable(String name, Object value) {
+        context.setVariable(name, value);
     }
 
     /**
-     * Evaluates some script
+     * Evaluates some script against the current Binding and returns the result
      * 
      * @param in the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(String scriptText, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
-        return run(scriptText, fileName, EMPTY_ARGS);
+        return evaluate(new ByteArrayInputStream(scriptText.getBytes()), fileName);
+    }
+
+    /**
+     * Evaluates some script against the current Binding and returns the result
+     * 
+     * @param in the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     */
+    public Object evaluate(InputStream in, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+        Class scriptClass = loader.parseClass(in, fileName);
+        Script script = InvokerHelper.createScript(scriptClass, context);
+        return script.run();
     }
 }

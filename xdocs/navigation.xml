@@ -30,6 +30,7 @@
       <item name="Running"             href="/running.html"/>
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>
+      <item name="BSF Integration"     href="/bsf.html"/>
     </menu>
 
     <menu name="Features">

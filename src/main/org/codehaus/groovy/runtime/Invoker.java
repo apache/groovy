@@ -111,7 +111,11 @@ public class Invoker {
 
 
     public Object invokeConstructor(String type, Object arguments) {
-        MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
+        return invokeConstructorOf(loadClass(type), arguments);
+    }
+
+    public Object invokeConstructorOf(Class type, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(type);
         List argumentList = asList(arguments);
         return metaClass.invokeConstructor(arguments, argumentList);
     }
