@@ -46,6 +46,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	class StreamingMarkupBuilder {
 		pendingStack = []
+		badTagClosure = {tag, pendingNamespaces, namespaces, prefix, attrs, body, out |
+							uri = pendingNamespaces[prefix]
+							
+							if (uri == null) {
+								uri = namespaces[prefix]
+							}
+							
+							throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
+						}
 		commentClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out |
 							out.unescaped() << "<!--"
 							out.bodyText() << body
@@ -128,26 +137,26 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 						
 		specialTags = ['yield':noopClosure,
 		               'yieldUnescaped':unescapedClosure,
-		               'comment':commentClosure,
-		               'declareNamespace':namespaceSetupClosure]
+		               'comment':commentClosure]
+		               
+		namespaceSpecificTags = ['http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, specialTags]]
+		
+		builder = null
 		
 		StreamingMarkupBuilder() {
+			this.builder = new BaseMarkupBuilder(this.tagClosure, ['declareNamespace':namespaceSetupClosure], this.namespaceSpecificTags)
 		}
 		
-		StreamingMarkupBuilder(extraTags) {
-			this.specialTags.putAll(extraTags)
-		}
-		
-		renameTag(oldName, newName) {
-			if (!this.specialTags.containsKey(oldName)) {
-				new GroovyRuntimeException("can't rename ${oldName} to ${newName}, ${oldName} not an existing tag")
-			}
+		StreamingMarkupBuilder(extraTags, extraNamespaceSpecificTags) {
+			nsTags = [:]
+			nsTags.putAll(this.namespaceSpecificTags)
+			nsTags.putAll(extraNamespaceSpecificTags)
 			
-			this.specialTags[newName] = this.specialTags.remove(oldName)
+			this.builder = new BaseMarkupBuilder(this.tagClosure, extraTags, nsTags)
 		}
 		
 		bind(closure) {
-			boundClosure = (new BaseMarkupBuilder(this.tagClosure, this.specialTags)).bind closure
+			boundClosure = this.builder.bind closure
 			
 			{out |
 			    out = new StreamingMarkupWriter(out)

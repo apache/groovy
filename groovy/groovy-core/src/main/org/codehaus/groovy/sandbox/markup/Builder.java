@@ -50,33 +50,50 @@ import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public abstract class Builder extends GroovyObjectSupport {
 	protected final Map methodMap;
+	protected final Map namespaceMethodMap = new HashMap();
 	protected final Closure defaultGenerator;
 	
 	public Builder(final Closure defaultGenerator) {
-		this(defaultGenerator, new HashMap());
+		this(defaultGenerator, new HashMap(), new HashMap());
 	}
 	
-	public Builder(final Closure defaultGenerator, final Map methodMap) {
+	public Builder(final Closure defaultGenerator, final Map methodMap, final Map namespaceMethodMap) {
 		this.defaultGenerator = defaultGenerator.asWritable();
-		this.methodMap = new HashMap();
 		
-		final Iterator keyIterator = methodMap.keySet().iterator();
+		this.methodMap = fettleMethodMap(this.defaultGenerator, methodMap);
+		
+		final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
+		
+		while (keyIterator.hasNext()) {
+		final Object key = keyIterator.next();
+		final List value = (List)namespaceMethodMap.get(key);
+		final Closure dg = ((Closure)value.get(0)).asWritable();
+		
+			this.namespaceMethodMap.put(key, new Object[]{dg, fettleMethodMap(dg, (Map)value.get(1))});
+		}
+	}
+	
+	private static Map fettleMethodMap(final Closure defaultGenerator, final Map methodMap) {
+	final Map newMethodMap = new HashMap();
+	final Iterator keyIterator = methodMap.keySet().iterator();
 		
 		while (keyIterator.hasNext()) {
 		final Object key = keyIterator.next();
 		final Object value = methodMap.get(key);
 		
 			if ((value instanceof Closure)) {
-				this.methodMap.put(key, value);
+				newMethodMap.put(key, value);
 			} else {
-				this.methodMap.put(key, this.defaultGenerator.curry(value));
+				newMethodMap.put(key, defaultGenerator.curry(value));
 			}
 		}
 		
+		return newMethodMap;
 	}
 	
 	abstract public Object bind(Closure root);
@@ -85,16 +102,12 @@ public abstract class Builder extends GroovyObjectSupport {
 	protected final Closure root;
 	protected final Closure defaultTag;
 	protected final Map tagMap = new HashMap();
+	protected final Map namespaceSpecificTags = new HashMap();
 		
-		public Built(final Closure root, final Closure defaultTag, final Map tagMap) {
+		public Built(final Closure root, final Closure defaultTag, final Map tagMap, final Map namespaceTagMap) {
 			this.defaultTag = defaultTag;
-			final Iterator keyIterator = tagMap.keySet().iterator();
-			
-			while (keyIterator.hasNext()) {
-			final Object key = keyIterator.next();
-			
-				this.tagMap.put(key, tagMap.get(key));
-			}
+			this.tagMap.putAll(tagMap);
+			this.namespaceSpecificTags.putAll(namespaceTagMap);
 		
 			try {
 				this.root = (Closure)root.clone();
