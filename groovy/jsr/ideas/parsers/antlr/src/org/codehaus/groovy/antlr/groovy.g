@@ -371,11 +371,24 @@ protected typeDefinitionInternal[AST mods]
  *  Must be guarded, as in (declarationStart) => declaration.
  */
 declaration!
-      :   ((modifiers!)? DEF!)=>
-          (m:modifiers)? DEF! nls! v:variableDefinitions[#m,null]
-          {#declaration = #v;}
-      |   (m2:modifiers)? t2:typeSpec[false] v2:variableDefinitions[#m2,#t2]
-          {#declaration = #v2;}
+      : 
+      						// method/variable using def
+            (m:modifiers)?
+            (
+        						DEF! nls! v:variableDefinitions[#m, null]	
+        						{#declaration = #v;}
+      						
+	        				|
+      				
+        						(constructorStart)=>
+     	 	  						v3:constructorDefinition[#m]
+      	 	       {#declaration = #v3;}
+  				    					|  						
+				    					
+		  	    						// method/variable using a type
+ 	      						t2:typeSpec[false] v2:variableDefinitions[#m,#t2]
+  		          {#declaration = #v2;}
+  		        )
       ; 
 
 /** A declaration with one declarator and no initialization, like a parameterDeclaration.
@@ -429,7 +442,17 @@ declarationStart!
     |   (   upperCaseIdent!
         |   builtInType!
         ) (LBRACK balancedTokens! RBRACK)* IDENT
+        
+    // constructor
+    | IDENT! LBRACK!
     ;
+
+/** Used to look ahead for a constructor 
+ */
+constructorStart!:
+				IDENT! nls! LPAREN!
+				;
+				
 
 /** Used only as a lookahead predicate for nested type declarations. */
 
@@ -1070,6 +1093,32 @@ variableDefinitions[AST mods, AST t]
         }
     ;
 
+/** I've split out constructors separately; we could maybe integrate back into variableDefinitions 
+ *  later on if we maybe simplified 'def' to be a type declaration?
+ */
+constructorDefinition[AST mods]
+  :     
+  														id:IDENT
+
+                // parse the formal parameter declarations.
+                LPAREN! param:parameterDeclarationList! RPAREN!
+
+                /*OBS*rt:declaratorBrackets[#t]*/
+
+                // get the list of exceptions that this method is
+                // declared to throw
+        (       tc:throwsClause!  )?
+
+                // the method body is an open block
+                // but, it may have an optional constructor call (for constructors only)
+  
+  						// TODO assert that the id matches the class
+        { isConstructorIdent(id); }
+
+        cb:constructorBody!
+        {   #constructorDefinition =  #(#[CTOR_IDENT,"CTOR_IDENT"],  mods, param, tc, cb);
+        }
+     ;
 
 /** Declaration of a variable. This can be a class/instance variable,
  *  or a local variable in a method

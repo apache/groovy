@@ -35,16 +35,6 @@ public class AllTests extends TestSuiteSupport {
         // TODO the following are all parser bugs
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
-        "SuperMethod2Bug.groovy",               // TODO: constructor bug
-        "SuperMethodBug.groovy",                // TODO: constructor bug
-        "TestBase.groovy",                      // TODO: constructor bug
-        "TestCaseBug.groovy",                   // TODO: constructor bug
-        "TestDerived.groovy",                   // TODO: constructor bug
-        "Build.groovy",                         // TODO: constructor bug
-        "PrivateVariableAccessFromAnotherInstanceTest.groovy",      // TODO: constructor bug
-        "SocketTest.groovy",                    // TODO: constructor bug
-        "ClosureComparatorTest.groovy",         // TODO: constructor bug
-        "ProcessTest.groovy",                   // TODO: constructor bug
 
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
@@ -82,6 +72,7 @@ public class AllTests extends TestSuiteSupport {
 
 
         // TODO: AST bugs I think...
+        "ClosureComparatorTest.groovy",         // TODO: constructor bug
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "PrimitiveTypeFieldTest.groovy",
 
@@ -101,6 +92,8 @@ public class AllTests extends TestSuiteSupport {
         "SerializeTest.groovy",                     // not easy to run from in IDE...
         "PrintlnWithNewBug.groovy",
         "dom/DOMTest.groovy",
+        "SuperMethod2Bug.groovy",
+        "SuperMethodBug.groovy",
     };
 
     public static Test suite() {

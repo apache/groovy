@@ -214,6 +214,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     methodDef(node);
                     break;
 
+                case CTOR_IDENT:
+                    constructorDef(node);
+                    break;
+
                 case VARIABLE_DEF:
                     fieldDef(node);
                     break;
@@ -240,7 +244,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        String name = identifier(node);
+        String name = null;
+
+        // constructor with def which looks like a method
+        boolean constructor = isType(CTOR_IDENT, node);
+        if (!constructor) {
+            name = identifier(node);
+        }
+
         node = node.getNextSibling();
 
         assertNodeType(PARAMETERS, node);
@@ -250,15 +261,41 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(SLIST, node);
         Statement code = statementList(node);
 
-        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
-        methodNode.addAnnotations(annotations);
-        configureAST(methodNode, methodDef);
-        if (classNode != null) {
-            classNode.addMethod(methodNode);
+        if (constructor) {
+            classNode.addConstructor(modifiers, parameters, code);
         }
         else {
-            output.addMethod(methodNode);
+            MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
+            methodNode.addAnnotations(annotations);
+            configureAST(methodNode, methodDef);
+            if (classNode != null) {
+                classNode.addMethod(methodNode);
+            }
+            else {
+                output.addMethod(methodNode);
+            }
         }
+    }
+
+    protected void constructorDef(AST constructorDef) {
+        List annotations = new ArrayList();
+        AST node = constructorDef.getFirstChild();
+        int modifiers = Constants.ACC_PUBLIC;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, annotations, modifiers);
+            node = node.getNextSibling();
+        }
+
+        assertNodeType(PARAMETERS, node);
+        Parameter[] parameters = parameters(node);
+        node = node.getNextSibling();
+
+        assertNodeType(SLIST, node);
+        Statement code = statementList(node);
+
+        ConstructorNode constructorNode = classNode.addConstructor(modifiers, parameters, code);
+        constructorNode.addAnnotations(annotations);
+        configureAST(constructorNode, constructorDef);
     }
 
     protected void fieldDef(AST fieldDef) {
@@ -491,7 +528,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_finally:
                 statement = statementList(node);
                 break;
-                            
+
             case METHOD_CALL:
                 statement = methodCall(node);
                 break;
@@ -809,6 +846,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case CLOSED_BLOCK:
                 return closureExpression(node);
 
+            case SUPER_CTOR_CALL:
+                return superMethodCallExpression(node);
+
             case METHOD_CALL:
                 return methodCallExpression(node);
 
@@ -818,7 +858,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case CTOR_CALL:
                 return constructorCallExpression(node);
 
-                case QUESTION:
+            case QUESTION:
                 return ternaryExpression(node);
 
             case DOT:
@@ -1221,6 +1261,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return methodCallExpression(node);
     }
 
+    protected Expression superMethodCallExpression(AST methodCallNode) {
+        AST node = methodCallNode.getFirstChild();
+
+        String name = "super";
+        Expression objectExpression = VariableExpression.SUPER_EXPRESSION;
+
+        Expression arguments = arguments(node);
+        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
+        configureAST(expression, methodCallNode);
+        return expression;
+    }
+
+
     protected MethodCallExpression methodCallExpression(AST methodCallNode) {
         AST node = methodCallNode.getFirstChild();
         if (isType(METHOD_CALL, node)) {
@@ -1279,14 +1332,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
         if (namedArguments) {
-            if (! expressionList.isEmpty()) {
+            if (!expressionList.isEmpty()) {
                 // lets remove any non-MapEntryExpression instances
                 // such as if the last expression is a ClosureExpression
                 // so lets wrap the named method calls in a Map expression
                 List argumentList = new ArrayList();
                 for (Iterator iter = expressionList.iterator(); iter.hasNext();) {
                     Expression expression = (Expression) iter.next();
-                    if (! (expression instanceof MapEntryExpression)) {
+                    if (!(expression instanceof MapEntryExpression)) {
                         argumentList.add(expression);
                     }
                 }
