@@ -20,7 +20,7 @@ class ForAndSqlBug extends GroovyTestCase {
     }
 
     void testBugInsideScript() {
-        assertScript( <<<EOF
+        assertScript( """
 import groovy.sql.TestHelper
 sql = TestHelper.makeSql()
 
@@ -32,7 +32,7 @@ for (x in li) {
     	assert x != null
     }
 }
-EOF)        
+""")        
 	}
 
 }

@@ -20,7 +20,7 @@ class Groovy593_Bug extends GroovyTestCase {
     StringWriter writer = new StringWriter()
     MarkupBuilder chars = new MarkupBuilder(writer)
     XmlParser parser = new XmlParser()
-    String expectedXML = <<<EOF
+    String expectedXML = """
 <chars>
   <ampersand a='&amp;'>&amp;</ampersand>
   <quote>&quot;</quote>
@@ -28,7 +28,7 @@ class Groovy593_Bug extends GroovyTestCase {
   <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; &quot; in middle</element>
   <greaterthan>&gt;</greaterthan>
 </chars>
-EOF
+"""
 
     void testBug() {
         // XML characters to test with
