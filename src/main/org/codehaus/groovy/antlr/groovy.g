@@ -1,5 +1,6 @@
 header {
 package org.codehaus.groovy.antlr.parser;
+import org.codehaus.groovy.antlr.*;
 import java.util.*;
 	import java.io.InputStream;
 	import java.io.Reader;

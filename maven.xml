@@ -30,11 +30,24 @@
 
   </postGoal>
   
-  <goal name="generate">
+  <goal name="generate" description="Regenerates the groovy grammar from antlr sources">
     <j:set var="maven.antlr.grammars" value="groovy.g"/>
     <j:set var="maven.antlr.src.dir" value="${basedir}/src/main/org/codehaus/groovy/antlr"/>
     <j:set var="maven.antlr.target.dir" value="${basedir}/src/main"/>
-    <attainGoal name="antlr:generate"/>
+
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyRecognizer.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyLexer.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyTokenTypes.java"/>
+    <delete file="${basedir}/src/main/org/codehaus/groovy/antlr/parser/GroovyTokenTypes.txt"/>
+
+<!--    <attainGoal name="antlr:generate"/> -->
+
+    <antlr target="${maven.antlr.src.dir}/${maven.antlr.grammars}"
+           outputdirectory="${maven.antlr.target.dir}/org/codehaus/groovy/antlr/parser">
+      <classpath refid="maven.dependency.classpath"/>
+    </antlr>
+
+
   </goal>
 
   <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
