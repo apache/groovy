@@ -48,16 +48,16 @@ public class Compiler
         return this.classLoader;
     }
 
-    public void setVerbose(boolean verbose) 
+    public void setVerbose(boolean verbose)
     {
         this.verbose = verbose;
     }
-    
-    public void setDebug(boolean debug) 
+
+    public void setDebug(boolean debug)
     {
         this.debug = debug;
     }
-    
+
     public void setClasspath(String classpath)
         throws Exception
     {
@@ -110,23 +110,26 @@ public class Compiler
 
         if ( ! this.errors.isEmpty() )
         {
-            throw new MultiException( (Exception[]) this.errors.toArray( EMPTY_EXCEPTION_ARRAY ) );
+			MultiException exception = new MultiException( (Exception[]) this.errors.toArray( EMPTY_EXCEPTION_ARRAY ) );
+			this.errors.clear();
+			throw exception;
+
         }
 
         List results = new ArrayList();
 
         CompileUnit unit = new CompileUnit();
-        
+
         for ( int i = 0 ; i < compilationUnits.length ; ++i )
         {
             stageThreeCompile( unit, compilationUnits[ i ], sources[ i ] );
         }
-         
+
         stageFourCompile(results, unit);
 
         return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
     }
-    
+
     protected CSTNode stageOneCompile(CharStream charStream)
         throws Exception
     {
@@ -150,7 +153,7 @@ public class Compiler
     /**
      * Compiles the AST
      */
-    protected void stageThreeCompile(CompileUnit unit, 
+    protected void stageThreeCompile(CompileUnit unit,
                                      CSTNode compilationUnit,
                                      CharStream charStream )
         throws Exception
@@ -160,9 +163,9 @@ public class Compiler
         module.setDescription(charStream.getDescription());
         unit.addModule(module);
     }
-    
 
-    protected void stageFourCompile(List results, 
+
+    protected void stageFourCompile(List results,
                                     CompileUnit unit)
         throws Exception
     {
@@ -177,9 +180,9 @@ public class Compiler
                     System.out.println("Generating class: " + classNode.getName());
                 }
                 GroovyClass[] classes = generateClasses( new GeneratorContext(unit),
-                                                         classNode, 
+                                                         classNode,
                                                          module.getDescription() );
-    
+
                 for ( int j = 0 ; j < classes.length ; ++j )
                 {
                     results.add( classes[ j ] );
@@ -196,10 +199,10 @@ public class Compiler
         List results = new ArrayList();
 
         ClassGenerator classGenerator = null;
-        
+
         verifier.visitClass(classNode);
-        
-        if ( debug ) 
+
+        if ( debug )
         {
             DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
 
@@ -209,27 +212,27 @@ public class Compiler
                                                  sourceLocator );
             classGenerator.visitClass( classNode );
         }
-        else 
+        else
         {
             ClassWriter classWriter = new ClassWriter( true );
 
-            classGenerator = new ClassGenerator( context, 
+            classGenerator = new ClassGenerator( context,
                                                  classWriter,
                                                  getClassLoader(),
                                                  sourceLocator );
-    
+
             classGenerator.visitClass( classNode );
-    
+
             byte[] bytes = classWriter.toByteArray();
-            
+
             results.add( new GroovyClass( classNode.getName(),
                                           bytes ) );
         }
-    
-        
+
+
         LinkedList innerClasses = classGenerator.getInnerClasses();
 
-        while ( ! innerClasses.isEmpty() ) 
+        while ( ! innerClasses.isEmpty() )
         {
             GroovyClass[] classes = generateClasses( context,
                                                      (ClassNode)
