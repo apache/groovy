@@ -43,40 +43,44 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.syntax;
+package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.GroovyException;
+import org.objectweb.asm.Constants;
 
-
-/** Base exception indicating a syntax error.
- *
- *  @author <a href="bob@werken.com">bob mcwhirter</a>
- *
- *  @version $Id$
+/**
+ * Represents an import statement of a single class
+ * 
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @version $Revision$
  */
-public class SyntaxException
-    extends GroovyException
-{
-    private int line;
-    private int column;
-    private String sourceLocator;
+public class ImportNode extends MetadataNode implements Constants {
 
-    public SyntaxException() 
-    {
+    private String className;
+    private String alias;
+    
+    public ImportNode(String className, String alias) {
+        this.className = className;
+        this.alias = alias;
     }
     
-    public SyntaxException(String message) 
-    {
-        super(message);
+    /**
+     * @return the text display of this import
+     */
+    public String getText() {
+        if (alias == null || alias.length() == 0) {
+            return "import " + className;
+        }
+        else {
+            return "import " + className + " as " + alias;
+        }
     }
     
-    public void setSourceLocator(String sourceLocator)
-    {
-        this.sourceLocator = sourceLocator;
+    public String getAlias() {
+        return alias;
     }
 
-    public String getSourceLocator()
-    {
-        return this.sourceLocator;
+    public String getClassName() {
+        return className;
     }
+
 }

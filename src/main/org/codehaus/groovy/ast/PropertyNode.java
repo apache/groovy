@@ -55,7 +55,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyNode extends Statement implements Constants {
+public class PropertyNode extends MetadataNode implements Constants {
 
     private FieldNode field;
     private Statement getterBlock;

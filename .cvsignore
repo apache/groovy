@@ -6,3 +6,4 @@ velocity.log
 logs
 lib
 dist
+.externalToolBuilders
