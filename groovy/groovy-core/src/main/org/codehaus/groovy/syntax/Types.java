@@ -1071,9 +1071,6 @@ public class Types
             case MOD:
                 return 45;
 
-            case POWER:
-                return 47;
-
             case NOT:
             case REGEX_PATTERN:
                 return 50;
@@ -1092,6 +1089,9 @@ public class Types
             case PREFIX_PLUS:
             case PREFIX_MINUS:
                 return 70;
+
+            case POWER:
+                return 72;
 
             case SYNTH_METHOD:
             case LEFT_SQUARE_BRACKET:

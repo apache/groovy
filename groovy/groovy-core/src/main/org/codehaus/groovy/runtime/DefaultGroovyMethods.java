@@ -2924,25 +2924,20 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @return a Number to the power of a certain exponent
      */
     public static Number power(Number self, Number exponent) {
-        double dexp = exponent.doubleValue();
-        int iexp = (int) dexp;
-        
-        if (NumberMath.isBigDecimal(self)) {
-            BigDecimal number = (BigDecimal) self;
-            if (iexp==dexp) return number.pow(iexp);
-        } else if (NumberMath.isBigInteger(self)) {
-            BigInteger number = (BigInteger) self;
-            if (iexp==dexp) return number.pow(iexp);
-        }
-        
-        double answer = Math.pow(self.doubleValue(), dexp);
-        if (NumberMath.isFloatingPoint(self) || NumberMath.isBigDecimal(self) || NumberMath.isFloatingPoint(exponent) || answer < 1) {
+	double base, exp, answer;
+	base = self.doubleValue();
+	exp = exponent.doubleValue();
+
+        answer = Math.pow(base, exp);
+	if ((double)((int)answer) == answer) {
+            return new Integer((int)answer);
+	}
+        else if ((double)((long)answer) == answer) {
+            return new Long((long)answer);
+	}
+	else {
             return new Double(answer);
-        } else if (NumberMath.isLong(self) || NumberMath.isBigDecimal(self) || NumberMath.isLong(exponent) || answer > Integer.MAX_VALUE) {
-            return new Long((long) answer);
-        } else {
-            return new Integer((int) answer);
-        }
+	}
     }
 
     /**
