@@ -41,4 +41,7 @@ public class MethodClosure extends Closure {
         this.metaClass = metaClass;
     }
 
+    protected Object doCall(Object arguments) {
+        return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+    }
 }
