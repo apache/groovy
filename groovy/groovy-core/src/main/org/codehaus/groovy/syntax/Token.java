@@ -89,6 +89,9 @@ public class Token
     /** Token type for "..". */
     public static final int DOT_DOT = 75;
 
+    /** Token type for "...". */
+    public static final int DOT_DOT_DOT = 77;
+    
     /** Token type for "!". */
     public static final int NOT = 80;
 
@@ -759,14 +762,23 @@ public class Token
     }
 
     public static Token dotDot(int startLine,
-                               int startColumn)
+							   int startColumn)
     {
-        return newToken( DOT_DOT,
-                         "..",
-                         startLine,
-                         startColumn );
+    	return newToken( DOT_DOT,
+    			"..",
+    			startLine,
+				startColumn );
     }
 
+    public static Token dotDotDot(int startLine,
+							      int startColumn)
+    {
+    	return newToken( DOT_DOT_DOT,
+    			"...",
+    			startLine,
+				startColumn );
+    }
+    
     /** Factory method for token for "!".
      *
      *  @param startLine Line upon which the token starts.

@@ -127,7 +127,12 @@ public class Lexer {
                         consume();
                         if (la() == '.') {
                             consume();
-                            token = Token.dotDot(getStartLine(), getStartColumn());
+                            if (la() == '.') {
+                            	consume();
+                            	token = Token.dotDotDot(getStartLine(), getStartColumn());
+                            } else {
+                            	token = Token.dotDot(getStartLine(), getStartColumn());
+                            }
                         }
                         else {
                             token = Token.dot(getStartLine(), getStartColumn());
