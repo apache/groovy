@@ -23,11 +23,9 @@ class ListTest extends GroovyTestCase {
         assert x[1] == 11
         assert x[2] == "cheese"
 		
-        /** @todo parser
         x[3] = 12
 		
 		assert x[3] == 12
-		*/
 		
 		
 		if ( x.contains("cheese") ) {
@@ -59,6 +57,31 @@ class ListTest extends GroovyTestCase {
        	assert x[0] == "cheese"
     }
     
+    void testSubscript() {
+        x = []
+        x[1] = 'cheese'
+        
+        assert x[0] == null
+        assert x[1] == 'cheese'
+        
+        x[2] = 'gromit'
+        x[3] = 'wallace'
+        
+        assert x.size() == 4
+        
+        /** @todo parser bug
+
+        index = -1
+        
+        x[-1] = 'nice'
+        
+        assert x[3] == 'nice'
+        
+        x[-2] = 'cheese'
+        
+        assert x[2] == 'cheese'
+        */
+    }
     
     void testClosure() {
         l = [1, 2, 3, "abc"]

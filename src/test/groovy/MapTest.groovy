@@ -73,18 +73,15 @@ class MapTest extends GroovyTestCase {
 	    
         println(m['xyz'])
         
-        /** @todo parser
-         
         m['def'] = 'cafebabe'
 	    
-        assert m['def'] = 'cafebabe'
+        assert m['def'] == 'cafebabe'
 	    
-        assert m.size() = 3
+        assert m.size() == 3
 	    
         m.remove('def')
 	    
-        assert m['def'] = null
+        assert m['def'] == null
         assert m.size() == 2
-         */
     }
 }
