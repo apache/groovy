@@ -119,14 +119,14 @@ public class RunBugsTest extends TestSupport {
         object.invokeMethod("testBug", null);
     }
     
-    public void testClosureParameterPassingBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/ClosureParameterPassingBug.groovy");
+    public void testMarkupAndMethodBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/MarkupAndMethodBug.groovy");
         object.invokeMethod("testBug", null);
     }
     */
         
-    public void testNestedClosure2Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/Groovy239_Bug.groovy");
+    public void testClosureParameterPassingBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ClosureParameterPassingBug.groovy");
         object.invokeMethod("testBug", null);
     }
 }

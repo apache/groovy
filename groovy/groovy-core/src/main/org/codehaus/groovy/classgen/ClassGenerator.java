@@ -1092,7 +1092,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             visitClassExpression(new ClassExpression(ownerTypeName));
         }
         else {
-            cv.visitVarInsn(ALOAD, 0);
+            if (isInnerClass()) {
+                visitFieldExpression(new FieldExpression(classNode.getField("owner")));
+            }
+            else {
+                cv.visitVarInsn(ALOAD, 0);
+            }
         }
         /*
         }
@@ -1107,11 +1112,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 visitClassExpression(new ClassExpression(ownerTypeName));
             }
             else {
-                cv.visitVarInsn(ALOAD, 0);
+                if (isInnerClass()) {
+                    visitFieldExpression(new FieldExpression(classNode.getField("owner")));
+                }
+                else {
+                    cv.visitVarInsn(ALOAD, 0);
+                }
             }
         }
 
-        String prototype = "(L" + helper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
+        //String prototype = "(L" + helper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
 
         // now lets load the various parameters we're passing
         for (int i = 2; i < localVariableParams.length; i++) {
@@ -1124,12 +1134,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             else {
                 visitVariableExpression(new VariableExpression(name));
             }
-            prototype = prototype + "L" + helper.getClassInternalName(param.getType()) + ";";
+            //prototype = prototype + "L" + helper.getClassInternalName(param.getType()) + ";";
         }
         passingClosureParams = false;
 
         // we may need to pass in some other constructors
-        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
+        //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
+        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor("void", localVariableParams ));
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -1947,11 +1958,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = classNode;
         boolean parentIsInnerClass = owner instanceof InnerClassNode;
-        /*
-        if (owner instanceof InnerClassNode) {
+        while (owner instanceof InnerClassNode) {
             owner = owner.getOuterClass();
         }
-        */
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
