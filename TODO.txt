@@ -1,6 +1,25 @@
 Core Groovy Tasks
 =================
 
+* to support dynamic mixins we should use dynamic proxies to allow
+	a groovy object to change metaclass at runtime
+
+* allow easy creation of sorting & Comparables via closures.
+
+	comparable = new Sorter().orderBy{
+		firstName(ascend:false)
+		lastName(ignoreCase:true)
+	}
+	
+	or using pure closures
+	
+	comparable = new Sorter(false) { i | i.lastName }
+	
+	
+* groovy dynamic proxy of any Java object in Java-land?
+
+* immutable bean
+
 * make TestMixin which would allow...
 	use to use a GroovyTestSuite to avoid the 'void' issue
 	allow other naming conventions - endsWith("Test" || "Bug")
@@ -19,19 +38,6 @@ Core Groovy Tasks
 * expose AST of Closures so that GroovyDO can turn a filter into an SQL query if it wishes
 
 * refactor to groovy.test + groovy.util?	
-	
-* add mixin syntax
-
-	mixin Foo {
-		private x
-		
-		bar() {
-			return "hello"
-		}
-	}
-	
-	class X extends A mixin Foo, Whatnot {
-	}
 
 * DOM and SAX builders
 

@@ -298,6 +298,18 @@ public class ASTBuilder
             interfaceNames = resolvedQualifiedNames( classRoot.getChild( 3 ).getChildren() );
         }
 
+        /** @todo parser 
+         * do we think the parser can iterate through the 
+         * interface names and find any MixinNodes avaiilable
+         * and pass those into the AST?
+         * 
+         * Maybe loading the class for the interface name and then
+         * we could check if it extends the groovy.lang.Mixin
+         * interface
+         */
+        
+        MixinNode[] mixinNames = MixinNode.EMPTY_ARRAY;
+        
         String fqClassName = null;
 
         if ( packageName == null
@@ -314,7 +326,8 @@ public class ASTBuilder
         ClassNode classNode = new ClassNode( fqClassName,
                                              modifiers,
                                              superClassName,
-                                             interfaceNames );
+                                             interfaceNames,
+                                             mixinNames );
 
         CSTNode[] bodyRoots = classRoot.getChild( 4 ).getChildren();
 

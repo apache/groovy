@@ -46,42 +46,30 @@
 package org.codehaus.groovy.ast;
 
 /**
- * Represents an inner class declaration
+ * Represents a mixin which can be applied to any ClassNode to implement mixins
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class InnerClassNode extends ClassNode {
+public class MixinNode extends ClassNode {
 
-    private ClassNode outerClass;
+    public static final MixinNode[] EMPTY_ARRAY = {};
+    
+    /**
+     * @param name is the full name of the class
+     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
+     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     */
+    public MixinNode(String name, int modifiers, String superClass) {
+        this(name, modifiers, superClass, EMPTY_STRING_ARRAY);
+    }
 
     /**
      * @param name is the full name of the class
      * @param modifiers the modifiers, @see org.objectweb.asm.Constants
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
-    public InnerClassNode(ClassNode outerClass, String name, int modifiers, String superClass) {
-        this(outerClass, name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
-    }
-
-    /**
-     * @param name is the full name of the class
-     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
-     */
-    public InnerClassNode(ClassNode outerClass, String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
-        super(name, modifiers, superClass, interfaces, mixins);
-        this.outerClass = outerClass;
-    }
-
-    public ClassNode getOuterClass() {
-        return outerClass;
-    }
-
-    /**
-     * @return the field node on the outer class or null if this is not an inner class
-     */
-    public FieldNode getOuterField(String name) {
-        return outerClass.getField(name);
+    public MixinNode(String name, int modifiers, String superClass, String[] interfaces) {
+        super(name, modifiers, superClass, interfaces, EMPTY_ARRAY);
     }
 }
