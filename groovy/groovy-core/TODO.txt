@@ -10,13 +10,9 @@ Things to Test
 	<bob>	        at org.codehaus.groovy.classgen.TestSupport$1.onClassNode(TestSupport.java:96)
 
 
-* test methods which return a specific type
-
-* why do the try/catch tests fail when run inside an IDE?
-
 * error messages for exceptions thrown in closures are not right
 
-* test print("foo " + valueThatsNull)
+* why do the try/catch tests fail when run inside an IDE?
 
 * test compiler errors when
 	- unknown class

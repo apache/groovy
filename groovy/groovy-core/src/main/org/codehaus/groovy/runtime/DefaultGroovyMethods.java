@@ -627,7 +627,8 @@ public class DefaultGroovyMethods {
     // Number based methods
     //-------------------------------------------------------------------------
     public static String plus(String left, Object value) {
-        return left + toString(value);
+        return left + value;
+        //return left + toString(value);
     }
 
     public static String minus(String left, Object value) {

@@ -575,6 +575,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitInsn(ARETURN);
         }
         else if (!c.isPrimitive()) {
+            
+            // we may need to cast
+            String returnType = methodNode.getReturnType();
+            if (returnType != null && ! returnType.equals("java.lang.Object")) {
+                doCast(returnType);
+            }
+            
             cv.visitInsn(ARETURN);
         }
         else {
@@ -949,7 +956,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String type = field.getType();
         if (leftHandExpression) {
             // this may be superflous
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            doCast(type);
         }
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
         String ownerName =
@@ -1338,6 +1345,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
+    }
+
+    protected void doCast(String type) {
+        cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
