@@ -751,13 +751,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         else {
             String name = expression.getVariable();
-
-            /** todo parser REMOVE THIS DIRTY HACK AS SOON AS COMPILER HANDLES ClassExpression */
-            if (name.equals("System")) {
-                new ClassExpression("java.lang.System").visit(this);
-                return;
-            }
-
             Variable variable = defineVariable(name, "java.lang.Object");
             String type = variable.getType();
             int index = variable.getIndex();
