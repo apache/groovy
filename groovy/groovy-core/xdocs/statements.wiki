@@ -115,14 +115,14 @@ value = [1, 2, 3].inject(0) { count, item | count + item }
 assert value == 6
 {code}
 
-The above code is equivlanent to the following (but just neater)
+The above code is equivalent to the following (but just neater)
 
 {code:groovysh}
 value = [1, 2, 3].inject(0, { count, item | count + item })
 assert value == 6
 {code}
 
-1.1. Important Note
+1.1 Important Note
 Note that when using the neater syntax for specifying closures either without parenthesis or
 by specifying the closure after the parenthesis, the closure must start on the same line.
 i.e. the { symbol must be on the same line as the method call statement. Otherwise the parser
@@ -161,6 +161,8 @@ bean.location = "Vegas"
 println bean.name + " is now in " + bean.location
 assert bean.location == "Vegas"
 {code}
+
+The above uses a special bean called Expando which allows properties to be added dyanmically at runtime.
 
 
 1.1 Safe navigation

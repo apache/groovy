@@ -18,7 +18,7 @@ emptyList.add(5)
 assert emptyList.size() == 1
 {code}
 
-Each list expression creates an implemenation of the {api:java.util.List}.
+Each list expression creates an implementation of the {api:java.util.List}.
 
 1.1 Ranges
 
@@ -47,8 +47,9 @@ assert ! range.contains(8)
 
 Note that ranges are implemented efficiently, creating a lightweight Java object containing a from and to value.
 
-Ranges can be used for any Java object which implements {api:java.lang.Comparable} and implements the increment() and decrement()
-methods. e.g. you can use Strings in a range
+Ranges can be used for any Java object which implements {api:java.lang.Comparable} for comparison and also
+have methods next() and previous() to return the next / previous item in the range.
+e.g. you can use Strings in a range
  
 
 {code:groovy}
@@ -115,8 +116,14 @@ assert x == "c"
 assert x.class == String
 
 sub = text[5..10]
-
 assert sub == 'cheese'
+
+map = ["name":"Gromit", "likes":"cheese", "id":1234]
+assert map['name'] == "Gromit"
+
+list = [10, 11, 12]
+answer = list[2]
+assert answer == 12
 {code}
 
 Notice that you can use ranges to extract part of a List/array/String/regex. You can also use a list of indexes too.

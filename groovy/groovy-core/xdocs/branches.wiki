@@ -84,4 +84,4 @@ Switch supports the following kinds of comparisons
 The case statement performs a ~~match~~ on the case value using the ~~isCase(switchValue)~~ method, 
 which defaults to call ~~equals(switchValue)~~ but has been overloaded for various types like Class or regex etc.
 
-So you could create your own kind of matcher class and overload the isCase(switchValue) method to provide your own kind of matching.
+So you could create your own kind of matcher class and add an isCase(switchValue) method to provide your own kind of matching.

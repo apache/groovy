@@ -2,5 +2,7 @@
 
 Here are a bunch of articles and blog posts on all things groovy
 
+* Ted Leung did a great {link:presentation at SeaJUG|http://www.sauria.com/presentations/Groovy%20SeaJUG%202004-03.ppt.pdf}
+* Gerald Bauer did a presentation at the {link:Austria JUG|http://viva.sourceforge.net/talk/jug-mar-2004/slides.html}
 * Mark Volkmann has written the excellent {link:Groovy - Scripting in Java|http://www.ociweb.com/jnb/jnbFeb2004.html}
 * an old presentation I gave at CodehausOne August 2003 is available as a {link:PDF|http://codehaus.org/~jstrachan/Groovy/Groovy.ppt} or as {link:HTML|http://codehaus.org/~jstrachan/Groovy/html/groovy.html}
