@@ -9,7 +9,11 @@
       <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
       <item name="CVS"             	   href="cvs-usage.html"/>
       <item name="IRC"				   href="irc://irc.codehaus.org/groovy"/>
+      <!--
+      if ever Jerk comes back...
       <item name="IRC Log"			   href="http://irc.codehaus.org/channels/groovy/"/>
+      -->
+      <item name="IRC Log"			   href="http://servlet.uwyn.com/drone/channellog?channelname=%23groovy&amp;botname=hausbot"/>
       <item name="Stats"			   href="http://stats.groovy.codehaus.org/"/>
       <item name="Roadmap"       	   href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap"/>
       <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242"/>
