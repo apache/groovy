@@ -368,7 +368,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l0);
 
         // push expression string onto stack
-        cv.visitLdcInsn(booleanExpression);
+        cv.visitLdcInsn(booleanExpression.getText());
         // now the optional exception expression
         statement.getMessageExpression().visit(this);
         
@@ -453,11 +453,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (value == null) {
             cv.visitInsn(ACONST_NULL);
         }
-        else if (value instanceof String) {
-            cv.visitLdcInsn((String) value);
-        }
         else {
-            throw new ClassGeneratorException("Cannot generate constant expression for value: " + value);
+            cv.visitLdcInsn(value);
         }
     }
 
@@ -507,49 +504,43 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitVariableExpression(VariableExpression expression) {
         String name = expression.getVariable();
         Variable variable = defineVariable(name, "java.lang.Object");
-        Class c = loadClass(variable.getType());
+        String type = variable.getType();
         int index = variable.getIndex();
 
         if (leftHandExpression) {
-            //return is based on class type
             //TODO: make work with arrays
-            if (!c.isPrimitive()) {
-                cv.visitVarInsn(ASTORE, index);
+            if (type.equals("double")) {
+                cv.visitVarInsn(DSTORE, index);
+            }
+            else if (type.equals("float")) {
+                cv.visitVarInsn(FSTORE, index);
+            }
+            else if (type.equals("long")) {
+                cv.visitVarInsn(LSTORE, index);
+            }
+            else if (type.equals("byte") || type.equals("short")  || type.equals("boolean") || type.equals("int")){
+                cv.visitVarInsn(ISTORE, index);
             }
             else {
-                if (c == double.class) {
-                    cv.visitVarInsn(DSTORE, index);
-                }
-                else if (c == float.class) {
-                    cv.visitVarInsn(FSTORE, index);
-                }
-                else if (c == long.class) {
-                    cv.visitVarInsn(LSTORE, index);
-                }
-                else { //byte,short,boolean,int are all IRETURN
-                    cv.visitVarInsn(ISTORE, index);
-                }
+                cv.visitVarInsn(ASTORE, index);
             }
         }
         else {
-            //return is based on class type
             //TODO: make work with arrays
-            if (!c.isPrimitive()) {
-                cv.visitVarInsn(ALOAD, index);
+            if (type.equals("double")) {
+                cv.visitVarInsn(DLOAD, index);
+            }
+            else if (type.equals("float")) {
+                cv.visitVarInsn(FLOAD, index);
+            }
+            else if (type.equals("long")) {
+                cv.visitVarInsn(LLOAD, index);
+            }
+            else if (type.equals("byte") || type.equals("short")  || type.equals("boolean") || type.equals("int")){
+                cv.visitVarInsn(ILOAD, index);
             }
             else {
-                if (c == double.class) {
-                    cv.visitVarInsn(DLOAD, index);
-                }
-                else if (c == float.class) {
-                    cv.visitVarInsn(FLOAD, index);
-                }
-                else if (c == long.class) {
-                    cv.visitVarInsn(LLOAD, index);
-                }
-                else { //byte,short,boolean,int are all IRETURN
-                    cv.visitVarInsn(ILOAD, index);
-                }
+                cv.visitVarInsn(ALOAD, index);
             }
         }
     }
