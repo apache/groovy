@@ -2179,14 +2179,29 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     classLoader.loadClass(type);
                     return type;
                 }
-                catch (Throwable e) { // fall through
-                } // lets try the system class loader
+                catch (Throwable e) { 
+                    // fall through
+                } 
+                
+                // lets try our class loader
+                try {
+                    getClass().getClassLoader().loadClass(type);
+                    return type;
+                }
+                catch (Throwable e) { 
+                    // fall through
+                } 
+                
+                // lets try the system class loader
                 try {
                     Class.forName(type);
                     return type;
                 }
-                catch (Throwable e) { // fall through
-                } // lets try class in same package
+                catch (Throwable e) { 
+                    // fall through
+                } 
+                
+                // lets try class in same package
                 String packageName = classNode.getPackageName();
                 if (packageName == null || packageName.length() <= 0) {
                     break;
