@@ -284,6 +284,7 @@ public class ASTHelper {
         // currently causes problems with classgen, possibly because
         // of name collisions.  So, for now, we use the old method...
 
+        if (as==null) as=name;
         output.addImport( as, name );  // unqualified
 
         name = dot( importPackage, name );

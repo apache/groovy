@@ -22,6 +22,8 @@ import antlr.TokenStreamException;
 import antlr.NoViableAltException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
+
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
@@ -161,30 +163,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void importDef(AST importNode) {
+        // TODO handle static imports       
+        
         AST node = importNode.getFirstChild();
+        
+        String alias = null;
         if (isType(LITERAL_as, node)) {
-            AST dotNode = node.getFirstChild();
-            AST packageNode = dotNode.getFirstChild();
-            AST classNode = packageNode.getNextSibling();
-            String packageName = qualifiedName(packageNode);
-            String name = qualifiedName(classNode);
-            String alias = identifier(dotNode.getNextSibling());
+            //import is like "import Foo as Bar"
+            node = node.getFirstChild();
+            AST aliasNode = node.getNextSibling();
+            alias = identifier(aliasNode);
+        } 
+        
+        if (node.getNumberOfChildren()==0) {
+            // import is like  "import Foo"
+            String name = identifier(node);
+            importClass(null, name, alias);
+            return;
+        }        
+        
+        AST packageNode = node.getFirstChild();
+        String packageName = qualifiedName(packageNode);
+        AST nameNode = packageNode.getNextSibling();
+        if (isType(STAR, nameNode)) {
+            // import is like "import foo.*"
+            importPackageWithStar(packageName);
+            if (alias!=null) throw new GroovyBugError(
+                    "imports like 'import foo.* as Bar' are not "+
+                    "supported and should be catched by the grammar");
+        } else {
+            // import is like "import foo.Bar"
+            String name = identifier(nameNode);
             importClass(packageName, name, alias);
-        }
-        else {
-            if (node == null) {
-                throw new ASTRuntimeException(importNode, "You must specify a class to import!");
-            }
-            AST packageNode = node.getFirstChild();
-            String packageName = qualifiedName(packageNode);
-            AST nameNode = packageNode.getNextSibling();
-            if (isType(STAR, nameNode)) {
-                importPackageWithStar(packageName);
-            }
-            else {
-                String name = qualifiedName(nameNode);
-                importClass(packageName, name, name);
-            }
         }
     }
 
