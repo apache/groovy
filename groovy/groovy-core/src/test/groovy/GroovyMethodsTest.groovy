@@ -44,4 +44,15 @@ class GroovyMethodsTest extends GroovyTestCase {
     	
     	assert x instanceof Character
     }
+
+    void testListGrep() {
+        list = ["James", "Bob", "Guillaume", "Sam"]
+        answer = list.grep(".*a.*")
+
+        assert answer == ["James", "Guillaume", "Sam"]
+
+        answer = list.grep("B.b")
+
+        assert answer == ["Bob"]
+    }
 }

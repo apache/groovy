@@ -1320,6 +1320,25 @@ public class DefaultGroovyMethods {
         return new ArrayList(flatten(self, new LinkedList()));
     }
 
+    /**
+     * Grep a list to return all entries matching a specified regexp
+     *
+     * @param self a List
+     * @param regexp a String representing a regexp
+     * @return a list containing all the elements mapping this regexp
+     */
+    public static List grep(List self, String regexp) {
+        List answer = new ArrayList();
+        for (int i = 0; i < self.size(); i++) {
+            Object value = self.get(i);
+            String s = toString(value);
+            if (s.matches(regexp)) {
+                answer.add(value);
+            }
+        }
+        return answer;
+    }
+
     private static List flatten(Collection elements, List addTo) {
         Iterator iter = elements.iterator();
         while (iter.hasNext()) {
