@@ -117,7 +117,11 @@ public abstract class CompilerFacade {
         onClass(classWriter, classNode);
         
         // now lets do inner classes
-        LinkedList innerClasses = generator.getInnerClasses();
+        LinkedList innerClasses = new LinkedList(generator.getInnerClasses());
+        generator.getInnerClasses().clear();
+        
+        //System.out.println("About to create: " + innerClasses);
+        
         while (!innerClasses.isEmpty()) {
             generateClass(context, (ClassNode) innerClasses.removeFirst(), file);
         }

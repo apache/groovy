@@ -198,7 +198,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
-
+        
         cw.visit(
             classNode.getModifiers(),
             internalClassName,
