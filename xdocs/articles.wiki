@@ -1,0 +1,6 @@
+1 Articles
+
+Here are a bunch of articles and blog posts on all things groovy
+
+* Mark Volkmann has written the excellent {link:Groovy - Scripting in Java|http://www.ociweb.com/jnb/jnbFeb2004.html}
+* an old presentation I gave at CodehausOne August 2003 is available as a {link:PDF|http://codehaus.org/~jstrachan/Groovy/Groovy.ppt} or as {link:HTML|http://codehaus.org/~jstrachan/Groovy/html/groovy.html}
