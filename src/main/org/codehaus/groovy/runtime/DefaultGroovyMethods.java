@@ -65,10 +65,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -76,6 +78,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -651,6 +654,147 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    public static List plus(List left, Collection right) {
+            List answer = new ArrayList(left.size()+right.size());
+            answer.addAll(left);
+            answer.addAll(right);
+            return answer;
+        }
+
+    public static List plus(List left, Object right) {
+        List answer = new ArrayList(left.size()+1);
+        answer.addAll(left);
+        answer.add(right);
+        return answer;
+    }
+
+    public static List multiply(List self, Number factor) {
+        int size=factor.intValue(); 
+        List answer = new ArrayList(self.size() * size);
+        for (int i = 0; i<size;i++) {
+           answer.addAll(self);
+         }
+        return answer;
+    }
+
+    public static List intersect(List left, Collection right) {
+
+        if (left.size()==0)
+            return new ArrayList();
+
+        boolean nlgnSort=sameType(new Collection[] {left, right});
+
+        ArrayList result = new ArrayList();
+        //creates the collection to look for values.
+        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) : left;
+
+        for (Iterator iter = right.iterator(); iter.hasNext();) {
+            final Object o = iter.next();
+              if (pickFrom.contains(o))
+                result.add(o);
+        }
+        return result;
+    }
+
+    public static List minus(List self, Collection removeMe) {
+    
+        if (self.size() ==0 )
+            return new ArrayList();
+
+        boolean nlgnSort = sameType(new Collection[] {self, removeMe});
+    
+        //we can't use the same tactic as for intersection
+        //since AbstractCollection only does a remove on the first
+        //element it encounter.
+    
+        if (nlgnSort) {
+            //n*log(n) version
+           Set answer = new TreeSet(self);
+           answer.removeAll(removeMe);
+           return new ArrayList(answer);
+        }
+        else
+        {    
+           //n*n version
+           List tmpAnswer = new LinkedList(self);
+           for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
+               Object element = iter.next();
+               boolean removeElement = false;
+               for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
+                   if (element.equals(iterator.next())) {    
+                       iter.remove();
+                   }
+               }
+           }
+           //remove duplicates
+           //can't use treeset since the base classes are different
+           List answer=new LinkedList();
+           Object[] array= (Object[]) tmpAnswer.toArray(new Object[tmpAnswer.size()]);
+           for (int i = 0;i<array.length;i++) {
+               if (array[i] != null) {
+                  for (int j = i + 1 ; j< array.length;j++) {
+                      if (array[i].equals(array[j])) {
+                          array[j]=null;
+                      }
+                  }
+                  answer.add(array[i]);
+               }
+           }
+        return new ArrayList(answer);
+        }
+    }    
+            
+    public static List flatten(List self) {
+        return new ArrayList(flatten(self, new LinkedList()));
+    }
+
+    private static List flatten(Collection elements, List addTo) {
+        Iterator iter = elements.iterator();
+        while (iter.hasNext()) {
+            Object element=iter.next();
+            if (element instanceof Collection) { 
+               flatten((Collection) element, addTo);
+            }
+            else if (element instanceof Map) {
+                flatten(((Map) element).values(),addTo);
+            }
+            else {
+                addTo.add(element);
+            } 
+        }
+        return addTo;
+    }
+
+    private static boolean sameType(Collection[] cols)
+    {
+        List all=new LinkedList();
+        for (int i = 0; i < cols.length; i++) {
+            all.addAll(cols[i]);
+        }
+        if (all.size()==0)
+            return true;
+
+        Object first=all.get(0);
+    
+        //trying to determine the base class of the collections
+        //special case for Numbers
+        Class baseClass;
+        if (first instanceof Number) {
+            baseClass=Number.class;
+        }
+        else {
+            baseClass=first.getClass();
+        }
+    
+        for (int i = 0; i < cols.length; i++) {
+            for (Iterator iter = cols[i].iterator(); iter.hasNext();) {
+                if (!baseClass.isInstance(iter.next())) {
+                    return false;
+                }
+            }        
+        }
+        return true;
+    }
     // String methods
     //-------------------------------------------------------------------------
     public static Object tokenize(String self, String token) {
@@ -722,6 +866,19 @@ public class DefaultGroovyMethods {
         }
     }
 
+    public static Number power(Number self, Number exponent) {
+        double answer=Math.pow(self.doubleValue(), exponent.doubleValue());
+        if (isFloatingPoint(self) || isFloatingPoint(exponent) || answer < 1 ) {
+            return new Double(answer); 
+        }
+        else if (isLong(self) || isLong(exponent) || answer > Integer.MAX_VALUE ) {
+            return new Long((long) answer);
+        }
+        else {
+            return new Integer((int) answer);
+        }
+    }
+    
     public static Number divide(Number left, Number right) {
         // lets use double for division?
         return new Double(left.doubleValue() / right.doubleValue());
