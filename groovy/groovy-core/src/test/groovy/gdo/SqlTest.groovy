@@ -17,15 +17,15 @@ class SqlTest extends GroovyTestCase {
     void testSqlQueryWithWhereClause() {
         sql = createSql()     
         
-        foo = 'drink'
+        foo = "drink"
         sql.queryEach("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
         sql = createSql()     
         
-        foo = 'cheese'
-        bar = 'edam'
+        foo = "cheese"
+        bar = "edam"
         sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
     }
     
@@ -39,8 +39,8 @@ class SqlTest extends GroovyTestCase {
     void testDataSetWithClosurePredicate() {
         sql = createSql()     
         
-        food = sql.dataSet('FOOD')
-        food.findAll { it.type == 'cheese' }.each { println("Cheese ${it.name}") }
+        food = sql.dataSet("FOOD")
+        food.findAll { it.type == "cheese" }.each { println("Cheese ${it.name}") }
     }
     
     protected createSql() {
@@ -51,17 +51,17 @@ class SqlTest extends GroovyTestCase {
         sql.execute("create table FOOD ( type varchar, name varchar)")
         
         // now lets populate the datasets
-        people = sql.dataSet('PERSON')
-        people.add( firstname:'James', lastname:'Strachan' )
-        people.add( firstname:'Bob', lastname:'Mcwhirter' )
-        people.add( firstname:'Sam', lastname:'Pullara' )
+        people = sql.dataSet("PERSON")
+        people.add( firstname:"James", lastname:"Strachan" )
+        people.add( firstname:"Bob", lastname:"Mcwhirter" )
+        people.add( firstname:"Sam", lastname:"Pullara" )
         
-        food = sql.dataSet('FOOD')
-        food.add( type:'cheese', name:'edam' )
-        food.add( type:'cheese', name:'brie' )
-        food.add( type:'cheese', name:'cheddar' )
-        food.add( type:'drink', name:'beer' )
-        food.add( type:'drink', name:'coffee' )
+        food = sql.dataSet("FOOD")
+        food.add( type:"cheese", name:"edam" )
+        food.add( type:"cheese", name:"brie" )
+        food.add( type:"cheese", name:"cheddar" )
+        food.add( type:"drink", name:"beer" )
+        food.add( type:"drink", name:"coffee" )
         
         return sql
     }

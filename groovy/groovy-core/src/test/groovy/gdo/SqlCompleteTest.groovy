@@ -2,7 +2,7 @@ package groovy.gdo
 
 import org.axiondb.jdbc.AxionDataSource
 
-class SqlCompleteTest extends SqlTest {
+class SqlCompleteTest extends GroovyTestCase {
 
     void testSqlQuery() {
         sql = createSql()     
@@ -10,7 +10,7 @@ class SqlCompleteTest extends SqlTest {
         results = [:]
         sql.queryEach("select * from PERSON") { results.put(it.firstname, it.lastname) }
         
-        expected = ['James':'Strachan', 'Bob':'Mcwhirter', 'Sam':'Pullara']
+        expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
 					
         assert results == expected
     }
@@ -18,23 +18,23 @@ class SqlCompleteTest extends SqlTest {
     void testSqlQueryWithWhereClause() {
         sql = createSql()     
         
-        foo = 'drink'
+        foo = "drink"
         results = []
         sql.queryEach("select * from FOOD where type=${foo}") { results.add(it.name) }
         
-        expected = ['beer', 'coffee']
+        expected = ["beer", "coffee"]
         assert results == expected
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
         sql = createSql()     
         
-        foo = 'cheese'
-        bar = 'edam'
+        foo = "cheese"
+        bar = "edam"
         results = []
         sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
         
-        expected = ['brie', 'cheddar']
+        expected = ["brie", "cheddar"]
         assert results == expected
     }
 
@@ -45,7 +45,7 @@ class SqlCompleteTest extends SqlTest {
         people = sql.dataSet("PERSON")
         people.each { results.add(it.firstname) }
         
-        expected = ['James', 'Bob', 'Sam']
+        expected = ["James", "Bob", "Sam"]
         assert results == expected
     }
     
@@ -53,10 +53,10 @@ class SqlCompleteTest extends SqlTest {
         sql = createSql()     
         
         results = []
-        food = sql.dataSet('FOOD')
-        food.findAll { it.type == 'cheese' }.each { results.add(it.name) }
+        food = sql.dataSet("FOOD")
+        food.findAll { it.type == "cheese" }.each { results.add(it.name) }
         
-        expected = ['edam', 'brie', 'cheddar']
+        expected = ["edam", "brie", "cheddar"]
         assert results == expected
     }
     
@@ -68,17 +68,17 @@ class SqlCompleteTest extends SqlTest {
         sql.execute("create table FOOD ( type varchar, name varchar)")
         
         // now lets populate the datasets
-        people = sql.dataSet('PERSON')
-        people.add( firstname:'James', lastname:'Strachan' )
-        people.add( firstname:'Bob', lastname:'Mcwhirter' )
-        people.add( firstname:'Sam', lastname:'Pullara' )
+        people = sql.dataSet("PERSON")
+        people.add( firstname:"James", lastname:"Strachan" )
+        people.add( firstname:"Bob", lastname:"Mcwhirter" )
+        people.add( firstname:"Sam", lastname:"Pullara" )
         
-        food = sql.dataSet('FOOD')
-        food.add( type:'cheese', name:'edam' )
-        food.add( type:'cheese', name:'brie' )
-        food.add( type:'cheese', name:'cheddar' )
-        food.add( type:'drink', name:'beer' )
-        food.add( type:'drink', name:'coffee' )
+        food = sql.dataSet("FOOD")
+        food.add( type:"cheese", name:"edam" )
+        food.add( type:"cheese", name:"brie" )
+        food.add( type:"cheese", name:"cheddar" )
+        food.add( type:"drink", name:"beer" )
+        food.add( type:"drink", name:"coffee" )
         
         return sql
     }
