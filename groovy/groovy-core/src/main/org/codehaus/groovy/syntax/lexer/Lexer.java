@@ -124,8 +124,17 @@ public class Lexer
                 {
                     mark();
                     consume();
-                    token = Token.dot( getStartLine(),
-                                       getStartColumn() );
+                    if ( la() == '.' )
+                    {
+                        consume();
+                        token = Token.dotDot( getStartLine(),
+                                              getStartColumn() );
+                    }
+                    else
+                    {
+                        token = Token.dot( getStartLine(),
+                                           getStartColumn() );
+                    }
                     break ROOT_SWITCH;
                 }
                 case ( '/' ):

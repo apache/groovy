@@ -155,6 +155,13 @@ public class LexerTest
                       Token.DOT );
     }
 
+    public void testDotDot()
+        throws Exception
+    {
+        assertSimple( "..",
+                      Token.DOT_DOT );
+    }
+
     public void testNot()
         throws Exception
     {
