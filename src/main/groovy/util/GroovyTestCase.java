@@ -93,6 +93,12 @@ public class GroovyTestCase extends TestCase {
         return super.getName();
     }
 
+    /**
+     * Asserts that the arrays are equivalent and contain the same values
+     *
+     * @param expected
+     * @param value
+     */
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
             "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
@@ -103,18 +109,43 @@ public class GroovyTestCase extends TestCase {
             assertEquals("value[" + i + "] when " + message, expected[i], value[i]);
         }
     }
+
+    /**
+     * Asserts that the array of characters has a given length
+     *
+     * @param length expected length
+     * @param array the array
+     */
     protected void assertLength(int length, char[] array) {
         assertEquals(length, array.length);
     }
 
+    /**
+     * Asserts that the array of ints has a given length
+     *
+     * @param length expected length
+     * @param array the array
+     */
     protected void assertLength(int length, int[] array) {
         assertEquals(length, array.length);
     }
 
+    /**
+     * Asserts that the array of objects has a given length
+     *
+     * @param length expected length
+     * @param array the array
+     */
     protected void assertLength(int length, Object[] array) {
         assertEquals(length, array.length);
     }
 
+    /**
+     * Asserts that the array of characters contains a given char
+     *
+     * @param expected expected character to be found
+     * @param array the array
+     */
     protected void assertContains(char expected, char[] array) {
         for (int i = 0; i < array.length; ++i) {
             if (array[i] == expected) {
@@ -139,6 +170,12 @@ public class GroovyTestCase extends TestCase {
         fail(message.toString());
     }
 
+    /**
+     * Asserts that the array of ints contains a given int
+     *
+     * @param expected expected int
+     * @param array the array
+     */
     protected void assertContains(int expected, int[] array) {
         for (int i = 0; i < array.length; ++i) {
             if (array[i] == expected) {
@@ -189,7 +226,8 @@ public class GroovyTestCase extends TestCase {
 
     /**
      * Asserts that the script runs without any exceptions
-     * @param script
+     *
+     * @param script the script that should pass without any exception thrown
      */
     protected void assertScript(final String script) throws Exception {
         log.info("About to execute script");
@@ -235,6 +273,13 @@ public class GroovyTestCase extends TestCase {
         assertTrue("Closure " + code + " should have failed", failed);
     }
 
+    /**
+     * Asserts that the given code closure fails when it is evaluated
+     * and that a particular exception is thrown.
+     *
+     * @param clazz the class of the expected exception
+     * @param code the closure that should fail
+     */
     protected void shouldFail(Class clazz, Closure code) {
         boolean failed = false;
         try {
@@ -253,7 +298,6 @@ public class GroovyTestCase extends TestCase {
     /**
      *  Returns a copy of a string in which all EOLs are \n.
      */
-
     protected String fixEOLs( String value )
     {
         return value.replaceAll( "(\\r\\n?)|\n", "\n" );
