@@ -55,9 +55,9 @@ if [ "x$GROOVY_HOME" = "x" ]; then
     GROOVY_HOME=`cd "$DIRNAME/.."; pwd`
 fi
 
-# Use default groovy-classworlds config
+# Use default grok-classworlds config
 if [ -z "$CLASSWORLDS_CONF" ]; then
-    CLASSWORLDS_CONF="$GROOVY_HOME/conf/groovy-classworlds.conf"
+    CLASSWORLDS_CONF="$GROOVY_HOME/conf/grok-classworlds.conf"
 fi
 CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar"
 
