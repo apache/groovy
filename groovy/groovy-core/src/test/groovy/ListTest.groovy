@@ -152,4 +152,17 @@ class ListTest extends GroovyTestCase {
         l= [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
         assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
     }
+    
+    void testRemove() {
+        l = ['a', 'b', 'c']
+        
+        l.remove(1)
+        
+        assert l == ['a', 'c']
+        
+        l.remove(0)
+        
+        assert l == ['c']
+        assert l.size() == 1
+    }
 }

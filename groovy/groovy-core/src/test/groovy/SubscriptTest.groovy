@@ -2,12 +2,12 @@ class SubscriptTest extends GroovyTestCase {
 
     void testListRange() {
         /** @todo fixme
-		list = ['a', 'b', 'c', 'd', 'e']
+        list = ['a', 'b', 'c', 'd', 'e']
 		
 		sub = list[2..4]
 
 		assert sub == ['c', 'd']
-		*/
+		 */
     }
     
     void testStringSubscript() {
