@@ -13,6 +13,7 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.ast.ModuleNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
         //todo suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
+
         suite.addTestSuite(org.codehaus.groovy.classgen.CapitalizeTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.ConstructorIssueTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.ConstructorTest.class);
@@ -44,7 +45,8 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.syntax.lexer.LexerTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.lexer.LexerTokenStreamTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.lexer.StringCharStreamTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.syntax.parser.AbstractMethodCheckTest.class);
+        suite.addTestSuite(org.codehaus.groovy.syntax.parser.AbstractMethodCheckTest.class);
+
         suite.addTestSuite(org.codehaus.groovy.syntax.parser.CSTNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.parser.ParserTest.class);
         //todo suite.addTestSuite(org.codehaus.groovy.syntax.parser.ReturnTypeErrorTest.class);
