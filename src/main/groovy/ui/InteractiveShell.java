@@ -96,6 +96,9 @@ public class InteractiveShell {
             if (command == null || command.equals("quit")) {
                 break;
             }
+            if (command.length() == 0) {
+                continue;
+            }
             try {
                 Object answer = shell.evaluate(command, "CommandLine" + counter++ +".groovy");
                 System.out.println(InvokerHelper.inspect(answer));
