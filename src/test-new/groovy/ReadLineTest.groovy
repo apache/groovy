@@ -10,7 +10,7 @@ import java.io.File
 class ReadLineTest extends GroovyTestCase {
     def file
     void setUp() {
-        file = new File("src/test/groovy/ReadLineTest.groovy")
+        file = new File("src/test-new/groovy/ReadLineTest.groovy")
     }
     void testReadOneLineFromReader() {
         file.withReader() {line = it.readLine()}

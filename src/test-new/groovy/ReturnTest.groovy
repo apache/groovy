@@ -15,55 +15,55 @@ class ReturnTest extends GroovyTestCase {
         assert value
     }
 
-	foo(x) {
-	    return ( x * 2 )
-	}
-	
-    bar(x) {
+    def foo(x) {
+        return ( x * 2 )
+    }
+
+    def bar(x) {
         return x > 5
     }
     
     void testVoidReturn() {
-    	explicitVoidReturn()
-    	implicitVoidReturn()
-		explicitVoidReturnWithoutFinalReturn()
-		implicitVoidReturnWithoutFinalReturn()
-	}
-	 
-	void explicitVoidReturn() {
-		return
-	}
-
-	implicitVoidReturn() {
-		return
-	}
-	
-    void explicitVoidReturnWithoutFinalReturn() {
-    	return;
-    	x = 4;
-    	if (x == 3) {
-    		return;
-    	} else {
-    		try {
-    			x = 3;
-    			return;
-    		} finally {
-    			//do nothing
-    		}
-    	}
+        explicitVoidReturn()
+        implicitVoidReturn()
+        explicitVoidReturnWithoutFinalReturn()
+        implicitVoidReturnWithoutFinalReturn()
     }
 
-    implicitVoidReturnWithoutFinalReturn() {
-    	x = 4;
-    	if (x == 3) {
-    		return;
-    	} else {
-    		try {
-    			x = 3;
-    			return;
-    		} finally {
-    			//do nothing
-    		}
-    	}
+    void explicitVoidReturn() {
+        return
+    }
+
+    def implicitVoidReturn() {
+        return
+    }
+
+    void explicitVoidReturnWithoutFinalReturn() {
+        return;
+        x = 4;
+        if (x == 3) {
+            return;
+        } else {
+            try {
+                x = 3;
+                return;
+            } finally {
+                //do nothing
+            }
+        }
+    }
+
+    def implicitVoidReturnWithoutFinalReturn() {
+        x = 4;
+        if (x == 3) {
+            return;
+        } else {
+            try {
+                x = 3;
+                return;
+            } finally {
+                //do nothing
+            }
+        }
     } 
 }
