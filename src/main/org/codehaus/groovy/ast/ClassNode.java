@@ -482,7 +482,7 @@ public class ClassNode extends MetadataNode implements Constants {
     public String resolveClassName(String type) {
         String answer = null;
         if (type != null) {
-            if (getNameWithoutPackage().equals(type)) {
+            if (getName().equals(type) || getNameWithoutPackage().equals(type)) {
                 return getName();
             }
             answer = tryResolveClassFromCompileUnit(type);
