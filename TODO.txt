@@ -121,8 +121,6 @@ Core Groovy Tasks
 
 * add doesNotUnderstand() method for catching & handling unknown methods	
 		
-* -> for not-null navigations?
-
 * << for list append and for output to streams
 	maybe other optional IO methods like gets?
 
