@@ -649,11 +649,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         CatchStatement catchStatement = statement.getCatchStatement(0);
 
         Statement tryStatement = statement.getTryStatement();
-        if (tryStatement.isEmpty()) {
-            return;
-        }
 
-        if (catchStatement == null) {
+        if (tryStatement.isEmpty() || catchStatement == null) {
             final Label l0 = new Label();
             cv.visitLabel(l0);
 

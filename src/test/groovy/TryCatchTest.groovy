@@ -19,6 +19,21 @@ class TryCatchTest extends GroovyTestCase {
         println("After try/catch")
      }
 
+
+     void testTryFinally() {
+         Boolean touched = false;
+         
+         try {
+         }
+         finally {
+             touched = true;
+         }
+
+         assert touched : "finally not called with empty try"
+     }
+
+
+
      void testWorkingMethod() {
          /** @todo causes inconsistent stack height
           assert exceptionCalled == false : "should not invoked the catch clause"        
