@@ -109,7 +109,8 @@ class Console extends ConsoleSupport {
     }
     
     showAbout() {
-        pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts')
+        version = InvokerHelper.getVersion()
+        pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
         dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
