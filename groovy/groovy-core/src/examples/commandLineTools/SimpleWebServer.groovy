@@ -11,6 +11,15 @@ import java.io.File
 
 if (init) { 
     headers = [:] 
+    binaryTypes = ["gif","jpg","png"]          
+    mimeTypes = [
+        "css" : "text/css",         
+        "gif" : "image/gif",
+        "htm" : "text/html",         
+        "html": "text/html",         
+        "jpg" : "image/jpeg",         
+        "png" : "image/png"
+    ]                                 
 }
 
 // parse the request
@@ -34,13 +43,32 @@ def processRequest() {
         // simple file browser rooted from current dir
         f = new File("." + content)
         if (f.isDirectory()) {
-            // directory listing
-            for (i in f.list()) {
-                if ("/" == content) { content = "" } // special case for root document
-                println "<a href='${content}/${i}'>${i}</a><br>"
-            }
+            printDirectoryListing(f)
         } else {
-            println(f.text)
+            extension = content.substring(content.lastIndexOf(".") + 1)
+            printHeaders(mimeTypes.get(extension,"text/plain"))          
+                      
+            if (binaryTypes.contains(extension)) {
+                socket.outputStream.write(f.readBytes())
+            } else {
+                println(f.text)
+            }
         }
     }
+}
+
+def printDirectoryListing(f) {
+    printHeaders("text/html")          
+    println "<html><head></head><body>"
+    for (i in f.list().toList().sort()) {
+        if ("/" == content) { content = "" } // special case for root document
+        println "<a href='${content}/${i}'>${i}</a><br>"
+    }
+    println "</body></html>"
+}
+
+def printHeaders(mimeType) {
+    println "HTTP/1.0 200 OK"
+    println "Content-Type: ${mimeType}"
+    println ""          
 }

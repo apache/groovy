@@ -66,6 +66,7 @@ public class GroovySocketServer implements Runnable {
             try {
                 String line = null;
                 script.setProperty("out", writer);
+                script.setProperty("socket", socket);
                 script.setProperty("init", Boolean.TRUE);
                 while ((line = reader.readLine()) != null) {
                     // System.out.println(line);
