@@ -67,6 +67,8 @@ import java.util.StringTokenizer;
 public class CompilerConfiguration {
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
 
+    private static boolean jsrGroovy;
+
     /**
      * See WarningMessage for levels
      */
@@ -489,6 +491,20 @@ public class CompilerConfiguration {
 
     public void setPluginFactory(ParserPluginFactory pluginFactory) {
         this.pluginFactory = pluginFactory;
+    }
+
+    /**
+     * Returns true if we are the JSR compatible Groovy language
+     */
+    public static boolean isJsrGroovy() {
+        return jsrGroovy;
+    }
+
+    /**
+     * Should only be called by the JSR parser
+     */
+    public static void setJsrGroovy(boolean value) {
+        jsrGroovy = value;
     }
 }
 
