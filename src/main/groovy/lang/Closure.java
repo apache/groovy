@@ -68,7 +68,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         try {
             return getMetaClass().invokeMethod(this, method, arguments);
         }
-        catch (GroovyRuntimeException e) {
+        catch (MissingMethodException e) {
             Object delegate = getDelegate();
             if (delegate != this) {
                 try {
@@ -145,21 +145,27 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
             return InvokerHelper.invokeMethod(this, "doCall", arguments);
         }
         catch (MissingMethodException e) {
-            Class[] expected = null;
-            try {
-                Method[] methods = getClass().getMethods();
-                for (int i = 0; i < methods.length; i++ ) {
-                    Method method = methods[i];
-                    if (method.getName().equals("doCall")) {
-                        expected = method.getParameterTypes();
-                        break;
-                    }
-                }
+            if (Closure.class.isAssignableFrom(e.getType())) {
+	            Class[] expected = null;
+	            try {
+	                Method[] methods = getClass().getMethods();
+	                for (int i = 0; i < methods.length; i++ ) {
+	                    Method method = methods[i];
+	                    if (method.getName().equals("doCall")) {
+	                        expected = method.getParameterTypes();
+	                        break;
+	                    }
+	                }
+	            }
+	            catch (Exception e2) {
+	                // ignore
+	            }
+	            throw new IncorrectClosureArgumentsException(this, arguments, expected);
             }
-            catch (Exception e2) {
-                // ignore
+            else {
+                // a problem evaluating the method on some other non-closure object
+                throw e;
             }
-            throw new IncorrectClosureArgumentsException(this, arguments, expected);
         }
     }
 
