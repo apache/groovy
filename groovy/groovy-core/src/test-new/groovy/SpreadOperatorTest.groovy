@@ -47,7 +47,7 @@ class SpreadOperatorTest extends GroovyTestCase {
     }
 
     void testSpreadingInClosureParameters() {
-        twice = {:: it*2}
+        twice = {-> it*2}
         // println twice(3)
         // println twice("abcd")
         // println twice(*[11])

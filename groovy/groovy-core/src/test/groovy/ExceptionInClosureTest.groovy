@@ -7,7 +7,7 @@
 class ExceptionInClosureTest extends GroovyTestCase {
 
     void testCallingOfFailedClosure() {
-        closure = { it :: it.foo() }
+        closure = { it -> it.foo() }
         
         try {
 	        closure.call("cheese")

@@ -46,105 +46,105 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	class StreamingMarkupBuilder extends AbstractStreamingBuilder {
 		def pendingStack = []
-		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
+		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
 							out.unescaped() << "<!--"
 							out.bodyText() << body
 							out.unescaped() << "-->"
 						 }
-		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
+		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
 							if (body instanceof Buildable) {
 								body.build(doc)
 							} else {
 								out.bodyText() << body
 							}
 					  }
-		def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
+		def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
 								out.unescaped() << body
 						   }
-		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
+		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
 						if (prefix != "") {
 							if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
 								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
 							}
-								
+
 							tag = prefix + ":" + tag
 						}
-							
+
 						out = out.unescaped() << "<${tag}"
-						
-					    attrs.each {key, value ::
+
+					    attrs.each {key, value ->
 					    				if (key.contains('$')) {
 					    					parts = key.tokenize('$')
-					    					
+
 					    					if (namespaces.containsKey(parts[0])) {
 					    						key = parts[0] + ":" + parts[1]
 					    					} else {
 					    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-					    					} 
+					    					}
 					    				}
-					    				
+
 										out << " ${key}='"
 										out.attributeValue() << "${value}"
 										out << "'"
 								  	}
-								  	
+
 						hiddenNamespaces = [:]
-			
-						pendingNamespaces.each {key, value ::
+
+						pendingNamespaces.each {key, value ->
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
 							out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
 							out.attributeValue() << "${value}"
 							out << "'"
 						}
-												  	
+
 						if (body == null) {
 							out << "/>"
 						} else {
 							out << ">"
-							
-							pendingStack.add pendingNamespaces.clone()	  	
+
+							pendingStack.add pendingNamespaces.clone()
 							pendingNamespaces.clear()
-											
+
 							if (body instanceof Buildable) {
 								body.build(doc)
 							} else {
 								out.bodyText() << body
 							}
-							
-							pendingNamespaces.clear()					
+
+							pendingNamespaces.clear()
 							pendingNamespaces.putAll pendingStack.pop()
-							
+
 							out << "</${tag}>"
 						}
-						
-						hiddenNamespaces.each {key, value ::
+
+						hiddenNamespaces.each {key, value ->
 													if (value == null) {
 														namespaces.remove key
 													} else {
 														namespaces[key] = value
 													}
-											   }											   						
+											   }
 					}
-		
+
 		def builder = null
-		
+
 		StreamingMarkupBuilder() {
 			specialTags.putAll(['yield':noopClosure,
 		               			'yieldUnescaped':unescapedClosure,
 		               			'comment':commentClosure])
-		               
+
 			nsSpecificTags = [':' 											   : [tagClosure, tagClosure, [:]],	// the default namespace
 						      'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
 		                      'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
-		               			
+
 			this.builder = new BaseMarkupBuilder(nsSpecificTags)
 		}
-		
+
 		def bind(closure) {
 			boundClosure = this.builder.bind(closure);
-			
-			{out ::
+
+			{out ->
 			    out = new StreamingMarkupWriter(out)
 				boundClosure.trigger = out
 				out.flush()

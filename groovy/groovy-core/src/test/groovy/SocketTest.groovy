@@ -41,7 +41,7 @@ class SocketTest extends GroovyTestCase {
     }
     
     void testSocketWithStreamsClosure() {
-        mySocket.withStreams {i,o::
+        mySocket.withStreams {i,o->
             assert i instanceof InputStream
             assert i != null
                       

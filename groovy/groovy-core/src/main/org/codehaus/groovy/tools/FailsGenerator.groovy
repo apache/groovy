@@ -61,7 +61,7 @@ class FailsGenerator {
     
     static void compareFiles(dir) {
     
-        attReader = {name,attName, oldVal, newVal::
+        attReader = {name,attName, oldVal, newVal->
             if (attName!=null) oldVal=Integer.parseInt(oldVal)
             boolean success = (oldVal!=0 && newVal==0)
             if (success) {
@@ -72,13 +72,13 @@ class FailsGenerator {
                 println("${name}: more ${attName} (from ${oldVal} to ${newVal}");
             }
             hasChanged = hasChanged || newVal!=oldVal
-            return success 
+            return success
         }
 
-    
+
         dir = new File(dir)
         if (!dir.isDirectory()) throw new RuntimeException("${dir} has to be a directory containg the xml tests reports")
-        dir.eachFileRecurse {file::
+        dir.eachFileRecurse {file->
             if (!file.getName().endsWith(".xml")) return
             if (file.getName().indexOf("\$")>-1) {
               println("${file.name} is ignored because it's output for a subclass")
@@ -88,7 +88,7 @@ class FailsGenerator {
             name = node['@name']
             errorVal = Integer.parseInt(node['@errors'])
             failureVal = Integer.parseInt(node['@failures'])
-            
+
             el = map.get(name)
             if (el==null && !save) throw new RuntimeException("unknown test ${name}, please add it to conf file ${conf.name}")
             if (el==null && save) {
@@ -99,22 +99,22 @@ class FailsGenerator {
                 addToMap(name,el)
                 hasChanged=true
             }
-            
+
             err  = attReader(name,"errors",el.errors,errorVal)
             fail = attReader(name,"failures",el.failures,failureVal)
             if (err && fail) {
-                println(">>> Congratualtions ${name} has passed the test <<<"); 
+                println(">>> Congratualtions ${name} has passed the test <<<");
             }
         }
     }
-    
+
     static int nr=0;
-    
+
     static void readConf() {
         reader = new LineNumberReader(new FileReader(conf));
         line = null;
-        
-        def readLine = {line::
+
+        def readLine = {line->
             if (line!=null) return line
             while (true) {
                 line = reader.readLine()
@@ -125,8 +125,8 @@ class FailsGenerator {
                 return line
             }
         }
-        
-        def lineloop = {line,lbreak,func::
+
+        def lineloop = {line,lbreak,func->
             while(true) {
                 if (line!=null && lbreak) return line
                 if (line==null) line = readLine(line)
@@ -136,9 +136,9 @@ class FailsGenerator {
             }
             return line
         }
-        
-        def attRead = {el,line::
-            line = lineloop(line,true) {line::
+
+        def attRead = {el,line->
+            line = lineloop(line,true) {line->
                 if (line[0]=="[" || line[-1]=="]") return line
                 int index = line.indexOf('=');
                 if (index==-1) throw new RuntimeException(" ${conf.name}:${nr} = expected somewhere, but got ${line}");
@@ -150,10 +150,10 @@ class FailsGenerator {
             }
             return line
         }
-        
-        
-        def fileStart = {::
-            lineloop(null,false) {line::
+
+
+        def fileStart = {->
+            lineloop(null,false) {line->
                 if (line[0]!="[" || line[-1]!="]") {
                     throw new RuntimeException("${conf.name}:${nr} filename inside of [] expected, but got ${line}")
                 }

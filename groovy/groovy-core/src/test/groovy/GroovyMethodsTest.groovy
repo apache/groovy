@@ -27,29 +27,29 @@ class GroovyMethodsTest extends GroovyTestCase {
     
     void testTimes() {
         count = 0
-        5.times { i :: count = count + i }
+        5.times { i -> count = count + i }
         assert count == 10
-        
+
         count = 0
         temp = 5
-        temp.times { i :: count = count + i }
-        
+        temp.times { i -> count = count + i }
+
         assert count == 10
     }
-    
+
     void testArraySubscript() {
         list = [1, 2, 3, 4]
         array = list.toArray()
-        
+
         value = array[2]
-        
+
         assert value == 3
-        
+
         array[0] = 9
-        
+
        assert array[0] == 9
     }
-    
+
     void testToCharacterMethod() {
         s = 'c'
         x = s.toCharacter()
@@ -86,13 +86,13 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testReverseEach() {
         l = ["cheese", "loves", "Guillaume"]
         expected = ["Guillaume", "loves", "cheese"]
-        
+
         answer = []
         l.reverseEach{ answer << it }
 
         assert answer == expected
     }
-    
+
     void testGrep() {
         list = ["Guillaume", "loves", "cheese"]
 
@@ -107,7 +107,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         answer = list.grep(2..3)
         assert answer == [2, 3, 2]
     }
-    
+
     void testMapGetWithDefault() {
         map = [:]
 
@@ -145,7 +145,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         println "Read the following lines..."
 
         /** @todo we should simplify the following line!!! */
-        new InputStreamReader(process.in).eachLine { line ::
+        new InputStreamReader(process.in).eachLine { line ->
             println line
             ++count
         }

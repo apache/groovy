@@ -49,28 +49,28 @@ import org.w3c.dom.Node
 	
 	class StreamingDOMBuilder extends AbstractStreamingBuilder {
 		def pendingStack = []
-		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
+		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
 							comment = dom.document.createComment(body)
-							
+
 							if (comment != null) {
 								dom.element.appendChild(comment)
 							}
 						 }
-		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
+		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
 						if (body instanceof Closure) {
 							body()
 						} else {
 							dom.element.appendChild(dom.document.createTextNode(body))
 						}
 					  }
-		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
+		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
 						attributes = []
 						nsAttributes = []
-						
-					    attrs.each {key, value ::
+
+					    attrs.each {key, value ->
 			    				if (key.contains('$')) {
 			    					parts = key.tokenize('$')
-			    					
+
 			    					if (namespaces.containsKey(parts[0])) {
 			    						namespaceUri = namespaces[parts[0]]
 
@@ -79,27 +79,27 @@ import org.w3c.dom.Node
 									nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}".toString(), value])
 			    					} else {
 			    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-			    					} 
+			    					}
 			    				} else {
 								attributes.add([key, value])
-			    				}			    				
+			    				}
 					  	}
-							  	
+
 						hiddenNamespaces = [:]
 
-						pendingNamespaces.each {key, value ::
+						pendingNamespaces.each {key, value ->
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
 //							nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", value])
 // workround for bug GROOVY-309
 							nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}".toString(), value])
 						}
-					
+
 						// setup the tag info
-						
+
 						uri = ""
 						qualifiedName = tag
-						
+
 						if (prefix != "") {
 							if (namespaces.containsKey(prefix)) {
 								uri = namespaces[prefix]
@@ -108,27 +108,27 @@ import org.w3c.dom.Node
 							} else {
 								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
 							}
-							
+
 							if (prefix != ":") {
 								qualifiedName = prefix + ":" + tag
 							}
 						}
-						
+
 						element = dom.document.createElementNS(uri, qualifiedName)
-						
+
 						nsAttributes.each {
 							element.setAttributeNS(it[0], it[1], it[2])
 						}
-						
+
 						attributes.each {
 							element.setAttribute(it[0], it[1])
 						}
-						
+
 						dom.element.appendChild(element)
 						dom.element = element
-						
+
 						if (body != null) {
-							pendingStack.add pendingNamespaces.clone()	  	
+							pendingStack.add pendingNamespaces.clone()
 							pendingNamespaces.clear()
 
 							if (body instanceof Closure) {
@@ -136,14 +136,14 @@ import org.w3c.dom.Node
 							} else {
 								dom.element.appendChild(dom.document.createTextNode(body))
 							}
-							
-							pendingNamespaces.clear()					
+
+							pendingNamespaces.clear()
 							pendingNamespaces.putAll pendingStack.pop()
 						}
 
 						dom.element = dom.element.getParentNode()
-						
-						hiddenNamespaces.each {key, value ::
+
+						hiddenNamespaces.each {key, value ->
 													if (value == null) {
 														namespaces.remove key
 													} else {

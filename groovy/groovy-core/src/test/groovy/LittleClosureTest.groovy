@@ -1,6 +1,6 @@
 class LittleClosureTest extends GroovyTestCase {
 
     void testClosure() {
-        block = {x:: return x > 5}
+        block = {x-> return x > 5}
     }
 }

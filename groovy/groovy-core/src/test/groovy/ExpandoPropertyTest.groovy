@@ -18,7 +18,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         foo.cheese = "Cheddar"
         foo.fullName = "Gromit"
         foo.nameLength = { return fullName.length() }
-        foo.multiParam = { a, b, c :: println("Called with ${a}, ${b}, ${c}"); return a + b + c }
+        foo.multiParam = { a, b, c -> println("Called with ${a}, ${b}, ${c}"); return a + b + c }
 
         assert foo.cheese == "Cheddar"
         assert foo.fullName == "Gromit"
