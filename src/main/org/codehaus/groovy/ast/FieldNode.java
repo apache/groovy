@@ -130,4 +130,10 @@ public class FieldNode extends MetadataNode implements Constants {
     public boolean isStatic() {
         return (modifiers & Constants.ACC_STATIC) != 0;
     }
+	/**
+	 * @param owner The owner to set.
+	 */
+	public void setOwner(String owner) {
+		this.owner = owner;
+	}
 }
