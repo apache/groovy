@@ -153,6 +153,9 @@ public class Types
     public static final int RIGHT_SHIFT                 = 281;   // >>
     public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
 
+    public static final int LEFT_SHIFT_EQUAL            = 285;   // <<=
+    public static final int RIGHT_SHIFT_EQUAL           = 286;   // >>=
+
     public static final int STAR                        = MULTIPLY;
 
     public static final int COMMA                       = 300;   // -
