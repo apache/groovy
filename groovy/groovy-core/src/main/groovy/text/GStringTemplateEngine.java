@@ -271,41 +271,36 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         public Writable make(final Map map) {
-            try {
-            final Closure delegatedClosure = (Closure)this.template.clone();
-                
-                delegatedClosure.setDelegate(new Binding(map));
-                
-                return new Writable() {
-                    /* (non-Javadoc)
-                    * @see groovy.lang.Writable#writeTo(java.io.Writer)
-                    */
-                    public Writer writeTo(final Writer writer) throws IOException {
-                        delegatedClosure.call(new Object[] {new PrintWriter(writer)});
+        final Closure delegatedClosure = (Closure)this.template.clone();
+            
+            delegatedClosure.setDelegate(new Binding(map));
+            
+            return new Writable() {
+                /* (non-Javadoc)
+                * @see groovy.lang.Writable#writeTo(java.io.Writer)
+                */
+                public Writer writeTo(final Writer writer) throws IOException {
+                    delegatedClosure.call(new Object[] {new PrintWriter(writer)});
 
-                        return writer;
+                    return writer;
+                }
+
+                /* (non-Javadoc)
+                * @see java.lang.Object#toString()
+                */
+                public String toString() {
+                    final StringWriter stringWriter = new StringWriter();
+
+                    try {
+                        writeTo(stringWriter);
+
+                        return stringWriter.toString();
+                    } catch (final IOException e) {
+                        return e.toString();
                     }
+                }
 
-                    /* (non-Javadoc)
-                    * @see java.lang.Object#toString()
-                    */
-                    public String toString() {
-                        final StringWriter stringWriter = new StringWriter();
-
-                        try {
-                            writeTo(stringWriter);
-
-                            return stringWriter.toString();
-                        } catch (final IOException e) {
-                            return e.toString();
-                        }
-                    }
-
-                };
-            } catch (final CloneNotSupportedException e) {
-                return null;
-            }
+            };
         }
-
 	}
 }

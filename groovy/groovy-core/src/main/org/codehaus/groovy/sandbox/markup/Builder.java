@@ -46,7 +46,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
-import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -79,7 +78,7 @@ public abstract class Builder extends GroovyObjectSupport {
 			if ((value instanceof Closure)) {
 				newMethodMap.put(key, value);
 			} else {
-				newMethodMap.put(key, defaultGenerator.curry(value));
+				newMethodMap.put(key, defaultGenerator.curry((Object[])value));
 			}
 		}
 		
@@ -95,11 +94,7 @@ public abstract class Builder extends GroovyObjectSupport {
 		public Built(final Closure root, final Map namespaceTagMap) {
 			this.namespaceSpecificTags.putAll(namespaceTagMap);
 		
-			try {
-				this.root = (Closure)root.clone();
-			} catch (final CloneNotSupportedException e) {
-				throw new GroovyRuntimeException(e.getMessage());	// this should never be thrown
-			}
+			this.root = (Closure)root.clone();
 			
 			this.root.setDelegate(this);
 		}
