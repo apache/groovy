@@ -1,15 +1,13 @@
 package com.javanicus.bpwj;
 
-import java.io.FileReader;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 
 public class ParserMain {
     public static void main(String[] args) {
+        // -- main bit
         List errorList = new ArrayList();
         if (args.length > 0) {
             try {
@@ -27,6 +25,7 @@ public class ParserMain {
             } catch (TrackSequenceException e) {
                 List anError = new ArrayList();
                 anError.add(args[0] + ": " + e.getExpected() + " expected"); // todo - line numbers
+                anError.add("after: " + e.getAfter());
                 anError.add(e.getFound()); // todo - better context of error
                 anError.add("^");
                 errorList.add(anError);

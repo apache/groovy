@@ -41,18 +41,29 @@ class JavaParser {
         //System.out.println(s);
     }
 
+    protected Alternation alternation(String name) {
+        return new Alternation(name);
+    }
 
-    public Parser zeroOrOne(Parser parser1) {
-        return new Alternation()
+    protected Sequence sequence(String name) {
+        return new TrackSequence(name);
+    }
+
+    protected Repetition repetition(Parser parser1) {
+        return new Repetition(parser1);
+    }
+
+    protected Parser zeroOrOne(Parser parser1) {
+        return alternation("zero or one")
                 .add(new Empty())
                 .add(parser1)
             ;
     }
 
-    public Parser oneOrMore(Parser parser1) {
-        return new TrackSequence("one or more " + parser1.getName())
+    protected Parser oneOrMore(Parser parser1) {
+        return sequence("one or more " + parser1.getName())
             .add(parser1)
-            .add(new Repetition(parser1));
+            .add(repetition(parser1));
     }
 
 
@@ -74,10 +85,10 @@ class JavaParser {
     public Parser qualifiedIdentifier() {
         log("qualifierIdentifier");
         if (qualifiedIdentifier != null) return qualifiedIdentifier;
-        qualifiedIdentifier = new TrackSequence("<qualifiedIdentifier>");
+        qualifiedIdentifier = sequence("<qualifiedIdentifier>");
         qualifiedIdentifier.add(identifier());
-        qualifiedIdentifier.add(new Repetition(
-                    new TrackSequence("<qualifiedIdentifier$1>")
+        qualifiedIdentifier.add(repetition(
+                    sequence("<qualifiedIdentifier$1>")
                         .add(new Symbol('.'))
                         .add(identifier())
             ));
@@ -95,7 +106,7 @@ class JavaParser {
     public Parser literal() {
         log("literal");
         if (literal != null) return literal;
-        literal = new Alternation();
+        literal = alternation("<literal>");
         literal.add(integerLiteral());
         literal.add(floatingPointLiteral());
         literal.add(characterLiteral());
@@ -111,10 +122,10 @@ class JavaParser {
     public Parser expression() {
         log("expression");
         if (expression != null) return expression;
-        expression = new TrackSequence("<expression>");
+        expression = sequence("<expression>");
         expression.add(expression1());
         expression.add(zeroOrOne(
-                new TrackSequence("<expression$1>")
+                sequence("<expression$1>")
                     .add(assignmentOperator())
                     .add(expression1())
             ));
@@ -139,7 +150,7 @@ class JavaParser {
     public Parser assignmentOperator() {
         log("assignmentOperator");
         if (assignmentOperator != null) return assignmentOperator;
-        assignmentOperator = new Alternation();
+        assignmentOperator = alternation("<assignmentOperator>");
         assignmentOperator.add(new Symbol("="));
         assignmentOperator.add(new Symbol("+="));
         assignmentOperator.add(new Symbol("-="));
@@ -162,12 +173,12 @@ class JavaParser {
     public Parser type() {
         log("type");
         if (type != null) return type;
-        type = new Alternation();
-        type.add(new TrackSequence("<type$1>")
+        type = alternation("<type>");
+        type.add(sequence("<type$1>")
                 .add(identifier())
                 .add(zeroOrOne(typeArguments()))
-                .add(new Repetition(
-                    new TrackSequence("<type$2>")
+                .add(repetition(
+                    sequence("<type$2>")
                         .add(new Symbol("."))
                         .add(identifier())
                         .add(zeroOrOne(typeArguments()))
@@ -184,11 +195,11 @@ class JavaParser {
     public Parser typeArguments() {
         log("typeArguments");
         if (typeArguments != null) return typeArguments;
-        typeArguments = new TrackSequence("<typeArguments>");
+        typeArguments = sequence("<typeArguments>");
         typeArguments.add(new Symbol("<"));
         typeArguments.add(typeArgument());
-        typeArguments.add(new Repetition(
-                new TrackSequence("<typeArguments$1>")
+        typeArguments.add(repetition(
+                sequence("<typeArguments$1>")
                     .add(new Symbol(","))
                     .add(typeArgument())
             ));
@@ -202,13 +213,13 @@ class JavaParser {
     public Parser typeArgument() {
         log("typeArgument");
         if (typeArgument != null) return typeArgument;
-        typeArgument = new Alternation();
+        typeArgument = alternation("<typeArgument>");
         typeArgument.add(type());
-        typeArgument.add(new TrackSequence("<typeArgument$1>")
+        typeArgument.add(sequence("<typeArgument$1>")
                 .add(new Symbol("?"))
                 .add(zeroOrOne(
-                    new TrackSequence("<typeArgument$2>")
-                        .add(new Alternation()
+                    sequence("<typeArgument$2>")
+                        .add(alternation("<typeArgument$a>")
                             .add(new Literal("extends"))
                             .add(new Literal("super"))
                         )
@@ -225,10 +236,10 @@ class JavaParser {
     public Parser rawType() {
         log("rawType");
         if (rawType != null) return rawType;
-        rawType = new TrackSequence("<rawType>");
+        rawType = sequence("<rawType>");
         rawType.add(identifier());
-        rawType.add(new Repetition(
-                new TrackSequence("<rawType$1>")
+        rawType.add(repetition(
+                sequence("<rawType$1>")
                     .add(new Symbol("."))
                     .add(identifier())
             ));
@@ -262,7 +273,7 @@ class JavaParser {
     public Parser expression1() {
         log("expression1");
         if (expression1 != null) return expression1;
-        expression1 = new TrackSequence("<expression1>");
+        expression1 = sequence("<expression1>");
         expression1.add(expression2());
         expression1.add(zeroOrOne(expression1Rest()));
         return expression1;
@@ -275,7 +286,7 @@ class JavaParser {
         log("expression1Rest");
         if (expression1Rest != null) return expression1Rest;
         expression1Rest = zeroOrOne(
-            new TrackSequence("<expression1Rest$1>")
+            sequence("<expression1Rest$1>")
                 .add(new Symbol("?"))
                 .add(expression())
                 .add(new Symbol(":"))
@@ -290,7 +301,7 @@ class JavaParser {
     public Parser expression2() {
         log("expression2");
         if (expression2 != null) return expression2;
-        expression2 = new TrackSequence("<expression2>");
+        expression2 = sequence("<expression2>");
         expression2.add(expression3());
         expression2.add(zeroOrOne(expression2Rest()));
         return expression2;
@@ -303,13 +314,13 @@ class JavaParser {
     public Parser expression2Rest() {
         log("expression2Rest");
         if (expression2Rest != null) return expression2Rest;
-        expression2Rest = new Alternation();
-        expression2Rest.add(new Repetition(
-                new TrackSequence("<expression2Rest$1>")
+        expression2Rest = alternation("<expression2Rest$a>");
+        expression2Rest.add(repetition(
+                sequence("<expression2Rest$1>")
                     .add(infixOp())
                     .add(expression3())
             ));
-        expression2Rest.add(new TrackSequence("<expression2Rest$2>")
+        expression2Rest.add(sequence("<expression2Rest$2>")
                 .add(expression3())
                 .add(new Literal("instanceof"))
                 .add(type())
@@ -340,7 +351,7 @@ class JavaParser {
     public Parser infixOp() {
         log("infixOp");
         if (infixOp != null) return infixOp;
-        infixOp = new Alternation();
+        infixOp = alternation("<infixOp>");
         infixOp.add(new Symbol("||"));
         infixOp.add(new Symbol("&&"));
         infixOp.add(new Symbol("|"));
@@ -370,24 +381,24 @@ class JavaParser {
     public Parser expression3() {
         log("expression3");
         if (expression3 != null) return expression3;
-        expression3 = new Alternation();
-        expression3.add(new TrackSequence("<expression3$1>")
+        expression3 = alternation("<expression3>");
+        expression3.add(sequence("<expression3$1>")
                 .add(prefixOp())
                 .add(expression3())
             );
-        expression3.add(new TrackSequence("<expression3$2>")
+        expression3.add(sequence("<expression3$2>")
                 .add(new Symbol("("))
-                .add(new Alternation()
+                .add(alternation("<expression3$a")
                     .add(expr())
                     .add(type())
                 )
                 .add(new Symbol(")"))
                 .add(expression3())
             );
-        expression3.add(new TrackSequence("<expression3$3>")
+        expression3.add(sequence("<expression3$3>")
                 .add(primary())
-                .add(new Repetition(selector()))
-                .add(new Repetition(postfixOp()))
+                .add(repetition(selector()))
+                .add(repetition(postfixOp()))
             );
         return expression3;
     }
@@ -406,56 +417,56 @@ class JavaParser {
     public Parser primary() {
         log("primary");
         if (primary != null) return primary;
-        primary = new Alternation();
+        primary = alternation("<primary>");
             // ( Expression)
-            primary.add(new TrackSequence("<primary$1>")
+            primary.add(sequence("<primary$1>")
                 .add(new Symbol("("))
                 .add(expression())
                 .add(new Symbol(")"))
             );
             // NonWildcardTypeArguments (ExplicitGenericInvocationSuffix |this Arguments)
-            primary.add(new TrackSequence("<primary$2>")
+            primary.add(sequence("<primary$2>")
                 .add(nonWildcardTypeArguments())
-                .add(new Alternation()
+                .add(alternation("<primary$a>")
                     .add(explicitGenericInvocationSuffix())
                     .add(new Literal("this"))
                 )
             );
             // this [Arguments]
-            primary.add(new TrackSequence("<primary$3>")
+            primary.add(sequence("<primary$3>")
                 .add(new Literal("this"))
                 .add(zeroOrOne(arguments()))
             );
             // super SuperSuffix
-            primary.add(new TrackSequence("<primary$4>")
+            primary.add(sequence("<primary$4>")
                 .add(new Literal("this"))
                 .add(superSuffix())
             );
             // Literal
             primary.add(literal());
             // new Creator
-            primary.add(new TrackSequence("<primary$5>")
+            primary.add(sequence("<primary$5>")
                 .add(new Literal("new"))
                 .add(creator())
             );
             // Identifier {. Identifier }[ IdentifierSuffix]
-            primary.add(new TrackSequence("<primary$6>")
+            primary.add(sequence("<primary$6>")
                 .add(identifier())
-                .add(new Repetition(new TrackSequence("<primary$7>")
+                .add(repetition(sequence("<primary$7>")
                     .add(new Symbol('.'))
                     .add(identifier())
                 ))
                 .add(zeroOrOne(identifierSuffix()))
             );
             // BasicType BracketsOpt.class
-            primary.add(new TrackSequence("<primary$8>")
+            primary.add(sequence("<primary$8>")
                 .add(basicType())
                 .add(bracketsOpt())
                 .add(new Symbol('.'))
                 .add(new Literal("class"))
             );
             // void.class
-            primary.add(new TrackSequence("<primary$9>")
+            primary.add(sequence("<primary$9>")
                 .add(new Literal("void"))
                 .add(new Symbol("."))
                 .add(new Literal("class"))
@@ -471,19 +482,19 @@ class JavaParser {
     public Parser identifierSuffix() {
         log("identifierSuffix");
         if (identifierSuffix != null) return identifierSuffix;
-        identifierSuffix = new Alternation();
+        identifierSuffix = alternation("<identifierSuffix>");
 
                 // [ (] BracketsOpt   . class | Expression])
-                identifierSuffix.add(new TrackSequence("<identifierSuffix$1>")
+                identifierSuffix.add(sequence("<identifierSuffix$1>")
                         .add(new Symbol('['))
-                        .add(new Alternation()
-                            .add(new TrackSequence("<identifierSuffix$1>")
+                        .add(alternation("<identifierSuffix$a")
+                            .add(sequence("<identifierSuffix$1>")
                                 .add(new Symbol(']'))
                                 .add(bracketsOpt())
                                 .add(new Symbol('.'))
                                 .add(new Literal("class"))
                             )
-                            .add(new TrackSequence("<identifierSuffix$2>")
+                            .add(sequence("<identifierSuffix$2>")
                                 .add(expression())
                                 .add(new Symbol(']'))
                             )
@@ -494,17 +505,17 @@ class JavaParser {
                 identifierSuffix.add(arguments());
 
                 // .   (class | ExplicitGenericInvocation |this |super Arguments |new [NonWildcardTypeArguments] InnerCreator )
-                identifierSuffix.add(new TrackSequence("<identifierSuffix$3>")
+                identifierSuffix.add(sequence("<identifierSuffix$3>")
                     .add(new Symbol('.'))
-                    .add(new Alternation()
+                    .add(alternation("<identifierySuffix$a>")
                         .add(new Literal("class"))
                         .add(explicitGenericInvocation())
                         .add(new Literal("this"))
-                        .add(new TrackSequence("<identifierSuffix$4>")
+                        .add(sequence("<identifierSuffix$4>")
                             .add(new Literal("super"))
                             .add(arguments())
                         )
-                        .add(new TrackSequence("<identifierSuffix$5>")
+                        .add(sequence("<identifierSuffix$5>")
                             .add(new Literal("new"))
                             .add(zeroOrOne(nonWildcardTypeArguments()))
                             .add(innerCreator())
@@ -520,7 +531,7 @@ class JavaParser {
     public Parser explicitGenericInvocation() {
         log("explicitGenericInvocation");
         if (explicitGenericInvocation != null) return explicitGenericInvocation;
-        explicitGenericInvocation = new TrackSequence("<explicitGenericInvocation>");
+        explicitGenericInvocation = sequence("<explicitGenericInvocation>");
         explicitGenericInvocation.add(nonWildcardTypeArguments());
         explicitGenericInvocation.add(explicitGenericInvocationSuffix());
         return explicitGenericInvocation;
@@ -532,7 +543,7 @@ class JavaParser {
     public Parser nonWildcardTypeArguments() {
         log("nonWildcardTypeArguments");
         if (nonWildcardTypeArguments != null) return nonWildcardTypeArguments;
-        nonWildcardTypeArguments = new TrackSequence("<nonWildcardTypeArguments>");
+        nonWildcardTypeArguments = sequence("<nonWildcardTypeArguments>");
         nonWildcardTypeArguments.add(new Symbol("<"));
         nonWildcardTypeArguments.add(typeList());
         nonWildcardTypeArguments.add(new Symbol(">"));
@@ -546,11 +557,11 @@ class JavaParser {
     public Parser explicitGenericInvocationSuffix() {
         log("explicitGenericInvocationSuffix");
         if (explicitGenericInvocationSuffix != null) return explicitGenericInvocationSuffix;
-        explicitGenericInvocationSuffix = new Alternation();
-            explicitGenericInvocationSuffix.add(new TrackSequence("<explicitGenericInvocationSuffix$1>")
+        explicitGenericInvocationSuffix = alternation("<explicitGenericInvocationSuffix$a>");
+            explicitGenericInvocationSuffix.add(sequence("<explicitGenericInvocationSuffix$1>")
                 .add(new Literal("super"))
                 .add(superSuffix()));
-            explicitGenericInvocationSuffix.add(new TrackSequence("<explicitGenericInvocationSuffix$2>")
+            explicitGenericInvocationSuffix.add(sequence("<explicitGenericInvocationSuffix$2>")
                 .add(identifier())
                 .add(arguments())
             );
@@ -568,7 +579,7 @@ class JavaParser {
     public Parser prefixOp() {
         log("prefixOp");
         if (prefixOp != null) return prefixOp;
-        prefixOp = new Alternation();
+        prefixOp = alternation("<prefixOp>");
         prefixOp.add(new Symbol("++"));
         prefixOp.add(new Symbol("--"));
         prefixOp.add(new Symbol('!'));
@@ -585,7 +596,7 @@ class JavaParser {
     public Parser postfixOp() {
         log("postfixOp");
         if (postfixOp != null) return postfixOp;
-        postfixOp = new Alternation();
+        postfixOp = alternation("<postfixOp>");
         postfixOp.add(new Symbol("++"));
         postfixOp.add(new Symbol("--"));
         return postfixOp;
@@ -602,32 +613,32 @@ class JavaParser {
     public Parser selector() {
         log("selector");
         if (selector != null) return selector;
-        selector = new Alternation();
-            selector.add(new TrackSequence("<selector$1>")
+        selector = alternation("<selector>");
+            selector.add(sequence("<selector$1>")
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(arguments()))
             );
-            selector.add(new TrackSequence("<selector$2>")
+            selector.add(sequence("<selector$2>")
                 .add(new Symbol('.'))
                 .add(explicitGenericInvocation())
             );
-            selector.add(new TrackSequence("<selector$3>")
+            selector.add(sequence("<selector$3>")
                 .add(new Symbol('.'))
                 .add(new Literal("this"))
             );
-            selector.add(new TrackSequence("<selector$4>")
+            selector.add(sequence("<selector$4>")
                 .add(new Symbol('.'))
                 .add(new Literal("super"))
                 .add(superSuffix())
             );
-            selector.add(new TrackSequence("<selector$5>")
+            selector.add(sequence("<selector$5>")
                 .add(new Symbol('.'))
                 .add(new Literal("new"))
                 .add(zeroOrOne(nonWildcardTypeArguments()))
                 .add(innerCreator())
             );
-            selector.add(new TrackSequence("<selector$6>")
+            selector.add(sequence("<selector$6>")
                 .add(new Symbol('['))
                 .add(expression())
                 .add(new Symbol(']'))
@@ -642,9 +653,9 @@ class JavaParser {
     public Parser superSuffix() {
         log("superSuffix");
         if (superSuffix != null) return superSuffix;
-        superSuffix = new Alternation();
+        superSuffix = alternation("<superSuffix>");
             superSuffix.add(arguments());
-            superSuffix.add(new TrackSequence("<superSuffix$1>")
+            superSuffix.add(sequence("<superSuffix$1>")
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(arguments()))
@@ -665,7 +676,7 @@ class JavaParser {
     public Parser basicType() {
         log("basicType");
         if (basicType != null) return basicType;
-        basicType = new Alternation();
+        basicType = alternation("<basicType>");
             basicType.add(new Literal("byte"));
             basicType.add(new Literal("short"));
             basicType.add(new Literal("char"));
@@ -693,11 +704,11 @@ class JavaParser {
     public Parser arguments() {
         log("arguments");
         if (arguments != null) return arguments;
-        arguments = new TrackSequence("<arguments>");
+        arguments = sequence("<arguments>");
             arguments.add(new Symbol('('));
-            arguments.add(zeroOrOne(new TrackSequence("<arguments$1>")
+            arguments.add(zeroOrOne(sequence("<arguments$1>")
                 .add(expression())
-                .add(new Repetition(new TrackSequence("<arguments$2>")
+                .add(repetition(sequence("<arguments$2>")
                     .add(new Symbol(','))
                     .add(expression())
                 ))
@@ -712,7 +723,7 @@ class JavaParser {
     public Parser bracketsOpt() {
         log("bracketsOpt");
         if (bracketsOpt != null) return bracketsOpt;
-        bracketsOpt = new Repetition(new TrackSequence("<bracketsOpt$1>")
+        bracketsOpt = repetition(sequence("<bracketsOpt$1>")
             .add(new Symbol('['))
             .add(new Symbol(']'))
         );
@@ -725,10 +736,10 @@ class JavaParser {
     public Parser creator() {
         log("creator");
         if (creator != null) return creator;
-        creator = new TrackSequence("<creator>");
+        creator = sequence("<creator>");
             creator.add(zeroOrOne(nonWildcardTypeArguments()));
             creator.add(createdName());
-            creator.add(new Alternation()
+            creator.add(alternation("<creator$a>")
                 .add(arrayCreatorRest())
                 .add(classCreatorRest())
             );
@@ -741,10 +752,10 @@ class JavaParser {
     public Parser createdName() {
         log("createdName");
         if (createdName != null) return createdName;
-        createdName = new TrackSequence("<createdName>");
+        createdName = sequence("<createdName>");
             createdName.add(identifier());
             createdName.add(zeroOrOne(nonWildcardTypeArguments()));
-            createdName.add(new Repetition(new TrackSequence("<createdName$1>")
+            createdName.add(repetition(sequence("<createdName$1>")
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(nonWildcardTypeArguments()))
@@ -758,7 +769,7 @@ class JavaParser {
     public Parser innerCreator() {
         log("innerCreator");
         if (innerCreator != null) return innerCreator;
-        innerCreator = new TrackSequence("<innerCreator>");
+        innerCreator = sequence("<innerCreator>");
             innerCreator.add(identifier());
             innerCreator.add(classCreatorRest());
         return innerCreator;
@@ -770,18 +781,18 @@ class JavaParser {
     public Parser arrayCreatorRest() {
         log("arrayCreatorRest");
         if (arrayCreatorRest != null) return arrayCreatorRest;
-        arrayCreatorRest = new TrackSequence("<arrayCreatorRest>");
+        arrayCreatorRest = sequence("<arrayCreatorRest>");
             arrayCreatorRest.add(new Symbol('['));
-            arrayCreatorRest.add(new Alternation()
-                .add(new TrackSequence("<arrayCreatorRest$1>")
+            arrayCreatorRest.add(alternation("<arrayCreatorRest$a>")
+                .add(sequence("<arrayCreatorRest$1>")
                     .add(new Symbol(']'))
                     .add(bracketsOpt())
                     .add(arrayInitializer())
                 )
-                .add(new TrackSequence("<arrayCreator$2>")
+                .add(sequence("<arrayCreator$2>")
                     .add(expression())
                     .add(new Symbol(']'))
-                    .add(new Repetition(new TrackSequence("<arrayCreator$3>")
+                    .add(repetition(sequence("<arrayCreator$3>")
                         .add(new Symbol('['))
                         .add(expression())
                         .add(new Symbol(']'))
@@ -798,7 +809,7 @@ class JavaParser {
     public Parser classCreatorRest() {
         log("classCreatorRest");
         if (classCreatorRest != null) return classCreatorRest;
-        classCreatorRest = new TrackSequence("<classCreatorRest>");
+        classCreatorRest = sequence("<classCreatorRest>");
             classCreatorRest.add(arguments());
             classCreatorRest.add(zeroOrOne(classBody()));
         return classCreatorRest;
@@ -810,11 +821,11 @@ class JavaParser {
     public Parser arrayInitializer() {
         log("arrayInitializer");
         if (arrayInitializer != null) return arrayInitializer;
-        arrayInitializer = new TrackSequence("<arrayInitializer>");
+        arrayInitializer = sequence("<arrayInitializer>");
         arrayInitializer.add(new Symbol("{"));
-        arrayInitializer.add(zeroOrOne(new TrackSequence("<arrayInitializer$1>")
+        arrayInitializer.add(zeroOrOne(sequence("<arrayInitializer$1>")
                 .add(variableInitializer())
-                .add(new Repetition(new TrackSequence("<arrayInitializer$2>")
+                .add(repetition(sequence("<arrayInitializer$2>")
                     .add(new Symbol(","))
                     .add(variableInitializer())
                 ))
@@ -831,7 +842,7 @@ class JavaParser {
     public Parser variableInitializer() {
         log("variableInitializer");
         if (variableInitializer != null) return variableInitializer;
-        variableInitializer = new Alternation();
+        variableInitializer = alternation("<variableInitializer>");
             variableInitializer.add(arrayInitializer());
             variableInitializer.add(expression());
         return variableInitializer;
@@ -843,7 +854,7 @@ class JavaParser {
     public Parser parExpression() {
         log("parExpression");
         if (parExpression != null) return parExpression;
-        parExpression = new TrackSequence("<parExpression>");
+        parExpression = sequence("<parExpression>");
             parExpression.add(new Symbol('('));
             parExpression.add(expression());
             parExpression.add(new Symbol(')'));
@@ -856,7 +867,7 @@ class JavaParser {
     public Parser block() {
         log("block");
         if (block != null) return block;
-        block = new TrackSequence("<block>");
+        block = sequence("<block>");
         block.add(new Symbol('{'));
         block.add(blockStatements());
         block.add(new Symbol('}'));
@@ -869,7 +880,7 @@ class JavaParser {
     public Parser blockStatements() {
         log("blockStatements");
         if (blockStatements != null) return blockStatements;
-        blockStatements = new Repetition(blockStatement());
+        blockStatements = repetition(blockStatement());
         return blockStatements;
     }
 
@@ -881,11 +892,11 @@ class JavaParser {
     public Parser blockStatement() {
         log("blockStatement");
         if (blockStatement != null) return blockStatement;
-        blockStatement = new Alternation();
+        blockStatement = alternation("<blockStatement>");
             blockStatement.add(localVariableDeclarationStatement());
             blockStatement.add(classOrInterfaceDeclaration());
-            blockStatement.add(new TrackSequence("<blockStatement$1>")
-                .add(zeroOrOne(new TrackSequence("<blockStatement$2>")
+            blockStatement.add(sequence("<blockStatement$1>")
+                .add(zeroOrOne(sequence("<blockStatement$2>")
                     .add(identifier())
                     .add(new Symbol(":"))
                 ))
@@ -900,7 +911,7 @@ class JavaParser {
     public Parser localVariableDeclarationStatement() {
         log("localVariableDeclarationStatement");
         if (localVariableDeclarationStatement != null) return localVariableDeclarationStatement;
-        localVariableDeclarationStatement = new TrackSequence("<localVariableDeclarationStatement>");
+        localVariableDeclarationStatement = sequence("<localVariableDeclarationStatement>");
             localVariableDeclarationStatement.add(zeroOrOne(new Literal("final")));
             localVariableDeclarationStatement.add(type());
             localVariableDeclarationStatement.add(variableDeclarators());
@@ -929,33 +940,33 @@ class JavaParser {
     public Parser statement() {
         log("statement");
         if (statement != null) return statement;
-        statement = new Alternation();
+        statement = alternation("<statement>");
             //Block
              statement.add(block());
             //assert Expression [: Expression];
-            statement.add(new TrackSequence("<statement$1>")
+            statement.add(sequence("<statement$1>")
                 .add(new Literal("assert"))
                 .add(expression())
                 .add(zeroOrOne(
-                    new TrackSequence("<statement$2>")
+                    sequence("<statement$2>")
                         .add(new Symbol(':'))
                         .add(expression())
                 ))
                 .add(new Symbol(';'))
             );
             //if ParExpression Statement [else Statement]
-            statement.add(new TrackSequence("<statement$3>")
+            statement.add(sequence("<statement$3>")
                 .add(new Literal("if"))
                 .add(parExpression())
                 .add(statement())
                 .add(zeroOrOne(
-                    new TrackSequence("<statement$4>")
+                    sequence("<statement$4>")
                         .add(new Literal("else"))
                         .add(statement())
                 ))
             );
             //for (ForControl) Statement
-            statement.add(new TrackSequence("<statement$5>")
+            statement.add(sequence("<statement$5>")
                 .add(new Literal("for"))
                 .add(new Symbol('('))
                 .add(forControl())
@@ -963,13 +974,13 @@ class JavaParser {
                 .add(statement())
             );
             //while ParExpression Statement
-            statement.add(new TrackSequence("<statement$6>")
+            statement.add(sequence("<statement$6>")
                 .add(new Literal("while"))
                 .add(parExpression())
                 .add(statement())
             );
             //do Statement while ParExpression ;
-            statement.add(new TrackSequence("<statement$7>")
+            statement.add(sequence("<statement$7>")
                 .add(new Literal("do"))
                 .add(statement())
                 .add(new Literal("while"))
@@ -977,12 +988,12 @@ class JavaParser {
                 .add(new Symbol(';'))
             );
             //try Block ( Catches | [Catches] finally Block )
-            statement.add(new TrackSequence("<statement$8>")
+            statement.add(sequence("<statement$8>")
                 .add(new Literal("try"))
                 .add(block())
-                .add(new Alternation()
+                .add(alternation("<statement$a>")
                     .add(catches())
-                    .add(new TrackSequence("<statement$9>")
+                    .add(sequence("<statement$9>")
                         .add(zeroOrOne(catches()))
                         .add(new Literal("finally"))
                         .add(block())
@@ -990,7 +1001,7 @@ class JavaParser {
                 )
             );
             //switch ParExpression{ SwitchBlockStatementGroups}
-            statement.add(new TrackSequence("<statement$10>")
+            statement.add(sequence("<statement$10>")
                 .add(new Literal("switch"))
                 .add(parExpression())
                 .add(new Symbol('{'))
@@ -998,30 +1009,30 @@ class JavaParser {
                 .add(new Symbol('}'))
             );
             //synchronized ParExpression Block
-            statement.add(new TrackSequence("<statement$11>")
+            statement.add(sequence("<statement$11>")
                 .add(new Literal("synchronized"))
                 .add(parExpression())
                 .add(block())
             );
             //return [Expression];
-            statement.add(new TrackSequence("<statement$12>")
+            statement.add(sequence("<statement$12>")
                 .add(new Literal("return"))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
             );
             //throw Expression ;
-            statement.add(new TrackSequence("<statement$13>")
+            statement.add(sequence("<statement$13>")
                 .add(new Literal("throw"))
                 .add(expression())
                 .add(new Symbol(';'))
             );
             //break [Identifier]
-            statement.add(new TrackSequence("<statement$14>")
+            statement.add(sequence("<statement$14>")
                 .add(new Literal("break"))
                 .add(zeroOrOne(identifier()))
             );
             //continue [Identifier]
-            statement.add(new TrackSequence("<statement$15>")
+            statement.add(sequence("<statement$15>")
                 .add(new Literal("continue"))
                 .add(zeroOrOne(identifier()))
             );
@@ -1030,7 +1041,7 @@ class JavaParser {
             //ExpressionStatement
             statement.add(expressionStatement());
             //Identifier :   Statement
-            statement.add(new TrackSequence("<statement$16>")
+            statement.add(sequence("<statement$16>")
                 .add(identifier())
                 .add(new Symbol(':'))
                 .add(statement())
@@ -1044,9 +1055,9 @@ class JavaParser {
     public Parser catches() {
         log("catches");
         if (catches != null) return catches;
-        catches = new TrackSequence("<catches>");
+        catches = sequence("<catches>");
             catches.add(catchClause());
-            catches.add(new Repetition(catchClause()));
+            catches.add(repetition(catchClause()));
         return catches;
     }
 
@@ -1056,7 +1067,7 @@ class JavaParser {
     public Parser catchClause() {
         log("catchClause");
         if (catchClause != null) return catchClause;
-        catchClause = new TrackSequence("<catchClause>");
+        catchClause = sequence("<catchClause>");
             catchClause.add(new Literal("catch"));
             catchClause.add(new Symbol('('));
             catchClause.add(formalParameter());
@@ -1071,7 +1082,7 @@ class JavaParser {
     public Parser switchBlockStatementGroups() {
         log("switchBlockStatementGroups");
         if (switchBlockStatementGroups != null) return switchBlockStatementGroups;
-        switchBlockStatementGroups = new Repetition(switchBlockStatementGroup());
+        switchBlockStatementGroups = repetition(switchBlockStatementGroup());
         return switchBlockStatementGroups;
     }
 
@@ -1081,7 +1092,7 @@ class JavaParser {
     public Parser switchBlockStatementGroup() {
         log("switchBlockStatementGroup");
         if (switchBlockStatementGroup != null) return switchBlockStatementGroup;
-        switchBlockStatementGroup = new TrackSequence("<switchBlockStatementGroup>");
+        switchBlockStatementGroup = sequence("<switchBlockStatementGroup>");
             switchBlockStatementGroup.add(switchLabel());
             switchBlockStatementGroup.add(blockStatements());
         return switchBlockStatementGroup;
@@ -1094,8 +1105,8 @@ class JavaParser {
     public Parser switchLabel() {
         log("switchLabel");
         if (switchLabel != null) return switchLabel;
-        switchLabel = new Alternation();
-            switchLabel.add(new TrackSequence("<switchLabel$1>")
+        switchLabel = alternation("<switchLabel>");
+            switchLabel.add(sequence("<switchLabel$1>")
                 .add(new Literal("case"))
                 .add(constantExpression())
                 .add(new Symbol(":"))
@@ -1111,7 +1122,7 @@ class JavaParser {
     public Parser moreStatementExpressions() {
         log("moreStatementExpressions");
         if (moreStatementExpressions != null) return moreStatementExpressions;
-        moreStatementExpressions = new Repetition(new TrackSequence("<moreStatementExpressions$1>")
+        moreStatementExpressions = repetition(sequence("<moreStatementExpressions$1>")
             .add(new Symbol(','))
             .add(statementExpression())
         );
@@ -1126,14 +1137,14 @@ class JavaParser {
     public Parser forControl() {
         log("forControl");
         if (forControl != null) return forControl;
-        forControl = new Alternation();
-            forControl.add(new TrackSequence("<forControl$1>")
+        forControl = alternation("<forControl>");
+            forControl.add(sequence("<forControl$1>")
                 .add(new Symbol(';'))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
                 .add(zeroOrOne(forUpdate()))
             );
-            forControl.add(new TrackSequence("<forControl$2>")
+            forControl.add(sequence("<forControl$2>")
                 .add(statementExpression())
                 .add(moreStatementExpressions())
                 .add(new Symbol(';'))
@@ -1141,7 +1152,7 @@ class JavaParser {
                 .add(new Symbol(';'))
                 .add(zeroOrOne(forUpdate()))
             );
-            forControl.add(new TrackSequence("<forControl$3>")
+            forControl.add(sequence("<forControl$3>")
                 .add(zeroOrOne(new Literal("final")))
                 .add(zeroOrOne(annotations()))
                 .add(type())
@@ -1158,15 +1169,15 @@ class JavaParser {
     public Parser forControlRest() {
         log("forControlRest");
         if (forControlRest != null) return forControlRest;
-        forControlRest = new Alternation();
-            forControlRest.add(new TrackSequence("<forControlRest$1>")
+        forControlRest = alternation("<forControlRest>");
+            forControlRest.add(sequence("<forControlRest$1>")
                 .add(variableDeclaratorsRest())
                 .add(new Symbol(';'))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
                 .add(zeroOrOne(forUpdate()))
             );
-            forControlRest.add(new TrackSequence("<forControlRest$2>")
+            forControlRest.add(sequence("<forControlRest$2>")
                 .add(new Symbol(':'))
                 .add(expression())
             );
@@ -1179,7 +1190,7 @@ class JavaParser {
     public Parser forUpdate() {
         log("forUpdate");
         if (forUpdate != null) return forUpdate;
-        forUpdate = new TrackSequence("<forUpdate>");
+        forUpdate = sequence("<forUpdate>");
             forUpdate.add(statementExpression());
             forUpdate.add(moreStatementExpressions());
         return forUpdate;
@@ -1192,7 +1203,7 @@ class JavaParser {
     public Parser modifiersOpt() {
         log("modifiersOpt");
         if (modifiersOpt != null) return modifiersOpt;
-        modifiersOpt = new Repetition(modifier());
+        modifiersOpt = repetition(modifier());
         return modifiersOpt;
     }
 
@@ -1213,7 +1224,7 @@ class JavaParser {
     public Parser modifier() {
         log("modifier");
         if (modifier != null) return modifier;
-        modifier = new Alternation();
+        modifier = alternation("<modifier>");
             modifier.add(annotation());
             modifier.add(new Literal("public"));
             modifier.add(new Literal("protected"));
@@ -1235,9 +1246,9 @@ class JavaParser {
     public Parser variableDeclarators() {
         log("variableDeclarators");
         if (variableDeclarators != null) return variableDeclarators;
-        variableDeclarators = new TrackSequence("<variableDeclarators>");
+        variableDeclarators = sequence("<variableDeclarators>");
             variableDeclarators.add(variableDeclarator());
-            variableDeclarators.add(new Repetition(new TrackSequence("<variableDeclarators$1>")
+            variableDeclarators.add(repetition(sequence("<variableDeclarators$1>")
                 .add(new Symbol(','))
                 .add(variableDeclarator())
             ));
@@ -1250,9 +1261,9 @@ class JavaParser {
     public Parser variableDeclaratorsRest() {
         log("variableDeclaratorsRest");
         if (variableDeclaratorsRest != null) return variableDeclaratorsRest;
-        variableDeclaratorsRest = new TrackSequence("<variableDeclaratorsRest>");
+        variableDeclaratorsRest = sequence("<variableDeclaratorsRest>");
             variableDeclaratorsRest.add(variableDeclaratorRest());
-            variableDeclaratorsRest.add(new Repetition(new TrackSequence("<variableDeclaratorsRest$1>")
+            variableDeclaratorsRest.add(repetition(sequence("<variableDeclaratorsRest$1>")
                 .add(new Symbol(','))
                 .add(variableDeclarator())
             ));
@@ -1265,9 +1276,9 @@ class JavaParser {
     public Parser constantDeclaratorsRest() {
         log("constantDeclaratorsRest");
         if (constantDeclaratorsRest != null) return constantDeclaratorsRest;
-        constantDeclaratorsRest = new TrackSequence("<constantDeclaratorsRest>");
+        constantDeclaratorsRest = sequence("<constantDeclaratorsRest>");
             constantDeclaratorsRest.add(constantDeclaratorRest());
-            constantDeclaratorsRest.add(new Repetition(new TrackSequence("<constantDeclaratorsRest$1>")
+            constantDeclaratorsRest.add(repetition(sequence("<constantDeclaratorsRest$1>")
                 .add(new Symbol(','))
                 .add(constantDeclarator())
             ));
@@ -1280,7 +1291,7 @@ class JavaParser {
     public Parser variableDeclarator() {
         log("variableDeclarator");
         if (variableDeclarator != null) return variableDeclarator;
-        variableDeclarator = new TrackSequence("<variableDeclarator>");
+        variableDeclarator = sequence("<variableDeclarator>");
         variableDeclarator.add(identifier());
         variableDeclarator.add(variableDeclaratorRest());
         return variableDeclarator;
@@ -1292,7 +1303,7 @@ class JavaParser {
     public Parser constantDeclarator() {
         log("constantDeclarator");
         if (constantDeclarator != null) return constantDeclarator;
-        constantDeclarator = new TrackSequence("<constantDeclarator>");
+        constantDeclarator = sequence("<constantDeclarator>");
             constantDeclarator.add(identifier());
             constantDeclarator.add(constantDeclaratorRest());
         return constantDeclarator;
@@ -1304,9 +1315,9 @@ class JavaParser {
     public Parser variableDeclaratorRest() {
         log("variableDeclaratorRest");
         if (variableDeclaratorRest != null) return variableDeclaratorRest;
-        variableDeclaratorRest = new TrackSequence("<variableDeclaratorRest>");
+        variableDeclaratorRest = sequence("<variableDeclaratorRest>");
             variableDeclaratorRest.add(bracketsOpt());
-            variableDeclaratorRest.add(zeroOrOne(new TrackSequence("<variableDeclaratorRest$1>")
+            variableDeclaratorRest.add(zeroOrOne(sequence("<variableDeclaratorRest$1>")
                 .add(new Symbol('='))
                 .add(variableInitializer())
             ));
@@ -1319,7 +1330,7 @@ class JavaParser {
     public Parser constantDeclaratorRest() {
         log("constantDeclaratorRest");
         if (constantDeclaratorRest != null) return constantDeclaratorRest;
-        constantDeclaratorRest = new TrackSequence("<constantDeclaratorRest>");
+        constantDeclaratorRest = sequence("<constantDeclaratorRest>");
             constantDeclaratorRest.add(bracketsOpt());
             constantDeclaratorRest.add(new Symbol('='));
             constantDeclaratorRest.add(variableInitializer());
@@ -1332,7 +1343,7 @@ class JavaParser {
     public Parser variableDeclaratorId() {
         log("variableDeclaratorId");
         if (variableDeclaratorId != null) return variableDeclaratorId;
-        variableDeclaratorId =  new TrackSequence("<variableDeclaratorId>");
+        variableDeclaratorId =  sequence("<variableDeclaratorId>");
             variableDeclaratorId.add(identifier());
             variableDeclaratorId.add(bracketsOpt());
         return variableDeclaratorId;
@@ -1344,16 +1355,16 @@ class JavaParser {
     public Parser compilationUnit() {
         log("compilationUnit");
         if (compilationUnit != null) return compilationUnit;
-        compilationUnit = new TrackSequence("<compilationUnit>");
+        compilationUnit = sequence("<compilationUnit>");
             compilationUnit.add(zeroOrOne(
-                new TrackSequence("<compilationUnit$1>")
-                    .add(zeroOrOne(annotations()))
+                sequence("<compilationUnit$1>")
+                    //todo .add(zeroOrOne(annotations()))
                     .add(new Literal("package"))
                     .add(qualifiedIdentifier())
                     .add(new Symbol(';'))
             ));
-            compilationUnit.add(new Repetition(importDeclaration()));
-            compilationUnit.add(new Repetition(typeDeclaration()));
+            compilationUnit.add(repetition(importDeclaration()));
+            compilationUnit.add(repetition(typeDeclaration()));
         return compilationUnit;
     }
 
@@ -1363,11 +1374,11 @@ class JavaParser {
     public Parser importDeclaration() {
         log("importDeclaration");
         if (importDeclaration != null) return importDeclaration;
-        importDeclaration = new TrackSequence("<importDeclaration>");
+        importDeclaration = sequence("<importDeclaration>");
             importDeclaration.add(new Literal("import"));
             importDeclaration.add(zeroOrOne(new Literal("static")));
             importDeclaration.add(identifier());
-            importDeclaration.add(new Repetition(new TrackSequence("<importDeclaration$1>")
+            importDeclaration.add(repetition(sequence("<importDeclaration$1>")
                 .add(new Symbol('.'))
                 .add(identifier())
             ));
@@ -1383,7 +1394,7 @@ class JavaParser {
     public Parser typeDeclaration() {
         log("typeDeclaration");
         if (typeDeclaration != null) return typeDeclaration;
-        typeDeclaration = new Alternation();
+        typeDeclaration = alternation("<typeDeclaration>");
             typeDeclaration.add(classOrInterfaceDeclaration());
             typeDeclaration.add(new Symbol(';'));
         return typeDeclaration;
@@ -1395,9 +1406,9 @@ class JavaParser {
     public Parser classOrInterfaceDeclaration() {
         log("classOrInterfaceDeclaration");
         if (classOrInterfaceDeclaration != null) return classOrInterfaceDeclaration;
-        classOrInterfaceDeclaration = new TrackSequence("<classOrInterfaceDeclaration>");
+        classOrInterfaceDeclaration = sequence("<classOrInterfaceDeclaration>");
         classOrInterfaceDeclaration.add(modifiersOpt());
-        classOrInterfaceDeclaration.add(new Alternation()
+        classOrInterfaceDeclaration.add(alternation("<classOrInterfaceDeclaration$a>")
                 .add(classDeclaration())
                 .add(interfaceDeclaration())
             );
@@ -1411,9 +1422,9 @@ class JavaParser {
     public Parser classDeclaration() {
         log("classDeclaration");
         if (classDeclaration != null) return classDeclaration;
-        classDeclaration = new Alternation();
+        classDeclaration = alternation("<classDeclaration>");
         classDeclaration.add(normalClassDeclaration());
-        classDeclaration.add(enumDeclaration());
+        //todo classDeclaration.add(enumDeclaration());
         return classDeclaration;
     }
 
@@ -1423,15 +1434,15 @@ class JavaParser {
     public Parser normalClassDeclaration() {
         log("normalClassDeclaration");
         if (normalClassDeclaration != null) return normalClassDeclaration;
-        normalClassDeclaration = new TrackSequence("<normalClassDeclaration>");
+        normalClassDeclaration = sequence("<normalClassDeclaration>");
             normalClassDeclaration.add(new Literal("class"));
             normalClassDeclaration.add(identifier());
             normalClassDeclaration.add(zeroOrOne(typeParameters()));
-            normalClassDeclaration.add(zeroOrOne(new TrackSequence("<normalClassDeclaration$1>")
+            normalClassDeclaration.add(zeroOrOne(sequence("<normalClassDeclaration$1>")
                 .add(new Literal("extends"))
                 .add(type())
             ));
-            normalClassDeclaration.add(zeroOrOne(new TrackSequence("<normalClassDeclaration$2>")
+            normalClassDeclaration.add(zeroOrOne(sequence("<normalClassDeclaration$2>")
                 .add(new Literal("implements"))
                 .add(typeList())
             ));
@@ -1445,10 +1456,10 @@ class JavaParser {
     public Parser typeParameters() {
         log("typeParameters");
         if (typeParameters != null) return typeParameters;
-        typeParameters = new TrackSequence("<typeParameters>");
+        typeParameters = sequence("<typeParameters>");
             typeParameters.add(new Symbol('<'));
             typeParameters.add(typeParameter());
-            typeParameters.add(new Repetition(new TrackSequence("<typeParameters$1>")
+            typeParameters.add(repetition(sequence("<typeParameters$1>")
                 .add(new Symbol(','))
                 .add(typeParameter())
             ));
@@ -1462,9 +1473,9 @@ class JavaParser {
     public Parser typeParameter() {
         log("typeParameter");
         if (typeParameter != null) return typeParameter;
-        typeParameter = new TrackSequence("<typeParameter>");
+        typeParameter = sequence("<typeParameter>");
             typeParameter.add(identifier());
-            typeParameter.add(zeroOrOne(new TrackSequence("<typeParameter$1>")
+            typeParameter.add(zeroOrOne(sequence("<typeParameter$1>")
                 .add(new Literal("extends"))
                 .add(bound())
             ));
@@ -1477,9 +1488,9 @@ class JavaParser {
     public Parser bound() {
         log("bound");
         if (bound != null) return bound;
-        bound = new TrackSequence("<bound>");
+        bound = sequence("<bound>");
             bound.add(type());
-            bound.add(new Repetition(new TrackSequence("<bound$1>")
+            bound.add(repetition(sequence("<bound$1>")
                 .add(new Symbol('&'))
                 .add(type())
             ));
@@ -1492,11 +1503,11 @@ class JavaParser {
     public Parser enumDeclaration() {
         log("enumDeclaration");
         if (enumDeclaration != null) return enumDeclaration;
-        enumDeclaration = new TrackSequence("<enumDeclaration>");
+        enumDeclaration = sequence("<enumDeclaration>");
             enumDeclaration.add(zeroOrOne(classModifiers()));
             enumDeclaration.add(new Literal("enum"));
             enumDeclaration.add(identifier());
-            enumDeclaration.add(zeroOrOne(new TrackSequence("<enumDeclaration$1>")
+            enumDeclaration.add(zeroOrOne(sequence("<enumDeclaration$1>")
                 .add(new Literal("implements"))
                 .add(typeList())
             ));
@@ -1510,7 +1521,7 @@ class JavaParser {
     public Parser enumBody() {
         log("enumBody");
         if (enumBody != null) return enumBody;
-        enumBody = new TrackSequence("<enumBody>");
+        enumBody = sequence("<enumBody>");
             enumBody.add(new Symbol('{'));
             enumBody.add(zeroOrOne(enumConstants()));
             enumBody.add(zeroOrOne(new Symbol(',')));
@@ -1526,9 +1537,9 @@ class JavaParser {
     public Parser enumConstants() {
         log("enumConstants");
         if (enumConstants != null) return enumConstants;
-        enumConstants = new Alternation();
+        enumConstants = alternation("<enumConstants>");
             enumConstants.add(enumConstant());
-            enumConstants.add(new TrackSequence("<enumConstants$1>")
+            enumConstants.add(sequence("<enumConstants$1>")
                 .add(enumConstants())
                 .add(new Symbol(','))
                 .add(enumConstant())
@@ -1544,7 +1555,7 @@ class JavaParser {
     public Parser enumConstant() {
         log("enumConstant");
         if (enumConstant != null) return enumConstant;
-        enumConstant = new TrackSequence("<enumConstant>");
+        enumConstant = sequence("<enumConstant>");
             enumConstant.add(annotations());
             enumConstant.add(identifier());
             enumConstant.add(zeroOrOne(enumArguments()));
@@ -1560,7 +1571,7 @@ class JavaParser {
     public Parser enumArguments() {
         log("enumArguments");
         if (enumArguments != null) return enumArguments;
-        enumArguments = new TrackSequence("<enumArguments>");
+        enumArguments = sequence("<enumArguments>");
             enumArguments.add(new Symbol('('));
             enumArguments.add(zeroOrOne(argumentList()));
             enumArguments.add(new Symbol(')'));
@@ -1575,7 +1586,7 @@ class JavaParser {
     public Parser enumBodyDeclarations() {
         log("enumBodyDeclarations");
         if (enumBodyDeclarations != null) return enumBodyDeclarations;
-        enumBodyDeclarations = new TrackSequence("<enumBodyDeclarations>");
+        enumBodyDeclarations = sequence("<enumBodyDeclarations>");
             enumBodyDeclarations.add(new Symbol(';'));
             enumBodyDeclarations.add(zeroOrOne(classBodyDeclarations()));
         return enumBodyDeclarations;
@@ -1588,7 +1599,7 @@ class JavaParser {
     public Parser interfaceDeclaration() {
         log("interfaceDeclaration");
         if (interfaceDeclaration != null) return interfaceDeclaration;
-        interfaceDeclaration = new Alternation();
+        interfaceDeclaration = alternation("<interfaceDeclaration>");
             interfaceDeclaration.add(normalInterfaceDeclaration());
             interfaceDeclaration.add(annotationTypeDeclaration());
         return interfaceDeclaration;
@@ -1600,11 +1611,11 @@ class JavaParser {
     public Parser normalInterfaceDeclaration() {
         log("normalInterfaceDeclaration");
         if (normalInterfaceDeclaration != null) return normalInterfaceDeclaration;
-        normalInterfaceDeclaration = new TrackSequence("<normalInterfaceDeclaration>");
+        normalInterfaceDeclaration = sequence("<normalInterfaceDeclaration>");
             normalInterfaceDeclaration.add(new Literal("interface"));
             normalInterfaceDeclaration.add(identifier());
             normalInterfaceDeclaration.add(zeroOrOne(typeParameters()));
-            normalInterfaceDeclaration.add(zeroOrOne(new TrackSequence("<normalInterfaceDeclaration$1>")
+            normalInterfaceDeclaration.add(zeroOrOne(sequence("<normalInterfaceDeclaration$1>")
                 .add(new Literal("extends"))
                 .add(typeList())
             ));
@@ -1618,9 +1629,9 @@ class JavaParser {
     public Parser typeList() {
         log("typeList");
         if (typeList != null) return typeList;
-        typeList = new TrackSequence("<typeList>");
+        typeList = sequence("<typeList>");
             typeList.add(type());
-            typeList.add(new Repetition(new TrackSequence("<typeList$1>")
+            typeList.add(repetition(sequence("<typeList$1>")
                 .add(new Symbol(','))
                 .add(type())
             ));
@@ -1633,7 +1644,7 @@ class JavaParser {
     public Parser annotationTypeDeclaration() {
         log("annotationTypeDeclaration");
         if (annotationTypeDeclaration != null) return annotationTypeDeclaration;
-        annotationTypeDeclaration = new TrackSequence("<annotationTypeDeclaration>");
+        annotationTypeDeclaration = sequence("<annotationTypeDeclaration>");
             annotationTypeDeclaration.add(zeroOrOne(interfaceModifiers()));
             annotationTypeDeclaration.add(new Symbol('@'));
             annotationTypeDeclaration.add(new Literal("interface")); // @todo is this correct?
@@ -1648,7 +1659,7 @@ class JavaParser {
     public Parser annotationTypeBody() {
         log("annotationTypeBody");
         if (annotationTypeBody != null) return annotationTypeBody;
-        annotationTypeBody = new TrackSequence("<annotationTypeBody>");
+        annotationTypeBody = sequence("<annotationTypeBody>");
             annotationTypeBody.add(new Symbol('{'));
             annotationTypeBody.add(annotationTypeElementDeclarations());
             annotationTypeBody.add(new Symbol('}'));
@@ -1662,9 +1673,9 @@ class JavaParser {
     public Parser annotationTypeElementDeclarations() {
         log("annotationTypeElementDeclarations");
         if (annotationTypeElementDeclarations != null) return annotationTypeElementDeclarations;
-        annotationTypeElementDeclarations = new Alternation();
+        annotationTypeElementDeclarations = alternation("<annotationTypeElementDeclarations>");
             annotationTypeElementDeclarations.add(annotationTypeElementDeclaration());
-            annotationTypeElementDeclarations.add(new TrackSequence("<annotationTypeElementDeclarations$1>")
+            annotationTypeElementDeclarations.add(sequence("<annotationTypeElementDeclarations$1>")
                 .add(annotationTypeElementDeclarations())
                 .add(annotationTypeElementDeclaration())
             );
@@ -1683,8 +1694,8 @@ class JavaParser {
     public Parser annotationTypeElementDeclaration() {
         log("annotationTypeElementDeclaration");
         if (annotationTypeElementDeclaration != null) return annotationTypeElementDeclaration;
-        annotationTypeElementDeclaration = new Alternation();
-            annotationTypeElementDeclaration.add(new TrackSequence("<annotationTypeElementDeclaration$1>")
+        annotationTypeElementDeclaration = alternation("<annotationTypeElementDeclaration>");
+            annotationTypeElementDeclaration.add(sequence("<annotationTypeElementDeclaration$1>")
                 .add(zeroOrOne(abstractMethodModifiers()))
                 .add(type())
                 .add(identifier())
@@ -1708,7 +1719,7 @@ class JavaParser {
     public Parser defaultValue() {
         log("defaultValue");
         if (defaultValue != null) return defaultValue;
-        defaultValue = new TrackSequence("<defaultValue>");
+        defaultValue = sequence("<defaultValue>");
             defaultValue.add(new Literal("default"));
             defaultValue.add(elementValue());
         return defaultValue;
@@ -1720,9 +1731,9 @@ class JavaParser {
     public Parser classBody() {
         log("classBody");
         if (classBody != null) return classBody;
-        classBody = new TrackSequence("<classBody>");
+        classBody = sequence("<classBody>");
             classBody.add(new Symbol('{'));
-            classBody.add(new Repetition(classBodyDeclaration()));
+            //todo classBody.add(repetition(classBodyDeclaration()));
             classBody.add(new Symbol('}'));
         return classBody;
     }
@@ -1733,9 +1744,9 @@ class JavaParser {
     public Parser interfaceBody() {
         log("interfaceBody");
         if (interfaceBody != null) return interfaceBody;
-        interfaceBody = new TrackSequence("<interfaceBody>");
+        interfaceBody = sequence("<interfaceBody>");
             interfaceBody.add(new Symbol('{'));
-            interfaceBody.add(new Repetition(interfaceBodyDeclaration()));
+            interfaceBody.add(repetition(interfaceBodyDeclaration()));
             interfaceBody.add(new Symbol('}'));
         return interfaceBody;
     }
@@ -1748,13 +1759,13 @@ class JavaParser {
     public Parser classBodyDeclaration() {
         log("classBodyDeclaration");
         if (classBodyDeclaration != null) return classBodyDeclaration;
-        classBodyDeclaration = new Alternation();
+        classBodyDeclaration = alternation("<classBodyDeclaration>");
             classBodyDeclaration.add(new Symbol(';'));
-            classBodyDeclaration.add(new TrackSequence("<classBodyDeclaration$1>")
+            classBodyDeclaration.add(sequence("<classBodyDeclaration$1>")
                 .add(zeroOrOne(new Literal("static")))
                 .add(block())
             );
-            classBodyDeclaration.add(new TrackSequence("<classBodyDeclaration$2>")
+            classBodyDeclaration.add(sequence("<classBodyDeclaration$2>")
                 .add(modifiersOpt())
                 .add(memberDecl())
             );
@@ -1771,15 +1782,15 @@ class JavaParser {
     public Parser memberDecl() {
         log("memberDecl");
         if (memberDecl != null) return memberDecl;
-        memberDecl = new Alternation();
+        memberDecl = alternation("<memberDecl>");
             memberDecl.add(genericMethodOrConstructorDecl());
             memberDecl.add(methodOrFieldDecl());
-            memberDecl.add(new TrackSequence("<memberDecl$1>")
+            memberDecl.add(sequence("<memberDecl$1>")
                 .add(new Literal("void"))
                 .add(identifier())
                 .add(methodDeclaratorRest())
             );
-            memberDecl.add(new TrackSequence("<memberDecl$2>")
+            memberDecl.add(sequence("<memberDecl$2>")
                 .add(identifier())
                 .add(constructorDeclaratorRest())
             );
@@ -1793,7 +1804,7 @@ class JavaParser {
     public Parser genericMethodOrConstructorDecl() {
         log("genericMethodOrConstructorDecl");
         if (genericMethodOrConstructorDecl != null) return genericMethodOrConstructorDecl;
-        genericMethodOrConstructorDecl = new TrackSequence("<genericMethodOrConstructorDecl>");
+        genericMethodOrConstructorDecl = sequence("<genericMethodOrConstructorDecl>");
             genericMethodOrConstructorDecl.add(typeParameters());
             genericMethodOrConstructorDecl.add(genericMethodOrConstructorRest());
         return genericMethodOrConstructorDecl;
@@ -1806,13 +1817,13 @@ class JavaParser {
     public Parser genericMethodOrConstructorRest() {
         log("genericMethodOrConstructorRest");
         if (genericMethodOrConstructorRest != null) return genericMethodOrConstructorRest;
-        genericMethodOrConstructorRest = new Alternation();
-            genericMethodOrConstructorRest.add(new TrackSequence("<genericMethodOrConstructorRest$1>")
+        genericMethodOrConstructorRest = alternation("<genericMethodOrConstructorRest>");
+            genericMethodOrConstructorRest.add(sequence("<genericMethodOrConstructorRest$1>")
                 .add(type())
                 .add(identifier())
                 .add(methodDeclaratorRest())
             );
-            genericMethodOrConstructorRest.add(new TrackSequence("<genericMethodOrConstructorRest$2>")
+            genericMethodOrConstructorRest.add(sequence("<genericMethodOrConstructorRest$2>")
                 .add(identifier())
                 .add(constructorDeclaratorRest())
             );
@@ -1825,7 +1836,7 @@ class JavaParser {
     public Parser methodOrFieldDecl() {
         log("methodOrFieldDecl");
         if (methodOrFieldDecl != null) return methodOrFieldDecl;
-        methodOrFieldDecl = new TrackSequence("<methodOrFieldDecl>");
+        methodOrFieldDecl = sequence("<methodOrFieldDecl>");
             methodOrFieldDecl.add(type());
             methodOrFieldDecl.add(identifier());
             methodOrFieldDecl.add(methodOrFieldRest());
@@ -1839,7 +1850,7 @@ class JavaParser {
     public Parser methodOrFieldRest() {
         log("methodOrFieldRest");
         if (methodOrFieldRest != null) return methodOrFieldRest;
-        methodOrFieldRest = new Alternation();
+        methodOrFieldRest = alternation("<methodOrFieldRest>");
             methodOrFieldRest.add(variableDeclaratorRest());
             methodOrFieldRest.add(methodDeclaratorRest());
         return methodOrFieldRest;
@@ -1852,9 +1863,9 @@ class JavaParser {
     public Parser interfaceBodyDeclaration() {
         log("interfaceBodyDeclaration");
         if (interfaceBodyDeclaration != null) return interfaceBodyDeclaration;
-        interfaceBodyDeclaration = new Alternation();
+        interfaceBodyDeclaration = alternation("<interfaceBodyDeclaration>");
             interfaceBodyDeclaration.add(new Symbol(';'));
-            interfaceBodyDeclaration.add(new TrackSequence("<interfaceBodyDeclaration$1>")
+            interfaceBodyDeclaration.add(sequence("<interfaceBodyDeclaration$1>")
                 .add(modifiersOpt())
                 .add(interfaceMemberDecl())
             );
@@ -1870,10 +1881,10 @@ class JavaParser {
     public Parser interfaceMemberDecl() {
         log("interfaceMemberDecl");
         if (interfaceMemberDecl != null) return interfaceMemberDecl;
-        interfaceMemberDecl = new Alternation();
+        interfaceMemberDecl = alternation("<interfaceMemberDecl>");
             interfaceMemberDecl.add(interfaceMethodOrFieldDecl());
             interfaceMemberDecl.add(interfaceGenericMethodDecl());
-            interfaceMemberDecl.add(new TrackSequence("<interfaceMemberDecl$1>")
+            interfaceMemberDecl.add(sequence("<interfaceMemberDecl$1>")
                 .add(new Literal("void"))
                 .add(identifier())
                 .add(voidInterfaceMethodDeclaratorRest())
@@ -1888,7 +1899,7 @@ class JavaParser {
     public Parser interfaceMethodOrFieldDecl() {
         log("interfaceMethodOrFieldDecl");
         if (interfaceMethodOrFieldDecl != null) return interfaceMethodOrFieldDecl;
-        interfaceMethodOrFieldDecl = new TrackSequence("<interfaceMethodOrFieldDecl>");
+        interfaceMethodOrFieldDecl = sequence("<interfaceMethodOrFieldDecl>");
             interfaceMethodOrFieldDecl.add(type());
             interfaceMethodOrFieldDecl.add(identifier());
             interfaceMethodOrFieldDecl.add(interfaceMethodOrFieldRest());
@@ -1902,8 +1913,8 @@ class JavaParser {
     public Parser interfaceMethodOrFieldRest() {
         log("interfaceMethodOrFieldRest");
         if (interfaceMethodOrFieldRest != null) return interfaceMethodOrFieldRest;
-        interfaceMethodOrFieldRest = new Alternation();
-            interfaceMethodOrFieldRest.add(new TrackSequence("<interfaceMethodOrFieldRest$1>")
+        interfaceMethodOrFieldRest = alternation("<interfaceMethodOrFieldRest>");
+            interfaceMethodOrFieldRest.add(sequence("<interfaceMethodOrFieldRest$1>")
                 .add(constantDeclaratorsRest())
                 .add(new Symbol(';'))
             );
@@ -1917,14 +1928,14 @@ class JavaParser {
     public Parser methodDeclaratorRest() {
         log("methodDeclaratorRest");
         if (methodDeclaratorRest != null) return methodDeclaratorRest;
-        methodDeclaratorRest = new TrackSequence("<methodDeclaratorRest>");
+        methodDeclaratorRest = sequence("<methodDeclaratorRest>");
             methodDeclaratorRest.add(formalParameters());
             methodDeclaratorRest.add(bracketsOpt());
-            methodDeclaratorRest.add(zeroOrOne(new TrackSequence("<methodDeclaratorRest$1>")
+            methodDeclaratorRest.add(zeroOrOne(sequence("<methodDeclaratorRest$1>")
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
             ));
-            methodDeclaratorRest.add(new Alternation()
+            methodDeclaratorRest.add(alternation("<methodDeclaratorRest$a>")
                 .add(methodBody())
                 .add(new Symbol(';'))
             );
@@ -1937,13 +1948,13 @@ class JavaParser {
     public Parser voidMethodDeclaratorRest() {
         log("voidMethodDeclaratorRest");
         if (voidMethodDeclaratorRest != null) return voidMethodDeclaratorRest;
-        voidMethodDeclaratorRest = new TrackSequence("<voidMethodDeclaratorRest>");
+        voidMethodDeclaratorRest = sequence("<voidMethodDeclaratorRest>");
             voidMethodDeclaratorRest.add(formalParameters());
-            voidMethodDeclaratorRest.add(zeroOrOne(new TrackSequence("<voidMethodDeclaratorRest$1>")
+            voidMethodDeclaratorRest.add(zeroOrOne(sequence("<voidMethodDeclaratorRest$1>")
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
             ));
-            voidMethodDeclaratorRest.add(new Alternation()
+            voidMethodDeclaratorRest.add(alternation("<voidMethodDeclaratorRest$a>")
                 .add(methodBody())
                 .add(new Symbol(';'))
             );
@@ -1956,10 +1967,10 @@ class JavaParser {
     public Parser interfaceMethodDeclaratorRest() {
         log("interfaceMethodDeclaratorRest");
         if (interfaceMethodDeclaratorRest != null) return interfaceMethodDeclaratorRest;
-        interfaceMethodDeclaratorRest = new TrackSequence("<interfaceMethodDeclaratorRest>");
+        interfaceMethodDeclaratorRest = sequence("<interfaceMethodDeclaratorRest>");
             interfaceMethodDeclaratorRest.add(formalParameters());
             interfaceMethodDeclaratorRest.add(bracketsOpt());
-            interfaceMethodDeclaratorRest.add(zeroOrOne(new TrackSequence("<interfaceMethodDeclaratorRest$1>")
+            interfaceMethodDeclaratorRest.add(zeroOrOne(sequence("<interfaceMethodDeclaratorRest$1>")
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
             ));
@@ -1972,7 +1983,7 @@ class JavaParser {
     public Parser interfaceGenericMethodDecl() {
         log("interfaceGenericMethodDecl");
         if (interfaceGenericMethodDecl != null) return interfaceGenericMethodDecl;
-        interfaceGenericMethodDecl = new TrackSequence("<interfaceGenericMethodDecl>");
+        interfaceGenericMethodDecl = sequence("<interfaceGenericMethodDecl>");
             interfaceGenericMethodDecl.add(typeParameters());
             interfaceGenericMethodDecl.add(type());
             interfaceGenericMethodDecl.add(identifier());
@@ -1986,9 +1997,9 @@ class JavaParser {
     public Parser voidInterfaceMethodDeclaratorRest() {
         log("voidInterfaceMethodDeclaratorRest");
         if (voidInterfaceMethodDeclaratorRest != null) return voidInterfaceMethodDeclaratorRest;
-        voidInterfaceMethodDeclaratorRest = new TrackSequence("<voidInterfaceMethodDeclaratorRest>");
+        voidInterfaceMethodDeclaratorRest = sequence("<voidInterfaceMethodDeclaratorRest>");
             voidInterfaceMethodDeclaratorRest.add(formalParameters());
-            voidInterfaceMethodDeclaratorRest.add(zeroOrOne(new TrackSequence("<voidInterfaceMethodDeclaratorRest$1>")
+            voidInterfaceMethodDeclaratorRest.add(zeroOrOne(sequence("<voidInterfaceMethodDeclaratorRest$1>")
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
             ));
@@ -2002,9 +2013,9 @@ class JavaParser {
     public Parser constructorDeclaratorRest() {
         log("constructorDeclaratorRest");
         if (constructorDeclaratorRest != null) return constructorDeclaratorRest;
-        constructorDeclaratorRest = new TrackSequence("<constructorDeclaratorRest>");
+        constructorDeclaratorRest = sequence("<constructorDeclaratorRest>");
             constructorDeclaratorRest.add(formalParameters());
-            constructorDeclaratorRest.add(zeroOrOne(new TrackSequence("<constructorDeclaratorRest$1>")
+            constructorDeclaratorRest.add(zeroOrOne(sequence("<constructorDeclaratorRest$1>")
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
             ));
@@ -2018,9 +2029,9 @@ class JavaParser {
     public Parser qualifiedIdentifierList() {
         log("qualifiedIdentifierList");
         if (qualifiedIdentifierList != null) return qualifiedIdentifierList;
-        qualifiedIdentifierList = new TrackSequence("<qualifiedIdentifierList>");
+        qualifiedIdentifierList = sequence("<qualifiedIdentifierList>");
         qualifiedIdentifierList.add(qualifiedIdentifier());
-        qualifiedIdentifierList.add(new Repetition(new TrackSequence("<qualifiedIdentifierList$1>")
+        qualifiedIdentifierList.add(repetition(sequence("<qualifiedIdentifierList$1>")
                 .add(new Symbol(','))
                 .add(qualifiedIdentifier())
             ));
@@ -2033,7 +2044,7 @@ class JavaParser {
     public Parser formalParameters() {
         log("formalParameters");
         if (formalParameters != null) return formalParameters;
-        formalParameters = new TrackSequence("<formalParameters>");
+        formalParameters = sequence("<formalParameters>");
             formalParameters.add(new Symbol('('));
             formalParameters.add(zeroOrOne(formalParameterDecls()));
             formalParameters.add(new Symbol(')'));
@@ -2047,7 +2058,7 @@ class JavaParser {
     public Parser formalParameterDecls() {
         log("formalParameterDecls");
         if (formalParameterDecls != null) return formalParameterDecls;
-        formalParameterDecls = new TrackSequence("<formalParameterDecls>");
+        formalParameterDecls = sequence("<formalParameterDecls>");
             formalParameterDecls.add(zeroOrOne(new Literal("final")));
             formalParameterDecls.add(zeroOrOne(annotations()));
             formalParameterDecls.add(type());
@@ -2062,15 +2073,15 @@ class JavaParser {
     public Parser formalParameterDeclsRest() {
         log("formalParameterDeclsRest");
         if (formalParameterDeclsRest != null) return formalParameterDeclsRest;
-        formalParameterDeclsRest = new Alternation();
-        formalParameterDeclsRest.add(new TrackSequence("<formalParameterDeclsRest$1>")
+        formalParameterDeclsRest = alternation("<formalParameterDeclsRest>");
+        formalParameterDeclsRest.add(sequence("<formalParameterDeclsRest$1>")
                 .add(variableDeclaratorId())
-                .add(zeroOrOne(new TrackSequence("<formalParameterDeclsRest$2>")
+                .add(zeroOrOne(sequence("<formalParameterDeclsRest$2>")
                     .add(new Symbol(','))
                     .add(formalParameterDecls())
                 ))
             );
-        formalParameterDeclsRest.add(new TrackSequence("<formalParameterDeclsRest$3>")
+        formalParameterDeclsRest.add(sequence("<formalParameterDeclsRest$3>")
                 .add(new Symbol("..."))  //todo - this doesn't seem right :-)
                 .add(variableDeclaratorId())
             );
@@ -2095,21 +2106,14 @@ class JavaParser {
 
 
 
-    // ------ JLSv3¤8.1.1 ------
+    // ------ altered JLSv3¤8.1.1 ------
     /** ClassModifiers:
-     *      ClassModifier
-     *      ClassModifiers ClassModifier
+     *      ClassModifier {ClassModifier}
      */
     public Parser classModifiers() {
         log("classModifiers");
         if (classModifiers != null) return classModifiers;
         classModifiers = oneOrMore(classModifier());
-        /*classModifiers = new Alternation();
-        classModifiers.add(classModifier());
-        classModifiers.add(new TrackSequence("<classModifiers$1>")
-                .add(classModifiers())
-                .add(classModifier())
-            );*/
         return classModifiers;
     }
     /** ClassModifier: one of
@@ -2131,20 +2135,14 @@ class JavaParser {
         return classModifier;
     }
 
-    // ------ JLSv3¤8.1.6 ------
+    // ------ altered JLSv3¤8.1.6 ------
     /** ClassBodyDeclarations:
-     *      ClassBodyDeclaration
-     *      ClassBodyDeclarations ClassBodyDeclaration
+     *      ClassBodyDeclaration {ClassBodyDeclaration}
      */
     public Parser classBodyDeclarations() {
         log("classBodyDeclarations");
         if (classBodyDeclarations != null) return classBodyDeclarations;
-        classBodyDeclarations = new Alternation();
-            classBodyDeclarations.add(classBodyDeclaration());
-            classBodyDeclarations.add(new TrackSequence("<classBodyDeclarations$1>")
-                .add(classBodyDeclarations())
-                .add(classBodyDeclaration())
-            );
+        classBodyDeclarations = oneOrMore(classBodyDeclaration());
         return classBodyDeclarations;
     }
 
@@ -2155,26 +2153,21 @@ class JavaParser {
     public Parser formalParameter() {
         log("formalParameter");
         if (formalParameter != null) return formalParameter;
-        formalParameter = new TrackSequence("<formalParameter>");
+        formalParameter = sequence("<formalParameter>");
             formalParameter.add(variableModifiers());
             formalParameter.add(type());
             formalParameter.add(variableDeclaratorId());
         return formalParameter;
     }
 
-    /** VariableModifiers:
-     *      VariableModifier
-     *      VariableModifiers VariableModifier
+    /** ------- altered JLSv3¤8.4.1 --------
+     *  VariableModifiers:
+     *      VariableModifier {VariableModifier}
      */
     public Parser variableModifiers() {
         log("variableModifiers");
         if (variableModifiers != null) return variableModifiers;
-        variableModifiers = new Alternation();
-            variableModifiers.add(variableModifier());
-            variableModifiers.add(new TrackSequence("<variableModifiers$1>")
-                .add(variableModifiers())
-                .add(variableModifier())
-            );
+        variableModifiers = oneOrMore(variableModifier());
         return variableModifiers;
     }
 
@@ -2184,26 +2177,20 @@ class JavaParser {
     public Parser variableModifier() {
         log("variableModifier");
         if (variableModifier != null) return variableModifier;
-        variableModifier = new Alternation();
+        variableModifier = alternation("<variableModifier>");
             variableModifier.add(new Literal("final"));
             variableModifier.add(annotation());
         return variableModifier;
     }
 
-    // ---------- JLSv3¤9.1.1 -------------
+    // ---------- altered JLSv3¤9.1.1 -------------
     /** InterfaceModifiers:
-     *      InterfaceModifier
-     *      InterfaceModifiers InterfaceModifier
+     *      InterfaceModifier {InterfaceModifier}
      */
     public Parser interfaceModifiers() {
         log("interfaceModifiers");
         if (interfaceModifiers != null) return interfaceModifiers;
-        interfaceModifiers = new Alternation();
-            interfaceModifiers.add(interfaceModifier());
-            interfaceModifiers.add(new TrackSequence("<interfaceModifiers$1>")
-                .add(interfaceModifiers())
-                .add(interfaceModifier())
-            );
+        interfaceModifiers = oneOrMore(interfaceModifier());
         return interfaceModifiers;
     }
 
@@ -2214,7 +2201,7 @@ class JavaParser {
     public Parser interfaceModifier() {
         log("interfaceModifier");
         if (interfaceModifier != null) return interfaceModifier;
-        interfaceModifier = new Alternation();
+        interfaceModifier = alternation("<interfaceModifier>");
             interfaceModifier.add(annotation());
             interfaceModifier.add(new Literal("public"));
             interfaceModifier.add(new Literal("protected"));
@@ -2232,7 +2219,7 @@ class JavaParser {
     public Parser constantDeclaration() {
         log("constantDeclaration");
         if (constantDeclaration != null) return constantDeclaration;
-        constantDeclaration = new TrackSequence("<constantDeclaration>");
+        constantDeclaration = sequence("<constantDeclaration>");
             constantDeclaration.add(zeroOrOne(constantModifiers()));
             constantDeclaration.add(type());
             constantDeclaration.add(variableDeclarators());
@@ -2240,19 +2227,14 @@ class JavaParser {
         return constantDeclaration;
     }
 
-    /** ConstantModifiers:
-     *      ConstantModifier
-     *      ConstantModifier ConstantModifers
+    /** ---------- altered JLSv3¤9.3 ---------------
+     * ConstantModifiers:
+     *      ConstantModifier {ConstantModifier}
      */
     public Parser constantModifiers() {
         log("constantModifiers");
         if (constantModifiers != null) return constantModifiers;
-        constantModifiers = new Alternation();
-            constantModifiers.add(constantModifier());
-            constantModifiers.add(new TrackSequence("<constantModifiers$1>")
-                .add(constantModifier())
-                .add(constantModifiers())
-            );
+        constantModifiers = oneOrMore(constantModifier());
         return constantModifiers;
     }
 
@@ -2262,7 +2244,7 @@ class JavaParser {
     public Parser constantModifier() {
         log("constantModifier");
         if (constantModifier != null) return constantModifier;
-        constantModifier = new Alternation();
+        constantModifier = alternation("<constantModifier>");
             constantModifier.add(annotation());
             constantModifier.add(new Literal("public"));
             constantModifier.add(new Literal("static"));
@@ -2270,20 +2252,14 @@ class JavaParser {
         return constantModifier;
     }
 
-    // ---------- JLSv3¤9.4 ---------------
+    // ---------- altered JLSv3¤9.4 ---------------
     /** AbstractMethodModifiers:
-     *      AbstractMethodModifier
-     *      AbstractMethodModifiers AbstractMethodModifier
+     *      AbstractMethodModifier {AbstractMethodModifier}
      */
     public Parser abstractMethodModifiers() {
         log("abstractMethodModifiers");
         if (abstractMethodModifiers != null) return abstractMethodModifiers;
-        abstractMethodModifiers = new Alternation();
-            abstractMethodModifiers.add(abstractMethodModifier());
-            abstractMethodModifiers.add(new TrackSequence("<abstractMethodModifiers$1>")
-                .add(abstractMethodModifiers())
-                .add(abstractMethodModifier())
-            );
+        abstractMethodModifiers = oneOrMore(abstractMethodModifier());
         return abstractMethodModifiers;
     }
 
@@ -2293,30 +2269,21 @@ class JavaParser {
     public Parser abstractMethodModifier() {
         log("abstractMethodModifier");
         if (abstractMethodModifier != null) return abstractMethodModifier;
-        abstractMethodModifier = new Alternation();
+        abstractMethodModifier = alternation("<abstractMethodModifier>");
             abstractMethodModifier.add(annotation());
             abstractMethodModifier.add(new Literal("public"));
             abstractMethodModifier.add(new Literal("abstract"));
         return abstractMethodModifier;
     }
 
-    // ---------- JLSv3¤9.7 ---------------
+    // ---------- altered JLSv3¤9.7 ---------------
     /** Annotations:
-     *      Annotation
-     *      Annotations Annotation
+     *      Annotation {Annotation}
      */
     public Parser annotations() {
         log("annotations");
         if (annotations != null) return annotations;
-        annotations = new Alternation();
-        //jrr - todo - line below just junk
-        annotations.add(new Word());
-        //jrr - todo - line above just junk
-        /*annotations.add(annotation());
-        annotations.add(new TrackSequence("<annotations$1>")
-                .add(annotations())
-                .add(annotation())
-            );*/
+        annotations = oneOrMore(annotation());
         return annotations;
     }
 
@@ -2328,13 +2295,10 @@ class JavaParser {
     public Parser annotation() {
         log("annotation");
         if (annotation != null) return annotation;
-        annotation = new Alternation();
-        //jrr - todo - line below just junk
-        annotation.add(new Word());
-        //jrr - todo - line above just junk
-        /*annotation.add(normalAnnotation());
+        annotation = alternation("<annotation>");
+        annotation.add(normalAnnotation());
         annotation.add(markerAnnotation());
-        annotation.add(singleElementAnnotation());*/
+        annotation.add(singleElementAnnotation());
         return annotation;
     }
 
@@ -2344,7 +2308,7 @@ class JavaParser {
     public Parser normalAnnotation() {
         log("normalAnnotation");
         if (normalAnnotation != null) return normalAnnotation;
-        normalAnnotation = new TrackSequence("<normalAnnotation>");
+        normalAnnotation = sequence("<normalAnnotation>");
             normalAnnotation.add(new Symbol('@'));
             normalAnnotation.add(typeName());
             normalAnnotation.add(new Symbol('('));
@@ -2360,9 +2324,9 @@ class JavaParser {
     public Parser elementValuePairs() {
         log("elementValuePairs");
         if (elementValuePairs != null) return elementValuePairs;
-        elementValuePairs = new Alternation();
+        elementValuePairs = alternation("<elementValuePairs>");
         elementValuePairs.add(elementValuePair());
-        elementValuePairs.add(new TrackSequence("<elementValuePairs$1>")
+        elementValuePairs.add(sequence("<elementValuePairs$1>")
                 .add(elementValuePairs())
                 .add(new Symbol(','))
                 .add(elementValuePair())
@@ -2376,7 +2340,7 @@ class JavaParser {
     public Parser elementValuePair() {
         log("elementValuePair");
         if (elementValuePair != null) return elementValuePair;
-        elementValuePair = new TrackSequence("<elementValuePair>");
+        elementValuePair = sequence("<elementValuePair>");
             elementValuePair.add(identifier());
             elementValuePair.add(new Symbol('='));
             elementValuePair.add(elementValue());
@@ -2391,7 +2355,7 @@ class JavaParser {
     public Parser elementValue() {
         log("elementValue");
         if (elementValue != null) return elementValue;
-        elementValue = new Alternation();
+        elementValue = alternation("<elementValue>");
         elementValue.add(conditionalExpression());
         elementValue.add(annotation());
         elementValue.add(elementValueArrayInitializer());
@@ -2404,7 +2368,7 @@ class JavaParser {
     public Parser elementValueArrayInitializer() {
         log("elementValueArrayInitializer");
         if (elementValueArrayInitializer != null) return elementValueArrayInitializer;
-        elementValueArrayInitializer = new TrackSequence("<elementValueArrayInitializer>");
+        elementValueArrayInitializer = sequence("<elementValueArrayInitializer>");
             elementValueArrayInitializer.add(new Symbol('{'));
             elementValueArrayInitializer.add(zeroOrOne(elementValues()));
             elementValueArrayInitializer.add(zeroOrOne(new Symbol(',')));
@@ -2419,9 +2383,9 @@ class JavaParser {
     public Parser elementValues() {
         log("elementValues");
         if (elementValues != null) return elementValues;
-        elementValues = new Alternation();
+        elementValues = alternation("<elementValues>");
         elementValues.add(elementValue());
-        elementValues.add(new TrackSequence("<elementValues$1>")
+        elementValues.add(sequence("<elementValues$1>")
                 .add(elementValues())
                 .add(new Symbol(','))
                 .add(elementValue())
@@ -2435,7 +2399,7 @@ class JavaParser {
     public Parser markerAnnotation() {
         log("markerAnnotation");
         if (markerAnnotation != null) return markerAnnotation;
-        markerAnnotation = new TrackSequence("<markerAnnotation>");
+        markerAnnotation = sequence("<markerAnnotation>");
             markerAnnotation.add(new Symbol('@'));
             markerAnnotation.add(typeName());
         return markerAnnotation;
@@ -2447,7 +2411,7 @@ class JavaParser {
     public Parser singleElementAnnotation() {
         log("singleElementAnnotation");
         if (singleElementAnnotation != null) return singleElementAnnotation;
-        singleElementAnnotation = new TrackSequence("<singleElementAnnotation>");
+        singleElementAnnotation = sequence("<singleElementAnnotation>");
             singleElementAnnotation.add(new Symbol('@'));
             singleElementAnnotation.add(typeName());
             singleElementAnnotation.add(new Symbol('('));
@@ -2464,9 +2428,9 @@ class JavaParser {
     public Parser argumentList() {
         log("argumentList");
         if (argumentList != null) return argumentList;
-        argumentList = new Alternation();
+        argumentList = alternation("<argumentList>");
         argumentList.add(expression());
-        argumentList.add(new TrackSequence("<argumentList$1>")
+        argumentList.add(sequence("<argumentList$1>")
                 .add(argumentList())
                 .add(new Symbol(','))
                 .add(expression())
@@ -2548,7 +2512,7 @@ class JavaParser {
         log("floatingPointLiteral");
         if (floatingPointLiteral != null) return floatingPointLiteral;
         //todo
-        floatingPointLiteral = new Word();
+        floatingPointLiteral = new Num();
         return floatingPointLiteral;
     }
 
@@ -2556,7 +2520,7 @@ class JavaParser {
         log("integerLiteral");
         if (integerLiteral != null) return integerLiteral;
         //todo
-        integerLiteral = new Word();
+        integerLiteral = new Num();
         return integerLiteral;
     }
 
@@ -2659,16 +2623,16 @@ class JavaParser {
     protected Sequence formalParameterDecls;
     protected Parser methodBody;
     protected Alternation classModifier;
-    protected Alternation classBodyDeclarations;
+    protected Parser classBodyDeclarations;
     protected Sequence formalParameter;
-    protected Alternation variableModifiers;
+    protected Parser variableModifiers;
     protected Alternation variableModifier;
-    protected Alternation interfaceModifiers;
+    protected Parser interfaceModifiers;
     protected Alternation interfaceModifier;
     protected Sequence constantDeclaration;
-    protected Alternation constantModifiers;
+    protected Parser constantModifiers;
     protected Alternation constantModifier;
-    protected Alternation abstractMethodModifiers;
+    protected Parser abstractMethodModifiers;
     protected Alternation abstractMethodModifier;
     protected Sequence normalAnnotation;
     protected Sequence elementValuePair;
@@ -2681,7 +2645,7 @@ class JavaParser {
     protected Sequence arrayInitializer;
     protected Sequence variableDeclarator;
     protected Alternation classDeclaration;
-    protected Alternation annotations;
+    protected Parser annotations;
     protected Alternation annotation;
     protected Alternation elementValue;
     protected Alternation elementValues;

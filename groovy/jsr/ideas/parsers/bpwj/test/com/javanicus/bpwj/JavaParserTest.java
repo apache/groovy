@@ -26,14 +26,36 @@ import sjm.parse.*;
 import sjm.parse.tokens.*;
 import sjm.examples.track.TrackException;
 
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.io.IOException;
+
 public class JavaParserTest extends TestCase {
     private ParserFacade parser;
 
     public void setUp() {
-        parser = new ParserFacade(new JavaParser().start());
+        parser = new ParserFacade(new LoggingJavaParser().start());
     }
 
     public void testSimpleJavaProgram() {
-        assertFalse(parser.parse("package foo.bar; public class Foo extends Bar{}").hasMoreElements());
+        // -- debug
+        try {
+            LoggingJavaParser.out = new PrintStream(new FileOutputStream("testSimpleJavaProgram.mm"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        LoggingJavaParser.out.println("<map version='0.7.1'>");
+
+
+
+        try{
+            assertFalse(parser.parse("package foo.bar; public class Foo extends Bar{}").hasMoreElements());
+        } catch (Exception e) {
+            LoggingJavaParser.out.println("</node>");
+        } 
+
+
+        LoggingJavaParser.out.println("</node>");
+        LoggingJavaParser.out.println("</map>");
     }
 }
