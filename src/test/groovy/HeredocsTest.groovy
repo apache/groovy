@@ -20,7 +20,6 @@ EOF
     }
     
     void testDollarEscaping() {
-        /** @todo use EOF again */
         s = <<<EOF
 hello $${name}
 EOF

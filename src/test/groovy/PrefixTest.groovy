@@ -21,12 +21,15 @@ class PrefixTest extends GroovyTestCase {
         assert x == 3.2
     }
 
-    /* @todo
     void testStringPrefix() {
         x = "bbc"
         x++
         
         assert x == "bbd"
+        
+        x--
+        x--
+        
+        assert x == "bbb"
     }
-    */
 }

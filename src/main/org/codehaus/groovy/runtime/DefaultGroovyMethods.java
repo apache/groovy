@@ -990,21 +990,21 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
-    public static List plus(List left, Collection right) {
+    public static List plus(Collection left, Collection right) {
         List answer = new ArrayList(left.size() + right.size());
         answer.addAll(left);
         answer.addAll(right);
         return answer;
     }
 
-    public static List plus(List left, Object right) {
+    public static List plus(Collection left, Object right) {
         List answer = new ArrayList(left.size() + 1);
         answer.addAll(left);
         answer.add(right);
         return answer;
     }
 
-    public static List multiply(List self, Number factor) {
+    public static List multiply(Collection self, Number factor) {
         int size = factor.intValue();
         List answer = new ArrayList(self.size() * size);
         for (int i = 0; i < size; i++) {
@@ -1099,6 +1099,33 @@ public class DefaultGroovyMethods {
             }
         }
         return addTo;
+    }
+    
+    /**
+     * Overloads the left shift operator to provide an append mechanism to add things
+     * to a list
+     */
+    public static Collection leftShift(Collection self, Object value) {
+        self.add(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an append mechanism to add things
+     * to a String buffer
+     */
+    public static StringBuffer leftShift(StringBuffer self, Object value) {
+        self.append(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an append mechanism to add things
+     * to a writer
+     */
+    public static PrintWriter leftShift(PrintWriter self, Object value) {
+        self.print(value);
+        return self;
     }
 
     private static boolean sameType(Collection[] cols) {
@@ -1362,6 +1389,92 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    /**
+     * Increments the last digit in the given string, resetting
+     * it and moving onto the next digit if increasing the digit
+     * no longer becomes a letter or digit.
+     * 
+     * @return
+     */
+    public static String increment(String self) {
+        StringBuffer buffer = new StringBuffer(self);
+        char firstCh = firstCharacter();
+        for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
+            char ch = increment(buffer.charAt(idx));
+            if (ch != 0) {
+                buffer.setCharAt(idx, ch);
+                break;
+            }
+            else {
+                // lets find the first char
+                buffer.setCharAt(idx, firstCh);
+            }
+        }
+        return buffer.toString();
+    }
+    
+    /**
+     * Decrements the last digit in the given string, resetting
+     * it and moving onto the next digit if increasing the digit
+     * no longer becomes a letter or digit.
+     * 
+     * @return
+     */
+    public static String decrement(String self) {
+        StringBuffer buffer = new StringBuffer(self);
+        char lastCh = lastCharacter();
+        for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
+            char ch = decrement(buffer.charAt(idx));
+            if (ch != 0) {
+                buffer.setCharAt(idx, ch);
+                break;
+            }
+            else {
+                // lets find the first char
+                buffer.setCharAt(idx, lastCh);
+            }
+        }
+        return buffer.toString();
+    }
+    
+    private static char increment(char ch) {
+        if (Character.isLetterOrDigit(++ch)) {
+            return ch;
+        }
+        else {
+            return 0;
+        }
+    }
+    
+    private static char decrement(char ch) {
+        if (Character.isLetterOrDigit(--ch)) {
+            return ch;
+        }
+        else {
+            return 0;
+        }
+    }
+    
+    /**
+     * @return the first character used when a letter rolls over when incrementing
+     */
+    private static char firstCharacter() {
+        char ch = 0;
+        while (! Character.isLetterOrDigit(ch)) {
+            ch++;
+        }
+        return ch;
+    }
+
+    /**
+     * @return the last character used when a letter rolls over when decrementing
+     */
+    private static char lastCharacter() {
+        char ch = firstCharacter();
+        while (Character.isLetterOrDigit(++ch));
+        return --ch;
+    }
+
     public static String multiply(String self, Number factor) {
         int size = factor.intValue();
         if (size < 1) {
@@ -1599,6 +1712,18 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Helper method to create a new BufferedReader for a file and then 
+     * passes it into the closure and ensures its closed again afterwords
+     * 
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static void withReader(File file, Closure closure) throws IOException {
+        withReader(newReader(file), closure);
+    }
+    
+    /**
      * Helper method to create a buffered output stream for a file
      *
      * @param file
@@ -1617,8 +1742,8 @@ public class DefaultGroovyMethods {
      * @return @throws
      *         FileNotFoundException
      */
-    public static void eachOutputStream(File file, Closure closure) throws IOException {
-        useStream(newOutputStream(file), closure);
+    public static void withOutputStream(File file, Closure closure) throws IOException {
+        withStream(newOutputStream(file), closure);
     }
 
     
@@ -1641,9 +1766,10 @@ public class DefaultGroovyMethods {
      * @return @throws
      *         FileNotFoundException
      */
-    public static void eachWriter(File file, Closure closure) throws IOException {
-        useWriter(newWriter(file), closure);
+    public static void withWriter(File file, Closure closure) throws IOException {
+        withWriter(newWriter(file), closure);
     }
+    
     /**
      * Helper method to create a new PrintWriter for a file
      * 
@@ -1663,8 +1789,8 @@ public class DefaultGroovyMethods {
      * @return @throws
      *         FileNotFoundException
      */
-    public static void eachPrintWriter(File file, Closure closure) throws IOException {
-        useWriter(newPrintWriter(file), closure);
+    public static void withPrintWriter(File file, Closure closure) throws IOException {
+        withWriter(newPrintWriter(file), closure);
     }
 
     /**
@@ -1676,7 +1802,7 @@ public class DefaultGroovyMethods {
      * @param closure the closure that the writer is passed into 
      * @throws IOException
      */
-    public static void useWriter(Writer writer, Closure closure) throws IOException {
+    public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
             
@@ -1707,7 +1833,7 @@ public class DefaultGroovyMethods {
      * @param closure the closure that the writer is passed into 
      * @throws IOException
      */
-    public static void useReader(Reader writer, Closure closure) throws IOException {
+    public static void withReader(Reader writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
             
@@ -1738,7 +1864,7 @@ public class DefaultGroovyMethods {
      * @param closure the closure that the stream is passed into 
      * @throws IOException
      */
-    public static void useStream(InputStream stream, Closure closure) throws IOException {
+    public static void withStream(InputStream stream, Closure closure) throws IOException {
         try {
             closure.call(stream);
             
@@ -1769,7 +1895,7 @@ public class DefaultGroovyMethods {
      * @param closure the closure that the stream is passed into 
      * @throws IOException
      */
-    public static void useStream(OutputStream stream, Closure closure) throws IOException {
+    public static void withStream(OutputStream stream, Closure closure) throws IOException {
         try {
             closure.call(stream);
             

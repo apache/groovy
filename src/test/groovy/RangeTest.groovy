@@ -1,6 +1,6 @@
 class RangeTest extends GroovyTestCase {
 
-	property x
+	//property x
 	
 	void testRange() {
 	    x = 0
@@ -108,5 +108,16 @@ class RangeTest extends GroovyTestCase {
 	    range = 1...11
 		s = range.size()
 	    assert s == 10
+	}
+	
+	void testStringRange() {
+	    range = 'a'..'d'
+	    
+	    list = []
+	    range.each { list << it }
+	    assert list == ['a', 'b', 'c', 'd']
+	    
+	    s = range.size()
+	    assert s == 4
 	}
 }
