@@ -21,7 +21,11 @@ class TestGenerator{
         behaviourDescription = comments[0].trim()
 
         if ("" != realOutputPath) {
-            realOutputPackage = realOutputPath.replaceAll(File.separator,'\\.')
+            realOutputPackage = ''
+            if (File.separator != '\\')
+                realOutputPackage = realOutputPath.replaceAll(File.separator,'.')
+            else
+                realOutputPackage = realOutputPath.replaceAll('\\\\','.')
             result.println("package ${realOutputPackage};")
         }
         result.println("import junit.framework.*;")
