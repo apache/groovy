@@ -54,13 +54,14 @@ public class GroovyMock extends GroovyObjectSupport implements Verifiable {
     }
 
     private ConstraintMatcher createMatcher(Object args) {
-        if (args instanceof Closure) {
-            Closure closure = (Closure) args;
-            return C.args(new ClosureConstraintMatcher(closure));
+        if(args.getClass().isArray()) {
+            Object argArray[] = (Object[]) args;
+            if (argArray[0] instanceof Closure) {
+                Closure closure = (Closure) argArray[0];
+                return C.args(new ClosureConstraintMatcher(closure));
+            }
         }
-        else {
-            return C.args(C.eq(args));
-        }
+        return C.args(C.eq(args));
     }
 
     private Object callMethod(String name, Object args) {

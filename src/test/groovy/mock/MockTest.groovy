@@ -67,8 +67,8 @@ class MockTest extends GroovyTestCase {
     }
 
     /*
-     * @todo GROOVY-76
-
+     * was GROOVY-76
+     */
     void testAnExpectationwithAClosurePassesIfClosurePasses() {
         mock.doSomething {arg | assert arg=="hello" } 
         
@@ -78,7 +78,6 @@ class MockTest extends GroovyTestCase {
         //verify
         mock.verify()
     }
-    */
 
     void testAnExpectationWithAClosureGivesErrorIFNotCalled() {
         mock.doSomething( {arg | assert arg=="poo" } )
