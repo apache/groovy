@@ -3277,6 +3277,18 @@ public class DefaultGroovyMethods {
         }
     }
 
+    public static void filter(Writer writer, Reader reader, Closure closure) {
+        int c;
+        try {
+            char[] chars = new char[1]; 
+            while ((c = reader.read()) != -1) {
+                chars[0] = (char)c;
+                writer.write((String)closure.call(new String(chars)));
+            }
+        } catch (IOException e) {
+        }
+    }
+    
     /**
      * Reads the content of the file into an array of byte
      *
