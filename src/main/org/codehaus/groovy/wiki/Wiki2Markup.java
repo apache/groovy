@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ant;
+package org.codehaus.groovy.wiki;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -58,6 +58,7 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
+import org.codehaus.groovy.classgen.Verifier;
 import org.radeox.api.engine.RenderEngine;
 import org.radeox.api.engine.context.RenderContext;
 import org.radeox.engine.BaseRenderEngine;
@@ -96,9 +97,9 @@ public class Wiki2Markup extends MatchingTask {
 
     public Wiki2Markup() {
         context = new BaseRenderContext();
-        engine = new BaseRenderEngine();
+        engine = createRenderEngine();
         m.setFrom("*.wiki");
-        m.setTo("*.html");
+        m.setTo(getExtension());
     }
 
     /**
@@ -317,20 +318,25 @@ public class Wiki2Markup extends MatchingTask {
     }
 
     protected void compile(File file, String name) throws IOException {
-        String text = readFile(file);
-        String result = engine.render(text, context);
-
         String[] names = m.mapFileName(name);
         String outputName = names[0];
+
+        context.set("name", Verifier.capitalize(name));
+        
+        String text = readFile(file);
+        String result = engine.render(text, context);
 
         File outputFile = new File(getDestdir(), outputName);
         System.out.println("Creating file: " + outputFile);
 
         FileWriter writer = new FileWriter(outputFile);
-        writer.write("<html><body>\n");
+        result = filter(result);
         writer.write(result);
-        writer.write("\n<body><html>\n");
         writer.close();
+    }
+
+    protected String filter(String result) {
+        return "<html><body>\n" + result + "\n<body><html>\n";
     }
 
     protected String readFile(File file) throws IOException {
@@ -345,5 +351,13 @@ public class Wiki2Markup extends MatchingTask {
             buffer.append("\n");
         }
         return buffer.toString();
+    }
+
+    protected RenderEngine createRenderEngine() {
+        return new BaseRenderEngine();
+    }
+
+    protected String getExtension() {
+        return "*.html";
     }
 }
