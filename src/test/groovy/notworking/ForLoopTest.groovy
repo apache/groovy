@@ -2,10 +2,11 @@ package groovy;
 
 import org.codehaus.groovy.GroovyTestCase;
 
+/**
+ * Tests iterating with local variables
+ */
 class ForLoopTest extends GroovyTestCase {
 
-	property x;
-	
     void testForLoop() {
         x = 0;
 

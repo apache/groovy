@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.lang.Range;
 import org.codehaus.groovy.lang.Tuple;
 
 /**
@@ -144,6 +145,10 @@ public class InvokerHelper {
         return answer;
     }
 
+    public static Range createRange(Object from, Object to) {
+        return new Range(asInt(from), asInt(to));
+    }
+    
     public static int asInt(Object value) {
         return getInstance().asInt(value);
     }
