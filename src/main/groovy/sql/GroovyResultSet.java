@@ -53,7 +53,6 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
-
 /**
  * Represents an extent of objects
  * 
@@ -101,11 +100,44 @@ public class GroovyResultSet extends GroovyObjectSupport {
     }
 
     /**
+     * Moves to the previous row
+     */
+    public boolean previous() throws SQLException {
+        if (updated) {
+            resultSet.updateRow();
+            updated = false;
+        }
+        return resultSet.previous();
+    }
+
+    /**
+     * Supports integer based subscript operators for accessing at numbered columns
+     * starting at 1
+     * 
+     * @param index is the number of the column to look at starting at 1
+     * @return
+     */
+    public Object getAt(int index) throws SQLException {
+        return resultSet.getObject(index);
+    }
+
+    /**
+     * Supports integer based subscript operators for updating the values of numbered columns
+     * starting at 1
+     * 
+     * @param index is the number of the column to look at starting at 1
+     * @return
+     */
+    public void putAt(int index, Object newValue) throws SQLException {
+        resultSet.updateObject(index, newValue);
+    }
+
+    /**
      * Adds a new row to this result set
      * @param values
      */
     public void add(Map values) throws SQLException {
-        resultSet.moveToInsertRow(); 
+        resultSet.moveToInsertRow();
         for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             resultSet.updateObject(entry.getKey().toString(), entry.getValue());

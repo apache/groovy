@@ -191,9 +191,11 @@ public class DataSet extends Sql {
                         "Could not find the ClassNode for MetaClass: " + where.getMetaClass());
                 }
                 MethodNode method = classNode.getMethod("doCall");
-                Statement statement = method.getCode();
-                if (statement != null) {
-                    statement.visit(visitor);
+                if (method != null) {
+                    Statement statement = method.getCode();
+                    if (statement != null) {
+                        statement.visit(visitor);
+                    }
                 }
             }
         }

@@ -14,6 +14,18 @@ class SqlTest extends GroovyTestCase {
         sql.queryEach("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
     }
     
+    void testQueryUsingColumnIndices() {
+    	sql = createSql()
+    	
+    	answer = null
+    	
+    	sql.queryEach("select count(*) from PERSON") { answer = it[1] }
+    	
+    	println "Found the count of ${answer}"
+    	
+    	assert answer == 3
+    }
+    
     void testSqlQueryWithWhereClause() {
         sql = createSql()     
         
