@@ -101,6 +101,7 @@ import java.util.regex.Pattern;
  * first parameter the destination class.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Jeremy Rayner
  * @author Sam Pullara
  * @author Rod Cope
  * @author Guillaume Laforge
@@ -4180,6 +4181,18 @@ public class DefaultGroovyMethods {
     }
     
     /**
+     * Overloads the left shift operator to provide an append mechanism
+     * to add things to the output stream of a socket
+     *
+     * @param self a Socket
+     * @param value a value to append
+     * @return a Writer
+     */
+    public static Writer leftShift(Socket self, Object value) throws IOException {
+        return leftShift(self.getOutputStream(), value);
+    }
+    
+    /**
      * Allow to pass a Closure to the accept methods of ServerSocket
      *
      * @param serverSocket a ServerSocket
@@ -4281,6 +4294,18 @@ public class DefaultGroovyMethods {
      */
     public static OutputStream getOut(Process self) {
         return self.getOutputStream();
+    }
+    
+    /**
+     * Overloads the left shift operator to provide an append mechanism
+     * to pipe into a Process
+     *
+     * @param self a Process
+     * @param value a value to append
+     * @return a Writer
+     */
+    public static Writer leftShift(Process self, Object value) throws IOException {
+        return leftShift(self.getOutputStream(), value);
     }
 
     /**
