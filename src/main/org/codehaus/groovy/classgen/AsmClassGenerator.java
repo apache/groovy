@@ -3569,7 +3569,16 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression leftExpression = expression.getLeftExpression();
         leftHandExpression = false;
         leftExpression.visit(this);
-        expression.getRightExpression().visit(this);
+        if (isComparisonExpression(leftExpression)) {
+            helper.boxBoolean();
+        }
+
+        // if the right hand side is a boolean expression, we need to autobox
+        Expression rightExpression = expression.getRightExpression();
+        rightExpression.visit(this);
+        if (isComparisonExpression(rightExpression)) {
+            helper.boxBoolean();
+        }
         compareToMethod.call(cv);
     }
 
