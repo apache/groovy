@@ -1,7 +1,9 @@
 1 Templates in Groovy
 
 The template framework in Groovy consists of a TemplateEngine abstract base class that engines must
-implement and a Template interface that the resulting templates they generate must implement.  Included with
+implement and a Template interface that the resulting templates they generate must implement.  
+
+Included with
 Groovy is the SimpleTemplateEngine that allows you to use JSP-like scriptlets, script, and EL expressions in
 your template in order to generate parametrized text.  Here is an example of using the system:
 
@@ -21,3 +23,6 @@ result = 'Dear "Sam Pullara",\nSo nice to meet you in San Francisco.\nSee you in
 
 assert result == template.toString()
 {code}
+
+Though its possible to plug in any kind of template engine dialect, we can share the same API to invoke templates. 
+e.g. we could create a Velocity / FreeMarker flavour TemplateEngine implemenation which could reuse GPath and auto-recompile to bytecode.
