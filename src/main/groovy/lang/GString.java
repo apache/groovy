@@ -78,7 +78,15 @@ public abstract class GString extends GroovyObjectSupport {
     public Object[] getValues() {
         return values;
     }
+    
+    public int getValueCount() {
+        return values.length;
+    }
 
+    public Object getValue(int idx) {
+        return values[idx];
+    }
+    
     public String toString() {
         String[] s = getStrings();
         int numberOfValues = values.length;
