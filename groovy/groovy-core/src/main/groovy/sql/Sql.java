@@ -79,6 +79,9 @@ public class Sql {
     // store the last row count for executeUpdate
     int updateCount = 0;
 
+    /** allows a closure to be used to configure the statement before its use */
+    private Closure configureStatement;
+
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL
@@ -198,7 +201,7 @@ public class Sql {
      * Construts an SQL instance using the given Connection. It is the callers
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
-     * {@link close()}method.
+     * {@link java.sql.Connection#close()}  method.
      * 
      * @param connection
      */
@@ -228,6 +231,7 @@ public class Sql {
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
+        configure(statement);
         ResultSet results = null;
         try {
             log.fine(sql);
@@ -255,6 +259,7 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
+            configure(statement);
             results = statement.executeQuery();
             closure.call(results);
         }
@@ -291,6 +296,7 @@ public class Sql {
     public void eachRow(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
+        configure(statement);
         ResultSet results = null;
         try {
             log.fine(sql);
@@ -329,6 +335,7 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
+            configure(statement);
             results = statement.executeQuery();
 
             GroovyResultSet groovyRS = new GroovyResultSet(results);
@@ -371,6 +378,7 @@ public class Sql {
         try {
             log.fine(sql);
             statement = connection.createStatement();
+            configure(statement);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -395,6 +403,7 @@ public class Sql {
         try {
             log.fine(sql);
             statement = connection.createStatement();
+            configure(statement);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
         }
@@ -417,6 +426,7 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
+            configure(statement);
             boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -442,6 +452,7 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
+            configure(statement);
             this.updateCount = statement.executeUpdate();
             return this.updateCount;
         }
@@ -490,6 +501,7 @@ public class Sql {
         try {
             log.fine(sql);
             setParameters(params, statement);
+            configure(statement);
             return statement.executeUpdate();
         }
         catch (SQLException e) {
@@ -526,6 +538,58 @@ public class Sql {
     public DataSource getDataSource() {
         return dataSource;
     }
+
+
+    public void commit() {
+        try {
+            this.useConnection.commit();
+        }
+        catch (SQLException e) {
+            log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
+        }
+    }
+
+    public void rollback() {
+        try {
+            this.useConnection.rollback();
+        }
+        catch (SQLException e) {
+            log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
+        }
+    }
+
+    /**
+     * @return Returns the updateCount.
+     */
+    public int getUpdateCount() {
+        return updateCount;
+    }
+
+    /**
+     * If this instance was created with a single Connection then the connection
+     * is returned. Otherwise if this instance was created with a DataSource
+     * then this method returns null
+     *
+     * @return the connection wired into this object, or null if this object
+     *         uses a DataSource
+     */
+    public Connection getConnection() {
+        return useConnection;
+    }
+
+
+    /**
+     * Allows a closure to be passed in to configure the JDBC statements before they are executed
+     * to do things like set the query size etc.
+     *
+     * @param configureStatement
+     */
+    public void withStatement(Closure configureStatement) {
+        this.configureStatement = configureStatement;
+    }
+
+    // Implementation methods
+    //-------------------------------------------------------------------------
 
     /**
      * @return the SQL version of the given query using ? instead of any
@@ -749,40 +813,14 @@ public class Sql {
         }
     }
 
-    public void commit() {
-        try {
-            this.useConnection.commit();
-        }
-        catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
-        }
-    }
-
-    public void rollback() {
-        try {
-            this.useConnection.rollback();
-        }
-        catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
-        }
-    }
-
     /**
-     * @return Returns the updateCount.
+     * Provides a hook to be able to configure JDBC statements, such as to configure
+     *
+     * @param statement
      */
-    public int getUpdateCount() {
-        return updateCount;
-    }
-
-    /**
-     * If this instance was created with a single Connection then the connection
-     * is returned. Otherwise if this instance was created with a DataSource
-     * then this method returns null
-     * 
-     * @return the connection wired into this object, or null if this object
-     *         uses a DataSource
-     */
-    public Connection getConnection() {
-        return useConnection;
+    protected void configure(Statement statement) {
+        if (configureStatement != null) {
+            configureStatement.call(statement);
+        }
     }
 }
