@@ -43,76 +43,22 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+
 package groovy.lang;
 
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.classgen.TestSupport;
 
 /**
- * This object represents a Groovy script
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Script extends GroovyObjectSupport {
-    private Binding binding = new Binding();
+public class ScriptPrintTest extends TestSupport {
 
-    public Binding getBinding() {
-        return binding;
-    }
-
-    public void setBinding(Binding binding) {
-        this.binding = binding;
+    public void testScriptWithCustomPrintln() throws Exception {
+        assertScript(
+            "out = new MockWriter(); println(); assert out.output == 'println()'\n"
+                + "println('hey'); assert out.output == 'println(hey)' : out.output\n"
+                + "print('hey'); assert out.output == 'print(hey)'\n");
     }
 
-    public Object getProperty(String property) {
-        //System.out.println("Script.getProperty for: " + property + " with binding: " + binding.getVariables());
-        return binding.getVariable(property);
-    }
-
-    public void setProperty(String property, Object newValue) {
-        //System.out.println("Script.setProperty for: " + property + " with newValue: " + newValue);
-        binding.setVariable(property, newValue);
-        //System.out.println("binding are now: " + binding.getVariables());
-    }
-
-    /**
-     * The main instance method of a script which has variables in scope
-     * as defined by the current {@link ShellContext} instance
-     * @return
-     */
-    public abstract Object run();
-    
-    
-    // println helper methods
-    
-    public void println() {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "println", ArgumentListExpression.EMPTY_ARRAY);
-        }
-        else {
-            System.out.println();
-        }
-    }
-    
-    public void print(Object value) {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "print", new Object[] { value });
-        }
-        else {
-            System.out.print(value);
-        }
-    }
-    
-    public void println(Object value) {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "println", new Object[] { value });
-        }
-        else {
-            System.out.println(value);
-        }
-    }
 }
