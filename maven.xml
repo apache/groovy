@@ -322,16 +322,6 @@
 
         <!-- TODO stuff that doesn't yet work with the JSR -->
 
-        <!-- handling foo.bar << something -->
-        <exclude name="**/ForAndSqlBug.groovy"/>
-        <exclude name="**/LeftShiftTest.groovy"/>
-        <exclude name="**/StreamingMarkupTest.groovy"/>
-        <exclude name="**/PrintTest.groovy"/>
-        <exclude name="**/Groovy308_Bug.groovy"/>
-        <exclude name="**/Groovy593_Bug.groovy"/>
-        <exclude name="**/ForAndSqlBug.groovy"/>
-
-
         <!-- unicode handling -->
         <exclude name="**/EscapedUnicodeTest.groovy"/>
         <exclude name="**/EscapedMetaCharacterTest.groovy"/>
@@ -354,18 +344,20 @@
         <exclude name="**/SafeNavigationTest.groovy"/>
 
 
-
         <!-- TODO - string literal stuff  -->
         <exclude name="**/Groovy675_Bug.groovy"/>
 
         <!-- TODO other stuff -->
         <exclude name="**/MvcDemo.groovy"/>
-        <exclude name="**/PrimitiveArraysTest.groovy"/>
+        <!--
+        -->
         <exclude name="**/MapFromList.groovy"/>
+        <exclude name="**/PrimitiveArraysTest.groovy"/>
         <exclude name="**/SwingDemo.groovy"/>
         <exclude name="**/*Demo.groovy"/>
         <exclude name="**/Html2Wiki.groovy"/>
         <exclude name="**/dom/DOMTest.groovy"/>
+
       </fileset>
     </copy>
     <!--
@@ -379,6 +371,9 @@
       <classpath refid="test.classpath"/>
       <arg value="${basedir}/target/test-classes"/>
       <arg value="${basedir}/target/test-classes"/>
+
+      <!-- should we list each files or not? -->
+      <arg value="${groovy.listFiles}"/>
     </java>
 
     <!--

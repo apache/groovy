@@ -100,11 +100,18 @@ public class Groovyc extends MatchingTask {
     public static void main(String[] args) {
         String dest = ".";
         String src = ".";
+        boolean listFiles = false;
         if (args.length > 0) {
             dest = args[0];
         }
         if (args.length > 1) {
             src = args[1];
+        }
+        if (args.length > 2) {
+            String flag = args[2];
+            if (flag.equalsIgnoreCase("true")) {
+                listFiles = true;
+            }
         }
 
         Project project = new Project();
@@ -114,7 +121,7 @@ public class Groovyc extends MatchingTask {
         compiler.setProject(project);
         compiler.setSrcdir(new Path(project, src));
         compiler.setDestdir(project.resolveFile(dest));
-        compiler.setListfiles(true);
+        compiler.setListfiles(listFiles);
         compiler.execute();
     }
 
@@ -424,7 +431,10 @@ public class Groovyc extends MatchingTask {
             if (listFiles) {
                 for (int i = 0; i < compileList.length; i++) {
                     String filename = compileList[i].getAbsolutePath();
+
+                    // TODO this logging does not seem to appear in the maven build??
                     log(filename);
+                    System.out.println("compiling: " + filename);
                 }
             }
 

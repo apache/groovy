@@ -33,6 +33,11 @@ public class ASTParserException extends ParserException {
         this.ast = e.getAst();
     }
 
+    public ASTParserException(String message, ASTRuntimeException e) {
+        super(message, e, e.getLine(), e.getColumn());
+        this.ast = e.getAst();
+    }
+
     public AST getAst() {
         return ast;
     }
