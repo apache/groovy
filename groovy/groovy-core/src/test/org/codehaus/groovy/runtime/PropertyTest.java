@@ -117,6 +117,20 @@ public class PropertyTest extends GroovyTestCase {
         Object value = InvokerHelper.getProperty(entry, "value");
         assertEquals("value property", "x", value);
     }
+
+    public void testMethodProperty() throws Exception {
+        Object value = InvokerHelper.getProperty(this, "getCheese");
+        assertTrue("Should have returned a closure: " + value, value instanceof Closure);
+
+        Object result = ((Closure) value).call();
+        assertEquals("result of closure call", getCheese(), result);
+        
+        System.out.println("Closure: " + value + " and cheese: " + result);
+    }
+    
+    public Object getCheese() {
+        return "cheddar";
+    }
     
     // Implementation methods
     //-------------------------------------------------------------------------
