@@ -960,6 +960,7 @@ public class MetaClass {
             catch (MissingMethodException e1) {
                 try {
                     Field field = object.getClass().getDeclaredField(property);
+                    field.setAccessible(true);
                     field.set(object, newValue);
                 }
                 catch (Exception e2) {
