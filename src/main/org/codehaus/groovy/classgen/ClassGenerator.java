@@ -64,7 +64,7 @@ public abstract class ClassGenerator extends CodeVisitorSupport implements Groov
 
   /**
    *  A constant that is the ASM representation of the JDK version number for use in the
-   *  <code>CodeWriter.visitor</code> method calls.
+   *  <code>ClassWriter.visitor</code> method calls.
    *
    *  <p>Prior to version 1.5 of ASM, the code generated was always JDK1.3 compliant.  As of ASM version
    *  1.5 there is an extra (first) parameter to specify the bytecode version to generate.  In
