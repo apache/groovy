@@ -43,41 +43,45 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.ast;
 
-package org.codehaus.groovy.tools;
-
-import java.io.File;
-
-import org.codehaus.groovy.GroovyTestCase;
 /**
- * Tests the compiling & running of GroovyTestCases
+ * Represents an inner class declaration
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompilerTest extends GroovyTestCase {
+public class InnerClassNode extends ClassNode {
 
-    Compiler compiler = new Compiler();
-    boolean dumpClass = true;
+    private ClassNode outerClass;
 
-    public void testMethodCall() throws Exception {
-        runTest("ClosureMethodTest.groovy");
+    /**
+     * @param name is the full name of the class
+     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
+     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     */
+    public InnerClassNode(ClassNode outerClass, String name, int modifiers, String superClass) {
+        this(outerClass, name, modifiers, superClass, EMPTY_STRING_ARRAY);
     }
 
-    protected void runTest(String name) throws Exception {
-        File file = new File("src/test/groovy/" + name);
-        
-        assertTrue("Could not find source file: " + file, file.exists());
-
-        compiler.compile(new File[] { file });
+    /**
+     * @param name is the full name of the class
+     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
+     * @param superClass the base class name - use "java.lang.Object" if no direct base class
+     */
+    public InnerClassNode(ClassNode outerClass, String name, int modifiers, String superClass, String[] interfaces) {
+        super(name, modifiers, superClass, interfaces);
+        this.outerClass = outerClass;
     }
 
-    protected void setUp() throws Exception {
-        File dir = new File("target/test-generated-classes");
-        dir.mkdirs();
-        compiler.setOutputDir(dir);
-
-        compiler.setDebug(dumpClass);
+    public ClassNode getOuterClass() {
+        return outerClass;
     }
 
+    /**
+     * @return the field node on the outer class or null if this is not an inner class
+     */
+    public FieldNode getOuterField(String name) {
+        return outerClass.getField(name);
+    }
 }

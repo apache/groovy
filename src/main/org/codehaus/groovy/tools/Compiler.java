@@ -4,6 +4,8 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -16,6 +18,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Category;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
+import org.codehaus.groovy.classgen.GroovyClassLoader;
 import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
@@ -24,6 +27,7 @@ import org.codehaus.groovy.syntax.parser.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
 import org.codehaus.groovy.syntax.parser.SemanticVerifier;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.util.DumpClassVisitor;
 
 public class Compiler
 {
@@ -34,6 +38,7 @@ public class Compiler
     private CompilerClassLoader classLoader;
     private List sourceDirs;
     private File outputDir;
+    private boolean debug;
 
     public Compiler()
     {
@@ -100,6 +105,14 @@ public class Compiler
     public File getOutputDir()
     {
         return this.outputDir;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     public void compile(String[] paths)
@@ -185,33 +198,44 @@ public class Compiler
                              File file)
         throws Exception
     {
-        ClassWriter    classWriter    = new ClassWriter( true );
-        ClassGenerator classGenerator = new ClassGenerator( classWriter,
-                                                            getClassLoader(),
-                                                            file.getName() );
-
-        classGenerator.visitClass( classNode );
-
-        byte[] code = classWriter.toByteArray();
-
-        File outputFile = createOutputFile( classNode.getName() );
-
-        if ( ! outputFile.getParentFile().exists() )
+        ClassGenerator classGenerator = null;
+        
+        if (debug) 
         {
-            outputFile.getParentFile().mkdirs();
+            DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
+            classGenerator = new ClassGenerator(dumpVisitor, getClassLoader(), file.getName());
+            classGenerator.visitClass( classNode );
         }
-
-        LOG.info( "generating class to: " + outputFile );
-
-        FileOutputStream out = new FileOutputStream( outputFile );
-
-        try
+        else 
         {
-            out.write( code );
-        }
-        finally
-        {
-            out.close();
+            ClassWriter    classWriter    = new ClassWriter( true );
+            classGenerator = new ClassGenerator( classWriter,
+                                                 getClassLoader(),
+                                                 file.getName() );
+    
+            classGenerator.visitClass( classNode );
+    
+            byte[] code = classWriter.toByteArray();
+    
+            File outputFile = createOutputFile( classNode.getName() );
+    
+            if ( ! outputFile.getParentFile().exists() )
+            {
+                outputFile.getParentFile().mkdirs();
+            }
+    
+            LOG.info( "generating class to: " + outputFile );
+    
+            FileOutputStream out = new FileOutputStream( outputFile );
+    
+            try
+            {
+                out.write( code );
+            }
+            finally
+            {
+                out.close();
+            }
         }
         
         // now lets process inner classes

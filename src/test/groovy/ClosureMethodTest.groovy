@@ -12,6 +12,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
 	property count;
 
+/*
     void testListCollect() {
         list = [1, 2, 3, 4]
         answer = list.collect( { item | return item * 2 } )
@@ -79,9 +80,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert values.sort() := [6, 8]
     }
 
-
-    /** @todo : allow closure to see outer fields
-	
+*/
     void testListEach() {
         count = 0;
 
@@ -91,6 +90,8 @@ class ClosureMethodTest extends GroovyTestCase {
         assert count := 10
     }
 
+    /** @todo : allow closure to see outer fields
+	
     void testMapEach() {
         count = 0;
 

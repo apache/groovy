@@ -73,6 +73,7 @@ import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.IfElse;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ListExpression;
 import org.codehaus.groovy.ast.MapEntryExpression;
 import org.codehaus.groovy.ast.MapExpression;
@@ -793,6 +794,30 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         //        }
     }
 
+    protected void visitOuterFieldExpression(FieldExpression expression) {
+        ClassNode outerClassNode = classNode.getOuterClass();
+        
+        int valueIdx = idx + 1;
+        
+        if (leftHandExpression) {
+            cv.visitVarInsn(ASTORE, valueIdx);
+        }
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitFieldInsn(GETFIELD, internalClassName, "__outerInstance", getTypeDescription(outerClassNode.getName()));
+        
+        FieldNode field = expression.getField();
+        boolean isStatic = field.isStatic();
+
+        int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
+        String ownerName = getClassInternalName(outerClassNode.getName());
+
+        if (leftHandExpression) {
+            cv.visitVarInsn(ALOAD, valueIdx);
+        }
+        cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
+    }
+
+
     public void visitVariableExpression(VariableExpression expression) {
         // lets see if the variable is a field
         FieldNode field = classNode.getField(expression.getVariable());
@@ -800,45 +825,53 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             visitFieldExpression(new FieldExpression(field));
         }
         else {
-            String name = expression.getVariable();
-            Variable variable = defineVariable(name, "java.lang.Object");
-            String type = variable.getType();
-            int index = variable.getIndex();
-
-            if (leftHandExpression) {
-                //TODO: make work with arrays
-                if (type.equals("double")) {
-                    cv.visitVarInsn(DSTORE, index);
-                }
-                else if (type.equals("float")) {
-                    cv.visitVarInsn(FSTORE, index);
-                }
-                else if (type.equals("long")) {
-                    cv.visitVarInsn(LSTORE, index);
-                }
-                else if (type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
-                    cv.visitVarInsn(ISTORE, index);
-                }
-                else {
-                    cv.visitVarInsn(ASTORE, index);
-                }
+            field = classNode.getOuterField(expression.getVariable());
+            if (field != null) {
+                visitOuterFieldExpression(new FieldExpression(field));
             }
             else {
-                //TODO: make work with arrays
-                if (type.equals("double")) {
-                    cv.visitVarInsn(DLOAD, index);
-                }
-                else if (type.equals("float")) {
-                    cv.visitVarInsn(FLOAD, index);
-                }
-                else if (type.equals("long")) {
-                    cv.visitVarInsn(LLOAD, index);
-                }
-                else if (type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
-                    cv.visitVarInsn(ILOAD, index);
+                String name = expression.getVariable();
+                Variable variable = defineVariable(name, "java.lang.Object");
+                String type = variable.getType();
+                int index = variable.getIndex();
+
+                if (leftHandExpression) {
+                    //TODO: make work with arrays
+                    if (type.equals("double")) {
+                        cv.visitVarInsn(DSTORE, index);
+                    }
+                    else if (type.equals("float")) {
+                        cv.visitVarInsn(FSTORE, index);
+                    }
+                    else if (type.equals("long")) {
+                        cv.visitVarInsn(LSTORE, index);
+                    }
+                    else if (
+                        type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
+                        cv.visitVarInsn(ISTORE, index);
+                    }
+                    else {
+                        cv.visitVarInsn(ASTORE, index);
+                    }
                 }
                 else {
-                    cv.visitVarInsn(ALOAD, index);
+                    //TODO: make work with arrays
+                    if (type.equals("double")) {
+                        cv.visitVarInsn(DLOAD, index);
+                    }
+                    else if (type.equals("float")) {
+                        cv.visitVarInsn(FLOAD, index);
+                    }
+                    else if (type.equals("long")) {
+                        cv.visitVarInsn(LLOAD, index);
+                    }
+                    else if (
+                        type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
+                        cv.visitVarInsn(ILOAD, index);
+                    }
+                    else {
+                        cv.visitVarInsn(ALOAD, index);
+                    }
                 }
             }
         }
@@ -971,7 +1004,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String name = outerClassName + "$" + (innerClasses.size() + 1);
         Parameter[] parameters = expression.getParameters();
 
-        ClassNode answer = new ClassNode(name, ACC_PUBLIC, "org/codehaus/groovy/lang/Closure");
+        InnerClassNode answer = new InnerClassNode(classNode, name, ACC_PUBLIC, "org/codehaus/groovy/lang/Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java/lang/Object", parameters, expression.getCode());
         FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
 
@@ -982,8 +1015,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 new BinaryExpression(
                     new FieldExpression(field),
                     Token.equal(-1, -1),
-                    new VariableExpression("__outerInstance"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "__outerInstance", null)};
+                    new VariableExpression("outerInstance"))));
+        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "outerInstance", null)};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
