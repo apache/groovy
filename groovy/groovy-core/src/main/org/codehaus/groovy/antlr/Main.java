@@ -4,13 +4,13 @@ import antlr.collections.AST;
 import antlr.collections.impl.*;
 import antlr.debug.misc.*;
 import antlr.*;
-import com.thoughtworks.xstream.XStream;
+//import com.thoughtworks.xstream.XStream;
 import java.awt.event.*;
 
 class Main {
 
 	static boolean showTree = false;
-    static boolean xml = false;
+    //static boolean xml = false;
 	static boolean verbose = false;
     public static void main(String[] args) {
 		// Use a try/catch block for parser exceptions
@@ -24,9 +24,9 @@ class Main {
 					if ( args[i].equals("-showtree") ) {
 						showTree = true;
 					}
-                    else if ( args[i].equals("-xml") ) {
-                        xml = true;
-                    }
+                    //else if ( args[i].equals("-xml") ) {
+                    //    xml = true;
+                    //}
 					else if ( args[i].equals("-verbose") ) {
 						verbose = true;
 					}
@@ -45,7 +45,7 @@ class Main {
 					}
 				} }
 			else
-				System.err.println("Usage: java -jar groovyc.jar [-showtree] [-xml] [-verbose] [-trace{,Lexer,Parser}]"+
+				System.err.println("Usage: java -jar groovyc.jar [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
                                    "<directory or file name>");
 		}
 		catch(Exception e) {
@@ -116,7 +116,7 @@ class Main {
 			);
 			if (verbose)  System.out.println(t.toStringList());
 		}
-        if ( xml ) {
+        /*if ( xml ) {
 			((CommonAST)t).setVerboseStringConversion(true, tokenNames);
 			ASTFactory factory = new ASTFactory();
 			AST r = factory.create(0,"AST ROOT");
@@ -131,7 +131,7 @@ class Main {
                 e.printStackTrace();
             }
 			//if (verbose)  System.out.println(t.toStringList());
-		}
+		}*/
 	/*@todo
 		GroovyTreeParser tparse = new GroovyTreeParser();
 		try {
