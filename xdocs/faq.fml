@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<faqs title="Frequently Asked Questions">
+
+  <part id="general">
+    <title>General</title>
+    
+    <faq id="whats-groovy">
+      <question>
+        What is Groovy?
+      </question>
+      <answer>
+        <p>
+          Groovy is a powerful high level language for the Java platform which compiles 
+          down to Java bytecode.
+        </p>
+        <p>
+          Think of it as a Ruby or Python like language that is tightly integrated with
+          the Java platform - allowing you the same powerful and concise coding syntax as
+          Ruby or Pyton but allowing you to stay on the JVM and protect your investment in
+          J2SE, J2EE and all the plethora of great useful Java code out there.
+        </p>
+      </answer>
+    </faq>
+
+  </part>
+
+  <part id="gdk">
+    <title>GDK (Groovy Development Kit)</title>
+    
+    <faq id="what-closure">
+      <question>
+        What are Closures?
+      </question>
+      <answer>
+        <p>
+		  Think of closures as being like anonymous inner classes in Java that have only a single (anonymous) method.
+		  They are very handy for passing blocks of code around from method to method.
+       </p>
+      </answer>
+    </faq>   
+  </part>
+
+
+	<!-- More faqs or parts here -->
+
+
+</faqs>

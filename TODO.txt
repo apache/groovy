@@ -64,6 +64,38 @@ Core Groovy Tasks
 * synchronized statement
 * implement break, continue and maybe retry
 
+* allow maps to be created using identifiers?
+	{name:'James', address:'London'}
+	
+	only issue is the identifiers could conflict.
+
+* handling sequences (0-n, 1-n)
+	they are Lists & behave like lists, any methods on the items will
+	be called etc.
+	
+	however how are they assigned / modified.
+	
+		foo.customers += customer
+		
+		foo.customers = [customer1, customer2]
+		
+		so assignment of sequence fields don't really do an assign; they do a set(List) instead
+		
+		- should we allow real assignments. e.g.
+		
+		Address* foo = ...;
+		foo = [1, 2, 3]
+		
+		foo keeps its type so its not a List
+		
+	how about handling mandatory values - 
+		the set we overload to do the non-null checks?
+		this must be a type. e.g.
+		
+			String! x = "hello"
+			x = null // error
+			
+	
 * Switch statement to use matches to handle classes, ranges, regexp etc		
 	- matches(object) for Range or Regexp or Class
 
@@ -463,5 +495,3 @@ foo.invokeMethod(method, args);
 * could code generate the MetaClass with very efficient dynamic dispatch
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
-
-
