@@ -87,9 +87,9 @@ import org.xml.sax.ext.LexicalHandler
 						pendingNamespaces.each {key, value |
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
-//							attributes.addAttribute("http://www.w3.org/XML/1998/namespace", key, "xmlns:${key}", "CDATA", value)
+//							attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
 // workround for bug GROOVY-309
-							attributes.addAttribute("http://www.w3.org/XML/1998/namespace", key, "xmlns:${key}".toString(), "CDATA", value)
+							attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
 			    				contentHandler.startPrefixMapping(key, value)
 						}
 					
