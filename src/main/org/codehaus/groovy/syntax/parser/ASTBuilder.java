@@ -604,13 +604,23 @@ public class ASTBuilder
 
     protected BreakStatement breakStatement(CSTNode statementRoot) throws ParserException {
         CSTNode[] children = statementRoot.getChildren();
-        String label = null; /** @todo */
+        if (children != null && children.length > 0) {
+            CSTNode identifier = children[0];
+            String label = identifier.getToken().getText();
+            return new BreakStatement(label);
+            
+        }
         return new BreakStatement();
     }
 
     protected ContinueStatement continueStatement(CSTNode statementRoot) throws ParserException {
         CSTNode[] children = statementRoot.getChildren();
-        String label = null; /** @todo */
+        if (children != null && children.length > 0) {
+            CSTNode identifier = children[0];
+            String label = identifier.getToken().getText();
+            return new ContinueStatement(label);
+            
+        }
         return new ContinueStatement();
     }
 

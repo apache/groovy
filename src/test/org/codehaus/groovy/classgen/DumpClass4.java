@@ -59,11 +59,19 @@ public class DumpClass4 {
 
     public DumpClass4() {
     }
-    
+
     public static void main(String[] args) {
         Object foo = InvokerHelper.invokeConstructorOf(DumpClass4.class, null);
     }
-   
+
     public void run() {
+        synchronized (this) {
+            InvokerHelper.invokeMethod(this, "foo", null);
+        }
+        InvokerHelper.invokeMethod(this, "bar", null);
+    }
+
+    public void throwException() {
+        throw (RuntimeException) InvokerHelper.invokeConstructor("java.lang.RuntimeException", "Hello");
     }
 }

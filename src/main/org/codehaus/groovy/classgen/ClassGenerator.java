@@ -137,13 +137,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
-	MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
-	MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
+    MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
+    MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
-	MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
-	MethodCaller notObject = MethodCaller.newStatic(InvokerHelper.class, "notObject");
-	MethodCaller regexPattern = MethodCaller.newStatic(InvokerHelper.class, "regexPattern");
+    MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
+    MethodCaller notObject = MethodCaller.newStatic(InvokerHelper.class, "notObject");
+    MethodCaller regexPattern = MethodCaller.newStatic(InvokerHelper.class, "regexPattern");
 
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
@@ -598,13 +598,42 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
-        // TODO Auto-generated method stub
+        statement.getExpression().visit(this);
 
+        int index = defineVariable(createSynchronizedVariableName(), "java.lang.Integer").getIndex();
+
+        cv.visitVarInsn(ASTORE, index);
+        cv.visitInsn(MONITORENTER);
+        final Label l0 = new Label();
+        cv.visitLabel(l0);
+
+        statement.getCode().visit(this);
+
+        cv.visitVarInsn(ALOAD, index);
+        cv.visitInsn(MONITOREXIT);
+        final Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        final Label l2 = new Label();
+        cv.visitLabel(l2);
+        cv.visitVarInsn(ALOAD, index);
+        cv.visitInsn(MONITOREXIT);
+        cv.visitInsn(ATHROW);
+        cv.visitLabel(l1);
+
+        exceptionBlocks.add(new Runnable() {
+            public void run() {
+                cv.visitTryCatchBlock(l0, l2, l2, null);
+            }
+        });
     }
 
     public void visitThrowStatement(ThrowStatement statement) {
-        // TODO Auto-generated method stub
-
+        statement.getExpression().visit(this);
+        
+        // we should infer the type of the exception from the expression
+        cv.visitTypeInsn(CHECKCAST, "java/lang/Throwable");
+        
+        cv.visitInsn(ATHROW);
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
@@ -692,13 +721,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 break;
 
             case Token.FIND_REGEX :
-               	evaluateBinaryExpression(findRegexMethod, expression);
-               	break;
-                	
+                evaluateBinaryExpression(findRegexMethod, expression);
+                break;
+
             case Token.MATCH_REGEX :
-               	evaluateBinaryExpression(matchRegexMethod, expression);
-               	break;
-                	
+                evaluateBinaryExpression(matchRegexMethod, expression);
+                break;
+
             case Token.COMPARE_GREATER_THAN :
                 evaluateBinaryExpression(compareGreaterThanMethod, expression);
                 break;
@@ -842,7 +871,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitRegexExpression(RegexExpression expression) {
-    	expression.getRegex().visit(this);
+        expression.getRegex().visit(this);
         regexPattern.call(cv);
     }
 
@@ -882,24 +911,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitNotExpression(NotExpression expression) {
-		Expression subExpression = expression.getExpression();
-		subExpression.visit(this);
+        Expression subExpression = expression.getExpression();
+        subExpression.visit(this);
 
-		// This is not the best way to do this.  Javac does it by reversing the underlying expressions but that proved
-		// fairly complicated for not much gain.  Instead we'll just use a utility function for now.
-		if (comparisonExpression(expression.getExpression())) {
-			notBoolean.call(cv);
-		} else {
-			notObject.call(cv);
-		}
-	}
-    
+        // This is not the best way to do this.  Javac does it by reversing the underlying expressions but that proved
+        // fairly complicated for not much gain.  Instead we'll just use a utility function for now.
+        if (comparisonExpression(expression.getExpression())) {
+            notBoolean.call(cv);
+        }
+        else {
+            notObject.call(cv);
+        }
+    }
+
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
 
-		if (!comparisonExpression(expression.getExpression())) {
-			asBool.call(cv);
-		}
+        if (!comparisonExpression(expression.getExpression())) {
+            asBool.call(cv);
+        }
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
@@ -991,7 +1021,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String type = checkValidType(call.getType(), call, "in constructor call");
 
         //System.out.println("Constructing: " + type);
-        
+
         //visitClassExpression(new ClassExpression(type));
         cv.visitLdcInsn(type);
 
@@ -1105,13 +1135,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     variable = defineVariable(name, "java.lang.Object");
                 }
                 if (variable == null) {
-                	variable = defineVariable(name, "java.lang.Object", false);
-                	visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), name));
+                    variable = defineVariable(name, "java.lang.Object", false);
+                    visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), name));
                     // We need to store this in a local variable now since it has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
-                	cv.visitInsn(DUP);
-					cv.visitVarInsn(ASTORE, variable.getIndex());
-					return;
+                    cv.visitInsn(DUP);
+                    cv.visitVarInsn(ASTORE, variable.getIndex());
+                    return;
                 }
                 String type = variable.getType();
                 int index = variable.getIndex();
@@ -1443,8 +1473,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLdcInsn(method);
 
         leftHandExpression = false;
-        
-        new ArgumentListExpression(new Expression[] { expression.getRightExpression() }).visit(this);
+
+        new ArgumentListExpression(new Expression[] { expression.getRightExpression()}).visit(this);
         // expression.getRightExpression().visit(this);
 
         invokeMethodMethod.call(cv);
@@ -1710,6 +1740,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private String createExceptionVariableName() {
         return "__exception" + idx;
+    }
+
+    private String createSynchronizedVariableName() {
+        return "__synchronized" + idx;
     }
 
     /**
