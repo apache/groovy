@@ -19,21 +19,19 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
 	}
 	
 	void testIntLocalVariable() {
-		/* @todo 
 		int x = 123
 		y = x + 1
 		assert y == 124
-		*/
 	}
 	
 	void testIntParamBug() {
 		assert bugMethod(123) == 246
 		assert bugMethod2(123) == 246
 		
-		/* @todo GROOVY-133
+		/* @todo GROOVY-133 */
 		closure = { int x | x * 2 }
 		assert closure.call(123) == 246
-		*/
+
 	}
 	
 	int bugMethod(int x) {

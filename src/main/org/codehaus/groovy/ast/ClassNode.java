@@ -81,8 +81,18 @@ public class ClassNode extends MetadataNode implements Constants {
     private boolean staticClass = false;
     private boolean scriptBody = false;
     private boolean script;
-
     private ClassNode superClassNode;
+
+
+    //br added to track the enclosing method for local inner classes
+    private MethodNode enclosingMethod = null;
+    public MethodNode getEnclosingMethod() {
+        return enclosingMethod;
+    }
+    public void setEnclosingMethod(MethodNode enclosingMethod) {
+        this.enclosingMethod = enclosingMethod;
+    }
+
 
     /**
      * @param name
@@ -114,6 +124,11 @@ public class ClassNode extends MetadataNode implements Constants {
         this.superClass = superClass;
         this.interfaces = interfaces;
         this.mixins = mixins;
+
+        //br for better JVM comformance
+        if ((modifiers & ACC_SUPER ) == 0) {
+            this.modifiers += ACC_SUPER;
+        }
     }
 
     public String getSuperClass() {
@@ -269,9 +284,9 @@ public class ClassNode extends MetadataNode implements Constants {
     public void addMixin(MixinNode mixin) {
         // lets check if it already uses a mixin
         boolean skip = false;
-        String name = mixin.getName();
+        String mixinName = mixin.getName();
         for (int i = 0; i < mixins.length; i++) {
-            if (name.equals(mixins[i].getName())) {
+            if (mixinName.equals(mixins[i].getName())) {
                 skip = true;
             }
         }
@@ -306,13 +321,13 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public void addStaticInitializerStatements(List staticStatements) {
         MethodNode method = null;
-        List methods = getDeclaredMethods("<clinit>");
-        if (methods.isEmpty()) {
+        List declaredMethods = getDeclaredMethods("<clinit>");
+        if (declaredMethods.isEmpty()) {
             method =
                 addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
         }
         else {
-            method = (MethodNode) methods.get(0);
+            method = (MethodNode) declaredMethods.get(0);
         }
         BlockStatement block = null;
         Statement statement = method.getCode();
@@ -453,13 +468,13 @@ public class ClassNode extends MetadataNode implements Constants {
      */
     public ClassNode findClassNode(String type) {
         ClassNode answer = null;
-        CompileUnit compileUnit = getCompileUnit();
-        if (compileUnit != null) {
-            answer = compileUnit.getClass(type);
+        CompileUnit theCompileUnit = getCompileUnit();
+        if (theCompileUnit != null) {
+            answer = theCompileUnit.getClass(type);
             if (answer == null) {
                 Class theClass;
                 try {
-                    theClass = compileUnit.loadClass(type);
+                    theClass = theCompileUnit.loadClass(type);
                     answer = createClassNode(theClass);
                 }
                 catch (ClassNotFoundException e) {
@@ -473,32 +488,32 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     protected ClassNode createClassNode(Class theClass) {
-        Class[] interfaces = theClass.getInterfaces();
-        int size = interfaces.length;
+        Class[] classInterfaces = theClass.getInterfaces();
+        int size = classInterfaces.length;
         String[] interfaceNames = new String[size];
         for (int i = 0; i < size; i++) {
-            interfaceNames[i] = interfaces[i].getName();
+            interfaceNames[i] = classInterfaces[i].getName();
         }
         
-        String name = null;
+        String className = null;
         if (theClass.getSuperclass() != null) {
-            name = theClass.getSuperclass().getName();
+            className = theClass.getSuperclass().getName();
         }
         ClassNode answer =
             new ClassNode(
                 theClass.getName(),
                 theClass.getModifiers(),
-                name,
+                className,
                 interfaceNames,
                 MixinNode.EMPTY_ARRAY);
         answer.compileUnit = getCompileUnit();
-        Method[] methods = theClass.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++ ) {
-            answer.addMethod(createMethodNode(methods[i]));
+        Method[] declaredMethods = theClass.getDeclaredMethods();
+        for (int i = 0; i < declaredMethods.length; i++ ) {
+            answer.addMethod(createMethodNode(declaredMethods[i]));
         }
-        Constructor[] constructors = theClass.getDeclaredConstructors();
-        for (int i = 0; i < constructors.length; i++ ) {
-            answer.addConstructor(createConstructorNode(constructors[i]));
+        Constructor[] declaredConstructors = theClass.getDeclaredConstructors();
+        for (int i = 0; i < declaredConstructors.length; i++ ) {
+            answer.addConstructor(createConstructorNode(declaredConstructors[i]));
         }
         return answer;
     }
@@ -587,14 +602,14 @@ public class ClassNode extends MetadataNode implements Constants {
      * @return
      */
     protected String tryResolveClassFromCompileUnit(String type) {
-        CompileUnit compileUnit = getCompileUnit();
-        if (compileUnit != null) {
-            if (compileUnit.getClass(type) != null) {
+        CompileUnit theCompileUnit = getCompileUnit();
+        if (theCompileUnit != null) {
+            if (theCompileUnit.getClass(type) != null) {
                 return type;
             }
 
             try {
-                compileUnit.loadClass(type);
+                theCompileUnit.loadClass(type);
                 return type;
             }
             catch (AccessControlException ace) {

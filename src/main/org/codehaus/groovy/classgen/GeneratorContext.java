@@ -45,7 +45,9 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.ast.MethodNode;
 
 
 /**
@@ -63,11 +65,15 @@ public class GeneratorContext {
         this.compileUnit = compileUnit;
     }
 
+    public CompileUnit getCompileUnit() {
+        return compileUnit;
+    }
+
     public int getNextInnerClassIdx() {
         return innerClassIdx++;
     }
     
-    public CompileUnit getCompileUnit() {
-        return compileUnit;
+    public String getNextClosureInnerName(ClassNode owner, ClassNode classNode, MethodNode methodNode) {
+        return "" + getNextInnerClassIdx();
     }
 }
