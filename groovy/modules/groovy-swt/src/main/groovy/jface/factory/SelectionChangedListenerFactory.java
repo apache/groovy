@@ -18,6 +18,9 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.Viewer;
 
 /**
+ * NOTE:	I have seen strnage behavior in combination with a CellModifier
+ * 			In this case just use an onEvent Selection.  
+ * 
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
  */

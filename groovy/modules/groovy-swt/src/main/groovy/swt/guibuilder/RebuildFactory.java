@@ -44,7 +44,7 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
             throw new InvalidParentException("not null");
         }
         
-        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
+        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent, properties);
         if (parentComposite == null) {
             throw new MissingPropertyException("parent", RebuildFactory.class);
         }

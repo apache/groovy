@@ -61,7 +61,8 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      *      java.lang.Object)
      */
     public Object newInstance(Map properties, Object parent) throws GroovyException {
-        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
+        // boolean shouldLayout = properties.containsKey("parent");
+        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent, properties);
 
         String styleProperty = (String) properties.remove("style");
         String text = (String) properties.remove("text");
@@ -73,22 +74,17 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 style = SwtUtils.parseStyle(SWT.class, styleProperty);
             }
         }
+        
         if (parentComposite != null) {
             Object formWidget = getFormWidget(parentComposite, properties, style, text);
             setBeanProperties(formWidget, properties);
 
-            // if (formWidget instanceof Control) {
-            //  	Control control = (Control) parent;
-            //      control.setData(FormToolkit.KEY_DRAW_BORDER,
-            // FormToolkit.TEXT_BORDER);
-            // }
-
-            // if (parent instanceof Composite) {
-            //  Composite parentComp = (Composite) parent;
-            //  toolkit.paintBordersFor(parentComp);
-            // }
+            // if (shouldLayout && parentComposite != null && parentComposite instanceof Composite) {
+            //    ((Composite) parentComposite).layout();
+            //}
 
             return formWidget;
+            
         } else {
             throw new InvalidParentException("composite instance");
         }

@@ -4,6 +4,7 @@
  */
 package groovy.swt.factory;
 
+import groovy.swt.InvalidChildException;
 import groovy.swt.SwtUtils;
 
 import java.lang.reflect.Constructor;
@@ -51,7 +52,8 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
             style = SwtUtils.parseStyle(SWT.class, styleProperty);
         }
 
-        Object parentWidget = SwtUtils.getParentWidget(parent);
+        Object parentWidget = SwtUtils.getParentWidget(parent, properties);
+
         Object bean = createWidget(parentWidget);
         if (bean != null) {
             setBeanProperties(bean, properties);
@@ -116,14 +118,23 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         }
     }
 
-    protected void setControl(Object bean, Object parent) {
+    protected void setControl(Object bean, Object parent) throws InvalidChildException {
         if (parent instanceof CTabItem) {
+            if (!(bean instanceof Control)) {
+                throw new InvalidChildException("cTabItem", Control.class.getName());
+            }
             CTabItem tabItem = (CTabItem) parent;
             tabItem.setControl((Control) bean);
         } else if (parent instanceof TabItem) {
+            if (!(bean instanceof Control)) {
+                throw new InvalidChildException("tabItem", Control.class.getName());
+            }
             TabItem tabItem = (TabItem) parent;
             tabItem.setControl((Control) bean);
         } else if (parent instanceof ScrolledComposite) {
+            if (!(bean instanceof Control)) {
+                throw new InvalidChildException("scrolledComposite", Control.class.getName());
+            }
             ScrolledComposite scrolledComposite = (ScrolledComposite) parent;
             scrolledComposite.setContent((Control) bean);
         } else if (bean instanceof Menu && parent instanceof Shell) {
@@ -136,5 +147,5 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
             }
         }
     }
-    
+
 }

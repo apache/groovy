@@ -48,7 +48,7 @@ public class LayoutFactory extends AbstractSwtFactory implements SwtFactory {
             setBeanProperties(layout, properties);
         }
 
-        Widget parentComposite = (Widget) SwtUtils.getParentWidget(parent);
+        Widget parentComposite = (Widget) SwtUtils.getParentWidget(parent, properties);
         if (parentComposite != null) {
             ((Composite) parentComposite).setLayout(layout);
         }

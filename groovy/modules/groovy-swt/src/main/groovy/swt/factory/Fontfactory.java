@@ -26,12 +26,11 @@ public class Fontfactory extends AbstractSwtFactory implements SwtFactory {
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-            throws GroovyException {
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
 
-        Object parentWidget = SwtUtils.getParentWidget(parent);
-        if (! (parentWidget instanceof Control)) { 
-            throw new InvalidParentException("control"); 
+        Object parentWidget = SwtUtils.getParentWidget(parent, properties);
+        if (!(parentWidget instanceof Control)) {
+            throw new InvalidParentException("control");
         }
 
         Control parentControl = (Control) parentWidget;
@@ -55,7 +54,7 @@ public class Fontfactory extends AbstractSwtFactory implements SwtFactory {
             Font newFont = new Font(parentControl.getDisplay(), fontData);
             parentControl.setFont(newFont);
         }
-        
+
         return parentControl;
     }
 

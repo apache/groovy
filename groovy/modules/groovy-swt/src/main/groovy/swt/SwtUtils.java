@@ -3,6 +3,7 @@ package groovy.swt;
 import groovy.jface.impl.ApplicationWindowImpl;
 
 import java.lang.reflect.Field;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
@@ -28,11 +29,10 @@ import org.eclipse.ui.forms.widgets.Section;
  *  
  * @version 1.1
  */
-public class SwtUtils  {
+public class SwtUtils {
 
     /** The Log to which logging calls will be made. */
     private static final Log log = LogFactory.getLog(SwtUtils.class);
-    
 
     /**
      * Parses the comma delimited String of style codes which are or'd
@@ -57,7 +57,8 @@ public class SwtUtils  {
      * 
      * @return the int code
      */
-    public static int parseStyle(Class constantClass, String text, boolean toUpperCase) throws GroovyException{
+    public static int parseStyle(Class constantClass, String text, boolean toUpperCase)
+            throws GroovyException {
         int answer = 0;
         if (text != null) {
             if (toUpperCase) {
@@ -71,16 +72,16 @@ public class SwtUtils  {
         }
         return answer;
     }
-    
+
     /**
      * @return the code for the given word or zero if the word doesn't match a
      * valid style
      */
-    public static int getStyleCode(Class constantClass,String text) throws GroovyException {
+    public static int getStyleCode(Class constantClass, String text) throws GroovyException {
         try {
             Field field = constantClass.getField(text);
             if (field == null) {
-                log.warn( "Unknown style code: " + text +" will be ignored");
+                log.warn("Unknown style code: " + text + " will be ignored");
                 return 0;
             }
             return field.getInt(null);
@@ -90,7 +91,7 @@ public class SwtUtils  {
             throw new GroovyException("The value: " + text + " is not understood");
         }
     }
-    
+
     /**
      * dispose all children
      * 
@@ -113,11 +114,9 @@ public class SwtUtils  {
     public static Shell getParentShell(Object parent) {
         if (parent instanceof ApplicationWindow) {
             return ((ApplicationWindowImpl) parent).getShell();
-        }
-        else if (parent instanceof Shell) {
+        } else if (parent instanceof Shell) {
             return (Shell) parent;
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -128,35 +127,35 @@ public class SwtUtils  {
      * @param parent
      * @return
      */
-    public static Object getParentWidget(Object parent) {
+    public static Object getParentWidget(Object parent, Map properties) {
+        if (parent == null && properties.containsKey("parent")) {
+            Object attribute = properties.remove("parent");
+            if (attribute instanceof Composite) {
+                Composite parentWidget = (Composite) attribute;
+                SwtUtils.disposeChildren((Composite) parentWidget);
+                return parentWidget;
+            }
+        }
+
         if (parent instanceof ApplicationWindow) {
             return (Composite) ((ApplicationWindowImpl) parent).getContents();
-        }
-        else if (parent instanceof Form) {
+        } else if (parent instanceof Form) {
             return ((Form) parent).getBody();
-        }
-        else if (parent instanceof ScrolledForm) {
+        } else if (parent instanceof ScrolledForm) {
             return ((ScrolledForm) parent).getBody();
-        }
-        else if (parent instanceof Section) {
+        } else if (parent instanceof Section) {
             return ((Section) parent).getClient();
-        }
-        else if (parent instanceof CTabItem) {
+        } else if (parent instanceof CTabItem) {
             return ((CTabItem) parent).getParent();
-        }
-        else if (parent instanceof TabItem) {
+        } else if (parent instanceof TabItem) {
             return ((TabItem) parent).getParent();
-        }
-        else if (parent instanceof Widget) {
+        } else if (parent instanceof Widget) {
             return (Widget) parent;
-        }
-        else if (parent instanceof TableViewer) {
+        } else if (parent instanceof TableViewer) {
             return ((TableViewer) parent).getTable();
-        }
-        else {
+        } else {
             return parent;
         }
     }
-    
-    
+
 }

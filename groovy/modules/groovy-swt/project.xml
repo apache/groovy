@@ -38,14 +38,6 @@
     </developers>
     <dependencies>
         <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm</artifactId>
-            <version>1.4.3</version>
-            <type>jar</type>
-            <url>http://asm.objectweb.org/</url>
-            <properties/>
-        </dependency>
-        <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
             <version>3.0</version>
@@ -62,7 +54,7 @@
         <dependency>
             <groupId>groovy</groupId>
             <artifactId>groovy</artifactId>
-            <version>1.0-beta-7</version>
+            <version>all-1.0-beta-8</version>
             <type>jar</type>
             <properties/>
         </dependency>

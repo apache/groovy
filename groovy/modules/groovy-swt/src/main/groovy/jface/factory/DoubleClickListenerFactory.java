@@ -21,6 +21,7 @@ import org.eclipse.jface.viewers.StructuredViewer;
  */
 public class DoubleClickListenerFactory extends AbstractSwtFactory implements SwtFactory,
         IDoubleClickListener, ClosureSupport {
+    
     private Closure closure;
 
     /*
@@ -55,6 +56,6 @@ public class DoubleClickListenerFactory extends AbstractSwtFactory implements Sw
      * @see org.eclipse.jface.viewers.IDoubleClickListener#doubleClick(org.eclipse.jface.viewers.DoubleClickEvent)
      */
     public void doubleClick(DoubleClickEvent event) {
-        closure.call(this);
+        closure.call(event);
     }
 }

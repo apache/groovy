@@ -140,7 +140,6 @@ public class SwtBuilder extends BuilderSupport {
      * @return
      */
     protected Object createWidget(Object name, Map attributes, Object current) {
-
         if (name.equals("doCall")) {
             return current;
         }
@@ -294,8 +293,8 @@ public class SwtBuilder extends BuilderSupport {
         // registerBeanFactory("tDateText", TDateText.class);
         // registerBeanFactory("tCalendar", TCalendar.class);
         // registerBeanFactory("textEditor", TextEditor.class);
-    } 
-    
+    }
+
     /*
      * @see groovy.util.BuilderSupport#setParent(java.lang.Object,
      *      java.lang.Object)
