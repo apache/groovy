@@ -1990,6 +1990,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         MethodNode method =
             answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
+
+        method.setLineNumber(expression.getLineNumber());
+        method.setColumnNumber(expression.getColumnNumber());
+        
         VariableScope scope = expression.getVariableScope();
         if (scope == null) {
             throw new RuntimeException(
