@@ -135,7 +135,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                         // lets try invoke method on the owner
                         return InvokerHelper.invokeMethod(this.owner, method, arguments);
                     } catch (InvokerInvocationException iie) {
-                        throw new InvokerInvocationException(iie.getCause());
+                        throw iie;
                     } catch (GroovyRuntimeException e1) {
                         if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                             // lets try invoke method on the delegate
