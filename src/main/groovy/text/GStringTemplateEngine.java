@@ -4,11 +4,7 @@
  */
 package groovy.text;
 
-import groovy.lang.Binding;
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyObject;
+import groovy.lang.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -228,36 +224,46 @@ public class GStringTemplateEngine extends TemplateEngine {
 	    		
 	    		templateExpressions.append("); ");		                		
 		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.text.Template#setBinding(java.util.Map)
-		 */
-		public void setBinding(Map map) {
-			((Closure)this.template).setDelegate(new Binding(map));
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Writable#writeTo(java.io.Writer)
-		 */
-		public Writer writeTo(final Writer writer) throws IOException {
-			this.template.call(new Object[] {new PrintWriter(writer)});
-			
-			return writer;
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		public String toString() {
-		final StringWriter stringWriter = new StringWriter();
-		
+
+
+        public Writable make() {
+            return make(null);
+        }
+
+        public Writable make(final Map map) {
             try {
-                writeTo(stringWriter);
-                
-                return stringWriter.toString();
-            } catch (final IOException e) {
-                return e.toString();
+                final Closure delegatedClosure = (Closure) template.clone();
+                delegatedClosure.setDelegate(new Binding(map));
+                return new Writable() {
+                    /* (non-Javadoc)
+                    * @see groovy.lang.Writable#writeTo(java.io.Writer)
+                    */
+                    public Writer writeTo(final Writer writer) throws IOException {
+                        delegatedClosure.call(new Object[] {new PrintWriter(writer)});
+
+                        return writer;
+                    }
+
+                    /* (non-Javadoc)
+                    * @see java.lang.Object#toString()
+                    */
+                    public String toString() {
+                        final StringWriter stringWriter = new StringWriter();
+
+                        try {
+                            writeTo(stringWriter);
+
+                            return stringWriter.toString();
+                        } catch (final IOException e) {
+                            return e.toString();
+                        }
+                    }
+
+                };
+            } catch (CloneNotSupportedException e) {
+                return null;
             }
-		}
+        }
+
 	}
 }

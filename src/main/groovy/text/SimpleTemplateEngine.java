@@ -36,6 +36,7 @@
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import groovy.lang.Writable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -71,49 +72,46 @@ public class SimpleTemplateEngine extends TemplateEngine {
     private static class SimpleTemplate implements Template {
         
         private Script script;
-        private Binding binding;
-        private Map map;
-        
-        /**
-         * Set the binding for the template.  Keys will be converted to Strings.
-         * 
-         * @see groovy.text.Template#setBinding(java.util.Map)
-         */
-        public void setBinding(final Map map) {
-            this.map = map;
-            binding = new Binding(map);
+
+        public Writable make() {
+            return make(null);
         }
-        
-        /**
-         * Write the template document with the set binding applied to the writer.
-         * 
-         * @see groovy.lang.Writable#writeTo(java.io.Writer)
-         */
-        public Writer writeTo(Writer writer) throws IOException {
-            if (binding == null) binding = new Binding();
-    		Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
-    		PrintWriter pw = new PrintWriter(writer);
-    		scriptObject.setProperty("out", pw);
-    		scriptObject.run();
-    		pw.flush();
-            return writer;
+
+        public Writable make(final Map map) {
+            return new Writable() {
+                /**
+                 * Write the template document with the set binding applied to the writer.
+                 *
+                 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+                 */
+                public Writer writeTo(Writer writer) throws IOException {
+                    Binding binding;
+                    if (map == null) binding = new Binding(); else binding = new Binding(map);
+                    Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
+                    PrintWriter pw = new PrintWriter(writer);
+                    scriptObject.setProperty("out", pw);
+                    scriptObject.run();
+                    pw.flush();
+                    return writer;
+                }
+
+                /**
+                 * Convert the template and binding into a result String.
+                 *
+                 * @see java.lang.Object#toString()
+                 */
+                public String toString() {
+                    try {
+                        StringWriter sw = new StringWriter();
+                        writeTo(sw);
+                        return sw.toString();
+                    } catch (Exception e) {
+                        return e.toString();
+                    }
+                }
+            };
         }
-        
-        /**
-         * Convert the template and binding into a result String.
-         * 
-         * @see java.lang.Object#toString()
-         */
-        public String toString() {
-            try {
-                StringWriter sw = new StringWriter();
-                writeTo(sw);
-                return sw.toString();
-            } catch (Exception e) {
-                return e.toString();
-            }
-        }
-       
+
         /**
          * Parse the text document looking for <% or <%= and then call out to the appropriate handler, otherwise copy the text directly
          * into the script while escaping quotes.
