@@ -291,6 +291,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             int type = node.getType();
             switch (type) {
                 case METHOD_CALL:
+                case IDENT:
                     block.addStatement(methodCall(node));
                     break;
 
@@ -667,15 +668,15 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return new BooleanExpression(expression(node));
     }
 
-    protected MethodCallExpression methodCallExpression(AST code) {
-        AST node = code.getFirstChild();
-
+    protected MethodCallExpression methodCallExpression(AST node) {
         String name = null;
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
 
         AST elist = null;
 
-
+        if (isType(METHOD_CALL, node)) {
+            node = node.getFirstChild();
+        }
         if (isType(DOT, node)) {
             AST objectNode = node.getFirstChild();
             elist = node.getNextSibling();
