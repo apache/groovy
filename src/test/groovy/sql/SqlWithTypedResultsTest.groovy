@@ -21,6 +21,9 @@ class SqlWithTypedResultsTest extends TestHelper {
          groovytest.add( anint:2, astring:"rocks" )
 
          // this line messes up things:
+         /** @todo this fails
+         Integer id
+		 */
          Integer id = 0
 		 
          sql.eachRow("SELECT * FROM groovytest ORDER BY anint") { 
