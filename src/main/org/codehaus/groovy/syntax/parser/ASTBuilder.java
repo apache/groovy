@@ -731,6 +731,7 @@ public class ASTBuilder
             case ( Token.FIND_REGEX ):
             case ( Token.MATCH_REGEX ):
             case ( Token.COMPARE_TO ):
+            case ( Token.LEFT_SQUARE_BRACKET ):
             {
                 return binaryExpression( expressionRoot );
             }

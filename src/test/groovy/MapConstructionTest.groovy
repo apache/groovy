@@ -48,8 +48,6 @@ class MapConstructionTest extends GroovyTestCase {
 	    
         assert m.size() == 3
 
-        /** @todo parser
-        assert s[2] == 'def'
-         */
+        assert m[2] == 'def'
     }
 }

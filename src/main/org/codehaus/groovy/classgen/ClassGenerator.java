@@ -889,6 +889,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression(matchRegexMethod, expression);
                 break;
 
+            case Token.LEFT_SQUARE_BRACKET :
+                evaluateBinaryExpression(leftHandExpression ? "set" : "get", expression);
+                break;
+
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }

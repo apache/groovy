@@ -39,7 +39,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
     }
     
     void testCounting() {
-        sum = 0
+        sum = 0; /** @todo remove ; when bug fixed */
 
         [1, 2, 3, 4].each { sum = sum + it }
 
@@ -57,7 +57,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
     }
 
     void testExampleUseOfClosureScopesUsingEach() {
-        a = 123
+        a = 123; /** @todo remove ; when bug fixed */
         
         [5].each { b = a + it }
 

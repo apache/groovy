@@ -64,7 +64,6 @@ class MapTest extends GroovyTestCase {
         assert m.containsKey("cheese")
     }
     
-    /** @todo parser
     void testMapMutation() {    
         m = [ 'abc' : 'def', 'def' : 134, 'xyz' : 'zzz' ]
 	    
@@ -72,6 +71,10 @@ class MapTest extends GroovyTestCase {
 	    
 	    assert m['def'] == 134
 	    
+        println(m['xyz'])
+        
+        /** @todo parser
+         
         m['def'] = 'cafebabe'
 	    
         assert m['def'] = 'cafebabe'
@@ -82,6 +85,6 @@ class MapTest extends GroovyTestCase {
 	    
         assert m['def'] = null
         assert m.size() == 2
+         */
     }
-    */
 }

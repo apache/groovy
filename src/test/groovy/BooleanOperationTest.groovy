@@ -15,9 +15,7 @@ class BooleanOperationTest extends GroovyTestCase {
         assert x == false
         assert x != true
         
-        /** @todo parser
         assert !x
-        */
         
         y = false        
         assert x == y
@@ -51,7 +49,6 @@ class BooleanOperationTest extends GroovyTestCase {
         }
         assert r
         
-        /** @todo parser 
         if ( !x ) {
             r = false
         }
@@ -60,7 +57,6 @@ class BooleanOperationTest extends GroovyTestCase {
         }
         
         assert r
-        */
     }
 
 
