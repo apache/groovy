@@ -192,12 +192,13 @@ options {
 	codeGenBitsetTestThreshold = 3;
 	defaultErrorHandler = false;	// Don't generate parser error handlers
 	buildAST = true;
+//	ASTLabelType = "GroovyAST"; 
 }
 
 tokens {
 	BLOCK; MODIFIERS; OBJBLOCK; SLIST; METHOD_DEF; VARIABLE_DEF;
 	INSTANCE_INIT; STATIC_INIT; TYPE; CLASS_DEF; INTERFACE_DEF;
-	PACKAGE_DEF; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
+	PACKAGE_DEF; ARRAY_DECLARATOR; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
 	PARAMETERS; PARAMETER_DEF; LABELED_STAT; TYPECAST; INDEX_OP;
 	POST_INC; POST_DEC; METHOD_CALL; EXPR;
 	IMPORT; UNARY_MINUS; UNARY_PLUS; CASE_GROUP; ELIST; FOR_INIT; FOR_CONDITION;
@@ -223,6 +224,7 @@ FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 		// TO DO: set up a common error-handling control block, to avoid excessive tangle between these guys
 		parser.lexer = lexer;
 		lexer.parser = parser;
+		parser.setASTNodeClass("org.codehaus.groovy.antlr.GroovySourceAST");
 		return parser;
 	}
 	// Create a scanner that reads from the input stream passed to us...
@@ -498,12 +500,11 @@ typeSpec[boolean addImagNode]
 // - generic type arguments after
 classTypeSpec[boolean addImagNode]
 	:	t:classOrInterfaceType[false]
-	   (ata:arrayOrTypeArgs[#t])? 
+ 	(options{greedy=true;}: // match as many as possible
+	 		lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
+		 )*
 		{
-// TODO - following line seems to cause stack overflow errors
-//      - need to figure out why INDEX_OP isn't being added to AST... 
-//			if (#ata != null)  #classTypeSpec = #ata;
-		if ( addImagNode ) {
+	if ( addImagNode ) {
 				#classTypeSpec = #(#[TYPE,"TYPE"], #classTypeSpec);
 			}
 		}
