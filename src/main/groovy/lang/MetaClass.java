@@ -173,7 +173,7 @@ public class MetaClass {
      * 
      * @param method
      */
-    public void addNewStaticInstanceMethod(Method method) {
+    protected void addNewStaticInstanceMethod(Method method) {
         String name = method.getName();
         List list = (List) newStaticInstanceMethodIndex.get(name);
         if (list == null) {
@@ -930,6 +930,20 @@ public class MetaClass {
             return parameterTypes.length == 1 && parameterTypes[0] == String.class;
         }
         return false;
+    }
+
+    protected void registerStaticMethods() {
+        Method[] methods = theClass.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (MethodHelper.isStatic(method)) {
+                Class[] paramTypes = method.getParameterTypes();
+                if (paramTypes.length > 0) {
+                    Class owner = paramTypes[0];
+                    registry.getMetaClass(owner).addNewStaticInstanceMethod(method);
+                }
+            }
+        }
     }
 
 }

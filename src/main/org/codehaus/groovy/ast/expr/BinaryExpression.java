@@ -80,6 +80,14 @@ public class BinaryExpression extends Expression {
         return leftExpression;
     }
 
+    public void setLeftExpression(Expression leftExpression) {
+        this.leftExpression = leftExpression;
+    }
+
+    public void setRightExpression(Expression rightExpression) {
+        this.rightExpression = rightExpression;
+    }
+
     public Token getOperation() {
         return operation;
     }

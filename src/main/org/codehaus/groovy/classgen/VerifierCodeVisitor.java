@@ -43,62 +43,44 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package org.codehaus.groovy.classgen;
 
-import java.beans.IntrospectionException;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerException;
-import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.syntax.Token;
+import org.objectweb.asm.Constants;
 
 /**
- * A registery of MetaClass instances which caches introspection & 
- * reflection information and allows methods to be dynamically added to 
- * existing classes at runtime
+ * Verifies the method code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MetaClassRegistry {
-    private Map metaClasses = Collections.synchronizedMap(new HashMap());
-    private boolean useAccessible;
+public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants {
 
-    public MetaClassRegistry() {
-        this(true);
+    private Verifier verifier;
+
+    VerifierCodeVisitor(Verifier verifier) {
+        this.verifier = verifier;
     }
-
-    /**
-     * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
-     * method will be called to enable access to all methods when using reflection
-     */
-    public MetaClassRegistry(boolean useAccessible) {
-        this.useAccessible = useAccessible;
-
-        // lets register the default methods
-        getMetaClass(DefaultGroovyMethods.class).registerStaticMethods();
-    }
-
-    public MetaClass getMetaClass(Class theClass) {
-        /** @todo use static field to get the MetaClass from Groovy classes*/
-
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        if (answer == null) {
-            try {
-                answer = new MetaClass(this, theClass);
+    
+    public void visitBinaryExpression(BinaryExpression expression) {
+        if (verifier.getClassNode().isScriptClass() && expression.getOperation().getType() == Token.EQUAL) {
+            // lets turn variable assignments into property assignments
+            Expression left = expression.getLeftExpression();
+            if (left instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) left;
+                
+                System.out.println("Converting varriable expression: " + varExp.getVariable());
+                
+                PropertyExpression propExp = new PropertyExpression(new VariableExpression("this"), varExp.getVariable());
+                expression.setLeftExpression(propExp);
             }
-            catch (IntrospectionException e) {
-                throw new InvokerException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
-            }
-            metaClasses.put(theClass, answer);
         }
-        return answer;
+        super.visitBinaryExpression(expression);
     }
 
-    public boolean useAccessible() {
-        return useAccessible;
-    }
 }

@@ -41,10 +41,14 @@ class Console extends ConsoleSupport {
                 }
                 menu(text:'Actions') {
                     menuItem() {
-                        action(name:'Run', closure:{ runScript() }, 
-                        	accelerator_key:KeyStroke.getKeyStroke('ctrl enter'),
-                        	mnemonic_key:KeyStroke.getKeyStroke('ctrl enter'), 
-                        	action_command_key:KeyStroke.getKeyStroke('ctrl enter')
+                        action(name:'Run', closure:{ owner.runScript() }, 
+                        keyStroke:'ctrl enter',
+                        acceleratorKey:KeyStroke.getKeyStroke("meta R")
+                        /*, 
+,
+                        mnemonicKey:"alt R"
+                        actionCommandKey:'F2'                        actionCommandKey:KeyStroke.getKeyStroke("F3")
+                        */
                         )
                     }
                 }
@@ -68,12 +72,6 @@ class Console extends ConsoleSupport {
         frame.show()
     }
     
-    showAbout() {
-        pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts')
-        dialog = pane.createDialog(frame, 'About GroovyConsole')
-        dialog.show()
-    }
-        
     runScript() {
         text = textArea.getText()
         scriptList.add(text)
@@ -98,5 +96,17 @@ class Console extends ConsoleSupport {
         println("Variables: " + shell.context.variables)
         
         textArea.setText("")
+    }
+    
+    showAbout() {
+        pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts')
+        dialog = pane.createDialog(frame, 'About GroovyConsole')
+        dialog.show()
+    }
+        
+    protected void handleException(String text, Exception e) {
+        pane = swing.optionPane(message:'Error: ' + e.getMessage() + '\nafter compiling: ' + text)
+        dialog = pane.createDialog(frame, 'Compile error')
+        dialog.show()
     }
 }

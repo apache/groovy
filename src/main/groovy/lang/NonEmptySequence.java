@@ -45,60 +45,31 @@
  */
 package groovy.lang;
 
-import java.beans.IntrospectionException;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerException;
-import org.codehaus.groovy.runtime.MethodHelper;
+import java.util.List;
 
 /**
- * A registery of MetaClass instances which caches introspection & 
- * reflection information and allows methods to be dynamically added to 
- * existing classes at runtime
- * 
+ * Represents a sequence of objects which represents one or many instances of
+ * of objects of a given type. The type can be ommitted in which case any type of
+ * object can be added.
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MetaClassRegistry {
-    private Map metaClasses = Collections.synchronizedMap(new HashMap());
-    private boolean useAccessible;
+public class NonEmptySequence extends Sequence {
 
-    public MetaClassRegistry() {
-        this(true);
+    public NonEmptySequence() {
+        super(null);
     }
 
-    /**
-     * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
-     * method will be called to enable access to all methods when using reflection
-     */
-    public MetaClassRegistry(boolean useAccessible) {
-        this.useAccessible = useAccessible;
-
-        // lets register the default methods
-        getMetaClass(DefaultGroovyMethods.class).registerStaticMethods();
+    public NonEmptySequence(Class type) {
+        super(type);
     }
 
-    public MetaClass getMetaClass(Class theClass) {
-        /** @todo use static field to get the MetaClass from Groovy classes*/
-
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        if (answer == null) {
-            try {
-                answer = new MetaClass(this, theClass);
-            }
-            catch (IntrospectionException e) {
-                throw new InvokerException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
-            }
-            metaClasses.put(theClass, answer);
-        }
-        return answer;
+    public NonEmptySequence(Class type, List content) {
+        super(type, content);
     }
 
-    public boolean useAccessible() {
-        return useAccessible;
+    public int minimumSize() {
+        return 1;
     }
 }
