@@ -8,7 +8,7 @@ class NodeGPathTest extends GroovyTestCase {
     void testSimpleGPathExpressions() {
         tree = createTree()
 
-        assert tree.person.find { it.attribute('name') == 'James' }.location.get(0).attribute('name') == 'London'
+        assert tree.person.find { it['@name'] == 'James' }.location[0]['@name'] == 'London'
     }
     
     protected createTree() {       
