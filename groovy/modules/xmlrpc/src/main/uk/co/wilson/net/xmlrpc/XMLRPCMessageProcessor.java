@@ -34,6 +34,8 @@ package uk.co.wilson.net.xmlrpc;
  */
 
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
+import groovy.net.xmlrpc.XMLRPCCallFailureException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -291,8 +293,14 @@ public class XMLRPCMessageProcessor extends MinML {
 	private final DateFormat dateTime1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	private final Boolean bools[] = {new Boolean(false), new Boolean(true)};
 	
-	public void parseMessage(final InputStream in) throws SAXException, IOException {
-		parse(new InputStreamReader(in, "ISO-8859-1"));
+	public void parseMessage(final InputStream in) throws IOException { 
+		try {
+			parse(new InputStreamReader(in, "ISO-8859-1"));
+		} catch (final XMLRPCFaultException e) {
+			throw new XMLRPCCallFailureException(e.getFaultString(), e.getFaultCode());
+		} catch (final SAXException e) {
+			throw new GroovyRuntimeException("XML error in response from remote system: " + e.getMessage());
+		}
 	}
 	
 	public List getParams() {
@@ -439,10 +447,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			this.methodName = this.buffer.toString();
 			this.inArray = (Boolean)this.aggregateStack.pop();
 		} else if ("fault".equals(name)) {
-			throw new RuntimeException("XML-RPC call Failure: " +
-					                   ((Map)this.params).get("faultString") +
-					                   ", fault code = " +
-					                   ((Map)this.params).get("faultCode"));
+			throw new XMLRPCFaultException(((Map)this.params).get("faultString"), ((Map)this.params).get("faultCode"));
 		}
 	}
 }
