@@ -50,6 +50,8 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -137,47 +139,52 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Generates a detailed dump string of an object showing its class,
-     * hashCode and fields
-     */
-    public static String dump(Object self) {
-        if (self == null) {
-            return "null";
-        }
-        StringBuffer buffer = new StringBuffer("<");
-        Class klass = self.getClass();
-        buffer.append(klass.getName());
-        buffer.append("@");
-        buffer.append(Integer.toHexString(self.hashCode()));
-        boolean groovyObject = self instanceof GroovyObject;
-        while (true) {
-            Field[] fields = klass.getDeclaredFields();
-            for (int i = 0; i < fields.length; i++) {
-                Field field = fields[i];
-                if ((field.getModifiers() & Modifier.STATIC) == 0) {
-                    if (groovyObject && field.getName().equals("metaClass")) {
-                        continue;
-                    }
-                    field.setAccessible(true);
-                    buffer.append(" ");
-                    buffer.append(field.getName());
-                    buffer.append("=");
-                    try {
-                        buffer.append(InvokerHelper.toString(field.get(self)));
-                    }
-                    catch (Exception e) {
-                        buffer.append(e);
-                    }
-                }
-            }
-            klass = klass.getSuperclass();
-            if (klass == null) {
-                break;
-            }
-        }
-        buffer.append(">");
-        return buffer.toString();
-    }
+	 * Generates a detailed dump string of an object showing its class,
+	 * hashCode and fields
+	 */
+	public static String dump(Object self) {
+	    if (self == null) {
+	        return "null";
+	    }
+	    StringBuffer buffer = new StringBuffer("<");
+	    Class klass = self.getClass();
+	    buffer.append(klass.getName());
+	    buffer.append("@");
+	    buffer.append(Integer.toHexString(self.hashCode()));
+	    boolean groovyObject = self instanceof GroovyObject;
+	    while (true) {
+	        Field[] fields = klass.getDeclaredFields();
+	        for (int i = 0; i < fields.length; i++) {
+	            final Field field = fields[i];
+	            if ((field.getModifiers() & Modifier.STATIC) == 0) {
+	                if (groovyObject && field.getName().equals("metaClass")) {
+	                    continue;
+	                }
+	    	    	AccessController.doPrivileged(new PrivilegedAction() {
+	    	    		public Object run() {
+	    	    			field.setAccessible(true);
+	    	                return null;
+	    	    		}
+	    	    	});
+	                buffer.append(" ");
+	                buffer.append(field.getName());
+	                buffer.append("=");
+	                try {
+	                    buffer.append(InvokerHelper.toString(field.get(self)));
+	                }
+	                catch (Exception e) {
+	                    buffer.append(e);
+	                }
+	            }
+	        }
+	        klass = klass.getSuperclass();
+	        if (klass == null) {
+	            break;
+	        }
+	    }
+	    buffer.append(">");
+	    return buffer.toString();
+	}
 
     /**
      * Print to a console in interactive format

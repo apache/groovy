@@ -49,6 +49,7 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.Binding;
 import groovy.lang.CompilerConfig;
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyObject;
 import groovy.lang.Script;
 import groovy.util.GroovyTestCase;
@@ -56,12 +57,12 @@ import groovy.util.GroovyTestCase;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -86,13 +87,20 @@ public class TestSupport extends GroovyTestCase implements Constants {
 
     // ClassLoader parentLoader = Thread.currentThread().getContextClassLoader();
     ClassLoader parentLoader = getClass().getClassLoader();
-    protected GroovyClassLoader loader = (DUMP_CLASS) ? new DumpingClassLoader(parentLoader): new GroovyClassLoader(parentLoader);
+    protected GroovyClassLoader loader = 
+    	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return (DUMP_CLASS) 
+					? new DumpingClassLoader(parentLoader)
+					: new GroovyClassLoader(parentLoader); 
+    		}
+    	});
     CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfig());
     ModuleNode module = new ModuleNode(unit);
     
     protected Class loadClass(ClassNode classNode) {
         classNode.setModule(module);
-        Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy");
+        Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy", "groovy.testSupport");
         return fooClass;
     }
 
@@ -177,11 +185,15 @@ public class TestSupport extends GroovyTestCase implements Constants {
         assertScript(text, getTestClassName());
     }
     
-    protected void assertScript(String text, String scriptName) throws Exception {
+    protected void assertScript(final String text, final String scriptName) throws Exception {
         log.info("About to execute script");
         log.info(text);
-        
-        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), scriptName);
+    	GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return new GroovyCodeSource(text, scriptName, "/groovy/testSupport");
+    		}
+    	});
+        Class groovyClass = loader.parseClass(gcs);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
@@ -189,13 +201,13 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected void assertScriptFile(String fileName) throws Exception {
         log.info("About to execute script: " + fileName);
         
-        Class groovyClass = loader.parseClass(new FileInputStream(fileName), fileName);
+        Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }
     
     protected GroovyObject compile(String fileName) throws Exception {
-        Class groovyClass = loader.parseClass(new File(fileName));
+        Class groovyClass = loader.parseClass(new GroovyCodeSource(new File(fileName)));
 
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
 

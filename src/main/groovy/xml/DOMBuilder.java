@@ -47,6 +47,9 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -71,7 +74,22 @@ public class DOMBuilder extends BuilderSupport {
     DocumentBuilder documentBuilder;
 
     public static DOMBuilder newInstance() throws ParserConfigurationException, FactoryConfigurationError {
-        return new DOMBuilder(DocumentBuilderFactory.newInstance().newDocumentBuilder());
+    	DocumentBuilder documentBuilder = null;
+    	try {
+			documentBuilder = (DocumentBuilder) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+				public Object run() throws ParserConfigurationException {
+					return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+				}
+			});
+    	} catch (PrivilegedActionException pae) {
+    		Exception e = pae.getException();
+    		if (e instanceof ParserConfigurationException) {
+    			throw (ParserConfigurationException) e;
+    		} else {
+    			throw new RuntimeException(e);
+    		}
+    	}
+        return new DOMBuilder(documentBuilder);
     }
 
     public DOMBuilder(Document document) {

@@ -40,6 +40,7 @@ import groovy.lang.Script;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -595,6 +596,10 @@ public class ClassNode extends MetadataNode implements Constants {
             try {
                 compileUnit.loadClass(type);
                 return type;
+            }
+            catch (AccessControlException ace) {
+            	//Percolate this for better diagnostic info
+            	throw ace;
             }
             catch (Throwable e) {
                 // fall through

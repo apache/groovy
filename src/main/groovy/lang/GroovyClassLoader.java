@@ -34,20 +34,29 @@
  */
 package groovy.lang;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
+import java.security.SecureClassLoader;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.jar.Manifest;
-import java.util.zip.ZipEntry;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -61,12 +70,15 @@ import org.objectweb.asm.ClassWriter;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
+ * @author Steve Goetze
  * @version $Revision$
  */
-public class GroovyClassLoader extends ClassLoader {
+public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
+    private class PARSING {};
     private CompilerConfig config;
+    private String[] paths;
 
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
@@ -92,7 +104,23 @@ public class GroovyClassLoader extends ClassLoader {
      * @return
      */
     public Class defineClass(ClassNode classNode, String file) {
-        CompileUnit unit = new CompileUnit(getParent(), config);
+    	return defineClass(classNode, file, "/groovy/defineClass");
+    }
+
+    /**
+     * Loads the given class node returning the implementation Class
+     *
+     * @param classNode
+     * @return
+     */
+    public Class defineClass(ClassNode classNode, String file, String newCodeBase) {
+    	CodeSource codeSource = null;
+    	try {
+    		codeSource = new CodeSource(new URL("file", "", newCodeBase), null);
+    	} catch (MalformedURLException e) {
+    		//swallow
+    	}
+        CompileUnit unit = new CompileUnit(getParent(), codeSource, config);
         ClassCollector compiler = createCollector(unit);
         compiler.generateClass(new GeneratorContext(unit), classNode, file);
         return compiler.generatedClass;
@@ -105,7 +133,7 @@ public class GroovyClassLoader extends ClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(File file) throws SyntaxException, IOException {
-        return parseClass(new FileInputStream(file), file.getName());
+    	return parseClass(new GroovyCodeSource(file));
     }
 
     /**
@@ -139,30 +167,86 @@ public class GroovyClassLoader extends ClassLoader {
         return parseClass(in, "script" + System.currentTimeMillis() + ".groovy");
     }
 
-    /**
-     * Parses the given character stream into a Java class capable of being run
-     *
-     * @param in an InputStream
-     * @param fileName the file name to use as the name of the class
-     * @return the main class defined in the given script
-     */
-    public Class parseClass(InputStream in, String fileName) throws SyntaxException, IOException {
-        Class answer = (Class) cache.get(fileName);
-        if (answer == null) {
-            CompileUnit unit = new CompileUnit(this, config);
-            ClassCollector compiler = createCollector(unit);
-            compiler.parseClass(in, fileName);
-            answer = compiler.generatedClass;
-            cache.put(fileName, answer);
-        }
-        return answer;
+    public Class parseClass(final InputStream in, final String fileName) throws SyntaxException, IOException {
+    	//For generic input streams, provide a catch-all codebase of GroovyScript
+    	//Security for these classes can be administered via policy grants with a codebase
+    	//of file:groovy.script
+    	GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return new GroovyCodeSource(in, fileName, "/groovy/script");
+    		}
+    	});
+    	return parseClass(gcs);
     }
-
+    
+    /**
+	 * Parses the given character stream into a Java class capable of being run
+	 *
+	 * @param in an InputStream
+	 * @param fileName the file name to use as the name of the class
+	 * @return the main class defined in the given script
+	 */
+	public Class parseClass(GroovyCodeSource codeSource) throws SyntaxException, IOException {
+		String name = codeSource.getName();
+		Class answer = null;
+		//ASTBuilder.resolveName can call this recursively -- for example when resolving a Constructor
+		//invocation for a class that is currently being compiled.  
+		synchronized (cache) {
+			answer = (Class) cache.get(name);
+			if (answer != null) {
+				return (answer==PARSING.class ? null : answer);
+			} else {
+				cache.put(name, PARSING.class);
+			}
+		}
+		//Was neither already loaded nor compiling, so compile and add to cache.
+	   	try {
+	   		CompileUnit unit = new CompileUnit(this, codeSource.getCodeSource(), config);
+	   		ClassCollector compiler = createCollector(unit);
+	   		compiler.parseClass(codeSource.getInputStream(), name);
+	   		answer = compiler.generatedClass;
+	   	} finally {
+	   		synchronized (cache) {
+	   			if (answer == null) {
+	   				cache.remove(name);
+	   			} else {
+	   				cache.put(name, answer);
+	   			}
+	   		}
+	   	}        		
+	    return answer;
+	}
+    
     /**
      * Using this classloader you can load groovy classes from the system classpath as though they were already compiled.
+     * Note that .groovy classes found with this mechanism need to conform to the standard java naming convention - i.e.
+     * the public class inside the file must match the filename and the file must be located in a directory structure
+     * that matches the package structure.
      */
-    protected Class findClass(String name) throws ClassNotFoundException {
-        String filename = name.replace('.', File.separatorChar) + ".groovy";
+    protected Class findClass(final String name) throws ClassNotFoundException {
+		SecurityManager sm = System.getSecurityManager();
+		if (sm != null) {
+			String className = name.replace('/', '.');
+			int i = className.lastIndexOf('.');
+			if (i != -1) {
+				sm.checkPackageDefinition(className.substring(0, i));
+			}
+		}
+        try {
+        	return (Class) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+        		public Object run() throws ClassNotFoundException {
+        			return findGroovyClass(name);
+        		}
+        	});
+        } catch (PrivilegedActionException pae) {
+        	throw (ClassNotFoundException) pae.getException();
+        }
+    }
+    
+    protected Class findGroovyClass(String name) throws ClassNotFoundException {
+        //Use a forward slash here for the path separator.  It will work as a separator
+    	//for the File class on all platforms, AND it is required as a jar file entry separator.
+    	String filename = name.replace('.', '/') + ".groovy";
         String[] paths = getClassPath();
         for (int i = 0; i < paths.length; i++) {
             String pathName = paths[i];
@@ -187,11 +271,12 @@ public class GroovyClassLoader extends ClassLoader {
                 } else {
                     try {
                         JarFile jarFile = new JarFile(path);
-                        ZipEntry entry = jarFile.getEntry(filename);
+                        JarEntry entry = jarFile.getJarEntry(filename);
                         if (entry != null) {
-                            InputStream is = jarFile.getInputStream(entry);
+                        	byte[] bytes = extractBytes(jarFile, entry);
+                            Certificate[] certs = entry.getCertificates();
                             try {
-                                return parseClass(is, filename);
+                                return parseClass(new GroovyCodeSource(new ByteArrayInputStream(bytes), filename, path, certs));
                             } catch (SyntaxException e1) {
                                 e1.printStackTrace();
                                 throw new ClassNotFoundException(
@@ -213,7 +298,21 @@ public class GroovyClassLoader extends ClassLoader {
     	throw new ClassNotFoundException(name);
     }
 
-    private String[] paths;
+    //Read the bytes from a non-null JarEntry.  This is done here because the entry must be read completely 
+    //in order to get verified certificates, which can only be obtained after a full read.
+    private byte[] extractBytes(JarFile jarFile, JarEntry entry) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        try {
+            BufferedInputStream bis = new BufferedInputStream(jarFile.getInputStream(entry));
+        	while ((b = bis.read()) != -1) {
+        		baos.write(b);
+        	}
+        } catch (IOException ioe) {
+        	throw new GroovyRuntimeException("Could not read the jar bytes for " + entry.getName());
+        }
+        return baos.toByteArray();
+    }
 
     /**
      * @return
@@ -222,7 +321,7 @@ public class GroovyClassLoader extends ClassLoader {
         if (paths == null) {
             List pathList = new ArrayList();
             String classpath = System.getProperty("java.class.path", ".");
-            expandClassPath(pathList, "", classpath);
+            expandClassPath(pathList, null, classpath);
             paths = new String[pathList.size()];
             paths = (String[]) pathList.toArray(paths);
         }
@@ -240,13 +339,17 @@ public class GroovyClassLoader extends ClassLoader {
             if (path.exists()) {
                 if (!path.isDirectory()) {
                     try {
-                        // Get the manifest classpath entry from the jar
                         JarFile jar = new JarFile(path);
                         pathList.add(paths[i]);
+                        // Get the manifest classpath entry from the jar
+                        /*
                         Manifest manifest = jar.getManifest();
                         Attributes classPathAttributes = manifest.getMainAttributes();
                         String manifestClassPath = classPathAttributes.getValue("Class-Path");
-                        expandClassPath(pathList, paths[i], manifestClassPath);
+                        if (manifestClassPath != null) {
+                        	expandClassPath(pathList, paths[i], manifestClassPath);
+                        }
+                        */
                     } catch (IOException e) {
                         // Bad jar, ignore
                         continue;
@@ -259,17 +362,18 @@ public class GroovyClassLoader extends ClassLoader {
     }
 
     /**
-     * A helper method to allow bytecode to be loaded
+     * A helper method to allow bytecode to be loaded.
+     * spg changed name to defineClass to make it more consistent with other ClassLoader methods 
      */
-    protected Class loadClass(String name, byte[] bytecode) {
-        return defineClass(name, bytecode, 0, bytecode.length);
+    protected Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
+        return defineClass(name, bytecode, 0, bytecode.length, domain);
     }
-
+    
     protected ClassCollector createCollector(CompileUnit unit) {
         return new ClassCollector(this, unit);
     }
 
-
+    
     protected static class ClassCollector extends CompilerFacade {
         private Class generatedClass;
         private GroovyClassLoader cl;
@@ -285,7 +389,7 @@ public class GroovyClassLoader extends ClassLoader {
 
             cl.debugWriteClassfile(classNode, code);
 
-            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length);
+            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, getCompileUnit().getCodeSource());
 
             if (generatedClass == null) {
                 generatedClass = theClass;
@@ -325,4 +429,19 @@ public class GroovyClassLoader extends ClassLoader {
         }
     }
 
+	/* (non-Javadoc)
+	 * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
+	 * Implemented here to check package access prior to returning an already loaded class.
+	 */
+	protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+		SecurityManager sm = System.getSecurityManager();
+		if (sm != null) {
+			String className = name.replace('/', '.');
+			int i = className.lastIndexOf('.');
+			if (i != -1) {
+				sm.checkPackageAccess(className.substring(0, i));
+			}
+		}
+		return super.loadClass(name, resolve);
+	}
 }

@@ -448,13 +448,26 @@
             <include>**/*.xsd</include>
           </includes>
         </resource>
-      </resources>
+      	
+      	<!-- security test files -->
+      <resource>
+        <directory>src/security</directory>
+        <includes>
+          <include>**/*.*</include>
+          <include>**/groovy*</include>
+	    </includes>
+      </resource>
+	 </resources>
 
       <includes>
         <include>**/*Test.*</include>
         <include>**/*Bug.*</include>
       </includes>
-
+    	
+      <excludes>
+        <exclude>**/SecurityTest.*</exclude>
+      </excludes>
+    	
     </unitTest>
 
     <resources>
@@ -465,7 +478,7 @@
           <include>**/*.xml</include>
         </includes>
       </resource>
-    </resources>
+	</resources>
 
   </build>
   

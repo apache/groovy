@@ -44,6 +44,8 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -212,27 +214,33 @@ public class GroovyScriptEngine implements ResourceConnector {
 				final ScriptCacheEntry finalEntry = entry;
 
 				// Compile the script into an object
-				GroovyClassLoader groovyLoader = new GroovyClassLoader(getClass().getClassLoader()) {
-					protected Class findClass(String className) throws ClassNotFoundException {
-						String filename = className.replace('.', File.separatorChar) + ".groovy";
-						URLConnection dependentScriptConn = null;
-						try {
-							dependentScriptConn = rc.getResourceConnection(filename);
-							finalEntry.dependencies.put(
-								dependentScriptConn.getURL(),
-								new Long(dependentScriptConn.getLastModified()));
-						} catch (ResourceException e1) {
-							throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+				GroovyClassLoader groovyLoader = 
+					(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+						public Object run() {
+							return new GroovyClassLoader(getClass().getClassLoader()) {
+								protected Class findClass(String className) throws ClassNotFoundException {
+									String filename = className.replace('.', File.separatorChar) + ".groovy";
+									URLConnection dependentScriptConn = null;
+									try {
+										dependentScriptConn = rc.getResourceConnection(filename);
+										finalEntry.dependencies.put(
+											dependentScriptConn.getURL(),
+											new Long(dependentScriptConn.getLastModified()));
+									} catch (ResourceException e1) {
+										throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+									}
+									try {
+										return parseClass(dependentScriptConn.getInputStream(), filename);
+									} catch (SyntaxException e2) {
+										throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
+									} catch (IOException e2) {
+										throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+									}
+								}
+							};
 						}
-						try {
-							return parseClass(dependentScriptConn.getInputStream(), filename);
-						} catch (SyntaxException e2) {
-							throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
-						} catch (IOException e2) {
-							throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
-						}
-					}
-				};
+					});
+
 				try {
 					entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
 				} catch (Exception e) {

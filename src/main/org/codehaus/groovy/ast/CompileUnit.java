@@ -36,6 +36,7 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.CompilerConfig;
 
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -55,14 +56,20 @@ public class CompileUnit {
     private Map classes = new HashMap();
     private CompilerConfig config;
     private ClassLoader classLoader;
+    private CodeSource codeSource;
     private Map cachedClasses = new HashMap();
     
     public static final Object NO_CLASS = new Object();
     
 
     public CompileUnit(ClassLoader classLoader, CompilerConfig config) {
+    	this(classLoader, null, config);
+    }
+    
+    public CompileUnit(ClassLoader classLoader, CodeSource codeSource, CompilerConfig config) {
         this.classLoader = classLoader;
         this.config = config;
+        this.codeSource = codeSource;
     }
 
     public List getModules() {
@@ -102,6 +109,10 @@ public class CompileUnit {
 
     public ClassLoader getClassLoader() {
         return classLoader;
+    }
+    
+    public CodeSource getCodeSource() {
+    	return codeSource;
     }
 
     

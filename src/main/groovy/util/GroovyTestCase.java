@@ -46,6 +46,7 @@
 package groovy.util;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyShell;
 
 import java.io.File;
@@ -196,6 +197,7 @@ public class GroovyTestCase extends TestCase {
 
         // lets write the file to the target directory so its available 
         // to the MetaClass.getClassNode()
+        // the file is also used to determine the CodeSource if running with a security manager
         String testClassName = getTestClassName();
 
         File file = new File("target/test-classes/" + testClassName);
@@ -209,7 +211,7 @@ public class GroovyTestCase extends TestCase {
         });
 
         GroovyShell shell = new GroovyShell();
-        shell.evaluate(script, testClassName);
+        shell.evaluate(new GroovyCodeSource(file));
     }
 
     protected String getTestClassName() {

@@ -163,4 +163,11 @@ public abstract class CompilerFacade {
     }
 
     protected abstract void onClass(ClassWriter classWriter, ClassNode classNode);
+
+    /**
+	 * @return Returns the unit.
+	 */
+	public CompileUnit getCompileUnit() {
+		return unit;
+	}
 }
