@@ -1,14 +1,13 @@
 #!/bin/env groovy
-# 
-# convert an ant build file into a format suitable for http://sf.net/projects/freemind
-#
-# by Jeremy Rayner - 2 Dec 2004
-# inspired by Sam Newman ( http://www.magpiebrain.com/archives/2004/12/02/antgui )
-#
-# usage:   groovy antmap.g > build.mm
+// 
+// convert an ant build file into a format suitable for http://sf.net/projects/freemind
+//
+// by Jeremy Rayner - 2 Dec 2004
+// inspired by Sam Newman ( http://www.magpiebrain.com/archives/2004/12/02/antgui )
+//
+// usage:   groovy AntMap > build.mm
 
 import groovy.util.XmlParser
-import java.io.File
 
 buildFileName = "build.xml"  // default
 
