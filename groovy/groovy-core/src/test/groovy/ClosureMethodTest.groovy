@@ -153,6 +153,16 @@ class ClosureMethodTest extends GroovyTestCase {
         println("")
     }
     
+    void testForEachLine() {
+        file = new File("src/test/groovy/Bar.groovy")
+        
+        println("For loop to display contents of file: " + file)
+        
+        for (line in file) { println(line) }
+        
+        println("")
+    }
+    
     void testReadLines() {
         file = new File("src/test/groovy/Bar.groovy")
 
@@ -167,7 +177,7 @@ class ClosureMethodTest extends GroovyTestCase {
     void testEachFile() {
         file = new File("src/test/groovy")
         
-        println("Contents of dir: " + file)
+        println("Closure loop to display contents of dir: " + file)
         
         file.eachFile { f | println(f.getName()) }
         
