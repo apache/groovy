@@ -243,7 +243,21 @@ public class MetaClass {
         }
 
         // lets try a static method then
-        return invokeStaticMethod(object, methodName, arguments);
+        try {
+            return invokeStaticMethod(object, methodName, arguments);
+        }
+        catch (NoSuchMethodException e) {
+            if (size == 1 && arguments[0] instanceof List) {
+                // lets coerce the list arguments into an array of arguments
+                // e.g. calling JFrame.setLocation( [100, 100] )
+
+                List list = (List) arguments[0];
+                return invokeMethod(object, methodName, list.toArray());
+            }
+            else {
+                throw e;
+            }
+        }
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
@@ -628,8 +642,7 @@ public class MetaClass {
             if (argumentArray == null) {
                 argumentArray = EMPTY_ARRAY;
             }
-            else 
-            if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
+            else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
                 argumentArray = ARRAY_WITH_NULL;
             }
             return method.invoke(object, argumentArray);
@@ -921,7 +934,8 @@ public class MetaClass {
     }
 
     protected boolean isGenericSetMethod(Method method) {
-        return (method.getName().equals("set") || method.getName().equals("setAttribute")) && method.getParameterTypes().length == 2;
+        return (method.getName().equals("set") || method.getName().equals("setAttribute"))
+            && method.getParameterTypes().length == 2;
     }
 
     protected boolean isGenericGetMethod(Method method) {

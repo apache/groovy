@@ -59,10 +59,7 @@ public class Demo extends TestSupport {
 
     public static void main(String[] args) throws Exception {
         Demo demo = new Demo();
-        GroovyObject object = demo.compile("src/test/groovy/swing/TableLayoutDemo.groovy");
-        //GroovyObject object = demo.compile("src/test/groovy/swing/SwingDemo.groovy");
-        //GroovyObject object = demo.compile("src/test/groovy/model/MvcDemo.groovy");
-        //GroovyObject object = demo.compile("src/test/groovy/swing/TableDemo.groovy");
+        GroovyObject object = demo.compile("src/test/groovy/swing/SwingDemo.groovy");
         object.invokeMethod("run", null);
     }
 }
