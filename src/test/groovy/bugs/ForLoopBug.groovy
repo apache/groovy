@@ -9,8 +9,8 @@ class ForLoopBug extends GroovyTestCase {
 list = []
 a = 1
 b = 5
-for (a in a..b) {
-    list << a
+for (c in a..b) {
+    list << c
 }
 assert list == [1, 2, 3, 4, 5]
 EOF)        
@@ -23,13 +23,13 @@ for (i in 1..10) {
 }
 EOF)        
     }
-    
+
     void testNormalMethod() {
         list = []
         a = 1
         b = 5
-        for (a in a..b) {
-            list << a
+        for (c in a..b) {
+            list << c
         }
         assert list == [1, 2, 3, 4, 5]
     }
@@ -45,4 +45,18 @@ EOF)
         
 		assert a == 5
     }
+
+
+    void testVisibility() {
+        assertScript( <<<EOF
+
+array = [ true, true, true ];
+for( boolean i in array ) {
+   1.times {
+       assert i == true;
+   }
+}
+EOF)        
+    }
+
 }
