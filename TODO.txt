@@ -1,4 +1,4 @@
-* AST closures and range
+* AST closures and range expressions
 
 * test the use of PropertyExpression
 	a.b = c.d
