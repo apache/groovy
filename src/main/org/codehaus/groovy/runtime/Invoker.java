@@ -215,6 +215,9 @@ public class Invoker {
             method.call(adapter);
             return adapter.asList();
         }
+        else if (value instanceof String) {
+            return DefaultGroovyMethods.toList((String) value);
+        }
         else if (value instanceof File) {
             try {
                 return DefaultGroovyMethods.readLines((File) value);
