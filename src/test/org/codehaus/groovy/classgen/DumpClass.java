@@ -179,4 +179,11 @@ public class DumpClass {
     public void doPlus() {
         x = InvokerHelper.invokeMethod(new Integer(2), "plus", new Integer(2));
     }
+    
+    public void assertFailed() {
+        StringBuffer buffer = new StringBuffer("Exception: ");
+        buffer.append("x = ");
+        buffer.append(x);
+        InvokerHelper.assertFailed(buffer, "message");
+    }
 }

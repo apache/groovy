@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -229,7 +230,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode);
-        
+
         //System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
 
         Object fieldValue = null;
@@ -263,7 +264,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitForLoop(ForLoop loop) {
         onLineNumber(loop);
-        
+
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
@@ -293,21 +294,21 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitWhileLoop(WhileLoop loop) {
         onLineNumber(loop);
-        
+
         // TODO Auto-generated method stub
 
     }
 
     public void visitDoWhileLoop(DoWhileLoop loop) {
         onLineNumber(loop);
-        
+
         // TODO Auto-generated method stub
 
     }
 
     public void visitIfElse(IfElse ifElse) {
         onLineNumber(ifElse);
-        
+
         ifElse.getBooleanExpression().visit(this);
 
         Label l0 = new Label();
@@ -325,7 +326,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitAssertStatement(AssertStatement statement) {
         onLineNumber(statement);
-        
+
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
 
@@ -339,7 +340,56 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l0);
 
         // push expression string onto stack
-        cv.visitLdcInsn(booleanExpression.getText());
+        String expressionText = booleanExpression.getText();
+        List list = new ArrayList();
+        addVariableNames(booleanExpression, list);
+        if (list.isEmpty()) {
+            cv.visitLdcInsn(expressionText);
+        }
+        else {
+            int line = statement.getLineNumber();
+            boolean first = true;
+
+            // lets create a new expression
+            cv.visitTypeInsn(NEW, "java/lang/StringBuffer");
+            cv.visitInsn(DUP);
+            cv.visitLdcInsn(expressionText + ". Values: ");
+
+            cv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuffer", "<init>", "(Ljava/lang/String;)V");
+            cv.visitVarInsn(ASTORE, ++idx);
+
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
+                String name = (String) iter.next();
+                String text = name + " = ";
+                if (first) {
+                    first = false;
+                }
+                else {
+                    text = ", " + name;
+                }
+
+                cv.visitVarInsn(ALOAD, idx);
+                cv.visitLdcInsn(text);
+                cv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/lang/StringBuffer",
+                    "append",
+                    "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
+                cv.visitInsn(POP);
+
+                cv.visitVarInsn(ALOAD, idx);
+                new VariableExpression(name).visit(this);
+                cv.visitMethodInsn(
+                    INVOKEVIRTUAL,
+                    "java/lang/StringBuffer",
+                    "append",
+                    "(Ljava/lang/Object;)Ljava/lang/StringBuffer;");
+                cv.visitInsn(POP);
+
+            }
+            cv.visitVarInsn(ALOAD, idx);
+        }
+
         // now the optional exception expression
         statement.getMessageExpression().visit(this);
 
@@ -347,16 +397,32 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l1);
     }
 
+    private void addVariableNames(Expression expression, List list) {
+        if (expression instanceof BooleanExpression) {
+            BooleanExpression boolExp = (BooleanExpression) expression;
+            addVariableNames(boolExp.getExpression(), list);
+        }
+        else if (expression instanceof BinaryExpression) {
+            BinaryExpression binExp = (BinaryExpression) expression;
+            addVariableNames(binExp.getLeftExpression(), list);
+            addVariableNames(binExp.getRightExpression(), list);
+        }
+        else if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            list.add(varExp.getVariable());
+        }
+    }
+
     public void visitTryCatchFinally(TryCatchFinally statement) {
         onLineNumber(statement);
-        
+
         // TODO Auto-generated method stub
 
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement);
-        
+
         statement.getExpression().visit(this);
 
         Class c = getExpressionType(statement.getExpression());
@@ -384,7 +450,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitExpressionStatement(ExpressionStatement statement) {
         onLineNumber(statement);
-        
+
         statement.getExpression().visit(this);
     }
 
@@ -428,19 +494,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             case Token.PLUS :
                 evaluateBinaryExpression("plus", expression);
                 break;
-                
+
             case Token.MINUS :
                 evaluateBinaryExpression("minus", expression);
                 break;
-                
+
             case Token.MULTIPLY :
                 evaluateBinaryExpression("multiply", expression);
                 break;
-                
+
             case Token.DIVIDE :
                 evaluateBinaryExpression("divide", expression);
                 break;
-                
+
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
@@ -450,7 +516,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // TODO Auto-generated method stub
 
     }
-    
+
     public void visitRegexExpression(RegexExpression expression) {
         // TODO Auto-generated method stub
 
