@@ -209,6 +209,10 @@
              fork="${maven.junit.fork}"
              dir="${maven.junit.dir}">
         <sysproperty key="basedir" value="${basedir}"/>
+        
+        <!-- use headless for AWT stuff -->
+        <sysproperty key="java.awt.headless" value="${true}"/>
+        
         <u:tokenize var="listOfProperties" delim=" ">${maven.junit.sysproperties}</u:tokenize>
         <j:forEach var="someProperty" items="${listOfProperties}">
           <sysproperty key="${someProperty}" value="${context.getVariable(someProperty)}"/>
