@@ -153,7 +153,7 @@ public class ASTBuilder extends ASTHelper
 
         setPackageName( packageDeclaration( input.get(1) ));
 
-        importStatements( output, input.get(2) );
+        importStatements(input.get(2) );
 
         for( int i = 3; i < input.size(); ++i )
         {
@@ -196,11 +196,11 @@ public class ASTBuilder extends ASTHelper
     *  Processes the imports Reduction produced by Parser.module().
     */
 
-    protected void importStatements( ModuleNode module, CSTNode container )
+    protected void importStatements(CSTNode container)
     {
         for( int i = 1; i < container.size(); ++i)
         {
-            importStatement( module, container.get(i) );
+            importStatement( container.get(i) );
         }
     }
 
@@ -210,7 +210,7 @@ public class ASTBuilder extends ASTHelper
     *  Processes the Reduction produced by Parser.importStatement().
     */
 
-    protected void importStatement( ModuleNode module, CSTNode reduction )
+    protected void importStatement(CSTNode reduction)
     {
         //
         // First, get the package name (if supplied).
@@ -224,11 +224,7 @@ public class ASTBuilder extends ASTHelper
 
         if( reduction.get(2).isA(Types.STAR) )
         {
-            String[] classes = module.addImportPackage( dot(importPackage) );
-            for( int i = 0; i < classes.length; i++ )
-            {
-                imports.put( classes[i], dot(importPackage, classes[i]) );
-            }
+            importPackageWithStar(importPackage);
         }
 
 
@@ -243,28 +239,14 @@ public class ASTBuilder extends ASTHelper
                 String  name   = identifier( clause );
                 String  as     = (clause.hasChildren() ? identifier(clause.get(1)) : name);
 
-                //
-                // There appears to be a bug in the previous code for
-                // single imports, in that the old code passed unqualified
-                // class names to module.addImport().  This hasn't been a
-                // problem apparently because those names are resolved here.
-                // Passing module.addImport() a fully qualified name does
-                // currently causes problems with classgen, possibly because
-                // of name collisions.  So, for now, we use the old method...
+                importClass(importPackage, name, as);
 
-                module.addImport( as, name );  // unqualified
-
-                name = dot( importPackage, name );
-
-                // module.addImport( as, name );  // qualified
-                imports.put( as, name );
             }
         }
     }
 
 
-
-   /**
+    /**
     *  Processes the Reduction produced by Parser.topLevelStatement().
     */
 

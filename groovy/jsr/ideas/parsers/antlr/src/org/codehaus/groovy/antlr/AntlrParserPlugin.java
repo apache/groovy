@@ -135,15 +135,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             AST packageNode = dotNode.getFirstChild();
             AST classNode = packageNode.getNextSibling();
             String packageName = qualifiedName(packageNode);
-            if (classNode != null) {
-                packageName += "." + qualifiedName(classNode);
-            }
+            String name = qualifiedName(classNode);
             String alias = identifier(dotNode.getNextSibling());
-            output.addImport(alias, packageName);
+            importClass(packageName, name, alias);
         }
         else {
-            String packageName = qualifiedName(node);
-            output.addImportPackage(packageName);
+            AST packageNode = node.getFirstChild();
+            String packageName = qualifiedName(packageNode);
+            AST nameNode = packageNode.getNextSibling();
+            if (isType(STAR, nameNode)) {
+                importPackageWithStar(packageName);
+            }
+            else {
+                String name = qualifiedName(nameNode);
+                importClass(packageName, name, name);
+            }
         }
     }
 
@@ -154,15 +160,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(DOT, qualifiedNameNode);
 
         AST node = qualifiedNameNode.getFirstChild();
-        if (isType(DOT, node)) {
-            String answer = qualifiedName(node);
-            AST next = node.getNextSibling();
-            if (next != null) {
-                return answer + "." + qualifiedName(next);
-            }
-            return answer;
-        }
-
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
 
