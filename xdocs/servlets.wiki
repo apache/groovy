@@ -30,5 +30,34 @@ EOS)
 session.counter = session.counter + 1
 {code}
 
+1.1 Setting up groovylets
+
+Put the following in your web.xml:
+
+{code:xml}
+<servlet>
+<servlet-name>Groovy</servlet-name>
+<servlet-class>groovy.servlet.GroovyServlet</servlet-class>
+</servlet>
+
+<servlet-mapping>
+<servlet-name>Groovy</servlet-name>
+<url-pattern>*.groovy</url-pattern>
+</servlet-mapping>
+{code}
 
 
+Then all the groovy jar files into WEB-INF/lib. (You should only need to put
+the groovy jar and the asm jar).
+
+Now put the .groovy files in, say, the root directory (i.e. where you would put your html files).  The
+groovy servlet takes care of compiling the .groovy files. 
+
+
+So for example using tomcat you could edit tomcat/conf/server.xml like so:
+
+{code:xml}
+<Context path="/groovy" docBase="c:/groovy-servlet"/>
+{code}
+
+Then access it with http://localhost:8080/groovy/hello.groovy  
