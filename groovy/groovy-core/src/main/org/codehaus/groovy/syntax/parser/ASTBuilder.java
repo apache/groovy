@@ -12,6 +12,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.Expression;
+import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.MethodNode;
@@ -158,6 +159,34 @@ public class ASTBuilder
         }
 
         return null;
+    }
+
+    protected boolean isDatatype(String name)
+    {
+        if ( this.imports.containsKey( name )  )
+        {
+            return true;
+        }
+
+        try
+        {
+            getClassLoader().loadClass( "java.lang." + name );
+            return true;
+        }
+        catch (ClassNotFoundException e)
+        {
+            try
+            {
+                getClassLoader().loadClass( "groovy.lang." + name );
+                return true;
+            }
+            catch (ClassNotFoundException ee)
+            {
+                // swallow
+            }
+        }
+
+        return false;
     }
 
     protected String qualifiedName(CSTNode nameRoot)
@@ -523,6 +552,9 @@ public class ASTBuilder
                 return constantExpression( expressionRoot );
             }
             case ( Token.IDENTIFIER ):
+            {
+                return  variableOrClassExpression( expressionRoot );
+            }
             case ( Token.KEYWORD_THIS ):
             case ( Token.KEYWORD_SUPER ):
             {
@@ -611,6 +643,17 @@ public class ASTBuilder
 
         return new PropertyExpression ( objectExpression,
                                         propertyName );
+    }
+
+    protected Expression variableOrClassExpression(CSTNode expressionRoot)
+    {
+        String text = expressionRoot.getToken().getText();
+
+        if ( isDatatype( text ) ) {
+            return new ClassExpression( resolveName( text ) );
+        }
+
+        return variableExpression( expressionRoot );
     }
 
     protected VariableExpression variableExpression(CSTNode expressionRoot)
