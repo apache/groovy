@@ -45,10 +45,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 	
 import org.xml.sax.helpers.AttributesImpl
+import org.xml.sax.ext.LexicalHandler
 	
 	class StreamingSAXBuilder extends AbstractStreamingBuilder {
 		pendingStack = []
-		commentClosure = {Object[] rest | }
+		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+							if (contentHandler instanceOf LexicalHandler) {
+								contentHandler.comment(body.toCharArray(), 0, body.length())
+							}
+						 }
 		noopClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
 						if (body instanceof Closure) {
 							body()
@@ -64,9 +69,12 @@ import org.xml.sax.helpers.AttributesImpl
 			    					parts = key.tokenize '$'
 			    					
 			    					if (namespaces.containsKey parts[0]) {
-//			    						attributes.addAttribute(namespaces[parts[0]], parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
+			    						namespaceUri = namespaces[parts[0]]
+			    						
+//			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
 // workround for bug GROOVY-309
-			    						attributes.addAttribute(namespaces[parts[0]], parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
+			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
+			    						contentHandler.startPrefixMapping(parts[0], namespaceUri)
 			    					} else {
 			    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
 			    					} 
@@ -122,7 +130,9 @@ import org.xml.sax.helpers.AttributesImpl
 
 						contentHandler.endElement(uri, tag, qualifiedName)
 						
-						hiddenNamespaces.each {key, value |	
+						hiddenNamespaces.each {key, value |
+													contentHandler.endPrefixMapping(key)
+													
 													if (value == null) {
 														namespaces.remove key
 													} else {
