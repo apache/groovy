@@ -1,7 +1,11 @@
 
 class PropertyTest extends GroovyTestCase {
 
-    @Property String name
+
+    // TODO should barf as TestCase has a private setter?
+    // @Property String name = "abc"
+
+    @Property String cheese = "edam"
 
     /** TODO can't do constructors :)
     PropertyTest() {
@@ -10,14 +14,14 @@ class PropertyTest extends GroovyTestCase {
 
     void testProperty() {
 
-/*
-        assert name == "abc"
-        assert this.name == "abc"
-        assert this.getName() == "abc"
+        assert cheese == "edam"
+        assert this.getCheese() == "edam"
+        //assert this.cheese == "edam"
 
-        assert foo2 == 1234
-        assert getFoo2() == 1234
-        assert this.foo2 == 1234
-*/
+        cheese = "cheddar"
+
+        assert this.getCheese() == "cheddar"
+        //assert this.cheese == "cheddar"
+
     }
 }
