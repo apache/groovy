@@ -62,10 +62,8 @@ Core Groovy Tasks
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
 
-* special variables
-	this 
+* add support for special variables
 	class
-	it (closure parameter)
 	super (base class)
 		
 * BeanBuilder - builder which creates a tree of beans
