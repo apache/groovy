@@ -3,10 +3,10 @@
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
 import java.util.*;
-	import java.io.InputStream;
-	import java.io.Reader;
-	import antlr.InputBuffer;
-	import antlr.LexerSharedInputState;
+import java.io.InputStream;
+import java.io.Reader;
+import antlr.InputBuffer;
+import antlr.LexerSharedInputState;
 
 import antlr.TokenBuffer;
 import antlr.TokenStreamException;
@@ -35,104 +35,104 @@ import antlr.collections.impl.ASTArray;
  *  the AST constructed from the parser.]
  *
  * Contributing authors:
- *		John Mitchell		johnm@non.net
- *		Terence Parr		parrt@magelang.com
- *		John Lilley		jlilley@empathy.com
- *		Scott Stanchfield	thetick@magelang.com
- *		Markus Mohnen		mohnen@informatik.rwth-aachen.de
- *		Peter Williams		pete.williams@sun.com
- *		Allan Jacobs		Allan.Jacobs@eng.sun.com
- *		Steve Messick		messick@redhills.com
- *		James Strachan		jstrachan@protique.com
- *		John Pybus		john@pybus.org
- *		John Rose		rose00@mac.com
- *		Jeremy Rayner		groovy@ross-rayner.com
+ *              John Mitchell           johnm@non.net
+ *              Terence Parr            parrt@magelang.com
+ *              John Lilley             jlilley@empathy.com
+ *              Scott Stanchfield       thetick@magelang.com
+ *              Markus Mohnen           mohnen@informatik.rwth-aachen.de
+ *              Peter Williams          pete.williams@sun.com
+ *              Allan Jacobs            Allan.Jacobs@eng.sun.com
+ *              Steve Messick           messick@redhills.com
+ *              James Strachan          jstrachan@protique.com
+ *              John Pybus              john@pybus.org
+ *              John Rose               rose00@mac.com
+ *              Jeremy Rayner           groovy@ross-rayner.com
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
- *		fixed bug in octal def (0..7 not 0..8)
+ *              fixed bug in octal def (0..7 not 0..8)
  * Version 1.10 August 1998 (parrt)
- *		added tree construction
- *		fixed definition of WS,comments for mac,pc,unix newlines
- *		added unary plus
+ *              added tree construction
+ *              fixed definition of WS,comments for mac,pc,unix newlines
+ *              added unary plus
  * Version 1.11 (Nov 20, 1998)
- *		Added "shutup" option to turn off last ambig warning.
- *		Fixed inner class def to allow named class defs as statements
- *		synchronized requires compound not simple statement
- *		add [] after builtInType DOT class in primaryExpression
- *		"const" is reserved but not valid..removed from modifiers
+ *              Added "shutup" option to turn off last ambig warning.
+ *              Fixed inner class def to allow named class defs as statements
+ *              synchronized requires compound not simple statement
+ *              add [] after builtInType DOT class in primaryExpression
+ *              "const" is reserved but not valid..removed from modifiers
  * Version 1.12 (Feb 2, 1999)
- *		Changed LITERAL_xxx to xxx in tree grammar.
- *		Updated java.g to use tokens {...} now for 2.6.0 (new feature).
+ *              Changed LITERAL_xxx to xxx in tree grammar.
+ *              Updated java.g to use tokens {...} now for 2.6.0 (new feature).
  *
  * Version 1.13 (Apr 23, 1999)
- *		Didn't have (stat)? for else clause in tree parser.
- *		Didn't gen ASTs for interface extends.  Updated tree parser too.
- *		Updated to 2.6.0.
+ *              Didn't have (stat)? for else clause in tree parser.
+ *              Didn't gen ASTs for interface extends.  Updated tree parser too.
+ *              Updated to 2.6.0.
  * Version 1.14 (Jun 20, 1999)
- *		Allowed final/abstract on local classes.
- *		Removed local interfaces from methods
- *		Put instanceof precedence where it belongs...in relationalExpr
- *			It also had expr not type as arg; fixed it.
- *		Missing ! on SEMI in classBlock
- *		fixed: (expr) + "string" was parsed incorrectly (+ as unary plus).
- *		fixed: didn't like Object[].class in parser or tree parser
+ *              Allowed final/abstract on local classes.
+ *              Removed local interfaces from methods
+ *              Put instanceof precedence where it belongs...in relationalExpr
+ *                      It also had expr not type as arg; fixed it.
+ *              Missing ! on SEMI in classBlock
+ *              fixed: (expr) + "string" was parsed incorrectly (+ as unary plus).
+ *              fixed: didn't like Object[].class in parser or tree parser
  * Version 1.15 (Jun 26, 1999)
- *		Screwed up rule with instanceof in it. :(  Fixed.
- *		Tree parser didn't like (expr).something; fixed.
- *		Allowed multiple inheritance in tree grammar. oops.
+ *              Screwed up rule with instanceof in it. :(  Fixed.
+ *              Tree parser didn't like (expr).something; fixed.
+ *              Allowed multiple inheritance in tree grammar. oops.
  * Version 1.16 (August 22, 1999)
- *		Extending an interface built a wacky tree: had extra EXTENDS.
- *		Tree grammar didn't allow multiple superinterfaces.
- *		Tree grammar didn't allow empty var initializer: {}
+ *              Extending an interface built a wacky tree: had extra EXTENDS.
+ *              Tree grammar didn't allow multiple superinterfaces.
+ *              Tree grammar didn't allow empty var initializer: {}
  * Version 1.17 (October 12, 1999)
- *		ESC lexer rule allowed 399 max not 377 max.
- *		java.tree.g didn't handle the expression of synchronized
- *		statements.
+ *              ESC lexer rule allowed 399 max not 377 max.
+ *              java.tree.g didn't handle the expression of synchronized
+ *              statements.
  * Version 1.18 (August 12, 2001)
- *	  	Terence updated to Java 2 Version 1.3 by
- *		observing/combining work of Allan Jacobs and Steve
- *		Messick.  Handles 1.3 src.  Summary:
- *		o  primary didn't include boolean.class kind of thing
- *	  	o  constructor calls parsed explicitly now:
- * 		   see explicitConstructorInvocation
- *		o  add strictfp modifier
- *	  	o  missing objBlock after new expression in tree grammar
- *		o  merged local class definition alternatives, moved after declaration
- *		o  fixed problem with ClassName.super.field
- *	  	o  reordered some alternatives to make things more efficient
- *		o  long and double constants were not differentiated from int/float
- *		o  whitespace rule was inefficient: matched only one char
- *		o  add an examples directory with some nasty 1.3 cases
- *		o  made Main.java use buffered IO and a Reader for Unicode support
- *		o  supports UNICODE?
- *		   Using Unicode charVocabulay makes code file big, but only
- *		   in the bitsets at the end. I need to make ANTLR generate
- *		   unicode bitsets more efficiently.
+ *              Terence updated to Java 2 Version 1.3 by
+ *              observing/combining work of Allan Jacobs and Steve
+ *              Messick.  Handles 1.3 src.  Summary:
+ *              o  primary didn't include boolean.class kind of thing
+ *              o  constructor calls parsed explicitly now:
+ *                 see explicitConstructorInvocation
+ *              o  add strictfp modifier
+ *              o  missing objBlock after new expression in tree grammar
+ *              o  merged local class definition alternatives, moved after declaration
+ *              o  fixed problem with ClassName.super.field
+ *              o  reordered some alternatives to make things more efficient
+ *              o  long and double constants were not differentiated from int/float
+ *              o  whitespace rule was inefficient: matched only one char
+ *              o  add an examples directory with some nasty 1.3 cases
+ *              o  made Main.java use buffered IO and a Reader for Unicode support
+ *              o  supports UNICODE?
+ *                 Using Unicode charVocabulay makes code file big, but only
+ *                 in the bitsets at the end. I need to make ANTLR generate
+ *                 unicode bitsets more efficiently.
  * Version 1.19 (April 25, 2002)
- *		Terence added in nice fixes by John Pybus concerning floating
- *		constants and problems with super() calls.  John did a nice
- *		reorg of the primary/postfix expression stuff to read better
- *		and makes f.g.super() parse properly (it was METHOD_CALL not
- *		a SUPER_CTOR_CALL).  Also:
+ *              Terence added in nice fixes by John Pybus concerning floating
+ *              constants and problems with super() calls.  John did a nice
+ *              reorg of the primary/postfix expression stuff to read better
+ *              and makes f.g.super() parse properly (it was METHOD_CALL not
+ *              a SUPER_CTOR_CALL).  Also:
  *
- *		o  "finally" clause was a root...made it a child of "try"
- *		o  Added stuff for asserts too for Java 1.4, but *commented out*
- *		   as it is not backward compatible.
+ *              o  "finally" clause was a root...made it a child of "try"
+ *              o  Added stuff for asserts too for Java 1.4, but *commented out*
+ *                 as it is not backward compatible.
  *
  * Version 1.20 (October 27, 2002)
  *
- *	  Terence ended up reorging John Pybus' stuff to
- *	  remove some nondeterminisms and some syntactic predicates.
- *	  Note that the grammar is stricter now; e.g., this(...) must
- *	be the first statement.
+ *        Terence ended up reorging John Pybus' stuff to
+ *        remove some nondeterminisms and some syntactic predicates.
+ *        Note that the grammar is stricter now; e.g., this(...) must
+ *      be the first statement.
  *
- *	  Trinary ?: operator wasn't working as array name:
- *		  (isBig ? bigDigits : digits)[i];
+ *        Trinary ?: operator wasn't working as array name:
+ *                (isBig ? bigDigits : digits)[i];
  *
- *	  Checked parser/tree parser on source for
- *		  Resin-2.0.5, jive-2.1.1, jdk 1.3.1, Lucene, antlr 2.7.2a4,
- *		and the 110k-line jGuru server source.
+ *        Checked parser/tree parser on source for
+ *                Resin-2.0.5, jive-2.1.1, jdk 1.3.1, Lucene, antlr 2.7.2a4,
+ *              and the 110k-line jGuru server source.
  *
  * Version 1.21 (October 17, 2003)
  *  Fixed lots of problems including:
@@ -143,49 +143,49 @@ import antlr.collections.impl.ASTArray;
  *  TJP fixed CHAR_LITERAL analogously.
  *
  * Version 1.21.2 (March, 2003)
- *	  Changes by Matt Quail to support generics (as per JDK1.5/JSR14)
- *	  Notes:
- *	  o We only allow the "extends" keyword and not the "implements"
- *		keyword, since thats what JSR14 seems to imply.
- *	  o Thanks to Monty Zukowski for his help on the antlr-interest
- *		mail list.
- *	  o Thanks to Alan Eliasen for testing the grammar over his
- *		Fink source base
+ *        Changes by Matt Quail to support generics (as per JDK1.5/JSR14)
+ *        Notes:
+ *        o We only allow the "extends" keyword and not the "implements"
+ *              keyword, since thats what JSR14 seems to imply.
+ *        o Thanks to Monty Zukowski for his help on the antlr-interest
+ *              mail list.
+ *        o Thanks to Alan Eliasen for testing the grammar over his
+ *              Fink source base
  *
  * Version 1.22 (July, 2004)
- *	  Changes by Michael Studman to support Java 1.5 language extensions
- *	  Notes:
- *	  o Added support for annotations types
- *	  o Finished off Matt Quail's generics enhancements to support bound type arguments
- *	  o Added support for new for statement syntax
- *	  o Added support for static import syntax
- *	  o Added support for enum types
- *	  o Tested against JDK 1.5 source base and source base of jdigraph project
- *	  o Thanks to Matt Quail for doing the hard part by doing most of the generics work
+ *        Changes by Michael Studman to support Java 1.5 language extensions
+ *        Notes:
+ *        o Added support for annotations types
+ *        o Finished off Matt Quail's generics enhancements to support bound type arguments
+ *        o Added support for new for statement syntax
+ *        o Added support for static import syntax
+ *        o Added support for enum types
+ *        o Tested against JDK 1.5 source base and source base of jdigraph project
+ *        o Thanks to Matt Quail for doing the hard part by doing most of the generics work
  *
  * Version 1.22.1 (July 28, 2004)
- *	  Bug/omission fixes for Java 1.5 language support
- *	  o Fixed tree structure bug with classOrInterface - thanks to Pieter Vangorpto for
- *		spotting this
- *	  o Fixed bug where incorrect handling of SR and BSR tokens would cause type
- *		parameters to be recognised as type arguments.
- *	  o Enabled type parameters on constructors, annotations on enum constants
- *		and package definitions
- *	  o Fixed problems when parsing if ((char.class.equals(c))) {} - solution by Matt Quail at Cenqua
+ *        Bug/omission fixes for Java 1.5 language support
+ *        o Fixed tree structure bug with classOrInterface - thanks to Pieter Vangorpto for
+ *              spotting this
+ *        o Fixed bug where incorrect handling of SR and BSR tokens would cause type
+ *              parameters to be recognised as type arguments.
+ *        o Enabled type parameters on constructors, annotations on enum constants
+ *              and package definitions
+ *        o Fixed problems when parsing if ((char.class.equals(c))) {} - solution by Matt Quail at Cenqua
  *
  * Version 1.22.2 (July 28, 2004)
- *	  Slight refactoring of Java 1.5 language support
- *	  o Refactored for/"foreach" productions so that original literal "for" literal
- *	    is still used but the for sub-clauses vary by token type
- *	  o Fixed bug where type parameter was not included in generic constructor's branch of AST
+ *        Slight refactoring of Java 1.5 language support
+ *        o Refactored for/"foreach" productions so that original literal "for" literal
+ *          is still used but the for sub-clauses vary by token type
+ *        o Fixed bug where type parameter was not included in generic constructor's branch of AST
  *
  * Version 1.22.3 (August 26, 2004)
- *	  Bug fixes as identified by Michael Stahl; clean up of tabs/spaces
+ *        Bug fixes as identified by Michael Stahl; clean up of tabs/spaces
  *        and other refactorings
- *	  o Fixed typeParameters omission in identPrimary and newStatement
- *	  o Replaced GT reconcilliation code with simple semantic predicate
- *	  o Adapted enum/assert keyword checking support from Michael Stahl's java15 grammar
- *	  o Refactored typeDefinition production and field productions to reduce duplication
+ *        o Fixed typeParameters omission in identPrimary and newStatement
+ *        o Replaced GT reconcilliation code with simple semantic predicate
+ *        o Adapted enum/assert keyword checking support from Michael Stahl's java15 grammar
+ *        o Refactored typeDefinition production and field productions to reduce duplication
  *
  * Version 1.22.4 (October 21, 2004)
  *    Small bux fixes
@@ -206,30 +206,30 @@ import antlr.collections.impl.ASTArray;
 public class GroovyRecognizer extends antlr.LLkParser       implements GroovyTokenTypes
  {
 
-	/** This factory is the correct way to wire together a Groovy parser and lexer. */
-	public static GroovyRecognizer make(GroovyLexer lexer) {
-		GroovyRecognizer parser = new GroovyRecognizer(lexer.plumb());
-		// TO DO: set up a common error-handling control block, to avoid excessive tangle between these guys
-		parser.lexer = lexer;
-		lexer.parser = parser;
-		parser.setASTNodeClass("org.codehaus.groovy.antlr.GroovySourceAST");
-	 parser.warningList = new ArrayList();
-		return parser;
-	}
-	// Create a scanner that reads from the input stream passed to us...
-	public static GroovyRecognizer make(InputStream in) { return make(new GroovyLexer(in)); }
-	public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
-	public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
-	public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
+        /** This factory is the correct way to wire together a Groovy parser and lexer. */
+    public static GroovyRecognizer make(GroovyLexer lexer) {
+        GroovyRecognizer parser = new GroovyRecognizer(lexer.plumb());
+        // TO DO: set up a common error-handling control block, to avoid excessive tangle between these guys
+        parser.lexer = lexer;
+        lexer.parser = parser;
+        parser.setASTNodeClass("org.codehaus.groovy.antlr.GroovySourceAST");
+        parser.warningList = new ArrayList();
+        return parser;
+    }
+    // Create a scanner that reads from the input stream passed to us...
+    public static GroovyRecognizer make(InputStream in) { return make(new GroovyLexer(in)); }
+    public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
+    public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
+    public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
 
-	List warningList;
-	public List getWarningList() { return warningList; }
+    List warningList;
+    public List getWarningList() { return warningList; }
 
-	GroovyLexer lexer;
-public GroovyLexer getLexer() { return lexer; }
-	public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
+    GroovyLexer lexer;
+    public GroovyLexer getLexer() { return lexer; }
+    public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
 
-	// stuff to adjust ANTLR's tracing machinery
+    // stuff to adjust ANTLR's tracing machinery
     public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceParser
     public void traceIn(String rname) throws TokenStreamException {
         if (!GroovyRecognizer.tracing)  return;
@@ -240,68 +240,68 @@ public GroovyLexer getLexer() { return lexer; }
         if (returnAST != null)  rname += returnAST.toStringList();
         super.traceOut(rname);
     }
-	
-	// Error handling.  This is a funnel through which parser errors go, when the parser can suggest a solution.
-	public void requireFailed(String problem, String solution) throws SemanticException {
-		// TO DO: Needs more work.
-		Token lt = null;
-		try { lt = LT(1); }
-		catch (TokenStreamException ee) { }
-		if (lt == null)  lt = Token.badToken;
-		throw new SemanticException(problem + ";\n   solution: " + solution,
-									getFilename(), lt.getLine(), lt.getColumn());
-	}
-	
-	public void addWarning(String warning, String solution) {
-		Token lt = null;
-		try { lt = LT(1); }
-		catch (TokenStreamException ee) { }
-		if (lt == null)  lt = Token.badToken;
-	
-		Map row = new HashMap();
-		row.put("warning" ,warning);
-		row.put("solution",solution);
-		row.put("filename",getFilename());
-		row.put("line"    ,new Integer(lt.getLine()));
-		row.put("column"  ,new Integer(lt.getColumn()));
-	// System.out.println(row);
-		warningList.add(row);
-	}
-	
-	// Convenience method for checking of expected error syndromes.
-	private void require(boolean z, String problem, String solution) throws SemanticException {
-		if (!z)  requireFailed(problem, solution);
-	}
+        
+    // Error handling.  This is a funnel through which parser errors go, when the parser can suggest a solution.
+    public void requireFailed(String problem, String solution) throws SemanticException {
+        // TO DO: Needs more work.
+        Token lt = null;
+        try { lt = LT(1); }
+        catch (TokenStreamException ee) { }
+        if (lt == null)  lt = Token.badToken;
+        throw new SemanticException(problem + ";\n   solution: " + solution,
+                                    getFilename(), lt.getLine(), lt.getColumn());
+    }
 
-	
-	// Query a name token to see if it begins with a capital letter.
-	// This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
-	private boolean isUpperCase(Token x) {
-		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
-		String xtext = x.getText();
-		return (xtext.length() > 0 && Character.isUpperCase(xtext.charAt(0)));
-	}
+    public void addWarning(String warning, String solution) {
+        Token lt = null;
+        try { lt = LT(1); }
+        catch (TokenStreamException ee) { }
+        if (lt == null)  lt = Token.badToken;
 
-	private AST currentClass = null;  // current enclosing class (for constructor recognition)
-	// Query a name token to see if it is identical with the current class name.
-	// This is used to distinguish constructors from other methods.
-	private boolean isConstructorIdent(Token x) {
-		if (currentClass == null)  return false;
-		if (currentClass.getType() != IDENT)  return false;  // cannot happen?
-		String cname = currentClass.getText();
+        Map row = new HashMap();
+        row.put("warning" ,warning);
+        row.put("solution",solution);
+        row.put("filename",getFilename());
+        row.put("line"    ,new Integer(lt.getLine()));
+        row.put("column"  ,new Integer(lt.getColumn()));
+        // System.out.println(row);
+        warningList.add(row);
+    }
 
-		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
-		return cname.equals(x.getText());
-	}
+    // Convenience method for checking of expected error syndromes.
+    private void require(boolean z, String problem, String solution) throws SemanticException {
+        if (!z)  requireFailed(problem, solution);
+    }
 
 
-/**
-	 * Counts the number of LT seen in the typeArguments production.
-	 * It is used in semantic predicates to ensure we have seen
-	 * enough closing '>' characters; which actually may have been
-	 * either GT, SR or BSR tokens.
-	 */
-	private int ltCounter = 0;
+    // Query a name token to see if it begins with a capital letter.
+    // This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
+    private boolean isUpperCase(Token x) {
+        if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+        String xtext = x.getText();
+        return (xtext.length() > 0 && Character.isUpperCase(xtext.charAt(0)));
+    }
+
+    private AST currentClass = null;  // current enclosing class (for constructor recognition)
+    // Query a name token to see if it is identical with the current class name.
+    // This is used to distinguish constructors from other methods.
+    private boolean isConstructorIdent(Token x) {
+        if (currentClass == null)  return false;
+        if (currentClass.getType() != IDENT)  return false;  // cannot happen?
+        String cname = currentClass.getText();
+
+        if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+        return cname.equals(x.getText());
+    }
+
+
+    /**
+     * Counts the number of LT seen in the typeArguments production.
+     * It is used in semantic predicates to ensure we have seen
+     * enough closing '>' characters; which actually may have been
+     * either GT, SR or BSR tokens.
+     */
+    private int ltCounter = 0;
 
 protected GroovyRecognizer(TokenBuffer tokenBuf, int k) {
   super(tokenBuf,k);
@@ -1109,8 +1109,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	
 /** A block body is either a single expression, with no additional newlines or separators,
-  * or else the usual parade of zero or more statements.
-  */
+* or else the usual parade of zero or more statements.
+*/
 	public final void blockBody() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -1932,7 +1932,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		if ((LA(1)==IDENT) && (_tokenSet_34.member(LA(2)))) {
 			variableDeclarator(getASTFactory().dupTree(mods),
-                                                   getASTFactory().dupTree(t));
+                           getASTFactory().dupTree(t));
 			astFactory.addASTChild(currentAST, returnAST);
 			{
 			_loop187:
@@ -1941,7 +1941,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					match(COMMA);
 					nls();
 					variableDeclarator(getASTFactory().dupTree(mods),
-                                                           getASTFactory().dupTree(t));
+                               getASTFactory().dupTree(t));
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
@@ -2112,8 +2112,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	
 /** A declaration with one declarator and no initialization, like a parameterDeclaration.
 
-*TODO* We must also audit the various occurrences of warning
-suppressions like "options { greedy = true; }".
+    *TODO* We must also audit the various occurrences of warning
+    supp ressions like "options { greedy = true; }".
 */
 	public final void singleDeclarationNoInit() throws RecognitionException, TokenStreamException {
 		
@@ -2858,10 +2858,10 @@ suppressions like "options { greedy = true; }".
 		if ( inputState.guessing==0 ) {
 			classTypeSpec_AST = (AST)currentAST.root;
 			
-				if ( addImagNode ) {
-							classTypeSpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(classTypeSpec_AST));
-						}
-					
+			if ( addImagNode ) {
+			classTypeSpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(classTypeSpec_AST));
+			}
+			
 			currentAST.root = classTypeSpec_AST;
 			currentAST.child = classTypeSpec_AST!=null &&classTypeSpec_AST.getFirstChild()!=null ?
 				classTypeSpec_AST.getFirstChild() : classTypeSpec_AST;
@@ -2907,10 +2907,10 @@ suppressions like "options { greedy = true; }".
 		if ( inputState.guessing==0 ) {
 			builtInTypeSpec_AST = (AST)currentAST.root;
 			
-						if ( addImagNode ) {
-							builtInTypeSpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(builtInTypeSpec_AST));
-						}
-					
+			if ( addImagNode ) {
+			builtInTypeSpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(builtInTypeSpec_AST));
+			}
+			
 			currentAST.root = builtInTypeSpec_AST;
 			currentAST.child = builtInTypeSpec_AST!=null &&builtInTypeSpec_AST.getFirstChild()!=null ?
 				builtInTypeSpec_AST.getFirstChild() : builtInTypeSpec_AST;
@@ -3142,10 +3142,10 @@ suppressions like "options { greedy = true; }".
 		if ( inputState.guessing==0 ) {
 			classOrInterfaceType_AST = (AST)currentAST.root;
 			
-						if ( addImagNode ) {
-							classOrInterfaceType_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(classOrInterfaceType_AST));
-						}
-					
+			if ( addImagNode ) {
+			classOrInterfaceType_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(classOrInterfaceType_AST));
+			}
+			
 			currentAST.root = classOrInterfaceType_AST;
 			currentAST.child = classOrInterfaceType_AST!=null &&classOrInterfaceType_AST.getFirstChild()!=null ?
 				classOrInterfaceType_AST.getFirstChild() : classOrInterfaceType_AST;
@@ -3278,11 +3278,11 @@ suppressions like "options { greedy = true; }".
 		if ( inputState.guessing==0 ) {
 			builtInTypeArraySpec_AST = (AST)currentAST.root;
 			
-						if (ata_AST != null)  builtInTypeArraySpec_AST = ata_AST;
-						if ( addImagNode ) {
-							builtInTypeArraySpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(builtInTypeArraySpec_AST));
-						}
-					
+			if (ata_AST != null)  builtInTypeArraySpec_AST = ata_AST;
+			if ( addImagNode ) {
+			builtInTypeArraySpec_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(builtInTypeArraySpec_AST));
+			}
+			
 			currentAST.root = builtInTypeArraySpec_AST;
 			currentAST.child = builtInTypeArraySpec_AST!=null &&builtInTypeArraySpec_AST.getFirstChild()!=null ?
 				builtInTypeArraySpec_AST.getFirstChild() : builtInTypeArraySpec_AST;
@@ -3435,15 +3435,15 @@ suppressions like "options { greedy = true; }".
 		if ( inputState.guessing==0 ) {
 			typeArgumentBounds_AST = (AST)currentAST.root;
 			
-						if (isUpperBounds)
-						{
-							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS")).add(typeArgumentBounds_AST));
-						}
-						else
-						{
-							typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS")).add(typeArgumentBounds_AST));
-						}
-					
+			if (isUpperBounds)
+			{
+			typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS")).add(typeArgumentBounds_AST));
+			}
+			else
+			{
+			typeArgumentBounds_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS")).add(typeArgumentBounds_AST));
+			}
+			
 			currentAST.root = typeArgumentBounds_AST;
 			currentAST.child = typeArgumentBounds_AST!=null &&typeArgumentBounds_AST.getFirstChild()!=null ?
 				typeArgumentBounds_AST.getFirstChild() : typeArgumentBounds_AST;
@@ -5213,7 +5213,7 @@ suppressions like "options { greedy = true; }".
 				if ( inputState.guessing==0 ) {
 					annotationField_AST = (AST)currentAST.root;
 					annotationField_AST =
-										(AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF")).add(mods_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(t_AST))).add(i_AST).add(amvi_AST));
+					(AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF")).add(mods_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(t_AST))).add(i_AST).add(amvi_AST));
 					currentAST.root = annotationField_AST;
 					currentAST.child = annotationField_AST!=null &&annotationField_AST.getFirstChild()!=null ?
 						annotationField_AST.getFirstChild() : annotationField_AST;
@@ -6089,8 +6089,8 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /** Zero or more insignificant newlines, all gobbled up and thrown away,
-  * but a warning message is left for the user.
-  */
+* but a warning message is left for the user.
+*/
 	public final void nlsWarn() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -6110,9 +6110,9 @@ suppressions like "options { greedy = true; }".
 		}
 		if ( inputState.guessing==0 ) {
 			addWarning(
-				  "A newline at this point does not follow the Groovy Coding Conventions.",
-				                	  "Keep this statement on one line, or use curly braces to break across multiple lines."
-				                	);
+			"A newline at this point does not follow the Groovy Coding Conventions.",
+			"Keep this statement on one line, or use curly braces to break across multiple lines."
+			);
 		}
 		returnAST = nlsWarn_AST;
 	}
@@ -7022,7 +7022,7 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /** A block which is known to be a closure, even if it has no apparent arguments.
- */
+*/
 	public final void closedBlock() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -7101,8 +7101,8 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /** A block inside an expression is always assumed to be a closure.
- *  Only blocks which occur directly as substatements are kept open.
- */
+*  Only blocks which occur directly as substatements are kept open.
+*/
 	public final void expressionBlock() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -7889,9 +7889,9 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /** In Groovy, return, break, continue, throw, and assert can be used in any expression context.
- *  Example:  println (x || return);  println assert x, "won't print a false value!"
- *  If an optional expression is missing, its value is void (this coerces to null when a value is required).
- */
+*  Example:  println (x || return);  println assert x, "won't print a false value!"
+*  If an optional expression is missing, its value is void (this coerces to null when a value is required).
+*/
 	public final void branchExpression() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -9105,23 +9105,23 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /**
- * A list constructor is a argument list enclosed in square brackets, without labels.
- * Any argument can be decorated with a spread or optional operator (*x, ?x), but not a label (a:x).
- * Examples:  [], [1], [1,2], [1,*l1,2], [*l1,*l2], [1,?x,2].
- * (The l1, l2 must be a sequence or null.)
- * <p>
- * A map constructor is an argument list enclosed in square brackets, with labels everywhere,
- * except possibly on spread arguments, which stand for whole maps spliced in.
- * A colon immediately after the left bracket also forces the expression to be a map constructor.
- * Examples: [:], [a:1], [: a:1], [a:1,b:2], [a:1,*m1,b:2], [:*m1,*m2], [a:1,q:?x,b:2], [a:1,a:*x,b:2]
- * (The m1, m2 must be a map or null.)
- * Values associated with identical keys overwrite from left to right:
- * [a:1,a:2]  ===  [a:2]
- * <p>
- * Some malformed constructor expressions are not detected in the parser, but in a post-pass.
- * Bad examples: [1,b:2], [a:1,2], [:1], [a:1,?x], [a:1, b:*x].
- * (Note that method call arguments, by contrast, can be a mix of keyworded and non-keyworded arguments.)
- */
+* A list constructor is a argument list enclosed in square brackets, without labels.
+* Any argument can be decorated with a spread or optional operator (*x, ?x), but not a label (a:x).
+* Examples:  [], [1], [1,2], [1,*l1,2], [*l1,*l2], [1,?x,2].
+* (The l1, l2 must be a sequence or null.)
+* <p>
+* A map constructor is an argument list enclosed in square brackets, with labels everywhere,
+* except possibly on spread arguments, which stand for whole maps spliced in.
+* A colon immediately after the left bracket also forces the expression to be a map constructor.
+* Examples: [:], [a:1], [: a:1], [a:1,b:2], [a:1,*m1,b:2], [:*m1,*m2], [a:1,q:?x,b:2], [a:1,a:*x,b:2]
+* (The m1, m2 must be a map or null.)
+* Values associated with identical keys overwrite from left to right:
+* [a:1,a:2]  ===  [a:2]
+* <p>
+* Some malformed constructor expressions are not detected in the parser, but in a post-pass.
+* Bad examples: [1,b:2], [a:1,2], [:1], [a:1,?x], [a:1, b:*x].
+* (Note that method call arguments, by contrast, can be a mix of keyworded and non-keyworded arguments.)
+*/
 	public final void listOrMapConstructorExpression() throws RecognitionException, TokenStreamException {
 		
 		returnAST = null;
@@ -9363,29 +9363,29 @@ suppressions like "options { greedy = true; }".
 	}
 	
 /** An expression may be followed by one or both of (...) and {...}.
- *  Note: If either is (...) or {...} present, it is a method call.
- *  The {...} is appended to the argument list, and matches a formal of type Closure.
- *  If there is no method member, a property (or field) is used instead, and must itself be callable.
- *  <p>
- *  If the methodCallArgs are absent, it is a property (or field) reference, if possible.
- *  If there is no property or field, it is treated as a method call (nullary) after all.
- *  <p>
- *  Arguments in the (...) can be labeled, and the appended block can be labeled also.
- *  If there is a mix of unlabeled and labeled arguments,
- *  all the labeled arguments must follow the unlabeled arguments,
- *  except that the closure (labeled or not) is always a separate final argument.
- *  Labeled arguments are collected up and passed as a single argument to a formal of type Map.
- *  <p>
- *  Therefore, f(x,y, a:p, b:q) {s} is equivalent in all ways to f(x,y, [a:p,b:q], {s}).
- *  Spread arguments of sequence type count as unlabeled arguments,
- *  while spread arguments of map type count as labeled arguments.
- *  (This distinction must sometimes be checked dynamically.)
- *
- *  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
- *  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
- *  <p>
- *  Returned AST is [METHOD_CALL, callee, ELIST?, CLOSED_BLOCK?].
- */
+*  Note: If either is (...) or {...} present, it is a method call.
+*  The {...} is appended to the argument list, and matches a formal of type Closure.
+*  If there is no method member, a property (or field) is used instead, and must itself be callable.
+*  <p>
+*  If the methodCallArgs are absent, it is a property (or field) reference, if possible.
+*  If there is no property or field, it is treated as a method call (nullary) after all.
+*  <p>
+*  Arguments in the (...) can be labeled, and the appended block can be labeled also.
+*  If there is a mix of unlabeled and labeled arguments,
+*  all the labeled arguments must follow the unlabeled arguments,
+*  except that the closure (labeled or not) is always a separate final argument.
+*  Labeled arguments are collected up and passed as a single argument to a formal of type Map.
+*  <p>
+*  Therefore, f(x,y, a:p, b:q) {s} is equivalent in all ways to f(x,y, [a:p,b:q], {s}).
+*  Spread arguments of sequence type count as unlabeled arguments,
+*  while spread arguments of map type count as labeled arguments.
+*  (This distinction must sometimes be checked dynamically.)
+*
+*  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
+*  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
+*  <p>
+*  Returned AST is [METHOD_CALL, callee, ELIST?, CLOSED_BLOCK?].
+*/
 	public final void methodCallArgs(
 		AST callee
 	) throws RecognitionException, TokenStreamException {
@@ -11196,8 +11196,8 @@ suppressions like "options { greedy = true; }".
  *  new
  *   |
  *   T --  ELIST
- *		   |
- *		  arg1 -- arg2 -- .. -- argn
+ *                 |
+ *                arg1 -- arg2 -- .. -- argn
  *
  *  new int[]
  *
@@ -11210,31 +11210,31 @@ suppressions like "options { greedy = true; }".
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR -- ARRAY_INIT
- *								  |
- *								EXPR -- EXPR
- *								  |	  |
- *								  1	  2
+ *                                                                |
+ *                                                              EXPR -- EXPR
+ *                                                                |   |
+ *                                                                1       2
  *
  *  new int[3]
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR
- *				|
- *			  EXPR
- *				|
- *				3
+ *                              |
+ *                        EXPR
+ *                              |
+ *                              3
  *
  *  new int[1][2]
  *
  *  new
  *   |
  *  int -- ARRAY_DECLARATOR
- *			   |
- *		 ARRAY_DECLARATOR -- EXPR
- *			   |			  |
- *			 EXPR			 1
- *			   |
- *			   2
+ *                         |
+ *               ARRAY_DECLARATOR -- EXPR
+ *                         |                  |
+ *                       EXPR                    1
+ *                         |
+ *                         2
  *
  */
 	public final void newExpression() throws RecognitionException, TokenStreamException {

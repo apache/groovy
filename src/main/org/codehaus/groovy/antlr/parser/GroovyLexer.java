@@ -3,10 +3,10 @@
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
 import java.util.*;
-	import java.io.InputStream;
-	import java.io.Reader;
-	import antlr.InputBuffer;
-	import antlr.LexerSharedInputState;
+import java.io.InputStream;
+import java.io.Reader;
+import antlr.InputBuffer;
+import antlr.LexerSharedInputState;
 
 import java.io.InputStream;
 import antlr.TokenStreamException;
@@ -35,91 +35,91 @@ import antlr.SemanticException;
 public class GroovyLexer extends antlr.CharScanner implements GroovyTokenTypes, TokenStream
  {
 
-	/** flag for enabling the "assert" keyword */
-	private boolean assertEnabled = true;
-	/** flag for enabling the "enum" keyword */
-	private boolean enumEnabled = true;
+    /** flag for enabling the "assert" keyword */
+    private boolean assertEnabled = true;
+    /** flag for enabling the "enum" keyword */
+    private boolean enumEnabled = true;
 
-	/** Enable the "assert" keyword */
-	public void enableAssert(boolean shouldEnable) { assertEnabled = shouldEnable; }
-	/** Query the "assert" keyword state */
-	public boolean isAssertEnabled() { return assertEnabled; }
-	/** Enable the "enum" keyword */
-	public void enableEnum(boolean shouldEnable) { enumEnabled = shouldEnable; }
-	/** Query the "enum" keyword state */
-	public boolean isEnumEnabled() { return enumEnabled; }
+    /** Enable the "assert" keyword */
+    public void enableAssert(boolean shouldEnable) { assertEnabled = shouldEnable; }
+    /** Query the "assert" keyword state */
+    public boolean isAssertEnabled() { return assertEnabled; }
+    /** Enable the "enum" keyword */
+    public void enableEnum(boolean shouldEnable) { enumEnabled = shouldEnable; }
+    /** Query the "enum" keyword state */
+    public boolean isEnumEnabled() { return enumEnabled; }
 
 
 /** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
-	protected int parenLevel = 0;
-	protected int suppressNewline = 0;  // be really mean to newlines inside strings
-	protected static final int SCS_TRIPLE = 1, SCS_VAL = 2, SCS_LIT = 4, SCS_LIMIT = 8;
-	protected int stringCtorState = 0;  // hack string constructor boundaries
-	/** Push parenLevel here and reset whenever inside '{x}'. */
-	protected ArrayList parenLevelStack = new ArrayList();
-	protected Token lastToken = Token.badToken;
+    protected int parenLevel = 0;
+    protected int suppressNewline = 0;  // be really mean to newlines inside strings
+    protected static final int SCS_TRIPLE = 1, SCS_VAL = 2, SCS_LIT = 4, SCS_LIMIT = 8;
+    protected int stringCtorState = 0;  // hack string constructor boundaries
+    /** Push parenLevel here and reset whenever inside '{x}'. */
+    protected ArrayList parenLevelStack = new ArrayList();
+    protected Token lastToken = Token.badToken;
 
-	protected void pushParenLevel() {
-		parenLevelStack.add(new Integer(parenLevel*8 + stringCtorState));
-		parenLevel = 0;
-		stringCtorState = 0;
-	}
-	protected void popParenLevel() {
-		int npl = parenLevelStack.size();
-		if (npl == 0)  return;
-		int i = ((Integer) parenLevelStack.remove(--npl)).intValue();
-		parenLevel      = i / SCS_LIMIT;
-		stringCtorState = i % SCS_LIMIT;
-	}
-	
-	protected void restartStringCtor(boolean expectLiteral) {
-		if (stringCtorState != 0) {
-			stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TRIPLE);
-		}
-	}
+    protected void pushParenLevel() {
+        parenLevelStack.add(new Integer(parenLevel*8 + stringCtorState));
+        parenLevel = 0;
+        stringCtorState = 0;
+    }
+    protected void popParenLevel() {
+        int npl = parenLevelStack.size();
+        if (npl == 0)  return;
+        int i = ((Integer) parenLevelStack.remove(--npl)).intValue();
+        parenLevel      = i / SCS_LIMIT;
+        stringCtorState = i % SCS_LIMIT;
+    }
 
-	void newlineCheck() throws RecognitionException {
-		if (suppressNewline > 0) {
-			suppressNewline = 0;
-			require(suppressNewline == 0,
-				"end of line reached within a simple string 'x' or \"x\"",
-				"for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
-		}
-		newline();
-	}
-	
-	/** This is a bit of plumbing which resumes collection of string constructor bodies,
-	 *  after an embedded expression has been parsed.
-	 *  Usage:  new GroovyRecognizer(new GroovyLexer(in).plumb()).
-	 */
-	public TokenStream plumb() {
-		return new TokenStream() {
-			public Token nextToken() throws TokenStreamException {
-				if (stringCtorState >= SCS_LIT) {
-					// This goo is modeled upon the ANTLR code for nextToken:
-					boolean tripleQuote = (stringCtorState & SCS_TRIPLE) != 0;
-					stringCtorState = 0;  // get out of this mode, now
-					resetText();
-					try {
-						mSTRING_CTOR_END(true, /*fromStart:*/false, tripleQuote);
-						return lastToken = _returnToken;
-					} catch (RecognitionException e) {
-						throw new TokenStreamRecognitionException(e);
-					} catch (CharStreamException cse) {
-						if ( cse instanceof CharStreamIOException ) {
-							throw new TokenStreamIOException(((CharStreamIOException)cse).io);
-						}
-						else {
-							throw new TokenStreamException(cse.getMessage());
-						}
-					}
-				}
-				return lastToken = GroovyLexer.this.nextToken();
-			}
-		};
-	}
+    protected void restartStringCtor(boolean expectLiteral) {
+        if (stringCtorState != 0) {
+            stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TRIPLE);
+        }
+    }
 
-	// stuff to adjust ANTLR's tracing machinery
+    void newlineCheck() throws RecognitionException {
+        if (suppressNewline > 0) {
+            suppressNewline = 0;
+            require(suppressNewline == 0,
+                "end of line reached within a simple string 'x' or \"x\"",
+                "for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
+        }
+        newline();
+    }
+
+    /** This is a bit of plumbing which resumes collection of string constructor bodies,
+     *  after an embedded expression has been parsed.
+     *  Usage:  new GroovyRecognizer(new GroovyLexer(in).plumb()).
+     */
+    public TokenStream plumb() {
+        return new TokenStream() {
+            public Token nextToken() throws TokenStreamException {
+                if (stringCtorState >= SCS_LIT) {
+                    // This goo is modeled upon the ANTLR code for nextToken:
+                    boolean tripleQuote = (stringCtorState & SCS_TRIPLE) != 0;
+                    stringCtorState = 0;  // get out of this mode, now
+                    resetText();
+                    try {
+                        mSTRING_CTOR_END(true, /*fromStart:*/false, tripleQuote);
+                        return lastToken = _returnToken;
+                    } catch (RecognitionException e) {
+                        throw new TokenStreamRecognitionException(e);
+                    } catch (CharStreamException cse) {
+                        if ( cse instanceof CharStreamIOException ) {
+                            throw new TokenStreamIOException(((CharStreamIOException)cse).io);
+                        }
+                        else {
+                            throw new TokenStreamException(cse.getMessage());
+                        }
+                    }
+                }
+                return lastToken = GroovyLexer.this.nextToken();
+            }
+        };
+    }
+
+        // stuff to adjust ANTLR's tracing machinery
     public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceLexer
     public void traceIn(String rname) throws CharStreamException {
         if (!GroovyLexer.tracing)  return;
@@ -130,31 +130,31 @@ public class GroovyLexer extends antlr.CharScanner implements GroovyTokenTypes, 
         if (_returnToken != null)  rname += tokenStringOf(_returnToken);
         super.traceOut(rname);
     }
-	private static java.util.HashMap ttypes;
-	private static String tokenStringOf(Token t) {
-		if (ttypes == null) {
-			java.util.HashMap map = new java.util.HashMap();
-			java.lang.reflect.Field[] fields = GroovyTokenTypes.class.getDeclaredFields();
-			for (int i = 0; i < fields.length; i++) {
-				if (fields[i].getType() != int.class)  continue;
-				try {
-					map.put(fields[i].get(null), fields[i].getName());
-				} catch (IllegalAccessException ee) {
-				}
-			}
-			ttypes = map;
-		}
-		Integer tt = new Integer(t.getType());
-		Object ttn = ttypes.get(tt);
-		if (ttn == null)  ttn = "<"+tt+">";
-		return "["+ttn+",\""+t.getText()+"\"]";
-	}
+    private static java.util.HashMap ttypes;
+    private static String tokenStringOf(Token t) {
+        if (ttypes == null) {
+            java.util.HashMap map = new java.util.HashMap();
+            java.lang.reflect.Field[] fields = GroovyTokenTypes.class.getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                if (fields[i].getType() != int.class)  continue;
+                try {
+                    map.put(fields[i].get(null), fields[i].getName());
+                } catch (IllegalAccessException ee) {
+                }
+            }
+            ttypes = map;
+        }
+        Integer tt = new Integer(t.getType());
+        Object ttn = ttypes.get(tt);
+        if (ttn == null)  ttn = "<"+tt+">";
+        return "["+ttn+",\""+t.getText()+"\"]";
+    }
 
-	protected GroovyRecognizer parser;  // little-used link; TO DO: get rid of
-	private void require(boolean z, String problem, String solution) throws SemanticException {
-		// TO DO: Direct to a common error handler, rather than through the parser.
-		if (!z)  parser.requireFailed(problem, solution);
-	}
+    protected GroovyRecognizer parser;  // little-used link; TO DO: get rid of
+    private void require(boolean z, String problem, String solution) throws SemanticException {
+        // TO DO: Direct to a common error handler, rather than through the parser.
+        if (!z)  parser.requireFailed(problem, solution);
+    }
 public GroovyLexer(InputStream in) {
 	this(new ByteBuffer(in));
 }
@@ -362,10 +362,6 @@ tryAgain:
 						mBSR_ASSIGN(true);
 						theRetToken=_returnToken;
 					}
-					else if ((LA(1)=='/') && (LA(2)=='*') && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && ((LA(4) >= '\u0003' && LA(4) <= '\uffff'))) {
-						mML_COMMENT(true);
-						theRetToken=_returnToken;
-					}
 					else if ((LA(1)=='<') && (LA(2)=='=') && (LA(3)=='>')) {
 						mCOMPARE_TO(true);
 						theRetToken=_returnToken;
@@ -402,7 +398,7 @@ tryAgain:
 						mNOT_EQUAL(true);
 						theRetToken=_returnToken;
 					}
-					else if ((LA(1)=='/') && (LA(2)=='=') && (true) && (true)) {
+					else if ((LA(1)=='/') && (LA(2)=='=')) {
 						mDIV_ASSIGN(true);
 						theRetToken=_returnToken;
 					}
@@ -486,6 +482,14 @@ tryAgain:
 						mSTAR_STAR(true);
 						theRetToken=_returnToken;
 					}
+					else if ((LA(1)=='/') && (LA(2)=='/')) {
+						mSL_COMMENT(true);
+						theRetToken=_returnToken;
+					}
+					else if ((LA(1)=='/') && (LA(2)=='*')) {
+						mML_COMMENT(true);
+						theRetToken=_returnToken;
+					}
 					else if ((LA(1)=='?') && (true)) {
 						mQUESTION(true);
 						theRetToken=_returnToken;
@@ -502,7 +506,7 @@ tryAgain:
 						mLNOT(true);
 						theRetToken=_returnToken;
 					}
-					else if ((LA(1)=='/') && (true) && (true) && (true)) {
+					else if ((LA(1)=='/') && (true)) {
 						mDIV(true);
 						theRetToken=_returnToken;
 					}
@@ -540,10 +544,6 @@ tryAgain:
 					}
 					else if ((LA(1)=='&') && (true)) {
 						mBAND(true);
-						theRetToken=_returnToken;
-					}
-					else if ((LA(1)=='#'||LA(1)=='/') && (true) && (true) && (true)) {
-						mSL_COMMENT(true);
 						theRetToken=_returnToken;
 					}
 				else {
@@ -1405,14 +1405,14 @@ tryAgain:
 				{
 				_loop544:
 				do {
-					if ((LA(1)=='/') && (LA(2)=='*') && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && ((LA(4) >= '\u0003' && LA(4) <= '\uffff'))) {
+					if ((LA(1)=='/') && (LA(2)=='/')) {
+						mSL_COMMENT(false);
+					}
+					else if ((LA(1)=='/') && (LA(2)=='*')) {
 						mML_COMMENT(false);
 					}
 					else if ((LA(1)=='\t'||LA(1)=='\u000c'||LA(1)==' ')) {
 						mWS(false);
-					}
-					else if ((LA(1)=='#'||LA(1)=='/') && (true) && (true) && (true)) {
-						mSL_COMMENT(false);
 					}
 					else {
 						break _loop544;
@@ -1448,26 +1448,9 @@ tryAgain:
 		_ttype = SL_COMMENT;
 		int _saveIndex;
 		
+		match("//");
 		{
-		switch ( LA(1)) {
-		case '/':
-		{
-			match("//");
-			break;
-		}
-		case '#':
-		{
-			match("#");
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());
-		}
-		}
-		}
-		{
-		_loop550:
+		_loop549:
 		do {
 			if ((_tokenSet_0.member(LA(1))) && (true) && (true) && (true)) {
 				{
@@ -1475,7 +1458,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop550;
+				break _loop549;
 			}
 			
 		} while (true);
@@ -1497,7 +1480,7 @@ tryAgain:
 		
 		match("/*");
 		{
-		_loop556:
+		_loop555:
 		do {
 			if ((LA(1)=='\r') && (LA(2)=='\n') && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && ((LA(4) >= '\u0003' && LA(4) <= '\uffff'))) {
 				match('\r');
@@ -1507,10 +1490,10 @@ tryAgain:
 				}
 			}
 			else {
-				boolean synPredMatched554 = false;
+				boolean synPredMatched553 = false;
 				if (((LA(1)=='*') && ((LA(2) >= '\u0003' && LA(2) <= '\uffff')) && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && (true))) {
-					int _m554 = mark();
-					synPredMatched554 = true;
+					int _m553 = mark();
+					synPredMatched553 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -1519,12 +1502,12 @@ tryAgain:
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched554 = false;
+						synPredMatched553 = false;
 					}
-					rewind(_m554);
+					rewind(_m553);
 					inputState.guessing--;
 				}
-				if ( synPredMatched554 ) {
+				if ( synPredMatched553 ) {
 					match('*');
 				}
 				else if ((LA(1)=='\r') && ((LA(2) >= '\u0003' && LA(2) <= '\uffff')) && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && (true)) {
@@ -1545,7 +1528,7 @@ tryAgain:
 					}
 				}
 				else {
-					break _loop556;
+					break _loop555;
 				}
 				}
 			} while (true);
@@ -1567,10 +1550,10 @@ tryAgain:
 		int _saveIndex;
 		int tt=0;
 		
-		boolean synPredMatched559 = false;
+		boolean synPredMatched558 = false;
 		if (((LA(1)=='\'') && (LA(2)=='\'') && (LA(3)=='\'') && ((LA(4) >= '\u0003' && LA(4) <= '\uffff')))) {
-			int _m559 = mark();
-			synPredMatched559 = true;
+			int _m558 = mark();
+			synPredMatched558 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -1578,17 +1561,17 @@ tryAgain:
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched559 = false;
+				synPredMatched558 = false;
 			}
-			rewind(_m559);
+			rewind(_m558);
 			inputState.guessing--;
 		}
-		if ( synPredMatched559 ) {
+		if ( synPredMatched558 ) {
 			_saveIndex=text.length();
 			match("'''");
 			text.setLength(_saveIndex);
 			{
-			_loop564:
+			_loop563:
 			do {
 				switch ( LA(1)) {
 				case '\n':  case '\r':  case '\\':
@@ -1607,10 +1590,10 @@ tryAgain:
 					break;
 				}
 				default:
-					boolean synPredMatched563 = false;
+					boolean synPredMatched562 = false;
 					if (((LA(1)=='\'') && ((LA(2) >= '\u0003' && LA(2) <= '\uffff')) && ((LA(3) >= '\u0003' && LA(3) <= '\uffff')) && ((LA(4) >= '\u0003' && LA(4) <= '\uffff')))) {
-						int _m563 = mark();
-						synPredMatched563 = true;
+						int _m562 = mark();
+						synPredMatched562 = true;
 						inputState.guessing++;
 						try {
 							{
@@ -1631,19 +1614,19 @@ tryAgain:
 							}
 						}
 						catch (RecognitionException pe) {
-							synPredMatched563 = false;
+							synPredMatched562 = false;
 						}
-						rewind(_m563);
+						rewind(_m562);
 						inputState.guessing--;
 					}
-					if ( synPredMatched563 ) {
+					if ( synPredMatched562 ) {
 						match('\'');
 					}
 					else if ((_tokenSet_3.member(LA(1)))) {
 						mSTRING_CH(false);
 					}
 				else {
-					break _loop564;
+					break _loop563;
 				}
 				}
 			} while (true);
@@ -1653,10 +1636,10 @@ tryAgain:
 			text.setLength(_saveIndex);
 		}
 		else {
-			boolean synPredMatched568 = false;
+			boolean synPredMatched567 = false;
 			if (((LA(1)=='"') && (LA(2)=='"') && (LA(3)=='"') && ((LA(4) >= '\u0003' && LA(4) <= '\uffff')))) {
-				int _m568 = mark();
-				synPredMatched568 = true;
+				int _m567 = mark();
+				synPredMatched567 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -1664,12 +1647,12 @@ tryAgain:
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched568 = false;
+					synPredMatched567 = false;
 				}
-				rewind(_m568);
+				rewind(_m567);
 				inputState.guessing--;
 			}
-			if ( synPredMatched568 ) {
+			if ( synPredMatched567 ) {
 				_saveIndex=text.length();
 				match("\"\"\"");
 				text.setLength(_saveIndex);
@@ -1686,7 +1669,7 @@ tryAgain:
 					++suppressNewline;
 				}
 				{
-				_loop566:
+				_loop565:
 				do {
 					switch ( LA(1)) {
 					case '\n':  case '\r':  case '\\':
@@ -1709,7 +1692,7 @@ tryAgain:
 							mSTRING_CH(false);
 						}
 					else {
-						break _loop566;
+						break _loop565;
 					}
 					}
 				} while (true);
@@ -1833,17 +1816,17 @@ tryAgain:
 			case 'u':
 			{
 				{
-				int _cnt582=0;
-				_loop582:
+				int _cnt581=0;
+				_loop581:
 				do {
 					if ((LA(1)=='u')) {
 						match('u');
 					}
 					else {
-						if ( _cnt582>=1 ) { break _loop582; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+						if ( _cnt581>=1 ) { break _loop581; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 					}
 					
-					_cnt582++;
+					_cnt581++;
 				} while (true);
 				}
 				if ( inputState.guessing==0 ) {
@@ -1950,7 +1933,7 @@ tryAgain:
 		int _saveIndex;
 		
 		{
-		_loop574:
+		_loop573:
 		do {
 			switch ( LA(1)) {
 			case '\n':  case '\r':  case '\\':
@@ -1964,10 +1947,10 @@ tryAgain:
 				break;
 			}
 			default:
-				boolean synPredMatched573 = false;
+				boolean synPredMatched572 = false;
 				if ((((LA(1)=='"') && ((LA(2) >= '\u0003' && LA(2) <= '\uffff')) && (true) && (true))&&(tripleQuote))) {
-					int _m573 = mark();
-					synPredMatched573 = true;
+					int _m572 = mark();
+					synPredMatched572 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -1988,19 +1971,19 @@ tryAgain:
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched573 = false;
+						synPredMatched572 = false;
 					}
-					rewind(_m573);
+					rewind(_m572);
 					inputState.guessing--;
 				}
-				if ( synPredMatched573 ) {
+				if ( synPredMatched572 ) {
 					match('"');
 				}
 				else if ((_tokenSet_3.member(LA(1)))) {
 					mSTRING_CH(false);
 				}
 			else {
-				break _loop574;
+				break _loop573;
 			}
 			}
 		} while (true);
@@ -2132,7 +2115,7 @@ tryAgain:
 		
 		mLETTER(false);
 		{
-		_loop591:
+		_loop590:
 		do {
 			switch ( LA(1)) {
 			case 'A':  case 'B':  case 'C':  case 'D':
@@ -2162,14 +2145,14 @@ tryAgain:
 			}
 			default:
 			{
-				break _loop591;
+				break _loop590;
 			}
 			}
 		} while (true);
 		}
 		if ( inputState.guessing==0 ) {
 			
-						if (stringCtorState != 0) {
+			if (stringCtorState != 0) {
 			if (LA(1) == '.' && LA(2) != '$' &&
 			Character.isJavaIdentifierStart(LA(2))) {
 			// pick up another name component before going literal again:
@@ -2191,15 +2174,15 @@ tryAgain:
 			}
 			_ttype = ttype;
 			
-						// check if "assert" keyword is enabled
-						if (assertEnabled && "assert".equals(new String(text.getBuffer(),_begin,text.length()-_begin))) {
-							_ttype = LITERAL_assert; // set token type for the rule in the parser
-						}
-						// check if "enum" keyword is enabled
-						if (enumEnabled && "enum".equals(new String(text.getBuffer(),_begin,text.length()-_begin))) {
-							_ttype = LITERAL_enum; // set token type for the rule in the parser
-						}
-					
+			// check if "assert" keyword is enabled
+			if (assertEnabled && "assert".equals(new String(text.getBuffer(),_begin,text.length()-_begin))) {
+			_ttype = LITERAL_assert; // set token type for the rule in the parser
+			}
+			// check if "enum" keyword is enabled
+			if (enumEnabled && "enum".equals(new String(text.getBuffer(),_begin,text.length()-_begin))) {
+			_ttype = LITERAL_enum; // set token type for the rule in the parser
+			}
+			
 		}
 		_ttype = testLiteralsTable(_ttype);
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
@@ -2310,40 +2293,40 @@ tryAgain:
 					isDecimal = false;
 				}
 				{
-				int _cnt599=0;
-				_loop599:
+				int _cnt598=0;
+				_loop598:
 				do {
 					if ((_tokenSet_5.member(LA(1))) && (true) && (true) && (true)) {
 						mHEX_DIGIT(false);
 					}
 					else {
-						if ( _cnt599>=1 ) { break _loop599; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+						if ( _cnt598>=1 ) { break _loop598; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 					}
 					
-					_cnt599++;
+					_cnt598++;
 				} while (true);
 				}
 			}
 			else {
-				boolean synPredMatched605 = false;
+				boolean synPredMatched604 = false;
 				if ((((LA(1) >= '0' && LA(1) <= '9')) && (true) && (true) && (true))) {
-					int _m605 = mark();
-					synPredMatched605 = true;
+					int _m604 = mark();
+					synPredMatched604 = true;
 					inputState.guessing++;
 					try {
 						{
 						{
-						int _cnt602=0;
-						_loop602:
+						int _cnt601=0;
+						_loop601:
 						do {
 							if (((LA(1) >= '0' && LA(1) <= '9'))) {
 								matchRange('0','9');
 							}
 							else {
-								if ( _cnt602>=1 ) { break _loop602; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+								if ( _cnt601>=1 ) { break _loop601; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 							}
 							
-							_cnt602++;
+							_cnt601++;
 						} while (true);
 						}
 						{
@@ -2375,40 +2358,40 @@ tryAgain:
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched605 = false;
+						synPredMatched604 = false;
 					}
-					rewind(_m605);
+					rewind(_m604);
 					inputState.guessing--;
 				}
-				if ( synPredMatched605 ) {
+				if ( synPredMatched604 ) {
 					{
-					int _cnt607=0;
-					_loop607:
+					int _cnt606=0;
+					_loop606:
 					do {
 						if (((LA(1) >= '0' && LA(1) <= '9'))) {
 							matchRange('0','9');
 						}
 						else {
-							if ( _cnt607>=1 ) { break _loop607; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+							if ( _cnt606>=1 ) { break _loop606; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 						}
 						
-						_cnt607++;
+						_cnt606++;
 					} while (true);
 					}
 				}
 				else if (((LA(1) >= '0' && LA(1) <= '7')) && (true) && (true) && (true)) {
 					{
-					int _cnt609=0;
-					_loop609:
+					int _cnt608=0;
+					_loop608:
 					do {
 						if (((LA(1) >= '0' && LA(1) <= '7'))) {
 							matchRange('0','7');
 						}
 						else {
-							if ( _cnt609>=1 ) { break _loop609; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+							if ( _cnt608>=1 ) { break _loop608; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 						}
 						
-						_cnt609++;
+						_cnt608++;
 					} while (true);
 					}
 					if ( inputState.guessing==0 ) {
@@ -2429,13 +2412,13 @@ tryAgain:
 				matchRange('1','9');
 				}
 				{
-				_loop612:
+				_loop611:
 				do {
 					if (((LA(1) >= '0' && LA(1) <= '9'))) {
 						matchRange('0','9');
 					}
 					else {
-						break _loop612;
+						break _loop611;
 					}
 					
 				} while (true);
@@ -2512,10 +2495,10 @@ tryAgain:
 				break;
 			}
 			default:
-				boolean synPredMatched618 = false;
+				boolean synPredMatched617 = false;
 				if ((((LA(1)=='.'||LA(1)=='D'||LA(1)=='E'||LA(1)=='F'||LA(1)=='d'||LA(1)=='e'||LA(1)=='f'))&&(isDecimal))) {
-					int _m618 = mark();
-					synPredMatched618 = true;
+					int _m617 = mark();
+					synPredMatched617 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -2535,29 +2518,29 @@ tryAgain:
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched618 = false;
+						synPredMatched617 = false;
 					}
-					rewind(_m618);
+					rewind(_m617);
 					inputState.guessing--;
 				}
-				if ( synPredMatched618 ) {
+				if ( synPredMatched617 ) {
 					{
 					switch ( LA(1)) {
 					case '.':
 					{
 						match('.');
 						{
-						int _cnt621=0;
-						_loop621:
+						int _cnt620=0;
+						_loop620:
 						do {
 							if (((LA(1) >= '0' && LA(1) <= '9'))) {
 								matchRange('0','9');
 							}
 							else {
-								if ( _cnt621>=1 ) { break _loop621; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+								if ( _cnt620>=1 ) { break _loop620; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 							}
 							
-							_cnt621++;
+							_cnt620++;
 						} while (true);
 						}
 						{
@@ -2712,17 +2695,17 @@ tryAgain:
 		}
 		}
 		{
-		int _cnt630=0;
-		_loop630:
+		int _cnt629=0;
+		_loop629:
 		do {
 			if (((LA(1) >= '0' && LA(1) <= '9'))) {
 				matchRange('0','9');
 			}
 			else {
-				if ( _cnt630>=1 ) { break _loop630; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
+				if ( _cnt629>=1 ) { break _loop629; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine(), getColumn());}
 			}
 			
-			_cnt630++;
+			_cnt629++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
