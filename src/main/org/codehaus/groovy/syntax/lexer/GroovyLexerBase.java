@@ -675,6 +675,7 @@ public class GroovyLexerBase extends LexerBase
                         }
                         case ('>') :
                         {
+                            consume();
                             c = la();
                             if( c == '>' )
                             {
