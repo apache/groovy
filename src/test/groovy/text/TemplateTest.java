@@ -59,7 +59,7 @@ public class TemplateTest extends TestCase {
         Binding binding = new Binding();
         binding.setVariable("sam", "pullara");
         Template template = new SimpleTemplateEngine().createTemplate("<%= sam %>");
-        template.setBinding(binding);
+        template.setBinding(binding.getVariables());
         assertEquals("pullara", template.toString());
     }
 }
