@@ -693,54 +693,50 @@ public class GroovyLexerBase extends LexerBase
                     boolean      isDecimal      = false;
 
 
-                    NUMBER_PROCESSING: do
+                    //
+                    // If it starts 0 and isn't a decimal number, we give
+                    // special handling for hexadecimal or octal notation.
+
+                    char c2 = la(2);
+                    if( c == '0' && (c2 == 'X' || c2 == 'x' || Numbers.isDigit(c2)) )
                     {
+                        numericLiteral.append( consume() );
 
-                        //
-                        // If it starts 0 and isn't a decimal number, we give
-                        // special handling for hexadecimal or octal notation.
-
-                        char c2 = la(2);
-                        if( c == '0' && (c2 == 'X' || c2 == 'x' || Numbers.isDigit(c2)) )
+                        if( (c = la()) == 'X' || c == 'x' )
                         {
                             numericLiteral.append( consume() );
-
-                            if( (c = la()) == 'X' || c == 'x' )
+                            if( Numbers.isHexDigit(la()) )
                             {
-                                numericLiteral.append( consume() );
-                                if( Numbers.isHexDigit(la()) )
+                                while( Numbers.isHexDigit(la()) )
                                 {
-                                    while( Numbers.isHexDigit(la()) )
-                                    {
-                                        numericLiteral.append( consume() );
-                                    }
-                                }
-                                else
-                                {
-                                    unexpected( la(), numericLiteral.length(), "expected hexadecimal digit" );
+                                    numericLiteral.append( consume() );
                                 }
                             }
                             else
                             {
-                                while( Numbers.isOctalDigit(la()) )
-                                {
-                                    numericLiteral.append( consume() );
-                                }
-
-                                if( Numbers.isDigit(la()) )
-                                {
-                                    unexpected( la(), numericLiteral.length(), "expected octal digit" );
-                                }
+                                unexpected( la(), numericLiteral.length(), "expected hexadecimal digit" );
+                            }
+                        }
+                        else
+                        {
+                            while( Numbers.isOctalDigit(la()) )
+                            {
+                                numericLiteral.append( consume() );
                             }
 
-                            break NUMBER_PROCESSING;
+                            if( Numbers.isDigit(la()) )
+                            {
+                                unexpected( la(), numericLiteral.length(), "expected octal digit" );
+                            }
                         }
+                    }
 
 
-                        //
-                        // If we are still here, the number is in base 10, integer or
-                        // decimal, and there might be a type specifier on the end.
+                    //
+                    // Otherwise, it's in base 10, integer or decimal.
 
+                    else
+                    {
                         while( Numbers.isDigit(la()) )
                         {
                             numericLiteral.append( consume() );
@@ -766,6 +762,12 @@ public class GroovyLexerBase extends LexerBase
                             if( (c = la()) == 'e' || c == 'E' )
                             {
                                 numericLiteral.append( consume() );
+
+                                if (la() == '+' || la() == '-')
+                                {
+                                    numericLiteral.append(consume());
+                                }
+
                                 if( Numbers.isDigit(la()) )
                                 {
                                     while( Numbers.isDigit(la()) )
@@ -779,17 +781,16 @@ public class GroovyLexerBase extends LexerBase
                                 }
                             }
                         }
+                    }
 
 
-                        //
-                        // If there is a type suffix, include it.
+                    //
+                    // If there is a type suffix, include it.
 
-                        if( Numbers.isNumericTypeSpecifier(la(), isDecimal) )
-                        {
-                            numericLiteral.append( consume() );
-                        }
-
-                    } while( false );
+                    if( Numbers.isNumericTypeSpecifier(la(), isDecimal) )
+                    {
+                        numericLiteral.append( consume() );
+                    }
 
 
                     //

@@ -49,7 +49,9 @@ package org.codehaus.groovy.syntax;
 import java.math.BigInteger;
 import java.math.BigDecimal;
 
-/** 
+import org.codehaus.groovy.syntax.parser.ParserException;
+
+/**
  *  Helper class for processing Groovy numeric literals.
  *
  *  @author Brian Larson
@@ -58,7 +60,7 @@ import java.math.BigDecimal;
  *  @version $Id$
  */
 
-public class Numbers 
+public class Numbers
 {
 
 
@@ -71,7 +73,7 @@ public class Numbers
     *  Returns true if the specified character is a base-10 digit.
     */
 
-    public static boolean isDigit( char c ) 
+    public static boolean isDigit( char c )
     {
         return c >= '0' && c <= '9';
     }
@@ -81,7 +83,7 @@ public class Numbers
     *  Returns true if the specific character is a base-8 digit.
     */
 
-    public static boolean isOctalDigit( char c ) 
+    public static boolean isOctalDigit( char c )
     {
         return c >= '0' && c <= '7';
     }
@@ -103,11 +105,11 @@ public class Numbers
     *  for a numeric value.
     */
 
-    public static boolean isNumericTypeSpecifier( char c, boolean isDecimal ) 
+    public static boolean isNumericTypeSpecifier( char c, boolean isDecimal )
     {
-        if( isDecimal ) 
-        { 
-            switch( c ) 
+        if( isDecimal )
+        {
+            switch( c )
             {
                 case 'G':
                 case 'g':
@@ -145,205 +147,181 @@ public class Numbers
 
     private static final BigInteger MAX_LONG    = BigInteger.valueOf(Long.MAX_VALUE);
     private static final BigInteger MIN_LONG    = BigInteger.valueOf(Long.MIN_VALUE);
+
     private static final BigInteger MAX_INTEGER = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger MIN_INTEGER = BigInteger.valueOf(Integer.MIN_VALUE);
-    
+
+    private static final BigDecimal MAX_DOUBLE  = new BigDecimal(String.valueOf(Double.MAX_VALUE));
+    private static final BigDecimal MIN_DOUBLE  = MAX_DOUBLE.negate();
+
+    private static final BigDecimal MAX_FLOAT   = new BigDecimal(String.valueOf(Float.MAX_VALUE));
+    private static final BigDecimal MIN_FLOAT   = MAX_FLOAT.negate();
+
+
 
    /**
     *  Builds a Number from the given integer descriptor.  Creates the narrowest
-    *  type possible, or a specific type, if specified.  Note that negative
-    *  numbers don't currently make it here (the sign is a separate token).
+    *  type possible, or a specific type, if specified.
+    *
+    *  @param  text literal text to parse
+    *  @return instantiated Number object
+    *  @throws NumberFormatException if the number does not fit within the type
+    *          requested by the type specifier suffix (invalid numbers don't make
+    *          it here)
     */
 
-    public static Number parseInteger( String text ) 
+    public static Number parseInteger( String text )
     {
+        char c = ' ';
         int length = text.length();
 
-        //
-        // Short cut for hex and octal data...
 
-        if( text.charAt(0) == '0' && length > 1 ) 
+        //
+        // Strip off the sign, if present
+
+        boolean negative = false;
+        if( (c = text.charAt(0)) == '-' || c == '+' )
         {
-            char c;
-            if( (c = text.charAt(1)) == 'X' || c == 'x' ) 
+            negative = (c == '-');
+            text = text.substring( 1, length );
+            length -= 1;
+        }
+
+
+        //
+        // Determine radix (default is 10).
+
+        int radix = 10;
+        if( text.charAt(0) == '0' && length > 1 )
+        {
+            if( (c = text.charAt(1)) == 'X' || c == 'x' )
             {
-                return parseHexadecimalInteger( text.substring(2, length) );
+                radix = 16;
+                text = text.substring( 2, length);
+                length -= 2;
             }
             else
             {
-                return parseOctalInteger( text.substring(1, length) );
+                radix = 8;
             }
         }
 
 
         //
-        // Strip off any type specifier, if present.
+        // Strip off any type specifier and convert it to lower
+        // case, if present.
 
-        char type = 'x';
-
+        char type = 'x';  // pick best fit
         if( isNumericTypeSpecifier(text.charAt(length-1), false) )
         {
             type = Character.toLowerCase( text.charAt(length-1) );
-            text = text.substring( 0, length );
+            text = text.substring( 0, length-1);
 
             length -= 1;
         }
 
-    
+
         //
-        // Get the value
+        // Add the sign back, if necessary
 
-        BigInteger value = new BigInteger( text );
+        if( negative )
+        {
+            text = "-" + text;
+        }
 
-        
+
         //
-        // Produce and return the correct type
+        // Build the specified type or, if no type was specified, the
+        // smallest type in which the number will fit.
 
-        switch( type )
+        switch (type)
         {
             case 'i':
-                return new Integer( value.intValue() );
+                return new Integer( Integer.parseInt(text, radix) );
 
             case 'l':
-                return new Long( value.longValue() );
+                return new Long( Long.parseLong(text, radix) );
 
             case 'g':
-                return value;
+                return new BigInteger( text, radix );
 
             default:
 
                 //
                 // If not specified, we will return the narrowest possible
-                // of Integer, Long, and BigInteger.  Note that because we
-                // don't know the sign, we cannot use the full positive range.
-                // We test the negative range anyway, to defend against changes
-                // in external code.
+                // of Integer, Long, and BigInteger.
 
-                if( value.compareTo(MAX_LONG) < 0 && value.compareTo(MIN_LONG) >= 0 ) 
+                BigInteger value = new BigInteger( text, radix );
+
+                if( value.compareTo(MAX_INTEGER) <= 0 && value.compareTo(MIN_INTEGER) >= 0 )
                 {
-                    if( value.compareTo(MAX_INTEGER) < 0 && value.compareTo(MIN_INTEGER) >= 0 )
-                    {
-                        return new Integer( value.intValue() );
-                    }
-                    else
-                    {
-                        return new Long( value.longValue() );
-                    }
+                    return new Integer(value.intValue());
                 }
-        }
+                else if( value.compareTo(MAX_LONG) <= 0 && value.compareTo(MIN_LONG) >= 0 )
+                {
+                    return new Long(value.longValue());
+                }
 
-        return value;
-    }
-                
-
-
-   /**
-    *  Parses an integer written in hexadecimal notation (already stripped
-    *  of any marker).  Returns a value of width appropriate to the number of 
-    *  digits.
-    */
-
-    public static Number parseHexadecimalInteger( String text ) 
-    {
-        int length = text.length();
-
-        if( length > 16 )
-        {
-            return new BigInteger( text, 16 );
-        }
-        else if( length > 8 )
-        {
-            return new Long( Long.parseLong(text, 16) );
-        }
-        else 
-        {
-            return new Integer( Integer.parseInt(text, 16) );
+                return value;
         }
     }
-        
-
-
-   /**
-    *  Parses an integer written in octal notation (already stripped
-    *  of any marker).  Returns a value of width appropriate to the number of 
-    *  digits.
-    */
-
-    public static Number parseOctalInteger( String text ) 
-    {
-        int length = text.length();
-
-        if( length > 24 )
-        {
-            return new BigInteger( text, 8 );
-        }
-        else if( length > 12 )
-        {
-            return new Long( Long.parseLong(text, 8) );
-        }
-        else
-        {
-            return new Integer( Integer.parseInt(text, 8) );
-        }
-    }
-        
 
 
 
    /**
     *  Builds a Number from the given decimal descriptor.  Uses BigDecimal,
     *  unless, Double or Float is requested.
+    *
+    *  @param  text literal text to parse
+    *  @return instantiated Number object
+    *  @throws NumberFormatException if the number does not fit within the type
+    *          requested by the type specifier suffix (invalid numbers don't make
+    *          it here)
     */
 
-    public static Number parseDecimal( String text ) 
+    public static Number parseDecimal( String text )
     {
-        //
-        // We allow decimal strings to omit the leading "0", but
-        // BigDecimal doesn't, so we'll patch it up if necessary.
-
-        if( text.charAt(0) == '.' ) 
-        {
-            text = "0" + text;
-        }
-
-
-        //
-        // Strip off any type specifier, if present.
-
-        char type = 'x';
         int length = text.length();
 
+
+        //
+        // Strip off any type specifier and convert it to lower
+        // case, if present.
+
+        char type = 'x';
         if( isNumericTypeSpecifier(text.charAt(length-1), true) )
         {
             type = Character.toLowerCase( text.charAt(length-1) );
-            text = text.substring( 0, length );
+            text = text.substring( 0, length-1 );
 
             length -= 1;
         }
 
-    
+
         //
-        // Get the value
+        // Build the specified type or default to BigDecimal
 
         BigDecimal value = new BigDecimal( text );
-
-
-        //
-        // Produce and return the correct type
-
         switch( type )
         {
             case 'f':
-                return new Float( value.floatValue() );
+                if( value.compareTo(MAX_FLOAT) <= 0 && value.compareTo(MIN_FLOAT) >= 0)
+                {
+                    return new Float( text );
+                }
+                throw new NumberFormatException( "out of range" );
 
             case 'd':
-                return new Double( value.doubleValue() );
+                if( value.compareTo(MAX_DOUBLE) <= 0 && value.compareTo(MIN_DOUBLE) >= 0)
+                {
+                    return new Double( text );
+                }
+                throw new NumberFormatException( "out of range" );
 
             case 'g':
-                return value;
+            default:
+                return new BigDecimal( text );
         }
-
-        return value;
     }
-    
+
 }
