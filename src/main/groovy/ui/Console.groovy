@@ -17,6 +17,7 @@ import javax.swing.JFileChooser
 import javax.swing.JOptionPane
 import javax.swing.SwingUtilities
 import javax.swing.text.StyleContext
+import javax.swing.text.BadLocationException;
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
@@ -172,7 +173,7 @@ class Console extends ConsoleSupport implements CaretListener {
     runScript(EventObject evt = null) {
         text = textArea.getText()
         if (textSelectionStart != textSelectionEnd) {   // we have a real selection
-            text = textArea.getText(textSelectionStart, textSelectionEnd)
+            text = textArea.getText()[textSelectionStart...textSelectionEnd]
         }
         scriptList.add(text)
 
