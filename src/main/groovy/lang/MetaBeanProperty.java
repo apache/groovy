@@ -40,21 +40,28 @@ package groovy.lang;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class MetaProperty {
+public class MetaBeanProperty extends MetaProperty {
 
-    protected String name;
-    protected Class type;
+    private MetaMethod getter;
+    private MetaMethod setter;
 
-    public MetaProperty(String name, Class type) {
-        this.name = name;
-        this.type = type;
+    public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
+		super(name, type);
+        this.getter = getter;
+        this.setter = setter;
     }
 
     /**
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public abstract Object getProperty(Object object) throws Exception;
+    public Object getProperty(Object object) throws Exception {
+		if (getter == null) {
+			//@todo we probably need a WriteOnlyException class
+			throw new GroovyRuntimeException("Cannot read write-only property: " + name);
+		}
+        return getter.invoke(object, MetaClass.EMPTY_ARRAY);
+    }
 
     /**
      * Sets the property on the given object to the new value
@@ -63,17 +70,39 @@ public abstract class MetaProperty {
      * @param newValue the new value of the property
      * @throws Exception if the property could not be set
      */
-    public abstract void setProperty(Object object, Object newValue);
+    public void setProperty(Object object, Object newValue) {
+		if(setter == null) {
+			throw new GroovyRuntimeException("Cannot set read-only property: " + name);
+		}
 
-    public String getName() {
-        return name;
+		try {
+			setter.invoke(object, new Object[] { newValue });
+		}
+		catch(Exception e) {
+			throw new GroovyRuntimeException("Cannot set property: " + name +
+				" reason: " + e.getMessage(), e);
+		}
     }
 
-    /**
-     * @return the type of the property
-     */
-    public Class getType() {
-        return type;
+    public MetaMethod getGetter() {
+        return getter;
     }
 
+    public MetaMethod getSetter() {
+        return setter;
+    }
+	
+	/**
+	 * this is for MetaClass to patch up the object later when looking for get*() methods
+	 */
+	void setGetter(MetaMethod getter) {
+		this.getter = getter;
+	}
+	
+	/**
+	 * this is for MetaClass to patch up the object later when looking for set*() methods
+	 */
+	void setSetter(MetaMethod setter) {
+		this.setter = setter;
+	}
 }

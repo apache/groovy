@@ -32,7 +32,11 @@
  * DAMAGE.
  *
  */
+ 
 package groovy.lang;
+
+
+import java.lang.reflect.Field;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -40,21 +44,23 @@ package groovy.lang;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class MetaProperty {
+public class MetaFieldProperty extends MetaProperty {
 
-    protected String name;
-    protected Class type;
+    private Field field;
 
-    public MetaProperty(String name, Class type) {
-        this.name = name;
-        this.type = type;
+    public MetaFieldProperty(Field field) {
+		super(field.getName(), field.getType());
+		
+        this.field = field;
     }
 
     /**
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
-    public abstract Object getProperty(Object object) throws Exception;
+    public Object getProperty(Object object) throws Exception {
+        return field.get(object);
+    }
 
     /**
      * Sets the property on the given object to the new value
@@ -63,17 +69,12 @@ public abstract class MetaProperty {
      * @param newValue the new value of the property
      * @throws Exception if the property could not be set
      */
-    public abstract void setProperty(Object object, Object newValue);
-
-    public String getName() {
-        return name;
+    public void setProperty(Object object, Object newValue) {
+		try {
+			field.set(object, newValue);
+		}
+		catch(Exception e) {
+			throw new GroovyRuntimeException("cannot set property " + name, e);
+		}
     }
-
-    /**
-     * @return the type of the property
-     */
-    public Class getType() {
-        return type;
-    }
-
 }
