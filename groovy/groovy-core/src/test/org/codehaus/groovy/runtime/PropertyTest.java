@@ -99,6 +99,12 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("static property out", System.out, value);
     }
     
+    public void testClassProperty() throws Exception {
+        Class c = String.class;
+        Object value = InvokerHelper.getProperty(c, "name");
+        assertEquals("class name property", c.getName(), value);
+    }
+    
     // Implementation methods
     //-------------------------------------------------------------------------
 

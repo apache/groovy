@@ -117,6 +117,10 @@ public class MetaClass {
             }
         }
 
+        System.out.println("class: " + theClass);
+        System.out.println("instance: " + this.methodIndex);
+        System.out.println("static: " + this.staticMethodIndex);
+
         // introspect
         BeanInfo info = Introspector.getBeanInfo(theClass);
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
@@ -209,7 +213,7 @@ public class MetaClass {
         if (!methods.isEmpty()) {
             Method method = chooseMethod(methods, arguments, argumentList);
             if (method != null) {
-                return doMethodInvoke(null, method, argumentList.toArray());
+                return doMethodInvoke(theClass, method, argumentList.toArray());
             }
         }
         throw new InvokerException("Could not find matching method called: " + methodName + " for class: " + theClass.getName());
@@ -226,21 +230,6 @@ public class MetaClass {
         return newStaticInstanceMethods;
     }
 
-    /**
-     * @return the value of the static property
-     */
-    public Object getStaticProperty(String property) {
-        try {
-            Field field = theClass.getField(property);
-            if (field != null) {
-                return field.get(null);
-            }
-        }
-        catch (Exception e) {
-            throw new InvokerException("Could not evaluate property: " + property, e);
-        }
-        throw new InvokerException("No such property: " + property);
-    }
 
     /**
      * @return the given property's value on the object
@@ -279,6 +268,10 @@ public class MetaClass {
             return null;
         }
         else {
+            if (object instanceof Class) {
+                // lets try a static field
+                return getStaticProperty((Class) object, property);
+            }
             throw new InvokerException("No such property: " + property);
         }
     }
@@ -313,6 +306,21 @@ public class MetaClass {
     // Implementation methods
     //-------------------------------------------------------------------------
 
+    /**
+     * @return the value of the static property of the given class
+     */
+    protected Object getStaticProperty(Class aClass, String property) {
+        try {
+            Field field = aClass.getField(property);
+            if (field != null) {
+                return field.get(null);
+            }
+        }
+        catch (Exception e) {
+            throw new InvokerException("Could not evaluate property: " + property, e);
+        }
+        throw new InvokerException("No such property: " + property);
+    }
     /**
      * Lets walk the base class & interfaces list to see if we can find the method
      */

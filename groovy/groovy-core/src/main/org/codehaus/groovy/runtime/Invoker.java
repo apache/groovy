@@ -79,8 +79,8 @@ public class Invoker {
         if (object instanceof Class) {
             Class theClass = (Class) object;
 
-            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-            return metaClass.invokeStaticMethod(methodName, arguments, argumentList);
+            MetaClass metaClass = metaRegistry.getMetaClass(Class.class);
+            return metaClass.invokeMethod(object, methodName, arguments, argumentList);
         }
         else {
             Class theClass = object.getClass();
@@ -245,10 +245,6 @@ public class Invoker {
     public Object getProperty(Object object, String property) {
         if (object == null) {
             throw new InvokerException("Cannot get property on null object");
-        }
-        else if (object instanceof Class) {
-            Class theClass = (Class) object;
-            return metaRegistry.getMetaClass(theClass).getStaticProperty(property);
         }
         else if (object instanceof Map) {
             Map map = (Map) object;
