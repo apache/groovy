@@ -9,7 +9,7 @@ Core Groovy Tasks
 	foo = System.out.println;
 	foo.call("hello");
 
-* closures - handle passing in of variables
+* closures - handle passing in of variables from outer scope?
 
 * constructors with map / tuple expressions, named parameter calling
  

@@ -1,8 +1,6 @@
 PARSER CHANGES REQUIRED
 =======================
 
-* allow closures to be passed as a parameter in a method call
-
 * support method invocation where last parameter can be specified as a closure
 
 	collection.each {i| print(i); }
@@ -13,20 +11,10 @@ PARSER CHANGES REQUIRED
 		}
 	}
 	
-* support named parameter arguments. e.g. foo(a:1234, b:542);
-	which uses NamedParameterExpression
-
-* support parsing of Foo.class which should create a ConstantExpression
-
 * support for new object expressions
-
 	foo = new Foo(1, 2, 3);
-
-* support subscript operator
-
-	foo[expression]
-	foo[0];
-	foo["hello"] = 123;
+	
+	which would use the ConstructorCallExpression in AST
 
 * handle field definitions
 	class Foo {
@@ -34,6 +22,17 @@ PARSER CHANGES REQUIRED
 		y;
 	}
 	
+* support named parameter arguments. e.g. foo(a:1234, b:542);
+	which uses NamedParameterExpression
+
+* support parsing of Foo.class which should create a ConstantExpression
+
+* support subscript operator
+
+	foo[expression]
+	foo[0];
+	foo["hello"] = 123;
+
 * allow new object expressions to take a Map or List expression as a last expression
 
 	foo = new MySpecialMap(123, 10) [a:1, b:2];
@@ -82,9 +81,14 @@ PARSER CHANGES REQUIRED
 	
 	...
 	foo();
+	
+	which sets the defaultValue property on a Parameter
 
 * grep for "@todo parser" in the src/test for **/*.groovy to find all the
   current bugs in the parser
+
+* implement the expressions in Strings stuff. e.g. "foo ${bar} whatnot" which should create a 
+	TextExpression AST node
   
 * check all the other operations are there + - / * % & | subscript operator foo[bar] foo[i] etc - along with the += *= abbreviations etc
 
