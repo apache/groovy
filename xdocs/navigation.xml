@@ -53,6 +53,7 @@
       <item name="Groovy Beans"       href="/beans.html"/>
       <item name="Ant Scripting"      href="/ant.html"/>
       <item name="Regex"              href="/regex.html"/>
+      <item name="Templates"          href="/templates.html"/>
     </menu>
 
     <menu name="User Guide">
