@@ -112,16 +112,26 @@
   	<attainGoal name="setclasspath"/>
   	
   	<wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
-  
+
+	<!-- lets generate the HTML docs -->
+	<attainGoal name="groovy:make-new-javadoc"/>
+	
     <attainGoal name="html2xdoc"/>
     <attainGoal name="faq"/>
   </preGoal>
+
+  <goal name="groovy:make-new-javadoc" prereqs="test:compile"
+		description="Generates the HTML of the new JavaDoc added to the JDK">
+    <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
 
   <postGoal name="test:compile">
     <attainGoal name="setclasspath"/>
     <attainGoal name="groovy:compile-tests"/>
     ${context.setVariable('java.awt.headless', true)}
-    <echo> value of java.awt.headless is ${context.getVariable('java.awt.headless')}</echo>
   </postGoal>
     
   <goal name="setclasspath">
