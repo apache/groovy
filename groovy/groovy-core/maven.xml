@@ -424,5 +424,28 @@
 	</jar>
 	<delete dir="${groovy.embeddable.working.dir}"/>
   </goal>
+
+  <goal name="groovy:exe" prereqs="rebuild">
+    <echo>Building a Groovy executable</echo>
+    <mkdir dir="${maven.build.dir}/native/classes"/>
+    <unzip src="${maven.build.dir}/${maven.final.name}.jar" dest="${maven.build.dir}/native/classes"
+/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-util-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-attrs-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/commons-cli-1.0.jar" dest="${maven.build.dir}/native/classes"/>
+    <exec executable="gcc">
+      <arg line="-g -o ${maven.build.dir}/native/base ${maven.src.dir}/native/base.c"/>
+    </exec>
+    <jar manifest="${maven.src.dir}/native/manifest-groovy" destfile="${maven.build.dir}/native/groovy.jar" basedir="${maven.build.dir}/native/classes"/>
+    <jar manifest="${maven.src.dir}/native/manifest-groovyc" destfile="${maven.build.dir}/native/groovyc.jar" basedir="${maven.build.dir}/native/classes"/>
+    <concat destfile="${maven.build.dir}/native/groovy">
+      <filelist dir="${maven.build.dir}/native" files="base,groovy.jar"/>
+    </concat>
+    <concat destfile="${maven.build.dir}/native/groovyc">
+      <filelist dir="${maven.build.dir}/native" files="base,groovyc.jar"/>
+    </concat>
+    <chmod file="${maven.build.dir}/native/groovy" perm="ugo+rx"/>
+  </goal>
  
 </project>
