@@ -49,7 +49,7 @@ widget = swing.frame(title:'My Frame') {
           label(text:entry.key)
           textField(text:entry.value)
        }
-       button(text:'OK', actionPerformed:{event| "I've been clicked".println() })
+       button(text:'OK', actionPerformed:{ println("I've been clicked with event ${it}") })
     }
 }
 widget.show()
