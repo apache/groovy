@@ -46,8 +46,10 @@
 package groovy.lang;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import org.codehaus.groovy.classgen.GroovyClassLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -101,6 +103,18 @@ public class GroovyShell {
         return context;
     }
     
+    /**
+     * A helper method which runs the given script file with the given command line arguments
+     * 
+     * @param scriptFile the file of the script to run
+     * @param args the command line arguments to pass in
+     */
+    public Object run(File scriptFile, List list) throws ClassNotFoundException, SyntaxException, IOException {
+        String[] args = new String[list.size()];
+        list.toArray(args);
+        return run(scriptFile.toString(), args);
+    }
+
     /**
      * Runs the given script file name with the given command line arguments
      * 

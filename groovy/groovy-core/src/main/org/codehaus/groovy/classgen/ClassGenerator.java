@@ -842,7 +842,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
 
-        cv.visitLdcInsn(call.getType());
+        String type = call.getType();
+        
+        // lets check that the type exists
+        checkValidType(type);
+        
+        cv.visitLdcInsn(type);
         arguments.visit(this);
 
         invokeConstructorMethod.call(cv);
@@ -1474,6 +1479,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
         return answer;
+    }
+
+    protected void checkValidType(String type) {
+        if (context.getCompileUnit().getClass(type) != null) {
+            return;
+        }
+        else {
+            try {
+                Class typeClass = classLoader.loadClass(type);
+            }
+            catch (ClassNotFoundException e) {
+                throw new RuntimeException("Unknown type: " + type, e);
+            }
+        }
     }
 
     protected String createIteratorName() {
