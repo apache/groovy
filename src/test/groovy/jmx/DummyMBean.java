@@ -43,58 +43,15 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.swing.impl;
+package groovy.jmx;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.LayoutManager;
-
-import javax.swing.JPanel;
-
-/** 
- * Represents a HTML style table layout
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class TableLayout implements ComponentFacade {
-
-    private JPanel panel = new JPanel();
-    private int rowCount;
-    private int space; /** @todo whats the cell spacing thingy called in HTML4? */
-
-    public TableLayout() {
-        panel.setLayout(createLayoutManager());
-    }
-
-    public Component getComponent() {
-        return panel;
-    }
-    
-    /**
-     * Adds a new cell to the current grid
-     */
-    public void addCell(TableLayoutCell cell) {
-        GridBagConstraints constraints = cell.getConstraints();
-        //constraints.insets = new Insets()
-        panel.add(cell.getComponent(), constraints);
-    }
-
-    /**
-     * Creates a new row index for child <tr> tags 
-     */
-    public int nextRowIndex() {
-        return rowCount++;
-    }
-
-    // Implementation methods
-    //-------------------------------------------------------------------------                    
-
-    /**
-     * Creates a GridBagLayout
-     */
-    protected LayoutManager createLayoutManager() {
-        return new GridBagLayout();
-    }
+public interface DummyMBean {
+    public void start();
+    public void stop();
+    public String getLocation();
+    public void setLocation(String location);
+    public String getName();
+    public void setName(String name);
+    public int getSize();
+    public void setSize(int size);
 }

@@ -56,13 +56,22 @@ package groovy.lang;
  */
 public interface GroovyObject {
 
-
     /** 
      * Invokes the given method
      * 
      */
     public Object invokeMethod(String name, Object args);
     
+    /**
+     * @return the given property
+     */
+    public Object getProperty(String property);
+
+    /**
+     * Sets the given property to the new value
+     */
+    public void setProperty(String property, Object newValue);
+        
     /**
      * @return the metaClass of this instance
      */

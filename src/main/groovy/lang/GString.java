@@ -60,7 +60,7 @@ package groovy.lang;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString implements GroovyObject {
+public abstract class GString extends GroovyObjectSupport {
 
     private Object[] values;
 

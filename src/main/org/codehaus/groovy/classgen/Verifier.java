@@ -113,7 +113,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 ACC_PUBLIC,
                 Object.class.getName(),
                 new Parameter[] {
-                    new Parameter(String.class.getName(), "name"),
+                    new Parameter(String.class.getName(), "method"),
                     new Parameter(Object.class.getName(), "arguments")},
                 new ReturnStatement(
                     new MethodCallExpression(
@@ -122,8 +122,40 @@ public class Verifier implements GroovyClassVisitor, Constants {
                         new ArgumentListExpression(
                             new Expression[] {
                                 new VariableExpression("this"),
-                                new VariableExpression("name"),
+                                new VariableExpression("method"),
                                 new VariableExpression("arguments")}))));
+
+            node.addMethod(
+                "getProperty",
+                ACC_PUBLIC,
+                Object.class.getName(),
+                new Parameter[] {
+                    new Parameter(String.class.getName(), "property")},
+                new ReturnStatement(
+                    new MethodCallExpression(
+                        new FieldExpression(metaClassField),
+                        "getProperty",
+                        new ArgumentListExpression(
+                            new Expression[] {
+                                new VariableExpression("this"),
+                                new VariableExpression("property")}))));
+                                
+            node.addMethod(
+                "setProperty",
+                ACC_PUBLIC,
+                "void",
+                new Parameter[] {
+                    new Parameter(String.class.getName(), "property"),
+                    new Parameter(Object.class.getName(), "value")},
+                new ExpressionStatement(
+                    new MethodCallExpression(
+                        new FieldExpression(metaClassField),
+                        "setProperty",
+                        new ArgumentListExpression(
+                            new Expression[] {
+                                new VariableExpression("this"),
+                                new VariableExpression("property"),
+                                new VariableExpression("value")}))));
         }
 
         if (node.getConstructors().isEmpty()) {

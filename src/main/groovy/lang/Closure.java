@@ -62,6 +62,14 @@ public abstract class Closure implements GroovyObject {
         this.delegate = delegate;
     }
 
+    public Object getProperty(String property) {
+        return getMetaClass().getProperty(this, property);
+    }
+
+    public void setProperty(String property, Object newValue) {
+         getMetaClass().setProperty(this, property, newValue);
+    }
+
     public Object invokeMethod(String method, Object arguments) {
         /** @todo optimise me! */
         try {

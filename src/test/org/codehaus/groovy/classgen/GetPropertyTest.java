@@ -43,58 +43,29 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.swing.impl;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.LayoutManager;
+package org.codehaus.groovy.classgen;
 
-import javax.swing.JPanel;
+import groovy.lang.GroovyObject;
 
-/** 
- * Represents a HTML style table layout
- *
+import org.codehaus.groovy.classgen.TestSupport;
+
+/**
+ * Tests using the GroovyObject API from Java on a groovy object
+ * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TableLayout implements ComponentFacade {
+public class GetPropertyTest extends TestSupport {
 
-    private JPanel panel = new JPanel();
-    private int rowCount;
-    private int space; /** @todo whats the cell spacing thingy called in HTML4? */
+    public void testProperty() throws Exception {
+        GroovyObject object = compile("src/test/org/codehaus/groovy/classgen/MyBean.groovy");
+        System.out.println("Got object: " + object);
 
-    public TableLayout() {
-        panel.setLayout(createLayoutManager());
-    }
+        Object value = object.getProperty("name");
+        assertEquals("name property", null, value);
 
-    public Component getComponent() {
-        return panel;
-    }
-    
-    /**
-     * Adds a new cell to the current grid
-     */
-    public void addCell(TableLayoutCell cell) {
-        GridBagConstraints constraints = cell.getConstraints();
-        //constraints.insets = new Insets()
-        panel.add(cell.getComponent(), constraints);
-    }
-
-    /**
-     * Creates a new row index for child <tr> tags 
-     */
-    public int nextRowIndex() {
-        return rowCount++;
-    }
-
-    // Implementation methods
-    //-------------------------------------------------------------------------                    
-
-    /**
-     * Creates a GridBagLayout
-     */
-    protected LayoutManager createLayoutManager() {
-        return new GridBagLayout();
+        object.setProperty("name", "Bob");
+        assertEquals("name property", "Bob", object.getProperty("name"));
     }
 }
