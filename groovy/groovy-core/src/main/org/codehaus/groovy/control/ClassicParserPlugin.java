@@ -32,7 +32,7 @@ import java.io.Reader;
 /**
  * @version $Revision$
  */
-public class ClassicParserPlugin extends ParserPlugin {
+public class ClassicParserPlugin implements ParserPlugin {
 
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {

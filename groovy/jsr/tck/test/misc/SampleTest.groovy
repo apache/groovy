@@ -1,3 +1,8 @@
+package foo.bar
+
+import java.io.File
+import java.util.Date as UDate
+
 class SampleTest extends GroovyTestCase {
 
     String foo = "John"
@@ -10,6 +15,15 @@ class SampleTest extends GroovyTestCase {
         assert x.size() == 1
 
         println "created list $x"
+
+        /* TODO not working yet!
+
+        f = new File("foo.txt")
+
+        println "File name $f.name"
+
+                println new UDate()
+        */
     }
 
     void testCase() {
