@@ -303,6 +303,7 @@ public class InvokerHelper {
                         object.invokeMethod("main", new Object[] { new String[0] });
                         return null;
                     } };
+                setProperties(object, context.getVariables());
             }
             script.setBinding(context);
             return script;
@@ -312,6 +313,16 @@ public class InvokerHelper {
                 "Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
                 e);
         }
+    }
+
+    /**
+     * Sets the properties on the given object
+     * 
+     * @param object
+     * @param map
+     */
+    public static void setProperties(Object object, Map map) {
+        getMetaClass(object).setProperties(object, map);
     }
 
     public static String getVersion() {
