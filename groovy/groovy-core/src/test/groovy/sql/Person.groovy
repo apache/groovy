@@ -1,4 +1,4 @@
-package groovy.gdo
+package groovy.sql
 
 class Person {
 

@@ -44,7 +44,7 @@
 
  */
 
-package groovy.gdo;
+package groovy.sql;
 
 import groovy.lang.GroovyObject;
 

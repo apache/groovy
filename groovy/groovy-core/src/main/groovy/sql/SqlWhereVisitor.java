@@ -1,4 +1,4 @@
-package groovy.gdo;
+package groovy.sql;
 
 import java.util.ArrayList;
 import java.util.List;

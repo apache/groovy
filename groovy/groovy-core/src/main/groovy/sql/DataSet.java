@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.gdo;
+package groovy.sql;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
