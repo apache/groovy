@@ -1173,14 +1173,19 @@ parameterDeclarationList
 parameterDeclaration!
         :       ("def"!)?  // useless but permitted for symmetry
                 pm:parameterModifier ( options {greedy=true;} : t:typeSpec[false])? id:parameterIdent
-                /*OBS*pd:declaratorBrackets[#t]*/
+                
+                // allow an optional default value expression
+                ( ASSIGN exp:expression )?
+                
+	                /*OBS*pd:declaratorBrackets[#t]*/
                 {#parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-                                                                        pm, #([TYPE,"TYPE"],t), id);}
+                                                                        pm, #([TYPE,"TYPE"],t), id, exp);}
         ;
 
 // TODO - possibly add nls! somewhere within variableLengthParameterDeclaration
 variableLengthParameterDeclaration!
 	:	pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
+	
 		/*OBS* pd:declaratorBrackets[#t]*/
 		{#variableLengthParameterDeclaration = #(#[VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF"],
 												pm, #([TYPE,"TYPE"],t), id);}

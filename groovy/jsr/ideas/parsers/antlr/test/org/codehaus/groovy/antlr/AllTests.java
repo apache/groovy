@@ -65,13 +65,12 @@ public class AllTests extends TestSuiteSupport {
         "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
         "PrintTest.groovy",                     // TODO: map keys cannot be numeric literals
         "ClosureMethodTest.groovy",             // TODO: map keys cannot be numeric literals
+        "ClosureWithDefaultParamTest.groovy",   // TODO: map keys cannot be numeric literals
 
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
 
         "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
-
-        "DefaultParamTest.groovy",              // TODO: can't parse default parameter values
 
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
