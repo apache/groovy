@@ -73,8 +73,8 @@ public class DumpClass2 {
     
     public Object makeClosure() {
         return new Closure(this) {
-            public void doCall() {
-                
+            public Object doCall() {
+                return null;
             }  
             public MetaClass getMetaClass() {
                 return null;
