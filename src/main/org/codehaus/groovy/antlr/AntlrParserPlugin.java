@@ -35,7 +35,10 @@ import org.codehaus.groovy.syntax.parser.ASTHelper;
 import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
 
+import com.thoughtworks.xstream.XStream;                      
+
 import java.io.Reader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -75,7 +78,22 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ast = parser.getAST();
 
+        if ("xml".equals(System.getProperty("antlr.ast"))) {
+            saveAsXML(sourceUnit.getName(),ast);
+        }
+
         return null; //new Reduction(Tpken.EOF);
+    }
+
+    private void saveAsXML(String name, AST ast) {
+        XStream xstream = new XStream();
+        try {
+            xstream.toXML(ast,new FileWriter(name + ".antlr.xml"));
+            System.out.println("Written AST to " + name + ".antlr.xml");
+        } catch (Exception e) {
+            System.out.println("Couldn't write to " + name + ".antlr.xml");
+            e.printStackTrace();
+        }
     }
 
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
@@ -1319,7 +1337,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
         AST elist = null;
-        if (isType(DOT, node)) {
+        if (isType(DOT, node) || isType(OPTIONAL_ARG, node)) {
             AST objectNode = node.getFirstChild();
             elist = node.getNextSibling();
 
@@ -1604,7 +1622,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getFirstChild();
         }
         String answer = null;
-        if (isType(DOT, node)) {
+        if (isType(DOT, node) || isType(OPTIONAL_ARG, node)) {
             answer = qualifiedName(node);
         }
         else if (isPrimitiveTypeLiteral(node)) {
