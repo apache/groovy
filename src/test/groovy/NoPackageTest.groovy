@@ -3,6 +3,6 @@ class NoPackageTest
 {
     void testClassDef()
     {
-        assert getClass().name := "NoPackageTest"
+        assert getClass().name == "NoPackageTest"
     }
 }

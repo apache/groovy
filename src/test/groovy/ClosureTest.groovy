@@ -14,20 +14,20 @@ class ClosureTest extends GroovyTestCase {
         block = {owner| owner.incrementCallCount() }
         
         assertClosure(block)
-        assert count := 1
+        assert count == 1
 
         assertClosure({owner| owner.incrementCallCount() })
-        assert count := 2
+        assert count == 2
     }
 
     void testBlockAsParameter() {
         count = 0
         
         callBlock(5, {owner| owner.incrementCallCount() })
-        assert count := 5
+        assert count == 5
 
         callBlock2(5, {owner| owner.incrementCallCount() })
-        assert count := 10
+        assert count == 10
     }
   
     void testMethodClosure() {
@@ -37,7 +37,7 @@ class ClosureTest extends GroovyTestCase {
   	    
         block.call()
   	    
-        assert count := 1
+        assert count == 1
   	        
         block = System.out.println
   	    

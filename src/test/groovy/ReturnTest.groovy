@@ -8,7 +8,7 @@ class ReturnTest extends GroovyTestCase {
 
     void testIntegerReturnValues() {
         value = foo(5)
-        assert value := 10
+        assert value == 10
     }
 
     void testBooleanReturnValues() {

@@ -12,7 +12,7 @@ class AssertTest extends GroovyTestCase {
         assert x != "foo"
         assert x !=  null
         assert x != "def"
-        assert x := "abc"
+        assert x == "abc"
         
         assert x.equals("abc")
         
@@ -28,14 +28,14 @@ class AssertTest extends GroovyTestCase {
         /** @todo 
         try {
 	        runCode = true
-	    	assert x := 5
+	    	assert x == 5
 	    	
 	    	fail("Should have thrown an exception")
 	    }
 	    catch (AssertionError e) {
-	        //msg = "Expression: (x := 5). Values: x = 1234"
-	        //assert e.getMessage() := msg
-	        //assert e.message := msg
+	        //msg = "Expression: (x == 5). Values: x = 1234"
+	        //assert e.getMessage() == msg
+	        //assert e.message == msg
 	    }
 	    assert runCode : "has not ran the try / catch block code"
 	    */

@@ -150,7 +150,7 @@ public class TokenTest
 
         assertToken( token,
                      Token.COMPARE_IDENTICAL,
-                     "==" );
+                     "===" );
     }
 
     public void testCompareEqual()
@@ -160,7 +160,7 @@ public class TokenTest
 
         assertToken( token,
                      Token.COMPARE_EQUAL,
-                     ":=" );
+                     "==" );
     }
 
     public void testCompareLessThan()

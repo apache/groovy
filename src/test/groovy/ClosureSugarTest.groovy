@@ -11,7 +11,7 @@ class ClosureSugarTest
              count = 20;
         }
 
-        assert count := 20;
+        assert count == 20;
     }
 
     void testMixedClosureSugar()
@@ -22,7 +22,7 @@ class ClosureSugarTest
              count = count + a;
         }
 
-        assert count := 16;
+        assert count == 16;
 
     }
 

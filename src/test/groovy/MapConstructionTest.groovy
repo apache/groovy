@@ -38,7 +38,7 @@ class MapConstructionTest extends GroovyTestCase {
         /** @todo parser
         assert m instanceof Map
         */
-        assert m.getClass().getName() := "java.util.HashMap"
+        assert m.getClass().getName() == "java.util.HashMap"
         
         result = 0
         text = ""
@@ -46,13 +46,13 @@ class MapConstructionTest extends GroovyTestCase {
             result = result + e.key
             text = text + e.value
         }
-        assert result := 6
-        assert text := "abcdefxyz"
+        assert result == 6
+        assert text == "abcdefxyz"
 	    
-        assert m.size() := 3
+        assert m.size() == 3
 
         /** @todo parser
-        assert s[2] := 'def'
+        assert s[2] == 'def'
          */
     }
 }

@@ -427,9 +427,9 @@ public class Token
         addTokenDescription( EQUAL,
                              "=" );
         addTokenDescription( COMPARE_EQUAL,
-                             ":=" );
-        addTokenDescription( COMPARE_IDENTICAL,
                              "==" );
+        addTokenDescription( COMPARE_IDENTICAL,
+                             "===" );
         addTokenDescription( COMPARE_LESS_THAN,
                              "<" );
         addTokenDescription( COMPARE_LESS_THAN_EQUAL,
@@ -759,7 +759,7 @@ public class Token
     public static Token compareIdentical(int startLine, int startColumn) 
     {
         return newToken( COMPARE_IDENTICAL,
-                         "==",
+                         "===",
                          startLine,
                          startColumn );
     }
@@ -775,7 +775,7 @@ public class Token
                                      int startColumn)
     {
         return newToken( COMPARE_EQUAL,
-                         ":=",
+                         "==",
                          startLine,
                          startColumn );
     }

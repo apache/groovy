@@ -12,14 +12,14 @@ class AssertNumberTest extends GroovyTestCase {
         assert x != null
         assert x != 432
         assert x != 423.2342
-        assert x := 123
+        assert x == 123
 		
         x = 42.2342
 
         assert x != null
    		assert x != 432
    		assert x != 423.2342
-		assert x := 42.2342
+		assert x == 42.2342
 	}
 	
 	void testLessThan() {

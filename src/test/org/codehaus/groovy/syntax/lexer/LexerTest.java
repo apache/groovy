@@ -186,14 +186,14 @@ public class LexerTest
     public void testCompareEqual()
         throws Exception
     {
-        assertSimple( ":=",
+        assertSimple( "==",
                       Token.COMPARE_EQUAL );
     }
 
     public void testCompareIdentical()
         throws Exception
     {
-        assertSimple( "==",
+        assertSimple( "===",
                       Token.COMPARE_IDENTICAL );
     }
 

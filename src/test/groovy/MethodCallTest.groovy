@@ -16,8 +16,8 @@ class MethodCallTest extends GroovyTestCase {
         s = "hello"
         c = s.getClass()
         assert c != null
-        assert c.name := "java.lang.String"
-        assert c.getName() := "java.lang.String"
+        assert c.name == "java.lang.String"
+        assert c.getName() == "java.lang.String"
     }
 	
 	void testGetNameBug() {
