@@ -164,4 +164,8 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
     protected Object getCurrent() {
         return current;
     }
+    
+    protected void setCurrent(Object current) {
+        this.current = current;
+    }
 }
