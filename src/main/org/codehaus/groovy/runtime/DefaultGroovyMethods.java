@@ -780,7 +780,6 @@ public class DefaultGroovyMethods {
     public static CharSequence getAt(CharSequence text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
-        int length = text.length();
 
         // if this is a backwards range, reverse the arguments to substring
         if (from > to) {
@@ -802,7 +801,6 @@ public class DefaultGroovyMethods {
     public static String getAt(String text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
-        int length = text.length();
 
         // if this is a backwards range, reverse the arguments to substring
         boolean reverse = range.isReverse();
@@ -1953,7 +1951,7 @@ public class DefaultGroovyMethods {
      * Produce a Writable object which writes the base64 encoding of the byte array
      * Calling toString() on the result rerurns the encoding as a String
      * 
-     * @param byte array to be encoded
+     * @param data byte array to be encoded
      * @return object which will write the base64 encoding of the byte array
      */
     public static Writable encodeBase64(final byte[] data) {
@@ -2045,7 +2043,7 @@ public class DefaultGroovyMethods {
      * 
      * Decode the Sting from base64 into a byte array
      * 
-     * @param the string to be decoded
+     * @param value the string to be decoded
      * @return the decoded bytes as an array
      */
     public static byte[] decodeBase64(final String value) {
@@ -2254,7 +2252,6 @@ public class DefaultGroovyMethods {
         char firstCh = firstCharacter();
         for (int idx = buffer.length() - 1; idx >= 0; idx--) {
             char ch = next(buffer.charAt(idx));
-            int value = ch;
             if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
                 break;
@@ -3711,7 +3708,7 @@ public class DefaultGroovyMethods {
     /**
      * @param file a File
      * @param encoding the encoding to be used when reading the file's contents
-     * @returna File which wraps the input file and which implements Writable
+     * @return File which wraps the input file and which implements Writable
      */
     public static File asWritable(File file, String encoding) {
         return new WritableFile(file, encoding);
