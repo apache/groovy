@@ -42,19 +42,24 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 
 /**
+<<<<<<< SimpleTemplateEngine.java
+ * This simple template engine uses JSP <% %> script and <%= %> expression syntax.  It also lets you use normal groovy expressions in
+ * the template text much like the new JSP EL functionality.
+ * 
+=======
  * A groovy template engine which uses JSP-like syntax.  
  * You can embed scripts with <% %> and GString expressions with <%= %>.
  * 
+>>>>>>> 1.2
  * @author sam
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
  */
 public class SimpleTemplateEngine extends TemplateEngine {
 
@@ -74,8 +79,8 @@ public class SimpleTemplateEngine extends TemplateEngine {
         private Script script;
         private Binding binding;
         
-        public void setBinding(Binding binding) {
-            this.binding = binding;
+        public void setBinding(final Map map) {
+            binding = new Binding(map);
         }
         
         public void writeTo(Writer writer) throws IOException {
