@@ -558,6 +558,71 @@ public class Lexer
                                                                 getStartColumn() );
                             break MULTICHAR_SWITCH;
                         }
+                        case ( '<' ):
+                        {
+                        	consume();
+                        	c = la();
+                        	// Long strings can be created by using <<<TOK ... \nTOK
+                        	// They are exactly like double quoted strings except you don't need to escape anything
+                        	if ( c == '<' ) {
+								consume();
+								// The marker consists of everything from the end of the <<< to the end of the line.
+								StringBuffer marker = new StringBuffer();
+								while((c = la()) != '\n') {
+									marker.append(c);
+									consume();
+								}
+								consume(); // consume the nextline
+								eol(); // next line
+								mark(); // this is the start of the string
+
+								StringBuffer stringLiteral = new StringBuffer();
+
+							  LITERAL_LOOP:
+								while ( true )
+								{
+									c = la();
+
+								  LITERAL_SWITCH:
+									switch ( c )
+									{
+										case ( '\n' ):
+										{
+											eol(); // bump the line number
+											StringBuffer markerBuffer = new StringBuffer();
+											markerBuffer.append(consume());
+											for (int i = 0; i < marker.length(); i++) {
+												if (la() != marker.charAt(i)) {
+													stringLiteral.append(markerBuffer);
+													continue LITERAL_LOOP;
+												}
+												c = consume();
+												markerBuffer.append(c);
+											}
+											break LITERAL_LOOP;
+										}
+										case ( CharStream.EOS ):
+										{
+											throw new UnterminatedStringLiteralException( getStartLine(),
+																						  getStartColumn() );
+										}
+									}
+								  	stringLiteral.append( consume() );
+								}
+
+							  	// Fortunately they have the same semantics as a double quoted string once lexed
+								token = Token.doubleQuoteString( getStartLine(),
+																 getStartColumn(),
+																 stringLiteral.toString() );
+								break ROOT_SWITCH;
+								
+                        	} else {
+                        		throw new UnexpectedCharacterException( getStartLine(),
+                                                                		getStartColumn()+1,
+                                                                		c,
+                                                                		new char[] { } );
+                        	}
+                        }
                         default:
                         {
                             token = Token.compareLessThan( getStartLine(),
