@@ -248,14 +248,19 @@
           <role>Developer</role>
         </roles>
     </developer>
+    <developer>
+        <name>Jeremy Rayner</name>
+        <id>jez</id>
+        <email>jeremy.rayner@gmail.com</email>
+        <organization>javanicus</organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+    </developer>
 
   </developers>
 
   <contributors>
-    <contributor>
-      <name>Jeremy Rayner</name>
-      <email></email>
-    </contributor>
     <contributor>
       <name>Joern Eyrich</name>
       <email></email>
