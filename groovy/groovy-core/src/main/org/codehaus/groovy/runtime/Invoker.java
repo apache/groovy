@@ -356,7 +356,7 @@ public class Invoker {
                     return ((Character) left).compareTo(asCharacter((String) right));
                 }
                 else if (right instanceof Number) {
-                    return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
+                	return ((Character) left).compareTo(asCharacter((Number)right));
                 }
             }
             else if (right instanceof Number) {
