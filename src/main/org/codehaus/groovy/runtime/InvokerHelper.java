@@ -181,6 +181,20 @@ public class InvokerHelper {
         getInstance().setProperty(object, property, newValue);
     }
 
+
+    /**
+     * This is so we don't have to reorder the stack when we call this method.
+     * At some point a better name might be in order.
+     */
+    public static void setGroovyObjectProperty(Object newValue, GroovyObject object, String property) {
+        object.setProperty(property, newValue);
+    }
+    
+    public static Object getGroovyObjectProperty(GroovyObject object, String property) {
+        return object.getProperty(property);
+    }
+    
+    
     /**
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
