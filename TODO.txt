@@ -109,12 +109,34 @@ OTHER STUFF
 
 OPTIMISATIONS
 =============
-method invocations - if instanceof DynamicMethodInvoke
+* method invocations - if instanceof DynamicMethodInvoke
 then generate bytecode
 
 foo.invokeMethod(method, args);
 
+* for all Groovy classes we can autogenerate a _groovyMetaClass
+static field which can be used to invoke methods & get properties.
 
+class SomeGroovyClass {
+	public static final MetaClass _groovyMetaClass = new MetaClass(thisClass);
+}
+
+someMethod() {
+	foo = new SomeGroovyClass();
+	foo.bar();
+}
+
+would translate to
+
+
+someMethod() {
+	foo = new SomeGroovyClass();
+	SomeGroovyClass._groovyMetaClass.invokeMethod(foo, "bar", null);
+}
+
+* could code generate the MetaClass with very efficient dynamic dispatch
+	e.g. could switch() on the method name & then use real method invocation
+	on the method instance
 
 
 LOGGING?
@@ -122,8 +144,10 @@ LOGGING?
 
 class Foo {
 
+  private log;
+  
   Foo(log = new GroovyLogger(thisClass)) {
-    @log = log;
+    this.log = log;
   }
   
   foo(file) {
@@ -234,57 +258,4 @@ class Foo extends MarkupBuilder {
   }
 }
 
-If we could remove the ; 
-
-
-
-BOB's PARSER HACKING LIST
-=========================
-
-* use ClassExpression rather than VariableExpression for class names
-	e.g. for "System" in code System.out.println
-	
-* implement closures (handle ClosureExpression)
-
-* support method invocation where last parameter can be specified as a closure
-
-	collection.each {i| print(i); }
-
-	table(valign:"Centre") {
-		tr {
-			td("hello") {
-		}
-	}
-	
-* support named parameter arguments. e.g. foo(a:1234, b:542);
-
-* support for new object expressions
-
-	foo = new Foo(1, 2, 3);
-
-* support subscript operator
-
-	foo[expression]
-	foo[0];
-	foo["hello"] = 123;
-	
-* maps "{" entry ["," entry]* "}"
-	entry =  keyExpression ":" valueExpression
-
-* allow new object expressions to take a Map or List expression as a last expression
-
-	foo = new MySpecialMap(123, 10) [a:1, b:2];
-	blah = new LinkedList [1, 2, 3, 4];
-	
-* make ; optional
-
-* methods on literals - e.g. "abc".length() or 1234.doubleValue();
-
-* support for [] as a type. e.g. main(String[] args)
-
-* grep for "@todo parser" in the src/test for **/*.groovy to find all the
-  current bugs in the parser
-  
-* check all the other operations are there + - / * % & | subscript operator foo[bar] foo[i] etc - along with the += *= abbreviations etc
-
-* regexp notation /regexp/ -> RegexExpression
+If we could remove the ; it'd be even cleaner
