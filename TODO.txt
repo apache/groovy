@@ -60,9 +60,7 @@ Things to Test
 Core Groovy Tasks
 =================
 
-* throw statement
 * synchronized statement
-* implement break, continue and maybe retry
 
 * allow maps to be created using identifiers?
 	{name:'James', address:'London'}
@@ -95,18 +93,6 @@ Core Groovy Tasks
 			String! x = "hello"
 			x = null // error
 			
-	
-* Switch statement to use matches to handle classes, ranges, regexp etc		
-	- matches(object) for Range or Regexp or Class
-
-	switch(value) {
-		case "hello":
-		case 0..12:
-		case /foo|bar/:
-		case a, b, c
-		case FooClass:
-	}		
-
 * closures - handle passing in of variables from outer scope?	
 	use a Holder object for all local variables and pass holder
 	into the closure
