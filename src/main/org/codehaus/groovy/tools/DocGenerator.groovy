@@ -99,21 +99,23 @@ class DocGenerator
 			for (className in sortedClasses.sort()) {
 
 				sb.append("<h2>${getObjectType(className)}</h2>")
-				writer2.println("<ul><b>${className}</b>")
+				writer2.println("<b>${className}</b>")
 
 				listOfMethods = jdkEnhancedClasses[className]
-
+				listOfMethods.sort { it.name }
+				
+				writer2.println("<table>")
 				for (meth in listOfMethods) {
                     counter++
                     anchor = "meth${counter}"
-                    writer2.println("<li><a href='#${anchor}'>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</a></li>")
+                    writer2.println("<tr><td>${getReturnType(meth)}</td> <td><a href='#${anchor}'>${meth.getName()}(${getParametersDecl(meth)})</a></td></tr>")
 
                     sb.append("  <a name='${anchor}'></a>")
 				    sb.append("  <p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
 					sb.append("  <ul>${getComment(meth)}")
 					sb.append("  ${getParametersReturnAndEx(meth)}</ul></p>")
 				}
-				writer2.println("</ul>")
+				writer2.println("</table>")
 			}
             writer.println(sb.toString())
 
