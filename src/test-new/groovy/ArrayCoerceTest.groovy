@@ -2,10 +2,6 @@ class ArrayCoerceTest extends GroovyTestCase {
 
     Object[] field
     Long[] numberField
-
-    /*
-      TODO parser bug - cannot parse!
-
     int[] primitiveField
 
     void testStaticallyTypedPrimitiveTypeArrays() {
@@ -23,7 +19,6 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert primitiveField.length == 3
     }
 
-    */
 
     void testFoo2() {
         def x = [1, 2, 3] as Object[]
