@@ -71,6 +71,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.swing.Action;
 import javax.swing.Box;
@@ -114,8 +116,6 @@ import javax.swing.RootPaneContainer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -126,7 +126,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class SwingBuilder extends BuilderSupport {
 
-    private Log log = LogFactory.getLog(getClass());
+    private Logger log = Logger.getLogger(getClass().getName());
     private Map factories = new HashMap();
     private Object constraints;
 
@@ -263,11 +263,11 @@ public class SwingBuilder extends BuilderSupport {
             try {
                 widget = factory.newInstance(attributes);
                 if (widget == null) {
-                    log.warn("Factory for name: " + name + " returned null");
+                    log.log(Level.WARNING, "Factory for name: " + name + " returned null");
                 }
                 else {
-                    if (log.isDebugEnabled()) {
-                        log.debug("For name: " + name + " created widget: " + widget);
+                    if (log.isLoggable(Level.FINE)) {
+                        log.fine("For name: " + name + " created widget: " + widget);
                     }
                 }
             }
@@ -276,7 +276,7 @@ public class SwingBuilder extends BuilderSupport {
             }
         }
         else {
-            log.warn("Could not find match for name: " + name);
+            log.log(Level.WARNING, "Could not find match for name: " + name);
         }
         if (widget != null) {
             if (widget instanceof Action) {

@@ -46,6 +46,8 @@
 
 package groovy.tree;
 
+import java.util.logging.Logger;
+
 import groovy.lang.GroovyObject;
 
 import org.codehaus.groovy.classgen.TestSupport;
@@ -77,15 +79,18 @@ public class NodePrinterTest extends TestSupport {
         object.invokeMethod("testClosure", null);
     }
     
-    /** @todo Why does this fail when using the GroovyClassLoader? */
-    public void TODO_testNestedClosureBug() throws Exception {
+    public void testNestedClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/tree/NestedClosureBugTest.groovy");
         object.invokeMethod("testNestedClosureBug", null);
     }
     
-    /** @todo Why does this fail when using the GroovyClassLoader? */
-    public void TODO_testClosureClassLoaderBug() throws Exception {
+    public void testClosureClassLoaderBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/tree/ClosureClassLoaderBug.groovy");
         object.invokeMethod("testTree", null);
+    }
+    
+    public void testLogging() {
+        Logger log = Logger.getLogger(getClass().getName());
+        log.info("Logging using JDK 1.4 logging");
     }
 }

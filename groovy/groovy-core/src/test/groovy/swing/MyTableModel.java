@@ -1,9 +1,9 @@
 package groovy.swing;
 
-import javax.swing.table.AbstractTableModel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import javax.swing.table.AbstractTableModel;
 
 /** 
  * A sample table model
@@ -13,8 +13,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class MyTableModel extends AbstractTableModel {
 
-    /** The Log to which logging calls will be made. */
-    private static final Log log = LogFactory.getLog(MyTableModel.class);
+    private static final Logger log = Logger.getLogger(MyTableModel.class.getName());
 
     public MyTableModel() {
     }
@@ -77,8 +76,8 @@ public class MyTableModel extends AbstractTableModel {
      * data can change.
      */
     public void setValueAt(Object value, int row, int col) {
-        if (log.isDebugEnabled()) {
-            log.debug(
+        if (log.isLoggable(Level.FINE)) {
+            log.fine(
                 "Setting value at " + row + "," + col + " to " + value + " (an instance of " + value.getClass() + ")");
         }
 
@@ -95,7 +94,7 @@ public class MyTableModel extends AbstractTableModel {
                 fireTableCellUpdated(row, col);
             }
             catch (NumberFormatException e) {
-                log.error("The \"" + getColumnName(col) + "\" column accepts only integer values.");
+                log.log(Level.SEVERE, "The \"" + getColumnName(col) + "\" column accepts only integer values.");
             }
         }
         else {
