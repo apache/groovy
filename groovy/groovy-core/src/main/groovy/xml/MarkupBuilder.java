@@ -116,7 +116,7 @@ public class MarkupBuilder extends BuilderSupport {
         return name;
     }
 
-    protected void nodeCompleted(Object node) {
+    protected void nodeCompleted(Object parent, Object node) {
         if (newline) {
             out.decrementIndent();
             out.printIndent();

@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -130,6 +131,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
         }
 
         addFieldInitialization(node);
+
+        node.visitContents(this);
     }
 
     protected void addClosureCode(InnerClassNode node) {
@@ -168,7 +171,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
             constructorNode.setCode(new BlockStatement(statements));
         }
-        
+
         if (!staticStatements.isEmpty()) {
             node.addStaticInitializerStatements(staticStatements);
         }
@@ -211,6 +214,34 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     public void visitMethod(MethodNode node) {
+        if (!node.isVoidMethod()) {
+            Statement statement = node.getCode();
+            if (statement instanceof ExpressionStatement) {
+                ExpressionStatement expStmt = (ExpressionStatement) statement;
+                node.setCode(new ReturnStatement(expStmt.getExpression()));
+            }
+            else if (statement instanceof BlockStatement) {
+                BlockStatement block = (BlockStatement) statement;
+                
+                // lets copy the list so we create a new block
+                List list = new ArrayList(block.getStatements());
+                if (!list.isEmpty()) {
+                    int idx = list.size() - 1;
+                    Statement last = (Statement) list.get(idx);
+                    if (last instanceof ExpressionStatement) {
+                        ExpressionStatement expStmt = (ExpressionStatement) last;
+                        list.set(idx, new ReturnStatement(expStmt.getExpression()));
+                    }
+                    else if (!(last instanceof ReturnStatement)) {
+                        list.add(new ReturnStatement(ConstantExpression.NULL));
+                    }
+                }
+                else {
+                    list.add(new ReturnStatement(ConstantExpression.NULL));
+                }
+                node.setCode(new BlockStatement(list));
+            }
+        }
     }
 
     public void visitField(FieldNode node) {

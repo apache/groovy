@@ -54,7 +54,7 @@ import org.codehaus.groovy.ast.stmt.*;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ConstructorNode extends ASTNode {
+public class ConstructorNode extends MetadataNode {
 
     private int modifiers;
     private Parameter[] parameters;   

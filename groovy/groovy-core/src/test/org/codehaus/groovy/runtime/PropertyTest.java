@@ -49,9 +49,11 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyTestCase;
 
+import java.awt.Point;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
 
 /**
  * Test the property access of the Invoker class
@@ -67,54 +69,54 @@ public class PropertyTest extends GroovyTestCase {
         Map map = new HashMap();
         map.put("foo", "abc");
         map.put("bar", new Integer(123));
-        
+
         assertGetSetProperty(map, "foo", "abc", "def");
         assertGetSetProperty(map, "bar", new Integer(123), new Double(12.34));
     }
- 
+
     public void testBeanProperties() throws Exception {
         DummyBean bean = new DummyBean();
-        
+
         assertGetSetProperty(bean, "name", "James", "Bob");
         assertGetSetProperty(bean, "i", new Integer(123), new Integer(455));
-        
+
         // dynamic properties
         assertGetSetProperty(bean, "dynamicFoo", null, "aValue");
         assertGetSetProperty(bean, "dynamicFoo", "aValue", "NewValue");
     }
- 
+
     public void testUsingMethodProperty() throws Exception {
         DummyBean bean = new DummyBean();
-        
+
         assertGetSetProperty(bean, "name", "James", "Bob");
 
         Object value = InvokerHelper.getProperty(bean, "getName");
         assertTrue("Should have returned a closure: " + value, value instanceof Closure);
         Closure closure = (Closure) value;
         Object result = closure.call(null);
-        assertEquals("Result of call to closure", "Bob", result);    
+        assertEquals("Result of call to closure", "Bob", result);
     }
 
     public void testStaticProperty() throws Exception {
         Object value = InvokerHelper.getProperty(System.class, "out");
         assertEquals("static property out", System.out, value);
     }
-    
+
     public void testClassProperty() throws Exception {
         Class c = String.class;
         Object value = InvokerHelper.getProperty(c, "name");
         assertEquals("class name property", c.getName(), value);
     }
-    
+
     public void testMapEntryProperty() throws Exception {
         HashMap map = new HashMap();
         map.put("a", "x");
         Object[] array = map.entrySet().toArray();
         Object entry = array[0];
-        
+
         Object key = InvokerHelper.getProperty(entry, "key");
         assertEquals("key property", "a", key);
-        
+
         Object value = InvokerHelper.getProperty(entry, "value");
         assertEquals("value property", "x", value);
     }
@@ -125,20 +127,30 @@ public class PropertyTest extends GroovyTestCase {
 
         Object result = ((Closure) value).call();
         assertEquals("result of closure call", getCheese(), result);
-        
+
         System.out.println("Closure: " + value + " and cheese: " + result);
     }
-    
+
+    public void testListCoercionProperty() throws Exception {
+        DummyBean bean = new DummyBean();
+        List list = new ArrayList();
+        list.add(new Integer(10));
+        list.add(new Integer(20));
+
+        InvokerHelper.setProperty(bean, "point", list);
+        assertEquals("Should have set a point", new Point(10, 20), bean.getPoint());
+    }
+
     public Object getCheese() {
         return "cheddar";
     }
-    
+
     // Implementation methods
     //-------------------------------------------------------------------------
 
     protected void assertGetSetProperty(Object object, String property, Object currentValue, Object newValue) {
         assertGetProperty(object, property, currentValue);
-        
+
         InvokerHelper.setProperty(object, property, newValue);
 
         assertGetProperty(object, property, newValue);
@@ -146,7 +158,7 @@ public class PropertyTest extends GroovyTestCase {
 
     protected void assertGetProperty(Object object, String property, Object expected) {
         Object value = InvokerHelper.getProperty(object, property);
-        
+
         assertEquals("property: " + property + " of: " + object, expected, value);
     }
 }

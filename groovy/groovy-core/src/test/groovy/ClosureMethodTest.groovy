@@ -1,3 +1,5 @@
+import java.io.File
+
 /** 
  * Tests the various Closure methods in Groovy
  * 
@@ -8,9 +10,9 @@ class ClosureMethodTest extends GroovyTestCase {
 
 	property count
 
-    void testListCollect() {
+    void testListMap() {
         list = [1, 2, 3, 4]
-        answer = list.collect( {item| return item * 2 } )
+        answer = list.map( {item| return item * 2 } )
 
         assert answer.size() == 4
         
@@ -18,9 +20,9 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == expected
     }
 
-    void testMapCollect() {
+    void testMapMap() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.collect( {e| return e.key + e.value } )
+        answer = map.map( {e| return e.key + e.value } )
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -53,26 +55,37 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == null
     }
 
-    void testListSelect() {
+    void testListFindAll() {
         list = [20, 5, 40, 2]
-        answer = list.select( {item| return item < 10 } )
+        answer = list.findAll( {item| return item < 10 } )
 
         assert answer.size() == 2
         assert answer == [5, 2]
     }
     
-    void testMapSelect() {
+    void testMapFindAll() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.select( {entry| return entry.value > 5 })
+        answer = map.findAll( {entry| return entry.value > 5 })
 
         assert answer.size() == 2
         
-        keys = answer.collect( {entry| return entry.key })
-        values = answer.collect {entry| return entry.value }
+        keys = answer.map( {entry| return entry.key })
+        values = answer.map {entry| return entry.value }
+
+		/** @todo parser        
+        System.out.println("keys " + keys + " values " + values)
+        System.out.println("keys " + keys)
+        System.out.println("values " + values)
+        "keys " + keys + " values " + values.println()
+        text = "keys " + keys + " values " + values
+        */
+		
+        // maps are in hash order so lets sort the results       
+        keys.sort() 
+        values.sort() 
         
-        // maps are in hash order so lets sort the results            
-        assert keys.sort() == [3, 4]
-        assert values.sort() == [6, 8]
+        assert keys == [3, 4]
+        assert values == [6, 8]
     }
 
     void testListEach() {
@@ -101,5 +114,66 @@ class ClosureMethodTest extends GroovyTestCase {
 		
         assert count == 30
         */
+    }
+    
+    void testListEvery() {
+        assert [1, 2, 3, 4].every {i| return i < 5 }
+        assert [1, 2, 7, 4].every {i| return i < 5 } == false
+    }
+
+    void testListAny() {
+        assert [1, 2, 3, 4].any {i| return i < 5 }
+        assert [1, 2, 3, 4].any {i| return i > 3 }
+        assert [1, 2, 3, 4].any {i| return i > 5 } == false
+    }
+    
+    void testJoin() {
+        value = [1, 2, 3].join('-')
+        assert value == "1-2-3"
+    }
+    
+    void testListReverse() {
+        value = [1, 2, 3, 4].reverse()
+        assert value == [4, 3, 2, 1]
+    }
+    
+    void testInspect() {
+        text = inspect()
+        text.println()
+        assert text != null && text.startsWith("<")
+    }
+
+    void testEachLine() {
+        file = new File("src/test/groovy/Bar.groovy")
+        
+        System.out.println("Contents of file: " + file)
+        
+        file.eachLine { line | line.println() }
+        
+        "".println()
+    }
+    
+    void testReadLines() {
+        file = new File("src/test/groovy/Bar.groovy")
+
+		lines = file.readLines()
+		
+		assert lines != null
+		assert lines.size() > 0
+
+		/** @todo parser		        
+        System.out.println("File has: " + lines.size() + " lines")
+        */
+        System.out.println("File has number of lines: " + lines.size())
+    }
+    
+    void testEachFile() {
+        file = new File("src/test/groovy")
+        
+        System.out.println("Contents of dir: " + file)
+        
+        file.eachFile { f | f.getName().println() }
+        
+        "".println()
     }
 }

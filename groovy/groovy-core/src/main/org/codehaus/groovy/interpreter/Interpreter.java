@@ -322,9 +322,9 @@ public class Interpreter implements GroovyCodeVisitor {
     }
 
     public void visitRangeExpression(RangeExpression expression) {
-        int from = evaluateInt(expression.getFrom());  
-        int to = evaluateInt(expression.getTo());
-        pushExpressionValue(new Range(from, to));
+        Object from = evaluate(expression.getFrom());  
+        Object to = evaluate(expression.getTo());
+        pushExpressionValue(new Range((Comparable) from, (Comparable) to));
     }
 
     public void visitVariableExpression(VariableExpression expression) {

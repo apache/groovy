@@ -56,22 +56,22 @@ import junit.framework.TestCase;
 public class RangeTest extends TestCase {
 
     public void testSize() {
-        Range r = new Range(0, 10);
+        Range r = createRange(0, 10);
         assertEquals("Size of " + r, 10, r.size());
-        r = new Range(0, 1);
+        r = createRange(0, 1);
         assertEquals("Size of " + r, 1, r.size());
-        r = new Range(0, 0);
+        r = createRange(0, 0);
         assertEquals("Size of " + r, 0, r.size());
     }
 
     public void testProperties() {
-        Range r = new Range(0, 10);
+        Range r = createRange(0, 10);
         assertEquals("from", 0, r.getFrom());
         assertEquals("to", 10, r.getTo());
     }
 
     public void testGet() {
-        Range r = new Range(10, 20);
+        Range r = createRange(10, 20);
         for (int i = 0; i < 10; i++) {
             Integer value = (Integer) r.get(i);
             assertEquals("Item at index: " + i, i + 10, value.intValue());
@@ -79,7 +79,7 @@ public class RangeTest extends TestCase {
     }
 
     public void testGetOutOfRange() {
-        Range r = new Range(10, 20);
+        Range r = createRange(10, 20);
 
         try {
             r.get(-1);
@@ -99,7 +99,7 @@ public class RangeTest extends TestCase {
     }
 
     public void testContains() {
-        Range r = new Range(10, 20);
+        Range r = createRange(10, 20);
 
         assertTrue("contains 11", r.contains(new Integer(11)));
         assertTrue("contains 10", r.contains(new Integer(10)));
@@ -111,7 +111,7 @@ public class RangeTest extends TestCase {
     }
 
     public void testSubList() {
-        Range r = new Range(10, 20);
+        Range r = createRange(10, 20);
 
         List s = r.subList(2, 4);
 
@@ -125,9 +125,9 @@ public class RangeTest extends TestCase {
     }
 
     public void testHashCodeAndEquals() {
-        Range a = new Range(1, 11);
-        Range b = new Range(1, 11);
-        Range c = new Range(2, 11);
+        Range a = createRange(1, 11);
+        Range b = createRange(1, 11);
+        Range c = createRange(2, 11);
 
         assertEquals("hashcode", a.hashCode(), b.hashCode());
         assertTrue("hashcode", a.hashCode() != c.hashCode());
@@ -138,5 +138,14 @@ public class RangeTest extends TestCase {
 
     public void testIterator() {
     }
+
+    protected Range createRange(int from, int to) {
+        return new Range(new Integer(from), new Integer(to));
+    }
+    
+    protected void assertEquals(String msg, int expected, Object value) {
+        assertEquals(msg, new Integer(expected), value);
+    }
+
 
 }

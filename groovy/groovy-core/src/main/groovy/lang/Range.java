@@ -48,28 +48,31 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
- * Represents a list of Integer objects from a specified int up to but not including
- * a given and to.
+ * Represents a list of objects from a value to a value using
+ * comparators
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class Range extends AbstractList {
 
-    private int from;
-    private int to;
+    private Comparable from;
+    private Comparable to;
+    private int size = -1;
 
-    public Range(int from, int to) {
+    public Range(Comparable from, Comparable to) {
         this.from = from;
         this.to = to;
     }
 
-    public int getFrom() {
+    public Comparable getFrom() {
         return from;
     }
 
-    public int getTo() {
+    public Comparable getTo() {
         return to;
     }
 
@@ -77,19 +80,32 @@ public class Range extends AbstractList {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        int value = index + from;
-        if (value >= to) {
-            throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
+        Object value = from;
+        for (int i = 0; i < index; i++) {
+            value = increment(value);
         }
-        return new Integer(value);
+        if (index >= size()) {
+            throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
+        }
+        return value;
     }
 
     public int size() {
-        return to - from;
+        if (size == -1) {
+            // lets lazily calculate the size
+            size = 0;
+            Object value = from;
+            while (to.compareTo(value) > 0) {
+                value = increment(value);
+                size++;
+            }
+        }
+        return size;
     }
 
     public int hashCode() {
-        return from ^ to;
+        /** @todo should code this the Josh Bloch way */
+        return from.hashCode() ^ to.hashCode();
     }
 
     public List subList(int fromIndex, int toIndex) {
@@ -102,19 +118,22 @@ public class Range extends AbstractList {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
-        return new Range(fromIndex + this.from, toIndex + this.from);
+        return new Range((Comparable) get(fromIndex), (Comparable) get(toIndex));
     }
 
     public String toString() {
         return "" + from + ":" + to;
     }
-    
-    public boolean contains(Object value) {
-        if (value instanceof Integer) {
-            Integer integer = (Integer) value;
-            int i = integer.intValue();
-            return i >= from && i < to;
+
+    public boolean contains(Comparable value) {
+        int result = from.compareTo(value);
+        if (result == 0) {
+            return true;
         }
-        return false;
+        return result < 0 && to.compareTo(value) > 0;
+    }
+
+    protected Object increment(Object value) {
+        return InvokerHelper.invokeMethod(value, "increment", null);
     }
 }

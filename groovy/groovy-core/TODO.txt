@@ -1,13 +1,113 @@
 Core Groovy Tasks
 =================
 
-* add metadata to the AST
+* bob - allow types to end in []
+
+* add table layout cell spacing thingy
+
+* rename tableLayout -> table and table -> grid
+
+* groovy.model -> groovy.mvc?
+
+* delete groovytablemodel / groovytablecolumn
+
+* a way to refactor the Swing builder so that the factory methods are just normal method calls?
+	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
+	the long laborious Map coding
+
+* test date range
+
+* article
+	- basics of groovy
+	- swing swing
+* main test main(args)
+
+* documentation in CVS as wiki text
+	- maven plugin to generate html / xdoc
+	- extract out unit tests / example code
+	- maybe write Swing editor of markup which talks
+		to the server (or CVS)
+
+* doc to write
+	- using beans + listeners
+	- expression language
+
+* object range with increment/decrement and handling up/down
+
+* test max, min, sort with closure comparator
+
+* closure on construction of beans?
+	new JTable() {....}
+		invokes the closure with the new object as delegate for setting properties etc
+
+* configure method on beans?
+	foo.configure(named arguments...)
+	
+* groovy thread...
+	foo = new GroovyThread(args) { closure }
+	
+* File.eachByte
+
+* String.chomp / String.tokenize() / scan / dump
+
+* <=> for compareTo()
+
+* << for list append and for output to streams
+	maybe other optional IO methods like gets?
+
+* File.eachByte
+		
+* investigate Pythons' zip, map, reduce, filter
+
+* support -ve indices on subscript operator
+
+* foo[1, 2] versus foo[1..2] etc
+
+
+* bug - x = methodName fails, but x = this.methodName works
+	- need to turn variableExpressions into property expressions
+	- if no local variable in scope
+
+* test Button(actionPerformed:{event| event.println() }
+
+* tree demo...
+
+* generate property change listener stuff on properties
+
+* test identity -> hashCode + equals methods
+
+* support for property converters, based on type
+
+* Map.get(key, defaultValue)
+* Map.setDefault(key, defaultValue) for things like
+	map.setDefault(key, []).add(newValue)
+	
+	to ensure the map has a list of things
+
+* maybe add python's * and ** for any number of args or maps in method decl
+
+* use *args in method invocation to expand a list as argument values	
+	
+* test map properties..
+
+	m = [:]
+	m.foo = ...
+	assert m.foo == ...
 	
 * test while, do while
 
 * access to local variables from inside a closure
 
 * switch statements
+	switch(value) {
+		case "hello":
+		case 0..12:
+		case /foo|bar/:
+		case a, b, c
+		case FooClass:
+	}		
+
+* implement break, continue and maybe retry
 
 * go through all not-working @todo tests in src/test
 	
@@ -17,6 +117,8 @@ Core Groovy Tasks
 * closures need to be able to access fields of outer class
 
 * closures - handle passing in of variables from outer scope?	
+	use a Holder object for all local variables and pass holder
+	into the closure
 	
 * groovy dynamic proxy of any Java object in Java-land?
 
@@ -26,7 +128,6 @@ Core Groovy Tasks
 	MetaClass.addMixin(mixin)
 
 * why does using the GroovyClassLoader cause the illegal access violation?
-
 
 * constructors with map / tuple expressions, named parameter calling
  

@@ -8,7 +8,7 @@ class IfElseTest extends GroovyTestCase {
             x = true
         }
 
-        assertEquals( true, x )
+        assert x == true
     }
 
     void testIf_WithElse_MatchIf() {
@@ -22,8 +22,8 @@ class IfElseTest extends GroovyTestCase {
             y = true
         }
 
-        assertEquals( true, x )
-        assertEquals( false, y )
+        assert x == true
+        assert y == false
 
     }
 
@@ -53,8 +53,8 @@ class IfElseTest extends GroovyTestCase {
             y = true
         }
 
-        assertEquals( true, x )
-        assertEquals( false, y )
+        assert x == true
+        assert y == false
     }
 
     void testIf_WithElseIf_MatchElseIf() {
@@ -86,8 +86,8 @@ class IfElseTest extends GroovyTestCase {
             z = true
         }
 
-        assertEquals( true, x )
-        assertEquals( false, y )
+        assert x == true
+        assert y == false
         assertEquals( false, z )
     }
 
@@ -125,7 +125,7 @@ class IfElseTest extends GroovyTestCase {
         }
 
         assertEquals( false, x )
-        assertEquals( false, y )
+        assert y == false
         assertEquals( true, z )
     }
 }

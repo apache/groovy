@@ -130,6 +130,15 @@
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
+  <!-- only used for JMX utilities -->
+    <dependency>
+      <id>mx4j</id>
+      <version>SNAPSHOT</version>
+      <properties>
+          <bootstrap>true</bootstrap>
+      </properties>
+    </dependency>
+
   </dependencies>
 
   <build>

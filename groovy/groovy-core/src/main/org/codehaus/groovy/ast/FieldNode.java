@@ -47,8 +47,7 @@ package org.codehaus.groovy.ast;
 
 import java.lang.reflect.Field;
 
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Constants;
 
 
@@ -58,7 +57,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class FieldNode extends Statement implements Constants {
+public class FieldNode extends MetadataNode implements Constants {
 
     private String name;
     private int modifiers;

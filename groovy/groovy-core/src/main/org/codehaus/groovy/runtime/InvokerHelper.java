@@ -56,7 +56,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
  * 
@@ -69,7 +68,7 @@ public class InvokerHelper {
     public static MetaClass getMetaClass(Object object) {
         return getInstance().getMetaClass(object);
     }
-    
+
     public static Invoker getInstance() {
         return singleton;
     }
@@ -171,8 +170,11 @@ public class InvokerHelper {
         return answer;
     }
 
-    public static Range createRange(Object from, Object to) {
-        return new Range(asInt(from), asInt(to));
+    public static List createRange(Object from, Object to) {
+        if (from instanceof Integer && to instanceof Integer) {
+            return new IntRange(asInt(from), asInt(to));
+        }
+        return new Range((Comparable) from, (Comparable) to);
     }
 
     public static int asInt(Object value) {
