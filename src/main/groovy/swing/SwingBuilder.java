@@ -46,9 +46,11 @@
 package groovy.swing;
 
 import groovy.lang.Closure;
+
 import groovy.model.DefaultTableModel;
 import groovy.model.ValueHolder;
 import groovy.model.ValueModel;
+
 import groovy.swing.impl.ComponentFacade;
 import groovy.swing.impl.ContainerFacade;
 import groovy.swing.impl.DefaultAction;
@@ -57,19 +59,31 @@ import groovy.swing.impl.Startable;
 import groovy.swing.impl.TableLayout;
 import groovy.swing.impl.TableLayoutCell;
 import groovy.swing.impl.TableLayoutRow;
+
 import groovy.util.BuilderSupport;
 
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Dialog;
+import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.LayoutManager;
+import java.awt.Window;
+
+import java.text.Format;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,18 +96,22 @@ import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JColorChooser;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -105,8 +123,11 @@ import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSlider;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
@@ -115,9 +136,17 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
+import javax.swing.JToolTip;
 import javax.swing.JTree;
+import javax.swing.JViewport;
+import javax.swing.JWindow;
 import javax.swing.KeyStroke;
+import javax.swing.OverlayLayout;
 import javax.swing.RootPaneContainer;
+import javax.swing.SpinnerDateModel;
+import javax.swing.SpinnerListModel;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SpringLayout;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
@@ -135,6 +164,8 @@ public class SwingBuilder extends BuilderSupport {
     private Map factories = new HashMap();
     private Object constraints;
     private Map passThroughNodes = new HashMap();
+    // tracks all containing windows, for auto-owned dialogs
+    private LinkedList containingWindows = new LinkedList();
 
     public SwingBuilder() {
         registerWidgets();
@@ -174,6 +205,9 @@ public class SwingBuilder extends BuilderSupport {
             }
             InvokerHelper.setProperty(parent, "layout", child);
         }
+        else if (child instanceof JToolTip && parent instanceof JComponent) {
+            ((JToolTip)child).setComponent((JComponent)parent);
+        }
         else if (parent instanceof JTable && child instanceof TableColumn) {
             JTable table = (JTable) parent;
             TableColumn column = (TableColumn) child;
@@ -182,8 +216,13 @@ public class SwingBuilder extends BuilderSupport {
         else if (parent instanceof JTabbedPane && child instanceof Component) {
             JTabbedPane tabbedPane = (JTabbedPane) parent;
             tabbedPane.add((Component)child);
+        } 
+        else if (child instanceof Window) {
+            // do nothing.  owner of window is set elsewhere, and this 
+            // shouldn't get added to any parent as a child 
+            // if it is a top level component anyway
         }
-        else {
+        else { 
             Component component = null;
             if (child instanceof Component) {
                 component = (Component) child;
@@ -203,7 +242,12 @@ public class SwingBuilder extends BuilderSupport {
                 }
                 else if (parent instanceof JScrollPane) {
                     JScrollPane scrollPane = (JScrollPane) parent;
-                    scrollPane.setViewportView(component);
+                    if (child instanceof JViewport) {
+                        scrollPane.setViewport((JViewport)component);
+                    } 
+                    else {
+                        scrollPane.setViewportView(component);
+                    }
                 }
                 else if (parent instanceof JSplitPane) {
                     JSplitPane splitPane = (JSplitPane) parent;
@@ -256,6 +300,11 @@ public class SwingBuilder extends BuilderSupport {
             Startable startable = (Startable) node;
             startable.start();
         }
+        if (node instanceof Window) {
+            if (!containingWindows.isEmpty() && containingWindows.getLast() == node) {
+                containingWindows.removeLast();
+            }
+        }
     }
 
     protected Object createNode(Object name) {
@@ -264,6 +313,10 @@ public class SwingBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Object value) {
         if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+            // value may need to go into containing windows list
+            if (value instanceof Window) {
+                containingWindows.add(value);
+            }
             return value;
         }
         else {
@@ -277,6 +330,10 @@ public class SwingBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Map attributes, Object value) {
         if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+            // value may need to go into containing windows list
+            if (value instanceof Window) {
+                containingWindows.add(value);
+            }
             handleWidgetAttributes(value, attributes);
             return value;
         }
@@ -295,6 +352,10 @@ public class SwingBuilder extends BuilderSupport {
         if (passThroughNodes.containsKey(name)) {
             widget = attributes.get(name);
             if ((widget != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(widget.getClass())) {
+                // value may need to go into containing windows list
+                if (widget instanceof Window) {
+                    containingWindows.add(widget);
+                }
                 attributes.remove(name);
             }
             else {
@@ -408,49 +469,76 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected void registerWidgets() {
+        //
+        // non-widget support classes
+        //
         registerBeanFactory("action", DefaultAction.class);
         passThroughNodes.put("action", javax.swing.Action.class);
-        registerFactory("boxLayout", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
-                return createBoxLayout(properties);
-            }
-        });
-        registerBeanFactory("button", JButton.class);
         registerBeanFactory("buttonGroup", ButtonGroup.class);
-        registerBeanFactory("checkBox", JCheckBox.class);
-        registerBeanFactory("checkBoxMenuItem", JCheckBoxMenuItem.class);
-
-        registerFactory("comboBox", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
-                return createComboBox(properties);
-            }
-        });
-
-        registerBeanFactory("desktopPane", JDesktopPane.class);
-
-        registerFactory("dialog", new Factory() {
-            public Object newInstance(Map properties)
-                throws InstantiationException, InstantiationException, IllegalAccessException {
-                return createDialog(properties);
-            }
-        });
-
-        registerBeanFactory("editorPane", JEditorPane.class);
-        registerBeanFactory("fileChooser", JFileChooser.class);
-        registerBeanFactory("frame", JFrame.class);
-        registerBeanFactory("internalFrame", JInternalFrame.class);
-        registerBeanFactory("label", JLabel.class);
-        registerBeanFactory("list", JList.class);
-
         registerFactory("map", new Factory() {
             public Object newInstance(Map properties)
                 throws InstantiationException, InstantiationException, IllegalAccessException {
                 return properties;
             }
         });
+        // ulimate pass through type
+        passThroughNodes.put("widget", java.awt.Component.class);
 
+        //
+        // standalone window classes
+        //
+        registerFactory("dialog", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createDialog(properties);
+            }
+        });
+        registerFactory("frame", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createFrame(properties);
+            }
+        });
+        registerBeanFactory("fileChooser", JFileChooser.class);
+        registerFactory("frame", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createFrame(properties);
+            }
+        });
+        registerBeanFactory("optionPane", JOptionPane.class);
+        registerFactory("window", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createWindow(properties);
+            }
+        });
+        
+        //
+        // widgets
+        //
+        registerBeanFactory("button", JButton.class);
+        registerBeanFactory("checkBox", JCheckBox.class);
+        registerBeanFactory("checkBoxMenuItem", JCheckBoxMenuItem.class);
+        registerBeanFactory("colorChooser", JColorChooser.class);
+        registerFactory("comboBox", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createComboBox(properties);
+            }
+        });
+        registerBeanFactory("desktopPane", JDesktopPane.class);
+        registerBeanFactory("editorPane", JEditorPane.class);
+        registerFactory("formattedTextField", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createFormattedTextField(properties);
+            }
+        });
+        registerBeanFactory("internalFrame", JInternalFrame.class);
+        registerBeanFactory("label", JLabel.class);
+        registerBeanFactory("layeredPane", JLayeredPane.class);
+        registerBeanFactory("list", JList.class);
         registerBeanFactory("menu", JMenu.class);
         registerBeanFactory("menuBar", JMenuBar.class);
         registerBeanFactory("menuItem", JMenuItem.class);
@@ -460,11 +548,11 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("progressBar", JProgressBar.class);
         registerBeanFactory("radioButton", JRadioButton.class);
         registerBeanFactory("radioButtonMenuItem", JRadioButtonMenuItem.class);
-        registerBeanFactory("optionPane", JOptionPane.class);
+        registerBeanFactory("scrollBar", JScrollBar.class);
         registerBeanFactory("scrollPane", JScrollPane.class);
         registerBeanFactory("separator", JSeparator.class);
-        registerBeanFactory("tabbedPane", JTabbedPane.class);
-
+        registerBeanFactory("slider", JSlider.class);
+        registerBeanFactory("spinner", JSpinner.class);
         registerFactory("splitPane", new Factory() {
             public Object newInstance(Map properties) {
                 JSplitPane answer = new JSplitPane();
@@ -473,6 +561,113 @@ public class SwingBuilder extends BuilderSupport {
                 answer.setTopComponent(null);
                 answer.setBottomComponent(null);
                 return answer;
+            }
+        });
+        registerBeanFactory("tabbedPane", JTabbedPane.class);
+        registerBeanFactory("table", JTable.class);
+        registerBeanFactory("textArea", JTextArea.class);
+        registerBeanFactory("textPane", JTextPane.class);
+        registerBeanFactory("textField", JTextField.class);
+        registerBeanFactory("toggleButton", JToggleButton.class);
+        registerBeanFactory("toolBar", JToolBar.class);
+        //registerBeanFactory("tooltip", JToolTip.class); // doens't work, user toolTipText property
+        registerBeanFactory("tree", JTree.class);
+        registerBeanFactory("viewport", JViewport.class); // sub class?
+
+        //
+        // MVC models   
+        //
+        registerBeanFactory("boundedRangeModel", DefaultBoundedRangeModel.class);
+
+        // spinner models
+	registerBeanFactory("spinnerDateModel", SpinnerDateModel.class);
+        registerBeanFactory("spinnerListModel", SpinnerListModel.class);
+        registerBeanFactory("spinnerNumberModel", SpinnerNumberModel.class);
+
+	// table models
+        registerFactory("tableModel", new Factory() {
+            public Object newInstance(Map properties) {
+                ValueModel model = (ValueModel) properties.remove("model");
+                if (model == null) {
+                    Object list = properties.remove("list");
+                    if (list == null) {
+                        list = new ArrayList();
+                    }
+                    model = new ValueHolder(list);
+                }
+                return new DefaultTableModel(model);
+            }
+        });
+        passThroughNodes.put("tableModel", javax.swing.table.TableModel.class);
+
+        registerFactory("propertyColumn", new Factory() {
+            public Object newInstance(Map properties) {
+                Object current = getCurrent();
+                if (current instanceof DefaultTableModel) {
+                    DefaultTableModel model = (DefaultTableModel) current;
+                    Object header = properties.remove("header");
+                    if (header == null) {
+                        header = "";
+                    }
+                    String property = (String) properties.remove("propertyName");
+                    if (property == null) {
+                        throw new IllegalArgumentException("Must specify a property for a propertyColumn");
+                    }
+                    Class type = (Class) properties.remove("type");
+                    if (type == null) {
+                        type = Object.class;
+                    }
+                    return model.addPropertyColumn(header, property, type);
+                }
+                else {
+                    throw new RuntimeException("propertyColumn must be a child of a tableModel");
+                }
+            }
+        });
+
+        registerFactory("closureColumn", new Factory() {
+            public Object newInstance(Map properties) {
+                Object current = getCurrent();
+                if (current instanceof DefaultTableModel) {
+                    DefaultTableModel model = (DefaultTableModel) current;
+                    Object header = properties.remove("header");
+                    if (header == null) {
+                        header = "";
+                    }
+                    Closure readClosure = (Closure) properties.remove("read");
+                    if (readClosure == null) {
+                        throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
+                    }
+                    Closure writeClosure = (Closure) properties.remove("write");
+                    Class type = (Class) properties.remove("type");
+                    if (type == null) {
+                        type = Object.class;
+                    }
+                    return model.addClosureColumn(header, readClosure, writeClosure, type);
+                }
+                else {
+                    throw new RuntimeException("propertyColumn must be a child of a tableModel");
+                }
+            }
+        });
+
+
+        //Standard Layouts
+        registerBeanFactory("borderLayout", BorderLayout.class);
+        registerBeanFactory("cardLayout", CardLayout.class);
+        registerBeanFactory("flowLayout", FlowLayout.class);
+        registerBeanFactory("gridBagLayout", GridBagLayout.class);
+        registerBeanFactory("gridLayout", GridLayout.class);
+        registerBeanFactory("overlayLayout", OverlayLayout.class);
+        registerBeanFactory("springLayout", SpringLayout.class);
+        registerBeanFactory("gridBagConstarints", GridBagConstraints.class);
+        registerBeanFactory("gbc", GridBagConstraints.class); // shortcut name
+
+        // box layout
+        registerFactory("boxLayout", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createBoxLayout(properties);
             }
         });
 
@@ -544,84 +739,7 @@ public class SwingBuilder extends BuilderSupport {
                 return Box.createRigidArea(dim);
             }
         });
-
-        registerBeanFactory("tabbedPane", JTabbedPane.class);
-        registerBeanFactory("table", JTable.class);
-
-        registerBeanFactory("textArea", JTextArea.class);
-        registerBeanFactory("textPane", JTextPane.class);
-        registerBeanFactory("textField", JTextField.class);
-        registerBeanFactory("toggleButton", JToggleButton.class);
-        registerBeanFactory("tree", JTree.class);
-        registerBeanFactory("toolBar", JToolBar.class);
-
-        // MVC models        
-        registerFactory("tableModel", new Factory() {
-            public Object newInstance(Map properties) {
-                ValueModel model = (ValueModel) properties.remove("model");
-                if (model == null) {
-                    Object list = properties.remove("list");
-                    if (list == null) {
-                        list = new ArrayList();
-                    }
-                    model = new ValueHolder(list);
-                }
-                return new DefaultTableModel(model);
-            }
-        });
-        passThroughNodes.put("tableModel", javax.swing.table.TableModel.class);
-
-        registerFactory("propertyColumn", new Factory() {
-            public Object newInstance(Map properties) {
-                Object current = getCurrent();
-                if (current instanceof DefaultTableModel) {
-                    DefaultTableModel model = (DefaultTableModel) current;
-                    Object header = properties.remove("header");
-                    if (header == null) {
-                        header = "";
-                    }
-                    String property = (String) properties.remove("propertyName");
-                    if (property == null) {
-                        throw new IllegalArgumentException("Must specify a property for a propertyColumn");
-                    }
-                    Class type = (Class) properties.remove("type");
-                    if (type == null) {
-                        type = Object.class;
-                    }
-                    return model.addPropertyColumn(header, property, type);
-                }
-                else {
-                    throw new RuntimeException("propertyColumn must be a child of a tableModel");
-                }
-            }
-        });
-
-        registerFactory("closureColumn", new Factory() {
-            public Object newInstance(Map properties) {
-                Object current = getCurrent();
-                if (current instanceof DefaultTableModel) {
-                    DefaultTableModel model = (DefaultTableModel) current;
-                    Object header = properties.remove("header");
-                    if (header == null) {
-                        header = "";
-                    }
-                    Closure readClosure = (Closure) properties.remove("read");
-                    if (readClosure == null) {
-                        throw new IllegalArgumentException("Must specify 'read' Closure property for a closureColumn");
-                    }
-                    Closure writeClosure = (Closure) properties.remove("write");
-                    Class type = (Class) properties.remove("type");
-                    if (type == null) {
-                        type = Object.class;
-                    }
-                    return model.addClosureColumn(header, readClosure, writeClosure, type);
-                }
-                else {
-                    throw new RuntimeException("propertyColumn must be a child of a tableModel");
-                }
-            }
-        });
-
+        
         // table layout
         registerBeanFactory("tableLayout", TableLayout.class);
         registerFactory("tr", new Factory() {
@@ -646,9 +764,6 @@ public class SwingBuilder extends BuilderSupport {
                 }
             }
         });
-
-        //ulimlate pass through type
-        passThroughNodes.put("widget", java.awt.Component.class);
     }
 
     protected Object createBoxLayout(Map properties) {
@@ -672,16 +787,67 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected Object createDialog(Map properties) {
+        JDialog dialog;
         Object owner = properties.remove("owner");
+        // if owner not explicit, use the last window type in the list
+        if ((owner == null) && !containingWindows.isEmpty()) {
+            owner = containingWindows.getLast();
+        }
         if (owner instanceof Frame) {
-            return new JDialog((Frame) owner);
+            dialog = new JDialog((Frame) owner);
         }
         else if (owner instanceof Dialog) {
-            return new JDialog((Dialog) owner);
+            dialog = new JDialog((Dialog) owner);
         }
         else {
-            return new JDialog();
+            dialog = new JDialog();
         }
+        containingWindows.add(dialog);
+        return dialog;
+    }
+    
+    /**
+     * Uses 'format," or "value,"  (in order)
+     *
+     */
+    protected Object createFormattedTextField(Map properties) {
+        JFormattedTextField ftf;
+        if (properties.containsKey("format")) {
+            ftf = new JFormattedTextField((Format) properties.remove("format"));
+        }
+        else if (properties.containsKey("value")) {
+            ftf = new JFormattedTextField(properties.remove("value"));
+        }
+        else {
+            ftf = new JFormattedTextField();
+        }
+        return ftf;
+    }
+
+    protected Object createFrame(Map properties) {
+        JFrame frame = new JFrame();
+        containingWindows.add(frame);
+        return frame;
+    }
+    
+    protected Object createWindow(Map properties) {
+        JWindow window;
+        Object owner = properties.remove("owner");
+        // if owner not explicit, use the last window type in the list
+        if ((owner == null) && !containingWindows.isEmpty()) {
+            owner = containingWindows.getLast();
+        }
+        if (owner instanceof Frame) {
+            window = new JWindow((Frame) owner);
+        }
+        else if (owner instanceof Window) {
+            window = new JWindow((Window) owner);
+        }
+        else {
+            window = new JWindow();
+        }
+        containingWindows.add(window);
+        return window;
     }
 
     protected Object createComboBox(Map properties) {
