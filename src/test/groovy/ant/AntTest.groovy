@@ -13,10 +13,9 @@ class AntTest extends GroovyTestCase {
         ant.sequential() {
 			echo('inside sequential')
 			
-			myDir = '/target/AntTest/'
+			myDir = 'target/AntTest/'
 			
-			mkdir(['dir':myDir])
-			//mkdir(dir:myDir) 
+			mkdir(dir:myDir) 
 			copy(todir:myDir) {
 			    fileset(dir:'src/test') {
 			        include(name:'**/*.groovy')
