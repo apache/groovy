@@ -687,11 +687,58 @@ public class ASTBuilder
 
         String methodName = expressionRoot.getChild( 1 ).getToken().getText();
 
-        TupleExpression args = tupleExpression( expressionRoot.getChild( 2 ) );
+        Expression paramList = actualParameterList( expressionRoot.getChild( 2 ) );
 
         return new MethodCallExpression( objectExpression,
                                          methodName,
-                                         args );
+                                         paramList );
+    }
+
+    protected Expression actualParameterList(CSTNode paramRoot)
+    {
+        Expression paramList = null;
+
+        CSTNode[] paramRoots = paramRoot.getChildren();
+
+        if ( paramRoots.length > 0
+             &&
+             matches( paramRoots[ 0 ],
+                      Token.COLON ) )
+        {
+            paramList = namedActualParameterList( paramRoot );
+        }
+        else
+        {
+            paramList = nonNamedActualParameterList( paramRoot );
+        }
+
+        return paramList;
+    }
+
+    protected NamedArgumentListExpression namedActualParameterList(CSTNode paramRoot)
+    {
+        NamedArgumentListExpression paramList = new NamedArgumentListExpression();
+
+        CSTNode[] paramRoots = paramRoot.getChildren();
+
+        for ( int i = 0 ; i < paramRoots.length ; ++i )
+        {
+            CSTNode keyRoot = paramRoots[ i ].getChild( 0 );
+            CSTNode valueRoot = paramRoots[ i ].getChild( 1 );
+
+            Expression keyExpr   = new ConstantExpression( keyRoot.getToken().getText() );
+            Expression valueExpr = expression( paramRoot );
+
+            paramList.addMapEntryExpression( keyExpr,
+                                             valueExpr );
+        }
+
+        return paramList;
+    }
+
+    protected TupleExpression nonNamedActualParameterList(CSTNode paramRoot)
+    {
+        return tupleExpression( paramRoot );
     }
 
     protected TupleExpression tupleExpression(CSTNode expressionRoot)
