@@ -109,6 +109,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     classDef(node);
                     break;
 
+                case METHOD_DEF:
+                    methodDef(node);
+                    break;
+
                 default:
                     {
                         Statement statement = statement(node);
@@ -195,6 +199,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
         output.addClass(classNode);
+        classNode = null;
     }
 
     protected void objectBlock(AST objectBlock) {
@@ -245,9 +250,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(SLIST, node);
         Statement code = statementList(node);
 
-        MethodNode methodNode = classNode.addMethod(name, modifiers, returnType, parameters, code);
+        MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
         methodNode.addAnnotations(annotations);
         configureAST(methodNode, methodDef);
+        if (classNode != null) {
+            classNode.addMethod(methodNode);
+        }
+        else {
+            output.addMethod(methodNode);
+        }
     }
 
     protected void fieldDef(AST fieldDef) {
@@ -1204,11 +1215,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return methodCallExpression(node);
     }
 
-    protected MethodCallExpression methodCallExpression(AST node) {
+    protected MethodCallExpression methodCallExpression(AST methodCallNode) {
+        AST node = methodCallNode.getFirstChild();
         if (isType(METHOD_CALL, node)) {
-            node = node.getFirstChild();
+            // sometimes method calls get wrapped in method calls for some wierd reason
+            return methodCallExpression(node);
         }
-        AST methodCallNode = node;
 
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
         AST elist = null;

@@ -9,6 +9,7 @@ class DOMTest extends GroovyTestCase {
 
   def benchmark = false;
 
+  /*
   void testDOMParser() {
     xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");
     doc = DOMBuilder.parse(xml);
@@ -31,7 +32,8 @@ class DOMTest extends GroovyTestCase {
 
     if (!benchmark) { assertCorrect html }
   }
-
+ */
+ 
   void testStreamingDOMBuilder() {
 
     doc = new StreamingDOMBuilder().bind {

@@ -44,6 +44,7 @@ public class AllTests extends TestSuiteSupport {
         "PrivateVariableAccessFromAnotherInstanceTest.groovy",      // TODO: constructor bug
         "SocketTest.groovy",                    // TODO: constructor bug
         "ClosureComparatorTest.groovy",         // TODO: constructor bug
+        "ProcessTest.groovy",                   // TODO: constructor bug
 
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
@@ -67,9 +68,6 @@ public class AllTests extends TestSuiteSupport {
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
-        "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
-
-
 
 
         // TODO: Parser decisions to make
@@ -79,38 +77,30 @@ public class AllTests extends TestSuiteSupport {
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
         "IntegerOperationTest.groovy",          // TODO: what to do about integer divide?
         "NumberMathTest.groovy",                // TODO: what to do about integer divide?
-
-
-
-        // Not sure of bug yet
-        "InconsistentStackHeightBug.groovy",    // TODO: parser bug
-        "DoubleSizeParametersBug.groovy",       // TODO: parser bug
-        "InvokeNormalMethodsFirstTest.groovy",  // TODO: not sure
-
-        "ProcessTest.groovy",                   // TODO: is this a parser bug or just a not very good compiler error?
-        "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
 
 
         // TODO: AST bugs I think...
+        "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
+        "PrimitiveTypeFieldTest.groovy",
+
         "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
         "ReturnTest.groovy",
-        "PrimitiveTypeFieldTest.groovy",
-        "PrintlnWithNewBug.groovy",
-        "AntTest.groovy",
-        "dom/DOMTest.groovy",
 
 
-        // Ignored test cases
+
+        // Ignored test cases which can't easily be run in this harness
+        // due to classpath issues
+        // (run them when we migrate New Groovy into groovy/groovy-core)
         //-------------------------------------------------------------------------
         "SqlCompleteTest.groovy",                   // not easy to run from in IDE...
         "SqlCompleteWithoutDataSourceTest.groovy",  // not easy to run from in IDE...
         "SqlWithBuilderTest.groovy",                // not easy to run from in IDE...
         "SqlWithTypedResultsTest.groovy",           // not easy to run from in IDE...
         "SerializeTest.groovy",                     // not easy to run from in IDE...
-
-
+        "PrintlnWithNewBug.groovy",
+        "dom/DOMTest.groovy",
     };
 
     public static Test suite() {
