@@ -56,9 +56,9 @@ public class ScriptPrintTest extends TestSupport {
 
     public void testScriptWithCustomPrintln() throws Exception {
         assertScript(
-            "out = new MockWriter(); println(); assert out.output == 'println()' : 'value of output is: ' + out.output\n"
-                + "print('hey'); assert out.output == 'print(hey)' : 'value is: ' + out.output\n"
-                + "println('hey'); assert out.output == 'println(hey)' : 'value is: ' + out.output\n");
+            "out = new MockWriter(); println(); assert out.output == 'println()', 'value of output is: ' + out.output\n"
+                + "print('hey'); assert out.output == 'print(hey)' , 'value is: ' + out.output\n"
+                + "println('hey'); assert out.output == 'println(hey)', 'value is: ' + out.output\n");
     }
 
 }

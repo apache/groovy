@@ -47,7 +47,7 @@
 package groovy.bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -60,7 +60,7 @@ public class IanMaceysBug extends TestSupport {
             assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
             fail("Should throw a syntax exception");
         }
-        catch (CompilationFailedException e) {
+        catch (RuntimeParserException e) {
             System.out.println("Worked. Caught: " + e);
         }
     }
