@@ -1,11 +1,16 @@
 <project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" >
 
-  <goal name="default" prereqs="clean, groovy:test, jar:jar"/>
+  <goal name="default" prereqs="clean, jar:jar"/>
   
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
   </preGoal>
 
+  <postGoal name="test:compile">
+    <attainGoal name="setclasspath"/>
+    <attainGoal name="groovy:compile-tests"/>
+  </postGoal>
+    
   <goal name="setclasspath">
 	<path id="test.classpath">
 	    <pathelement path="${maven.build.dest}"/>
@@ -15,11 +20,6 @@
 	</path>
   </goal>
   
-  <postGoal name="test:compile">
-    <attainGoal name="setclasspath"/>
-    <attainGoal name="groovy:compile-tests"/>
-  </postGoal>
-    
 
   <goal name="asm:dump" prereqs="test:compile"
 		description="Dumps the ASM instructions to generate the given class using the name property">
@@ -35,7 +35,7 @@
     </java>
   </goal>
 
-  <goal name="groovy:compile-tests"
+  <goal name="groovy:compile-tests" prereqs="java:compile, setclasspath"
   		description="Compiles the Groovy unit test cases">
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
     <!-- lets copy and touch all the groovy files to ensure they all recompile -->
@@ -54,7 +54,7 @@
     </groovyc>
   </goal>
 
-
+<!--
   <goal name="test" 
         description="Test the application"
         prereqs="">
@@ -66,6 +66,7 @@
         prereqs="">
     <attainGoal name="groovy:test"/>
   </goal>
+-->
 
   <goal name="groovy:test"
         description="Test the application with any Java or Groovy unit tests"

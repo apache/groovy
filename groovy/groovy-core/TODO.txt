@@ -3,6 +3,8 @@ Core Groovy Tasks
 
 * AST for new object expressions, constructors with map / tuple expressions, named parameter calling
  
+* default values for parameters
+
 * test try / catch
 
 * change to use == for equals?
