@@ -122,6 +122,8 @@ public class ASTBuilderTest extends TestParserSupport {
 
         ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
         Expression exp = exprStmt.getExpression();
+        System.out.println(exp);
+        
         assertTrue(exp instanceof BinaryExpression);
         BinaryExpression binExpr = (BinaryExpression) exp;
         assertTrue("RHS is constant", binExpr.getRightExpression() instanceof ConstantExpression);
@@ -197,6 +199,38 @@ public class ASTBuilderTest extends TestParserSupport {
 
     public void testDoubleSubscript() throws Exception {
         ModuleNode module = parse("class Foo { void testMethod() { x = foo[0][0] } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+
+        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
+        Expression exp = exprStmt.getExpression();
+
+        System.out.println("expr: " + exp);
+
+        System.out.println("text: " + exp.getText());
+    }
+
+    public void testMethodCallWithDotAndNoParenthesis() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { foo.someMethod 1 } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+
+        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
+        Expression exp = exprStmt.getExpression();
+
+        System.out.println("expr: " + exp);
+
+        System.out.println("text: " + exp.getText());
+    }
+
+    public void testMethodCallWithNoParenthesis() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { someMethod 1 } }", "Dummy.groovy");
         BlockStatement statement = getCode(module, "testMethod");
 
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
@@ -293,19 +327,21 @@ public class ASTBuilderTest extends TestParserSupport {
     }
 
     public void testMethodCallWithoutParensBug() throws Exception {
-        try {
-            ModuleNode module = parse("class Foo { void testMethod() { println 3 } }", "Dummy.groovy");
-            BlockStatement statement = getCode(module, "testMethod");
+        ModuleNode module = parse("class Foo { void testMethod() { println 3, 5 } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
 
-            assertEquals("Statements size: " + statement.getStatements(), 2, statement.getStatements().size());
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
 
-            System.out.println(statement.getStatements());
+        System.out.println(statement.getStatements());
+    }
 
-            fail("Should have thrown a compiler error message");
-        }
-        catch (Exception e) {
-            System.out.println("Caught: " + e);
-        }
+    public void testReturnMethodClosure() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { System.out.println\n}}", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
     }
 
     public void testMethodWithArrayTypeParam() throws Exception {

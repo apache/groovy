@@ -12,6 +12,7 @@ public class AbstractTokenStreamTest
         extends AbstractTokenStream
     {
         private int cur;
+        private int checkpoint;
         private Token[] tokens;
 
         public MockTokenStream(Token[] tokens)
@@ -33,6 +34,14 @@ public class AbstractTokenStreamTest
             ++this.cur;
 
             return token;
+        }
+
+        public void checkpoint() {
+            checkpoint = cur;
+        }
+
+        public void restore() {
+            cur = checkpoint;
         }
     }
 

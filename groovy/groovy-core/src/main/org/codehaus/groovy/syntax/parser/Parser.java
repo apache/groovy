@@ -1132,6 +1132,7 @@ public class Parser {
                     //                                        "this" ) );
                     identifier = rootNode(lt_bare());
                     expr = identifier;
+
                     break PREFIX_SWITCH;
                 }
             case (Token.PATTERN_REGEX) :
@@ -1146,16 +1147,24 @@ public class Parser {
                 }
         }
 
-        if (identifier != null && (lt_bare() == Token.LEFT_PARENTHESIS || lt_bare() == Token.LEFT_CURLY_BRACE)) {
-            if (expr == identifier) {
-                CSTNode replacementExpr = new CSTNode();
-                CSTNode resultExpr = sugaryMethodCallExpression(replacementExpr, identifier, null);
-                if (resultExpr != replacementExpr) {
-                    expr = resultExpr;
+        if (identifier != null) {
+            if (lt_bare() == Token.LEFT_PARENTHESIS || lt_bare() == Token.LEFT_CURLY_BRACE) {
+                if (expr == identifier) {
+                    CSTNode replacementExpr = new CSTNode();
+                    CSTNode resultExpr = sugaryMethodCallExpression(replacementExpr, identifier, null);
+                    if (resultExpr != replacementExpr) {
+                        expr = resultExpr;
+                    }
+                }
+                else {
+                    expr = sugaryMethodCallExpression(expr, identifier, null);
                 }
             }
             else {
-                expr = sugaryMethodCallExpression(expr, identifier, null);
+                CSTNode methodCall = tryParseMethodCallWithoutParenthesis(expr, identifier);
+                if (methodCall != null) {
+                    expr = methodCall;
+                }
             }
         }
 
@@ -1172,7 +1181,7 @@ public class Parser {
     }
 
     protected CSTNode subscriptExpression(CSTNode expr) throws SyntaxException, IOException {
-        expr = rootNode(lt_bare(), expr);
+        expr = rootNode_bare(lt_bare(), expr);
 
         optionalNewlines();
         CSTNode rangeExpr = rangeExpression();
@@ -1204,9 +1213,8 @@ public class Parser {
     }
 
     protected CSTNode methodCallOrPropertyExpression(CSTNode expr) throws SyntaxException, IOException {
-        CSTNode dotExpr = rootNode(lt_bare());
-
-        CSTNode identifier = rootNode(lt_bare());
+        CSTNode dotExpr = rootNode_bare(lt_bare());
+        CSTNode identifier = rootNode_bare(lt_bare());
 
         switch (lt_bare()) {
             case (Token.LEFT_PARENTHESIS) :
@@ -1217,19 +1225,21 @@ public class Parser {
                 }
             default :
                 {
-                    dotExpr.addChild(expr);
-                    dotExpr.addChild(identifier);
-                    expr = dotExpr;
+                    // lets try parse a method call
+                    CSTNode methodCall = tryParseMethodCallWithoutParenthesis(expr, identifier);
+                    if (methodCall != null) {
+                        expr = methodCall;
+                    }
+                    else {
+                        dotExpr.addChild(expr);
+                        dotExpr.addChild(identifier);
+                        expr = dotExpr;
+                    }
                     break;
                 }
         }
 
         return expr;
-    }
-
-    protected boolean lookAheadForMethodCall() throws IOException, SyntaxException {
-        return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE)
-            && (lt(2) == Token.IDENTIFIER || lt(2) == Token.KEYWORD_CLASS);
     }
 
     protected CSTNode sugaryMethodCallExpression(CSTNode expr, CSTNode identifier, CSTNode dotExpr)
@@ -1238,12 +1248,14 @@ public class Parser {
         CSTNode paramList = null;
 
         if (lt_bare() == Token.LEFT_PARENTHESIS) {
-            methodExpr = rootNode(Token.LEFT_PARENTHESIS);
+            methodExpr = rootNode_bare(Token.LEFT_PARENTHESIS);
+            optionalNewlines();
             methodExpr.addChild(expr);
             methodExpr.addChild(identifier);
             paramList = parameterList(Token.RIGHT_PARENTHESIS);
             methodExpr.addChild(paramList);
-            consume(Token.RIGHT_PARENTHESIS);
+            optionalNewlines();
+            consume_bare(Token.RIGHT_PARENTHESIS);
         }
 
         if (lt_bare() == Token.LEFT_CURLY_BRACE) {
@@ -1266,6 +1278,50 @@ public class Parser {
         }
 
         return expr;
+    }
+
+    protected CSTNode tryParseMethodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
+        throws SyntaxException, IOException {
+        switch (lt_bare()) {
+            case Token.IDENTIFIER :
+            case Token.DOUBLE_QUOTE_STRING :
+            case Token.FLOAT_NUMBER :
+            case Token.INTEGER_NUMBER :
+                // lets try parse a method call
+                getTokenStream().checkpoint();
+                try {
+                    return methodCallWithoutParenthesis(expr, identifier);
+                }
+                catch (Exception e) {
+                    getTokenStream().restore();
+                }
+        }
+        return null;
+    }
+
+    protected CSTNode methodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
+        throws SyntaxException, IOException {
+        CSTNode methodExpr = new CSTNode(Token.leftParenthesis(-1, -1));
+        methodExpr.addChild(expr);
+        methodExpr.addChild(identifier);
+
+        CSTNode parameterList = new CSTNode(Token.syntheticList());
+
+        parameterList.addChild(expression());
+
+        while (lt_bare() == Token.COMMA) {
+            consume_bare(lt_bare());
+            optionalNewlines();
+            parameterList.addChild(expression());
+        }
+
+        methodExpr.addChild(parameterList);
+        return methodExpr;
+    }
+
+    protected boolean lookAheadForMethodCall() throws IOException, SyntaxException {
+        return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE)
+            && (lt(2) == Token.IDENTIFIER || lt(2) == Token.KEYWORD_CLASS);
     }
 
     protected CSTNode regexPattern() throws IOException, SyntaxException {
@@ -1370,17 +1426,18 @@ public class Parser {
     }
 
     protected CSTNode parameterList(int endOfListDemarc) throws IOException, SyntaxException {
-        if (lt() == Token.IDENTIFIER && lt(2) == Token.COLON) {
+        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.COLON) {
             return namedParameterList(endOfListDemarc);
         }
 
         CSTNode parameterList = new CSTNode(Token.syntheticList());
 
-        while (lt() != endOfListDemarc) {
+        while (lt_bare() != endOfListDemarc) {
             parameterList.addChild(expression());
 
-            if (lt() == Token.COMMA) {
-                consume(Token.COMMA);
+            if (lt_bare() == Token.COMMA) {
+                consume_bare(Token.COMMA);
+                optionalNewlines();
             }
             else {
                 break;
@@ -1396,14 +1453,15 @@ public class Parser {
         while (lt() != endOfListDemarc) {
             CSTNode name = rootNode(Token.IDENTIFIER);
 
-            CSTNode namedParam = rootNode(Token.COLON, name);
+            CSTNode namedParam = rootNode_bare(Token.COLON, name);
 
             namedParam.addChild(expression());
 
             parameterList.addChild(namedParam);
 
-            if (lt() == Token.COMMA) {
-                consume(Token.COMMA);
+            if (lt_bare() == Token.COMMA) {
+                consume_bare(Token.COMMA);
+                optionalNewlines();
             }
             else {
                 break;
@@ -1742,8 +1800,18 @@ public class Parser {
         return new CSTNode(consume(type));
     }
 
+    protected CSTNode rootNode_bare(int type) throws IOException, SyntaxException {
+        return new CSTNode(consume_bare(type));
+    }
+
     protected CSTNode rootNode(int type, CSTNode child) throws IOException, SyntaxException {
         CSTNode root = new CSTNode(consume(type));
+        root.addChild(child);
+        return root;
+    }
+
+    protected CSTNode rootNode_bare(int type, CSTNode child) throws IOException, SyntaxException {
+        CSTNode root = new CSTNode(consume_bare(type));
         root.addChild(child);
         return root;
     }
