@@ -87,7 +87,29 @@ public class MetaClassTest extends GroovyTestCase {
         metaClass.invokeMethod(value, "toString", new Object[0]);
     }
 
+    public void testPublicField() {
+        DymmyClass dymmyClass = new DymmyClass();
+        
+        MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
+        
+        assertEquals(metaClass.getProperty(dymmyClass, "x"), new Integer(0));
+        assertEquals(metaClass.getProperty(dymmyClass, "y"), "none");
+        
+        metaClass.setProperty(dymmyClass, "x", new Integer(25));
+        assertEquals(dymmyClass.x, 25);
+
+        metaClass.setProperty(dymmyClass, "y", "newvalue");
+        assertEquals(dymmyClass.y, "newvalue");
+    }
+    
     public void doSomething() {
         System.out.println("Called doSomething()");
     }
 }
+
+
+class DymmyClass {
+    public int x = 0;
+    public String y = "none";
+}
+

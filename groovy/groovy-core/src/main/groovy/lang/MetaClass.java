@@ -474,7 +474,17 @@ public class MetaClass {
             if (object instanceof Object[]) {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
             }
-
+            if (object instanceof Object) {
+                try {
+                    // lets try a public field
+                    Field field = object.getClass().getDeclaredField(property);
+                    return field.get(object);
+                }
+                catch (Exception e1) {
+                    throw new MissingPropertyException(property, theClass);
+                }
+            }
+            
             MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
             if (addListenerMethod != null) {
                 /* @todo one day we could try return the previously registered Closure listener for easy removal */
@@ -547,8 +557,21 @@ public class MetaClass {
             /** @todo or are we an extensible class? */
 
             // lets try invoke the set method
+
             String method = "set" + capitalize(property);
-            invokeMethod(object, method, new Object[] { newValue });
+            try {
+                invokeMethod(object, method, new Object[] { newValue });
+            }
+            catch (MissingMethodException e1) {
+                try {
+                    Field field = object.getClass().getDeclaredField(property);
+                    field.set(object, newValue);
+                }
+                catch (Exception e2) {
+                    throw new MissingPropertyException(property, theClass, e2);
+                }
+            }
+            
         }
         catch (GroovyRuntimeException e) {
             throw new MissingPropertyException(property, theClass, e);
