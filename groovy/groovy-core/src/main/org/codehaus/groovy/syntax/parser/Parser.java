@@ -867,7 +867,7 @@ public class Parser {
     protected CSTNode assertStatement() throws IOException, SyntaxException {
         CSTNode statement = rootNode(Token.KEYWORD_ASSERT);
 
-        statement.addChild(conditionalExpression());
+        statement.addChild(ternaryExpression());
 
         if (lt() == Token.COLON) {
             consume(Token.COLON);
@@ -900,7 +900,7 @@ public class Parser {
             expr.addChild(typeExpr);
         }
         else {
-            expr = conditionalExpression();
+            expr = ternaryExpression();
         }
 
         switch (lt_bare()) {
@@ -913,7 +913,7 @@ public class Parser {
                 {
                     expr = rootNode(lt_bare(), expr);
                     optionalNewlines();
-                    expr.addChild(conditionalExpression());
+                    expr.addChild(ternaryExpression());
                     break;
                 }
         }
@@ -921,11 +921,11 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode conditionalExpression() throws IOException, SyntaxException {
+    protected CSTNode ternaryExpression() throws IOException, SyntaxException {
         CSTNode expr = logicalOrExpression();
 
         if (lt_bare() == Token.QUESTION) {
-            rootNode(Token.QUESTION, expr);
+            expr = rootNode(Token.QUESTION, expr);
             optionalNewlines();
             expr.addChild(assignmentExpression());
 
@@ -934,7 +934,7 @@ public class Parser {
             consume(Token.COLON);
 
             optionalNewlines();
-            expr.addChild(conditionalExpression());
+            expr.addChild(ternaryExpression());
         }
 
         return expr;
