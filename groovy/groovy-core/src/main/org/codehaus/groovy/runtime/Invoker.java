@@ -109,6 +109,13 @@ public class Invoker {
         return metaClass.invokeStaticMethod(null, method, arguments, argumentList);
     }
 
+
+    public Object invokeConstructor(String type, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
+        List argumentList = asList(arguments);
+        return metaClass.invokeConstructor(arguments, argumentList);
+    }
+
     public List asList(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;

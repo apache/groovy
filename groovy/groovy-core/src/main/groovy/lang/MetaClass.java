@@ -49,10 +49,12 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -85,11 +87,13 @@ public class MetaClass {
     private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
     private Method genericGetMethod;
     private Method genericSetMethod;
+    private List constructors;
 
     public MetaClass(MetaClassRegistry registry, Class theClass) throws IntrospectionException {
         this.registry = registry;
         this.theClass = theClass;
 
+        constructors = Arrays.asList(theClass.getDeclaredConstructors());
         addMethods(theClass);
 
         // introspect
@@ -175,7 +179,7 @@ public class MetaClass {
         Class theClass = object.getClass();
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
-            Method method = chooseMethod(methods, arguments, argumentList);
+            Method method = (Method) chooseMethod(methods, arguments, argumentList);
             if (method != null) {
                 return doMethodInvoke(object, method, arguments, argumentList);
             }
@@ -186,7 +190,7 @@ public class MetaClass {
         List staticArgumentList = new ArrayList(argumentList.size() + 1);
         staticArgumentList.add(object);
         staticArgumentList.addAll(argumentList);
-        Method method = chooseMethod(newStaticInstanceMethods, staticArgumentList, staticArgumentList);
+        Method method = (Method) chooseMethod(newStaticInstanceMethods, staticArgumentList, staticArgumentList);
         if (method == null) {
             method = findNewStaticInstanceMethod(methodName, staticArgumentList);
         }
@@ -202,7 +206,7 @@ public class MetaClass {
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
-            Method method = chooseMethod(methods, arguments, argumentList);
+            Method method = (Method) chooseMethod(methods, arguments, argumentList);
             if (method != null) {
                 return doMethodInvoke(theClass, method, argumentList.toArray());
             }
@@ -219,6 +223,16 @@ public class MetaClass {
         throw new InvokerException(
             "Could not find matching method called: " + methodName + " for class: " + theClass.getName());
     }
+
+    public Object invokeConstructor(Object arguments, List argumentList) {
+        Constructor constructor = (Constructor) chooseMethod(constructors, arguments, argumentList);
+        if (constructor != null) {
+            return doConstructorInvoke(constructor, argumentList.toArray());
+        }
+        throw new InvokerException(
+            "Could not find matching constructor for class: " + theClass.getName());
+    }
+
 
     /**
      * @return the currently registered static methods against this class
@@ -429,7 +443,7 @@ public class MetaClass {
         MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
         List list = superClass.getNewStaticInstanceMethods(methodName);
         if (!list.isEmpty()) {
-            Method method = chooseMethod(list, staticArgumentList, staticArgumentList);
+            Method method = (Method) chooseMethod(list, staticArgumentList, staticArgumentList);
             if (method != null) {
                 // lets cache it for next invocation
                 addNewStaticInstanceMethod(method);
@@ -506,6 +520,44 @@ public class MetaClass {
         }
     }
 
+    protected Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
+        //System.out.println("Evaluating constructor: " + constructor + " with arguments: " + InvokerHelper.toString(argumentArray));
+        //System.out.println(this.theClass);
+
+        try {
+            return constructor.newInstance(argumentArray);
+        }
+        catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            if (t instanceof Error) {
+                Error error = (Error) t;
+                throw error;
+            }
+            throw new InvokerInvocationException(e);
+        }
+        catch (IllegalAccessException e) {
+            throw new InvokerException(
+                "could not access constructor: "
+                    + constructor
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
+        }
+        catch (Exception e) {
+            throw new InvokerException(
+                "failed to invoke constructor: "
+                    + constructor
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
+        }
+    }
+
+
     /**
      * Chooses the correct method to use from a list of methods which match by name.
      * 
@@ -514,7 +566,7 @@ public class MetaClass {
      * @param argumentList the argument to the method morphed into a List (maybe of 1 item)
      * @return
      */
-    protected Method chooseMethod(List methods, Object arguments, List argumentList) {
+    protected Object chooseMethod(List methods, Object arguments, List argumentList) {
         int methodCount = methods.size();
         if (methodCount <= 0) {
             return null;
@@ -522,7 +574,7 @@ public class MetaClass {
         else if (methodCount == 1) {
             return (Method) methods.get(0);
         }
-        Method answer = null;
+        Object answer = null;
         if (arguments == null) {
             answer = chooseMostGeneralMethodWith1Param(methods);
         }
@@ -533,16 +585,16 @@ public class MetaClass {
 
             // lets look for methods with 1 argument which matches the type of the arguments
             Class closestClass = null;
-            Method singleParameterMatch = null;
+            Object singleParameterMatch = null;
             boolean wasMethodWithMultiArgs = false;
 
             for (Iterator iter = methods.iterator(); iter.hasNext();) {
-                Method method = (Method) iter.next();
-                Class[] paramTypes = method.getParameterTypes();
+                Object method = iter.next();
+                Class[] paramTypes = getParameterTypes(method);
                 if (paramTypes.length == 1) {
                     Class theType = paramTypes[0];
                     if (isCompatibleInstance(theType, arguments)) {
-                        if (closestClass == null || !isAssignableFrom(theType, closestClass)) {
+                        if (closestClass == null || !theType.isAssignableFrom(closestClass)) {
                             closestClass = theType;
                             singleParameterMatch = method;
                         }
@@ -554,13 +606,13 @@ public class MetaClass {
             }
 
             // lets compare number of arguments
-            Method multiParamMatch = null;
+            Object multiParamMatch = null;
             int size = argumentList.size();
             int matches = 0;
             if (size > 1) {
                 for (Iterator iter = methods.iterator(); iter.hasNext();) {
-                    Method method = (Method) iter.next();
-                    Class[] paramTypes = method.getParameterTypes();
+                    Object method = iter.next();
+                    Class[] paramTypes = getParameterTypes(method);
                     if (paramTypes.length == size) {
                         // lets check the parameter types match
                         boolean validMethod = true;
@@ -583,8 +635,8 @@ public class MetaClass {
                 }
 
                 // how do we choose between them...
-                int answerSize = singleParameterMatch.getParameterTypes().length;
-                int matchingArgSize = multiParamMatch.getParameterTypes().length;
+                int answerSize = getParameterTypes(singleParameterMatch).length;
+                int matchingArgSize = getParameterTypes(multiParamMatch).length;
 
                 if (answerSize == matchingArgSize) {
                     return singleParameterMatch;
@@ -604,21 +656,33 @@ public class MetaClass {
             "Could not find which method to invoke from this list: " + methods + " for arguments: " + arguments);
     }
 
+    protected Class[] getParameterTypes(Object methodOrConstructor) {
+        if (methodOrConstructor instanceof Method) {
+            Method method = (Method) methodOrConstructor;
+            return method.getParameterTypes();
+        }
+        if (methodOrConstructor instanceof Constructor) {
+            Constructor constructor = (Constructor) methodOrConstructor;
+            return constructor.getParameterTypes();
+        }
+        throw new IllegalArgumentException("Must be a Method or Constructor");
+    }
+
     /**
      * @return the method with 1 parameter which takes the most general type of object (e.g. Object)
      */
-    protected Method chooseMostGeneralMethodWith1Param(List methods) {
+    protected Object chooseMostGeneralMethodWith1Param(List methods) {
         // lets look for methods with 1 argument which matches the type of the arguments
         Class closestClass = null;
-        Method answer = null;
+        Object answer = null;
 
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            Method method = (Method) iter.next();
-            Class[] paramTypes = method.getParameterTypes();
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
             int paramLength = paramTypes.length;
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
-                if (closestClass == null || isAssignableFrom(theType, closestClass)) {
+                if (closestClass == null || theType.isAssignableFrom(closestClass)) {
                     closestClass = theType;
                     answer = method;
                 }
@@ -627,17 +691,13 @@ public class MetaClass {
         return answer;
     }
 
-    protected boolean isAssignableFrom(Class theType, Class closestClass) {
-        return theType.isAssignableFrom(closestClass);
-    }
-
     /**
      * @return the method with 1 parameter which takes the most general type of object (e.g. Object)
      */
-    protected Method chooseEmptyMethodParams(List methods) {
+    protected Object chooseEmptyMethodParams(List methods) {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            Method method = (Method) iter.next();
-            Class[] paramTypes = method.getParameterTypes();
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
                 return method;

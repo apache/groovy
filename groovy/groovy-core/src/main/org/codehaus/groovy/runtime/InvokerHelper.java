@@ -82,6 +82,10 @@ public class InvokerHelper {
         return getInstance().invokeStaticMethod(type, methodName, arguments);
     }
 
+    public static Object invokeConstructor(String type, Object arguments) {
+        return getInstance().invokeConstructor(type, arguments);
+    }
+
     public static Iterator asIterator(Object collection) {
         return getInstance().asIterator(collection);
     }
@@ -183,4 +187,5 @@ public class InvokerHelper {
             throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
+
 }

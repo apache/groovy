@@ -46,44 +46,19 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.Closure;
-import groovy.lang.MetaClass;
+import groovy.lang.GroovyObject;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
+import org.codehaus.groovy.classgen.TestSupport;
 
 /**
- * This is a scratch class used to experiment with ASM to see what kind of 
- * stuff is output for normal Java code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DumpClass2 {
+public class ConstructorTest extends TestSupport {
 
-    private String bar = (String) InvokerHelper.invokeStaticMethod("InvokerHelper", "getMetaClass", null);
-
-    public DumpClass2(Object foo) {
-    }
-    
-    public Object makeClosure() {
-        return new Closure(this) {
-            public void doCall() {
-                
-            }  
-            public MetaClass getMetaClass() {
-                return null;
-            }
-            
-            public void setMetaClass(MetaClass metaClass) {
-            }
-        };
-    }
-    public String getBar() {
-        return bar;
-    }
-    
-    public Object callConstructor() {
-        return InvokerHelper.invokeConstructor("java.lang.String", "hello");
+    public void testConstructor() throws Exception {
+        GroovyObject object = compile("src/test/groovy/NewExpressionTest.groovy");
+        object.invokeMethod("testNewInstance", null);
     }
 }
