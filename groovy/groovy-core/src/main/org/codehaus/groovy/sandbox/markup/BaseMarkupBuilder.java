@@ -106,7 +106,7 @@ public class BaseMarkupBuilder extends Builder {
 			//
 			// call the closure corresponding to the tag
 			//
-			Map tagMap = this.tagMap;
+/*			Map tagMap = this.tagMap;
 			Closure defaultTag = this.defaultTag;
 			
 			if (this.pendingNamespaces.containsKey(this.prefix)) {
@@ -127,6 +127,29 @@ public class BaseMarkupBuilder extends Builder {
 					defaultTag = (Closure)info[0];
 					tagMap = (Map)info[1];
 				}
+			}*/
+			
+			final Object uri;
+			
+			if (this.pendingNamespaces.containsKey(this.prefix)) {
+				uri = this.pendingNamespaces.get(this.prefix);
+			} else if (this.namespaces.containsKey(this.prefix)) {
+				uri = this.namespaces.get(this.prefix);
+			} else {
+				uri = null;
+			}
+			
+			final Map tagMap;
+			final Closure defaultTag;
+			
+			if (uri != null && this.namespaceSpecificTags.containsKey(uri)) {
+			final Object[] info = (Object[])this.namespaceSpecificTags.get(uri);
+				
+				defaultTag = (Closure)info[0];
+				tagMap = (Map)info[1];
+			} else {
+				defaultTag = this.defaultTag;
+				tagMap = this.tagMap;
 			}
 			
 			final String prefix = this.prefix;
