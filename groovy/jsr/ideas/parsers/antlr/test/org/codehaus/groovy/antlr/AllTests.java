@@ -32,14 +32,8 @@ public class AllTests extends TestSuiteSupport {
 
     static String[] excludedTests = {
 
-        "ArrayTest.groovy",                     // TODO: arrays
-        "ConstructorParameterBug.groovy",       // TODO: arrays
-        "PropertyTest.groovy",                  // TODO: arrays
-        "SubscriptTest.groovy",                 // TODO: arrays
-        "GroovyMethodsTest.groovy",             // TODO: arrays
-        "ConstructorBug.groovy",                // TODO: arrays
-        "ClosureTest.groovy",                   // TODO: arrays
-        "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: arrays
+        "ArrayTest.groovy",                     // TODO: new type[size]
+        "PropertyTest.groovy",                  // TODO: new type[size]
 
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
@@ -54,6 +48,7 @@ public class AllTests extends TestSuiteSupport {
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
+        "ClosureTest.groovy",                   // TODO: need method pointers syntax
 
 
         // TODO: Parser decisions to make
@@ -71,6 +66,8 @@ public class AllTests extends TestSuiteSupport {
         "SqlWithBuilderTest.groovy",                // not easy to run from in IDE...
         "SqlWithTypedResultsTest.groovy",           // not easy to run from in IDE...
         "SerializeTest.groovy",                     // not easy to run from in IDE...
+        "SubscriptTest.groovy",
+        "ConstructorBug.groovy",
         "PrintlnWithNewBug.groovy",
         "dom/DOMTest.groovy",
         "SuperMethod2Bug.groovy",

@@ -47,7 +47,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         
         array[0] = 9
         
-           assert array[0] == 9
+       assert array[0] == 9
     }
     
     void testToCharacterMethod() {
@@ -77,7 +77,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testJoinString() {
-        arr = new String[] {"a", "b", "c", "d"}
+        String[] arr = ["a", "b", "c", "d"]
         joined = arr.join(", ")
 
         assert joined == "a, b, c, d"
@@ -94,68 +94,68 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
     
     void testGrep() {
-            list = ["Guillaume", "loves", "cheese"]
+        list = ["Guillaume", "loves", "cheese"]
 
-            answer = list.grep(~".*ee.*")
-            assert answer == ["cheese"]
+        answer = list.grep(~".*ee.*")
+        assert answer == ["cheese"]
 
-            list = [123, "abc", 4.56]
-            answer = list.grep(String)
-            assert answer == ["abc"]
+        list = [123, "abc", 4.56]
+        answer = list.grep(String)
+        assert answer == ["abc"]
 
-            list = [4, 2, 7, 3, 6, 2]
-            answer = list.grep(2..3)
-            assert answer == [2, 3, 2]
+        list = [4, 2, 7, 3, 6, 2]
+        answer = list.grep(2..3)
+        assert answer == [2, 3, 2]
     }
     
     void testMapGetWithDefault() {
-            map = [:]
+        map = [:]
 
-            assert map.foo == null
+        assert map.foo == null
 
-            map.get("foo", []).add(123)
+        map.get("foo", []).add(123)
 
-            assert map.foo == [123]
+        assert map.foo == [123]
 
-            map.get("bar", [:]).get("xyz", [:]).cheese = 123
+        map.get("bar", [:]).get("xyz", [:]).cheese = 123
 
-            assert map.bar.xyz.cheese == 123
-            assert map.size() == 2
-        }
+        assert map.bar.xyz.cheese == 123
+        assert map.size() == 2
+    }
 
     void DISABLE_testExecuteCommandLineProcessUsingAString() {
-            /** @todo why does this not work
-            javaHome = System.getProperty('java.home', '')
-            cmd = "${javaHome}/bin/java -version"
-            */
+        /** @todo why does this not work
+        javaHome = System.getProperty('java.home', '')
+        cmd = "${javaHome}/bin/java -version"
+        */
 
-            cmd = "ls -l"
-            if (System.getProperty('os.name', '').contains('Win')) {
-                cmd = "dir"
-            }
+        cmd = "ls -l"
+        if (System.getProperty('os.name', '').contains('Win')) {
+            cmd = "dir"
+        }
 
-            println "executing command: ${cmd}"
+        println "executing command: ${cmd}"
 
-            process = cmd.execute()
-            //process = "ls -l".execute()
+        process = cmd.execute()
+        //process = "ls -l".execute()
 
-            // lets have an easier way to do this!
-            count = 0
+        // lets have an easier way to do this!
+        count = 0
 
-            println "Read the following lines..."
+        println "Read the following lines..."
 
-            /** @todo we should simplify the following line!!! */
-            new InputStreamReader(process.in).eachLine { line |
-                println line
-                count++
-            }
-            println ""
+        /** @todo we should simplify the following line!!! */
+        new InputStreamReader(process.in).eachLine { line |
+            println line
+            ++count
+        }
+        println ""
 
-            process.waitFor()
-            value = process.exitValue()
-            println "Exit value of command line is ${value}"
+        process.waitFor()
+        value = process.exitValue()
+        println "Exit value of command line is ${value}"
 
-            assert count > 1
+        assert count > 1
     }
     
     void DISABLED_testExecuteCommandLineProcessAndUseWaitForOrKill() {

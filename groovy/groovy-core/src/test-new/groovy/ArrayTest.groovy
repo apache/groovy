@@ -10,10 +10,10 @@ class ArrayTest extends GroovyTestCase {
         assert array[0] == "Hello"
         
         println "Created array ${array.inspect()} with type ${array.class}"
-	}
+    }
     
     void testArrayWithInitializer() {
-        array = new String[] { "nice", "cheese", "gromit" }
+        String[] array = [ "nice", "cheese", "gromit" ]
         
         println "Created array ${array.inspect()} with type ${array.class}"
         
@@ -23,13 +23,13 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == "gromit"
     }
 
-	void testCharArrayCreate() {
-   		array  = new char[3]
-   		assert array.size() == 3
-	}
-	
+    void testCharArrayCreate() {
+           array  = new char[3]
+           assert array.size() == 3
+    }
+
     void testCharArrayWithInitializer() {
-        array = new char[] { 'a', 'b', 'c' }
+        char[] array = [ 'a', 'b', 'c' ]
         
         println "Created array ${array.inspect()} with type ${array.class}"
         
@@ -39,13 +39,13 @@ class ArrayTest extends GroovyTestCase {
         assert array[2] == 'c'
     }
     
-	void testByteArrayCreate() {
-		array = new byte[100]
-		assert array.size() == 100;
-	}
-	
+    void testByteArrayCreate() {
+        array = new byte[100]
+        assert array.size() == 100;
+    }
+
     void testByteArrayWithInitializer() {
-        array = new byte[] { 0, 1, 2, 3 }
+        byte[] array = [0, 1, 2, 3]
         
         println "Created array ${array.inspect()} with type ${array.class}"
         
@@ -57,30 +57,30 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testByteArrayWithInitializerAndAssignmentOfNumber() {
-		array = new byte[] { 2, 4}
+        byte[] array = [ 2, 4]
         println "Created array ${array.inspect()} with type ${array.class}"
-		assert array.size() == 2
-		assert array[0] == 2
-		assert array[1] == 4
-		
-		array[0] = 76
-		array[1] = 32
-		assert array[0] == 76
-		assert array[1] == 32
-		
-		array.putAt(0, 45)
-		array.putAt(1, 67)
-		assert array[0] == 45
-		assert array[1] == 67
-	}
-		
-	void testDoubleArrayCreate() {
-   		array  = new double[3]
-   		assert array.size() == 3
-	}
-	
+        assert array.size() == 2
+        assert array[0] == 2
+        assert array[1] == 4
+
+        array[0] = 76
+        array[1] = 32
+        assert array[0] == 76
+        assert array[1] == 32
+
+        array.putAt(0, 45)
+        array.putAt(1, 67)
+        assert array[0] == 45
+        assert array[1] == 67
+    }
+
+    void testDoubleArrayCreate() {
+         array  = new double[3]
+         assert array.size() == 3
+    }
+
     void testDoubleArrayWithInitializer() {
-        array = new double[] { 1.3, 3.14, 2.7 }
+        double[] array = [ 1.3, 3.14, 2.7]
         
         println "Created array ${array.inspect()} with type ${array.class}"
         
@@ -88,9 +88,9 @@ class ArrayTest extends GroovyTestCase {
         assert array[0] == 1.3 , array.inspect()
         assert array[1] == 3.14
         assert array[2] == 2.7
-    }		
+    }
 
-    	
+
     void testIntArrayCreate() {
         array = new int[5]
         
@@ -98,7 +98,7 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testIntArrayWithInitializer() {
-		array = new int[] { 42, -5, 360 }
+        int[] array = [42, -5, 360]
         
         println "Created array ${array.inspect()} with type ${array.class}"
         
@@ -107,12 +107,11 @@ class ArrayTest extends GroovyTestCase {
         assert array[1] == -5
         assert array[2] == 360
     }
-	
-	
-	
-/*
+
+
+
     void testArrayDeclaration() {
-        String[] array = new String{} { "a", "b", "c" }
+        String[] array = [ "a", "b", "c" ]
 
         array.each { |element| println( element ) }
 
@@ -125,5 +124,4 @@ class ArrayTest extends GroovyTestCase {
 
         o.testArrayDeclaration();
     }
-*/
 }
