@@ -50,10 +50,10 @@ public class TemplateTest extends TestCase {
     
     public void testMixedTemplateText() throws CompilationFailedException, ClassNotFoundException, IOException {
         Template template1 = new SimpleTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
-        assertEquals("test of expr and 1 script.", template1.toString());
+        assertEquals("test of expr and 1 script.", template1.make().toString());
         
         Template template2 = new GStringTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
-        assertEquals("test of expr and 1 script.", template2.toString());
+        assertEquals("test of expr and 1 script.", template2.make().toString());
         
     }
     
@@ -62,11 +62,9 @@ public class TemplateTest extends TestCase {
         binding.put("sam", "pullara");
         
         Template template1 = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");
-        template1.setBinding(binding);
-        assertEquals("pullarapullara", template1.toString());
+        assertEquals("pullarapullara", template1.make(binding).toString());
         
         Template template2 = new GStringTemplateEngine().createTemplate("<%= sam %><% out << sam %>");
-        template2.setBinding(binding);
-        assertEquals("pullarapullara", template2.toString());
+        assertEquals("pullarapullara", template2.make(binding).toString());
     }
 }

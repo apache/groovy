@@ -47,6 +47,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -497,8 +499,7 @@ public class TemplateServlet extends HttpServlet {
         /*
          * Set binding and write response.
          */
-        template.setBinding(binding.getVariables());
-        template.writeTo(response.getWriter());
+        template.make(binding.getVariables()).writeTo(response.getWriter());
 
     }
 

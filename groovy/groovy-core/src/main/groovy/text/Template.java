@@ -36,6 +36,7 @@ package groovy.text;
 import groovy.lang.Writable;
 
 import java.util.Map;
+import java.io.Writer;
 
 
 /**
@@ -43,6 +44,7 @@ import java.util.Map;
  * 
  * @author sam
  */
-public interface Template extends Writable {
-    void setBinding(Map binding);
+public interface Template {
+    Writable make();
+    Writable make(Map binding);
 }
