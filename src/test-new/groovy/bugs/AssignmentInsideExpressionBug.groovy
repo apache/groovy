@@ -11,18 +11,16 @@ class AssignmentInsideExpressionBug extends GroovyTestCase {
             println "y is greater than 5"
         }
         
-        /** @todo uncomment when the parser allows this
-        a = b = 123
+        def a = b = 123
         assert a == 123
         assert b == 123
-        */
     }
 
-    someMethod() {
+    def someMethod() {
         return "worked!"
     }
     
-    getFoo() {
+    def getFoo() {
         return 7
     }
 }

@@ -35,7 +35,7 @@ class BlockAsClosureBug extends GroovyTestCase {
         assert c == 9
     }
     
-    foo() {
+    def foo() {
         c = 0 
         
         block: { 

@@ -8,6 +8,6 @@ class ArrayMethodCallBug extends TestSupport {
         dummyMethod(array)
     }
     
-    protected dummyMethod(array) {
+    protected void dummyMethod(array) {
     }
 }
