@@ -107,6 +107,17 @@ public class GroovyShell extends GroovyObjectSupport {
         this.context = binding;
     }
 
+    /**
+     * Creates a child shell using a new ClassLoader which uses the parent shell's 
+     * class loader as its parent
+     * 
+     * @param shell is the parent shell used for the variable bindings and the parent class loader
+     */
+    public GroovyShell(GroovyShell shell) {
+        this.loader = new GroovyClassLoader(shell.loader);
+        this.context = shell.context;
+    }
+
     public Binding getContext() {
         return context;
     }

@@ -82,6 +82,14 @@ public class BSFTest extends TestCase {
         System.out.println("The eval returned the value: " + list);
     }
     
+    public void testTwoEvalsWithSameName() throws Exception {
+        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('first line')\n  return 'cheese'");
+        assertEquals("cheese", answer);
+        
+        answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('second line')\n  return 'gromit'");
+        assertEquals("gromit", answer);
+    }
+    
     public void testBsfVariables() throws Exception {
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('testing variables')\n  assert this.bsf != null\n  return this.bsf");
         assertTrue("Should have an answer", answer != null);
