@@ -617,9 +617,9 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-        //System.out.println("Evaluating method: " + method);
-        //System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
-        //System.out.println(this.theClass);
+//        System.out.println("Evaluating method: " + method);
+//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+//        System.out.println(this.theClass);
 
         try {
             if (registry.useAccessible()) {

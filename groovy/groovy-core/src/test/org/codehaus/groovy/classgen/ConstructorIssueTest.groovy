@@ -18,6 +18,6 @@ class ConstructorIssueTest extends GroovyTestCase {
     }
     
     void testConstructorIssue() {
-        main(null)
+        main([null].toArray())
     }
 }
