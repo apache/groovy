@@ -175,6 +175,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Zohar Melamed</name>
+      <id>zohar</id>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
