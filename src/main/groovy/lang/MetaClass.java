@@ -1325,6 +1325,15 @@ public class MetaClass {
         return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
     }
 
+    /**
+     * Call this method when any mutation method is called, such as adding a new
+     * method to this MetaClass so that any caching or bytecode generation can be
+     * regenerated.
+     */
+    protected synchronized void onMethodChange() {
+        reflector = null;
+    }
+    
     protected synchronized void checkInitialised() {
         if (!initialised) {
             initialised = true;
