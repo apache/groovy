@@ -33,6 +33,9 @@
  */
 package groovy.lang;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,7 +54,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence {
+public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable {
 
     private Object[] values;
     /** cached value of the GString */
@@ -147,18 +150,27 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     public String toString() {
         if (text == null) {
-            String[] s = getStrings();
-            int numberOfValues = values.length;
-            StringBuffer buffer = new StringBuffer();
-            for (int i = 0, size = s.length; i < size; i++) {
-                buffer.append(s[i]);
-                if (i < numberOfValues) {
-                    buffer.append(InvokerHelper.toString(values[i]));
-                }
+            StringWriter buffer = new StringWriter();
+            try {
+                writeTo(buffer);
+            }
+            catch (IOException e) {
+                throw new StringWriterIOException(e);
             }
             text = buffer.toString();
         }
         return text;
+    }
+
+    public void writeTo(Writer out) throws IOException {
+        String[] s = getStrings();
+        int numberOfValues = values.length;
+        for (int i = 0, size = s.length; i < size; i++) {
+            out.write(s[i]);
+            if (i < numberOfValues) {
+                InvokerHelper.write(out, values[i]);
+            }
+        }
     }
 
     public boolean equals(Object that) {
