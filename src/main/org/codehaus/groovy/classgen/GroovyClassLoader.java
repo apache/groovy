@@ -45,7 +45,16 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.io.IOException;
+
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.lexer.CharStream;
+import org.codehaus.groovy.syntax.lexer.Lexer;
+import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
+import org.codehaus.groovy.syntax.parser.ASTBuilder;
+import org.codehaus.groovy.syntax.parser.CSTNode;
+import org.codehaus.groovy.syntax.parser.Parser;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -62,12 +71,48 @@ public class GroovyClassLoader extends ClassLoader {
         this.classWriter = new ClassWriter(true);
     }
 
+    /**
+     * Loads the given class node returning the implementation Class
+     * 
+     * @param classNode
+     * @return
+     */
     public Class defineClass(ClassNode classNode) {
-        ClassGenerator visitor = new ClassGenerator(new GeneratorContext(), classWriter, this, null);
+        return defineClass(new GeneratorContext(), classNode);
+    }
+
+    /**
+     * Parses the given character stream into a Java class capable of being run
+     * 
+     * @param charStream
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(CharStream charStream) throws SyntaxException, IOException {
+        Lexer lexer = new Lexer(charStream);
+        Parser parser = new Parser(new LexerTokenStream(lexer));
+        CSTNode compilationUnit = parser.compilationUnit();
+
+        ASTBuilder astBuilder = new ASTBuilder(this);
+        ClassNode[] classNodes = astBuilder.build(compilationUnit);
+
+        GeneratorContext context = new GeneratorContext();
+        Class answer = null;
+        for (int i = 0; i < classNodes.length; ++i) {
+            Class aClass = defineClass(context, classNodes[i]);
+            if (i == 0) {
+                answer = aClass;
+            }
+        }
+        return answer;
+    }
+
+    protected Class defineClass(GeneratorContext context, ClassNode classNode) {
+        ClassGenerator visitor = new ClassGenerator(context, classWriter, this, null);
         visitor.visitClass(classNode);
 
         byte[] code = classWriter.toByteArray();
 
         return defineClass(classNode.getName(), code, 0, code.length);
     }
+
 }
