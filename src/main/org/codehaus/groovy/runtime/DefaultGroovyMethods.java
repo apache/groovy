@@ -44,24 +44,6 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -86,6 +68,25 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.IOException;
+import java.io.Writer;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.BufferedReader;
+import java.io.Reader;
+import java.io.File;
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
+import java.io.UnsupportedEncodingException;
+import java.io.FileNotFoundException;
+import java.io.BufferedOutputStream;
+import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.BufferedInputStream;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -125,7 +126,6 @@ public class DefaultGroovyMethods {
      * property names.
      * 
      * @param self
-     * @return
      */
     public static void putAt(Object self, String property, Object newValue) {
         InvokerHelper.setProperty(self, property, newValue);
@@ -205,17 +205,6 @@ public class DefaultGroovyMethods {
         }
         out.print(InvokerHelper.toString(self));
     }
-
-    /**
-     * Print to a console in interactive format
-     */
-    /*
-     * public static void print(Collection self, PrintWriter out) {
-     * out.print("["); boolean first = true; for (Iterator iter =
-     * self.iterator(); iter.hasNext(); ) { if (first) { first = false; } else {
-     * out.print(", "); } InvokerHelper.invokeMethod(iter.next(), "print",
-     * out); } out.print("]"); }
-     */
 
     /**
      * Print to a console in interactive format
@@ -2689,6 +2678,127 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Reads the content of the File opened with the specified encoding and returns it as a String
+     *
+     * @param file the file whose content we want to read
+     * @param charset the charset used to read the content of the file
+     * @return a String containing the content of the file
+     * @throws IOException
+     */
+    public static String getText(File file, String charset) throws IOException {
+        BufferedReader reader = newReader(file, charset);
+        return getText(reader);
+    }
+
+    /**
+     * Reads the content of the File and returns it as a String
+     *
+     * @param file the file whose content we want to read
+     * @return a String containing the content of the file
+     * @throws IOException
+     */
+    public static String getText(File file) throws IOException {
+        BufferedReader reader = newReader(file);
+        return getText(reader);
+    }
+
+    /**
+     * Reads the content of the BufferedReader and returns it as a String
+     *
+     * @param reader a BufferedReader whose content we want to read
+     * @return a String containing the content of the buffered reader
+     * @throws IOException
+     */
+    public static String getText(BufferedReader reader) throws IOException {
+        StringBuffer answer = new StringBuffer();
+        // reading the content of the file within a char buffer allow to keep the correct line endings
+        char[] charBuffer = new char[4096];
+        int nbCharRead = 0;
+        while ((nbCharRead = reader.read(charBuffer)) != -1) {
+            if (nbCharRead == charBuffer.length)
+            {
+                // appends a full buffer
+                answer.append(charBuffer);
+            }
+            else
+            {
+                // appends the last incomplete buffer
+                char[] endBuffer = new char[nbCharRead];
+                System.arraycopy(charBuffer, 0, endBuffer, 0, nbCharRead);
+                answer.append(endBuffer);
+            }
+        }
+        reader.close();
+        return answer.toString();
+    }
+
+    /**
+     * Write the text and append a new line (depending on the platform line-ending)
+     *
+     * @param writer a BufferedWriter
+     * @param line the line to write
+     * @throws IOException
+     */
+    public static void writeLine(BufferedWriter writer, String line) throws IOException {
+        writer.write(line);
+        writer.newLine();
+    }
+
+    /**
+     * Write the text to the File.
+     *
+     * @param file a File
+     * @param text the text to write to the File
+     * @throws IOException
+     */
+    public static void write(File file, String text) throws IOException {
+        BufferedWriter writer = newWriter(file);
+        writer.write(text);
+        writer.close();
+    }
+
+    /**
+     * Write the text to the File with a specified encoding.
+     *
+     * @param file a File
+     * @param text the text to write to the File
+     * @param charset the charset used
+     * @throws IOException
+     */
+    public static void write(File file, String text, String charset) throws IOException {
+        BufferedWriter writer = newWriter(file, charset);
+        writer.write(text);
+        writer.close();
+    }
+
+    /**
+     * Append the text at the end of the File
+     *
+     * @param file a File
+     * @param text the text to append at the end of the File
+     * @throws IOException
+     */
+    public static void append(File file, String text) throws IOException {
+        BufferedWriter writer = newWriter(file, true);
+        writer.write(text);
+        writer.close();
+    }
+
+    /**
+     * Append the text at the end of the File with a specified encoding
+     *
+     * @param file a File
+     * @param text the text to append at the end of the File
+     * @param charset the charset used
+     * @throws IOException
+     */
+    public static void append(File file, String text, String charset) throws IOException {
+        BufferedWriter writer = newWriter(file, charset, true);
+        writer.write(text);
+        writer.close();
+    }
+
+    /**
      * Reads the reader into a list of Strings for each line
      *
      * @param reader a Reader
@@ -2724,6 +2834,19 @@ public class DefaultGroovyMethods {
     public static BufferedReader newReader(File file) throws IOException {
         CharsetToolkit toolkit = new CharsetToolkit(file);
         return toolkit.getReader();
+    }
+
+    /**
+     * Helper method to create a buffered reader for a file, with a specified charset
+     *
+     * @param file a File
+     * @param charset the charset with which we want to write in the File
+     * @return a BufferedReader
+     * @throws FileNotFoundException if the File was not found
+     * @throws UnsupportedEncodingException if the encoding specified is not supported
+     */
+    public static BufferedReader newReader(File file, String charset) throws FileNotFoundException, UnsupportedEncodingException {
+        return new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
     }
 
     /**
@@ -2782,14 +2905,109 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a new BufferedWriter for a file and then
-     * passes it into the closure and ensures its closed again afterwords
+     * Helper method to create a buffered writer for a file in append mode
      *
      * @param file a File
+     * @param append true if in append mode
+     * @return a BufferedWriter
+     * @throws FileNotFoundException
+     */
+    public static BufferedWriter newWriter(File file, boolean append) throws IOException {
+        return new BufferedWriter(new FileWriter(file, append));
+    }
+
+    /**
+     * Helper method to create a buffered writer for a file
+     *
+     * @param file a File
+     * @param charset the name of the encoding used to write in this file
+     * @param append true if in append mode
+     * @return a BufferedWriter
+     * @throws FileNotFoundException
+     */
+    public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
+        if (append) {
+            return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
+        }
+        else {
+            // first write the Byte Order Mark for Unicode encodings
+            FileOutputStream stream = new FileOutputStream(file);
+            if ("UTF-16BE".equals(charset)) {
+                writeUtf16Bom(stream, true);
+            }
+            else if ("UTF-16LE".equals(charset)) {
+                writeUtf16Bom(stream, false);
+            }
+            return new BufferedWriter(new OutputStreamWriter(stream, charset));
+        }
+    }
+
+    /**
+     * Helper method to create a buffered writer for a file
+     *
+     * @param file    a File
+     * @param charset the name of the encoding used to write in this file
+     * @return a BufferedWriter
+     * @throws FileNotFoundException
+     */
+    public static BufferedWriter newWriter(File file, String charset) throws IOException {
+        return newWriter(file, charset, false);
+    }
+
+    /**
+     * Write a Byte Order Mark at the begining of the file
+     *
+     * @param stream the FileOuputStream to write the BOM to
+     * @param bigEndian true if UTF 16 Big Endian or false if Low Endian
+     * @throws IOException
+     */
+    private static void writeUtf16Bom(FileOutputStream stream, boolean bigEndian) throws IOException {
+        if (bigEndian) {
+            stream.write(-2);
+            stream.write(-1);
+        }
+        else {
+            stream.write(-1);
+            stream.write(-2);
+        }
+    }
+
+    /**
+     * Helper method to create a new BufferedWriter for a file and then
+     * passes it into the closure and ensures it is closed again afterwords
+     *
+     * @param file a File
+     * @param closure a closure
      * @throws FileNotFoundException
      */
     public static void withWriter(File file, Closure closure) throws IOException {
         withWriter(newWriter(file), closure);
+    }
+
+    /**
+     * Helper method to create a new BufferedWriter for a file in a specified encoding
+     * and then passes it into the closure and ensures it is closed again afterwords
+     *
+     * @param file a File
+     * @param charset the charset used
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withWriter(File file, String charset, Closure closure) throws IOException {
+        withWriter(newWriter(file, charset), closure);
+    }
+
+    /**
+     * Helper method to create a new BufferedWriter for a file in a specified encoding
+     * in append mode and then passes it into the closure and ensures it is closed again afterwords
+     *
+     * @param file a File
+     * @param charset the charset used
+     * @param closure a closure
+     * @throws FileNotFoundException
+     */
+    public static void withWriterAppend(File file, String charset, Closure closure) throws IOException {
+        withWriter(newWriter(file, charset, true), closure);
     }
 
     /**
@@ -2800,6 +3018,18 @@ public class DefaultGroovyMethods {
      */
     public static PrintWriter newPrintWriter(File file) throws IOException {
         return new PrintWriter(newWriter(file));
+    }
+
+    /**
+     * Helper method to create a new PrintWriter for a file with a specified charset
+     *
+     * @param file a File
+     * @param charset the charset
+     * @return a PrintWriter
+     * @throws FileNotFoundException
+     */
+    public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
+        return new PrintWriter(newWriter(file, charset));
     }
 
     /**
@@ -2942,7 +3172,7 @@ public class DefaultGroovyMethods {
     /**
      * Allows an output stream to be used, calling the closure with the output stream
      * and then ensuring that the output stream is closed down again irrespective
-     * of whether exceptions occur or the
+     * of whether exceptions occur
      *
      * @param stream the stream which is used and then closed
      * @param closure the closure that the writer is passed into
@@ -2953,9 +3183,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Allows an output stream to be used, calling the closure with the output stream
+     * and then ensuring that the output stream is closed down again irrespective
+     * of whether exceptions occur.
+     *
+     * @param stream the stream which is used and then closed
+     * @param charset the charset used
+     * @param closure the closure that the writer is passed into
+     * @throws IOException
+     */
+    public static void withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
+        withWriter(new OutputStreamWriter(stream, charset), closure);
+    }
+
+    /**
      * Allows a OutputStream to be used, calling the closure with the stream
      * and then ensuring that the stream is closed down again irrespective
-     * of whether exceptions occur or the
+     * of whether exceptions occur.
      *
      * @param stream the stream which is used and then closed
      * @param closure the closure that the stream is passed into
@@ -3028,15 +3272,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the file into a list of Bytes for each byte
+     * Reads the content of the file into an array of byte
      *
      * @param file a File
      * @return a List of Bytes
      */
-    public static List readBytes(File file) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(file);
-        eachByte(file, closure);
-        return closure.asList();
+    public static byte[] readBytes(File file) throws IOException {
+        byte[] bytes = new byte[(int)file.length()];
+        FileInputStream fileInputStream = new FileInputStream(file);
+        fileInputStream.read(bytes);
+        fileInputStream.close();
+        return bytes;
     }
 
     /**
@@ -3065,6 +3311,17 @@ public class DefaultGroovyMethods {
      */
     public static InputStream getIn(Process self) {
         return self.getInputStream();
+    }
+
+    /**
+     * Read the text of the output stream of the Process.
+     *
+     * @param self a Process
+     * @return the text of the output
+     * @throws IOException
+     */
+    public static String getText(Process self) throws IOException {
+        return getText(new BufferedReader(new InputStreamReader(self.getInputStream())));
     }
 
     /**
