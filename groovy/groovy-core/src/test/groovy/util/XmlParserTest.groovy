@@ -36,7 +36,7 @@ class XmlParserTest extends GroovyTestCase {
         
         
         // lets find what Wallace likes in 1 query
-        answer = node.character.find { it['@id'] == '1' }.likes.get(0).text()
+        answer = node.character.find { it['@id'] == '1' }.likes[0].text()
         assert answer == "cheese"
     }
     
