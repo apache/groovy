@@ -35,14 +35,10 @@ class DOMTest extends GroovyTestCase {
     doc = new StreamingDOMBuilder().bind {
       html {
         head {
-		  title (class:"mytitle") {
-		    mkp.yield "Test";
-		  }
+		  title (class:"mytitle", "Test")
         }
         body {
-		  p (class:"mystyle") {
-		    mkp.yield "This is a test.";
-		  }
+		  p (class:"mystyle", "This is a test.")
         }
       }
 	}()
@@ -62,10 +58,10 @@ class DOMTest extends GroovyTestCase {
   
   static void main(args) {
   	// Relative results:
-  	// Test       04/27/2004
+  	// Test       5th May 2004
   	// Parser:    1.0
-  	// Builder:   1.06
-  	// Streaming: 0.63
+  	// Builder:   1.05
+  	// Streaming: 0.77
   	x = Integer.parseInt(args[0]);
   	test = new DOMTest();
   	standard = 0;
