@@ -2,23 +2,28 @@ package groovy.gdo
 
 import org.axiondb.jdbc.AxionDataSource
 
-/**
- * This is more of a sample program than a unit test and is here as an easy
- * to read demo of GDO. The actual full unit test case is in SqlCompleteTest
- */
-class SqlTest extends GroovyTestCase {
+class SqlCompleteTest extends SqlTest {
 
     void testSqlQuery() {
         sql = createSql()     
         
-        sql.queryEach("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
+        results = [:]
+        sql.queryEach("select * from PERSON") { results.put(it.firstname, it.lastname) }
+        
+        expected = ['James':'Strachan', 'Bob':'Mcwhirter', 'Sam':'Pullara']
+					
+        assert results == expected
     }
     
     void testSqlQueryWithWhereClause() {
         sql = createSql()     
         
         foo = 'drink'
-        sql.queryEach("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
+        results = []
+        sql.queryEach("select * from FOOD where type=${foo}") { results.add(it.name) }
+        
+        expected = ['beer', 'coffee']
+        assert results == expected
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
@@ -26,21 +31,33 @@ class SqlTest extends GroovyTestCase {
         
         foo = 'cheese'
         bar = 'edam'
-        sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
+        results = []
+        sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
+        
+        expected = ['brie', 'cheddar']
+        assert results == expected
     }
-    
+
     void testDataSet() {
         sql = createSql()     
         
+        results = []
         people = sql.dataSet("PERSON")
-        people.each { println("Hey ${it.firstname}") }
+        people.each { results.add(it.firstname) }
+        
+        expected = ['James', 'Bob', 'Sam']
+        assert results == expected
     }
     
     void testDataSetWithClosurePredicate() {
         sql = createSql()     
         
+        results = []
         food = sql.dataSet('FOOD')
-        food.findAll { it.type == 'cheese' }.each { println("Cheese ${it.name}") }
+        food.findAll { it.type == 'cheese' }.each { results.add(it.name) }
+        
+        expected = ['edam', 'brie', 'cheddar']
+        assert results == expected
     }
     
     protected createSql() {
