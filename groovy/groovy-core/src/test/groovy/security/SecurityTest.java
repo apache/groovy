@@ -1,8 +1,16 @@
 package groovy.security;
 
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyCodeSource;
+
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.security.Security;
 import java.util.PropertyPermission;
+
+import org.codehaus.groovy.control.CompilationFailedException;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -91,4 +99,13 @@ public class SecurityTest extends SecurityTestSupport {
         Security.setProperty("package.access", "org.codehaus.groovy");
 		assertExecute(new File("src/test/org/codehaus/groovy/classgen/MetaClassTest.groovy"), new RuntimePermission("accessClassInPackage.org.codehaus.groovy"));
 	}
+	
+	//Mailing list post by Richard Hensley reporting a CodeSource bug.  A GroovyCodeSource created
+	//with a URL was causing an NPE.
+	public void testCodeSource() throws IOException, CompilationFailedException {
+		URL script = loader.getResource("groovy/ArrayTest.groovy");
+		GroovyCodeSource gcs = new GroovyCodeSource(script);
+		Class result = loader.parseClass(gcs);
+	}
+	
 }

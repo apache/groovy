@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -86,22 +87,31 @@ public class GroovyCodeSource {
 	
 	public GroovyCodeSource(final File file) throws FileNotFoundException {
 		this.inputStream = new FileInputStream(file);
-		this.name = file.getName();
-		//toURI() below requires access to user.dir - allow here since getCodeSource() is package private and is
-		//used only by the GroovyClassLoader.
+		//The calls below require access to user.dir - allow here since getName() and getCodeSource() are
+		//package private and used only by the GroovyClassLoader.
 		try {
-			this.codeSource = (CodeSource) AccessController.doPrivileged( new PrivilegedExceptionAction() {
+			Object[] info = (Object[]) AccessController.doPrivileged( new PrivilegedExceptionAction() {
 				public Object run() throws MalformedURLException {
+					Object[] info = new Object[2];
+					info[0] = file.getAbsolutePath();
 					//toURI().toURL() will encode, but toURL() will not.
-					return new CodeSource(file.toURI().toURL(), null);
+					info[1] = new CodeSource(file.toURI().toURL(), null);
+					return info;
 				}
 			});
+			this.name = (String) info[0];
+			this.codeSource = (CodeSource) info[1];
 		} catch (PrivilegedActionException pae) {
 			throw new RuntimeException("Could not construct a URL from: " + file);
 		}
 	}
 	
-	public GroovyCodeSource(URL url) {
+	public GroovyCodeSource(URL url) throws IOException {
+		if (url == null) {
+			throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
+		}
+		this.inputStream = url.openStream();
+		this.name = url.toExternalForm();
 		this.codeSource = new CodeSource(url, null);
 	}
 	
@@ -113,7 +123,7 @@ public class GroovyCodeSource {
 		return inputStream;
 	}
 
-	public String getName() {
+	String getName() {
 		return name;
 	}
 }
