@@ -210,7 +210,7 @@ public class XMLRPCMessageProcessor extends MinML {
 				while (iterator.hasNext()) {
 				final Map.Entry entry = (Map.Entry)iterator.next();
 					
-					emit(encodeString(buffer.append("<member><name>"), (String)entry.getKey()).append("</name>"), entry.getValue()).append("</member>");
+					emit(encodeString(buffer.append("<member><name>"), entry.getKey().toString()).append("</name>"), entry.getValue()).append("</member>");
 				}
 				
 				buffer.append("</struct></value>");
