@@ -11,7 +11,6 @@ class Console {
 	property swing
     property textArea
     property outputArea
-    property historyArea
     property shell
     property counter
     property scriptList
@@ -41,7 +40,7 @@ class Console {
                 }
                 menu(text:'Actions') {
                     menuItem() {
-                        action(name:'Run', closure:{ runScript() }, accelerator_key:KeyStroke.getKeyStroke('meta r'))
+                        action(name:'Run', closure:{ runScript() }, accelerator_key:KeyStroke.getKeyStroke('ctrl enter'))
                     }
                 }
                 menu(text:'Help') {
@@ -52,15 +51,10 @@ class Console {
             }
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
-	                owner.historyArea = textArea(editable:false)
+                    owner.outputArea = textArea(editable:false)
                 }
-                splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
-                    scrollPane {
-                        owner.textArea = textArea()
-                    }
-                    scrollPane {
-                        owner.outputArea = textArea(editable:false)
-                    }
+                scrollPane {
+                    owner.textArea = textArea()
                 }
             }
         }        
@@ -77,7 +71,8 @@ class Console {
     runScript() {
         text = textArea.getText()
         scriptList.add(text)
-        historyArea.setText( historyArea.getText() + "\n" + text )
+        output = outputArea.getText() + "\ngroovy:>" + text.replaceAll("\n", "\ngroovy:>") + "\n";
+        outputArea.setText(output)
         
         if (shell == null) {
         	shell = new GroovyShell()
@@ -90,9 +85,19 @@ class Console {
         }
         name = "Script" + counter
         
-        Object answer = shell.evaluate(text, name)
-
-        outputArea.setText(InvokerHelper.toString(answer))
+        answer = null
+        answer = shell.evaluate(text, name)
+        /*
+        try {
+	        answer = shell.evaluate(text, name)
+        } 
+        catch (Exception e) {
+            answer = e
+        }
+        */
+        output = output + InvokerHelper.toString(answer)
+        
+        outputArea.setText(output)
         
         println("Variables: " + shell.context.variables)
         

@@ -3,3 +3,6 @@ maven.log
 bin
 *.properties
 velocity.log
+logs
+lib
+dist

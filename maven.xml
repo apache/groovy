@@ -34,10 +34,15 @@
 
   <goal name="console" prereqs="test:compile"
 		description="Runs the Groovy command console">
+    <java classname="groovy.ui.Console" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+<!--		
     <java classname="groovy.lang.GroovyShell" fork="yes">
       <arg value="src/main/groovy/ui/Console.groovy"/>
       <classpath refid="test.classpath"/>
     </java>
+-->    
   </goal>
 
   <goal name="swing:demo" prereqs="test:compile"
@@ -65,6 +70,7 @@
 	    <pathelement path="target/test-classes"/>
 	    <path refid="maven.dependency.classpath"/>
 	</path>
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
   </goal>
   
 
@@ -82,9 +88,20 @@
     </java>
   </goal>
 
-  <goal name="groovy:compile-tests" prereqs="java:compile, setclasspath"
+  <goal name="groovy:compile" prereqs="java:compile, setclasspath"
+  		description="Compiles the Groovy code">
+    <copy todir="${basedir}/target/classes">
+      <fileset dir="${basedir}/src/main">
+        <include name="**/*.groovy"/>
+      </fileset>
+    </copy>
+    <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
+      <classpath refid="test.classpath"/>
+    </groovyc>
+  </goal>
+
+  <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath"
   		description="Compiles the Groovy unit test cases">
-    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
     <!-- lets copy and touch all the groovy files to ensure they all recompile -->
     <mkdir dir="${basedir}/target/test-classes"/>
     <copy todir="${basedir}/target/test-classes">

@@ -629,6 +629,9 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    // String methods
+    //-------------------------------------------------------------------------
+    
     // Number based methods
     //-------------------------------------------------------------------------
     public static String plus(String left, Object value) {
