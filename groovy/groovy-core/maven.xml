@@ -139,7 +139,7 @@
     <attainGoal name="faq"/>
   </goal>
 
-  <goal name="groovy:make-new-javadoc" prereqs="test:compile"
+  <goal name="groovy:make-new-javadoc" prereqs="java:compile"
 		description="Generates the HTML of the new JavaDoc added to the JDK">
     <mkdir dir="${maven.html2xdoc.dir}"/>
     <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">

@@ -27,9 +27,7 @@
   
   
   <shortDescription>groovy: a powerful and dynamic scripting language for the JVM</shortDescription>
-<!--
-  <logo>http://images.werken.com/werkflow.gif</logo>
--->
+  <logo>/images/groovy-logo.png</logo>
 
   <description>
    	a powerful and dynamic scripting language for the JVM
