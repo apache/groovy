@@ -183,7 +183,7 @@ public class MetaClassRegistry {
         if (loader instanceof GroovyClassLoader) {
             return (GroovyClassLoader) loader;
         }
-
+        
         synchronized (loaderMap) {
             GroovyClassLoader groovyLoader = (GroovyClassLoader) loaderMap.get(loader);
             if (groovyLoader == null) {
@@ -191,7 +191,20 @@ public class MetaClassRegistry {
                     groovyLoader = this.loader;
                 }
                 else {
-                    groovyLoader = new GroovyClassLoader(loader);
+                    // We have to make sure a class loaded through groovy is always
+                    // able to find a class of the runtime. I assume the classloaders
+                    // are behaving normal and delegate unknown classes to the parent
+                    // classloader. So if no parent has the same classloader as the 
+                    // runtime we can't use the normal loader to create the 
+                    // GroovyClassLoader
+                    ClassLoader localLoader = getClass().getClassLoader();
+                    ClassLoader parent = loader;
+                    while (parent!=localLoader && parent!=null) parent=parent.getParent();
+                    if (parent==null) {
+                        groovyLoader = new GroovyClassLoader(localLoader);
+                    } else {
+                        groovyLoader = new GroovyClassLoader(loader);
+                    }
                 }
 
                 loaderMap.put(loader, groovyLoader);
