@@ -45,6 +45,11 @@ public class Compiler
         return this.classLoader;
     }
 
+    public void setVerbose(boolean verbose) 
+    {
+        this.verbose = verbose;
+    }
+    
     public void setClasspath(String classpath)
         throws Exception
     {
@@ -154,6 +159,10 @@ public class Compiler
 
         for ( int i = 0 ; i < classNodes.length ; ++i )
         {
+            if (verbose)
+            {
+                System.out.println("Generating class: " + classNodes[i].getName());
+            }
             GroovyClass[] classes = generateClasses( new GeneratorContext(),
                                                      classNodes[ i ],
                                                      charStream.getDescription() );

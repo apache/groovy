@@ -1,9 +1,5 @@
 package groovy.xml
 
-/** @todo parser we should be able to remove these */
-import groovy.xml.DOMBuilder
-import groovy.xml.TestXmlSupport
-
 /**
  * This test uses the verbose syntax to test the building of 
  * W3C DOM trees using GroovyMarkup

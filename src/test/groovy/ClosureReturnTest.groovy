@@ -16,7 +16,6 @@ class ClosureReturnTest extends GroovyTestCase {
         assert value == false
     }
 	
-
     void testReturnValueUsingFunction() {
         block = {|x| return someFunction(x) }
         

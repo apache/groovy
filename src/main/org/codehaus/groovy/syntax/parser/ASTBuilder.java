@@ -13,6 +13,11 @@ import org.objectweb.asm.Constants;
 public class ASTBuilder
 {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final String[] DEFAULT_IMPORTS = {
+        "java.lang.",
+        "groovy.lang.",
+        "groovy.util."
+    };
 
     private ClassLoader classLoader;
     private Map imports;
@@ -135,70 +140,40 @@ public class ASTBuilder
 
                 return packageName + "." + name;
             }
-            catch (ClassNotFoundException e)
+            catch (Exception e)
             {
                 // swallow
             }
-            
+            catch (Error e)
+            {
+                // swallow
+            }
         }        
-        try
-        {
-            getClassLoader().loadClass( "java.lang." + name );
-
-            return "java.lang." + name;
-        }
-        catch (ClassNotFoundException e)
+        for (int i = 0; i < DEFAULT_IMPORTS.length; i++)
         {
             try
             {
-                getClassLoader().loadClass( "groovy.lang." + name );
-
-                return "groovy.lang." + name;
+                String fullName = DEFAULT_IMPORTS[i] + name;
+                getClassLoader().loadClass( fullName );
+                return fullName;
             }
-            catch (ClassNotFoundException ee)
+            catch (Exception e)
             {
-                try
-                {
-                    getClassLoader().loadClass( "groovy.util." + name );
-
-                    return "groovy.util." + name;
-                }
-                catch (ClassNotFoundException eee)
-                {
-                    // swallow
-                }
+                // swallow
+            }
+            catch (Error e)
+            {
+                // swallow
             }
         }
 
+        /** @todo throw exception if not found? */
         return null;
     }
 
     protected boolean isDatatype(String name)
     {
-        if ( this.imports.containsKey( name )  )
-        {
-            return true;
-        }
-
-        try
-        {
-            getClassLoader().loadClass( "java.lang." + name );
-            return true;
-        }
-        catch (ClassNotFoundException e)
-        {
-            try
-            {
-                getClassLoader().loadClass( "groovy.lang." + name );
-                return true;
-            }
-            catch (ClassNotFoundException ee)
-            {
-                // swallow
-            }
-        }
-
-        return false;
+        return resolveName(name) != null;
     }
 
     protected String qualifiedName(CSTNode nameRoot)
