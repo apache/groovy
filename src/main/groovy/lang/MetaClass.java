@@ -394,23 +394,21 @@ public class MetaClass {
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
             Class[] argClasses = convertToTypeArray(arguments);
-            method = (MetaMethod) chooseMethod(methodName, methods, argClasses, false);
+            method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
             if (method == null) {
-                method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
-                if (method == null) {
-                    int size = (arguments != null) ? arguments.length : 0;
-                    if (size == 1) {
-                        Object firstArgument = arguments[0];
-                        if (firstArgument instanceof List) {
-                            // lets coerce the list arguments into an array of
-                            // arguments
-                            // e.g. calling JFrame.setLocation( [100, 100] )
+                int size = (arguments != null) ? arguments.length : 0;
+                if (size == 1) {
+                    Object firstArgument = arguments[0];
+                    if (firstArgument instanceof List) {
+                        // lets coerce the list arguments into an array of
+                        // arguments
+                        // e.g. calling JFrame.setLocation( [100, 100] )
 
-                            List list = (List) firstArgument;
-                            arguments = list.toArray();
-                            argClasses = convertToTypeArray(arguments);
-                            method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
-                            if (method==null) return null;
+                        List list = (List) firstArgument;
+                        arguments = list.toArray();
+                        argClasses = convertToTypeArray(arguments);
+                        method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
+                        if (method==null) return null;
                             return new TransformMetaMethod(method) {
                                 public Object invoke(Object object, Object[] arguments) throws Exception {
                                     Object firstArgument = arguments[0];
@@ -419,7 +417,6 @@ public class MetaClass {
                                     return super.invoke(object, arguments);
                                 }
                             };
-                        }
                     }
                 }
             }
@@ -1738,12 +1735,79 @@ public class MetaClass {
         return validMethod;
     }
 
+    private boolean isSuperclass(Class claszz, Class superclass) {
+        while (claszz!=null) {
+            if (claszz==superclass) return true;
+            claszz = claszz.getSuperclass();
+        }
+        return false;
+    }
+    
+    private Class[] wrap(Class[] classes) {
+        Class[] wrappedArguments = new Class[classes.length];
+        for (int i = 0; i < wrappedArguments.length; i++) {
+            Class c = classes[i];
+            if (c==null) continue;
+            if (c.isPrimitive()) {
+                if (c==Integer.TYPE) {
+                    c=Integer.class;
+                } else if (c==Byte.TYPE) {
+                    c=Byte.class;
+                } else if (c==Long.TYPE) {
+                    c=Long.class;
+                } else if (c==Double.TYPE) {
+                    c=Double.class;
+                } else if (c==Float.TYPE) {
+                    c=Float.class;
+                }
+            } else if (isSuperclass(c,GString.class)) {
+                c = String.class;
+            }
+            wrappedArguments[i]=c;
+        } 
+        return wrappedArguments;
+    }
+    
     protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
+        
+        Class[] wrappedArguments = wrap(arguments);
+        LinkedList directMatches = new LinkedList();
+        // test for a method with equal classes (natives are wrapped
         for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
             Object method = iter.next();
-            Class[] paramTypes = getParameterTypes(method);
-            if (Arrays.equals(arguments, paramTypes)) return method;
+            Class[] paramTypes = wrap(getParameterTypes(method));
+            if (Arrays.equals(wrappedArguments, paramTypes)) directMatches.add(method);
         }
+        if (directMatches.size()>0) {
+            matchingMethods = directMatches;
+        }
+        if (directMatches.size()>1) {
+            matchingMethods = directMatches;
+            // we have more then one possible match for wrapped natives
+            // so next test without using wrapping
+            directMatches = new LinkedList();
+            for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
+                Object method = iter.next();
+                Class[] paramTypes = getParameterTypes(method);
+                if (Arrays.equals(arguments, paramTypes)) directMatches.add(method);
+            }
+            if (directMatches.size()==1) matchingMethods = directMatches;
+        }
+        
+        // filter out cases where we don't have a superclass
+        List superclassMatches = new ArrayList(matchingMethods);
+        for (Iterator iter = superclassMatches.iterator(); iter.hasNext(); ) {
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
+            for (int i=0; i<paramTypes.length; i++) {
+                if (!isSuperclass(arguments[i],paramTypes[i])) iter.remove();
+            }
+        }
+        if (superclassMatches.size()!=0) {
+            //if not all methods are filtered out use the filtered methods
+            matchingMethods = superclassMatches;
+        }
+        
         Object answer = null;
         int size = arguments.length;
         Class[] mostSpecificTypes = null;
@@ -1761,11 +1825,9 @@ public class MetaClass {
                     Class type = paramTypes[i];
 
                     if (!isAssignableFrom(mostSpecificType, type)) {
-
                         useThisMethod = true;
                         break;
                     }
-
                 }
                 if (useThisMethod) {
 
