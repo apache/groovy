@@ -94,7 +94,7 @@ public class ParserTest extends GroovyTestCase {
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
-            assertToken(e.getToken(), ".", Token.DOT);
+            assertToken(e.getUnexpectedToken(), ".", Token.DOT);
 
             assertLength(1, e.getExpectedTypes());
 
@@ -111,7 +111,7 @@ public class ParserTest extends GroovyTestCase {
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
-            assertNull(e.getToken());
+            assertNull(e.getUnexpectedToken());
 
             assertLength(1, e.getExpectedTypes());
 
@@ -259,7 +259,7 @@ public class ParserTest extends GroovyTestCase {
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
-            assertToken(e.getToken(), ".", Token.DOT);
+            assertToken(e.getUnexpectedToken(), ".", Token.DOT);
 
             assertLength(1, e.getExpectedTypes());
 
@@ -276,7 +276,7 @@ public class ParserTest extends GroovyTestCase {
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
-            assertNull(e.getToken());
+            assertNull(e.getUnexpectedToken());
 
             assertLength(1, e.getExpectedTypes());
 
@@ -320,7 +320,7 @@ public class ParserTest extends GroovyTestCase {
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
-            assertToken(e.getToken(), "{", Token.LEFT_CURLY_BRACE);
+            assertToken(e.getUnexpectedToken(), "{", Token.LEFT_CURLY_BRACE);
 
             assertLength(1, e.getExpectedTypes());
 

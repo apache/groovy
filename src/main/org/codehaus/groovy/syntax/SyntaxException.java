@@ -47,36 +47,65 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyException;
 
-
 /** Base exception indicating a syntax error.
  *
  *  @author <a href="bob@werken.com">bob mcwhirter</a>
  *
  *  @version $Id$
  */
-public class SyntaxException
-    extends GroovyException
-{
+public class SyntaxException extends GroovyException {
+
+    /** Line upon which the error occurred. */
     private int line;
+
+    /** Column upon which the error occurred. */
     private int column;
+
     private String sourceLocator;
 
-    public SyntaxException() 
-    {
-    }
-    
-    public SyntaxException(String message) 
-    {
+    public SyntaxException(String message, int line, int column) {
         super(message);
+        this.line = line;
+        this.column = column;
     }
-    
-    public void setSourceLocator(String sourceLocator)
-    {
+
+    // Properties
+    // ----------------------------------------------------------------------
+    public void setSourceLocator(String sourceLocator) {
         this.sourceLocator = sourceLocator;
     }
 
-    public String getSourceLocator()
-    {
+    public String getSourceLocator() {
         return this.sourceLocator;
+    }
+
+    /** Retrieve the line upon which the error occurred.
+     *
+     *  @return The line.
+     */
+    public int getLine() {
+        return line;
+    }
+
+    /** Retrieve the column upon which the error occurred.
+     *
+     *  @return The column.
+     */
+    public int getStartColumn() {
+        return column;
+    }
+    
+    /** 
+     * @return the end of the line on which the error occurs
+     */
+    public int getStartLine() {
+        return getLine();
+    }
+
+    /**
+     * @return the end column on which the error occurs
+     */
+    public int getEndColumn() {
+        return getStartColumn() + 1;
     }
 }
