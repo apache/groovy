@@ -62,7 +62,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * A default JUnit TestCase in Groovy. This provides a number of helper methods
  * plus avoids the JUnit restriction of requiring all test* methods to be void
  * return type.
- * 
+ *
  * @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -203,7 +203,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * Asserts that the value of toString() on the given object matches the
      * given text string
-     * 
+     *
      * @param value the object to be output to the console
      * @param expected the expected String representation
      */
@@ -215,7 +215,7 @@ public class GroovyTestCase extends TestCase {
     /**
      * Asserts that the value of inspect() on the given object matches the
      * given text string
-     * 
+     *
      * @param value the object to be output to the console
      * @param expected the expected String representation
      */
@@ -233,7 +233,7 @@ public class GroovyTestCase extends TestCase {
         log.info("About to execute script");
         //log.info(script);
 
-        // lets write the file to the target directory so its available 
+        // lets write the file to the target directory so its available
         // to the MetaClass.getClassNode()
         // the file is also used to determine the CodeSource if running with a security manager
         String testClassName = getTestClassName();
@@ -260,7 +260,7 @@ public class GroovyTestCase extends TestCase {
 
     /**
      * Asserts that the given code closure fails when it is evaluated
-     * 
+     *
      * @param code
      */
     protected void shouldFail(Closure code) {
@@ -292,10 +292,12 @@ public class GroovyTestCase extends TestCase {
                 failed = true;
                 System.out.println("Worked: caught expected exception: " + e);
             }
+            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + e, failed);
+            return;
         }
         assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), failed);
     }
-    
+
 
     /**
      *  Returns a copy of a string in which all EOLs are \n.
