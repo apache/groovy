@@ -4,14 +4,15 @@
 
   <body>
     <links>
-      <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
+      <item name="Download"            href="download.html"/>
       <item name="JavaDoc"             href="apidocs/index.html"/>
+      <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
       <item name="CVS"             	   href="cvs-usage.html"/>
       <item name="IRC"				   href="irc://irc.codehaus.org/groovy"/>
       <item name="IRC Log"			   href="http://irc.codehaus.org/channels/groovy/"/>
       <item name="Stats"			   href="http://stats.groovy.codehaus.org/"/>
-      <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=compversions"/>
       <item name="Roadmap"       	   href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap"/>
+      <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242"/>
     </links>
 
     <menu name="Groovy">
@@ -23,11 +24,11 @@
       <item name="Wish List"           href="http://wiki.codehaus.org/groovy/WishList"/>
       <!--
       <item name="License"             href="/license.html"/>
-      <item name="Download"            href="/download.html"/>
       -->
     </menu>
 
     <menu name="Using Groovy">
+      <item name="Installing"          href="/install.html"/>
       <item name="Running"             href="/running.html"/>
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>
@@ -43,17 +44,18 @@
       <item name="Regex"              href="/regex.html"/>
     </menu>
 
+    <menu name="Presentation">
+      <item name="PDF"                 href="http://codehaus.org/~jstrachan/Groovy/Groovy.ppt"/>
+      <item name="HTML"                href="http://codehaus.org/~jstrachan/Groovy/html/groovy.html"/>
+    </menu>
+    
     <menu name="Examples">
       <item name="Scripts"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/script/"/>
       <item name="Unit tests"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/"/>
       <item name="GroovyAnt"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/util/AntTest.groovy?rev=HEAD&amp;view=auto"/>
       <item name="GroovySwing"        href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/"/>
     </menu>
-    
-    <menu name="Presentation">
-      <item name="PDF"                 href="http://codehaus.org/~jstrachan/Groovy/Groovy.ppt"/>
-      <item name="HTML"                href="http://codehaus.org/~jstrachan/Groovy/html/groovy.html"/>
-    </menu>
+
   </body>
 
 </project>
