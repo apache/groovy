@@ -170,6 +170,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
     MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setPropertySafe2");
+    MethodCaller getGroovyObjectPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getGroovyObjectProperty");
+    MethodCaller setGroovyObjectPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setGroovyObjectProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
     MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
@@ -1602,22 +1604,36 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         cv.visitLdcInsn(expression.getProperty());
 
-        if (expression.isSafe()) {
+        if (isGroovyObject(objectExpression) && ! expression.isSafe()) {
             if (left) {
-                setPropertySafeMethod2.call(cv);
+                setGroovyObjectPropertyMethod.call(cv);
             }
             else {
-                getPropertySafeMethod.call(cv);
+                getGroovyObjectPropertyMethod.call(cv);
             }
         }
         else {
-            if (left) {
-                setPropertyMethod2.call(cv);
+            if (expression.isSafe()) {
+                if (left) {
+                    setPropertySafeMethod2.call(cv);
+                }
+                else {
+                    getPropertySafeMethod.call(cv);
+                }
             }
             else {
-                getPropertyMethod.call(cv);
+                if (left) {
+                    setPropertyMethod2.call(cv);
+                }
+                else {
+                    getPropertyMethod.call(cv);
+                }
             }
         }
+    }
+
+    protected boolean isGroovyObject(Expression objectExpression) {
+        return isThisExpression(objectExpression);
     }
 
     /**
