@@ -41,6 +41,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
+ * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
+ *
+ * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @version $Revision$
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
@@ -64,14 +67,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             parser.compilationUnit();
         }
         catch (RecognitionException e) {
-            // TODO
-            throw new RuntimeException(e);
-            //throw new CompilationFailedException(e.getMessage() new Token(-1, e.getFilename(), e.getLine(), e.getColumn()));
+            sourceUnit.addException(e);
         }
         catch (TokenStreamException e) {
-            // TODO
-            throw new RuntimeException(e);
-            ///throw new CompilationFailedException(e.getMessage(), Token.EOF);
+            sourceUnit.addException(e);
         }
 
         ast = parser.getAST();
@@ -82,7 +81,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
         setClassLoader(classLoader);
         makeModule();
-        convertGroovy(ast);
+        try {
+            convertGroovy(ast);
+        }
+        catch (ASTRuntimeException e) {
+            throw new ASTParserException(e);
+        }
         return output;
     }
 
@@ -424,7 +428,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return true;
         }
         else {
-            throw new RuntimeException("Cannot specify modifier: " + node.getText() + " when access scope has already been defined. " + description(node));
+            throw new ASTRuntimeException(node, "Cannot specify modifier: " + node.getText() + " when access scope has already been defined");
         }
     }
 
@@ -690,7 +694,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             expressionNode = node.getNextSibling();
         }
         if (expressionNode == null) {
-            throw new RuntimeException("No expression available: " + description(node));
+            throw new ASTRuntimeException(node, "No expression available");
         }
         return new ThrowStatement(expression(expressionNode));
     }
@@ -1301,7 +1305,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // node.setCSTNode(ast);
     }
 
-    protected Token makeToken(int typeCode, AST node) {
+    protected static Token makeToken(int typeCode, AST node) {
         return Token.newSymbol(typeCode, node.getLine(), node.getColumn());
     }
 
@@ -1317,23 +1321,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected void assertNodeType(int type, AST node) {
         if (node == null) {
-            throw new RuntimeException("No child node available in AST when expecting type: " + type);
+            throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + type);
         }
         if (node.getType() != type) {
-            throw new RuntimeException("Unexpected node type: " + node.getType() + " found " + description(node));
+            throw new ASTRuntimeException(node, "Unexpected node type: " + node.getType() + " found");
         }
     }
 
     protected void notImplementedYet(AST node) {
-        throw new RuntimeException("AST node not implemented yet for type: " + node.getType() + description(node));
+        throw new ASTRuntimeException(node, "AST node not implemented yet for type: " + node.getType());
     }
 
     protected void unknownAST(AST node) {
-        throw new RuntimeException("Unknown type: " + node.getType() + description(node));
-    }
-
-    protected String description(AST node) {
-        return " at node: " + node + " at line: " + node.getLine() + " column: " + node.getColumn();
+        throw new ASTRuntimeException(node, "Unknown type: " + node.getType());
     }
 
     protected void dumpTree(AST ast) {

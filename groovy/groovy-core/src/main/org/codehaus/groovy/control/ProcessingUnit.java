@@ -364,6 +364,10 @@ public abstract class ProcessingUnit
     }
 
 
+    public void addException(Exception cause) throws CompilationFailedException {
+        addError(new ExceptionMessage(cause));
+        fail();
+    }
 
 
   //---------------------------------------------------------------------------

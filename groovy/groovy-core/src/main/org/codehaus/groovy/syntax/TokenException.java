@@ -8,9 +8,13 @@ public class TokenException extends SyntaxException {
         super(
             (token == null)
                 ? message + ". No token"
-                : message, // + " at line: " + token.getStartLine() + " column: " + token.getStartColumn(),
+                : message,
             getLine(token),
             getColumn(token));
+    }
+
+    public TokenException(String message, Throwable cause, int line, int column) {
+        super(message, cause, line, column);
     }
 
     public int getEndColumn() {
@@ -20,7 +24,8 @@ public class TokenException extends SyntaxException {
         }
         return getStartColumn() + length;
     }
-    
+
+
     // Implementation methods
     // ----------------------------------------------------------------------
     private static int getColumn(Token token) {
