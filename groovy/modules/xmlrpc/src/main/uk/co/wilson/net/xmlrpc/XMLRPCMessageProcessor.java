@@ -267,6 +267,7 @@ public class XMLRPCMessageProcessor extends MinML {
 	private boolean gotValue = false;
 	private final StringBuffer buffer = new StringBuffer();
 	private final DateFormat dateTime = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
+	private final DateFormat dateTime1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	private final Boolean bools[] = {new Boolean(false), new Boolean(true)};
 	
 	public void parseMessage(final InputStream in) throws SAXException, IOException {
@@ -343,8 +344,18 @@ public class XMLRPCMessageProcessor extends MinML {
 				synchronized (this) {
 					this.params = this.dateTime.parse(this.buffer.toString());
 				}
-			} catch (ParseException e) {
-				throw new SAXException(e);
+			} catch (final ParseException e) {
+				//
+				// Some implementations produce funny formats 
+				// Try an alternate format
+				//
+				try {
+					synchronized (this) {
+						this.params = this.dateTime1.parse(this.buffer.toString());
+					}
+				} catch (final ParseException e1) {
+					throw new SAXException(e);	// throw the original exception
+				}
 			}
 			this.gotValue = true;
 		} else if ("base64".equals(name)) {
