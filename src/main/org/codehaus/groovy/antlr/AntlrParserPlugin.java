@@ -1253,11 +1253,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression leftExpression = expression(leftNode);
         AST rightNode = leftNode.getNextSibling();
         if (rightNode == null) {
-            rightNode = leftNode.getFirstChild();
+            //rightNode = leftNode.getFirstChild();
+            return leftExpression;
         }
-        if (rightNode == null) {
+        /*if (rightNode == null) {
             throw new NullPointerException("No rightNode associated with binary expression");
-        }
+        }*/
         Expression rightExpression = expression(rightNode);
         return new BinaryExpression(leftExpression, token, rightExpression);
     }
