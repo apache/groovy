@@ -68,6 +68,7 @@ public class ModuleNode extends ASTNode implements Constants {
 
     private BlockStatement statementBlock = new BlockStatement();
     private List classes = new ArrayList();
+    private List methods = new ArrayList();
     private Map imports = new HashMap();
     private CompileUnit unit;
     private String packageName;
@@ -81,8 +82,12 @@ public class ModuleNode extends ASTNode implements Constants {
         return statementBlock;
     }
 
+    public List getMethods() {
+        return methods;
+    }
+    
     public List getClasses() {
-        if (createClassForStatements && !statementBlock.isEmpty()) {
+        if (createClassForStatements && (!statementBlock.isEmpty() || ! methods.isEmpty())) {
             ClassNode mainClass = createStatementsClass();
             classes.add(mainClass);
             mainClass.setModule(this);
@@ -109,6 +114,10 @@ public class ModuleNode extends ASTNode implements Constants {
     public void addClass(ClassNode node) {
         classes.add(node);
         node.setModule(this);
+    }
+    
+    public void addMethod(MethodNode node) {
+        methods.add(node);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -172,6 +181,7 @@ public class ModuleNode extends ASTNode implements Constants {
         name += extractClassFromFileDescription();
         
         ClassNode classNode = new ClassNode(name, ACC_PUBLIC, "java.lang.Object");
+        if (!statementBlock.isEmpty()) {
         classNode.addMethod(
             new MethodNode(
                 "main",
@@ -179,6 +189,16 @@ public class ModuleNode extends ASTNode implements Constants {
                 "void",
                 new Parameter[] { new Parameter("java.lang.String[]", "args")},
                 statementBlock));
+        }
+        for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
+            MethodNode node = (MethodNode) iter.next();
+            int modifiers = node.getModifiers();
+            if ((modifiers & ACC_ABSTRACT) == 0) {
+                throw new RuntimeException("Cannot use abstract methods in a script, they are only available inside classes. Method: " + node.getName());
+            }
+            node.setModifiers(modifiers | ACC_STATIC);
+            classNode.addMethod(node);
+        }
         return classNode;
     }
 

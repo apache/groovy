@@ -90,6 +90,10 @@ public class MethodNode extends MetadataNode {
         return modifiers;
     }
 
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
+    }
+
     public String getName() {
         return name;
     }
