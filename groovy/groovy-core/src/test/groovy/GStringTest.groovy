@@ -98,4 +98,18 @@ class GStringTest extends GroovyTestCase {
         println "Created ${value}"
         assert value != null
     }
+    
+    testGroovy441() {
+		arg = "test" 
+		content = "${arg} =" 
+
+		if (arg != "something") 
+		{ 
+			content += "?" 
+		}
+
+		content += "= ${arg}." 
+
+		assert content == "test =?= test."
+    }
 }
