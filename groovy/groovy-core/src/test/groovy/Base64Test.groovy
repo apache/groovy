@@ -18,11 +18,6 @@ class Base64Test extends GroovyTestCase {
     		// turn the byte array back to a String for caomparison
     		decodedString = new String(decodedBytes, "ISO-8859-1")
     		
-    		println "'${decodedString}'"
-    		println "'${testString}'"
-    		println decodedString.size()
-    		println testString.size()
-    		
     		assert decodedString.equals(testString)
     }
 
