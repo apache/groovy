@@ -20,7 +20,15 @@ package org.codehaus.groovy.antlr;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.collections.AST;
-import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.MixinNode;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -163,7 +171,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             else {
                 buffer.append(".");
             }
-            buffer.append(identifier(node));
+            buffer.append(qualifiedName(node));
         }
         return buffer.toString();
     }
@@ -377,7 +385,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 Expression expression = expression(memberNode.getNextSibling());
                 annotatedNode.addMember(param, expression);
             }
-            else  {
+            else {
                 break;
             }
         }
@@ -594,7 +602,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (node = node.getNextSibling(); isType(CASE_GROUP, node); node = node.getNextSibling()) {
             AST child = node.getFirstChild();
             if (isType(LITERAL_case, child)) {
-            list.add(caseStatement(child));
+                list.add(caseStatement(child));
             }
             else {
                 defaultStatement = statement(child.getNextSibling());
@@ -829,10 +837,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                  return binaryExpression(Types.COMPARE_IDENTICAL, node);
 
                  case ???:
-                     return binaryExpression(Types.LOGICAL_AND_EQUAL, node);
+                 return binaryExpression(Types.LOGICAL_AND_EQUAL, node);
 
                  case ???:
-                     return binaryExpression(Types.LOGICAL_OR_EQUAL, node);
+                 return binaryExpression(Types.LOGICAL_OR_EQUAL, node);
 
                  */
 
@@ -889,12 +897,28 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST elist = listNode.getFirstChild();
         assertNodeType(ELIST, elist);
 
-        for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
-            expressions.add(expression(node));
+        AST node = elist.getFirstChild();
+        if (isType(LABELED_ARG, node)) {
+            do {
+                expressions.add(mapEntryExpression(node));
+                node = node.getNextSibling();
+            }
+            while (isType(LABELED_ARG, node));
+
+            return new MapExpression(expressions);
         }
-        return new ListExpression(expressions);
+        else {
+            while (node != null) {
+                expressions.add(expression(node));
+                node = node.getNextSibling();
+            }
+            return new ListExpression(expressions);
+        }
     }
 
+    /**
+     * Typically only used for map constructors I think?
+     */
     protected Expression mapExpression(AST mapNode) {
         List expressions = new ArrayList();
         AST elist = mapNode.getFirstChild();
@@ -1171,6 +1195,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected String resolvedName(AST node) {
         if (isType(TYPE, node)) {
             node = node.getFirstChild();
+        }
+        if (isType(DOT, node)) {
+            return qualifiedName(node);
         }
         String identifier = identifier(node);
         return resolveTypeName(identifier);

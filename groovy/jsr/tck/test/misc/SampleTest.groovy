@@ -10,6 +10,36 @@ class SampleTest extends GroovyTestCase {
     String foo = "John"
     String bar = "Jez"
 
+    void testListClosure() {
+        def list = [1, 2, 3]
+
+        println "list is $list"
+
+        // TODO sort out parser
+        //list.each { (e)| println("List contains $e") }
+    }
+
+    void testMap() {
+        n = [:]
+        assert n instanceof java.util.Map
+
+        m = ["y":2, "foo":"bar", "x":4.2]
+
+        // TODO
+        //m.each { (k, v)| println "key $k and value $v" }
+
+        println "Created map $m"
+
+        m2 = [x:123, y:456, z:"whatnot"]
+
+        println "Created map with named arguments $m2"
+
+        // TODO parser can't handle this!
+        //m3 = [123:456, 678:"whatnot"]
+        m3 = [(123):456, (678):"whatnot"]
+        println "Created map with named arguments $m3"
+    }
+
     void testStrings() {
         assert "\\" == '\\'
         assert "\\" != "\\\\"
@@ -34,6 +64,9 @@ class SampleTest extends GroovyTestCase {
         println "File name $name"
 
         println new UDate()
+
+        def sd = new java.sql.Date(105, 11, 5)
+        println "created SQL date of value $sd"
     }
 
     void testAsCastAndInstanceof() {
@@ -44,15 +77,6 @@ class SampleTest extends GroovyTestCase {
 
         assert foo == bar
         assert foo instanceof String
-    }
-
-    void testClosure() {
-        def list = [1, 2, 3]
-
-        println "list is $list"
-
-        // TODO sort out parser
-        //list.each { (e)| println("List contains $e") }
     }
 
     void testComplexExpression() {
