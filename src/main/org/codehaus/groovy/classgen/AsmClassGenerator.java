@@ -1456,6 +1456,14 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateBinaryExpressionWithAsignment("intdiv", expression);
                 break;
 
+            case Types.BITWISE_AND :
+                evaluateBinaryExpression("and", expression);
+                break;
+
+            case Types.PIPE :
+                evaluateBinaryExpression("or", expression);
+                break;
+
             case Types.MOD :
                 evaluateBinaryExpression("mod", expression);
                 break;
