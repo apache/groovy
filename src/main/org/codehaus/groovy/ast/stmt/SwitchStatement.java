@@ -64,6 +64,10 @@ public class SwitchStatement extends Statement {
     private Statement defaultStatement;
     
 
+    public SwitchStatement(Expression expression) {
+        this(expression, EmptyStatement.INSTANCE);
+    }
+
     public SwitchStatement(Expression expression, Statement defaultStatement) {
         this.expression = expression;
         this.defaultStatement = defaultStatement;
@@ -83,6 +87,10 @@ public class SwitchStatement extends Statement {
 
     public Statement getDefaultStatement() {
         return defaultStatement;
+    }
+
+    public void setDefaultStatement(Statement defaultStatement) {
+        this.defaultStatement = defaultStatement;
     }
 
     public void addCase(CaseStatement caseStatement) {

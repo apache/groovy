@@ -46,34 +46,31 @@
 package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
- * Represents a case statement in a switch statement
+ * Represents a break statement in a switch or loop statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CaseStatement extends Statement {
+public class BreakStatement extends Statement {
 
-    private Statement code;
-    private Expression expression;
+    private String label;
     
-    public CaseStatement(Expression expression, Statement code) {
-        this.expression = expression;
-        this.code = code;
+    public BreakStatement() {
+        this(null);
     }
     
-    public Statement getCode() {
-        return code;
+    public BreakStatement(String label) {
+        this.label = label;
     }
     
-    public Expression getExpression() {
-        return expression;
+    public String getLabel() {
+        return label;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitCaseStatement(this);
+        visitor.visitBreakStatement(this);
     }
 }
