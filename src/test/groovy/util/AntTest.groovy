@@ -58,7 +58,7 @@ class AntTest extends GroovyTestCase {
     	ant = new AntBuilder()
         
         ant.junit {
-        	test(name:'groovy.util.AntTest')
+        	test(name:'groovy.util.SomethingThatDoesNotExist')
         }
     }
     
