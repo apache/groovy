@@ -1,0 +1,98 @@
+<project>
+    <pomVersion>3</pomVersion>
+    <id>scriptom</id>
+    <groupId>groovy</groupId>
+    <artifactId>scriptom</artifactId>
+    <name>scriptom</name>
+    <currentVersion>1.0-SNAPSHOT</currentVersion>
+    <organization>
+        <name>The Codehaus</name>
+        <url>http://codehaus.org</url>
+        <logo>http://codehaus.org/codehaus-small.gif</logo>
+    </organization>
+    <inceptionYear>2004</inceptionYear>
+    <package>org.codehaus.scriptom</package>
+    <description>sCriptOM is a dynamic proxy around COM objects leveraging the Jacob library</description>
+    <url>http://groovy.codehaus.org/</url>
+    <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
+
+    <siteAddress>beaver.codehaus.org</siteAddress>
+    <siteDirectory>/home/projects/groovy/public_html/scriptom/maven</siteDirectory>
+    <distributionDirectory>/home/projects/groovy/dist</distributionDirectory>
+
+    <repository>
+        <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy/modules/scriptom</connection>
+        <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/modules/scriptom</developerConnection>
+        <url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/scriptom</url>
+    </repository>
+    <versions/>
+    <branches/>
+    <mailingLists/>
+    <developers>
+        <developer>
+            <id>glaforge</id>
+            <name>Guillaume Laforge</name>
+            <roles>
+                <role>Developer</role>
+                <role>Founder</role>
+            </roles>
+        </developer>
+    </developers>
+
+    <dependencies>
+        <dependency>
+            <groupId>groovy</groupId>
+            <artifactId>groovy-all</artifactId>
+            <version>1.0-beta-8</version>
+            <type>jar</type>
+            <properties/>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <nagEmailAddress>scm@groovy.codehaus.org</nagEmailAddress>
+        <sourceDirectory>src/main</sourceDirectory>
+        <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
+        <unitTest>
+            <includes>
+                <include>**/*Test.*</include>
+                <include>**/*Bug.*</include>
+            </includes>
+            <resources>
+                <resource>
+                    <directory>src/test</directory>
+                    <filtering>false</filtering>
+                    <includes>
+                        <include>**/*.properties</include>
+                        <include>**/*.xml</include>
+                    </includes>
+                </resource>
+            </resources>
+        </unitTest>
+        <resources>
+            <resource>
+                <directory>src/main</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.properties</include>
+                    <include>**/*.xml</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+    <reports>
+<!--        <report>maven-license-plugin</report>            -->
+<!--        <report>maven-checkstyle-plugin</report>         -->
+<!--        <report>maven-pmd-plugin</report>                -->
+<!--        <report>maven-jdepend-plugin</report>            -->
+<!--        <report>maven-changelog-plugin</report>          -->
+<!--        <report>maven-file-activity-plugin</report>      -->
+<!--        <report>maven-developer-activity-plugin</report> -->
+<!--        <report>maven-jxr-plugin</report>                -->
+        <report>maven-javadoc-plugin</report>
+        <report>maven-junit-report-plugin</report>
+<!--        <report>maven-faq-plugin</report>                -->
+<!--        <report>maven-clover-plugin</report>             -->
+<!--        <report>maven-changes-plugin</report>            -->
+    </reports>
+</project>
