@@ -1070,9 +1070,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AST leftNode = node.getFirstChild();
         Expression leftExpression = expression(leftNode);
-        AST rightNode = leftNode.getFirstChild();
+        AST rightNode = leftNode.getNextSibling();
         if (rightNode == null) {
-            rightNode = leftNode.getNextSibling();
+            rightNode = leftNode.getFirstChild();
         }
         if (rightNode == null) {
             throw new NullPointerException("No rightNode associated with binary expression");
@@ -1099,17 +1099,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression dotExpression(AST node) {
         // lets decide if this is a propery invocation or a method call
-        AST elist = node.getNextSibling();
-        if (elist != null) {
-            return methodCallExpression(node);
+        AST leftNode = node.getFirstChild();
+        if (leftNode != null) {
+            AST identifierNode = leftNode.getNextSibling();
+            if (identifierNode != null) {
+                Expression leftExpression = expression(leftNode);
+                String property = identifier(identifierNode);
+                return new PropertyExpression(leftExpression, property);
+            }
         }
-        else {
-            AST leftNode = node.getFirstChild();
-            Expression leftExpression = expression(leftNode);
-
-            String property = identifier(leftNode.getNextSibling());
-            return new PropertyExpression(leftExpression, property);
-        }
+        return methodCallExpression(node);
     }
 
     protected MethodCallExpression methodCallExpression(AST node) {

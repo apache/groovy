@@ -14,14 +14,21 @@ class PropertyTest extends GroovyTestCase {
 
     void testProperty() {
 
+        def foo = this.cheese
+        assert foo == "edam"
+
         assert cheese == "edam"
         assert this.getCheese() == "edam"
-        //assert this.cheese == "edam"
+        assert this.cheese == "edam"
+
+        def bar = this
+        assert bar.getCheese() == "edam"
+        assert bar.cheese == "edam"
 
         cheese = "cheddar"
 
         assert this.getCheese() == "cheddar"
-        //assert this.cheese == "cheddar"
+        assert this.cheese == "cheddar"
 
     }
 }
