@@ -876,8 +876,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return ternaryExpression(node);
 
             case OPTIONAL_ARG:
-                return binaryExpression(Types.NAVIGATE, node);
-
             case DOT:
                 return dotExpression(node);
 
@@ -1292,7 +1290,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     return new AttributeExpression(leftExpression, field);
                 }
                 String property = identifier(identifierNode);
-                return new PropertyExpression(leftExpression, property);
+                return new PropertyExpression(leftExpression, property, node.getType()==OPTIONAL_ARG);
             }
         }
         return methodCallExpression(node);
