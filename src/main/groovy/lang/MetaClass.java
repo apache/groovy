@@ -856,7 +856,7 @@ public class MetaClass {
                 // just rethrow it; there's nothing left to do here
                 throw e;
             }
-            catch (TypeMissMatchException e) {
+            catch (TypeMismatchException e) {
                 // tried to access to mismatched object.
                 throw e;
             }
