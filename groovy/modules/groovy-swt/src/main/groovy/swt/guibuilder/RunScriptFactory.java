@@ -44,6 +44,7 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      */
     public Object newInstance(Map properties, Object parent)
             throws GroovyException {
+        
         // get src
         String src = (String) properties.remove("src");
         if (src == null) { throw new MissingPropertyException("src",
@@ -104,8 +105,12 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
             log.log(Level.WARNING, e.getMessage());
         }
 
-        // layout parent
-        parent.layout();
+        // layout widget
+        if (parent != null) {
+            parent.layout();
+        } else if (obj != null && (obj instanceof Composite)){
+            ((Composite) obj).layout();
+        }
 
         return obj;
     }
