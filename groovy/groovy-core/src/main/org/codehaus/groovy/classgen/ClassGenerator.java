@@ -1054,6 +1054,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 evaluateBinaryExpressionWithAsignment("div", expression);
                 break;
 
+            case Token.MOD :
+                evaluateBinaryExpression("mod", expression);
+                break;
+
+            case Token.MOD_EQUAL :
+                evaluateBinaryExpressionWithAsignment("mod", expression);
+                break;
+
             case Token.LEFT_SHIFT :
                 evaluateBinaryExpression("leftShift", expression);
                 break;

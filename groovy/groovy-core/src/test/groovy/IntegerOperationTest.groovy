@@ -84,4 +84,48 @@ class IntegerOperationTest extends GroovyTestCase {
         y = x / 2
         assert y == 10.0 : "y = " + y        
     }
+    
+    void testMod() {
+    	x = 100 % 3
+    	
+    	assert x == 1
+    	
+    	/** @todo bug!
+    	y = 11
+    	y %= 3
+    	assert y == 2
+    	*/
+    }
+    
+    void testAnd() {
+    	/** @todo parser 
+    	x = 1 & 3
+    	
+    	assert x == 1
+    	*/
+    	
+    	x = 1.and(3)
+    	
+    	assert x == 1
+    }
+     
+     void testOr() {
+     	/** @todo parser
+     	x = 1 | 3
+     	
+     	assert x == 3
+     	
+     	x = 1 | 4
+     	
+     	assert x == 5
+     	*/
+     	
+     	x = 1.or(3)
+     	
+     	assert x == 3
+     	
+     	x = 1.or(4)
+     	
+     	assert x ==5
+    }
 }

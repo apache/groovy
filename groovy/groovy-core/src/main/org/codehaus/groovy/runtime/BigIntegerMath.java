@@ -35,4 +35,19 @@ public class BigIntegerMath extends NumberMath {
 		return toBigInteger(left).compareTo(toBigInteger(right));
 	}
 
+    protected Number andImpl(Number left, Number right) {
+        return toBigInteger(left).and(toBigInteger(right));
+    }
+    
+    protected Number modImpl(Number left, Number right) {
+        return toBigInteger(left).mod(toBigInteger(right));
+    }
+    
+    protected Number negateImpl(Number left) {
+        return toBigInteger(left).negate();
+    }
+
+    protected Number orImpl(Number left, Number right) {
+        return toBigInteger(left).or(toBigInteger(right));
+    }
 }

@@ -61,7 +61,24 @@ public abstract class NumberMath extends Object {
 		return getMath(left,right).compareToImpl(left, right);
 	}
 	
-	public static boolean isFloatingPoint(Number number) {
+    public static Number or(Number left, Number right) {
+        return getMath(left,right).orImpl(left, right);
+    }
+    
+    public static Number and(Number left, Number right) {
+        return getMath(left,right).andImpl(left, right);
+    }
+    
+    public static Number mod(Number left, Number right) {
+        return getMath(left,right).modImpl(left, right);
+    }
+
+    public static Number negate(Number left) {
+        return getMath(left).negateImpl(left);
+    }
+    
+    
+    public static boolean isFloatingPoint(Number number) {
 		return number instanceof Double || number instanceof Float;
 	}
 
@@ -149,5 +166,22 @@ public abstract class NumberMath extends Object {
 	protected abstract Number multiplyImpl(Number left, Number right);
 	protected abstract Number divideImpl(Number left, Number right);
 	protected abstract int compareToImpl(Number left, Number right);
+    protected abstract Number negateImpl(Number left);
 
+
+    protected Number andImpl(Number left, Number right) {
+        throw createUnsupportedException("and()", left);
+    }
+
+    protected Number modImpl(Number left, Number right) {
+        throw createUnsupportedException("mod()", left);
+    }
+    
+    protected Number orImpl(Number left, Number right) {
+        throw createUnsupportedException("or()", left);
+    }
+    
+    protected UnsupportedOperationException createUnsupportedException(String operation, Number left) {
+        return new UnsupportedOperationException("Cannot use " + operation + " on this number type: " + left.getClass().getName() + " with value: + left");
+    }
 }

@@ -45,4 +45,20 @@ public class IntegerMath extends NumberMath {
 		}
 	}
 
+    protected Number orImpl(Number left, Number right) {
+        return new Integer(left.intValue() | right.intValue());
+    }
+
+    protected Number andImpl(Number left, Number right) {
+        return new Integer(left.intValue() & right.intValue());
+    }
+
+    protected Number modImpl(Number left, Number right) {
+        return new Integer(left.intValue() % right.intValue());
+    }
+
+    protected Number negateImpl(Number left) {
+        return new Integer(-left.intValue());
+    }
+
 }
