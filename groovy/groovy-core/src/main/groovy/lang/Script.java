@@ -45,8 +45,12 @@
  */
 package groovy.lang;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * This object represents a Groovy script
@@ -138,5 +142,27 @@ public abstract class Script extends GroovyObjectSupport {
         else {
             System.out.println(value);
         }
+    }
+    
+    /**
+     * A helper method to allow the dynamic evaluation of groovy expressions using this
+     * scripts binding as the variable scope
+     * 
+     * @param expression is the Groovy script expression to evaluate
+     */
+    public Object evaluate(String expression) throws SyntaxException, IOException {
+        GroovyShell shell = new GroovyShell(binding);
+        return shell.evaluate(expression);
+    }
+    
+    /**
+     * A helper method to allow the dynamic evaluation of groovy expressions using this
+     * scripts binding as the variable scope
+     * 
+     * @param file is the Groovy script to evaluate
+     */
+    public Object evaluate(File file) throws SyntaxException, IOException {
+        GroovyShell shell = new GroovyShell(binding);
+        return shell.evaluate(file);
     }
 }
