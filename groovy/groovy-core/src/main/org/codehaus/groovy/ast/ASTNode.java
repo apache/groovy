@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.parser.CSTNode;
 
 /**
  * Base class for any AST node
@@ -87,7 +87,7 @@ public class ASTNode {
     }
 
     public void setCSTNode(CSTNode node) {
-        Token token = node.getToken();
+        Token token = node.getRoot();
         if (token != null) {
             setColumnNumber(token.getStartColumn());
             setLineNumber(token.getStartLine());
@@ -95,8 +95,8 @@ public class ASTNode {
         if (getLineNumber() < 0) {
             //System.out.println("No line number for token: " + token);
             if (node.children() > 0) {
-                for (int i = 0; i < node.children(); i++) {
-                    CSTNode child = node.getChild(i);
+                for (int i = 1; i < node.size(); i++) {
+                    CSTNode child = node.get(i);
                     if (child != null) {
                         setCSTNode(child);
                         if (getLineNumber() >= 0) {

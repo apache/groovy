@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
@@ -67,7 +68,6 @@ import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NegationExpression;
@@ -98,1312 +98,2143 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.Numbers;
+import org.codehaus.groovy.GroovyBugError;
 import org.objectweb.asm.Constants;
 
-public class ASTBuilder {
+
+
+/**
+ *  Builds an Abstract Syntax Tree from the Concrete Syntax Tree produced
+ *  by the Parser.  The resulting AST is very preliminary, and must still
+ *  be validated and massaged before it is ready to be used.
+ *  <code>build()</code> is the primary entry point.
+ *
+ *  @author James Strachan
+ *  @author Bob McWhirter
+ *  @author Sam Pullara
+ *  @author Chris Poirier
+ */
+
+public class ASTBuilder
+{
+
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String[] DEFAULT_IMPORTS = { "java.lang.", "groovy.lang.", "groovy.util." };
-    private static final Object NOT_RESOLVED = new Object();
+    private static final String[] DEFAULT_IMPORTS    = { "java.lang.", "groovy.lang.", "groovy.util." };
 
-    private ClassLoader classLoader;
-    private Map imports;
-    private Map resolvedNames = new HashMap();
 
-    private String packageName;
 
-    public ASTBuilder(ClassLoader classLoader) {
+  //---------------------------------------------------------------------------
+  // INITIALIZATION AND MEMBER ACCESS
+
+
+    private ClassLoader classLoader;   // Our ClassLoader, which provides information on external types
+    private Map         imports;       // Our imports, simple name => fully qualified name
+    private String      packageName;   // The package name in which the module sits
+
+
+   /**
+    *  Initializes the <code>ASTBuilder</code>.
+    */
+
+    public ASTBuilder(ClassLoader classLoader)
+    {
         this.classLoader = classLoader;
         this.imports = new HashMap();
+        this.packageName = null;
     }
 
-    public ClassLoader getClassLoader() {
+
+
+   /**
+    *  Returns our class loader (as supplied on construction).
+    */
+
+    public ClassLoader getClassLoader()
+    {
         return this.classLoader;
     }
 
-    public ModuleNode build(CSTNode unitRoot) throws ParserException {
-        ModuleNode answer = new ModuleNode();
 
-        CSTNode[] children = unitRoot.getChildren();
 
-        packageName = packageDeclaration(children[0]);
 
-        answer.setPackageName(packageName);
+  //---------------------------------------------------------------------------
+  // ENTRY POINT
 
-        importStatements(answer, children[1]);
 
-        for (int i = 2; i < children.length; ++i) {
-            datatypeDeclaration(answer, packageName, children[i]);
+   /**
+    *  Builds an AST ModuleNode from a Parser.module() Reduction.
+    */
+
+    public ModuleNode build( CSTNode input ) throws ParserException
+    {
+        ModuleNode output = new ModuleNode();
+        resolutions.clear();
+
+        //
+        // input structure:
+        //    1: package
+        //    2: imports
+        //   3+: statements
+
+        packageName = packageDeclaration( input.get(1) );
+        output.setPackageName( packageName );
+
+        importStatements( output, input.get(2) );
+
+        for( int i = 3; i < input.size(); ++i )
+        {
+            topLevelStatement( output, input.get(i) );
         }
 
-        if (answer.isEmpty()) {
-            answer.addStatement(new BlockStatement());
+        if( output.isEmpty() )
+        {
+            output.addStatement( new BlockStatement() );
         }
-        return answer;
+
+        return output;
     }
 
-    protected String packageDeclaration(CSTNode packageRoot) {
-        CSTNode nameRoot = packageRoot.getChild(0);
 
-        if (nameRoot.getToken() == null) {
-            return null;
+
+
+  //---------------------------------------------------------------------------
+  // DECLARATIONS
+
+
+   /**
+    *  Processes the Reduction produced by Parser.packageDeclaration().
+    */
+
+    protected String packageDeclaration( CSTNode reduction )
+    {
+        if( reduction.hasChildren() )
+        {
+            return makeName( reduction.get(1) );
         }
 
-        return qualifiedName(nameRoot);
+        return null;
+
     }
 
-    protected void importStatements(ModuleNode node, CSTNode importsRoot) {
-        CSTNode[] importStatements = importsRoot.getChildren();
 
-        for (int i = 0; i < importStatements.length; ++i) {
-            importStatement(node, importStatements[i]);
+
+   /**
+    *  Processes the imports Reduction produced by Parser.module().
+    */
+
+    protected void importStatements( ModuleNode module, CSTNode container )
+    {
+        for( int i = 1; i < container.size(); ++i)
+        {
+            importStatement( module, container.get(i) );
         }
     }
 
-    protected void importStatement(ModuleNode node, CSTNode importRoot) {
 
+
+   /**
+    *  Processes the Reduction produced by Parser.importStatement().
+    */
+
+    protected void importStatement( ModuleNode module, CSTNode reduction )
+    {
         //
         // First, get the package name (if supplied).
 
-        CSTNode packageNode = importRoot.getChild(0);
-        String  packageName = null;
-        if( packageNode.isEmpty() ) {
-            packageName = "";
-        }
-        else {
-            packageName = qualifiedName( packageNode ) + ".";
-        }
+        String importPackage = makeName( reduction.get(1), null );
+
+
 
         //
-        // Process the import list.
+        // If the first clause is Types.STAR, it's a package import.
 
-        int current = 1;
-        if( importRoot.getChild(current).getToken().getType() == Token.MULTIPLY ) {
-            String[] classes = node.addImportPackage( packageName );
-            for( int i = 0; i < classes.length; i++ ) {
-                addImport( packageName + classes[i], classes[i] );
+        if( reduction.get(2).isA(Types.STAR) )
+        {
+            String[] classes = module.addImportPackage( dot(importPackage) );
+            for( int i = 0; i < classes.length; i++ )
+            {
+                imports.put( classes[i], dot(importPackage, classes[i]) );
             }
         }
 
-        else {
-            while( current < importRoot.children() ) {
-                CSTNode clause = importRoot.getChild( current );
+
+        //
+        // Otherwise, it's a series of specific imports.
+
+        else
+        {
+            for( int i = 2; i < reduction.size(); i++ )
+            {
+                CSTNode clause = reduction.get(i);
                 String  name   = identifier( clause );
-                String  as     = (clause.children() > 0 ? identifier(clause.getChild(0)) : name);
+                String  as     = (clause.hasChildren() ? identifier(clause.get(1)) : name);
 
-                addImport( packageName + name, as );
-                node.addImport( as, name );
+                //
+                // There appears to be a bug in the previous code for
+                // single imports, in that the old code passed unqualified
+                // class names to module.addImport().  This hasn't been a
+                // problem apparently because those names are resolved here.
+                // Passing module.addImport() a fully qualified name does
+                // currently causes problems with classgen, possibly because
+                // of name collisions.  So, for now, we use the old method...
 
-                current++;
-           }
-        }
-    }
+                module.addImport( as, name );  // unqualified
 
-    protected void addImport(String importName, String asName) {
-        this.imports.put(asName, importName);
-    }
+                name = dot( importPackage, name );
 
-    protected String resolveName(String name) {
-        
-        Object obj = resolvedNames.get(name);
-        if ( obj == NOT_RESOLVED ) {
-            return null;
-        } else if ( obj != null ) {
-            return (String)obj;
-        }
-        
-        String resolved = null;
-        
-        String original = name;
-        name = removeTypeModifiers(name);
-        String postfix = "";
-        if (original.length() > name.length()) {
-            postfix = original.substring(name.length());
-        }
-
-        if (name.indexOf(".") >= 0) {
-            resolved = original;
-        }
-        else if (
-            name.equals("void")
-                || name.equals("int")
-                || name.equals("boolean")
-                || name.equals("long")
-                || name.equals("short")
-                || name.equals("char")
-                || name.equals("byte")
-                || name.equals("double")
-                || name.equals("float")) {
-            resolved = original;
-        }
-
-        if (resolved == null && this.imports.containsKey(name)) {
-            resolved = (String) this.imports.get(name) + postfix;
-        }
-
-
-        if (resolved == null && packageName != null && packageName.length() > 0) {
-            try {
-                getClassLoader().loadClass(packageName + "." + name);
-
-                resolved = packageName + "." + name + postfix;
-            }
-            catch (Exception e) {
-                // swallow
-            }
-            catch (Error e) {
-                // swallow
+                // module.addImport( as, name );  // qualified
+                imports.put( as, name );
             }
         }
-        if ( resolved == null ) {
-            for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
-                try {
-                    String fullName = DEFAULT_IMPORTS[i] + name;
-                    getClassLoader().loadClass(fullName);
-                    resolved = fullName + postfix;
-                    break;
-                }
-                catch (Exception e) {
-                    // swallow
-                }
-                catch (Error e) {
-                    // swallow
-                }
-            }
-        }
-        if ( resolved == null ) {
-            resolvedNames.put(name,NOT_RESOLVED);
-        } else {
-            resolvedNames.put(name,resolved);
-        }
-        return resolved;
     }
 
-    /**
-     * Strips any trailing type modifiers from the name; like [] or * or ! or ? or +
-     */
-    protected String removeTypeModifiers(String name) {
-        if (name.endsWith("[]")) {
-            return removeTypeModifiers(name.substring(0, name.length() - 2));
+
+
+   /**
+    *  Processes the Reduction produced by Parser.topLevelStatement().
+    */
+
+    protected void topLevelStatement( ModuleNode module, CSTNode reduction ) throws ParserException
+    {
+        int type = reduction.getMeaning();
+        switch( type )
+        {
+            case Types.SYNTH_CLASS:
+                module.addClass( classDeclaration(null, reduction) );
+                break;
+
+            case Types.SYNTH_INTERFACE:
+                module.addClass( interfaceDeclaration(null, reduction) );
+                break;
+
+            case Types.SYNTH_METHOD:
+                module.addMethod( methodDeclaration(null, reduction) );
+                break;
+
+            default:
+                module.addStatement( statement(reduction) );
+                break;
         }
-        return name;
+
     }
 
-    protected boolean isDatatype(String name) {
-        return resolveName(name) != null;
-    }
 
-    protected String qualifiedName(CSTNode nameRoot) {
-        String qualifiedName = "";
 
-        if (matches(nameRoot, Token.LEFT_SQUARE_BRACKET)) {
-            CSTNode child = nameRoot.getChild(0);
-            return qualifiedName(child) + "[]";
-        }
-        if (matches(nameRoot, Token.DOT)) {
-            CSTNode cur = nameRoot;
+   /**
+    *  Processes the Reduction produced by Parser.classDeclaration().
+    */
 
-            while (matches(cur, Token.DOT)) {
-                qualifiedName = "." + cur.getChild(1).getToken().getText() + qualifiedName;
-                cur = cur.getChild(0);
-            }
+    protected ClassNode classDeclaration( ClassNode context, CSTNode reduction ) throws ParserException
+    {
+        //
+        // Calculate the easy stuff
 
-            qualifiedName = cur.getToken().getText() + qualifiedName;
-        }
-        else if (matches(nameRoot, Token.KEYWORD_VOID)) {
-            return "void";
-        }
-        else if (matches(nameRoot, Token.KEYWORD_INT)) {
-            return "int";
-        }
-        else if (matches(nameRoot, Token.KEYWORD_FLOAT)) {
-            return "float";
-        }
-        else {
-            Token token = nameRoot.getToken();
+        String   name = identifier( reduction );
+        int modifiers = modifiers( reduction.get(1) );
+        String parent = resolveName( reduction.get(2).get(1) );
 
-            if (token == null) {
-                qualifiedName = "java.lang.Object";
-            }
-            else {
-                qualifiedName = token.getText();
-            }
+
+        //
+        // Then process the interface list.
+
+        CSTNode  interfaceReduction = reduction.get(3);
+        String[] interfaces = new String[interfaceReduction.children()];
+        for( int i = 1; i < interfaceReduction.size(); i++ )
+        {
+            interfaces[i-1] = resolveName( interfaceReduction.get(i) );
         }
 
-        return qualifiedName;
-    }
 
-    /**
-     * @todo we should actually remove all resolving code from the ASTBuilder and 
-     * move it into the verifier / analyser
-     */
-    protected String resolvedQualifiedName(CSTNode nameRoot) {
-        String name = qualifiedName(nameRoot);
-        String answer = resolveName(name);
-        if (answer == null) {
-            answer = name;
-        }
-        return answer;
-    }
+        //
+        // Create the class.
 
-    /**
-     * @todo we should actually remove all resolving code from the ASTBuilder and 
-     * move it into the verifier / analyser
-     */
-    protected String resolvedQualifiedNameNotNull(CSTNode child) throws ParserException {
-        String answer = resolvedQualifiedName(child);
-        if (answer == null) {
-            return qualifiedName(child);
-        }
-        return answer;
-    }
+        ClassNode classNode = (
+            context == null
+                ? new ClassNode(               dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                : new InnerClassNode( context, dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+        );
 
-    /**
-     * @todo we should actually remove all resolving code from the ASTBuilder and 
-     * move it into the verifier / analyser
-     */
-    protected String[] qualifiedNames(CSTNode[] nameRoots) {
-        String[] qualifiedNames = new String[nameRoots.length];
-
-        for (int i = 0; i < nameRoots.length; ++i) {
-            qualifiedNames[i] = qualifiedName(nameRoots[i]);
-        }
-
-        return qualifiedNames;
-    }
-
-    /**
-     * @todo we should actually remove all resolving code from the ASTBuilder and 
-     * move it into the verifier / analyser
-     */
-    protected String[] resolvedQualifiedNames(CSTNode[] nameRoots) throws ParserException {
-        String[] qualifiedNames = qualifiedNames(nameRoots);
-
-        for (int i = 0; i < qualifiedNames.length; ++i) {
-            String name = resolveName(qualifiedNames[i]);
-            if (name == null) {
-                name = qualifiedNames[i];
-            }
-            qualifiedNames[i] = name;
-        }
-
-        return qualifiedNames;
-    }
-
-    protected void datatypeDeclaration(ModuleNode module, String packageName, CSTNode datatypeCst)
-        throws ParserException {
-        if (matches(datatypeCst, Token.KEYWORD_CLASS)) {
-            module.addClass(classDeclaration(packageName, datatypeCst));
-        }
-        else if (matches(datatypeCst, Token.KEYWORD_INTERFACE)) {
-            module.addClass(interfaceDeclaration(packageName, datatypeCst));
-        }
-        else if (matches(datatypeCst, Token.SYNTH_METHOD)) {
-            module.addMethod(methodDeclaration(datatypeCst));
-        }
-        else {
-            module.addStatement(statement(datatypeCst));
-        }
-    }
-
-    protected ClassNode classDeclaration(String packageName, CSTNode classRoot) throws ParserException {
-        int modifiers = modifiers(classRoot.getChild(0));
-
-        String className = identifier(classRoot.getChild(1));
-
-        String superClassName = "java.lang.Object";
-
-        if (matches(classRoot.getChild(2), Token.KEYWORD_EXTENDS)) {
-            superClassName = resolvedQualifiedNameNotNull(classRoot.getChild(2).getChild(0));
-        }
-        else {
-            superClassName = "java.lang.Object";
-        }
-
-        String[] interfaceNames = EMPTY_STRING_ARRAY;
-
-        if (matches(classRoot.getChild(3), Token.KEYWORD_IMPLEMENTS)) {
-            interfaceNames = resolvedQualifiedNames(classRoot.getChild(3).getChildren());
-        }
-
-        /** @todo parser
-         * do we think the parser can iterate through the
-         * interface names and find any MixinNodes avaiilable
-         * and pass those into the AST?
-         *
-         * Maybe loading the class for the interface name and then
-         * we could check if it extends the groovy.lang.Mixin
-         * interface
-         */
-
-        MixinNode[] mixinNames = MixinNode.EMPTY_ARRAY;
-
-        String fqClassName = null;
-
-        if (packageName == null || packageName.trim().equals("")) {
-            fqClassName = className;
-        }
-        else {
-            fqClassName = packageName.trim() + "." + className;
-        }
-
-        ClassNode classNode = new ClassNode(fqClassName, modifiers, superClassName, interfaceNames, mixinNames);
-        classNode.setCSTNode(classRoot.getChild(1));
-        CSTNode[] bodyRoots = classRoot.getChild(4).getChildren();
-
-        for (int i = 0; i < bodyRoots.length; ++i) {
-            if (matches(bodyRoots[i], Token.KEYWORD_PROPERTY)) {
-                addPropertyDeclaration(classNode, bodyRoots[i]);
-            }
-        }
-
-        for (int i = 0; i < bodyRoots.length; ++i) {
-            if (matches(bodyRoots[i], Token.SYNTH_METHOD)) {
-                methodDeclaration(classNode, bodyRoots[i]);
-            }
-        }
-
+        classNode.setCSTNode( reduction.get(0) );
+        typeBody( classNode, reduction.get(4), 0, 0 );
         return classNode;
     }
 
-    protected PropertyNode addPropertyDeclaration(ClassNode classNode, CSTNode propertyRoot) throws ParserException {
-        int modifiers = modifiers(propertyRoot.getChild(0));
 
-        String identifier = propertyRoot.getChild(1).getToken().getText();
 
-        String typeName = resolvedQualifiedName(propertyRoot.getChild(2));
+   /**
+    *  Processes a type body for classDeclaration() and others.
+    */
 
-        Expression initialValue = null;
-        if (propertyRoot.getChildren().length > 3) {
-            initialValue = expression(propertyRoot.getChild(3));
-        }
+    protected void typeBody( ClassNode classNode, CSTNode body, int propertyModifiers, int methodModifiers ) throws ParserException
+    {
+        for( int i = 1; i < body.size(); i++ )
+        {
+            CSTNode statement = body.get(i);
+            switch( statement.getMeaning() )
+            {
+                case Types.SYNTH_PROPERTY:
+                    addPropertyDeclaration( classNode, statement, propertyModifiers );
+                    break;
 
-        PropertyNode propertyNode = classNode.addProperty(identifier, modifiers, typeName, initialValue, null, null);
-        propertyNode.setCSTNode(propertyRoot.getChild(1));
-        return propertyNode;
-    }
+                case Types.SYNTH_METHOD:
+                    methodDeclaration( classNode, statement, methodModifiers );
+                    break;
 
-    protected void methodDeclaration(ClassNode classNode, CSTNode methodRoot) throws ParserException {
-        int modifiers = modifiers(methodRoot.getChild(0));
+                case Types.SYNTH_CLASS:
+                    classDeclaration( classNode, statement );
+                    break;
 
-        String identifier = methodRoot.getChild(1).getToken().getText();
+                case Types.SYNTH_INTERFACE:
+                    interfaceDeclaration( classNode, statement );
+                    break;
 
-        String returnType = resolvedQualifiedName(methodRoot.getChild(2));
-
-        Parameter[] parameters = parameters(methodRoot.getChild(3).getChildren());
-
-        if (identifier.equals(classNode.getNameWithoutPackage())) {
-            ConstructorNode constructorNode =
-                new ConstructorNode(modifiers, parameters, statementBlock(methodRoot.getChild(4)));
-            constructorNode.setCSTNode(methodRoot.getChild(1));
-            classNode.addConstructor(constructorNode);
-        }
-        else {
-            MethodNode methodNode =
-                new MethodNode(identifier, modifiers, returnType, parameters, statementBlock(methodRoot.getChild(4)));
-            methodNode.setCSTNode(methodRoot.getChild(1));
-            classNode.addMethod(methodNode);
-        }
-    }
-
-    protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException {
-        int modifiers = modifiers(methodRoot.getChild(0));
-
-        String identifier = methodRoot.getChild(1).getToken().getText();
-
-        String returnType = resolvedQualifiedName(methodRoot.getChild(2));
-
-        Parameter[] parameters = parameters(methodRoot.getChild(3).getChildren());
-        MethodNode methodNode =
-            new MethodNode(identifier, modifiers, returnType, parameters, statementBlock(methodRoot.getChild(4)));
-        methodNode.setCSTNode(methodRoot.getChild(1));
-        return methodNode;
-    }
-
-    protected Parameter[] parameters(CSTNode[] paramRoots) throws ParserException {
-        Parameter[] parameters = new Parameter[paramRoots.length];
-
-        for (int i = 0; i < paramRoots.length; ++i) {
-            String identifier = paramRoots[i].getChild(1).getToken().getText();
-            String type       = resolvedQualifiedName(paramRoots[i].getChild(0));
-
-            CSTNode defaultNode = paramRoots[i].getChild(2);
-            if( defaultNode == null || defaultNode.isEmpty() ) {
-                parameters[i] = new Parameter( type, identifier );
+                default:
+                    throw new GroovyBugError( "unrecognized type body statement [" + statement.toString() + "]" );
             }
-            else {
-                Expression defaultExpression = expression( defaultNode );
-                parameters[i] = new Parameter( type, identifier, defaultExpression );
+        }
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.propertyDeclaration().
+    *  Adds the property to the supplied class.
+    */
+
+    protected void addPropertyDeclaration( ClassNode classNode, CSTNode reduction, int extraModifiers ) throws ParserException
+    {
+        String   name = identifier( reduction );
+        int modifiers = modifiers( reduction.get(1) ) | extraModifiers;
+        String   type = resolveName( reduction.get(2) );
+
+        Expression value = reduction.size() > 3 ? expression(reduction.get(3)) : null;
+
+        PropertyNode propertyNode = classNode.addProperty( name, modifiers, type, value, null, null );
+        propertyNode.setCSTNode( reduction.get(0) );
+
+    }
+
+
+
+   /**
+    *  A synonym for <code>addPropertyDeclaration( classNode, reduction, 0 )</code>.
+    */
+
+    protected void addPropertyDeclaration( ClassNode classNode, CSTNode reduction ) throws ParserException
+    {
+        addPropertyDeclaration( classNode, reduction, 0 );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.methodDeclaration().
+    *  Adds the method to the supplied class.
+    */
+
+    protected MethodNode methodDeclaration( ClassNode classNode, CSTNode reduction, int extraModifiers ) throws ParserException
+    {
+        String className = null;
+        if( classNode != null  )
+        {
+            className = classNode.getNameWithoutPackage();
+        }
+
+
+        //
+        // Get the basic method data
+
+        String   name = identifier( reduction );
+        int modifiers = modifiers( reduction.get(1) ) | extraModifiers;
+        String   type = resolveName( reduction.get(2) );
+
+        Parameter[] parameters = parameterDeclarations( reduction.get(3) );
+        BlockStatement    body = statementBody( reduction.get(5) );
+
+
+        //
+        // Process the throws clause
+
+        CSTNode  clause     = reduction.get(4);
+        String[] throwTypes = new String[clause.children()];
+        for( int i = 1; i < clause.size(); i++ )
+        {
+            throwTypes[i-1] = resolveName( clause.get(i) );
+        }
+
+        if( clause.hasChildren() ) { throw new GroovyBugError( "NOT YET IMPLEMENTED: throws clause" ); }
+
+
+        //
+        // An unnamed method is a static initializer
+
+        if( name.length() == 0 )
+        {
+            throw new GroovyBugError( "NOT YET IMPLEMENTED: static initializers" );
+
+            /*
+
+            ConstructorNode node = new ConstructorNode( modifiers | Constants.ACC_STATIC, parameters, body );
+            node.setCSTNode( reduction.get(0) );
+
+            classNode.addConstructor( node );
+            return null;
+
+            */
+        }
+
+
+        //
+        // A method with the class name is a constructor
+
+        else if( className != null && name.equals(className) )
+        {
+            ConstructorNode node = new ConstructorNode( modifiers, parameters, body );
+            node.setCSTNode( reduction.get(0) );
+
+            classNode.addConstructor( node );
+            return null;
+        }
+
+
+        //
+        // Anything else is a plain old method
+
+        else
+        {
+            MethodNode method = new MethodNode( name, modifiers, type, parameters, body );
+            method.setCSTNode( reduction.get(0) );
+
+            if( classNode != null )
+            {
+                classNode.addMethod( method );
+            }
+
+            return method;
+        }
+
+    }
+
+
+
+   /**
+    *  A synonym for <code>methodDeclaration( classNode, reduction, 0 )</code>.
+    */
+
+    protected MethodNode methodDeclaration( ClassNode classNode, CSTNode reduction ) throws ParserException
+    {
+        return methodDeclaration( classNode, reduction, 0 );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.parameterDeclarationList().
+    */
+
+    protected Parameter[] parameterDeclarations( CSTNode reduction ) throws ParserException
+    {
+        Parameter[] parameters = new Parameter[ reduction.children() ];
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            CSTNode node = reduction.get(i);
+
+            String identifier = identifier( node );
+            String type       = resolveName( node.get(1) );
+
+            if( node.size() > 2 )
+            {
+                parameters[i-1] = new Parameter( type, identifier, expression(node.get(2)) );
+            }
+            else
+            {
+                parameters[i-1] = new Parameter( type, identifier );
             }
         }
 
         return parameters;
+
     }
 
-    protected ClassNode interfaceDeclaration(String packageName, CSTNode interfaceRoot) {
-        return null;
-    }
 
-    protected BlockStatement statementOrStatementBlock(CSTNode blockRoot) throws ParserException {
-        if (blockRoot.getToken() == null || blockRoot.getToken().getType() == Token.LEFT_CURLY_BRACE) {
-            return statementBlock(blockRoot, 0);
+
+   /**
+    * Processes the Reduction produced by Parser.interfaceDeclaration().
+    */
+
+    protected ClassNode interfaceDeclaration( ClassNode context, CSTNode reduction ) throws ParserException
+    {
+        throw new GroovyBugError( "NOT YET IMPLEMENTED: interfaces" );
+
+        /*
+
+        //
+        // Calculate the easy stuff
+
+        String   name = identifier( reduction );
+        int modifiers = modifiers( reduction.get(1) ) | Constants.ACC_ABSTRACT | Constants.ACC_STATIC;
+        String parent = null;
+
+
+        //
+        // Then process the interface list.
+
+        CSTNode  interfaceReduction = reduction.get(3);
+        String[] interfaces = new String[interfaceReduction.children()];
+        for( int i = 1; i < interfaceReduction.size(); i++ )
+        {
+            interfaces[i-1] = resolveName( interfaceReduction.get(i) );
         }
-        else {
-            BlockStatement statementBlock = new BlockStatement();
 
-            Statement statement = statement(blockRoot);
-            statementBlock.addStatement(statement);
-            statement.setCSTNode(blockRoot);
 
-            return statementBlock;
+        //
+        // Create the interface.
+
+        ClassNode classNode = (
+            context == null
+                ? new ClassNode(               dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                : new InnerClassNode( context, dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+        );
+
+		  classNode.setCSTNode( reduction.get(0) );
+
+        int propertyModifiers = Constants.ACC_STATIC | Constants.ACC_FINAL | Constants.ACC_PUBLIC;
+        int methodModifiers   = Constants.ACC_ABSTRACT;
+
+        typeBody( classNode, reduction.get(4), propertyModifiers, methodModifiers );
+
+
+        return classNode;
+
+        */
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // STATEMENTS
+
+
+   /**
+    *  Processes the Reduction that results from Parser.statementBody().
+    */
+
+    protected BlockStatement statementBody( CSTNode reduction ) throws ParserException
+    {
+        if( reduction.isEmpty() )
+        {
+            return new BlockStatement();
         }
-    }
+        else if( reduction.getMeaning() == Types.LEFT_CURLY_BRACE )
+        {
+            return statementBlock( reduction );
+        }
+        else
+        {
+            Statement statement = statement( reduction );
+            statement.setCSTNode( reduction );
 
-    protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException {
-        return statementBlock(blockRoot, 0);
-    }
-
-    protected BlockStatement statementBlock(CSTNode blockRoot, int startIndex) throws ParserException {
-        BlockStatement statementBlock = new BlockStatement();
-
-        CSTNode[] statementRoots = blockRoot.getChildren();
-
-        for (int i = startIndex; i < statementRoots.length; ++i) {
-            CSTNode statementRoot = statementRoots[i];
-            if( statementRoot.getToken() != null ) {
-                Statement statement = statement(statementRoot);
-                statementBlock.addStatement(statement);
-                statement.setCSTNode(statementRoot);
+            BlockStatement block = null;
+            if( statement instanceof BlockStatement )
+            {
+                block = (BlockStatement)statement;
             }
-        }
+            else
+            {
+                block = new BlockStatement();
+                block.addStatement( statement );
+            }
 
-        return statementBlock;
+            return block;
+        }
     }
 
-    protected Statement statement(CSTNode statementRoot) throws ParserException {
+
+
+   /**
+    *  Processes any series of statements, starting at the specified offset
+    *  and running to the end of the CSTNode.
+    */
+
+    protected BlockStatement statements( CSTNode reduction, int first ) throws ParserException
+    {
+        BlockStatement block = new BlockStatement();
+
+        for( int i = first; i < reduction.size(); i++ )
+        {
+            CSTNode statementReduction = reduction.get(i);
+
+            Statement statement = statement( statementReduction );
+            statement.setCSTNode( statementReduction );
+
+            block.addStatement( statement );
+        }
+
+        return block;
+    }
+
+
+
+   /**
+    *  Processes any statement block.
+    */
+
+    protected BlockStatement statementBlock( CSTNode reduction ) throws ParserException
+    {
+        return statements( reduction, 1 );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.statement().
+    */
+
+    protected Statement statement( CSTNode reduction ) throws ParserException
+    {
         Statement statement = null;
 
         //
         // Convert the statement
 
-        switch (statementRoot.getToken().getInterpretation()) {
-            case (Token.KEYWORD_ASSERT) :
-                {
-                    statement = assertStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_FOR) :
-                {
-                    statement = forStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_WHILE) :
-                {
-                    statement = whileStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_DO) :
-                {
-                    statement = doWhileStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_TRY) :
-                {
-                    statement = tryStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_RETURN) :
-                {
-                    statement = returnStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_SWITCH) :
-                {
-                    statement = switchStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_IF) :
-                {
-                    statement = ifStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_THROW) :
-                {
-                    statement = throwStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_BREAK) :
-                {
-                    statement = breakStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_CONTINUE) :
-                {
-                    statement = continueStatement(statementRoot);
-                    break;
-                }
-            case (Token.KEYWORD_SYNCHRONIZED) :
-                {
-                    statement = synchronizedStatement(statementRoot);
-                    break;
-                }
-            case (Token.SYNTH_BLOCK) :
-            case (Token.LEFT_CURLY_BRACE) :
-                {
-                    statement = statementBlock(statementRoot);
-                    break;
-                }
-            case (Token.SYNTH_CLOSURE) :
-                {
-                    statement = expressionStatement(statementRoot);
-                    break;
-                }
-            case (Token.SYNTH_LABEL) :
-                {
-                    statement = statement(statementRoot.getChild(1));
-                    statement.setStatementLabel( statementRoot.getChild(0).getToken().getText() );
-                    break;
-                }
-            default :
-                {
-                    statement = expressionStatement(statementRoot);
-                }
+        switch( reduction.getMeaning() )
+        {
+            case Types.KEYWORD_ASSERT:
+            {
+                statement = assertStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_BREAK:
+            {
+                statement = breakStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_CONTINUE:
+            {
+                statement = continueStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_IF:
+            {
+                statement = ifStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_RETURN:
+            {
+                statement = returnStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_SWITCH:
+            {
+                statement = switchStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_SYNCHRONIZED:
+            {
+                statement = synchronizedStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_THROW:
+            {
+                statement = throwStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_TRY:
+            {
+                statement = tryStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_FOR:
+            {
+                statement = forStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_WHILE:
+            {
+                statement = whileStatement( reduction );
+                break;
+            }
+
+            case Types.KEYWORD_DO:
+            {
+                statement = doWhileStatement( reduction );
+                break;
+            }
+
+            case Types.SYNTH_BLOCK:
+            case Types.LEFT_CURLY_BRACE:
+            {
+                statement = statementBlock( reduction );
+                break;
+            }
+
+            case Types.SYNTH_LABEL:
+            {
+                statement = statement( reduction.get(1) );
+                statement.setStatementLabel( identifier(reduction) );
+                break;
+            }
+
+            case Types.SYNTH_CLOSURE:
+            default:
+            {
+                statement = expressionStatement( reduction );
+                break;
+            }
+
         }
-        statement.setCSTNode(statementRoot);
+
+
+        statement.setCSTNode( reduction );
+        return statement;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.assertStatement().
+    */
+
+    protected AssertStatement assertStatement( CSTNode reduction ) throws ParserException
+    {
+        BooleanExpression expression = new BooleanExpression( expression(reduction.get(1)) );
+
+        if( reduction.children() > 1 )
+        {
+            return new AssertStatement( expression, expression(reduction.get(2)) );
+        }
+
+        return new AssertStatement( expression, ConstantExpression.NULL );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.breakStatement().
+    */
+
+    protected BreakStatement breakStatement( CSTNode reduction ) throws ParserException
+    {
+        if( reduction.hasChildren() )
+        {
+            return new BreakStatement( reduction.get(1).getRootText() );
+        }
+
+        return new BreakStatement();
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.continueStatement().
+    */
+
+    protected ContinueStatement continueStatement( CSTNode reduction ) throws ParserException
+    {
+
+        if( reduction.hasChildren() )
+        {
+            return new ContinueStatement( reduction.get(1).getRootText() );
+        }
+
+        return new ContinueStatement();
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.ifStatement().
+    */
+
+    protected IfStatement ifStatement( CSTNode reduction ) throws ParserException
+    {
+        Expression condition = expression( reduction.get(1) );
+        BlockStatement  body = statementBody( reduction.get(2) );
+        Statement  elseBlock = EmptyStatement.INSTANCE;
+
+        if( reduction.size() > 3 )
+        {
+            CSTNode elseReduction = reduction.get(3);
+            if( elseReduction.getMeaning() == Types.KEYWORD_IF )
+            {
+                elseBlock = ifStatement( elseReduction );
+            }
+            else
+            {
+                elseBlock = statementBody( elseReduction.get(1) );
+            }
+
+        }
+
+        return new IfStatement( new BooleanExpression(condition), body, elseBlock );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.returnStatement().
+    */
+
+    protected ReturnStatement returnStatement( CSTNode reduction ) throws ParserException
+    {
+        if( reduction.hasChildren() )
+        {
+            return new ReturnStatement( expression(reduction.get(1)) );
+        }
+
+        return ReturnStatement.RETURN_VOID;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.switchStatement().
+    */
+
+    protected SwitchStatement switchStatement( CSTNode reduction ) throws ParserException
+    {
+        SwitchStatement statement = new SwitchStatement( expression(reduction.get(1)) );
+
+        for( int i = 2; i < reduction.size(); i++ )
+        {
+            CSTNode child = reduction.get(i);
+
+            switch( child.getMeaning() )
+            {
+
+                case Types.KEYWORD_CASE:
+                    statement.addCase( caseStatement(child) );
+                    break;
+
+                case Types.KEYWORD_DEFAULT:
+                    statement.setDefaultStatement( statementBlock(child) );
+                    break;
+
+                default:
+                    throw new GroovyBugError( "invalid something in switch [" + child + "]" );
+            }
+        }
 
         return statement;
     }
 
-    protected WhileStatement whileStatement(CSTNode statementRoot) throws ParserException {
-        Expression expr = expression(statementRoot.getChild(0));
-        BlockStatement statementBlock = statementOrStatementBlock(statementRoot.getChild(1));
 
-        return new WhileStatement(new BooleanExpression(expr), statementBlock);
+
+   /**
+    *  Processes the Reduction produced by Parser.switchStatement() for cases.
+    */
+
+    protected CaseStatement caseStatement( CSTNode reduction ) throws ParserException
+    {
+        return new CaseStatement( expression(reduction.get(1)), statements(reduction, 2) );
     }
 
-    protected DoWhileStatement doWhileStatement(CSTNode statementRoot) throws ParserException {
-        Expression expr = expression(statementRoot.getChild(1));
-        BlockStatement statementBlock = statementOrStatementBlock(statementRoot.getChild(0));
 
-        return new DoWhileStatement(new BooleanExpression(expr), statementBlock);
+
+   /**
+    *  Processes the Reduction produced by Parser.synchronizedStatement().
+    */
+
+    protected SynchronizedStatement synchronizedStatement( CSTNode reduction ) throws ParserException
+    {
+        return new SynchronizedStatement( expression(reduction.get(1)), statementBody(reduction.get(2)) );
     }
 
-    protected IfStatement ifStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
 
-        BooleanExpression expression = new BooleanExpression(expression(children[0]));
-        BlockStatement ifBlock = statementOrStatementBlock(children[1]);
 
-        Statement elseBlock = null;
+   /**
+    *  Processes the Reduction produced by Parser.throwStatement().
+    */
 
-        if (children.length == 3 && matches(children[2], Token.KEYWORD_IF)) {
-            elseBlock = ifStatement(children[2]);
-        }
-        else if (children.length == 3) {
-            elseBlock = statementOrStatementBlock(children[2].getChild(0));
-        }
-        else {
-            elseBlock = EmptyStatement.INSTANCE;
-        }
-
-        return new IfStatement(expression, ifBlock, elseBlock);
+    protected ThrowStatement throwStatement( CSTNode reduction ) throws ParserException
+    {
+        return new ThrowStatement( expression(reduction.get(1)) );
     }
 
-    protected SwitchStatement switchStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
 
-        Expression expression = expression(children[0]);
 
-        SwitchStatement answer = new SwitchStatement(expression);
-        Statement defaultBlock = null;
-        for (int i = 1; i < children.length; i++) {
-            CSTNode child = children[i];
-            if (matches(child, Token.KEYWORD_CASE)) {
-                answer.addCase(caseStatement(child));
+   /**
+    *  Processes the Reduction produced by Parser.tryStatement().
+    */
+
+    protected TryCatchStatement tryStatement( CSTNode reduction ) throws ParserException
+    {
+        BlockStatement         body = statementBody( reduction.get(1) );
+        BlockStatement finallyBlock = statementBody( reduction.get(3) );
+
+        TryCatchStatement statement = new TryCatchStatement( body, finallyBlock );
+
+        CSTNode catches = reduction.get(2);
+        for( int i = 1; i < catches.size(); i++ )
+        {
+            CSTNode   element = catches.get(i);
+            String       type = resolveName( element.get(1) );
+            String identifier = identifier( element.get(2) );
+
+            statement.addCatch( new CatchStatement(type, identifier, statementBody(element.get(3))) );
+        }
+
+        return statement;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.forStatement().
+    */
+
+    protected ForStatement forStatement( CSTNode reduction ) throws ParserException
+    {
+        CSTNode header = reduction.get(1);
+        Statement body = statementBody( reduction.get(2) );
+
+
+        //
+        // If the header has type Types.UNKNOWN, it's a standard for loop.
+
+        if( header.getMeaning() == Types.UNKNOWN )
+        {
+            Expression[] init = expressions( header.get(1) );
+            Expression   test = expression(  header.get(2) );
+            Expression[] incr = expressions( header.get(3) );
+
+            throw new GroovyBugError( "NOT YET IMPLEMENTED: standard for loop" );
+        }
+
+
+        //
+        // Otherwise, it's a for each loop.
+
+        else
+        {
+
+            Type         type = typeExpression( header.get(1) );
+            String identifier = identifier(  header.get(2) );
+            Expression source = expression(  header.get(3) );
+
+            return new ForStatement( identifier, type, source, body );
+        }
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.doWhileStatement().
+    */
+
+    protected DoWhileStatement doWhileStatement( CSTNode reduction ) throws ParserException
+    {
+        Expression condition = expression( reduction.get(2) );
+        BlockStatement  body = statementBody( reduction.get(1) );
+
+        return new DoWhileStatement( new BooleanExpression(condition), body );
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.whileStatement().
+    */
+
+    protected WhileStatement whileStatement( CSTNode reduction ) throws ParserException
+    {
+        Expression condition = expression( reduction.get(1) );
+        BlockStatement  body = statementBody( reduction.get(2) );
+
+        return new WhileStatement( new BooleanExpression(condition), body );
+
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // EXPRESSIONS
+
+
+   /**
+    *  Processes any expression that forms a complete statement.
+    */
+
+    protected Statement expressionStatement( CSTNode node ) throws ParserException
+    {
+        return new ExpressionStatement( expression(node) );
+    }
+
+
+
+   /**
+    *  Processes a series of expression to an Expression[].
+    */
+
+    protected Expression[] expressions( CSTNode reduction ) throws ParserException
+    {
+        Expression[] expressions = new Expression[ reduction.children() ];
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            expressions[i-1] = expression( reduction.get(i) );
+        }
+
+        return expressions;
+    }
+
+
+
+   /**
+    *  Processes the CSTNode produced by Parser.expression().
+    */
+
+    protected Expression expression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression = null;
+
+        int type = reduction.getMeaningAs( EXPRESSION_HANDLERS );
+        switch( type )
+        {
+            case Types.SYNTHETIC:
+            {
+                expression = syntheticExpression( reduction );
+                break;
             }
-            else if (matches(child, Token.KEYWORD_DEFAULT)) {
-                answer.setDefaultStatement(statementBlock(child));
+
+            case Types.RANGE_OPERATOR:
+            {
+                Expression from = expression( reduction.get(1) );
+                Expression   to = expression( reduction.get(2) );
+
+                expression = new RangeExpression( from, to, reduction.getMeaning() == Types.DOT_DOT );
+                break;
             }
-            else {
-                throw new ParserException("Expecting case or default block", child.getToken());
+
+
+            case Types.LEFT_SQUARE_BRACKET:
+            case Types.INFIX_OPERATOR:
+            {
+                expression = infixExpression( reduction );
+                break;
             }
-        }
-        return answer;
-    }
 
-    protected CaseStatement caseStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
-        Expression expression = expression(children[0]);
-        return new CaseStatement(expression, statementBlock(statementRoot, 1));
-    }
 
-    protected ThrowStatement throwStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
-        return new ThrowStatement(expression(children[0]));
-    }
+            case Types.REGEX_PATTERN:
+            {
+                expression = new RegexExpression( expression(reduction.get(1)) );
+                break;
+            }
 
-    protected BreakStatement breakStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
-        if (children != null && children.length > 0) {
-            CSTNode identifier = children[0];
-            String label = identifier.getToken().getText();
-            return new BreakStatement(label);
 
-        }
-        return new BreakStatement();
-    }
+            case Types.PREFIX_OPERATOR:
+            {
+                expression = prefixExpression( reduction );
+                break;
+            }
 
-    protected ContinueStatement continueStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
-        if (children != null && children.length > 0) {
-            CSTNode identifier = children[0];
-            String label = identifier.getToken().getText();
-            return new ContinueStatement(label);
 
-        }
-        return new ContinueStatement();
-    }
+            case Types.POSTFIX_OPERATOR:
+            {
+                Expression body = expression( reduction.get(1) );
+                expression = new PostfixExpression( body, reduction.getRoot() );
+                break;
+            }
 
-    protected SynchronizedStatement synchronizedStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode[] children = statementRoot.getChildren();
-        Expression expression = expression(children[0]);
-        return new SynchronizedStatement(expression, statementBlock(statementRoot, 1));
-    }
 
-    protected TryCatchStatement tryStatement(CSTNode statementRoot) throws ParserException {
-        TryCatchStatement tcf =
-            new TryCatchStatement(statementBlock(statementRoot.getChild(0)), statementBlock(statementRoot.getChild(1)));
+            case Types.SIMPLE_EXPRESSION:
+            {
+                expression = simpleExpression( reduction );
+                break;
+            }
 
-        CSTNode[] catchRoots = statementRoot.getChild(2).getChildren();
 
-        for (int i = 0; i < catchRoots.length; ++i) {
-            String exceptionType = resolvedQualifiedNameNotNull(catchRoots[i].getChild(0));
-            String identifier = identifier(catchRoots[i].getChild(1));
-            Statement block = statementBlock(catchRoots[i].getChild(2));
+            case Types.KEYWORD_NEW:
+            {
+                expression = newExpression( reduction );
+                break;
+            }
 
-            tcf.addCatch(new CatchStatement(exceptionType, identifier, block));
+            default:
+                throw new GroovyBugError( "unhandled CST: [" + reduction.toString() + "]" );
+
         }
 
-        return tcf;
-    }
-
-    protected ReturnStatement returnStatement(CSTNode statementRoot) throws ParserException {
-        if( statementRoot.children() > 0 ) {
-            return new ReturnStatement(expression(statementRoot.getChild(0)));
-        }
-        else {
-            return ReturnStatement.RETURN_VOID;
-        }
-    }
-
-    protected ForStatement forStatement(CSTNode statementRoot) throws ParserException {
-        CSTNode variableNode = statementRoot.getChild(0);
-        String variable = variableNode.getToken().getText();
-
-        Type variableType = Type.DYNAMIC_TYPE;
-        if (variableNode.getChildren().length > 0) {
-            variableType = new Type(resolvedQualifiedNameNotNull(variableNode.getChild(0)));
+        if( expression == null )
+        {
+            throw new GroovyBugError( "expression produced null: [" + reduction.toString() + "]" );
         }
 
-        Expression collectionExpr = expression(statementRoot.getChild(1));
-
-        BlockStatement bodyBlock = statementOrStatementBlock(statementRoot.getChild(2));
-
-        return new ForStatement(variable, variableType, collectionExpr, bodyBlock);
-    }
-
-    protected AssertStatement assertStatement(CSTNode statementRoot) throws ParserException {
-        BooleanExpression assertExpr = new BooleanExpression(expression(statementRoot.getChild(0)));
-
-        CSTNode messageRoot = statementRoot.getChild(1);
-        Expression messageExpr = null;
-
-        if (messageRoot.getToken() == null) {
-            // lets pass in null since we know the expression string
-            messageExpr = ConstantExpression.NULL;
-        }
-        else {
-            messageExpr = expression(messageRoot);
-        }
-
-        return new AssertStatement(assertExpr, messageExpr);
-    }
-
-    protected Statement expressionStatement(CSTNode statementRoot) throws ParserException {
-        Expression expression = expression(statementRoot);
-        return new ExpressionStatement(expression);
-    }
-
-    protected Expression expression(CSTNode expressionRoot) throws ParserException {
-        Expression expression = makeExpression(expressionRoot);
-        expression.setCSTNode(expressionRoot);
+        expression.setCSTNode( reduction );
         return expression;
     }
 
-    protected Expression makeExpression(CSTNode expressionRoot) throws ParserException {
-        switch (expressionRoot.getToken().getType()) {
-            case (Token.MINUS) :
-                {
-                    if (expressionRoot.getChildren().length == 1) {
-                        return negationExpression(expressionRoot);
-                    }
-                }
-            case (Token.COMPARE_EQUAL) :
-            case (Token.COMPARE_NOT_EQUAL) :
-            case (Token.COMPARE_IDENTICAL) :
-            case (Token.COMPARE_LESS_THAN) :
-            case (Token.COMPARE_LESS_THAN_EQUAL) :
-            case (Token.COMPARE_GREATER_THAN) :
-            case (Token.COMPARE_GREATER_THAN_EQUAL) :
-            case (Token.PLUS) :
-            case (Token.PLUS_EQUAL) :
-            case (Token.MINUS_EQUAL) :
-            case (Token.MULTIPLY) :
-            case (Token.MULTIPLY_EQUAL) :
-            case (Token.DIVIDE) :
-            case (Token.DIVIDE_EQUAL) :
-            case (Token.MOD) :
-            case (Token.MOD_EQUAL) :
-            case (Token.EQUAL) :
-            case (Token.KEYWORD_INSTANCEOF) :
-            case (Token.LOGICAL_AND) :
-            case (Token.LOGICAL_OR) :
-            case (Token.FIND_REGEX) :
-            case (Token.MATCH_REGEX) :
-            case (Token.COMPARE_TO) :
-            case (Token.LEFT_SQUARE_BRACKET) :
-            case (Token.LEFT_SHIFT) :
-           case (Token.RIGHT_SHIFT) :
+
+    public static final int[] EXPRESSION_HANDLERS = {
+          Types.SYNTHETIC
+        , Types.RANGE_OPERATOR
+        , Types.LEFT_SQUARE_BRACKET
+        , Types.INFIX_OPERATOR
+        , Types.REGEX_PATTERN
+        , Types.PREFIX_OPERATOR
+        , Types.POSTFIX_OPERATOR
+        , Types.SIMPLE_EXPRESSION
+        , Types.KEYWORD_NEW
+    };
+
+
+
+
+   /**
+    *  Processes most infix operators.
+    */
+
+    public Expression infixExpression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression;
+
+        int type = reduction.getMeaning();
+        switch( type )
+        {
+            case Types.DOT:
+            case Types.NAVIGATE:
             {
-                return binaryExpression(expressionRoot);
-            }
-           case (Token.QUESTION) :
-           {
-               return ternaryExpression(expressionRoot);
-           }
-            case (Token.SYNTH_POSTFIX) :
+                String name = reduction.get(2).getRootText();
+
+                Expression context = null;
+                if( name.equals("class") )
                 {
-                    return postfixExpression(expressionRoot);
-                }
-            case (Token.SYNTH_PREFIX) :
-                {
-                    return prefixExpression(expressionRoot);
-                }
-            case (Token.DOT_DOT) :
-                {
-                    return rangeExpression(expressionRoot, true);
-                }
-            case (Token.DOT_DOT_DOT) :
-                {
-                    return rangeExpression(expressionRoot, false);
-                }
-            case (Token.SINGLE_QUOTE_STRING) :
-            case (Token.INTEGER_NUMBER) :
-            case (Token.FLOAT_NUMBER) :
-            case (Token.KEYWORD_NULL) :
-            case (Token.KEYWORD_TRUE) :
-            case (Token.KEYWORD_FALSE) :
-                {
-                    return constantExpression(expressionRoot);
-                }
-            case (Token.DOUBLE_QUOTE_STRING) :
-                {
-                    GStringExpression gstring = compositeStringExpression(expressionRoot);
-                    if (gstring.isConstantString()) {
-                        return gstring.asConstantString();
+                    CSTNode node = reduction.get(1);
+                    if( node.isA(Types.LEFT_SQUARE_BRACKET) && node.children() == 1 )
+                    {
+                        throw new GroovyBugError( "NOT YET IMPLEMENTED: .class for array types" );
+                        // context = classExpression( reduction.get(1) );
                     }
-                    return gstring;
                 }
-            case (Token.PATTERN_REGEX) :
-                {
-                    Expression string = expression(expressionRoot.getChild(0));
-                    RegexExpression regex = new RegexExpression(string);
-                    return regex;
-                }
-            case (Token.IDENTIFIER) :
-                {
-                    Expression expression = variableOrClassExpression(expressionRoot);
-                    // if the next token is another identifier and this is a class then
-                    // we should set the type on the assignment variable expression
-                    //System.out.println("we have: " + expressionRoot);
-                    return expression;
-                }
-            case (Token.KEYWORD_THIS) :
-            case (Token.KEYWORD_SUPER) :
-                {
-                    return variableExpression(expressionRoot);
-                }
-            case (Token.DOT) :
-                {
-                    return propertyExpression(expressionRoot);
-                }
-            case (Token.NAVIGATE) :
-                {
-                    return safePropertyExpression(expressionRoot);
-                }
-            case (Token.SYNTH_LIST) :
-                {
-                    return listExpression(expressionRoot);
-                }
-            case (Token.SYNTH_MAP) :
-                {
-                    return mapExpression(expressionRoot);
-                }
-            case (Token.LEFT_PARENTHESIS) :
-                {
-                    return methodCallExpression(expressionRoot);
-                }
-            case (Token.LEFT_CURLY_BRACE) :
-                {
-                    return closureExpression(expressionRoot);
-                }
-            case (Token.KEYWORD_NEW) :
-                {
-                    return newExpression(expressionRoot);
-                }
-            case (Token.NOT) :
-                {
-                    return notExpression(expressionRoot);
-                }
-            case (Token.SYNTH_CAST) :
-                {
-                    return castExpression(expressionRoot);
-                }
-        }
 
-        throw new RuntimeException(
-            expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot);
-    }
-
-    protected Expression castExpression(CSTNode root) throws ParserException {
-        CSTNode typeExpression = root.getChild(0);
-        CSTNode expressionRoot = root.getChild(1);
-        return new CastExpression(resolveName(typeExpression.getToken().getText()), expression(expressionRoot));
-    }
-
-    protected Expression postfixExpression(CSTNode root) throws ParserException {
-        CSTNode expressionRoot = root.getChild(0);
-        return new PostfixExpression(expression(expressionRoot.getChild(0)), expressionRoot.getToken());
-    }
-
-    protected Expression prefixExpression(CSTNode root) throws ParserException {
-        CSTNode expressionRoot = root.getChild(0);
-        return new PrefixExpression(expressionRoot.getToken(), expression(expressionRoot.getChild(0)));
-    }
-
-    protected Expression notExpression(CSTNode expressionRoot) throws ParserException {
-        Expression notExpression = new NotExpression(expression(expressionRoot.getChild(0)));
-
-        return notExpression;
-    }
-
-    protected Expression negationExpression(CSTNode expressionRoot) throws ParserException {
-        Expression negationExpression = new NegationExpression(expression(expressionRoot.getChild(0)));
-
-        return negationExpression;
-    }
-
-    protected GStringExpression compositeStringExpression(CSTNode expressionRoot) throws ParserException {
-        GStringExpression expr = new GStringExpression(expressionRoot.getToken().getText());
-
-        CSTNode children[] = expressionRoot.getChildren();
-
-        for (int i = 0; i < children.length; ++i) {
-            if (matches(children[i], Token.SINGLE_QUOTE_STRING)) {
-                ConstantExpression constantExpression = constantExpression(children[i]);
-
-                if (constantExpression != null) {
-                    expr.addString(constantExpression);
+                if( context == null )
+                {
+                    context = expression( reduction.get(1) );
                 }
+
+                expression = new PropertyExpression( context, name, type == Types.NAVIGATE );
+                break;
             }
-            else {
-                Expression expression = expression(children[i]);
-                expr.addValue(expression);
+
+
+            case Types.KEYWORD_INSTANCEOF:
+            {
+                Expression   lhs = expression(  reduction.get(1) );
+                Expression   rhs = classExpression( reduction.get(2) );
+                expression = new BinaryExpression( lhs, reduction.getRoot(), rhs );
+                break;
             }
-        }
 
-        return expr;
-    }
 
-    protected Expression newExpression(CSTNode expressionRoot) throws ParserException {
-        String datatype = resolvedQualifiedNameNotNull(expressionRoot.getChild(0));
-
-        CSTNode node = expressionRoot.getChild(1);
-        if (node.getToken().getType() == Token.LEFT_SQUARE_BRACKET) {
-            CSTNode next = expressionRoot.getChild(2);
-            if (next.getToken().getType() == Token.LEFT_CURLY_BRACE) {
-                // lets use an initializer list
-                TupleExpression args = nonNamedActualParameterList(expressionRoot.getChild(3));
-                return new ArrayExpression(datatype, args.getExpressions());
-            }
-            else {
-                // use a basic size
-                return new ArrayExpression(datatype, expression(next));
-            }
-        }
-        else {
-            //TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
-            Expression args = actualParameterList(expressionRoot.getChild(1));
-
-            return new ConstructorCallExpression(datatype, args);
-        }
-    }
-
-    protected ClosureExpression closureExpression(CSTNode expressionRoot) throws ParserException {
-        Parameter[] parameters = parameters(expressionRoot.getChild(0).getChildren());
-
-        ClosureExpression answer = new ClosureExpression(parameters, statementBlock(expressionRoot.getChild(1)));
-        answer.setCSTNode(expressionRoot);
-        return answer;
-    }
-
-    protected MethodCallExpression methodCallExpression(CSTNode expressionRoot) throws ParserException {
-        CSTNode objectExpressionRoot = expressionRoot.getChild(0);
-
-        //System.out.println("Got method: " + expressionRoot);
-
-        Expression objectExpression = null;
-
-        boolean implicitThis = false;
-        if (objectExpressionRoot.getToken() == null) {
-            objectExpression = VariableExpression.THIS_EXPRESSION;
-            implicitThis = true;
-        }
-        else {
-            objectExpression = expression(expressionRoot.getChild(0));
-        }
-
-        String methodName = expressionRoot.getChild(1).getToken().getText();
-
-        Expression paramList = actualParameterList(expressionRoot.getChild(2));
-
-        MethodCallExpression answer = new MethodCallExpression(objectExpression, methodName, paramList);
-        answer.setImplicitThis(implicitThis);
-
-        if (expressionRoot.getChildren().length > 3) {
-            CSTNode notExpr = expressionRoot.getChild(3);
-            if (notExpr != null && notExpr.getToken().getType() == Token.NAVIGATE) {
-                answer.setSafe(true);
-            }
-        }
-        return answer;
-    }
-
-    protected Expression actualParameterList(CSTNode paramRoot) throws ParserException {
-        Expression paramList = null;
-
-        CSTNode[] paramRoots = paramRoot.getChildren();
-
-        if (paramRoots.length > 0 && matches(paramRoots[0], Token.COLON)) {
-            paramList = namedActualParameterList(paramRoot);
-        }
-        else {
-            paramList = nonNamedActualParameterList(paramRoot);
-        }
-
-        return paramList;
-    }
-
-    protected Expression namedActualParameterList(CSTNode paramRoot) throws ParserException {
-        //NamedArgumentListExpression paramList = new NamedArgumentListExpression();
-        //ListExpression paramList = new ListExpression();
-        TupleExpression paramList = new TupleExpression();
-
-        CSTNode[] paramRoots = paramRoot.getChildren();
-
-        MapExpression map = new MapExpression();
-
-        paramList.addExpression(map);
-
-        for (int i = 0; i < paramRoots.length; ++i) {
-            if (matches(paramRoots[i], Token.COLON)) {
-                CSTNode keyRoot = paramRoots[i].getChild(0);
-                CSTNode valueRoot = paramRoots[i].getChild(1);
-
-                //System.err.println( "param: " + paramRoots[i] );
-
-                Expression keyExpr = new ConstantExpression(keyRoot.getToken().getText());
-                keyExpr.setCSTNode(keyRoot);
-                Expression valueExpr = expression(valueRoot);
-
-                //paramList.addMapEntryExpression( keyExpr,
-                //valueExpr );
-
-                map.addMapEntryExpression(keyExpr, valueExpr);
-            }
-            else {
-                if (matches(paramRoots[i], Token.LEFT_CURLY_BRACE)) {
-                    paramList.addExpression(closureExpression(paramRoots[i]));
-                }
-
+            default:
+            {
+                Expression lhs = expression( reduction.get(1) );
+                Expression rhs = expression( reduction.get(2) );
+                expression = new BinaryExpression( lhs, reduction.getRoot(), rhs );
                 break;
             }
         }
 
-        // System.err.println( "paramList: " + paramList );
-
-        return paramList;
+        return expression;
     }
 
-    protected TupleExpression nonNamedActualParameterList(CSTNode paramRoot) throws ParserException {
-        return tupleExpression(paramRoot);
-    }
 
-    protected TupleExpression tupleExpression(CSTNode expressionRoot) throws ParserException {
-        TupleExpression tupleExpression = new TupleExpression();
 
-        CSTNode[] exprRoots = expressionRoot.getChildren();
+   /**
+    *  Processes most prefix operators.
+    */
 
-        for (int i = 0; i < exprRoots.length; ++i) {
-            tupleExpression.addExpression(expression(exprRoots[i]));
+    public Expression prefixExpression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression = null;
+        Expression body = expression( reduction.get(1) );
+
+        int type = reduction.getMeaning();
+        switch( type )
+        {
+            case Types.PREFIX_MINUS:
+                expression = new NegationExpression( body );
+                break;
+
+            case Types.PREFIX_PLUS:
+                expression = body;   // no op
+                break;
+
+            case Types.NOT:
+                expression = new NotExpression( body );
+                break;
+
+            default:
+                expression = new PrefixExpression( reduction.getRoot(), body );
+                break;
         }
 
-        return tupleExpression;
+        return expression;
     }
 
-    protected ListExpression listExpression(CSTNode expressionRoot) throws ParserException {
-        ListExpression listExpression = new ListExpression();
 
-        CSTNode[] exprRoots = expressionRoot.getChildren();
 
-        for (int i = 0; i < exprRoots.length; ++i) {
-            listExpression.addExpression(expression(exprRoots[i]));
+   /**
+    *  Processes most simple expressions.
+    */
+
+    public Expression simpleExpression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression = null;
+
+        int type = reduction.getMeaning();
+        switch( type )
+        {
+            case Types.KEYWORD_NULL:
+                expression = ConstantExpression.NULL;
+                break;
+
+            case Types.KEYWORD_TRUE:
+                expression = ConstantExpression.TRUE;
+                break;
+
+            case Types.KEYWORD_FALSE:
+                expression = ConstantExpression.FALSE;
+                break;
+
+            case Types.STRING:
+                expression = new ConstantExpression( reduction.getRootText() );
+                break;
+
+            case Types.INTEGER_NUMBER:
+                expression = new ConstantExpression( Numbers.parseInteger(reduction.getRootText()) );
+                break;
+
+            case Types.DECIMAL_NUMBER:
+                expression = new ConstantExpression( Numbers.parseDecimal(reduction.getRootText()) );
+                break;
+
+            case Types.KEYWORD_SUPER:
+            case Types.KEYWORD_THIS:
+                expression = variableExpression( reduction );
+                break;
+
+            case Types.IDENTIFIER:
+                expression = variableOrClassExpression( reduction );
+                break;
+
         }
 
-        return listExpression;
+        return expression;
     }
 
-    protected MapExpression mapExpression(CSTNode expressionRoot) throws ParserException {
-        MapExpression mapExpression = new MapExpression();
 
-        CSTNode[] entryRoots = expressionRoot.getChildren();
 
-        for (int i = 0; i < entryRoots.length; ++i) {
-            Expression keyExpression = expression(entryRoots[i].getChild(0));
-            Expression valueExpression = expression(entryRoots[i].getChild(1));
+   /**
+    *  Processes most synthetic expressions.
+    */
 
-            MapEntryExpression entryExpression = new MapEntryExpression(keyExpression, valueExpression);
-            mapExpression.addMapEntryExpression(entryExpression);
-        }
+    public Expression syntheticExpression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression = null;
 
-        return mapExpression;
-    }
+        int type = reduction.getMeaning();
+        switch( type )
+        {
+            case Types.SYNTH_TERNARY:
+            {
+                BooleanExpression condition   = new BooleanExpression( expression(reduction.get(1)) );
+                Expression        trueBranch  = expression( reduction.get(2) );
+                Expression        falseBranch = expression( reduction.get(3) );
 
-    protected RangeExpression rangeExpression(CSTNode expressionRoot, boolean inclusive) throws ParserException {
-        Expression toExp = expression(expressionRoot.getChild(1));
-        return new RangeExpression(expression(expressionRoot.getChild(0)), toExp, inclusive);
-    }
-
-    protected Expression propertyExpression(CSTNode expressionRoot) throws ParserException {
-        Expression objectExpression = expression(expressionRoot.getChild(0));
-
-        String propertyName = expressionRoot.getChild(1).getToken().getText();
-
-        return new PropertyExpression(objectExpression, propertyName);
-    }
-
-    protected Expression safePropertyExpression(CSTNode expressionRoot) throws ParserException {
-        Expression objectExpression = expression(expressionRoot.getChild(0));
-
-        String propertyName = expressionRoot.getChild(1).getToken().getText();
-
-        return new PropertyExpression(objectExpression, propertyName, true);
-    }
-
-    protected Expression variableOrClassExpression(CSTNode expressionRoot) {
-        String text = expressionRoot.getToken().getText();
-
-        if (isDatatype(text)) {
-            return new ClassExpression(resolveName(text));
-        }
-
-        return variableExpression(expressionRoot);
-    }
-
-    protected VariableExpression variableExpression(CSTNode expressionRoot) {
-        VariableExpression answer = new VariableExpression(expressionRoot.getToken().getText());
-        if (expressionRoot.getChildren().length > 0) {
-            answer.setType(resolveName(expressionRoot.getChild(0).getToken().getText()));
-        }
-        return answer;
-    }
-
-    protected ConstantExpression constantExpression(CSTNode expressionRoot) {
-        ConstantExpression expr = null;
-
-        switch (expressionRoot.getToken().getType()) {
-            case (Token.KEYWORD_NULL) :
-                {
-                    expr = ConstantExpression.NULL;
-                    break;
-                }
-            case (Token.KEYWORD_TRUE) :
-                {
-                    expr = ConstantExpression.TRUE;
-                    break;
-                }
-            case (Token.KEYWORD_FALSE) :
-                {
-                    expr = ConstantExpression.FALSE;
-                    break;
-                }
-            case (Token.SINGLE_QUOTE_STRING) :
-                {
-                    expr = new ConstantExpression(expressionRoot.getToken().getText());
-                    break;
-                }
-            case (Token.DOUBLE_QUOTE_STRING) :
-                {
-                    // FIXME... not really a constant expr
-                    // after building string-concat expr from it
-                    // but this is just a convenient place for it now.
-                    expr = new ConstantExpression(expressionRoot.getToken().getText());
-                    break;
-                }
-            case (Token.INTEGER_NUMBER) :
-                {
-                    expr = new ConstantExpression(createInteger(expressionRoot.getToken().getText()));
-                    break;
-                }
-            case (Token.FLOAT_NUMBER) :
-                {
-                    expr = new ConstantExpression(new Double(expressionRoot.getToken().getText()));
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    /**
-     * Chooses the right Number implementation for the given integer number.
-     * Typically this is an Integer for efficiency or a Long if the number is very large
-     *
-     * @param text
-     * @return
-     */
-    protected Number createInteger(String text) {
-        // lets use an Integer if it will fit as it makes for more efficient bytecode
-        final long l;
-        
-        if (text.startsWith("0") && text.length() > 1) {
-            final char c = text.charAt(1);
-            
-            if (c == 'X' || c == 'x') {
-                l = Long.parseLong(text.substring(2), 16);
-            } else {
-                l = Long.parseLong(text, 8);
+                expression = new TernaryExpression( condition, trueBranch, falseBranch );
+                break;
             }
-        } else {
-            l = Long.parseLong(text);
-        }
 
-        if (l > Integer.MIN_VALUE && l < Integer.MAX_VALUE) {
-            return new Integer((int) l);
-        } else {
-            return new Long(l);
-        }
-    }
 
-    protected BinaryExpression binaryExpression(CSTNode expressionRoot) throws ParserException {
-        Expression lhsExpression = expression(expressionRoot.getChild(0));
+            case Types.SYNTH_CAST:
+            {
+                String className = resolveName( reduction.get(1) );
+                Expression  body = expression(  reduction.get(2) );
 
-        Expression rhsExpression = null;
-        CSTNode classNode = expressionRoot.getChild(1);
-        if (expressionRoot.getToken().getType() == Token.KEYWORD_INSTANCEOF) {
-            String name = resolvedQualifiedName(classNode);
-            if (name == null) {
-                name = identifier(classNode);
+                expression = new CastExpression( className, body );
+                break;
             }
-            rhsExpression = new ClassExpression(name);
-        }
-        else {
-            rhsExpression = expression(classNode);
+
+
+            case Types.SYNTH_VARIABLE_DECLARATION:
+            {
+                expression = variableDeclarationExpression( reduction );
+                break;
+            }
+
+
+            case Types.SYNTH_METHOD_CALL:
+            {
+                expression = methodCallExpression( reduction );
+                break;
+            }
+
+
+            case Types.SYNTH_CLOSURE:
+            {
+                expression = closureExpression( reduction );
+                break;
+            }
+
+
+            case Types.SYNTH_GSTRING:
+            {
+                expression = gstringExpression( reduction );
+                break;
+            }
+
+
+            case Types.SYNTH_LIST:
+            {
+                expression = listExpression( reduction );
+                break;
+            }
+
+
+            case Types.SYNTH_MAP:
+            {
+                expression = mapExpression( reduction );
+                break;
+            }
         }
 
-        return new BinaryExpression(lhsExpression, expressionRoot.getToken(), rhsExpression);
+        return expression;
     }
 
-    protected TernaryExpression ternaryExpression(CSTNode expressionRoot) throws ParserException {
-        BooleanExpression booleanExpression = new BooleanExpression(expression(expressionRoot.getChild(0)));
-        Expression trueExpression = expression(expressionRoot.getChild(1));
-        Expression falseExpression = expression(expressionRoot.getChild(2));
 
-        return new TernaryExpression(booleanExpression, trueExpression, falseExpression);
+
+
+   /**
+    *  Converts a (typically IDENTIFIER) CSTNode to a ClassExpression, if valid,
+    *  or a VariableExpression otherwise.
+    */
+
+    protected Expression variableOrClassExpression( CSTNode reduction ) throws ParserException
+    {
+        String className = resolveName( reduction, false );
+
+        if( className == null )
+        {
+            return variableExpression( reduction );
+        }
+        else
+        {
+            return new ClassExpression( className );
+        }
     }
 
-    protected int modifiers(CSTNode modifiersRoot) {
-        CSTNode[] modifierNodes = modifiersRoot.getChildren();
 
+
+   /**
+    *  Converts a CSTNode into a ClassExpression.
+    */
+
+    protected ClassExpression classExpression( CSTNode reduction ) throws ParserException
+    {
+        String name = resolveName( reduction, true );
+        return new ClassExpression( name );
+    }
+
+
+
+   /**
+    *  Converts a (typically IDENTIFIER) CSTNode to a VariableExpression, if
+    *  valid.
+    */
+
+    protected VariableExpression variableExpression( CSTNode reduction )
+    {
+        return new VariableExpression( reduction.getRootText() );
+    }
+
+
+
+   /**
+    *  Converts an (possibly optional) type expression to a Type.
+    */
+
+    protected Type typeExpression( CSTNode reduction )
+    {
+        String name = makeName( reduction, null );
+        if( name == null )
+        {
+            return Type.DYNAMIC_TYPE;
+        }
+        else
+        {
+            return new Type( resolveName(name, true) );
+        }
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by parsing a typed variable
+    *  declaration.
+    */
+
+    protected Expression variableDeclarationExpression( CSTNode reduction ) throws ParserException
+    {
+        String type = resolveName( reduction.get(1) );
+
+
+        //
+        // TEMPORARY UNTIL GENERAL SUPPORT IN PLACE
+
+        if( reduction.size() == 3 )
+        {
+            CSTNode node = reduction.get(2);
+
+            VariableExpression name = variableExpression( node );
+            name.setType( type );
+
+            Token symbol = Token.newSymbol( Types.EQUAL, -1, -1 );
+
+            return new BinaryExpression( name, symbol, expression(node.get(1)) );
+        }
+
+
+        throw new GroovyBugError( "NOT YET IMPLEMENTED: generalized variable declarations" );
+
+        /*
+
+        VariableDeclarationExpression expression = new VariableDeclarationExpression( type );
+
+        for( i = 2; i < reduction.size(); i++ )
+        {
+            CSTNode node = reduction.get(i);
+            declaration.add( node.get(0), expression(node.get(1)) );
+        }
+
+        return expression;
+
+        */
+    }
+
+
+
+   /**
+    *  Processes a SYNTH_METHOD_CALL Reduction produced by Parser.expression().
+    */
+
+    protected MethodCallExpression methodCallExpression( CSTNode reduction ) throws ParserException
+    {
+        MethodCallExpression call = null;
+
+        //
+        // Figure out the name and context of the method call.
+
+        CSTNode descriptor = reduction.get(1);
+        Expression context = null;
+        boolean   implicit = false;
+        String      method = "call";
+        boolean       safe = false;
+
+        int type = descriptor.getMeaning();
+        switch( type )
+        {
+            case Types.KEYWORD_SUPER:
+            {
+                context  = variableExpression( descriptor );
+                method   = identifier( descriptor );
+                break;
+            }
+
+            case Types.KEYWORD_THIS:
+            {
+                context  = VariableExpression.THIS_EXPRESSION;
+                method   = identifier( descriptor );
+                break;
+            }
+
+            case Types.IDENTIFIER:
+            {
+                context  = VariableExpression.THIS_EXPRESSION;
+                method   = identifier( descriptor );
+                implicit = true;
+                break;
+            }
+
+            case Types.DOT:
+            case Types.NAVIGATE:
+            {
+                context = expression( descriptor.get(1) );
+                method  = identifier( descriptor.get(2) );
+                safe    = type == Types.NAVIGATE;
+                break;
+            }
+
+            default:
+            {
+                context = expression( descriptor );
+                break;
+            }
+        }
+
+
+        //
+        // And build the expression
+
+        Expression parameters = parameterList( reduction.get(2) );
+
+        // System.out.println( "method call expression: " + context + ", " + method + ", " + parameters + ", " + implicit );
+
+        call = new MethodCallExpression( context, method, parameters );
+        call.setImplicitThis( implicit );
+        call.setSafe( safe );
+
+        return call;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.closureExpression().
+    */
+
+    protected ClosureExpression closureExpression( CSTNode reduction ) throws ParserException
+    {
+        ClosureExpression expression = null;
+
+        Parameter[] parameters = parameterDeclarations( reduction.get(1) );
+        expression = new ClosureExpression( parameters, statementBlock(reduction.get(2)) );
+
+        return expression;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.parameterList().
+    */
+
+    protected Expression parameterList( CSTNode reduction ) throws ParserException
+    {
+        TupleExpression list = new TupleExpression();
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            CSTNode node = reduction.get(i);
+            list.addExpression( expression(node) );
+        }
+
+        return list;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.newExpression().
+    */
+
+    protected Expression newExpression( CSTNode reduction ) throws ParserException
+    {
+        Expression expression = null;
+        CSTNode      typeNode = reduction.get(1);
+        String           type = resolveName( typeNode );
+
+
+        //
+        // Array types have dimension and initialization data to handle.
+
+        if( typeNode.getMeaning() == Types.LEFT_SQUARE_BRACKET )
+        {
+            CSTNode dimensions = reduction.get(2);
+
+            //
+            // BUG: at present, ArrayExpression expects a scalar type and
+            // does not support multi-dimensional arrays.  In future, the
+            // the latter will need to change, and that may require the
+            // former to change, as well.  For now, we calculate the scalar
+            // type and error for multiple dimensions.
+
+            if( typeNode.get(1).getMeaning() == Types.LEFT_SQUARE_BRACKET )
+            {
+                throw new GroovyBugError( "NOT YET IMPLEMENTED: multidimensional arrays" );
+            }
+            else
+            {
+                type = resolveName( typeNode.get(1) );
+            }
+
+
+            //
+            // If there are no dimensions, process a tuple initializer
+
+            if( dimensions.isEmpty() )
+            {
+                CSTNode data = reduction.get(3);
+
+                if( data.get(1, true).getMeaning() == Types.SYNTH_TUPLE )
+                {
+                    throw new GroovyBugError( "NOT YET IMPLEMENTED: multidimensional arrays" );
+                }
+
+                expression = new ArrayExpression( type, tupleExpression(data).getExpressions() );
+            }
+
+
+            //
+            // Otherwise, process the dimensions
+
+            else
+            {
+                if( dimensions.size() > 2 )
+                {
+                    throw new GroovyBugError( "NOT YET IMPLEMENTED: multidimensional arrays" );
+
+                    /*
+
+                    expression = new ArrayExpression( type, tupleExpression(dimensions) );
+
+                    */
+                }
+                else
+                {
+                    expression = new ArrayExpression( type, expression(dimensions.get(1)) );
+                }
+            }
+        }
+
+
+        //
+        // Scalar types have a constructor parameter list and possibly a type body
+
+        else
+        {
+            Expression parameters = parameterList( reduction.get(2) );
+
+            if( reduction.size() > 3 )
+            {
+                throw new GroovyBugError( "NOT YET IMPLEMENTED: anonymous classes" );
+            }
+
+            expression = new ConstructorCallExpression( type, parameters );
+        }
+
+        return expression;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.newArrayInitializer().
+    */
+
+    protected TupleExpression tupleExpression( CSTNode reduction ) throws ParserException
+    {
+        TupleExpression tuple = new TupleExpression();
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            CSTNode element = reduction.get(i);
+
+            if( element.getMeaning() == Types.SYNTH_TUPLE )
+            {
+                tuple.addExpression( tupleExpression(element) );
+            }
+            else
+            {
+                tuple.addExpression( expression(element) );
+            }
+        }
+
+        return tuple;
+    }
+
+
+
+   /**
+    *  Processes the Reduction produced by Parser.gstring().
+    */
+
+    protected Expression gstringExpression( CSTNode reduction ) throws ParserException
+    {
+        if( !reduction.hasChildren() )
+        {
+            return new ConstantExpression( "" );
+        }
+
+        if( reduction.children() == 1 && reduction.get(1).getMeaning() == Types.STRING )
+        {
+            return expression( reduction.get(1) );
+        }
+
+
+        GStringExpression expression = new GStringExpression( reduction.getRootText() );
+        boolean lastWasExpression = false;
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            CSTNode element = reduction.get(i);
+            if( element.getMeaning() == Types.STRING )
+            {
+                ConstantExpression string = new ConstantExpression( element.getRootText() );
+                string.setCSTNode( element );
+
+                expression.addString( string );
+
+                lastWasExpression = false;
+            }
+            else
+            {
+                if( lastWasExpression )
+                {
+                    expression.addString( new ConstantExpression("") );
+                }
+
+                lastWasExpression = true;
+                expression.addValue( element.isEmpty() ? ConstantExpression.NULL : expression(element) );
+            }
+        }
+
+        return expression;
+    }
+
+
+
+   /**
+    *  Processes one of the Reductions produced by Parser.listOrMapExpression().
+    */
+
+    protected ListExpression listExpression( CSTNode reduction ) throws ParserException
+    {
+        ListExpression list = new ListExpression();
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            list.addExpression( expression(reduction.get(i)) );
+        }
+
+        return list;
+    }
+
+
+
+   /**
+    *  Processes the other Reduction produced by Parser.listOrMapExpression().
+    */
+
+    protected MapExpression mapExpression( CSTNode reduction ) throws ParserException
+    {
+        MapExpression map = new MapExpression();
+
+        for( int i = 1; i < reduction.size(); i++ )
+        {
+            CSTNode  element = reduction.get(i);
+            Expression   key = expression( element.get(1) );
+            Expression value = expression( element.get(2) );
+
+            map.addMapEntryExpression( key, value );
+        }
+
+        return map;
+    }
+
+
+
+
+
+  //---------------------------------------------------------------------------
+  // NAMING
+
+    private static HashMap resolutions = new HashMap();  // cleared on build(), to be safe
+    private static String NOT_RESOLVED = new String();
+
+
+   /**
+    *  Converts a CSTNode representation of a type name back into
+    *  a string.
+    */
+
+    protected String makeName( CSTNode root, String defaultName )
+    {
+        if( root == null )
+        {
+            return defaultName;
+        }
+
+        String name = "";
+        switch( root.getMeaning() )
+        {
+            case Types.LEFT_SQUARE_BRACKET:
+            {
+                name = makeName( root.get(1) ) + "[]";
+                break;
+            }
+
+            case Types.DOT:
+            {
+                CSTNode node = root;
+                while( node.isA(Types.DOT) )
+                {
+                    name = "." + node.get(2).getRootText() + name;
+                    node = node.get(1);
+                }
+
+                name = node.getRootText() + name;
+                break;
+            }
+
+            case Types.UNKNOWN:
+            {
+                name = defaultName;
+                break;
+            }
+
+            default:
+            {
+                name = root.getRootText();
+                break;
+            }
+
+        }
+
+        return name;
+    }
+
+
+
+   /**
+    *  A synonym for <code>makeName( root, "java.lang.Object" )</code>.
+    */
+
+    protected String makeName( CSTNode root )
+    {
+        return makeName( root, "java.lang.Object" );
+    }
+
+
+
+   /**
+    *  Returns the text of an identifier.
+    */
+
+    protected String identifier( CSTNode identifier )
+    {
+        return identifier.getRootText();
+    }
+
+
+
+   /**
+    *  Returns a fully qualified name for any given potential type
+    *  name.  Returns null if no qualified name could be determined.
+    */
+
+    protected String resolveName( String name, boolean safe )
+    {
+        //
+        // Use our cache of resolutions, if possible
+
+        String resolution = (String)resolutions.get( name );
+        if( resolution == NOT_RESOLVED )
+        {
+            return (safe ? name : null);
+        }
+        else if( resolution != null )
+        {
+            return (String)resolution;
+        }
+
+
+        do
+        {
+            //
+            // If the type name contains a ".", it's probably fully
+            // qualified, and we don't take it to verification here.
+
+            if( name.indexOf(".") >= 0 )
+            {
+                resolution = name;
+                break;                                            // <<< FLOW CONTROL <<<<<<<<<
+            }
+
+
+            //
+            // Otherwise, we'll need the scalar type for checking, and
+            // the postfix for reassembly.
+
+            String scalar = name, postfix = "";
+            while( scalar.endsWith("[]") )
+            {
+                scalar = scalar.substring( 0, scalar.length() - 2 );
+                postfix += "[]";
+            }
+
+
+            //
+            // Primitive types are all valid...
+
+            if( Types.ofType(Types.lookupKeyword(scalar), Types.PRIMITIVE_TYPE) )
+            {
+                resolution = name;
+                break;                                            // <<< FLOW CONTROL <<<<<<<<<
+            }
+
+
+            //
+            // Next, check our imports and return the qualified name,
+            // if available.
+
+            if( this.imports.containsKey(scalar) )
+            {
+                resolution = ((String)this.imports.get(scalar)) + postfix;
+                break;                                            // <<< FLOW CONTROL <<<<<<<<<
+            }
+
+
+            //
+            // Next, see if our class loader can resolve it in the current package.
+
+            if( packageName != null && packageName.length() > 0 )
+            {
+                try
+                {
+                    getClassLoader().loadClass( dot(packageName, scalar) );
+                    resolution = dot(packageName, name);
+
+                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
+                }
+                catch( Throwable e )
+                {
+                    /* ignore */
+                }
+            }
+
+
+            //
+            // Last chance, check the default imports.
+
+            for( int i = 0; i < DEFAULT_IMPORTS.length; i++ )
+            {
+                try
+                {
+                    String qualified = DEFAULT_IMPORTS[i] + scalar;
+                    getClassLoader().loadClass( qualified );
+
+                    resolution = qualified + postfix;
+                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
+                }
+                catch( Throwable e )
+                {
+                    /* ignore */
+                }
+            }
+
+        } while( false );
+
+
+        //
+        // Cache the solution and return it
+
+        if( resolution == null )
+        {
+            resolutions.put( name, NOT_RESOLVED );
+            return (safe ? name : null);
+        }
+        else
+        {
+            resolutions.put( name, resolution );
+            return resolution;
+        }
+    }
+
+
+
+   /**
+    *  Builds a name from a CSTNode, then resolves it.  Returns the resolved name
+    *  if available, or null, unless safe is set, in which case the built name
+    *  is returned instead of null.
+    *
+    *  @todo we should actually remove all resolving code from the ASTBuilder and
+    *        move it into the verifier / analyser
+    */
+
+    protected String resolveName( CSTNode root, boolean safe )
+    {
+        String name = makeName( root );
+        return resolveName( name, safe );
+    }
+
+
+
+   /**
+    *  A synonym for <code>resolveName( root, true )</code>.
+    */
+
+    protected String resolveName( CSTNode root )
+    {
+        return resolveName( root, true );
+    }
+
+
+
+   /**
+    *  Returns true if the specified name is a known type name.
+    */
+
+    protected boolean isDatatype( String name )
+    {
+        return resolveName( name, false ) != null;
+    }
+
+
+
+   /**
+    *  Returns two names joined by a dot.  If the base name is
+    *  empty, returns the name unchanged.
+    */
+
+    protected String dot( String base, String name )
+    {
+        if( base != null && base.length() > 0 )
+        {
+            return base + "." + name;
+        }
+
+        return name;
+    }
+
+
+
+   /**
+    *  A synonym for <code>dot( base, "" )</code>.
+    */
+
+    protected String dot( String base )
+    {
+        return dot( base, "" );
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // ASM SUPPORT
+
+
+   /**
+    *  Returns the ASM Constant bits for the specified modifiers.
+    */
+
+    protected int modifiers( CSTNode list )
+    {
         int modifiers = 0;
 
-        for (int i = 0; i < modifierNodes.length; ++i) {
-            SWITCH : switch (modifierNodes[i].getToken().getType()) {
-                case (Token.KEYWORD_PUBLIC) :
-                    {
-                        modifiers |= Constants.ACC_PUBLIC;
-                        break SWITCH;
-                    }
-                case (Token.KEYWORD_PROTECTED) :
-                    {
-                        modifiers |= Constants.ACC_PROTECTED;
-                        break SWITCH;
-                    }
-                case (Token.KEYWORD_PRIVATE) :
-                    {
-                        modifiers |= Constants.ACC_PRIVATE;
-                        break SWITCH;
-                    }
-                case (Token.KEYWORD_STATIC) :
-                    {
-                        modifiers |= Constants.ACC_STATIC;
-                        break SWITCH;
-                    }
-                case (Token.KEYWORD_ABSTRACT) :
-                    {
-                        modifiers |= Constants.ACC_ABSTRACT;
-                        break SWITCH;
-                    }
+        for( int i = 1; i < list.size(); ++i )
+        {
+            SWITCH: switch( list.get(i).getMeaning() )
+            {
+                case Types.KEYWORD_PUBLIC:
+                {
+                    modifiers |= Constants.ACC_PUBLIC;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_PROTECTED:
+                {
+                    modifiers |= Constants.ACC_PROTECTED;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_PRIVATE:
+                {
+                    modifiers |= Constants.ACC_PRIVATE;
+                    break SWITCH;
+                }
+
+
+                case Types.KEYWORD_ABSTRACT:
+                {
+                    modifiers |= Constants.ACC_ABSTRACT;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_FINAL:
+                {
+                    modifiers |= Constants.ACC_FINAL;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_NATIVE:
+                {
+                    modifiers |= Constants.ACC_NATIVE;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_TRANSIENT:
+                {
+                    modifiers |= Constants.ACC_TRANSIENT;
+                    break SWITCH;
+                }
+
+                case Types.KEYWORD_VOLATILE:
+                {
+                    modifiers |= Constants.ACC_VOLATILE;
+                    break SWITCH;
+                }
+
+
+                case Types.KEYWORD_SYNCHRONIZED:
+                {
+                    modifiers |= Constants.ACC_SYNCHRONIZED;
+                    break SWITCH;
+                }
+                case Types.KEYWORD_STATIC:
+                {
+                    modifiers |= Constants.ACC_STATIC;
+                    break SWITCH;
+                }
+
             }
         }
 
-        // if not protected or private lets default to public
-        if ((modifiers & (Constants.ACC_PROTECTED | Constants.ACC_PRIVATE)) == 0) {
+
+        //
+        // If not protected or private we default to public.
+
+        if( (modifiers & (Constants.ACC_PROTECTED | Constants.ACC_PRIVATE)) == 0 )
+        {
             modifiers |= Constants.ACC_PUBLIC;
         }
 
         return modifiers;
     }
 
-    protected String identifier(CSTNode identifierRoot) {
-        return identifierRoot.getToken().getText();
+
+
+
+  //---------------------------------------------------------------------------
+  // ERROR HANDLING
+
+
+   /**
+    *  Throws a <code>ParserException</code>.
+    */
+
+    protected void error( String description, CSTNode node ) throws ParserException
+    {
+        throw new ParserException( description, node.getRoot() );
     }
 
-    boolean matches(CSTNode root, int rootType) {
-        return ((root.getToken() != null) && (root.getToken().getType() == rootType));
-    }
 
-    boolean matches(CSTNode root, int rootType, int c1Type) {
-        return (
-            (matches(root, rootType))
-                && ((root.getChild(1) != null)
-                    && (root.getChild(1).getToken() != null)
-                    && (root.getChild(1).getToken().getType() == c1Type)));
-    }
-
-    boolean matches(CSTNode root, int rootType, int c1Type, int c2Type) {
-        return (
-            (matches(root, rootType, c1Type))
-                && ((root.getChild(2) != null)
-                    && (root.getChild(2).getToken() != null)
-                    && (root.getChild(2).getToken().getType() == c2Type)));
-    }
-
-    boolean matches(CSTNode root, int rootType, int c1Type, int c2Type, int c3Type) {
-        return (
-            (matches(root, rootType, c1Type))
-                && ((root.getChild(3) != null)
-                    && (root.getChild(3).getToken() != null)
-                    && (root.getChild(3).getToken().getType() == c3Type)));
-    }
 }

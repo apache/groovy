@@ -84,11 +84,11 @@ public class GStringTest extends TestSupport {
             new ExpressionStatement(
                 new BinaryExpression(
                     new VariableExpression("user"),
-                    Token.equal(-1, -1),
+                    Token.newSymbol("=", -1, -1),
                     new ConstantExpression("World"))));
         block.addStatement(
             new ExpressionStatement(
-                new BinaryExpression(new VariableExpression("str"), Token.equal(-1, -1), compositeStringExpr)));
+                new BinaryExpression(new VariableExpression("str"), Token.newSymbol( "=", -1, -1), compositeStringExpr)));
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "println", new VariableExpression("str"))));
@@ -97,7 +97,7 @@ public class GStringTest extends TestSupport {
             new ExpressionStatement(
                 new BinaryExpression(
                     new VariableExpression("text"),
-                    Token.equal(-1, -1),
+                    Token.newSymbol( "=", -1, -1),
                     new MethodCallExpression(new VariableExpression("str"), "toString", ConstantExpression.NULL))));
 
         block.addStatement(
@@ -105,7 +105,7 @@ public class GStringTest extends TestSupport {
                 new BooleanExpression(
                     new BinaryExpression(
                         new VariableExpression("text"),
-                        Token.compareEqual(-1, -1),
+                        Token.newSymbol( "==", -1, -1),
                         new ConstantExpression("Hello World!")))));
         classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
 

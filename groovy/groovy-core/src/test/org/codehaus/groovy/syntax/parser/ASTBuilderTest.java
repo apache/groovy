@@ -53,6 +53,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -176,7 +177,7 @@ public class ASTBuilderTest extends TestParserSupport {
         assertTrue("LHS is binary expression", lhs instanceof BinaryExpression);
 
         BinaryExpression lhsBinExpr = (BinaryExpression) lhs;
-        assertEquals(Token.LEFT_SQUARE_BRACKET, lhsBinExpr.getOperation().getType());
+        assertEquals(Types.LEFT_SQUARE_BRACKET, lhsBinExpr.getOperation().getType());
 
         assertTrue("Left of LHS is a variable", lhsBinExpr.getLeftExpression() instanceof VariableExpression);
         assertTrue("Right of LHS is a constant", lhsBinExpr.getRightExpression() instanceof ConstantExpression);

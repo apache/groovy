@@ -27,7 +27,7 @@ sql = TestHelper.makeSql()
 li = ["a", "b"]
 for (x in li) {
     sql.eachRow("SELECT count(*) FROM FOOD") { e |
-    	println " $${x}"
+    	println " \${x}"
     	
     	assert x != null
     }

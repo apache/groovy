@@ -79,6 +79,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.Constants;
@@ -128,8 +129,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
             IfStatement initMetaClassField =
                 new IfStatement(
                     new BooleanExpression(
-                        new BinaryExpression(metaClassVar, Token.compareEqual(-1, -1), ConstantExpression.NULL)),
-                    new ExpressionStatement(new BinaryExpression(metaClassVar, Token.equal(-1, -1), initMetaClassCall)),
+                        new BinaryExpression(metaClassVar, Token.newSymbol( Types.COMPARE_EQUAL, -1, -1), ConstantExpression.NULL)),
+                    new ExpressionStatement(new BinaryExpression(metaClassVar, Token.newSymbol( Types.EQUAL, -1, -1), initMetaClassCall)),
                     EmptyStatement.INSTANCE);
 
             node.addSyntheticMethod(
@@ -446,7 +447,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 new ExpressionStatement(
                     new BinaryExpression(
                         new FieldExpression(fieldNode),
-                        Token.equal(fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
+                        Token.newSymbol(Types.EQUAL, fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
                         expression));
             if (fieldNode.isStatic()) {
                 staticList.add(statement);
@@ -483,7 +484,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
     protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
         Expression expression = new FieldExpression(field);
         return new ExpressionStatement(
-            new BinaryExpression(expression, Token.equal(0, 0), new VariableExpression("value")));
+            new BinaryExpression(expression, Token.newSymbol(Types.EQUAL, 0, 0), new VariableExpression("value")));
     }
 
     /**

@@ -112,6 +112,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
@@ -447,7 +448,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
         };
         evaluateEqual(
-            new BinaryExpression(new VariableExpression(loop.getVariable()), Token.equal(-1, -1), expression));
+            new BinaryExpression(new VariableExpression(loop.getVariable()), Token.newSymbol(Types.EQUAL, -1, -1), expression));
 
         loop.getLoopBlock().visit(this);
 
@@ -976,115 +977,115 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitBinaryExpression(BinaryExpression expression) {
         switch (expression.getOperation().getType()) {
-            case Token.EQUAL :
+            case Types.EQUAL :
                 evaluateEqual(expression);
                 break;
 
-            case Token.COMPARE_IDENTICAL :
+            case Types.COMPARE_IDENTICAL :
                 evaluateBinaryExpression(compareIdenticalMethod, expression);
                 break;
 
-            case Token.COMPARE_EQUAL :
+            case Types.COMPARE_EQUAL :
                 evaluateBinaryExpression(compareEqualMethod, expression);
                 break;
 
-            case Token.COMPARE_NOT_EQUAL :
+            case Types.COMPARE_NOT_EQUAL :
                 evaluateBinaryExpression(compareNotEqualMethod, expression);
                 break;
 
-            case Token.COMPARE_TO :
+            case Types.COMPARE_TO :
                 evaluateCompareTo(expression);
                 break;
 
-            case Token.COMPARE_GREATER_THAN :
+            case Types.COMPARE_GREATER_THAN :
                 evaluateBinaryExpression(compareGreaterThanMethod, expression);
                 break;
 
-            case Token.COMPARE_GREATER_THAN_EQUAL :
+            case Types.COMPARE_GREATER_THAN_EQUAL :
                 evaluateBinaryExpression(compareGreaterThanEqualMethod, expression);
                 break;
 
-            case Token.COMPARE_LESS_THAN :
+            case Types.COMPARE_LESS_THAN :
                 evaluateBinaryExpression(compareLessThanMethod, expression);
                 break;
 
-            case Token.COMPARE_LESS_THAN_EQUAL :
+            case Types.COMPARE_LESS_THAN_EQUAL :
                 evaluateBinaryExpression(compareLessThanEqualMethod, expression);
                 break;
 
-            case Token.LOGICAL_AND :
+            case Types.LOGICAL_AND :
                 evaluateLogicalAndExpression(expression);
                 break;
 
-            case Token.LOGICAL_OR :
+            case Types.LOGICAL_OR :
                 evaluateLogicalOrExpression(expression);
                 break;
 
-            case Token.PLUS :
+            case Types.PLUS :
                 evaluateBinaryExpression("plus", expression);
                 break;
 
-            case Token.PLUS_EQUAL :
+            case Types.PLUS_EQUAL :
                 evaluateBinaryExpressionWithAsignment("plus", expression);
                 break;
 
-            case Token.MINUS :
+            case Types.MINUS :
                 evaluateBinaryExpression("minus", expression);
                 break;
 
-            case Token.MINUS_EQUAL :
+            case Types.MINUS_EQUAL :
                 evaluateBinaryExpressionWithAsignment("minus", expression);
                 break;
 
-            case Token.MULTIPLY :
+            case Types.MULTIPLY :
                 evaluateBinaryExpression("multiply", expression);
                 break;
 
-            case Token.MULTIPLY_EQUAL :
+            case Types.MULTIPLY_EQUAL :
                 evaluateBinaryExpressionWithAsignment("multiply", expression);
                 break;
 
-            case Token.DIVIDE :
+            case Types.DIVIDE :
                 //SPG don't use divide since BigInteger implements directly
                 //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
                 evaluateBinaryExpression("div", expression);
                 break;
 
-            case Token.DIVIDE_EQUAL :
+            case Types.DIVIDE_EQUAL :
                 //SPG don't use divide since BigInteger implements directly
                 //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
                 evaluateBinaryExpressionWithAsignment("div", expression);
                 break;
 
-            case Token.MOD :
+            case Types.MOD :
                 evaluateBinaryExpression("mod", expression);
                 break;
 
-            case Token.MOD_EQUAL :
+            case Types.MOD_EQUAL :
                 evaluateBinaryExpressionWithAsignment("mod", expression);
                 break;
 
-            case Token.LEFT_SHIFT :
+            case Types.LEFT_SHIFT :
                 evaluateBinaryExpression("leftShift", expression);
                 break;
 
-            case Token.RIGHT_SHIFT :
+            case Types.RIGHT_SHIFT :
                 evaluateBinaryExpression("rightShift", expression);
                 break;
 
-            case Token.KEYWORD_INSTANCEOF :
+            case Types.KEYWORD_INSTANCEOF :
                 evaluateInstanceof(expression);
                 break;
 
-            case Token.FIND_REGEX :
+            case Types.FIND_REGEX :
                 evaluateBinaryExpression(findRegexMethod, expression);
                 break;
 
-            case Token.MATCH_REGEX :
+            case Types.MATCH_REGEX :
                 evaluateBinaryExpression(matchRegexMethod, expression);
                 break;
 
-            case Token.LEFT_SQUARE_BRACKET :
+            case Types.LEFT_SQUARE_BRACKET :
                 if (leftHandExpression) {
                     throw new RuntimeException("Should not be called");
                     //evaluateBinaryExpression("putAt", expression);
@@ -1101,10 +1102,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitPostfixExpression(PostfixExpression expression) {
         switch (expression.getOperation().getType()) {
-            case Token.PLUS_PLUS :
+            case Types.PLUS_PLUS :
                 evaluatePostfixMethod("next", expression.getExpression());
                 break;
-            case Token.MINUS_MINUS :
+            case Types.MINUS_MINUS :
                 evaluatePostfixMethod("previous", expression.getExpression());
                 break;
         }
@@ -1112,10 +1113,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitPrefixExpression(PrefixExpression expression) {
         switch (expression.getOperation().getType()) {
-            case Token.PLUS_PLUS :
+            case Types.PLUS_PLUS :
                 evaluatePrefixMethod("next", expression.getExpression());
                 break;
-            case Token.MINUS_MINUS :
+            case Types.MINUS_MINUS :
                 evaluatePrefixMethod("previous", expression.getExpression());
                 break;
         }
@@ -1927,12 +1928,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExp = (BinaryExpression) expression;
             switch (binExp.getOperation().getType()) {
-                case Token.EQUAL :
-                case Token.PLUS_EQUAL :
-                case Token.MINUS_EQUAL :
-                case Token.MULTIPLY_EQUAL :
-                case Token.DIVIDE_EQUAL :
-                case Token.MOD_EQUAL :
+                case Types.EQUAL :
+                case Types.PLUS_EQUAL :
+                case Types.MINUS_EQUAL :
+                case Types.MULTIPLY_EQUAL :
+                case Types.DIVIDE_EQUAL :
+                case Types.MOD_EQUAL :
                     return false;
             }
         }
@@ -2237,7 +2238,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             new ExpressionStatement(
                 new BinaryExpression(
                     new FieldExpression(field),
-                    Token.equal(-1, -1),
+                    Token.newSymbol(Types.EQUAL, -1, -1),
                     new VariableExpression("_outerInstance"))));
 
         // lets assign all the parameter fields from the outer context
@@ -2276,7 +2277,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     "void",
                     new Parameter[] { new Parameter(realType, "__value") },
                     new ExpressionStatement(
-                        new BinaryExpression(expression, Token.equal(0, 0), new VariableExpression("__value"))));
+                        new BinaryExpression(expression, Token.newSymbol(Types.EQUAL, 0, 0), new VariableExpression("__value"))));
                         */
             }
             else {
@@ -2289,7 +2290,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     new ExpressionStatement(
                         new BinaryExpression(
                             new FieldExpression(paramField),
-                            Token.equal(-1, -1),
+                            Token.newSymbol(Types.EQUAL, -1, -1),
                             new VariableExpression(paramName))));
             }
         }
@@ -2420,7 +2421,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
-            if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
+            if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
                 // lets replace this assignment to a subscript operator with a
                 // method call
                 // e.g. x[5] += 10
@@ -2473,7 +2474,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
-            if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
+            if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
                 // lets replace this assignment to a subscript operator with a
                 // method call
                 // e.g. x[5] = 10
@@ -2695,7 +2696,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected Expression createReturnLHSExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
-            if (binExpr.getOperation().isAssignmentToken()) {
+            if (binExpr.getOperation().isA(Types.ASSIGNMENT_OPERATOR)) {
                 return createReusableExpression(binExpr.getLeftExpression());
             }
         }
@@ -2725,15 +2726,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
             switch (binExpr.getOperation().getType()) {
-                case Token.COMPARE_EQUAL :
-                case Token.MATCH_REGEX :
-                case Token.COMPARE_GREATER_THAN :
-                case Token.COMPARE_GREATER_THAN_EQUAL :
-                case Token.COMPARE_LESS_THAN :
-                case Token.COMPARE_LESS_THAN_EQUAL :
-                case Token.COMPARE_IDENTICAL :
-                case Token.COMPARE_NOT_EQUAL :
-                case Token.KEYWORD_INSTANCEOF :
+                case Types.COMPARE_EQUAL :
+                case Types.MATCH_REGEX :
+                case Types.COMPARE_GREATER_THAN :
+                case Types.COMPARE_GREATER_THAN_EQUAL :
+                case Types.COMPARE_LESS_THAN :
+                case Types.COMPARE_LESS_THAN_EQUAL :
+                case Types.COMPARE_IDENTICAL :
+                case Types.COMPARE_NOT_EQUAL :
+                case Types.KEYWORD_INSTANCEOF :
                     return true;
             }
         }

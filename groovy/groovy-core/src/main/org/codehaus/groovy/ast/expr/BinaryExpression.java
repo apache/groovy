@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -101,7 +102,7 @@ public class BinaryExpression extends Expression {
     }
 
     public String getText() {
-        if (operation.getType() == Token.LEFT_SQUARE_BRACKET) {
+        if (operation.getType() == Types.LEFT_SQUARE_BRACKET) {
             return leftExpression.getText() + "[" + rightExpression.getText() + "]";
         }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";

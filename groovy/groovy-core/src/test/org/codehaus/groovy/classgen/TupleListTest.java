@@ -109,7 +109,7 @@ public class TupleListTest extends TestSupport {
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
         BlockStatement block = new BlockStatement();
-        block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newToken(Token.EQUAL, 0, 0), listExpression)));
+        block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
         block.addStatement(new ForStatement("i", Type.DYNAMIC_TYPE, new VariableExpression("list"), loopStatement));
         classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
 

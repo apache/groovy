@@ -154,6 +154,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
             }
             endScript(sw);
             String result = sw.toString();
+            System.out.println( "source text:\n" + result );
             return result;
         }
 
@@ -184,9 +185,6 @@ public class SimpleTemplateEngine extends TemplateEngine {
                     } else {
                         break;
                     }
-                }
-                if (c == '\"') {
-                    sw.write('\\');
                 }
                 sw.write(c);
             }

@@ -63,13 +63,9 @@ import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.syntax.lexer.CharStream;
-import org.codehaus.groovy.syntax.lexer.Lexer;
-import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
-import org.codehaus.groovy.syntax.parser.ASTBuilder;
-import org.codehaus.groovy.syntax.parser.CSTNode;
-import org.codehaus.groovy.syntax.parser.Parser;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.DumpClassVisitor;
+import org.codehaus.groovy.syntax.parser.Parser;
 
 /**
  *  Controls the compilation process, from source to class generation.
@@ -179,13 +175,19 @@ public class Compiler {
         }
 
         //
-        // Next, run parse the sources, producing a CST for each.
+        // Next, parse the sources to ASTs.
 
-        CSTNode[] csts = new CSTNode[sources.length];
+        CompileUnit unit = new CompileUnit( getClassLoader(), config );
 
         for (int i = 0; i < sources.length; ++i) {
             try {
-                csts[i] = parseSource(sources[i], descriptors[i]);
+
+                if( verbose ) {
+                    System.out.println("building source [" + descriptors[i] + "]");
+                }
+                
+                ModuleNode ast = parse( sources[i], descriptors[i] );
+                unit.addModule(ast);
             }
             catch (ExceptionCollector e) {
                 if (!e.isEmpty()) {
@@ -216,25 +218,9 @@ public class Compiler {
         }
 
         //
-        // Next, compile the CSTs to ASTs, and from there to classes.
+        // Next, compile the ASTs to classes.
 
-        CompileUnit unit = new CompileUnit(getClassLoader(), config);
         ArrayList classes = new ArrayList();
-
-        for (int i = 0; i < csts.length; ++i) {
-            try {
-                ModuleNode ast = buildAST(csts[i], descriptors[i]);
-                unit.addModule(ast);
-            }
-            catch (ExceptionCollector e) {
-                if (!e.isEmpty()) {
-                    failures.add(descriptors[i], e);
-                }
-            }
-            catch( Exception e ) {
-                throw new CompilerBugException( descriptors[i], "AST creation", e );
-            }
-        }
 
         for (Iterator iter = unit.getModules().iterator(); iter.hasNext();) {
             ModuleNode module = (ModuleNode) iter.next();
@@ -267,14 +253,16 @@ public class Compiler {
         return (GroovyClass[]) classes.toArray(GroovyClass.EMPTY_ARRAY);
     }
 
-    /**
-     *  Parses a <code>CharStream</code> source, producing a Concrete
-     *  Syntax Tree (CST).  Lexing and parsing errors will be collected in 
-     *  an <code>ExceptionCollector</code>.
-     */
 
-    protected CSTNode parseSource(CharStream charStream, String descriptor) throws ExceptionCollector, Exception {
-        CSTNode tree = null;
+
+   /**
+    *  Parses a <code>CharStream</code> source, producing a Concrete
+    *  Syntax Tree (CST).  Lexing and parsing errors will be collected in 
+    *  an <code>ExceptionCollector</code>.
+    */
+
+    protected ModuleNode parse( CharStream charStream, String descriptor ) throws ExceptionCollector, Exception {
+        ModuleNode ast = null;
 
         if (verbose) {
             System.out.println("Parsing: " + descriptor);
@@ -283,11 +271,10 @@ public class Compiler {
         ExceptionCollector collector = new ExceptionCollector(maximumParseFailuresPerFile);
 
         try {
-            Lexer lexer = new Lexer(charStream);
-            Parser parser = new Parser(new LexerTokenStream(lexer), collector);
+            Parser parser = Parser.create( charStream, collector );
 
             collector.throwUnlessEmpty();
-            tree = parser.compilationUnit();
+            ast = parser.parse( getClassLoader(), descriptor );
         }
         catch (ExceptionCollector e) {
             collector.merge(e, false);
@@ -298,28 +285,14 @@ public class Compiler {
 
         collector.throwUnlessEmpty();
 
-        return tree;
+        return ast;
     }
 
-    /**
-     *  Creates an Abstract Syntax Tree (AST) from the CST.
-     */
 
-    protected ModuleNode buildAST(CSTNode cst, String descriptor) throws Exception {
-        //        ExceptionCollector collector = new ExceptionCollector();
 
-        ASTBuilder astBuilder = new ASTBuilder(getClassLoader()); // , collector );
-
-        ModuleNode module = astBuilder.build(cst);
-        module.setDescription(descriptor);
-
-        //        collector.throwUnlessEmpty();
-        return module;
-    }
-
-    /**
-     *  Generates a class from an AST.
-     */
+   /**
+    *  Generates a class from an AST.
+    */
 
     protected ArrayList generateClasses(GeneratorContext context, ClassNode classNode, String descriptor)
         throws Exception {
