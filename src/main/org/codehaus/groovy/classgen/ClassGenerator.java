@@ -409,7 +409,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitAssertStatement(AssertStatement statement) {
         onLineNumber(statement);
-        
+
         //System.out.println("Assert: " + statement.getLineNumber() + " for: " + statement.getText());
 
         BooleanExpression booleanExpression = statement.getBooleanExpression();
@@ -935,7 +935,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // lets check that the type exists
         String type = checkValidType(call.getType(), call, "in constructor call");
 
-        cv.visitLdcInsn(type);
+        visitClassExpression(new ClassExpression(type));
+        //cv.visitLdcInsn(type);
+
         arguments.visit(this);
 
         invokeConstructorMethod.call(cv);
@@ -1152,7 +1154,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitClassExpression(ClassExpression expression) {
         String type = expression.getText();
-        final String staticFieldName = "class$" + type.replace('.', '$');
+
+        final String staticFieldName =
+            (type.equals(classNode.getName())) ? "class$0" : "class$" + type.replace('.', '$');
 
         syntheticStaticFields.add(staticFieldName);
 
@@ -1602,6 +1606,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String checkValidType(String type, ASTNode node, String message) {
         String original = type;
         if (type != null) {
+            if (classNode.getNameWithoutPackage().equals(type)) {
+                return classNode.getName();
+            }
             for (int i = 0; i < 2; i++) {
                 if (context.getCompileUnit().getClass(type) != null) {
                     return type;

@@ -17,11 +17,7 @@ class Console {
     property scriptList
 
 	static void main(args) {
-        /** @todo bug in new 
         console = new Console()
-         */
-        console = Console.newInstance()
-        
         console.run()
 	}
 
@@ -29,7 +25,7 @@ class Console {
 	    scriptList = []
         swing = new SwingBuilder()
 
-        frame = swing.frame(title:'GroovyConsole'/** @todo, location:[100,100],  size:[800,400]*/) {
+        frame = swing.frame(title:'GroovyConsole') { // location:[100,100],  size:[800,400]) {
             menuBar {
                 menu(text:'File') {
                     menuItem() {

@@ -3,7 +3,7 @@
   <goal name="default" prereqs="clean, groovy:make-install"/>
   
   <goal name="run" prereqs="test:compile"
-		description="Runs the given Groovy script by compiling it first to bytecode">
+		description="Runs the given compiled Groovy class">
 
 	<j:if test="${empty(name)}">
       <j:set var="name" value="HelloWorld"/>
@@ -12,6 +12,21 @@
 	<echo>Running class $$name = ${name}</echo>
     <java classname="${name}" fork="yes">
       <classpath refid="test.classpath"/>
+      <arg value="${args}"/>
+    </java>
+  </goal>
+
+  <goal name="script" prereqs="test:compile"
+		description="Runs the given Groovy script file">
+
+	<j:if test="${empty(name)}">
+      <j:set var="name" value="src/test/groovy/script/HelloWorld.groovy"/>
+	</j:if>
+	
+	<echo>Running class $$name = ${name}</echo>
+    <java classname="groovy.lang.GroovyShell" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${name}"/>
       <arg value="${args}"/>
     </java>
   </goal>

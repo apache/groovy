@@ -372,6 +372,14 @@ public class ClassNode extends MetadataNode implements Constants {
         return null;
     }
 
+    public String getNameWithoutPackage() {
+        int idx = name.lastIndexOf('.');
+        if (idx > 0) {
+            return name.substring(idx + 1);
+        }
+        return name;
+    }
+
     public void visitContents(GroovyClassVisitor visitor) {
         // now lets visit the contents of the class
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
