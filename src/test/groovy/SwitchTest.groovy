@@ -4,15 +4,15 @@ class SwitchTest extends GroovyTestCase {
         x = "foo"
         
         switch (x) {
-         
             case "bar":
                 println("bar")
-                
             case "foo":
                 println("foo")
-                
+                //break;
+            case "xyz":
+	            println("xyz")
             default:
-                println("Default")
+    	        println("Default")
         }
     }
 }
