@@ -243,6 +243,28 @@ public class Sql {
     }
 
     /**
+     * Executes the given SQL update
+     * 
+     * @return the number of rows updated
+     */
+    public int executeUpdate(String sql) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            log.fine(sql);
+            statement = connection.createStatement();
+            return statement.executeUpdate(sql);
+        }
+        catch (SQLException e) {
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
      * Executes the given piece of SQL with parameters
      */
     public boolean execute(String sql, List params) throws SQLException {
@@ -264,12 +286,46 @@ public class Sql {
     }
 
     /**
+     * Executes the given SQL update with parameters
+     * 
+     * @return the number of rows updated
+     */
+    public int executeUpdate(String sql, List params) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            log.fine(sql);
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
+            return statement.executeUpdate();
+        }
+        catch (SQLException e) {
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
      * Executes the given SQL with embedded expressions inside
      */
     public boolean execute(GString gstring) throws SQLException {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
         return execute(sql, params);
+    }
+
+    /**
+     * Executes the given SQL update with embedded expressions inside
+     * 
+     * @return the number of rows updated
+     */
+    public int executeUpdate(GString gstring) throws SQLException {
+        String sql = asSql(gstring);
+        List params = getParameters(gstring);
+        return executeUpdate(sql, params);
     }
 
     /**
