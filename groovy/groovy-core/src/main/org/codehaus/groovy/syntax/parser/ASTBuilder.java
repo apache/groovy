@@ -691,10 +691,11 @@ public class ASTBuilder
 
         for ( int i = 0 ; i < children.length ; ++i )
         {
-            if ( matches( children[ 0 ],
+            if ( matches( children[ i ],
                           Token.SINGLE_QUOTE_STRING ) )
             {
                 ConstantExpression constantExpression = constantExpression( children[ i ] );
+
                 if (constantExpression != null) 
                 {    
                     expr.addString( constantExpression );
