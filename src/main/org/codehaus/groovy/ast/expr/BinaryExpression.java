@@ -180,7 +180,15 @@ public class BinaryExpression extends Expression {
                     return chooseWiderNumberType(leftExpression.getType(), rightExpression.getType());
                 }
                 return null;
-            case Types.LEFT_SHIFT :
+
+            case Types.POWER :
+            case Types.POWER_EQUAL :
+                if (isNumber(leftExpression.getType()) && isNumber(rightExpression.getType())) {
+                    return chooseWiderNumberType(leftExpression.getType(), rightExpression.getType());
+                }
+                return null;
+
+	    case Types.LEFT_SHIFT :
                 if (isNumber(leftExpression.getType()) && isNumber(rightExpression.getType())) {
                     return leftExpression.getTypeClass();
                 }

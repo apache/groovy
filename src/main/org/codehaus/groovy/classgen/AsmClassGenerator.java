@@ -1490,12 +1490,21 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateBinaryExpressionWithAsignment("mod", expression);
                 break;
 
+            case Types.POWER :
+                evaluateBinaryExpression("power", expression);
+                break;
+
+            case Types.POWER_EQUAL :
+                evaluateBinaryExpressionWithAsignment("power", expression);
+                break;
+
             case Types.LEFT_SHIFT :
                 evaluateBinaryExpression("leftShift", expression);
                 break;
 
             case Types.LEFT_SHIFT_EQUAL :
                 evaluateBinaryExpressionWithAsignment("leftShift", expression);
+                break;
 
             case Types.RIGHT_SHIFT :
                 evaluateBinaryExpression("rightShift", expression);
@@ -1503,6 +1512,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             case Types.RIGHT_SHIFT_EQUAL :
                 evaluateBinaryExpressionWithAsignment("rightShift", expression);
+                break;
 
             case Types.RIGHT_SHIFT_UNSIGNED :
                 evaluateBinaryExpression("rightShiftUnsigned", expression);
