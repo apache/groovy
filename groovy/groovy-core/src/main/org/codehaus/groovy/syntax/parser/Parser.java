@@ -992,14 +992,8 @@ public class Parser {
         }
         else if (lt_bare() == Token.DOT_DOT_DOT) {
             expr = rootNode(Token.DOT_DOT_DOT, expr);
-            Token t = expr.getToken();
-            int line = t.getStartLine();
-            int column = t.getStartColumn();
             optionalNewlines();
-            CSTNode expr1 = new CSTNode(Token.minus(line, column));
-            expr1.addChild(additiveExpression());
-            expr1.addChild(new CSTNode(Token.integerNumber(line, column, "1")));
-            expr.addChild(expr1);
+            expr.addChild(additiveExpression());
         }
         return expr;
     }

@@ -52,7 +52,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
 /**
- * Represents a list of Integer objects from a specified int up to but not including
+ * Represents a list of Integer objects from a specified int up to and including
  * a given and to.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -151,7 +151,7 @@ public class IntRange extends AbstractList implements Range {
         if (value instanceof Integer) {
             Integer integer = (Integer) value;
             int i = integer.intValue();
-            return i >= from && i < to;
+            return i >= from && i <= to;
         }
         return false;
     }

@@ -52,7 +52,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
 /**
- * Represents a list of objects from a value to a value using
+ * Represents an inclusive list of objects from a value to a value using
  * comparators
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -164,7 +164,7 @@ public class ObjectRange extends AbstractList implements Range {
         if (result == 0) {
             return true;
         }
-        return result < 0 && to.compareTo(value) > 0;
+        return result < 0 && to.compareTo(value) >= 0;
     }
 
     public void step(int step, Closure closure) {

@@ -681,11 +681,11 @@ public class ASTBuilder {
                 }
             case (Token.DOT_DOT) :
                 {
-                    return rangeExpression(expressionRoot);
+                    return rangeExpression(expressionRoot, true);
                 }
             case (Token.DOT_DOT_DOT) :
                 {
-                    return rangeExpression(expressionRoot);
+                    return rangeExpression(expressionRoot, false);
                 }
             case (Token.SINGLE_QUOTE_STRING) :
             case (Token.INTEGER_NUMBER) :
@@ -976,8 +976,12 @@ public class ASTBuilder {
         return mapExpression;
     }
 
-    protected RangeExpression rangeExpression(CSTNode expressionRoot) throws ParserException {
-        return new RangeExpression(expression(expressionRoot.getChild(0)), expression(expressionRoot.getChild(1)));
+    protected RangeExpression rangeExpression(CSTNode expressionRoot, boolean inclusive) throws ParserException {
+        Expression toExp = expression(expressionRoot.getChild(1));
+        if (! inclusive) {
+            toExp = new MethodCallExpression(toExp, "decrement", ConstantExpression.EMPTY_ARRAY);
+        }
+        return new RangeExpression(expression(expressionRoot.getChild(0)), toExp);
     }
 
     protected Expression propertyExpression(CSTNode expressionRoot) throws ParserException {

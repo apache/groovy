@@ -1,6 +1,4 @@
 class RangeTest extends GroovyTestCase {
-
-	//property x
 	
 	void testRange() {
 	    x = 0
@@ -72,6 +70,29 @@ class RangeTest extends GroovyTestCase {
 	    }
 
 	    assert x == 18
+	}
+	
+	void testRangeContains() {
+	    range = 0..10
+	    assert range.contains(0)
+	    assert range.contains(10)
+	    
+	    range = 0...5
+	    assert range.contains(0)
+	    assert ! range.contains(5)
+	}
+	
+	void testObjectRangeContains() {
+	    range = 'a'..'x'
+	    assert range.contains('a')
+	    assert range.contains('x')
+	    assert range.contains('z') == false
+	    
+	    range = 'b'...'f'
+	    assert range.contains('b')
+	    assert ! range.contains('g')
+	    assert ! range.contains('f')
+	    assert ! range.contains('a')
 	}
 	
 	void testRangeToString() {

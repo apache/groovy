@@ -31,7 +31,7 @@ class Foo implements Serializable {
  	    return blah
  	}
 	
- 	/*
+ 	/* @todo bug
 	String toString() {
 	    return super.toString() + " name: " + getName() + " location: " + getLocation()
 		// return super.toString() + " name: ${name} location: ${location}"
