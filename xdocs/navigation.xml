@@ -40,6 +40,7 @@
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>
       <item name="BSF Integration"     href="/bsf.html"/>
+      <item name="IntelliJ Plugin"     href="/intellij.html"/>
       <item name="Eclipse Plugin"      href="/eclipse.html"/>
     </menu>
 
@@ -69,6 +70,13 @@
 
     <menu name="Articles">
       <item name="Index"                href="/articles.html"/>
+    </menu>
+    
+    <menu name="Modules">
+      <item name="GroovySWT"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/groovy-swt"/>
+      <item name="GSP"  		  	  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/pages"/>
+      <item name="Process"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/process"/>
+      <item name="XML-RPC"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/modules/xmlrpc"/>
     </menu>
     
     <menu name="Examples">
