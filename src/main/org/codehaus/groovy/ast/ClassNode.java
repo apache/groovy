@@ -123,9 +123,9 @@ public class ClassNode extends AnnotatedNode implements Constants {
         this.mixins = mixins;
 
         //br for better JVM comformance
-        if ((modifiers & ACC_SUPER) == 0) {
+        /*if ((modifiers & ACC_SUPER) == 0) {
             this.modifiers += ACC_SUPER;
-        }
+        }*/
     }
 
     public String getSuperClass() {
