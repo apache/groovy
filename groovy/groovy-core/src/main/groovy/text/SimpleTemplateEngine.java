@@ -89,13 +89,14 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * 
          * @see groovy.lang.Writable#writeTo(java.io.Writer)
          */
-        public void writeTo(Writer writer) throws IOException {
+        public Writer writeTo(Writer writer) throws IOException {
             if (binding == null) binding = new Binding();
     		Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
     		PrintWriter pw = new PrintWriter(writer);
     		scriptObject.setProperty("out", pw);
     		scriptObject.run();
     		pw.flush();
+            return writer;
         }
         
         /**

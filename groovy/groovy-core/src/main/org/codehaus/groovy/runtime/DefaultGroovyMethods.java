@@ -1577,10 +1577,31 @@ public class DefaultGroovyMethods {
      * @return a Writer
      */
     public static Writer leftShift(OutputStream self, Object value) throws IOException {
-        OutputStreamWriter writer = new OutputStreamWriter(self);
+        OutputStreamWriter writer = new FlushingStreamWriter(self);
         leftShift(writer, value);
-        writer.flush();
         return writer;
+    }
+    
+    protected static class FlushingStreamWriter extends OutputStreamWriter {
+
+        public FlushingStreamWriter(OutputStream out) {
+            super(out);
+        }
+        
+        public void write(char[] cbuf, int off, int len) throws IOException {
+            super.write(cbuf, off, len);
+            flush();
+        }
+        
+        public void write(int c) throws IOException {
+            super.write(c);
+            flush();
+        }
+        
+        public void write(String str, int off, int len) throws IOException {
+            super.write(str, off, len);
+            flush();
+        }
     }
 
     private static boolean sameType(Collection[] cols) {
@@ -3368,10 +3389,7 @@ public class DefaultGroovyMethods {
             this.encoding = encoding;
         }
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Writable#writeTo(java.io.Writer)
-         */
-        public void writeTo(Writer out) throws IOException {
+        public Writer writeTo(Writer out) throws IOException {
             final Reader reader =
                 (this.encoding == null)
                     ? DefaultGroovyMethods.newReader(this.delegate)
@@ -3388,151 +3406,89 @@ public class DefaultGroovyMethods {
             finally {
                 reader.close();
             }
+            return out;
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#canRead()
-         */
         public boolean canRead() {
             return delegate.canRead();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#canWrite()
-         */
         public boolean canWrite() {
             return delegate.canWrite();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#compareTo(java.io.File)
-         */
         public int compareTo(File arg0) {
             return delegate.compareTo(arg0);
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#compareTo(java.lang.Object)
-         */
         public int compareTo(Object arg0) {
             return delegate.compareTo(arg0);
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#createNewFile()
-         */
         public boolean createNewFile() throws IOException {
             return delegate.createNewFile();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#delete()
-         */
         public boolean delete() {
             return delegate.delete();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#deleteOnExit()
-         */
         public void deleteOnExit() {
             delegate.deleteOnExit();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#equals(java.lang.Object)
-         */
         public boolean equals(Object arg0) {
             return delegate.equals(arg0);
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#exists()
-         */
         public boolean exists() {
             return delegate.exists();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getAbsoluteFile()
-         */
         public File getAbsoluteFile() {
             return delegate.getAbsoluteFile();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getAbsolutePath()
-         */
         public String getAbsolutePath() {
             return delegate.getAbsolutePath();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getCanonicalFile()
-         */
         public File getCanonicalFile() throws IOException {
             return delegate.getCanonicalFile();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getCanonicalPath()
-         */
         public String getCanonicalPath() throws IOException {
             return delegate.getCanonicalPath();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getName()
-         */
         public String getName() {
             return delegate.getName();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getParent()
-         */
         public String getParent() {
             return delegate.getParent();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getParentFile()
-         */
         public File getParentFile() {
             return delegate.getParentFile();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#getPath()
-         */
         public String getPath() {
             return delegate.getPath();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#hashCode()
-         */
         public int hashCode() {
             return delegate.hashCode();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#isAbsolute()
-         */
         public boolean isAbsolute() {
             return delegate.isAbsolute();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#isDirectory()
-         */
         public boolean isDirectory() {
             return delegate.isDirectory();
         }
 
-        /* (non-Javadoc)
-         * @see java.io.File#isFile()
-         */
         public boolean isFile() {
             return delegate.isFile();
         }
