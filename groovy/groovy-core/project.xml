@@ -153,6 +153,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Travis Kay</name>
+      <id>travis</id>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
