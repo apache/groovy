@@ -634,7 +634,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
-        cv.visitVarInsn(ALOAD, 0);
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         cv.visitVarInsn(ALOAD, 0);

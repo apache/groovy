@@ -3,6 +3,8 @@ Core Groovy Tasks
 
 * remove log4j dependency
 
+* test the various closure methods - map, each, collect etc
+
 * test the use of closures for methods
 	foo = System.out.println;
 	foo.call("hello");

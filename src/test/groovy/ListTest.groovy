@@ -73,9 +73,7 @@ class ListTest extends GroovyTestCase {
         block = {i| System.out.println(i) }
         l.each(block)
         
-        /* @todo
-        l.each( {i| System.out.println(i) } );
-        */
+        l.each( {i| System.out.println(i) } )
         
         /* @todo parser
         l.each {i| System.out.println(i) }

@@ -10,46 +10,52 @@ import org.codehaus.groovy.GroovyTestCase;
  */
 class ClosureTest extends GroovyTestCase {
 
-	property callCount;
-
-    void testNothing() { } 
+	property count;
 
     void testSimpleBlockCall() {
-        callCount = 0;
+        count = 0;
 
-        block = {owner|owner.incrementCallCount(); }
+        block = {owner| owner.incrementCallCount() }
         
         assertClosure(block);
-        
-        block.call(this);
-        
-        assert callCount := 1;
+        assert count := 1
+
+        assertClosure({owner| owner.incrementCallCount() })
+        assert count := 2
     }
 
-/** @todo parser        
+    void testBlockAsParameter() {
+        count = 0
+        
+        callBlock(5, { owner | owner.incrementCallCount() })
+        assert count := 5
 
-    testBlockAsParameter() {
-        callCount = 0;
-        
-        callBlock(5, { | owner | owner.incrementCallCount(); });
-        
-        assert callCount == 5;
+        callBlock2(5, { owner | owner.incrementCallCount() })
+        assert count := 10
     }
-*/
-
-
+  
 	incrementCallCount() {
-	    System.out.println("invoked increment method!");
-	    callCount = callCount + 1;
+	    //System.out.println("invoked increment method!")
+	    count = count + 1
 	}
 	
 	assertClosure(Closure block) {
 	    assert block != null
+        block.call(this)
 	}
 	
-	protected callBlock(count, block) {
-	    for i in range(0, count) {
-			block.call(this);	        
+	/** @todo
+	  protected 
+	  */
+	callBlock(Integer num, Closure block) {
+	    for i in 0..num {
+			block.call(this)
 	    }
 	}
+
+    callBlock2(num, block) {
+        for i in 0..num {
+            block.call(this)
+        }
+    }
 }
