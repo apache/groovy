@@ -70,6 +70,8 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("attributes", 0, attribute.attributes().size());
         assertEquals("value", 0, attribute.children().size());
         assertEquals("text", "", attribute.text());
+
+        dump(attribute);
     }
 
     public void testAttributeWithAttributes() {
@@ -81,6 +83,8 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 0, attribute.children().size());
         assertEquals("text", "", attribute.text());
+
+        dump(attribute);
     }
 
     public void testAttributeWithText() {
@@ -89,6 +93,8 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("attributes", 0, attribute.attributes().size());
         assertEquals("value", 1, attribute.children().size());
         assertEquals("text", "the text", attribute.text());
+
+        dump(attribute);
     }
 
     public void testAttributeWithAttributesAndChildren() {
@@ -105,6 +111,8 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 3, attribute.children().size());
         assertEquals("text", "someText", attribute.text());
+
+        dump(attribute);
     }
 
     public void testAttributeWithAttributesAndChildrenWithMixedText() {
@@ -133,6 +141,13 @@ public class NodeTest extends GroovyTestCase {
         
         assertEquals("Node1", node1, list.get(0));
         assertEquals("Node2", node2, list.get(1));
+
+        dump(attribute);
+    }
+
+    protected void dump(Node node) {
+        NodePrinter printer = new NodePrinter();
+        printer.print(node);
     }
 
 }

@@ -46,14 +46,13 @@
 package groovy.util;
 
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * A helper class for creating nested trees of data
@@ -140,6 +139,7 @@ public class NodePrinter {
         }
     }
 
+
     protected void printAttributes(Map attributes) {
         out.print("(");
         boolean first = true;
@@ -153,8 +153,14 @@ public class NodePrinter {
             }
             out.print(entry.getKey().toString());
             out.print(":");
-            out.print(InvokerHelper.toString(entry.getValue()));
+            if (entry.getValue() instanceof String) {
+                out.print("'" + entry.getValue() + "'");
+            }
+            else {
+                out.print(InvokerHelper.toString(entry.getValue()));
+            }
         }
         out.print(")");
     }
+
 }
