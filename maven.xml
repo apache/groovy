@@ -252,6 +252,14 @@
     <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
   </goal>
   
+  
+  <goal name="asm:verify" prereqs="test:compile"
+    description="verifies the bytecode of every class">
+    <taskdef name="verifyclasses" classname="org.codehaus.groovy.ant.VerifyClass" classpathref="test.classpath"/> 
+    
+    <verifyclasses dir="${basedir}/target/classes"/>
+    <verifyclasses dir="${basedir}/target/test-classes"/>
+  </goal>
 
   <goal name="asm:dump" prereqs="test:compile"
     description="Dumps the ASM instructions to generate the given class using the name property">
@@ -402,6 +410,62 @@
   </goal>
 -->
 
+
+  <goal name="groovy:fails"
+        description="Test the application with any former failing tests"
+        prereqs="test:compile"
+  >
+    <path id="test.classpath">
+      <pathelement path="${maven.build.dest}"/>
+	  <pathelement path="target/classes"/>
+	  <pathelement path="target/test-fails"/>
+	  <path refid="maven.dependency.classpath"/>
+    </path> 
+
+      <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" /> 
+	
+      <delete dir="${basedir}/target/test-fails-reports" />
+      <delete dir="${basedir}/target/test-fails" />
+
+      <mkdir dir="${basedir}/target/test-fails"/>
+      <mkdir dir="${basedir}/target/test-fails-reports"/>
+
+      <copy todir="${basedir}/target/test-fails" >
+        <fileset dir="${basedir}/src/test-fails">
+          <include name="**/*.groovy"/>  
+        </fileset> 
+      </copy>
+
+
+      <javac srcdir="${basedir}/src/test-fails"
+             destdir="${basedir}/target/test-fails"
+             classpathref="test.classpath" >
+        <include name="**/*.java" />   
+      </javac>
+      
+      <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
+        <classpath refid="test.classpath"/>
+        <arg value="${basedir}/target/test-fails"/>
+        <arg value="${basedir}/target/test-fails"/>
+      </java>
+      
+    <junit printsummary="yes">
+      <classpath>
+          <path refid="maven.dependency.classpath"/>
+          <pathelement location="${basedir}/target/classes"/>
+          <pathelement location="${basedir}/target/test-fails"/>
+          <pathelement path="${plugin.getDependencyPath('junit')}"/>
+      </classpath>
+      <formatter type="xml"/>
+      <batchtest todir="${basedir}/target/test-fails-reports">
+        <fileset dir="${basedir}/target/test-fails">
+          <exclude name="**/*AbstractTestCase.*"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </goal>
+
+
   <goal name="groovy:test"
         description="Test the application with any Java or Groovy unit tests"
         prereqs="test:compile">
@@ -453,7 +517,6 @@
             <j:forEach var="pat" items="${pom.build.unitTest.excludes}">
               <exclude name="${pat}"/>
             </j:forEach>
-              <!-- KEEP ALL ABSTRACT TESTS FROM BEING RUN! -->
               <exclude name="**/*AbstractTestCase.*"/>
           </fileset>
         </batchtest>
