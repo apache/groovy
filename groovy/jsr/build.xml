@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<project name="jsr" default="default">
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   directories                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="publish.dir" value="/home/projects/groovy/public_html/jsr"/>
+  <property name="spec.wiki.dir" value="spec/wiki"/>
+
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                  targets                          -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <target name="default" 
+          depends="publish" 
+          description="default: publish distributables"
+  />
+  
+  <target name="clean" description="remove all built files">
+    <ant dir="spec" target="clean"/> 
+    <ant dir="ideas/parsers/antlr" target="clean"/>
+  </target>
+
+  <target name="dist" description="create distributables">
+    <ant dir="ideas/parsers/antlr" target="standalone" inheritAll="false"/>
+    <ant dir="spec" target="render" inheritAll="false"/>
+  </target>
+
+  <target name="publish" depends="dist" description="publish distributables">
+    <copy todir="${publish.dir}/spec">
+      <fileset dir="${spec.wiki.dir}"/>
+    </copy>
+  </target>
+
+</project>
