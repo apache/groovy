@@ -629,40 +629,65 @@ public class ClassNode extends MetadataNode implements Constants {
             if (getName().equals(type) || getNameWithoutPackage().equals(type)) {
                 return getName();
             }
-            answer = tryResolveClassFromCompileUnit(type);
-            if (answer == null) {
-                // lets try class in same package
-                String packageName = getPackageName();
-                if (packageName != null && packageName.length() > 0) {
-                    answer = tryResolveClassFromCompileUnit(packageName + "." + type);
+			// try to resolve Class names
+            answer = tryResolveClassAndInnerClass(type);
+			if (answer == null) {
+				// try to resolve a public static inner class' name
+                if (type.indexOf('.') > -1) {
+                    int lastPoint = type.lastIndexOf('.');
+                    String replacedPointType = new StringBuffer()
+                        .append(type.substring(0, lastPoint)).append("$")
+                        .append(type.substring(lastPoint + 1)).toString();
+                    answer = tryResolveClassAndInnerClass(replacedPointType);
                 }
-            }
-            if (answer == null) {
-                // lets try use the packages imported in the module
-                if (module != null) {
-                    //System.out.println("Looking up inside the imported packages: " + module.getImportPackages());
-                    
-                    for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext(); ) {
-                        String packageName = (String) iter.next();
-                        answer = tryResolveClassFromCompileUnit(packageName + type);
-                        if (answer != null) {
-                            return answer;
-                        }
-                    }
-                }
-            }
-            if (answer == null) {
-                for (int i = 0, size = defaultImports.length; i < size; i++ ) {
-                    String packagePrefix = defaultImports[i];
-                    answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
-                    if (answer != null) {
-                        return answer;
-                    }
-                }
-            }
+			}
         }
         return answer;
     }
+
+	private String tryResolveClassAndInnerClass(String type) {
+		String answer = tryResolveClassFromCompileUnit(type);
+		if (answer == null)
+		{
+			// lets try class in same package
+			String packageName = getPackageName();
+			if (packageName != null && packageName.length() > 0)
+			{
+				answer = tryResolveClassFromCompileUnit(packageName + "." + type);
+			}
+		}
+		if (answer == null)
+		{
+			// lets try use the packages imported in the module
+			if (module != null)
+			{
+				//System.out.println("Looking up inside the imported packages: " + module.getImportPackages());
+
+				for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext();)
+				{
+					String packageName = (String) iter.next();
+					answer = tryResolveClassFromCompileUnit(packageName + type);
+					if (answer != null)
+					{
+						return answer;
+					}
+				}
+			}
+		}
+		if (answer == null)
+		{
+			for (int i = 0, size = defaultImports.length; i < size; i++)
+			{
+				String packagePrefix = defaultImports[i];
+				answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
+				if (answer != null)
+				{
+					return answer;
+				}
+			}
+		}
+		return answer;
+	}
 
     /**
      * @param type
