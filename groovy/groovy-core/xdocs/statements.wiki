@@ -123,6 +123,7 @@ assert value == 6
 {code}
 
 1.1 Important Note
+
 Note that when using the neater syntax for specifying closures either without parenthesis or
 by specifying the closure after the parenthesis, the closure must start on the same line.
 i.e. the { symbol must be on the same line as the method call statement. Otherwise the parser
@@ -163,6 +164,8 @@ assert bean.location == "Vegas"
 {code}
 
 The above uses a special bean called Expando which allows properties to be added dyanmically at runtime.
+An Expando is a Map which behaves as a dynamic bean: adding new key/value pairs add the equivalent
+getter and setter methods, as if they were defined in a real bean.
 
 
 1.1 Safe navigation

@@ -41,7 +41,7 @@ As the above is interpreted as the use of the 'each' property and then the creat
 
 1.1 Things to be aware of
 
-* semicolon is optional. Use then if you like (though you must use them to put several statements on one line).
+* semicolon is optional. Use them if you like (though you must use them to put several statements on one line).
 * the return keyword is optional
 * you can use the __this__ keyword inside static methods (which refers to this class)
 * things are public by default. There's no need to use the public modifier on classes or methods though you can if you like

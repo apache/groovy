@@ -10,7 +10,7 @@ println 'he said "cheese!" again'
 {code}
 
 The groovy parser supports the notation \uab12 (i.e. a leading backslash and precisely four hex digits after the 'u' ).
-This notation can be used in strings oranywhere in the program like the Java parser does.
+This notation can be used in strings or anywhere in the program like the Java parser does.
 
 1.1 Multi-line strings
 
@@ -42,12 +42,13 @@ println(text)
 
 1.1 GStrings
 
-Strings can contain arbitrary expressions inside them as shown above using the 
-~~${expression}~~ syntax in a similar way to JSP EL, Velocity and Jexl. 
-Any valid Groovy expression can be enclosed in the ${...} including method calls etc
+In Groovy, Strings are always GStrings, ie. Strings can contain arbitrary expressions inside them as shown
+above using the ~~${expression}~~ syntax in a similar way to JSP EL, Velocity and Jexl.
+Any valid Groovy expression can be enclosed in the ${...} including method calls etc.
+GStrings are defined the same way as normal Strings would be created in Java.
 
 What actually happens is whenever a string expression contains a ${...} expression then
-rather than a normal java.langString instance, a
+rather than a normal java.lang.String instance, a
 {link:GString|http://groovy.codehaus.org/apidocs/groovy/lang/GString.html} object is created
 which contains the text and values used inside the String. GString uses lazy evaluation so its not
 until the toString() method is invoked that the GString is evaluated. 
