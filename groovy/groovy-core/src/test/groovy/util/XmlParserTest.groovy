@@ -27,7 +27,7 @@ EOF
         characters = node.character
         
         for (c in characters) {
-            println(c.attribute('name'))
+            println c['@name']
         }
         
         assert characters.size() == 2
@@ -35,13 +35,13 @@ EOF
         assert node.character.likes.size() == 2 : "Likes ${node.character.likes}"
         
         // lets find Gromit
-        gromit = node.character.find { it.attribute('id') == '2' }
+        gromit = node.character.find { it['@id'] == '2' }
         assert gromit != null : "Should have found Gromit!"
-        assert gromit.attribute('name') == "Gromit"
+        assert gromit['@name'] == "Gromit"
         
         
         // lets find what Wallace likes in 1 query
-        answer = node.character.find { it.attribute('id') == '1' }.likes.get(0).text()
+        answer = node.character.find { it['@id'] == '1' }.likes.get(0).text()
         assert answer == "cheese"
     }
     
