@@ -88,6 +88,33 @@
         <role>Founder</role>
       </roles>
     </developer>
+    <developer>
+      <name>Joe Walnes</name>
+      <id>joe</id>
+      <email></email>
+      <organization>ThoughtWorks</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Chris Stevenson</name>
+      <id>skizz</id>
+      <email></email>
+      <organization>ThoughtWorks</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Jamie McCrindle</name>
+      <id>jamiemc</id>
+      <email></email>
+      <organization>Three</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <dependencies>
