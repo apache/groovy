@@ -360,41 +360,46 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param classpath
      */
     private void expandClassPath(List pathList, String base, String classpath) {
-        String[] paths = classpath.split(File.pathSeparator);
-        for (int i = 0; i < paths.length; i++) {
-            File path = null;
 
-            if ("".equals(base)) {
-                path = new File(paths[i]);
-            } else {
-                path = new File(base, paths[i]);
-            }
+        // checking against null prevents an NPE when recursevely expanding the classpath
+        // in case the classpath is malformed
+        if (classpath != null) {
 
-            if (path.exists()) {
-                if (!path.isDirectory()) {
-                    try {
-                        JarFile jar = new JarFile(path);
-                        pathList.add(paths[i]);
-                        // Get the manifest classpath entry from the jar
-                        // SPG This code is currently unreliable - the Class-Path attribute
-                        // returns entries which are delimited in unpredictable ways.
-                        // See for example openejb-loader jar.  Commenting until we
-                        // decide how we want to handle these cases (if at all).
-                        /*
-                        Manifest manifest = jar.getManifest();
-                        Attributes classPathAttributes = manifest.getMainAttributes();
-                        String manifestClassPath = classPathAttributes.getValue("Class-Path");
+            // Sun's convention for the class-path attribute is to seperate each entry with spaces
+            // but some libraries don't respect that convention and add commas, colons, semi-colons
+            String[] paths = classpath.split("[\\ ,:;]");
 
-                        if (manifestClassPath != null)
-                            expandClassPath(pathList, paths[i], manifestClassPath);
-                        */
+            for (int i = 0; i < paths.length; i++) {
+                if (paths.length > 0) {
+                    File path = null;
 
-                    } catch (IOException e) {
-                        // Bad jar, ignore
-                        continue;
+                    if ("".equals(base)) {
+                        path = new File(paths[i]);
+                    } else {
+                        path = new File(base, paths[i]);
                     }
-                } else {
-                    pathList.add(paths[i]);
+
+                    if (path.exists()) {
+                        if (!path.isDirectory()) {
+                            try {
+                                JarFile jar = new JarFile(path);
+                                pathList.add(paths[i]);
+
+                                Manifest manifest = jar.getManifest();
+                                Attributes classPathAttributes = manifest.getMainAttributes();
+                                String manifestClassPath = classPathAttributes.getValue("Class-Path");
+
+                                if (manifestClassPath != null)
+                                    expandClassPath(pathList, paths[i], manifestClassPath);
+
+                            } catch (IOException e) {
+                                // Bad jar, ignore
+                                continue;
+                            }
+                        } else {
+                            pathList.add(paths[i]);
+                        }
+                    }
                 }
             }
         }
