@@ -109,7 +109,7 @@ public class AntBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
     }
 
-    protected void nodeCompleted(Object node) {
+    protected void nodeCompleted(Object parent, Object node) {
         if (node instanceof Task) {
             Task task = (Task) node;
             task.perform();

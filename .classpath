@@ -13,5 +13,6 @@
     <classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
     <classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.5.2.jar"/>
     <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.3.4.jar"/>
+    <classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-SNAPSHOT.jar"/>
     <classpathentry kind="output" path="bin"/>
 </classpath>

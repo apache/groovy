@@ -46,7 +46,9 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.GString;
 import groovy.lang.Range;
+import groovy.util.ClosureComparator;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -57,6 +59,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -67,11 +71,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
-
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -82,6 +86,47 @@ import java.util.SortedSet;
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
+
+    private static final Integer ONE = new Integer(1);
+
+    /**
+     * Generates a detailed inspection string of an object showing its
+     * class, hashCode and fields 
+     */
+    public static String inspect(Object self) {
+        if (self == null) {
+            return "null";
+        }
+        StringBuffer buffer = new StringBuffer("<");
+        Class klass = self.getClass();
+        buffer.append(klass.getName());
+        buffer.append("@");
+        buffer.append(Integer.toHexString(self.hashCode()));
+        while (true) {
+            Field[] fields = klass.getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                Field field = fields[i];
+                if ((field.getModifiers() & Modifier.STATIC) == 0) {
+                    field.setAccessible(true);
+                    buffer.append(" ");
+                    buffer.append(field.getName());
+                    buffer.append("=");
+                    try {
+                        buffer.append(InvokerHelper.toString(field.get(self)));
+                    }
+                    catch (Exception e) {
+                        buffer.append(e);
+                    }
+                }
+            }
+            klass = klass.getSuperclass();
+            if (klass == null) {
+                break;
+            }
+        }
+        buffer.append(">");
+        return buffer.toString();
+    }
 
     /**
      * Print to a console in interactive format
@@ -199,12 +244,36 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * @return true if every item in the collection matches the closure predicate
+     */
+    public static boolean every(Object self, Closure closure) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            if (!InvokerHelper.asBool(closure.call(iter.next()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @return true if any item in the collection matches the closure predicate
+     */
+    public static boolean any(Object self, Closure closure) {
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            if (InvokerHelper.asBool(closure.call(iter.next()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Maps the values of a collection to new values using the 
      * 
      * @param source
      * @param closure
      */
-    public static List collect(Object self, Closure closure) {
+    public static List map(Object self, Closure closure) {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
@@ -218,7 +287,7 @@ public class DefaultGroovyMethods {
      * @param source
      * @param closure
      */
-    public static List collect(Collection self, Closure closure) {
+    public static List map(Collection self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
@@ -232,7 +301,7 @@ public class DefaultGroovyMethods {
      * @param source
      * @param closure
      */
-    public static List collect(Map self, Closure closure) {
+    public static List map(Map self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
@@ -255,6 +324,7 @@ public class DefaultGroovyMethods {
         }
         return null;
     }
+
     /**
      * Finds the first value matching the closure condition
      * 
@@ -288,12 +358,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects all values matching the closure condition
+     * Finds all values matching the closure condition
      * 
      * @param source
      * @param closure
      */
-    public static Object select(Object self, Closure closure) {
+    public static Object findAll(Object self, Closure closure) {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
@@ -305,12 +375,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects all values matching the closure condition
+     * Finds all values matching the closure condition
      * 
      * @param source
      * @param closure
      */
-    public static List select(Collection self, Closure closure) {
+    public static List findAll(Collection self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
@@ -322,12 +392,12 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects all values matching the closure condition
+     * Finds all values matching the closure condition
      * 
      * @param source
      * @param closure
      */
-    public static List select(Map self, Closure closure) {
+    public static List findAll(Map self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Object value = iter.next();
@@ -358,8 +428,6 @@ public class DefaultGroovyMethods {
         return buffer.toString();
     }
 
-
-
     /**
      * Selects the maximum value found in the collection
      * 
@@ -380,10 +448,21 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Selects the maximum value found in the collection using the given comparator
+     */
+    public static Object max(Collection self, Comparator comparator) {
+        Object answer = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (comparator.compare(value, answer) > 0) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Selects the minimum value found in the collection
-     * 
-     * @param source
-     * @param closure
      */
     public static Object min(Collection self) {
         Object answer = null;
@@ -396,6 +475,35 @@ public class DefaultGroovyMethods {
             }
         }
         return answer;
+    }
+
+    /**
+     * Selects the minimum value found in the collection using the given comparator
+     */
+    public static Object min(Collection self, Comparator comparator) {
+        Object answer = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (comparator.compare(value, answer) < 0) {
+                answer = value;
+
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the minimum value found in the collection using the given closure as a comparator
+     */
+    public static Object min(Collection self, Closure closure) {
+        return min(self, new ClosureComparator(closure));
+    }
+
+    /**
+     * Selects the maximum value found in the collection using the given closure as a comparator
+     */
+    public static Object max(Collection self, Closure closure) {
+        return max(self, new ClosureComparator(closure));
     }
 
     /**
@@ -425,7 +533,7 @@ public class DefaultGroovyMethods {
      * @return
      */
     public static Object get(String text, Range range) {
-        return text.substring(range.getFrom(), range.getTo());
+        return text.substring(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
 
     /**
@@ -435,7 +543,7 @@ public class DefaultGroovyMethods {
      * @return
      */
     public static Object get(List list, Range range) {
-        return list.subList(range.getFrom(), range.getTo());
+        return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
 
     /**
@@ -445,14 +553,13 @@ public class DefaultGroovyMethods {
      */
     public static Object get(Collection coll, String property) {
         List answer = new ArrayList(coll.size());
-        for (Iterator iter = coll.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = coll.iterator(); iter.hasNext();) {
             Object item = iter.next();
             Object value = InvokerHelper.getProperty(item, property);
             answer.add(value);
         }
         return answer;
     }
-
 
     /**
      * A convenience method for creating an immutable map
@@ -505,6 +612,27 @@ public class DefaultGroovyMethods {
         return self;
     }
 
+    /**
+     * A convenience method for sorting a List using a closure as a comparator
+     */
+    public static List sort(List self, Closure closure) {
+        Collections.sort(self, new ClosureComparator(closure));
+        return self;
+    }
+
+    /**
+     * Reverses the list
+     */
+    public static List reverse(List self) {
+        int size = self.size();
+        List answer = new ArrayList(size);
+        ListIterator iter = self.listIterator(size);
+        while (iter.hasPrevious()) {
+            answer.add(iter.previous());
+        }
+        return answer;
+    }
+
     // Number based methods
     //-------------------------------------------------------------------------
     public static String plus(String left, Object value) {
@@ -520,6 +648,14 @@ public class DefaultGroovyMethods {
         return (value == null) ? "null" : value.toString();
     }
 
+    public static Number increment(Number self) {
+        return plus(self, ONE);
+    }
+    
+    public static Number decrement(Number self) {
+        return minus(self, ONE);
+    }
+    
     public static Number plus(Number left, Number right) {
         /** @todo maybe a double dispatch thing to handle new large numbers? */
         if (isFloatingPoint(left) || isFloatingPoint(right)) {
@@ -570,14 +706,108 @@ public class DefaultGroovyMethods {
         return number instanceof Float || number instanceof Double;
     }
 
+    /**
+     * Iterates a number of times
+     */
     public static void times(Number self, Closure closure) {
-        for (int i = 0, size = self.intValue(); i < size; i++ ) {
+        for (int i = 0, size = self.intValue(); i < size; i++) {
             closure.call(new Integer(i));
         }
     }
 
+    /**
+     * Iterates from this number up to the given number
+     */
+    public static void upto(Number self, Number to, Closure closure) {
+        for (int i = self.intValue(), size = to.intValue(); i < size; i++) {
+            closure.call(new Integer(i));
+        }
+    }
+
+    /**
+     * Iterates from this number up to the given number using a step increment
+     */
+    public static void step(Number self, Number to, Number stepNumber, Closure closure) {
+        for (int i = self.intValue(), size = to.intValue(), step = stepNumber.intValue(); i < size; i += step) {
+            closure.call(new Integer(i));
+        }
+    }
+
+    public static int abs(Number number) {
+        return Math.abs(number.intValue());
+    }
+
+    public static long abs(Long number) {
+        return Math.abs(number.longValue());
+    }
+
+    public static float abs(Float number) {
+        return Math.abs(number.floatValue());
+    }
+
+    public static double abs(Double number) {
+        return Math.abs(number.doubleValue());
+    }
+
+    public static int round(Float number) {
+        return Math.round(number.floatValue());
+    }
+
+    public static long round(Double number) {
+        return Math.round(number.doubleValue());
+    }
+
     // File based methods
     //-------------------------------------------------------------------------
+
+    /**
+     * Iterates through the given file line by line
+     */
+    public static void eachLine(File self, Closure closure) throws IOException {
+        BufferedReader reader = newReader(self);
+        try {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                else {
+                    closure.call(line);
+                }
+            }
+            reader.close();
+        }
+        catch (IOException e) {
+            if (reader != null) {
+                try {
+                    reader.close();
+                }
+                catch (Exception e2) {
+                    // ignore as we're already throwing
+                }
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Reads the file into a list of Strings for each line
+     */
+    public static List readLines(File file) throws IOException {
+        IteratorClosureAdapter closure = new IteratorClosureAdapter(file);
+        eachLine(file, closure);
+        return closure.asList();
+    }
+
+    /**
+     * Invokes the closure for each file in the given directory
+     */
+    public static void eachFile(File self, Closure closure) {
+        File[] files = self.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            closure.call(files[i]);
+        }
+    }
 
     /**
      * Helper method to create a buffered reader for a file
@@ -612,14 +842,30 @@ public class DefaultGroovyMethods {
      * @param expression
      * @param closure
      */
-    public static void query(Connection connection, TextExpression expression, Closure closure) throws SQLException {
+    public static void query(Connection connection, GString gstring, Closure closure) throws SQLException {
+        ResultSet results = null;
+
         // lets turn the expression into an SQL string
         String sql = null;
-        ResultSet results = null;
+        String[] text = gstring.getStrings();
+        if (text.length == 1) {
+            sql = text[0];
+        }
+        else {
+            StringBuffer buffer = new StringBuffer(text[0]);
+            for (int i = 1; i < text.length; i++) {
+                buffer.append("?");
+                buffer.append(text[i]);
+            }
+            sql = buffer.toString();
+        }
         PreparedStatement statement = connection.prepareStatement(sql);
         try {
             // lets bind the values to the statement
-
+            Object[] values = gstring.getValues();
+            for (int i = 0; i < values.length; i++) {
+                statement.setObject(i + 1, values[i]);
+            }
             results = statement.executeQuery();
 
             closure.call(results);

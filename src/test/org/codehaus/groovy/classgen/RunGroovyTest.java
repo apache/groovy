@@ -65,6 +65,12 @@ public class RunGroovyTest extends TestSupport {
     
     public void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureMethodTest.groovy");
-        object.invokeMethod("testListCollect", null);
+        object.invokeMethod("testListMap", null);
+    }
+
+    public void testOptionalReturn() throws Exception {
+        GroovyObject object = compile("src/test/groovy/OptionalReturnTest.groovy");
+        object.invokeMethod("testSingleExpression", null);
+        object.invokeMethod("testLastExpressionIsSimple", null);
     }
 }

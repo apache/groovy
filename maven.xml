@@ -35,6 +35,21 @@
     </java>
   </goal>
 
+  <goal name="swing:demo" prereqs="test:compile"
+		description="Runs the GroovySwing demo">
+    <java classname="groovy.swing.Demo" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+  <goal name="jmx:demo" prereqs="test:compile"
+		description="Runs the JMX demo">
+    <java classname="org.apache.geronimo.explorer.ExplorerMain" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+
   <goal name="groovy:compile-tests" prereqs="java:compile, setclasspath"
   		description="Compiles the Groovy unit test cases">
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
@@ -52,7 +67,7 @@
     <touch>
     	<fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/> 
     </touch>
-    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="false">
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
   </goal>

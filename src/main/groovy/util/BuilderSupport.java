@@ -117,7 +117,6 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         if (current != null) {
             proxyBuilder.setParent(current, node);
         }
-
         //System.out.println("Created node: " + node);
 
         if (closure != null) {
@@ -131,7 +130,8 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
             current = oldCurrent;
         }
-        proxyBuilder.nodeCompleted(node);
+
+        proxyBuilder.nodeCompleted(current, node);
         return node;
     }
 
@@ -158,7 +158,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
      * A hook to allow nodes to be processed once they have had all of their
      * children applied
      */
-    protected void nodeCompleted(Object node) {
+    protected void nodeCompleted(Object parent, Object node) {
     }
 
     protected Object getCurrent() {

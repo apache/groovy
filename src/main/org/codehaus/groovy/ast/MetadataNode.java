@@ -43,15 +43,51 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package org.codehaus.groovy.ast;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
- * Represents a text expression with embedded expression values
+ * Base class for any AST node which is capable of storing metadata
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TextExpression {
- 
+public class MetadataNode extends ASTNode {
+    private Map attributes = new HashMap();
+    
+    public Map getAttributes() {
+        return attributes;
+    }
+    
+    public Object getAttributes(String name) {
+        return attributes.get(name);
+    }
+    
+    public void addAttribute(String name, Object value) {
+        Object oldValue = attributes.get(name);
+        if (oldValue == null) {
+            attributes.put(name, value);
+        }
+        else {
+            List list = null;
+            if (oldValue instanceof List) {
+                list = (List) oldValue;
+            }
+            else {
+                list = new ArrayList();
+                list.add(oldValue);
+                attributes.put(name, list);
+            }
+            list.add(value);
+        }
+    }
+
+    public void setAttribute(String name, Object value) {
+        attributes.put(name, value);
+    }
 }

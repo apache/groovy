@@ -68,6 +68,9 @@ public class ConstructorCallExpression extends Expression {
     }
     
     public String getType() {
+        if (type == null) {
+            return "java.lang.Object";
+        }
         return type;
     }
 

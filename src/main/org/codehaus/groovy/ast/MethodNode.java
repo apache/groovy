@@ -45,10 +45,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 /**
  * Represents a method declaration
@@ -56,7 +53,7 @@ import org.codehaus.groovy.ast.stmt.*;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodNode extends ASTNode {
+public class MethodNode extends MetadataNode {
 
     private String name;
     private int modifiers;
@@ -75,39 +72,6 @@ public class MethodNode extends ASTNode {
             this.returnType = "java.lang.Object";
             this.dynamicReturnType = true;
         }
-        if (!isVoidMethod()) {
-            this.code = ensureStatementEndsWithReturn(code);
-        }
-    }
-
-    /**
-     * Ensures that the method body includes a return null at the end.
-     */
-    public static Statement ensureStatementEndsWithReturn(Statement code) {
-        if (code instanceof BlockStatement) {
-            BlockStatement block = (BlockStatement) code;
-            List statements = block.getStatements();
-            boolean shouldAdd = statements.isEmpty();
-            if (!shouldAdd) {
-                Statement statement = (Statement) statements.get(statements.size() - 1);
-                if (!(statement instanceof ReturnStatement)) {
-                    shouldAdd = true;
-                }
-            }
-            if (shouldAdd) {
-                List newList = new ArrayList(statements.size() + 1);
-                newList.addAll(statements);
-                newList.add(ReturnStatement.RETURN_NULL);
-                return new BlockStatement(newList);
-            }
-        }
-        else if (!(code instanceof ReturnStatement)) {
-            List newList = new ArrayList(2);
-            newList.add(code);
-            newList.add(ReturnStatement.RETURN_NULL);
-            return new BlockStatement(newList);
-        }
-        return code;
     }
 
     public boolean isVoidMethod() {
@@ -116,6 +80,10 @@ public class MethodNode extends ASTNode {
 
     public Statement getCode() {
         return code;
+    }
+
+    public void setCode(Statement code) {
+        this.code = code;
     }
 
     public int getModifiers() {

@@ -46,14 +46,17 @@
 package groovy.lang;
 
 import java.beans.BeanInfo;
+import java.beans.EventSetDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -91,6 +94,7 @@ public class MetaClass {
     private Map staticMethodIndex = new HashMap();
     private Map newStaticInstanceMethodIndex = new HashMap();
     private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
+    private Map listeners = new HashMap();
     private Method genericGetMethod;
     private Method genericSetMethod;
     private List constructors;
@@ -108,6 +112,15 @@ public class MetaClass {
         for (int i = 0; i < descriptors.length; i++) {
             PropertyDescriptor descriptor = descriptors[i];
             propertyDescriptors.put(descriptor.getName(), descriptor);
+        }
+        EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
+        for (int i = 0; i < eventDescriptors.length; i++) {
+            EventSetDescriptor descriptor = eventDescriptors[i];
+            Method[] listenerMethods = descriptor.getListenerMethods();
+            for (int j = 0; j < listenerMethods.length; j++) {
+                Method listenerMethod = listenerMethods[j];
+                listeners.put(listenerMethod.getName(), descriptor.getAddListenerMethod());
+            }
         }
 
         // now lets see if there are any methods on one of my interfaces
@@ -302,10 +315,39 @@ public class MetaClass {
                 throw new InvokerException("Cannot set read-only property: " + property);
             }
             Object[] arguments = { newValue };
-            doMethodInvoke(object, method, arguments);
+            try {
+                doMethodInvoke(object, method, arguments);
+            }
+            catch (InvokerException e) {
+                // if the value is a List see if we can construct the value 
+                // from a constructor
+                if (newValue instanceof List) {
+                    List list = (List) newValue;
+                    int params = list.size();
+                    Constructor[] constructors = descriptor.getPropertyType().getConstructors();
+                    for (int i = 0; i < constructors.length; i++) {
+                        Constructor constructor = constructors[i];
+                        if (constructor.getParameterTypes().length == params) {
+                            //System.out.println("Found constructor: " + constructor);
+                            Object value = doConstructorInvoke(constructor, list.toArray());
+                            doMethodInvoke(object, method, new Object[] { value });
+                            return;
+                        }
+                    }
+                }
+                throw e;
+            }
             return;
         }
 
+        Method addListenerMethod = (Method) listeners.get(property);
+        if (addListenerMethod != null && newValue instanceof Closure) {
+            // lets create a dynamic proxy
+            Object proxy = createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
+            doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
+            return;    
+        } 
+        
         if (genericSetMethod != null) {
             Object[] arguments = { property, newValue };
             doMethodInvoke(object, genericSetMethod, arguments);
@@ -314,7 +356,9 @@ public class MetaClass {
 
         /** @todo or are we an extensible class? */
 
-        throw new InvokerException("No such property: " + property);
+        // lets try invoke the set method
+        String method = "set" + property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
+        invokeMethod(object, method, newValue);
     }
 
     public ClassNode getClassNode() {
@@ -327,7 +371,7 @@ public class MetaClass {
                 groovyFile = groovyFile.substring(0, idx);
             }
             groovyFile = groovyFile.replace('.', '/') + ".groovy";
-            
+
             //System.out.println("Attempting to load: " + groovyFile);
             URL url = theClass.getClassLoader().getResource(groovyFile);
             if (url == null) {
@@ -361,6 +405,24 @@ public class MetaClass {
 
     // Implementation methods
     //-------------------------------------------------------------------------
+
+    /**
+     * @param listenerType the interface of the listener to proxy
+     * @param listenerMethodName the name of the method in the listener API to call the closure on
+     * @param closure the closure to invoke on the listenerMethodName method invocation
+     * @return a dynamic proxy which calls the given closure on the given method name
+     */
+    protected Object createListenerProxy(Class listenerType, final String listenerMethodName, final Closure closure) {
+        InvocationHandler handler = new InvocationHandler() {
+            public Object invoke(Object object, Method method, Object[] arguments) throws Throwable {
+                if (listenerMethodName.equals(method.getName())) {
+                    /** @todo hack! */
+                    closure.call(arguments[0]);
+                }
+                return null;
+            }};
+        return Proxy.newProxyInstance(listenerType.getClassLoader(), new Class[] { listenerType }, handler);
+    }
 
     /**
      * Adds all the methods declared in the given class to the metaclass
@@ -518,9 +580,9 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-        System.out.println("Evaluating method: " + method);
-        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
-        System.out.println(this.theClass);
+        //System.out.println("Evaluating method: " + method);
+        //System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+        //System.out.println(this.theClass);
 
         try {
             if (registry.useAccessible()) {

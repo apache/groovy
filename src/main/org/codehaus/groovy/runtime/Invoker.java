@@ -150,6 +150,12 @@ public class Invoker {
         else if (value.getClass().isArray()) {
             return Arrays.asList((Object[]) value);
         }
+        else if (value instanceof MethodClosure) {
+            MethodClosure method = (MethodClosure) value;
+            IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
+            method.call(adapter);
+            return adapter.asList();
+        }
         else {
             // lets assume its a collection of 1
             return Collections.singletonList(value);

@@ -46,6 +46,9 @@
 
 package org.codehaus.groovy.runtime;
 
+import java.awt.Point;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,7 +62,9 @@ public class DummyBean {
     private String name = "James";
     private Integer i = new Integer(123);
     private Map dynamicProperties = new HashMap();
-
+    private Point point;
+    private PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+    
     public DummyBean() {
     }
 
@@ -72,6 +77,10 @@ public class DummyBean {
         this.i = i;
     }
 
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        changeSupport.addPropertyChangeListener(listener);
+    }
+    
     public Integer getI() {
         return i;
     }
@@ -114,6 +123,14 @@ public class DummyBean {
 
     public String toString() {
         return super.toString() + "[name=" + name + ";i=" + i + "]";
+    }
+
+    public Point getPoint() {
+        return point;
+    }
+
+    public void setPoint(Point point) {
+        this.point = point;
     }
 
 }

@@ -1,0 +1,51 @@
+
+class GeneratorTest extends GroovyTestCase {
+
+    void testGenerator() {
+        x = this.sampleGenerator
+        //System.out.println("x: " + x)
+		
+        result = ''
+        for (i in x) {
+            result = result + i
+        }
+	    
+        assert result == "ABC"
+    }
+
+    void testFindAll() {
+        x = this.sampleGenerator
+ 	    
+        value = x.findAll { item | return item == "C" }
+        assert value == ["C"]
+ 	    
+        value = x.findAll { item | return item != "B" }
+        assert value == ["A", "C"]
+    }
+    
+	
+    void testEach() {
+        x = this.sampleGenerator
+ 	    
+        value = x.each { item | item.println() }
+    }
+    
+	
+	/** @todo validator bug, should detect this as a property if no variable/field in scope 
+	void testMissingThisBug() {
+        result = ''
+        for (i in sampleGenerator) {
+            result = result + i
+        }
+	    
+        assert result == "ABC"
+    }
+    */
+	
+	void sampleGenerator(closure) {
+	    // kinda like yield statements
+	    closure.call("A")
+	    closure.call("B")
+	    closure.call("C")
+	}
+}

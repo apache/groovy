@@ -68,7 +68,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassNode extends ASTNode implements Constants {
+public class ClassNode extends MetadataNode implements Constants {
 
     private String name;
     private int modifiers;
@@ -314,6 +314,25 @@ public class ClassNode extends ASTNode implements Constants {
             }
         }
         return null;
+    }
+
+    public void visitContents(GroovyClassVisitor visitor) {
+        // now lets visit the contents of the class
+        for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
+            visitor.visitProperty((PropertyNode) iter.next());
+        }
+    
+        for (Iterator iter = getFields().iterator(); iter.hasNext();) {
+            visitor.visitField((FieldNode) iter.next());
+        }
+    
+        for (Iterator iter = getConstructors().iterator(); iter.hasNext();) {
+            visitor.visitConstructor((ConstructorNode) iter.next());
+        }
+    
+        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+            visitor.visitMethod((MethodNode) iter.next());
+        }
     }
 
 }

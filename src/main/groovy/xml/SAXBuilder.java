@@ -137,7 +137,7 @@ public class SAXBuilder extends BuilderSupport {
         }
     }
 
-    protected void nodeCompleted(Object name) {
+    protected void nodeCompleted(Object parent, Object name) {
         String uri = "";
         String localName = null;
         String qualifiedName = "";

@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -174,6 +175,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private Set syntheticStaticFields = new HashSet();
 
+    private int lastVariableIndex;
+
     public ClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
@@ -208,22 +211,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             getClassInternalNames(classNode.getInterfaces()),
             sourceFile);
 
-        // now lets visit the contents of the class
-        for (Iterator iter = classNode.getProperties().iterator(); iter.hasNext();) {
-            visitProperty((PropertyNode) iter.next());
-        }
-
-        for (Iterator iter = classNode.getFields().iterator(); iter.hasNext();) {
-            visitField((FieldNode) iter.next());
-        }
-
-        for (Iterator iter = classNode.getConstructors().iterator(); iter.hasNext();) {
-            visitConstructor((ConstructorNode) iter.next());
-        }
-
-        for (Iterator iter = classNode.getMethods().iterator(); iter.hasNext();) {
-            visitMethod((MethodNode) iter.next());
-        }
+        classNode.visitContents(this);
 
         createSyntheticStaticFields();
 
@@ -565,6 +553,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         statement.getExpression().visit(this);
 
+        Expression assignExpr = assignmentExpression(statement.getExpression());
+        if (assignExpr != null) {
+            leftHandExpression = false;
+            assignExpr.visit(this);
+        }
+
         Class c = getExpressionType(statement.getExpression());
 
         //return is based on class type
@@ -678,7 +672,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             // lets load the outer this
             int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
             cv.visitVarInsn(ALOAD, 0);
-            cv.visitFieldInsn(GETFIELD, internalClassName, "__outerInstance", getTypeDescription(owner.getName()));
+            cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(owner.getName()));
             cv.visitVarInsn(ASTORE, paramIdx);
 
             cv.visitTypeInsn(NEW, innerClassinternalName);
@@ -903,7 +897,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitVarInsn(ASTORE, valueIdx);
         }
         cv.visitVarInsn(ALOAD, 0);
-        cv.visitFieldInsn(GETFIELD, internalClassName, "__outerInstance", getTypeDescription(outerClassNode.getName()));
+        cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
 
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
@@ -933,6 +927,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 Variable variable = defineVariable(name, "java.lang.Object");
                 String type = variable.getType();
                 int index = variable.getIndex();
+                lastVariableIndex = index;
 
                 if (leftHandExpression) {
                     //TODO: make work with arrays
@@ -1168,7 +1163,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
-        FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
+        FieldNode field = answer.addField("owner", ACC_PRIVATE, outerClassName, null);
 
         // lets make the constructor
         BlockStatement block = new BlockStatement();
@@ -1322,6 +1317,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return false;
     }
 
+    protected Expression assignmentExpression(Expression expression) {
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binExp = (BinaryExpression) expression;
+            if (binExp.getOperation().getType() == Token.EQUAL) {
+                return binExp.getLeftExpression();
+            }
+        }
+        return null;
+    }
+
     protected boolean comparisonExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
@@ -1342,7 +1347,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return false;
     }
 
-    protected void onLineNumber(Statement statement) {
+    protected void onLineNumber(ASTNode statement) {
         int number = statement.getLineNumber();
         if (number >= 0 && cv != null) {
             cv.visitLineNumber(number, new Label());
@@ -1473,6 +1478,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * @return the ASM internal name of the type
      */
     protected String getClassInternalName(String name) {
+        if (name == null) {
+            return "java/lang/Object";
+        }
         String answer = name.replace('.', '/');
         if (answer.endsWith("[]")) {
             return "[" + answer.substring(0, answer.length() - 2);
