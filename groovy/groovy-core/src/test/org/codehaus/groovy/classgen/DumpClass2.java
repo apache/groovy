@@ -62,7 +62,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class DumpClass2 {
 
     private String bar = (String) InvokerHelper.invokeStaticMethod("InvokerHelper", "getMetaClass", null);
-    private String[] foo = { "hello", "world" };
+    private static String[] foo = { "hello", "world" };
     
     public DumpClass2(Object foo) {
     }

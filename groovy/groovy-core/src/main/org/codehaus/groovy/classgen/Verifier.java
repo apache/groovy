@@ -96,10 +96,13 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 new StaticMethodCallExpression(
                     InvokerHelper.class.getName(),
                     "getMetaClass",
-                    new VariableExpression("this")), null, null);
+                    new VariableExpression("this")),
+                null,
+                null);
         FieldNode metaClassField = metaClassProperty.getField();
         // lets add the invokeMethod implementation
-        boolean addDelegateObject = node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
+        boolean addDelegateObject =
+            node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
         if (addDelegateObject) {
             // don't do anything as the base class implements the invokeMethod
         }
@@ -141,8 +144,9 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
     protected void addFieldInitialization(ClassNode node, ConstructorNode constructorNode) {
         List statements = new ArrayList();
+        List staticStatements = new ArrayList();
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-            addFieldInitialization(statements, constructorNode, (FieldNode) iter.next());
+            addFieldInitialization(statements, staticStatements, constructorNode, (FieldNode) iter.next());
         }
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
@@ -154,7 +158,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             else if (code != null) {
                 otherStatements.add(code);
             }
-            if (! otherStatements.isEmpty()) {
+            if (!otherStatements.isEmpty()) {
                 Statement first = (Statement) otherStatements.get(0);
                 if (isSuperMethodCall(first)) {
                     otherStatements.remove(0);
@@ -163,6 +167,32 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 statements.addAll(otherStatements);
             }
             constructorNode.setCode(new BlockStatement(statements));
+        }
+        
+        if (!staticStatements.isEmpty()) {
+            node.addStaticInitializerStatements(staticStatements);
+        }
+    }
+
+    protected void addFieldInitialization(
+        List list,
+        List staticList,
+        ConstructorNode constructorNode,
+        FieldNode fieldNode) {
+        Expression expression = fieldNode.getInitialValueExpression();
+        if (expression != null) {
+            ExpressionStatement statement =
+                new ExpressionStatement(
+                    new BinaryExpression(
+                        new FieldExpression(fieldNode),
+                        Token.equal(fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
+                        expression));
+            if (fieldNode.isStatic()) {
+                staticList.add(statement);
+            }
+            else {
+                list.add(statement);
+            }
         }
     }
 
@@ -175,18 +205,6 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
         }
         return false;
-    }
-
-    protected void addFieldInitialization(List list, ConstructorNode constructorNode, FieldNode fieldNode) {
-        Expression expression = fieldNode.getInitialValueExpression();
-        if (expression != null) {
-            list.add(
-                new ExpressionStatement(
-                    new BinaryExpression(
-                        new FieldExpression(fieldNode),
-                        Token.equal(fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
-                        expression)));
-        }
     }
 
     public void visitConstructor(ConstructorNode node) {

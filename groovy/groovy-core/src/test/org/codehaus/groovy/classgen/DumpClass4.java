@@ -43,53 +43,35 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast.stmt;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import groovy.lang.CompositeString;
+import groovy.lang.MetaClass;
+
 
 /**
- * A list of statements
+ * This is a scratch class used to experiment with ASM to see what kind of 
+ * stuff is output for normal Java code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class BlockStatement extends Statement {
+public abstract class DumpClass4 extends CompositeString {
 
-    private List statements;
+    private static String[] strings = { "hello", "world" };
+    private MetaClass metaClass;
     
-    public BlockStatement() {
-        this(new ArrayList());
-    }
-    
-    public BlockStatement(List statements) {
-        this.statements = statements;
+    public DumpClass4(Object[] values) {
+        super(values);
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
-            statement.visit(visitor);
-        }
+    public String[] getStrings() {
+        return strings;
     }
 
-    public List getStatements() {
-        return statements;
+    public void foo(Object data) {
+        strings = (String[]) data;
+        metaClass = (MetaClass) data;
     }
-
-    public void addStatement(Statement statement) {
-        statements.add(statement);
-    }
-
-    public void addStatements(List listOfStatements) {
-        statements.addAll(listOfStatements);
-    }
-
-    public String toString() {
-        return super.toString() + statements;
-    }
-
 }

@@ -47,6 +47,7 @@ package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +55,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -282,6 +284,36 @@ public class ClassNode extends ASTNode implements Constants {
         String name = propertyNode.getName();
         return new ExpressionStatement(
             new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
+    }
+
+    public void addStaticInitializerStatements(List staticStatements) {
+        MethodNode method = getMethod("<clinit>");
+        if (method == null) {
+            method = addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+        }
+        BlockStatement block = null;
+        Statement statement = method.getCode();
+        if (statement == null) {
+            block = new BlockStatement();
+        }
+        else if (statement instanceof BlockStatement) {
+            block = (BlockStatement) statement;
+        }
+        else {
+            block = new BlockStatement();
+            block.addStatement(statement);
+        }
+        block.addStatements(staticStatements);
+    }
+
+    public MethodNode getMethod(String name) {
+        for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
+            MethodNode method = (MethodNode) iter.next();
+            if (name.equals(method.getName())) {
+                return method;
+            }
+        }
+        return null;
     }
 
 }

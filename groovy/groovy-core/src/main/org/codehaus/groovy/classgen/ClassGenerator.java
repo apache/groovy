@@ -856,9 +856,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (!isStatic && !leftHandExpression) {
             cv.visitVarInsn(ALOAD, 0);
         }
+        String type = field.getType();
         if (leftHandExpression) {
             // this may be superflous
-            cv.visitTypeInsn(CHECKCAST, getClassInternalName(field.getType()));
+            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
         }
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
         String ownerName =
@@ -866,7 +867,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 ? internalClassName
                 : Type.getInternalName(loadClass(field.getOwner()));
 
-        cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
+        cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(type));
 
         // lets push this back on the stack 
         //        if (! isStatic && leftHandExpression) {
@@ -1081,7 +1082,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         int size = expression.getExpressions().size();
         pushConstant(size);
 
-        cv.visitTypeInsn(ANEWARRAY, getTypeDescription(expression.getType()));
+        String typeName = getClassInternalName(expression.getType());
+        cv.visitTypeInsn(ANEWARRAY, typeName);
 
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
@@ -1119,12 +1121,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitInsn(AASTORE);
         }
         
+        int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+        cv.visitVarInsn(ASTORE, paramIdx);
+        
         ClassNode innerClass = createCompositeStringClass(expression);
         innerClasses.add(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
+        cv.visitVarInsn(ALOAD, paramIdx);
 
         cv.visitMethodInsn(
             INVOKESPECIAL,
@@ -1178,7 +1184,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.CompositeStringExpression");
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.CompositeString");
 
         FieldNode stringsField =
             answer.addField(
@@ -1189,7 +1195,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         answer.addMethod(
             "getStrings",
-            ACC_PUBLIC | ACC_STATIC,
+            ACC_PUBLIC,
             "java.lang.String[]",
             Parameter.EMPTY_ARRAY,
             new ReturnStatement(new FieldExpression(stringsField)));
@@ -1199,7 +1205,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object", "values")};
+        Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
@@ -1452,7 +1458,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * @return the ASM internal name of the type
      */
     protected String getClassInternalName(String name) {
-        return name.replace('.', '/');
+        String answer = name.replace('.', '/');
+        if (answer.endsWith("[]")) {
+            return "[" + answer.substring(0, answer.length() - 2);
+        }
+        return answer;
     }
 
     /**

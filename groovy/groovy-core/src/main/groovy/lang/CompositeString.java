@@ -62,6 +62,10 @@ public abstract class CompositeString implements GroovyObject {
 
     private Object[] values;
 
+    public CompositeString(Object values) {
+        this.values = (Object[]) values;
+    }
+    
     public CompositeString(Object[] values) {
         this.values = values;
     }
