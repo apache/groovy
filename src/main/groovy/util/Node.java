@@ -90,6 +90,20 @@ public class Node {
         this.name = name;
         this.attributes = attributes;
         this.value = value;
+        
+        if (parent != null) {
+            Object parentValue = parent.value();
+            List parentList = null;
+            if (parentValue instanceof List) {
+                parentList = (List) parentValue;
+            }
+            else {
+                parentList = new ArrayList();
+                parentList.add(parentValue);
+                parent.setValue(parentList);
+            }
+            parentList.add(this);
+        }
     }
 
     public String text() {
