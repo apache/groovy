@@ -41,12 +41,36 @@ class CastTest extends GroovyTestCase {
         assert b.class == Short : "Type is ${b.class}"
     }
     
+    void testIntCast() {
+        i = (Integer) 'x'
+        
+        assert i instanceof Integer
+    }
+    
+    void testCharCompare() {
+        i = (Integer) 'x'
+        c = 'x'
+        
+        assert i == c
+        assert i =='x'
+        assert c == 'x'
+		assert i == i
+		assert c == c
+        
+        /** @todo
+        
+        assert 'x' == i
+        assert 'x' == c
+        assert 'x' == 'x'
+         */
+    }
+    
     void testCharCast() {
         c = (Character) 'x'
         
         assert c instanceof Character
         
-        c = (Character) 10
+        c = (Character)10
         
         assert c instanceof Character
     }
