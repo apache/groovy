@@ -34,11 +34,11 @@
  */
 package groovy.util;
 
+import groovy.lang.GroovyClassLoader;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 
-import org.codehaus.groovy.classgen.GroovyClassLoader;
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE

@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-import org.codehaus.groovy.classgen.GroovyClassLoader;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 

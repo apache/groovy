@@ -291,7 +291,6 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
-        String name = propertyNode.getName();
         return new ExpressionStatement(
             new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
     }
