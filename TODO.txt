@@ -13,8 +13,6 @@ Refactorings / Tidying things up
 Things to Test
 ==============
 
-* test GPath
-
 * test do while
 
 * test compiler errors when

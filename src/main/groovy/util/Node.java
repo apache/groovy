@@ -145,6 +145,10 @@ public class Node {
         return attributes;
     }
 
+    public Object attribute(Object key) {
+        return (attributes != null) ? attributes.get(key) : null;
+    }
+    
     public Object name() {
         return name;
     }
