@@ -39,7 +39,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Kim Pilho
  * @version $Revision$
@@ -50,7 +50,7 @@ public class MetaBeanProperty extends MetaProperty {
     private MetaMethod setter;
 
     public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
-		super(name, type);
+        super(name, type);
         this.getter = getter;
         this.setter = setter;
     }
@@ -60,120 +60,142 @@ public class MetaBeanProperty extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) throws Exception {
-		if (getter == null) {
-			//@todo we probably need a WriteOnlyException class
-			throw new GroovyRuntimeException("Cannot read write-only property: " + name);
-		}
+        if (getter == null) {
+            //@todo we probably need a WriteOnlyException class
+            throw new GroovyRuntimeException("Cannot read write-only property: " + name);
+        }
         return getter.invoke(object, MetaClass.EMPTY_ARRAY);
     }
 
     /**
      * Sets the property on the given object to the new value
-     * 
-     * @param object on which to set the property
+     *
+     * @param object   on which to set the property
      * @param newValue the new value of the property
      * @throws Exception if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
-		if(setter == null) {
-			throw new GroovyRuntimeException("Cannot set read-only property: " + name);
-		}
+        if (setter == null) {
+            throw new GroovyRuntimeException("Cannot set read-only property: " + name);
+        }
 
-		try {
-			// we'll convert a GString to String if needed
-			if(getType() == String.class && !(newValue instanceof String))
-				newValue = newValue.toString();
+        try {
+            // we'll convert a GString to String if needed
+            if (getType() == String.class && !(newValue instanceof String)) {
+                newValue = newValue.toString();
+            }
 
-			// Set property for primitive types
-			if (newValue instanceof java.math.BigDecimal) {
-				if (getType() == Double.class)
-					newValue = new Double(((java.math.BigDecimal) newValue).doubleValue());
-				else if (getType() == Float.class)
-					newValue = new Float(((java.math.BigDecimal) newValue).floatValue());
-				else if (getType() == Long.class)
-					newValue = new Long(((java.math.BigDecimal) newValue).longValue());
-				else if (getType() == Integer.class)
-					newValue = new Integer(((java.math.BigDecimal) newValue).intValue());
-				else if (getType() == Short.class)
-					newValue = new Short((short) ((java.math.BigDecimal) newValue).intValue());
-				else if (getType() == Byte.class)
-					newValue = new Byte((byte) ((java.math.BigDecimal) newValue).intValue());
-				else if (getType() == Character.class)
-					newValue = new Character((char) ((java.math.BigDecimal) newValue).intValue());
-			}
-			else if (newValue instanceof java.math.BigInteger) {
-				if (getType() == Long.class)
-					newValue = new Long(((java.math.BigInteger) newValue).longValue());
-				else if (getType() == Integer.class)
-					newValue = new Integer(((java.math.BigInteger) newValue).intValue());
-				else if (getType() == Short.class)
-					newValue = new Short((short) ((java.math.BigInteger) newValue).intValue());
-				else if (getType() == Byte.class)
-					newValue = new Byte((byte) ((java.math.BigInteger) newValue).intValue());
-				else if (getType() == Character.class)
-					newValue = new Character((char) ((java.math.BigInteger) newValue).intValue());
-			}
-			else if (newValue instanceof java.lang.Long) {
-				if (getType() == Integer.class)
-					newValue = new Integer(((Long) newValue).intValue());
-				else if (getType() == Short.class)
-					newValue = new  Short(((Long) newValue).shortValue());
-				else if (getType() == Byte.class)
-					newValue = new Byte(((Long) newValue).byteValue());
-				else if (getType() == Character.class)
-					newValue = new Character((char) ((Long) newValue).intValue());
-			}
-			else if (newValue instanceof java.lang.Integer) {
-				if (getType() == Short.class)
-					newValue = new  Short(((Integer) newValue).shortValue());
-				else if (getType() == Byte.class)
-					newValue = new Byte(((Integer) newValue).byteValue());
-				else if (getType() == Character.class)
-					newValue = new Character((char) ((Integer) newValue).intValue());
-			}
-
-			setter.invoke(object, new Object[] { newValue });
-		}
-                catch (IllegalArgumentException e) {    // exception for executing as scripts
-                    try {
-                        newValue = InvokerHelper.asType(newValue, getType());
-                        setter.invoke(object, new Object[] { newValue });
-                    }
-		    catch (Exception ex) {
-		         throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
-                                                         + "' can not refer to the value '"
-                                                         + newValue + "' (type " + toName(newValue.getClass())
-                                                         + "), because it is of the type " + toName(getType())
-                                                         + ". The reason is from java.lang.IllegalArgumentException."  );
-	             }
+            // Set property for primitive types
+            if (newValue instanceof java.math.BigDecimal) {
+                if (getType() == Double.class) {
+                    newValue = new Double(((java.math.BigDecimal) newValue).doubleValue());
                 }
-                catch (ClassCastException e) {    // exception for executing as compiled classes
-                    try {
-                        newValue = InvokerHelper.asType(newValue, getType());
-                        setter.invoke(object, new Object[] { newValue });
-                    }
-		    catch (Exception ex) {
-		         throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
-                                                         + "' can not refer to the value '"
-                                                         + newValue + "' (type " + toName(newValue.getClass())
-                                                         + "), because it is of the type " + toName(getType())
-                                                         + ". The reason is from java.lang.ClassCastException."  );
-	            }
+                else if (getType() == Float.class) {
+                    newValue = new Float(((java.math.BigDecimal) newValue).floatValue());
                 }
-		catch (Exception e) {
-			throw new GroovyRuntimeException("Cannot set property: " + name +
-				" reason: " + e.getMessage(), e);
-		}
+                else if (getType() == Long.class) {
+                    newValue = new Long(((java.math.BigDecimal) newValue).longValue());
+                }
+                else if (getType() == Integer.class) {
+                    newValue = new Integer(((java.math.BigDecimal) newValue).intValue());
+                }
+                else if (getType() == Short.class) {
+                    newValue = new Short((short) ((java.math.BigDecimal) newValue).intValue());
+                }
+                else if (getType() == Byte.class) {
+                    newValue = new Byte((byte) ((java.math.BigDecimal) newValue).intValue());
+                }
+                else if (getType() == Character.class) {
+                    newValue = new Character((char) ((java.math.BigDecimal) newValue).intValue());
+                }
+            }
+            else if (newValue instanceof java.math.BigInteger) {
+                if (getType() == Long.class) {
+                    newValue = new Long(((java.math.BigInteger) newValue).longValue());
+                }
+                else if (getType() == Integer.class) {
+                    newValue = new Integer(((java.math.BigInteger) newValue).intValue());
+                }
+                else if (getType() == Short.class) {
+                    newValue = new Short((short) ((java.math.BigInteger) newValue).intValue());
+                }
+                else if (getType() == Byte.class) {
+                    newValue = new Byte((byte) ((java.math.BigInteger) newValue).intValue());
+                }
+                else if (getType() == Character.class) {
+                    newValue = new Character((char) ((java.math.BigInteger) newValue).intValue());
+                }
+            }
+            else if (newValue instanceof java.lang.Long) {
+                if (getType() == Integer.class) {
+                    newValue = new Integer(((Long) newValue).intValue());
+                }
+                else if (getType() == Short.class) {
+                    newValue = new Short(((Long) newValue).shortValue());
+                }
+                else if (getType() == Byte.class) {
+                    newValue = new Byte(((Long) newValue).byteValue());
+                }
+                else if (getType() == Character.class) {
+                    newValue = new Character((char) ((Long) newValue).intValue());
+                }
+            }
+            else if (newValue instanceof java.lang.Integer) {
+                if (getType() == Short.class) {
+                    newValue = new Short(((Integer) newValue).shortValue());
+                }
+                else if (getType() == Byte.class) {
+                    newValue = new Byte(((Integer) newValue).byteValue());
+                }
+                else if (getType() == Character.class) {
+                    newValue = new Character((char) ((Integer) newValue).intValue());
+                }
+            }
+
+            setter.invoke(object, new Object[]{newValue});
+        }
+        catch (IllegalArgumentException e) {    // exception for executing as scripts
+            try {
+                newValue = InvokerHelper.asType(newValue, getType());
+                setter.invoke(object, new Object[]{newValue});
+            }
+            catch (Exception ex) {
+                throw new TypeMismatchException("The property '" + toName(object.getClass()) + "." + name
+                        + "' can not refer to the value '"
+                        + newValue + "' (type " + toName(newValue.getClass())
+                        + "), because it is of the type " + toName(getType())
+                        + ". The reason is from java.lang.IllegalArgumentException.");
+            }
+        }
+        catch (ClassCastException e) {    // exception for executing as compiled classes
+            try {
+                newValue = InvokerHelper.asType(newValue, getType());
+                setter.invoke(object, new Object[]{newValue});
+            }
+            catch (Exception ex) {
+                throw new TypeMismatchException("The property '" + toName(object.getClass()) + "." + name
+                        + "' can not refer to the value '"
+                        + newValue + "' (type " + toName(newValue.getClass())
+                        + "), because it is of the type " + toName(getType())
+                        + ". The reason is from java.lang.ClassCastException.");
+            }
+        }
+        catch (Exception e) {
+            throw new GroovyRuntimeException("Cannot set property: " + name +
+                    " reason: " + e.getMessage(), e);
+        }
     }
 
     private String toName(Class c) {
         String s = c.toString();
-        if (s.startsWith("class ") && s.length() > 6)
+        if (s.startsWith("class ") && s.length() > 6) {
             return s.substring(6);
-        else
+        }
+        else {
             return s;
-     }
-     
+        }
+    }
+
     public MetaMethod getGetter() {
         return getter;
     }
@@ -181,18 +203,18 @@ public class MetaBeanProperty extends MetaProperty {
     public MetaMethod getSetter() {
         return setter;
     }
-	
-	/**
-	 * this is for MetaClass to patch up the object later when looking for get*() methods
-	 */
-	void setGetter(MetaMethod getter) {
-		this.getter = getter;
-	}
-	
-	/**
-	 * this is for MetaClass to patch up the object later when looking for set*() methods
-	 */
-	void setSetter(MetaMethod setter) {
-		this.setter = setter;
-	}
+
+    /**
+     * this is for MetaClass to patch up the object later when looking for get*() methods
+     */
+    void setGetter(MetaMethod getter) {
+        this.getter = getter;
+    }
+
+    /**
+     * this is for MetaClass to patch up the object later when looking for set*() methods
+     */
+    void setSetter(MetaMethod setter) {
+        this.setter = setter;
+    }
 }

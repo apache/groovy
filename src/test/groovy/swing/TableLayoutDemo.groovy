@@ -16,13 +16,13 @@ class TableLayoutDemo {
         
         frame = swing.frame(title:'TableLayout Demo', location:[200,200], size:[300,200]) {
             menuBar {
-		        menu(text:'Help') {
-		            menuItem() {
-		                action(name:'About', closure:{ showAbout() })
-		            }
-		        }
-		    }
-			tableLayout {
+                menu(text:'Help') {
+                    menuItem() {
+                        action(name:'About', closure:{ showAbout() })
+                    }
+                }
+            }
+            tableLayout {
                 tr {
                     td {
                         label(text:'name')
@@ -45,13 +45,13 @@ class TableLayoutDemo {
                     }
                 }
             }
-		}        
-		frame.show()
+        }
+        frame.show()
     }
     
-    showAbout() {
- 		pane = swing.optionPane(message:'This demo shows how you can use HTML style table layouts with Swing components')
- 		dialog = pane.createDialog(frame, 'About TableLayout Demo')
- 		dialog.show()
+    void showAbout() {
+         pane = swing.optionPane(message:'This demo shows how you can use HTML style table layouts with Swing components')
+         dialog = pane.createDialog(frame, 'About TableLayout Demo')
+         dialog.show()
     }
 }
