@@ -198,10 +198,8 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
     
     /**
-	 * Parses the given character stream into a Java class capable of being run
+	 * Parses the given code source into a Java class capable of being run
 	 *
-	 * @param in an InputStream
-	 * @param fileName the file name to use as the name of the class
 	 * @return the main class defined in the given script
 	 */
 	public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
@@ -481,7 +479,14 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
         }
     }
-    */
+    /**
+     * open up the super class define that takes raw bytes
+     *
+     */
+    public Class defineClass(String name, byte[] b) {
+    	return super.defineClass(name, b, 0, b.length);
+    }
+
 
 	/* (non-Javadoc)
 	 * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
