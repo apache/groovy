@@ -1,6 +1,6 @@
 /*
  * Created on Mar 17, 2004
- *
+ *  
  */
 package groovy.swt.guibuilder;
 
@@ -20,9 +20,11 @@ import org.eclipse.swt.widgets.Composite;
 /**
  * Run another script
  * 
- * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> $Id$
+ * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> $Id:
+ *         RunScriptFactory.java,v 1.1 2004/03/18 08:51:48 ckl Exp $
  */
 public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
+
     /** the logger */
     private Logger log = Logger.getLogger(getClass().getName());
 
@@ -40,11 +42,17 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent) throws GroovyException {
+    public Object newInstance(Map properties, Object parent)
+            throws GroovyException {
         // get src
         String src = (String) properties.remove("src");
-        if (src == null) {
-            throw new MissingPropertyException("src", RunScriptFactory.class);
+        if (src == null) { throw new MissingPropertyException("src",
+                RunScriptFactory.class); }
+
+        // get binding
+        Binding binding = (Binding) properties.remove("binding");
+        if (binding == null) {
+            binding = new Binding();
         }
 
         // get parent composite
@@ -55,7 +63,7 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
         }
 
         // run script
-        return runScript(src, parentComposite);
+        return runScript(src, parentComposite, binding);
     }
 
     /**
@@ -64,12 +72,12 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      * @param parent
      * @return
      */
-    private Object runScript(String script, Composite parent) throws GroovyException {
+    private Object runScript(String script, Composite parent, Binding binding)
+            throws GroovyException {
         // TODO dispose children as an option
         // SwtUtils.disposeChildren(parent);
 
         // script binding
-        Binding binding = new Binding();
         binding.setVariable("guiBuilder", guiBuilder);
         if (parent != null) {
             binding.setVariable("parent", parent);
@@ -77,8 +85,7 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
         Object obj = null;
         try {
             obj = guiBuilder.getScriptEngine().run(script, binding);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.log(Level.WARNING, e.getMessage());
         }
         return obj;
