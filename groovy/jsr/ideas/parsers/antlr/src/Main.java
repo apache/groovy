@@ -1,4 +1,3 @@
-/** based on antlr-2.7.4/examples/java/java/Main.java */
 import java.io.*;
 import antlr.collections.AST;
 import antlr.collections.impl.*;
@@ -9,6 +8,7 @@ import java.awt.event.*;
 class Main {
 
 	static boolean showTree = false;
+	static boolean verbose = false;
     public static void main(String[] args) {
 		// Use a try/catch block for parser exceptions
 		try {
@@ -21,12 +21,25 @@ class Main {
 					if ( args[i].equals("-showtree") ) {
 						showTree = true;
 					}
+					else if ( args[i].equals("-verbose") ) {
+						verbose = true;
+					}
+					else if ( args[i].equals("-trace") ) {
+						GroovyRecognizer.tracing = true;
+						GroovyLexer.tracing = true;
+					}
+					else if ( args[i].equals("-traceParser") ) {
+						GroovyRecognizer.tracing = true;
+					}
+					else if ( args[i].equals("-traceLexer") ) {
+						GroovyLexer.tracing = true;
+					}
 					else {
 						doFile(new File(args[i])); // parse it
 					}
 				} }
 			else
-				System.err.println("Usage: java Main [-showtree] "+
+				System.err.println("Usage: java Main [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
                                    "<directory or file name>");
 		}
 		catch(Exception e) {
@@ -48,9 +61,8 @@ class Main {
 		}
 
 		// otherwise, if this is a groovy file, parse it!
-		else if ((f.getName().length()>7) &&
-				f.getName().substring(f.getName().length()-7).equals(".groovy")) {
-			System.err.println("   "+f.getAbsolutePath());
+		else if (f.getName().endsWith(".groovy")) {
+			System.err.println(" --- "+f.getAbsolutePath());
 			// parseFile(f.getName(), new FileInputStream(f));
 			parseFile(f.getName(), new BufferedReader(new FileReader(f)));
 		}
@@ -60,19 +72,17 @@ class Main {
 	public static void parseFile(String f, Reader r)
 								 throws Exception {
 		try {
-			// Create a scanner that reads from the input stream passed to us
-			GroovyLexer lexer = new GroovyLexer(r);
-			lexer.setFilename(f);
-
 			// Create a parser that reads from the scanner
-			GroovyRecognizer parser = new GroovyRecognizer(lexer);
+			GroovyRecognizer parser = GroovyRecognizer.make(r);
 			parser.setFilename(f);
 
 			// start parsing at the compilationUnit rule
 			parser.compilationUnit();
 			
+			System.out.println("parseFile "+f+" => "+parser.getAST());
+
 			// do something with the tree
-//@todo			doTreeAction(f, parser.getAST(), parser.getTokenNames());
+			doTreeAction(f, parser.getAST(), parser.getTokenNames());
 		}
 		catch (Exception e) {
 			System.err.println("parser exception: "+e);
@@ -80,7 +90,6 @@ class Main {
 		}
 	}
 	
-/*todo
 	public static void doTreeAction(String f, AST t, String[] tokenNames) {
 		if ( t==null ) return;
 		if ( showTree ) {
@@ -99,18 +108,20 @@ class Main {
                    }
 		        }
 			);
-			// System.out.println(t.toStringList());
+			if (verbose)  System.out.println(t.toStringList());
 		}
+	/*@todo
 		GroovyTreeParser tparse = new GroovyTreeParser();
 		try {
 			tparse.compilationUnit(t);
-			// System.out.println("successful walk of result AST for "+f);
+			if (verbose)  System.out.println("successful walk of result AST for "+f);
 		}
 		catch (RecognitionException e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
+	@todo*/
 
-	}*/
+	}
 }
 

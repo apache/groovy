@@ -1,14 +1,25 @@
-/**
- * WARNING: This is not the real groovy.g file, it is just a placeholder
- * till the real thing has been released into the wild by John Rose.
- * The names have been changed to fall in line with the external expectations
- * in build files, test classes etc...
+/* JSR-241 Groovy Recognizer */
+/* NOTE:  SET EDITOR TAB WIDTH TO 4 NOT 8 */
+/* See TO DO, DECIDE, PROPOSAL markers throughout this file. */
+
+header {
+    import java.util.ArrayList;
+	import java.io.InputStream;
+	import java.io.Reader;
+	import antlr.InputBuffer;
+	import antlr.LexerSharedInputState;
+}
+
+/** JSR-241 Groovy Recognizer
  *
+ * This Groovy grammar is derived from antlr-2.7.4/examples/java/java/java.g
+ * The version of java.g is 1.22 (April 14, 2004).
+ * This software may be found at http://www.antlr.org/ .
  *
+ * TO DO:  The changes need to be reapplied to an updated Java 5 grammar,
+ * probably http://michaelstudman.com/codegargle/blogEntry.do?id=11 .
  *
- * Java 1.3 Recognizer
- *
- * Run 'java Main [-showtree] directory-full-of-java-files'
+ * Run 'java Main [-showtree] directory-full-of-groovy-files'
  *
  * [The -showtree option pops up a Swing frame that shows
  *  the AST constructed from the parser.]
@@ -25,6 +36,7 @@
  *      Allan Jacobs        Allan.Jacobs@eng.sun.com
  *      Steve Messick       messick@redhills.com
  *      John Pybus			john@pybus.org
+ *      John Rose			rose00@mac.com
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
@@ -125,10 +137,11 @@
  *
  * This grammar is in the PUBLIC DOMAIN
  */
+
 class GroovyRecognizer extends Parser;
 options {
-	k = 2;                           // two token lookahead
-	exportVocab=Java;                // Call its vocabulary "Java"
+	k = 3;                           // three token lookahead
+	exportVocab=Groovy;              // Call its vocabulary "Groovy"
 	codeGenMakeSwitchThreshold = 2;  // Some optimizations
 	codeGenBitsetTestThreshold = 3;
 	defaultErrorHandler = false;     // Don't generate parser error handlers
@@ -136,68 +149,194 @@ options {
 }
 
 tokens {
-	BLOCK; MODIFIERS; OBJBLOCK; SLIST; CTOR_DEF; METHOD_DEF; VARIABLE_DEF;
+	BLOCK; MODIFIERS; OBJBLOCK; SLIST; METHOD_DEF; VARIABLE_DEF;
 	INSTANCE_INIT; STATIC_INIT; TYPE; CLASS_DEF; INTERFACE_DEF;
-	PACKAGE_DEF; ARRAY_DECLARATOR; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
+	PACKAGE_DEF; EXTENDS_CLAUSE; IMPLEMENTS_CLAUSE;
 	PARAMETERS; PARAMETER_DEF; LABELED_STAT; TYPECAST; INDEX_OP;
-	POST_INC; POST_DEC; METHOD_CALL; EXPR; ARRAY_INIT;
+	POST_INC; POST_DEC; METHOD_CALL; EXPR;
 	IMPORT; UNARY_MINUS; UNARY_PLUS; CASE_GROUP; ELIST; FOR_INIT; FOR_CONDITION;
 	FOR_ITERATOR; EMPTY_STAT; FINAL="final"; ABSTRACT="abstract";
-	STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL;
+	UNUSED_GOTO="goto"; UNUSED_CONST="const"; UNUSED_DO="do";
+	STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL; CTOR_IDENT;
+	STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
+	CLOSED_BLOCK; IMPLICIT_PARAMETERS; DEF="def";
+	SELECT_SLOT; REFLECT_MEMBER; DYNAMIC_MEMBER;
+	LABELED_ARG; SPREAD_ARG; OPTIONAL_ARG; SCOPE_ESCAPE;
+	LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
+	FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 }
 
-// Compilation Unit: In Java, this is a single file.  This is the start
+{
+	/** This factory is the correct way to wire together a Groovy parser and lexer. */
+	public static GroovyRecognizer make(GroovyLexer lexer) {
+		GroovyRecognizer parser = new GroovyRecognizer(lexer.plumb());
+		// TO DO: set up a common error-handling control block, to avoid excessive tangle between these guys
+		parser.lexer = lexer;
+		lexer.parser = parser;
+		return parser;
+	}
+	// Create a scanner that reads from the input stream passed to us...
+	public static GroovyRecognizer make(InputStream in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
+
+	GroovyLexer lexer;
+	public GroovyLexer getLexer() { return lexer; }
+	public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
+
+	// stuff to adjust ANTLR's tracing machinery
+    public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceParser
+    public void traceIn(String rname) throws TokenStreamException {
+        if (!GroovyRecognizer.tracing)  return;
+        super.traceIn(rname);
+    }
+    public void traceOut(String rname) throws TokenStreamException {
+        if (!GroovyRecognizer.tracing)  return;
+        if (returnAST != null)  rname += returnAST.toStringList();
+        super.traceOut(rname);
+    }
+	
+	// Error handling.  This is a funnel through which parser errors go, when the parser can suggest a solution.
+	public void requireFailed(String problem, String solution) throws SemanticException {
+		// TO DO: Needs more work.
+		Token lt = null;
+		try { lt = LT(1); }
+		catch (TokenStreamException ee) { }
+		if (lt == null)  lt = Token.badToken;
+		throw new SemanticException(problem + ";\n   solution: " + solution,
+									getFilename(), lt.getLine(), lt.getColumn());
+	}
+	// Convenience method for checking of expected error syndromes.
+	private void require(boolean z, String problem, String solution) throws SemanticException {
+		if (!z)  requireFailed(problem, solution);
+	}
+
+	// Query a name token to see if it begins with a capital letter.
+	// This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
+	private boolean isUpperCase(Token x) {
+		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+		String xtext = x.getText();
+		return (xtext.length() > 0 && Character.isUpperCase(xtext.charAt(0)));
+	}
+
+	private AST currentClass = null;  // current enclosing class (for constructor recognition)
+	// Query a name token to see if it is identical with the current class name.
+	// This is used to distinguish constructors from other methods.
+	private boolean isConstructorIdent(Token x) {
+		if (currentClass == null)  return false;
+		if (currentClass.getType() != IDENT)  return false;  // cannot happen?
+		String cname = currentClass.getText();
+
+		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+		return cname.equals(x.getText());
+	}
+}
+
+// Compilation Unit: In Groovy, this is a single file or script.  This is the start
 //   rule for this parser
 compilationUnit
 	:	// A compilation unit starts with an optional package definition
-		(	packageDefinition
-		|	/* nothing */
-		)
+		packageDefinition
 
-		// Next we have a series of zero or more import statements
-		( importDefinition )*
+		// The main part of the script is a sequence of any number of statements.
+		// Semicolons and/or significant newlines serve as separators.
+		( sep! (statement)? )*
+		EOF!
 
-		// Wrapping things up with any number of class or interface
-		//    definitions
-		( typeDefinition )*
-
+	|
+		(statement)? ( sep! (statement)? )*
 		EOF!
 	;
-
+	
+/** A Groovy script or simple expression.  Can be anything legal inside {...}. */
+snippetUnit
+	:       blockBody
+	;
 
 // Package statement: "package" followed by an identifier.
 packageDefinition
-	options {defaultErrorHandler = true;} // let ANTLR handle errors
-	:	p:"package"^ {#p.setType(PACKAGE_DEF);} identifier SEMI!
+	//options {defaultErrorHandler = true;} // let ANTLR handle errors
+	:	p:"package"^ {#p.setType(PACKAGE_DEF);} identifier
 	;
 
 
 // Import statement: import followed by a package or class name
-importDefinition
-	options {defaultErrorHandler = true;}
-	:	i:"import"^ {#i.setType(IMPORT);} identifierStar SEMI!
+importStatement
+	//options {defaultErrorHandler = true;}
+	:	i:"import"^ {#i.setType(IMPORT);} identifierStar
 	;
 
-// A type definition in a file is either a class or interface definition.
-typeDefinition
-	options {defaultErrorHandler = true;}
-	:	m:modifiers!
-		( classDefinition[#m]
-		| interfaceDefinition[#m]
-		)
-	|	SEMI!
-	;
-
-/** A declaration is the creation of a reference or primitive-type variable
- *  Create a separate Type/Var tree for each var in the var list.
+/** A declaration is the creation of a reference or primitive-type variable,
+ *  or (if arguments are present) of a method.
+ *  Generically, this is called a 'variable' definition, even in the case of a class field or method.
+ *  It may start with the keyword "def" and/or modifiers.
+ *  It may also start, more simply, with a capitalized type name.
+ *  <p>
+ *  AST effect: Create a separate Type/Var tree for each var in the var list.
+ *  Must be guarded, as in (declarationStart) => declaration.
  */
 declaration!
-	:	m:modifiers t:typeSpec[false] v:variableDefinitions[#m,#t]
+	:	DEF! nls!
+		(m:modifiers)? (t:typeSpec[false])?  v:variableDefinitions[#m,#t]
 		{#declaration = #v;}
+	|   m2:modifiers   (t2:typeSpec[false])? v2:variableDefinitions[#m2,#t2]
+		{#declaration = #v2;}
+	|	t3:typeSpec[false] v3:variableDefinitions[null,#t3]
+		{#declaration = #v3;}
+	;
+
+/** A declaration with one declarator and no initialization, like a parameterDeclaration. */
+singleDeclarationNoInit!
+	:	DEF! nls!
+		(m:modifiers)? (t:typeSpec[false])?  v:singleVariable[#m,#t]
+		{#singleDeclarationNoInit = #v;}
+	|   m2:modifiers   (t2:typeSpec[false])? v2:singleVariable[#m2,#t2]
+		{#singleDeclarationNoInit = #v2;}
+	|	t3:typeSpec[false] v3:singleVariable[null,#t3]
+		{#singleDeclarationNoInit = #v3;}
+	;
+
+singleDeclaration
+	:   sd:singleDeclarationNoInit!
+		{ #singleDeclaration = #sd; }
+		varInitializer
+	;
+
+/** Used only as a lookahead predicate, before diving in and parsing a declaration.
+ *  A declaration can be unambiguously introduced with "def" or a modifier token like "final".
+ *  It may also be introduced by a simple identifier whose first character is an uppercase letter,
+ *  as in {String x}.  Brackets (array and generic) are allowed, as in {List[] x}.
+ *  Anything else is parsed as a statement of some sort (expression or command).
+ *  <p>
+ *  (In the absence of explicit method-call parens, we assume a capitalized name is a type name.
+ *  Yes, this is a little hacky.  Alternatives are to complicate the declaration or command
+ *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
+ *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
+ *  between 'println' and 'String'.)
+ */
+declarationStart!
+	:   DEF
+	|   modifier!
+	|   upperCaseIdent! (LBRACK balancedTokens! RBRACK)* (IDENT | "it")
+	;
+
+/** Used only as a lookahead predicate for nested type declarations. */
+typeDeclarationStart!
+	:   (modifier!)* ("class" | "interface")
+	;
+
+/** An IDENT token whose spelling is required to start with an uppercase letter.
+ *  In the case of a simple statement {UpperID name} the identifier is taken to be a type name, not a command name.
+ */
+upperCaseIdent
+	:   {isUpperCase(LT(1))}?
+		IDENT
 	;
 
 // A type specification is a type name with possible brackets afterwards
 //   (which would make it an array type).
+// Set addImagNode true for types inside expressions, not declarations.
 typeSpec[boolean addImagNode]
 	: classTypeSpec[addImagNode]
 	| builtInTypeSpec[addImagNode]
@@ -205,9 +344,12 @@ typeSpec[boolean addImagNode]
 
 // A class type specification is a class type with possible brackets afterwards
 //   (which would make it an array type).
+// TO DO: Get rid of these special type productions for Groovy.  For now, make greedy to suppress errors.
 classTypeSpec[boolean addImagNode]
-	:	identifier (lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!)*
+	:	t:identifier
+		(   ata:arrayOrTypeArgs[#t]  )?
 		{
+			if (#ata != null)  #classTypeSpec = #ata;
 			if ( addImagNode ) {
 				#classTypeSpec = #(#[TYPE,"TYPE"], #classTypeSpec);
 			}
@@ -217,8 +359,10 @@ classTypeSpec[boolean addImagNode]
 // A builtin type specification is a builtin type with possible brackets
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
-	:	builtInType (lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!)*
+	:	t:builtInType
+		(   ata:arrayOrTypeArgs[#t]  )?
 		{
+			if (#ata != null)  #builtInTypeSpec = #ata;
 			if ( addImagNode ) {
 				#builtInTypeSpec = #(#[TYPE,"TYPE"], #builtInTypeSpec);
 			}
@@ -243,26 +387,33 @@ builtInType
 	|	"float"
 	|	"long"
 	|	"double"
+	|	"any"
+	// PROPOSE:  Add "list", "map", "closure"??
 	;
 
 // A (possibly-qualified) java identifier.  We start with the first IDENT
 //   and expand its name by adding dots and following IDENTS
 identifier
-	:	IDENT  ( DOT^ IDENT )*
+	:	IDENT
+		(   options { greedy = true; } :
+			DOT^ nls! IDENT )*
 	;
 
 identifierStar
 	:	IDENT
-		( DOT^ IDENT )*
-		( DOT^ STAR  )?
+		(   options { greedy = true; } :
+			DOT^  nls! IDENT )*
+		(   DOT^  nls! STAR
+		|   "as"^ nls! IDENT
+		)?
 	;
 
-// A list of zero or more modifiers.  We could have used (modifier)* in
+// A list of one or more modifiers.  We could have used (modifier)* in
 //   place of a call to modifiers, but I thought it was a good idea to keep
 //   this rule separate so they can easily be collected in a Vector if
 //   someone so desires
 modifiers
-	:	( modifier )*
+	:	( modifier nls! )+
 		{#modifiers = #([MODIFIERS, "MODIFIERS"], #modifiers);}
 	;
 
@@ -285,7 +436,9 @@ modifier
 
 // Definition of a Java class
 classDefinition![AST modifiers]
-	:	"class" IDENT
+		{ AST prevCurrentClass = currentClass; }
+	:	"class" IDENT nls!
+		{ currentClass = #IDENT; }
 		// it _might_ have a superclass...
 		sc:superClassClause
 		// it might implement some interfaces...
@@ -294,16 +447,17 @@ classDefinition![AST modifiers]
 		cb:classBlock
 		{#classDefinition = #(#[CLASS_DEF,"CLASS_DEF"],
 							   modifiers,IDENT,sc,ic,cb);}
+		{ currentClass = prevCurrentClass; }
 	;
 
 superClassClause!
-	:	( "extends" id:identifier )?
+	:	( "extends" nls! id:identifier nls! )?
 		{#superClassClause = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],id);}
 	;
 
 // Definition of a Java Interface
 interfaceDefinition![AST modifiers]
-	:	"interface" IDENT
+	:	"interface" IDENT nls!
 		// it might extend some other interfaces
 		ie:interfaceExtends
 		// now parse the body of the interface (looks like a class...)
@@ -315,9 +469,10 @@ interfaceDefinition![AST modifiers]
 
 // This is the body of a class.  You can have fields and extra semicolons,
 // That's about it (until you see what a field is...)
+// Semicolons and/or significant newlines serve as separators.
 classBlock
 	:	LCURLY!
-			( field | SEMI! )*
+			(field)? ( sep! (field)? )*
 		RCURLY!
 		{#classBlock = #([OBJBLOCK, "OBJBLOCK"], #classBlock);}
 	;
@@ -325,8 +480,8 @@ classBlock
 // An interface can extend several other interfaces...
 interfaceExtends
 	:	(
-		e:"extends"!
-		identifier ( COMMA! identifier )*
+		e:"extends"! nls!
+		identifier ( COMMA! nls! identifier )* nls!
 		)?
 		{#interfaceExtends = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],
 							#interfaceExtends);}
@@ -335,7 +490,7 @@ interfaceExtends
 // A class can implement several interfaces...
 implementsClause
 	:	(
-			i:"implements"! identifier ( COMMA! identifier )*
+			i:"implements"! nls! identifier ( COMMA! nls! identifier )* nls!
 		)?
 		{#implementsClause = #(#[IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE"],
 								 #implementsClause);}
@@ -347,40 +502,18 @@ implementsClause
 //   need to be some semantic checks to make sure we're doing the right thing...
 field!
 	:	// method, constructor, or variable declaration
-		mods:modifiers
-		(	h:ctorHead s:constructorBody // constructor
-			{#field = #(#[CTOR_DEF,"CTOR_DEF"], mods, h, s);}
-
-		|	cd:classDefinition[#mods]       // inner class
+		(declarationStart)=>
+		d:declaration
+		{#field = #d;}
+	|
+		// type declaration
+		(typeDeclarationStart)=>
+		( mods:modifiers )?
+		(	cd:classDefinition[#mods]       // inner class
 			{#field = #cd;}
 
 		|	id:interfaceDefinition[#mods]   // inner interface
 			{#field = #id;}
-
-		|	t:typeSpec[false]  // method or variable declaration(s)
-			(	IDENT  // the name of the method
-
-				// parse the formal parameter declarations.
-				LPAREN! param:parameterDeclarationList RPAREN!
-
-				rt:declaratorBrackets[#t]
-
-				// get the list of exceptions that this method is
-				// declared to throw
-				(tc:throwsClause)?
-
-				( s2:compoundStatement | SEMI )
-				{#field = #(#[METHOD_DEF,"METHOD_DEF"],
-						     mods,
-							 #(#[TYPE,"TYPE"],rt),
-							 IDENT,
-							 param,
-							 tc,
-							 s2);}
-			|	v:variableDefinitions[#mods,#t] SEMI
-//				{#field = #(#[VARIABLE_DEF,"VARIABLE_DEF"], v);}
-				{#field = #v;}
-			)
 		)
 
     // "static { ... }" class initializer
@@ -393,27 +526,69 @@ field!
 	;
 
 constructorBody
-    :   lc:LCURLY^ {#lc.setType(SLIST);}
-            ( options { greedy=true; } : explicitConstructorInvocation)?
-            (statement)*
+    :   lc:LCURLY^ {#lc.setType(SLIST);} nls!
+        (   (explicitConstructorInvocation) =>   // Java compatibility hack
+			explicitConstructorInvocation (sep! blockBody)?
+			| blockBody
+		)
         RCURLY!
     ;
 
 /** Catch obvious constructor calls, but not the expr.super(...) calls */
 explicitConstructorInvocation
-    :   "this"! lp1:LPAREN^ argList RPAREN! SEMI!
+		{boolean zz; /*ignored*/ }
+    :   "this"! lp1:LPAREN^ zz=argList RPAREN!
 		{#lp1.setType(CTOR_CALL);}
-    |   "super"! lp2:LPAREN^ argList RPAREN! SEMI!
+    |   "super"! lp2:LPAREN^ zz=argList RPAREN!
 		{#lp2.setType(SUPER_CTOR_CALL);}
     ;
 
+/** The tail of a declaration.
+  * Either v1, v2, ... (with possible initializers) or else m(args){body}.
+  * The two arguments are the modifier list (if any) and the declaration head (if any).
+  * The declaration head is the variable type, or (for a method) the return type.
+  * If it is missing, then the variable type is taken from its initializer (if there is one).
+  * Otherwise, the variable type defaults to 'any'.
+  * DECIDE:  Method return types default to the type of the method body, as an expression.
+  */
 variableDefinitions[AST mods, AST t]
 	:	variableDeclarator[getASTFactory().dupTree(mods),
 						   getASTFactory().dupTree(t)]
-		(	COMMA!
+		(	COMMA! nls!
 			variableDeclarator[getASTFactory().dupTree(mods),
 							   getASTFactory().dupTree(t)]
 		)*
+	|
+		// The parser allows a method definition anywhere a variable definition is accepted.
+
+		(   id:IDENT
+		|   qid:STRING_LITERAL		{#qid.setType(IDENT);}  // use for operator defintions, etc.
+		)
+
+		// parse the formal parameter declarations.
+		LPAREN! param:parameterDeclarationList! RPAREN!
+
+		/*OBS*rt:declaratorBrackets[#t]*/
+
+		// get the list of exceptions that this method is
+		// declared to throw
+		(	tc:throwsClause!  )?
+
+		// the method body is an open block
+		// but, it may have an optional constructor call (for constructors only)
+		(
+			{isConstructorIdent(id)}?
+			{#id.setType(CTOR_IDENT);}
+			cb:constructorBody!
+		|	mb:openBlock!
+		|   /*or nothing at all*/
+		)
+		{   if (#cb != null)   #mb = #cb;
+			if (#qid != null)  #id = #qid;
+			#variableDefinitions =
+				#(#[METHOD_DEF,"METHOD_DEF"],
+				  mods, #(#[TYPE,"TYPE"],t), id, param, tc, mb);
+		}
 	;
 
 /** Declaration of a variable.  This can be a class/instance variable,
@@ -421,22 +596,39 @@ variableDefinitions[AST mods, AST t]
  * It can also include possible initialization.
  */
 variableDeclarator![AST mods, AST t]
-	:	id:IDENT d:declaratorBrackets[t] v:varInitializer
-		{#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],d), id, v);}
+	:
+		id:variableName
+		/*OBS*d:declaratorBrackets[t]*/
+		v:varInitializer
+		{#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id, v);}
 	;
 
+/** Used in cases where a declaration cannot have commas, or ends with the "in" operator instead of '='. */
+singleVariable![AST mods, AST t]
+	:
+		id:variableName
+		{#singleVariable = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id);}
+	;
+
+variableName
+	:   (IDENT | "it")
+	;
+
+/*OBS*
 declaratorBrackets[AST typ]
 	:	{#declaratorBrackets=typ;}
 		(lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!)*
 	;
+*OBS*/
 
 varInitializer
-	:	( ASSIGN^ initializer )?
+	:	( ASSIGN^ nls! initializer )?
 	;
 
+/*OBS*
 // This is an initializer used to set up an array.
 arrayInitializer
-	:	lc:LCURLY^ {#lc.setType(ARRAY_INIT);}
+	:	lc:LCURLY^ nls {#lc.setType(ARRAY_INIT);}
 			(	initializer
 				(
 					// CONFLICT: does a COMMA after an initializer start a new
@@ -447,58 +639,104 @@ arrayInitializer
 						warnWhenFollowAmbig = false;
 					}
 				:
-					COMMA! initializer
+					COMMA! nls! initializer
 				)*
 				(COMMA!)?
 			)?
+			nls!
 		RCURLY!
 	;
+*OBS*/
 
 
 // The two "things" that can initialize an array element are an expression
 //   and another (nested) array initializer.
 initializer
 	:	expression
+/*OBS*  // Use [...] for initializing all sorts of sequences, including arrays.
 	|	arrayInitializer
-	;
-
-// This is the header of a method.  It includes the name and parameters
-//   for the method.
-//   This also watches for a list of exception classes in a "throws" clause.
-ctorHead
-	:	IDENT  // the name of the method
-
-		// parse the formal parameter declarations.
-		LPAREN! parameterDeclarationList RPAREN!
-
-		// get the list of exceptions that this method is declared to throw
-		(throwsClause)?
+*OBS*/
 	;
 
 // This is a list of exception classes that the method is declared to throw
 throwsClause
-	:	"throws"^ identifier ( COMMA! identifier )*
+	:	"throws"^ nls! identifier ( COMMA! nls! identifier )* nls!
 	;
 
 
 // A list of formal parameters
 parameterDeclarationList
-	:	( parameterDeclaration ( COMMA! parameterDeclaration )* )?
+	:	( parameterDeclaration ( COMMA! nls! parameterDeclaration )* )?
 		{#parameterDeclarationList = #(#[PARAMETERS,"PARAMETERS"],
 									#parameterDeclarationList);}
 	;
 
 // A formal parameter.
 parameterDeclaration!
-	:	pm:parameterModifier t:typeSpec[false] id:IDENT
-		pd:declaratorBrackets[#t]
+	:	("def"!)?  // useless but permitted for symmetry
+		pm:parameterModifier ( options {greedy=true;} : t:typeSpec[false])? id:parameterIdent
+		/*OBS*pd:declaratorBrackets[#t]*/
 		{#parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-									pm, #([TYPE,"TYPE"],pd), id);}
+									pm, #([TYPE,"TYPE"],t), id);}
 	;
 
 parameterModifier
 	:	(f:"final")?
 		{#parameterModifier = #(#[MODIFIERS,"MODIFIERS"], f);}
+	;
+
+closureParameters
+	:   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
+		{#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
+	|   LPAREN! parameterDeclarationList RPAREN! BOR!
+		// Yes, you can have a full parameter declaration list.
+		// Yes, you must parenthesize it (as for a named method) unless it's really, really simple.
+	;
+
+closureParametersStart!
+	:   BOR
+	|	parameterIdent! nls! (BOR | COMMA)
+	|   LPAREN balancedTokens! RPAREN nls! BOR
+	;
+
+/** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
+closureParameter!
+	:   parameterIdent!
+		{#closureParameter = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
+								#(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"]),
+								#closureParameter);}
+	;
+
+/** A formal parameter name can be decorated with the optionality operator, meaning that
+ *  the argument can be omitted by the caller.
+ *  (This has the same effect as creating a new wrapper overloading that
+ *  passes the appropriate null value in place of the missing argument.)
+ *  <p>
+ *  A formal parameter name can be decorated with a spread operator f(*x),
+ *  which means the name will be bound to a list of argument values.
+ *  This spread argument must be the last argument, except perhaps for
+ *  a Map argument (which may also be spread), and except perhaps for
+ *  a final Closure argument.  The Map and Closure parameters must be
+ *  explicitly typed, in order to provide a clear basis for dividing
+ *  incoming arguments into unlabeled, labeled, and closure categories.
+ *  <p>
+ *  Examples:
+ *    {(*al) | al}(0,1,2)  ===  [0,1,2]
+ *    {(*al) | al}(0,a:1,b:2)  ===  [0,[a:1,b:2]]
+ *    {(*al) | al}(0){s}  ===  [0,{s}]
+ *    {(*al,Closure c) | al}(0){s}  ===  [0]
+ *    {(*al,Map m) | al}(0,a:1,b:2)  ===  [0]
+ *    {(*al,Map m) | m}(0)  ===  [:]
+ */
+parameterIdent
+	:   (   // Spread operator:  {(*y)|y}(1,2,3)  ===  [1,2,3]
+			sp:STAR^				{#sp.setType(SPREAD_ARG);}
+		|   // Optional-null operator:  {(?x,?y)|[x,y]}(1)  ===  [1,null]
+			op:QUESTION^			{#op.setType(OPTIONAL_ARG);}
+		)?
+		(   IDENT
+		|   "it"		// allow keyword "it", but only as a method or closure parameter
+		)
 	;
 
 // Compound statement.  This is used in many contexts:
@@ -509,38 +747,143 @@ parameterModifier
 //   As the body of a method
 //   As a completely indepdent braced block of code inside a method
 //      it starts a new scope for variable definitions
+// In Groovy, this is called an "open block".  It cannot have closure arguments.
 
 compoundStatement
-	:	lc:LCURLY^ {#lc.setType(SLIST);}
-			// include the (possibly-empty) list of statements
-			(statement)*
+	:   openBlock
+	;
+
+/** An open block is not allowed to have closure arguments. */
+openBlock
+	:	lc:LCURLY^ {#lc.setType(SLIST);}   // AST type of SLIST means "never gonna be a closure"
+		blockBody
 		RCURLY!
 	;
 
+/** A block body is either a single expression, with no additional newlines or separators,
+  * or else the usual parade of zero or more statements.
+  */
+blockBody
+	:   // Allow almost any expression, as long as it stands completely alone in the block.
+		// The expression must not contain line breaks outside of parentheses.
+		// DECIDE: Illegality of line breaks.  Forces coders to place the RCURLY right after the expression:  {1+1}.
+		// This makes expression-bearing blocks look more distinct.
+		(balancedTokensNoSep (RCURLY | EOF)) => (assignmentExpression (RCURLY | EOF)) => expressionNotBOR
 
+	|	// include the (possibly-empty) list of statements
+		(statement)? (sep! (statement)?)*
+	;
+
+// Special restriction:  Logical OR expressions cannot occur at statement level, not even as {a...|b...}.
+// This restriction helps programmers avoid inadvertantly creating closure arguments.
+// Note pernicious case #1:  {it|1}.  Does this mean set the low-order bit of the argument, or return constant 1?
+// Note pernicious case #2:  {xx|1}.  Does this mean add the low-order bit into xx, or return constant 1?
+// In both cases, the bar is "eagerly" taken to be a closure argument delimiter.
+expressionNotBOR
+	:   e:expression
+		{require(#e.getType() != BOR,
+				"expression in block; cannot be of the form a|b",
+				"enclose the expression parentheses (a|b)");}
+	;
+
+/** A block which is known to be a closure, even if it has no apparent arguments.
+ */
+closedBlock
+	:	lc:LCURLY^ {#lc.setType(CLOSED_BLOCK);}
+		( ( nls closureParametersStart ) =>
+			nls! closureParameters
+		|
+			implicitParameters  // implicit {it|...} or {?noname|...}
+		)
+		blockBody
+		RCURLY!
+	;
+
+/** A block inside an expression is assumed to be a closure, unless it is double braced.
+ *  DECIDE: PROPOSAL: Double bracing always forces an open block.
+ *  This syntax is useful for passing on a pre-existing closure to a call, rather than building another.
+ *  Example:  <code>def forEachTwice(Closure y) { forEach{{y}}; forEach{{y}} }</code>
+ *  In the absence of double bracing, the block may always be interpreted as a closure,
+ *  even though its syntactic context may require that the closure be immediately invoked.
+ */
+expressionBlock
+	:   (LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
+		LCURLY! openBlock RCURLY!
+	|   closedBlock
+	;
+
+/** An appended block follows a method name or method argument list.
+ *  It is optionally labeled.  DECIDE:  A good rule?
+ */
+appendedBlock
+	:
+	/*
+	    (IDENT COLON nls LCURLY)=>
+		IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
+		expressionBlock
+	|
+	*/
+		expressionBlock
+	;
+
+/** A block known to be a closure, but which omits its arguments, is given this placeholder.
+ *  A subsequent pass is responsible for deciding if there is an implicit 'it' parameter,
+ *  or if the parameter list should be empty.
+ */
+implicitParameters
+	:   {   #implicitParameters = #(#[IMPLICIT_PARAMETERS,"IMPLICIT_PARAMETERS"]);  }
+	;
+
+/** A sub-block of a block can be either open or closed.
+ *  It is closed if and only if there are explicit closure arguments.
+ *  Compare this to a block which is appended to a method call,
+ *  which is given closure arguments, even if they are not explicit in the code.
+ */
+openOrClosedBlock
+	:   (LCURLY nls closureParametersStart ) =>
+		closedBlock
+	|	openBlock
+	;
+	
 statement
 	// A list of statements in curly braces -- start a new scope!
-	:	compoundStatement
+	// Free-floating blocks must be labeled or double-braced, to defend against typos.
+	:	(LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
+		LCURLY! openOrClosedBlock RCURLY!
+	|	compoundStatement
+		{require(false,
+				"ambiguous free-floating block head{...} needs context to determine if it's open or closed",
+				"surround {...} with extra braces {{...}} or use it as a closure in an expression x={...}");}
 
 	// declarations are ambiguous with "ID DOT" relative to expression
 	// statements.  Must backtrack to be sure.  Could use a semantic
 	// predicate to test symbol table to see what the type was coming
 	// up, but that's pretty hard without a symbol table ;)
-	|	(declaration)=> declaration SEMI!
+	|	(declarationStart)=>
+		declaration
 
 	// An expression statement.  This could be a method call,
 	// assignment statement, or any other expression evaluated for
 	// side-effects.
-	|	expression SEMI!
+	|	expressionStatement
 
 	// class definition
-	|	m:modifiers! classDefinition[#m]
+	|	(m:modifiers!)? classDefinition[#m]
 
 	// Attach a label to the front of a statement
-	|	IDENT c:COLON^ {#c.setType(LABELED_STAT);} statement
+	// This block is executed for effect, unless it has an explicit closure argument.
+	|	IDENT c:COLON^ {#c.setType(LABELED_STAT);}
+		(   (LCURLY) => openOrClosedBlock
+		|   statement
+		)
 
 	// If-else statement
-	|	"if"^ LPAREN! expression RPAREN! statement
+	// Note:  There is no nls next to either paren, even though it would be increase compatibility
+	// with various styles of Java indenting.  The "if" statement has the same constraints on white
+	// space as a method call statement like "iflikemethod (args) { body }".  By restricting
+	// newlines in both constructs in similar ways, we make Groovy internally consistent,
+	// at a minor cost to compatibility with Java.
+	|	"if"^ LPAREN! expression RPAREN! compatibleBodyStatement
 		(
 			// CONFLICT: the old "dangling-else" problem...
 			//           ANTLR generates proper code matching
@@ -549,52 +892,125 @@ statement
 				warnWhenFollowAmbig = false;
 			}
 		:
-			"else"! statement
+			(sep!)?  // allow SEMI here for compatibility with Java
+			"else"! nls! compatibleBodyStatement
 		)?
 
 	// For statement
 	|	"for"^
-			LPAREN!
-				forInit SEMI!   // initializer
-				forCond	SEMI!   // condition test
-				forIter         // updater
-			RPAREN!
-			statement                     // statement to loop over
+			LPAREN! forHead RPAREN!
+			compatibleBodyStatement                    // statement to loop over
 
 	// While statement
-	|	"while"^ LPAREN! expression RPAREN! statement
+	|	"while"^ LPAREN! expression RPAREN! compatibleBodyStatement
 
-	// do-while statement
-	|	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
+	/*OBS* no do-while statement in Groovy (too ambiguous)
+        |	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
+	*OBS*/
 
-	// get out of a loop (or switch)
-	|	"break"^ (IDENT)? SEMI!
+	// With statement
+	// (This is the Groovy scope-shift mechanism, used for builders.)
+	|	"with"^ LPAREN! expression RPAREN! compoundStatement
+	
+	// Splice statement, meaningful only inside a "with" expression.
+	// PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
+	|   sp:STAR^ nls!			{#sp.setType(SPREAD_ARG);}
+		expressionStatement
+	// Example:  with(htmlbuilder) { head{} body{ *"some text" } }
+	// Equivalent to:  { htmlbuilder.head{} htmlbuilder.body{ (htmlbuilder as Collection).add("some text") } }
 
-	// do next iteration of a loop
-	|	"continue"^ (IDENT)? SEMI!
-
-	// Return an expression
-	|	"return"^ (expression)? SEMI!
+	// Import statement.  Can be used in any scope.  Has "import x as y" also.
+	|   importStatement
 
 	// switch/case statement
 	|	"switch"^ LPAREN! expression RPAREN! LCURLY!
-			( casesGroup )*
+			(casesGroup)*
 		RCURLY!
 
 	// exception try-catch block
 	|	tryBlock
 
-	// throw an exception
-	|	"throw"^ expression SEMI!
-
 	// synchronize a statement
 	|	"synchronized"^ LPAREN! expression RPAREN! compoundStatement
 
-	// asserts (uncomment if you want 1.4 compatibility)
-	// |	"assert"^ expression ( COLON! expression )? SEMI!
-
+	/*OBS*
 	// empty statement
 	|	s:SEMI {#s.setType(EMPTY_STAT);}
+	*OBS*/
+	;
+
+/** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
+ *  Support this practice, even though it isn't very Groovy.
+ */
+compatibleBodyStatement
+	:   (LCURLY)=>
+		compoundStatement
+	|
+		statement
+	;
+
+/** In Groovy, return, break, continue, throw, and assert can be used in any expression context.
+ *  Example:  println (x || return);  println assert x, "won't print a false value!"
+ *  If an optional expression is missing, its value is void (this coerces to null when a value is required).
+ */
+branchExpression
+	:
+	// Return an expression
+		"return"^ (assignmentExpression)?
+
+	// break:  get out of a loop, or switch, or method call
+	// continue:  do next iteration of a loop, or leave a closure
+	|	("break"^ | "continue"^)
+		(   IDENT
+			(   options {greedy=true;} :
+				COLON! assignmentExpression
+			)?
+		)?
+
+	// throw an exception
+	|	"throw"^ assignmentExpression!
+
+	// asserts
+	|	"assert"^ assignmentExpression
+		(   options {greedy=true;} :
+			COMMA! assignmentExpression
+		)?
+
+	// Note:  The colon is too special in Groovy; we modify the FOR and ASSERT syntax to dispense with it.
+	;
+
+/** Any statement which begins with an expression, called the "head".
+ *  The head can be followed by command arguments:  {x.y a,b}, {x[y] a,b}, even {f(x) y}.
+ *  Or, the head can be followed by an assignment operator:  {x.y = z}, {x.y[a] ++}, {x.y(a) += z}, etc.
+ *  To catch simple errors, expressions at statement level have a limited set of syntaxes.
+ *  For example, {print x; +y} is a syntax error.  (Java does this trick also.)
+ *  If you really want something weird, wrap it in parentheses or curly braces.
+ */
+//  id(a), x.id(a), (x).id(a), etc.; id{...}, x.id{...}, (x).id{...}, etc.
+expressionStatement
+		{ boolean endBrackets = false; }
+	:   endBrackets=
+		head:pathExpression!
+		(	{!endBrackets}?
+			commandArguments[#head]
+		|   assignmentTail[#head]
+		|   {#expressionStatement = #head;}  // no command arguments
+		)
+		{   // Do an error check on the following token:
+			switch (LA(1)) {
+			case RCURLY: case RBRACK: case RPAREN: case SEMI: case NLS: case EOF:
+				break;
+			default:
+				require(false,
+						"command followed by garbage in f...",
+						"parenthesize correct argument list f(...) or whole expression (f()...)");
+			}
+		}
+	|
+		// Prefix increment; a special case of assignment statement.
+		(INC^ | DEC^) endBrackets=pathExpression
+	|
+		branchExpression
 	;
 
 casesGroup
@@ -613,21 +1029,38 @@ casesGroup
 	;
 
 aCase
-	:	("case"^ expression | "default") COLON!
+	:	("case"^ expression | "default") COLON! nls!
 	;
 
 caseSList
-	:	(statement)*
+	:	statement (sep! (statement)?)*
 		{#caseSList = #(#[SLIST,"SLIST"],#caseSList);}
 	;
 
+// The head of a for loop.
+forHead
+	:
+		// scan ahead for those pesky SEMI tokens...
+		(balancedTokensNoSep RPAREN) =>
+		// the coast is clear; it's a modern Groovy for statement
+		(   (declarationStart)=>
+			singleDeclarationNoInit
+		|   IDENT
+		|   "it"
+		)
+		i:"in"^		{#i.setType(FOR_IN_ITERABLE);}
+		shiftExpression
+ 	|
+		// Java-style for, in the name of backward compatibility
+		forInit SEMI!   // initializer
+		forCond	SEMI!   // condition test
+		forIter         // updater
+	;
+
 // The initializer for a for loop
+// The controlExpressionList production includes declarations as a possibility
 forInit
-		// if it looks like a declaration, it is
-	:	(	(declaration)=> declaration
-		// otherwise it could be an expression list...
-		|	expressionList
-		)?
+	:	(controlExpressionList)?
 		{#forInit = #(#[FOR_INIT,"FOR_INIT"],#forInit);}
 	;
 
@@ -637,15 +1070,15 @@ forCond
 	;
 
 forIter
-	:	(expressionList)?
+	:	(controlExpressionList)?
 		{#forIter = #(#[FOR_ITERATOR,"FOR_ITERATOR"],#forIter);}
 	;
 
 // an exception handler try/catch block
 tryBlock
 	:	"try"^ compoundStatement
-		(handler)*
-		( finallyClause )?
+		( options {greedy=true;} :  nls! handler)*
+		( options {greedy=true;} :  nls! finallyClause)?
 	;
 
 finallyClause
@@ -657,6 +1090,81 @@ handler
 	:	"catch"^ LPAREN! parameterDeclaration RPAREN! compoundStatement
 	;
 
+assignmentTail[AST head]
+	:
+		{#assignmentTail = head;}
+		(   ASSIGN^
+		|   PLUS_ASSIGN^
+		|   MINUS_ASSIGN^
+		|   STAR_ASSIGN^
+		|   DIV_ASSIGN^
+		|   MOD_ASSIGN^
+		|   SR_ASSIGN^
+		|   BSR_ASSIGN^
+		|   SL_ASSIGN^
+		|   BAND_ASSIGN^
+		|   BXOR_ASSIGN^
+		|   BOR_ASSIGN^
+		//|   USEROP_13^  //DECIDE: This is how user-define ops would show up.
+		)
+		nls!
+		assignmentExpression
+	|
+		{#assignmentTail = head;}
+		in:INC^ {#in.setType(POST_INC);}
+	|
+		{#assignmentTail = head;}
+		de:DEC^ {#de.setType(POST_DEC);}
+	;
+
+/** A member name (x.y) or element name (x[y]) can serve as a command name,
+ *  which may be followed by a list of arguments.
+ */
+commandArguments[AST head]
+	:   {   #commandArguments = head;
+			switch (LA(1)) {
+			case PLUS: case MINUS: case INC: case DEC:
+			case STAR: case DIV: case MOD:
+			case SR: case BSR: case SL:
+			case BAND: case BXOR: case BOR:
+			require(false,
+					"garbage infix or prefix operator after command name f +x",
+					"parenthesize either the whole expression (f+x) or the command arguments f(+x)");
+			}
+		}
+		expression (options { greedy=true; } : COMMA! nls! expression)*
+		// println 2+2 //BAD
+		// println(2+2) //OK
+		// println (2)+2 //BAD
+		// println((2)+2) //OK
+		// (println(2)+2) //OK
+		// compare (2), 2 //BAD
+		// compare( (2), 2 ) //OK
+		// foo.bar baz{bat}, bang{boz} //OK?!
+		{
+			AST headid = getASTFactory().dup(#head);
+			headid.setType(METHOD_CALL);
+			headid.setText("<command>");
+			#commandArguments = #(headid, #commandArguments);
+		}
+	;
+
+assignmentOp
+	:
+	(   ASSIGN^
+	|   PLUS_ASSIGN^
+	|   MINUS_ASSIGN^
+	|   STAR_ASSIGN^
+	|   DIV_ASSIGN^
+	|   MOD_ASSIGN^
+	|   SR_ASSIGN^
+	|   BSR_ASSIGN^
+	|   SL_ASSIGN^
+	|   BAND_ASSIGN^
+	|   BXOR_ASSIGN^
+	|   BOR_ASSIGN^
+	)
+	;
 
 // expressions
 // Note that most of these expressions follow the pattern
@@ -664,7 +1172,7 @@ handler
 //       nextHigherPrecedenceExpression
 //           (OPERATOR nextHigherPrecedenceExpression)*
 // which is a standard recursive definition for a parsing an expression.
-// The operators in java have the following precedences:
+// The operators in Groovy have the following precedences:
 //    lowest  (13)  = *= /= %= += -= <<= >>= >>>= &= ^= |=
 //            (12)  ?:
 //            (11)  ||
@@ -693,80 +1201,296 @@ handler
 
 
 // the mother of all expressions
+// This nonterminal is not used for expression statements, which have a more restricted syntax
+// due to possible ambiguities with other kinds of statements.  This nonterminal is used only
+// in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression
-	:	assignmentExpression
+	:   (declarationStart)=> singleDeclaration
+	|   branchExpression
+	|	assignmentExpression
 		{#expression = #(#[EXPR,"EXPR"],#expression);}
 	;
 
 
 // This is a list of expressions.
-expressionList
-	:	expression (COMMA! expression)*
-		{#expressionList = #(#[ELIST,"ELIST"], expressionList);}
+controlExpressionList
+	:	controlExpression (COMMA! nls! controlExpression)*
+		{#controlExpressionList = #(#[ELIST,"ELIST"], controlExpressionList);}
+	;
+
+/** Used for backward compatibility, in a few places where
+ *  Java expresion statements and declarations are required.
+ */
+controlExpression
+		{boolean zz; /*ignore*/ }
+	:	// if it looks like a declaration, it is
+		(declarationStart)=> singleDeclaration
+	|   // otherwise it's a plain statement expression
+		zz=head:pathExpression!
+		(	assignmentTail[#head]
+		|   {#controlExpression = #head;}  // no command syntax in this context
+		)
+	|
+		// Prefix increment; a special case of assignment statement.
+		(INC^ | DEC^) zz=pathExpression
+	;
+
+/** A "path expression" is a name which can be used for value, assigned to, or called.
+ *  Uses include assignment targets, commands, and types in declarations.
+ *  It is called a "path" because it looks like a linear path through a data structure.
+ *  Example:  a.b[n].c(x).d{s}
+ *  (Compare to a C lvalue, or LeftHandSide in the JLS section 15.26.)
+ *  General expressions are built up from path expressions, using operators like '+' and '='.
+ *  Note:  A path expression cannot begin with a block or closure.
+ */
+pathExpression
+returns [boolean endBrackets = false]
+	:   pe:primaryExpression!
+		endBrackets=
+		pathExpressionTail[#pe]
+	;
+
+pathExpressionTail[AST result]
+returns [boolean endBrackets = false]
+	:
+		// The primary can then be followed by a chain of .id, (a), [a], and {...}
+		(
+			// Parsing of this chain is greedy.  For example, a pathExpression may be a command name
+			// followed by a command argument, but that command argument cannot begin with an LPAREN,
+			// since a parenthesized expression is greedily attached to the pathExpression as a method argument.
+			options { greedy=true; }
+			:
+
+			endBrackets=
+			pe:pathElement[result]!
+			{ result = #pe; }
+		)*
+		{   #pathExpressionTail = result;  }
+	;
+
+pathExpressionFromBrackets
+		{boolean zz; /*ignore*/ }
+	:   pe:expressionBlock!
+		zz=pathExpressionTail[#pe]
+	|   pe2:listOrMapConstructorExpression!
+		zz=pathExpressionTail[#pe2]
+	;
+
+pathElement[AST prefix]
+returns [boolean endBrackets = false]
+		{boolean zz; /*ignore*/ }
+	:
+		{   #pathElement = prefix;  }
+		// Stuff which can precede a DOT:
+		(   // Spread operator:  x*.y  ===  x?.collect{it.y}
+			sp:STAR^				{#sp.setType(SPREAD_ARG);}
+		|   // Optional-null operator:  x?.y  === (x==null)?null:x.y
+			op:QUESTION^			{#op.setType(OPTIONAL_ARG);}
+		)?
+		// The all-powerful dot.
+		DOT^ nls! namePart
+		{   endBrackets = false; }
+	|
+		mca:methodCallArgs[prefix]
+		{   #pathElement = #mca; endBrackets = true;  }
+	|
+		// Element selection is always an option, too.
+		// In Groovy, the stuff between brackets is a general argument list,
+		// since the bracket operator is transformed into a method call.
+		// This can also be a declaration head; square brackets are used to parameterize array types.
+		ata:arrayOrTypeArgs[prefix]
+		{   #pathElement = #ata; endBrackets = false;  }
+
+/*NYI*
+	|	DOT^ nls! "this"
+
+	|	DOT^ nls! "super"
+		(   // (new Outer()).super()  (create enclosing instance)
+			lp3:LPAREN^ argList RPAREN!
+			{#lp3.setType(SUPER_CTOR_CALL);}
+		|   DOT^ IDENT
+			(	lps:LPAREN^ {#lps.setType(METHOD_CALL);}
+				argList
+				RPAREN!
+			)?
+		)
+	|	DOT^ nls! newExpression
+*NYI*/
+	;
+
+/** Lookahead pattern for pathElement. */
+pathElementStart!
+	:   (LPAREN | LBRACE | LBRACK | DOT | (STAR|QUESTION) DOT)
+	;
+
+/** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
+ *  <p>The alternative for "in" is there just for error processing; it raises an error.
+ */
+namePart
+	:
+		(   amp:LAND^   {#amp.setType(REFLECT_MEMBER);} // foo.&bar reflects the 'bar' member of foo
+		|	ats:ATSIGN^ {#amp.setType(SELECT_SLOT);}	// foo.@bar selects the field (or attribute), not property
+		)?
+
+	    (   IDENT
+		|   sl:STRING_LITERAL {#sl.setType(IDENT);}
+			// foo.'bar' is in all ways same as foo.bar, except that bar can have an arbitrary spelling
+		|   dn:dynamicMemberName!
+			{   #namePart = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dn);  }
+			// DECIDE PROPOSAL:  foo.(bar), x.(p?'a':'b') means dynamic lookup on a dynamic name
+		|
+			openBlock
+			// PROPOSAL, DECIDE:  Is this inline form of the 'with' statement useful?
+			// Definition:  a.{foo} === {with(a) {foo}}
+			// May cover some path expression use-cases previously handled by dynamic scoping (closure delegates).
+		// Recover with a good diagnostic from a common error:
+		|   "in"  // poster child; the lexer makes all keywords after dot look like "in"
+			{   String kwd = LT(1).getText();
+				require(false,
+						"illegal keyword after dot in x."+kwd,
+						"put the keyword in quotes, as in x.'"+kwd+"'");
+				// This helps the user recover from ruined Java identifiers, as in System.'in'.
+				// DECIDE: Shall we just define foo.in to DTRT automagically, or do we want the syntax check?
+			}
+		)
+
+		// (No, x.&@y is not needed; just say x.&y as Slot or some such.)
+	;
+
+/** If a dot is followed by a parenthesized or quoted expression, the member is computed dynamically,
+ *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
+ */
+dynamicMemberName
+	:   (   parenthesizedExpression
+		|   stringConstructorExpression
+		)
+	{   #dynamicMemberName = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dynamicMemberName);  }
+	;
+
+/** An expression may be followed by one or both of (...) and {...}.
+ *  Note: If either is (...) or {...} present, it is a method call.
+ *  The {...} is appended to the argument list, and matches a formal of type Closure.
+ *  If there is no method member, a property (or field) is used instead, and must itself be callable.
+ *  <p>
+ *  If the methodCallArgs are absent, it is a property (or field) reference, if possible.
+ *  If there is no property or field, it is treated as a method call (nullary) after all.
+ *  <p>
+ *  Arguments in the (...) can be labeled, and the appended block can be labeled also.
+ *  If there is a mix of unlabeled and labeled arguments,
+ *  all the labeled arguments must follow the unlabeled arguments,
+ *  except that the closure (labeled or not) is always a separate final argument.
+ *  Labeled arguments are collected up and passed as a single argument to a formal of type Map.
+ *  <p>
+ *  Therefore, f(x,y, a:p, b:q) {s} is equivalent in all ways to f(x,y, [a:p,b:q], {s}).
+ *  Spread arguments of sequence type count as unlabeled arguments,
+ *  while spread arguments of map type count as labeled arguments.
+ *  (This distinction must sometimes be checked dynamically.)
+ *
+ *  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
+ *  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
+ *  <p>
+ *  Returned AST is [METHOD_CALL, callee, ELIST?, CLOSED_BLOCK?].
+ */
+methodCallArgs[AST callee]
+	{boolean zz; /*ignore*/ }
+	:
+		{#methodCallArgs = callee;}
+		lp:LPAREN^ {#lp.setType(METHOD_CALL);}
+		zz=argList
+		RPAREN!
+		( options {greedy=true;} : appendedBlock )?		// maybe append a closure
+	|
+		// else use a closure alone
+		{#methodCallArgs = callee;}
+		cb:appendedBlock
+		{   AST lbrace = getASTFactory().dup(#cb);
+			lbrace.setType(METHOD_CALL);
+			#methodCallArgs = #(lbrace, #methodCallArgs);
+		}
+	;
+
+/** An expression may be followed by [...].
+ *  Unlike Java, these brackets may contain a general argument list,
+ *  which is passed to the array element operator, which can make of it what it wants.
+ *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
+ *  <p>Returned AST is [INDEX_OP, indexee, ELIST].
+ */
+arrayOrTypeArgs[AST indexee]
+	{boolean zz; /*ignore*/ }
+	:
+		{#arrayOrTypeArgs = indexee;}
+		(
+			// it's convenient to be greedy here, though it doesn't affect correctness
+			options { greedy = true; } :
+			lb:LBRACK^ {#lb.setType(INDEX_OP);}
+			zz=argList
+			RBRACK!
+		)+
 	;
 
 
 // assignment expression (level 13)
 assignmentExpression
 	:	conditionalExpression
-		(	(	ASSIGN^
-            |   PLUS_ASSIGN^
-            |   MINUS_ASSIGN^
-            |   STAR_ASSIGN^
-            |   DIV_ASSIGN^
-            |   MOD_ASSIGN^
-            |   SR_ASSIGN^
-            |   BSR_ASSIGN^
-            |   SL_ASSIGN^
-            |   BAND_ASSIGN^
-            |   BXOR_ASSIGN^
-            |   BOR_ASSIGN^
-            )
+		(       
+			(   ASSIGN^
+			|   PLUS_ASSIGN^
+			|   MINUS_ASSIGN^
+			|   STAR_ASSIGN^
+			|   DIV_ASSIGN^
+			|   MOD_ASSIGN^
+			|   SR_ASSIGN^
+			|   BSR_ASSIGN^
+			|   SL_ASSIGN^
+			|   BAND_ASSIGN^
+			|   BXOR_ASSIGN^
+			|   BOR_ASSIGN^
+			)
+			nls!
 			assignmentExpression
 		)?
 	;
 
-
 // conditional test (level 12)
 conditionalExpression
 	:	logicalOrExpression
-		( QUESTION^ assignmentExpression COLON! conditionalExpression )?
+		( QUESTION^ nls! assignmentExpression COLON! nls! conditionalExpression )?
 	;
 
 
 // logical or (||)  (level 11)
 logicalOrExpression
-	:	logicalAndExpression (LOR^ logicalAndExpression)*
+	:	logicalAndExpression (LOR^ nls! logicalAndExpression)*
 	;
 
 
 // logical and (&&)  (level 10)
 logicalAndExpression
-	:	inclusiveOrExpression (LAND^ inclusiveOrExpression)*
+	:	inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
 	;
 
 
 // bitwise or non-short-circuiting or (|)  (level 9)
 inclusiveOrExpression
-	:	exclusiveOrExpression (BOR^ exclusiveOrExpression)*
+	:	exclusiveOrExpression (BOR^ nls! exclusiveOrExpression)*
 	;
 
 
 // exclusive or (^)  (level 8)
 exclusiveOrExpression
-	:	andExpression (BXOR^ andExpression)*
+	:	andExpression (BXOR^ nls! andExpression)*
 	;
 
 
 // bitwise or non-short-circuiting and (&)  (level 7)
 andExpression
-	:	equalityExpression (BAND^ equalityExpression)*
+	:	equalityExpression (BAND^ nls! equalityExpression)*
 	;
 
 
 // equality/inequality (==/!=) (level 6)
 equalityExpression
-	:	relationalExpression ((NOT_EQUAL^ | EQUAL^) relationalExpression)*
+	:	relationalExpression ((NOT_EQUAL^ | EQUAL^) nls! relationalExpression)*
 	;
 
 
@@ -777,42 +1501,59 @@ relationalExpression
 				|	GT^
 				|	LE^
 				|	GE^
+				|	"in"^
 				)
+				nls!
 				shiftExpression
-			)*
-		|	"instanceof"^ typeSpec[true]
+			)?
+		|	"instanceof"^ nls! typeSpec[true]
+		|	"as"^         nls! typeSpec[true] //TO DO: Rework to allow type expression?
 		)
 	;
 
 
 // bit shift expressions (level 4)
 shiftExpression
-	:	additiveExpression ((SL^ | SR^ | BSR^) additiveExpression)*
+	:	additiveExpression
+		(   ((SL^ | SR^ | BSR^) nls!
+			|   RANGE_INCLUSIVE^
+			|   DEC^ {#DEC.setType(RANGE_EXCLUSIVE);}
+				// DECIDE: Maybe use a--b to denote C/Java-style index range ("exclusive")
+			)
+			additiveExpression
+		)*
 	;
 
 
 // binary addition/subtraction (level 3)
 additiveExpression
-	:	multiplicativeExpression ((PLUS^ | MINUS^) multiplicativeExpression)*
+	:	multiplicativeExpression ((PLUS^ | MINUS^) nls! multiplicativeExpression)*
 	;
 
 
 // multiplication/division/modulo (level 2)
 multiplicativeExpression
-	:	unaryExpression ((STAR^ | DIV^ | MOD^ ) unaryExpression)*
+	:	unaryExpression ((STAR^ | DIV^ | MOD^ ) nls! unaryExpression)*
 	;
 
 unaryExpression
-	:	INC^ unaryExpression
-	|	DEC^ unaryExpression
-	|	MINUS^ {#MINUS.setType(UNARY_MINUS);} unaryExpression
-	|	PLUS^  {#PLUS.setType(UNARY_PLUS);} unaryExpression
+	:	INC^ nls! unaryExpression
+	|	DEC^ nls! unaryExpression
+	|	MINUS^ {#MINUS.setType(UNARY_MINUS);} nls! unaryExpression
+	|	PLUS^  {#PLUS.setType(UNARY_PLUS);} nls! unaryExpression
+	|	DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} nls! unaryExpression
 	|	unaryExpressionNotPlusMinus
 	;
 
+// The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
+// If not within a "with" block, it pops the operand out of the static global scope,
+// into whatever dynamic (unchecked) global scope is available when the script is run,
+// regardless of package and imports.
+// Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
+
 unaryExpressionNotPlusMinus
-	:	BNOT^ unaryExpression
-	|	LNOT^ unaryExpression
+	:	BNOT^ nls! unaryExpression
+	|	LNOT^ nls! unaryExpression
 
 		// use predicate to skip cases like: (int.class)
     |   (LPAREN builtInTypeSpec[true] RPAREN) =>
@@ -822,6 +1563,7 @@ unaryExpressionNotPlusMinus
         // Have to backtrack to see if operator follows.  If no operator
         // follows, it's a typecast.  No semantic checking needed to parse.
         // if it _looks_ like a cast, it _is_ a cast; else it's a "(expr)"
+		// TO DO:  Rework this mess for Groovy.
     |	(LPAREN classTypeSpec[true] RPAREN unaryExpressionNotPlusMinus)=>
         lp:LPAREN^ {#lp.setType(TYPECAST);} classTypeSpec[true] RPAREN!
         unaryExpressionNotPlusMinus
@@ -831,6 +1573,7 @@ unaryExpressionNotPlusMinus
 
 // qualified names, array expressions, method invocation, post inc/dec
 postfixExpression
+		{boolean zz; /*ignored*/}
 	:
     /*
     "this"! lp1:LPAREN^ argList RPAREN!
@@ -840,40 +1583,13 @@ postfixExpression
 		{#lp2.setType(SUPER_CTOR_CALL);}
     |
     */
-        primaryExpression
+        (   zz=pathExpression				// x, x.f, x(), x{}, etc.
+		|   pathExpressionFromBrackets		// {c}, {c}(), [x].f, etc.
+		)
 
 		(
-            /*
-            options {
-				// the use of postfixExpression in SUPER_CTOR_CALL adds DOT
-				// to the lookahead set, and gives loads of false non-det
-				// warnings.
-				// shut them off.
-				generateAmbigWarnings=false;
-			}
-		:	*/
-            DOT^ IDENT
-			(	lp:LPAREN^ {#lp.setType(METHOD_CALL);}
-				argList
-				RPAREN!
-			)?
-		|	DOT^ "this"
-
-		|	DOT^ "super"
-            (   // (new Outer()).super()  (create enclosing instance)
-                lp3:LPAREN^ argList RPAREN!
-                {#lp3.setType(SUPER_CTOR_CALL);}
-			|   DOT^ IDENT
-                (	lps:LPAREN^ {#lps.setType(METHOD_CALL);}
-                    argList
-                    RPAREN!
-                )?
-            )
-		|	DOT^ newExpression
-		|	lb:LBRACK^ {#lb.setType(INDEX_OP);} expression RBRACK!
-		)*
-
-		(   // possibly add on a post-increment or post-decrement.
+			options {greedy=true;} :
+			// possibly add on a post-increment or post-decrement.
             // allows INC/DEC on too much, but semantics can check
 			in:INC^ {#in.setType(POST_INC);}
 	 	|	de:DEC^ {#de.setType(POST_DEC);}
@@ -882,25 +1598,90 @@ postfixExpression
 
 // the basic element of an expression
 primaryExpression
-	:	identPrimary ( options {greedy=true;} : DOT^ "class" )?
+	:	IDENT
+	/*OBS*  //class names work fine as expressions, no need for T.class in Groovy
+		( options {greedy=true;} : DOT^ "class" )?
+	*OBS*/
     |   constant
 	|	"true"
 	|	"false"
 	|	"null"
     |   newExpression
+	|	"it"							// implicit or explicit closure parameter (or method parameter)
 	|	"this"
 	|	"super"
-	|	LPAREN! assignmentExpression RPAREN!
+	|	parenthesizedExpression			// (general stuff..,.)
+	|   stringConstructorExpression		// "foo $bar baz"; presented as multiple tokens
+	|   builtInType						// type expressions work in Groovy
+	/*OBS*  //class names work fine as expressions
 		// look for int.class and int[].class
 	|	builtInType
 		( lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK! )*
-		DOT^ "class"
+		DOT^ nls! "class"
+	*OBS*/
 	;
 
+parenthesizedExpression
+	:   lp:LPAREN^ expression RPAREN!			{ #lp.setType(EXPR); }
+	;
+
+// Groovy syntax for "$x $y".
+stringConstructorExpression
+	:   cs:STRING_CTOR_START
+		{ #cs.setType(STRING_LITERAL); }
+
+		stringConstructorValuePart
+
+		(   cm:STRING_CTOR_MIDDLE
+			{ #cm.setType(STRING_LITERAL); }
+			stringConstructorValuePart
+		)*
+
+		ce:STRING_CTOR_END
+		{ #ce.setType(STRING_LITERAL);
+		  #stringConstructorExpression =
+			#(#[STRING_CONSTRUCTOR,"STRING_CONSTRUCTOR"], stringConstructorExpression);
+		}
+	;
+
+stringConstructorValuePart
+	:   identifier		// aka, pathExpression
+	|   openBlock
+	;
+
+/**
+ * A list constructor is a argument list enclosed in square brackets, without labels.
+ * Any argument can be decorated with a spread or optional operator (*x, ?x), but not a label (a:x).
+ * Examples:  [], [1], [1,2], [1,*l1,2], [*l1,*l2], [1,?x,2].
+ * (The l1, l2 must be a sequence or null.)
+ * <p>
+ * A map constructor is an argument list enclosed in square brackets, with labels everywhere,
+ * except possibly on spread arguments, which stand for whole maps spliced in.
+ * A colon immediately after the left bracket also forces the expression to be a map constructor.
+ * Examples: [:], [a:1], [: a:1], [a:1,b:2], [a:1,*m1,b:2], [:*m1,*m2], [a:1,q:?x,b:2], [a:1,a:*x,b:2]
+ * (The m1, m2 must be a map or null.)
+ * Values associated with identical keys overwrite from left to right:
+ * [a:1,a:2]  ===  [a:2]
+ * <p>
+ * Some malformed constructor expressions are not detected in the parser, but in a post-pass.
+ * Bad examples: [1,b:2], [a:1,2], [:1], [a:1,?x], [a:1, b:*x].
+ * (Note that method call arguments, by contrast, can be a mix of keyworded and non-keyworded arguments.)
+ */
+listOrMapConstructorExpression
+		{ boolean hasLabels = false, hal; }
+	:   lcon:LBRACK^
+		(  COLON!		{ hasLabels |= true; }  )?  // [:], [:*x], [:*x,*y] are map constructors
+		hal=argList		{ hasLabels |= hal;  }      // any argument label implies a map
+		RBRACK!
+		{   #lcon.setType(hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR);  }
+	;
+
+/*OBS*
 /** Match a, a.b.c refs, a.b.c(...) refs, a.b.c[], a.b.c[].class,
  *  and a.b.c.class refs.  Also this(...) and super(...).  Match
  *  this or super.
  */
+/*OBS*
 identPrimary
 	:	IDENT
 		(
@@ -909,7 +1690,7 @@ identPrimary
 				// We do want to match here.  Turn off warning.
 				greedy=true;
 			}
-		:	DOT^ IDENT
+		:	DOT^ nls! IDENT
 		)*
 		(
             options {
@@ -919,12 +1700,13 @@ identPrimary
                 // limitation of linear approximate lookahead.
 				greedy=true;
 		    }
-		:   ( lp:LPAREN^ {#lp.setType(METHOD_CALL);} argList RPAREN! )
+		:   ( lp:LPAREN^ {#lp.setType(METHOD_CALL);} zz=argList RPAREN! )
 		|	( options {greedy=true;} :
               lbc:LBRACK^ {#lbc.setType(ARRAY_DECLARATOR);} RBRACK!
             )+
 		)?
     ;
+*OBS*/
 
 /** object instantiation.
  *  Trees are built as illustrated by the following input/tree pairs:
@@ -976,9 +1758,14 @@ identPrimary
  *
  */
 newExpression
+		{boolean zz; /*ignored*/}
 	:	"new"^ type
-		(	LPAREN! argList RPAREN! (classBlock)?
+		(	LPAREN! zz=argList RPAREN!
+			/*NYI*
+			(anonymousInnerClassBlock)?
+			*NYI*/
 
+/*OBS*
 			//java 1.1
 			// Note: This will allow bad constructs like
 			//    new int[4][][3] {exp,exp}.
@@ -988,16 +1775,80 @@ newExpression
 			//   b) [ expr ] and an init are not used together
 
 		|	newArrayDeclarator (arrayInitializer)?
+			// Groovy does not support Java syntax for initialized new arrays.
+			// Use sequence constructors instead.
+*OBS*/
 		)
+	// DECIDE:  Keep 'new x()' syntax?
 	;
+	
+/*NYI*
+anonymousInnerClassBlock
+	:   classBlock
+	;
+*NYI*/
 
 argList
-	:	(	expressionList
+returns [boolean hasLabels = false]
+{ boolean hl2; }
+	:	(
+			hasLabels=argument
+			(
+				options { greedy=true; }:
+				COMMA! hl2=argument		{ hasLabels |= hl2; }
+			)*
+			{#argList = #(#[ELIST,"ELIST"], argList);}
 		|	/*nothing*/
 			{#argList = #[ELIST,"ELIST"];}
 		)
+
+		// DECIDE: Allow an extra trailing comma, for easy editing of long lists.
+		// This applies uniformly to [x,y,] and (x,y,).  It is inspired by Java's a[] = {x,y,}.
+		(   COMMA!  )?
 	;
 
+/** A single argument in (...) or [...].  Corresponds to to a method or closure parameter.
+ *  May be labeled.  May be modified by the spread or optionality operators *, ?.
+ */
+argument
+returns [boolean hasLabel = false]
+	:
+		// Optional argument label.
+		// Usage:  Specifies a map key, or a keyworded argument.
+		(   (argumentLabelStart) =>
+			argumentLabel c:COLON^			{#c.setType(LABELED_ARG);}
+		)?
+
+		(	// Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
+			sp:STAR^				{#sp.setType(SPREAD_ARG);}
+		|	// Optional-null operator:  f(1,?x,2)  ===  (x==null)?f(1,2):f(1,x,2)
+			op:QUESTION^			{#op.setType(OPTIONAL_ARG);}
+		)?
+
+		expression
+	;
+
+/** A label for an argument is of the form a:b, 'a':b, "a":b, or (a):b.
+ *	The labels in (a:b), ('a':b), and ("a":b) are in all ways equivalent,
+ *	except that the quotes allow more spellings.
+ *  Equivalent dynamically computed labels are (('a'):b) and ("${'a'}":b)
+ *  but not ((a):b) or "$a":b, since the latter cases evaluate (a) as a normal identifier.
+ *	Bottom line:  If you want a truly variable label, use parens and say ((a):b).
+ */
+argumentLabel
+	:   STRING_LITERAL
+	|   id:IDENT			{#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
+	|   stringConstructorExpression							// dynamic expression
+	|   parenthesizedExpression								// dynamic expression
+	;
+
+/** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
+argumentLabelStart!
+	:   ( IDENT | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
+		COLON
+	;
+
+/*OBS*
 newArrayDeclarator
 	:	(
 			// CONFLICT:
@@ -1014,24 +1865,68 @@ newArrayDeclarator
 			RBRACK!
 		)+
 	;
+*OBS*/
 
 constant
 	:	NUM_INT
-	|	CHAR_LITERAL
 	|	STRING_LITERAL
 	|	NUM_FLOAT
 	|	NUM_LONG
 	|	NUM_DOUBLE
+	|   NUM_BIG_INT
+	|   NUM_BIG_DECIMAL
+	;
+
+/** Fast lookahead across balanced brackets of all sorts. */
+balancedBrackets!
+	:   LPAREN balancedTokens RPAREN
+	|   LBRACK balancedTokens RBRACK
+	|   LCURLY balancedTokens RCURLY
+	|   STRING_CTOR_START balancedTokens STRING_CTOR_END
+	;
+
+balancedTokens!
+	:   (   balancedBrackets
+		|   ~(LPAREN|LBRACK|LCURLY | STRING_CTOR_START
+		     |RPAREN|RBRACK|RCURLY | STRING_CTOR_END)
+		)*
+	;
+
+balancedTokensNoSep!
+	:   (   balancedBrackets
+		|   ~(LPAREN|LBRACK|LCURLY | STRING_CTOR_START
+		     |RPAREN|RBRACK|RCURLY | STRING_CTOR_END     | SEMI|NLS)
+		)*
+	;
+
+/** A statement separator is either a semicolon or a significant newline. 
+ *  Any number of additional (insignificant) newlines may accompany it.
+ *  (All the '!' signs simply suppress the default AST building.)
+ */
+sep!
+	:   SEMI! nls!
+	|   NLS!		// this newline is significant!
+		(
+			options { greedy=true; }:
+			SEMI! nls!      // this superfluous semicolon is gobbled
+		)?
+	;
+
+/** Zero or more insignificant newlines, all gobbled up and thrown away. */
+nls!    :
+		(options { greedy=true; }: NLS!)?
 	;
 
 
+// TO DO: declarations in expression position
+
 //----------------------------------------------------------------------------
-// The Java scanner
+// The Groovy scanner
 //----------------------------------------------------------------------------
 class GroovyLexer extends Lexer;
 
 options {
-	exportVocab=Java;      // call the vocabulary "Java"
+	exportVocab=Groovy;    // call the vocabulary "Groovy"
 	testLiterals=false;    // don't automatically test for literals
 	k=4;                   // four characters of lookahead
 	charVocabulary='\u0003'..'\u7FFE';
@@ -1042,18 +1937,127 @@ options {
 }
 
 
+{
+	/** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
+	protected int parenLevel = 0;
+	protected int suppressNewline = 0;  // be really mean to newlines inside strings
+	protected static final int SCS_TRIPLE = 1, SCS_VAL = 2, SCS_LIT = 4, SCS_LIMIT = 8;
+	protected int stringCtorState = 0;  // hack string constructor boundaries
+	/** Push parenLevel here and reset whenever inside '{x}'. */
+	protected ArrayList parenLevelStack = new ArrayList();
+	protected Token lastToken = Token.badToken;
+
+	protected void pushParenLevel() {
+		parenLevelStack.add(new Integer(parenLevel*8 + stringCtorState));
+		parenLevel = 0;
+		stringCtorState = 0;
+	}
+	protected void popParenLevel() {
+		int npl = parenLevelStack.size();
+		if (npl == 0)  return;
+		int i = ((Integer) parenLevelStack.remove(--npl)).intValue();
+		parenLevel      = i / SCS_LIMIT;
+		stringCtorState = i % SCS_LIMIT;
+	}
+	
+	protected void restartStringCtor(boolean expectLiteral) {
+		if (stringCtorState != 0) {
+			stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TRIPLE);
+		}
+	}
+
+	void newlineCheck() throws RecognitionException {
+		if (suppressNewline > 0) {
+			suppressNewline = 0;
+			require(suppressNewline == 0,
+				"end of line reached within a simple string 'x' or \"x\"",
+				"for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
+		}
+		newline();
+	}
+	
+	/** This is a bit of plumbing which resumes collection of string constructor bodies,
+	 *  after an embedded expression has been parsed.
+	 *  Usage:  new GroovyRecognizer(new GroovyLexer(in).plumb()).
+	 */
+	public TokenStream plumb() {
+		return new TokenStream() {
+			public Token nextToken() throws TokenStreamException {
+				if (stringCtorState >= SCS_LIT) {
+					// This goo is modeled upon the ANTLR code for nextToken:
+					boolean tripleQuote = (stringCtorState & SCS_TRIPLE) != 0;
+					stringCtorState = 0;  // get out of this mode, now
+					resetText();
+					try {
+						mSTRING_CTOR_END(true, /*fromStart:*/false, tripleQuote);
+						return lastToken = _returnToken;
+					} catch (RecognitionException e) {
+						throw new TokenStreamRecognitionException(e);
+					} catch (CharStreamException cse) {
+						if ( cse instanceof CharStreamIOException ) {
+							throw new TokenStreamIOException(((CharStreamIOException)cse).io);
+						}
+						else {
+							throw new TokenStreamException(cse.getMessage());
+						}
+					}
+				}
+				return lastToken = GroovyLexer.this.nextToken();
+			}
+		};
+	}
+
+	// stuff to adjust ANTLR's tracing machinery
+    public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceLexer
+    public void traceIn(String rname) throws CharStreamException {
+        if (!GroovyLexer.tracing)  return;
+        super.traceIn(rname);
+    }
+    public void traceOut(String rname) throws CharStreamException {
+        if (!GroovyLexer.tracing)  return;
+        if (_returnToken != null)  rname += tokenStringOf(_returnToken);
+        super.traceOut(rname);
+    }
+	private static java.util.HashMap ttypes;
+	private static String tokenStringOf(Token t) {
+		if (ttypes == null) {
+			java.util.HashMap map = new java.util.HashMap();
+			java.lang.reflect.Field[] fields = GroovyTokenTypes.class.getDeclaredFields();
+			for (int i = 0; i < fields.length; i++) {
+				if (fields[i].getType() != int.class)  continue;
+				try {
+					map.put(fields[i].get(null), fields[i].getName());
+				} catch (IllegalAccessException ee) {
+				}
+			}
+			ttypes = map;
+		}
+		Integer tt = new Integer(t.getType());
+		Object ttn = ttypes.get(tt);
+		if (ttn == null)  ttn = "<"+tt+">";
+		return "["+ttn+",\""+t.getText()+"\"]";
+	}
+
+	protected GroovyRecognizer parser;  // little-used link; TO DO: get rid of
+	private void require(boolean z, String problem, String solution) throws SemanticException {
+		// TO DO: Direct to a common error handler, rather than through the parser.
+		if (!z)  parser.requireFailed(problem, solution);
+	}
+}
+
+// TO DO:  Regexp ops, range ops, Borneo-style ops.
 
 // OPERATORS
 QUESTION		:	'?'		;
-LPAREN			:	'('		;
-RPAREN			:	')'		;
-LBRACK			:	'['		;
-RBRACK			:	']'		;
-LCURLY			:	'{'		;
-RCURLY			:	'}'		;
+LPAREN			:	'('	{++parenLevel;} ;
+RPAREN			:	')'	{--parenLevel;} ;
+LBRACK			:	'['	{++parenLevel;} ;
+RBRACK			:	']'	{--parenLevel;} ;
+LCURLY			:	'{'	{pushParenLevel();};
+RCURLY			:	'}'	{popParenLevel(); if(stringCtorState!=0) restartStringCtor(true);};
 COLON			:	':'		;
 COMMA			:	','		;
-//DOT			:	'.'		;
+DOT  			:	'.'		;
 ASSIGN			:	'='		;
 EQUAL			:	"=="	;
 LNOT			:	'!'		;
@@ -1090,28 +2094,56 @@ BAND			:	'&'		;
 BAND_ASSIGN		:	"&="	;
 LAND			:	"&&"	;
 SEMI			:	';'		;
-
+DOLLAR			:	'$'		;
+ATSIGN			:	'@'		;
+RANGE_INCLUSIVE	:	".."	;
 
 // Whitespace -- ignored
-WS	:	(	' '
+WS	:	(
+		options { greedy=true; }:
+			' '
 		|	'\t'
 		|	'\f'
-			// handle newlines
-		|	(	options {generateAmbigWarnings=false;}
-			:	"\r\n"  // Evil DOS
-			|	'\r'    // Macintosh
-			|	'\n'    // Unix (the right way)
-			)
-			{ newline(); }
-		)+
+                )+
 		{ _ttype = Token.SKIP; }
+	;
+
+protected
+ONE_NL! :       // handle newlines, which are significant in Groovy
+		(	options {generateAmbigWarnings=false;}
+		:	"\r\n"  // Evil DOS
+		|	'\r'    // Macintosh
+		|	'\n'    // Unix (the right way)
+		)
+                {
+			// update current line number for error reporting
+                        newlineCheck();
+                }
+	;
+	
+// Group any number of newlines (with comments and whitespace) into a single token.
+// This reduces the amount of parser lookahead required to parse around newlines.
+// It is an invariant that the parser never sees NLS tokens back-to-back.
+NLS	:	
+		(	ONE_NL
+			(WS | SL_COMMENT | ML_COMMENT)*
+			// (gobble, gobble)*
+		)+
+		// Inside (...) and [...] but not {...}, ignore newlines.
+		{   if (parenLevel != 0) {
+				$setType(Token.SKIP);
+			} else {
+				$setText("<lineterm>");
+			}
+		}
 	;
 
 // Single-line comments
 SL_COMMENT
 	:	"//"
-		(~('\n'|'\r'))* ('\n'|'\r'('\n')?)?
-		{$setType(Token.SKIP); newline();}
+		(~('\n'|'\r'))*
+		{$setType(Token.SKIP);}
+		ONE_NL
 	;
 
 // multiple-line comments
@@ -1128,10 +2160,10 @@ ML_COMMENT
 				generateAmbigWarnings=false;
 			}
 		:
-			{ LA(2)!='/' }? '*'
-		|	'\r' '\n'		{newline();}
-		|	'\r'			{newline();}
-		|	'\n'			{newline();}
+			( '*' ~'/' ) => '*'
+		|	'\r' '\n'		{newlineCheck();}
+		|	'\r'			{newlineCheck();}
+		|	'\n'			{newlineCheck();}
 		|	~('*'|'\n'|'\r')
 		)*
 		"*/"
@@ -1139,16 +2171,69 @@ ML_COMMENT
 	;
 
 
-// character literals
-CHAR_LITERAL
-	:	'\'' ( ESC | ~('\''|'\n'|'\r'|'\\') ) '\''
-	;
-
 // string literals
 STRING_LITERAL
-	:	'"' (ESC|~('"'|'\\'|'\n'|'\r'))* '"'
+		{int tt=0;}
+	:   ("'''") =>  //...shut off ambiguity warning
+		"'''"!
+		(   STRING_CH | ESC | '"' | '$'
+		|	('\'' (~'\'' | '\'' ~'\'')) => '\''  // allow 1 or 2 close quotes
+		)*
+		"'''"!
+	|	'\''!
+					{++suppressNewline;}
+		(   STRING_CH | ESC | '"' | '$'  )*
+					{--suppressNewline;}
+		'\''!
+	|   ("\"\"\"") =>  //...shut off ambiguity warning
+		"\"\"\""!
+		tt=STRING_CTOR_END[true, /*tripleQuote:*/ true]
+		{$setType(tt);}
+	|	'"'!
+					{++suppressNewline;}
+		tt=STRING_CTOR_END[true, /*tripleQuote:*/ false]
+		{$setType(tt);}
 	;
 
+protected
+STRING_CTOR_END[boolean fromStart, boolean tripleQuote]
+returns [int tt=STRING_CTOR_END]
+	:
+		(
+			options {  greedy = true;  }:
+		    STRING_CH | ESC | '\''
+		|   ('"' (~'"' | '"' ~'"'))=> {tripleQuote}? '"'  // allow 1 or 2 close quotes
+		)*
+		(	(   { !tripleQuote }? "\""!
+			|   {  tripleQuote }? "\"\"\""!
+			)
+			{
+				if (fromStart)      tt = STRING_LITERAL;  // plain string literal!
+				if (!tripleQuote)	{--suppressNewline;}
+				// done with string constructor!
+				//assert(stringCtorState == 0);
+			}
+		|   '$'!
+			{
+				// (('*')? ('{' | LETTER)) =>
+				int k = 1;
+				char lc = LA(k);
+				if (lc == '*')  lc = LA(++k);
+				require(lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)),
+						"illegal string body character after dollar sign",
+						"either escape a literal dollar sign \"\\$5\" or bracket the value expression \"${5}\"");
+				// Yes, it's a string constructor, and we've got a value part.
+				tt = (fromStart ? STRING_CTOR_START : STRING_CTOR_MIDDLE);
+				stringCtorState = SCS_VAL + (tripleQuote? SCS_TRIPLE: 0);
+			}
+		)
+		{   $setType(tt);  }
+	;
+
+protected
+STRING_CH
+	:   ~('"'|'\''|'\\'|'$'|'\n'|'\r')
+	;
 
 // escape sequence -- note that this is protected; it can only be called
 //   from another lexer rule -- it will not ever directly return a token to
@@ -1160,16 +2245,19 @@ STRING_LITERAL
 // the FOLLOW ambig warnings.
 protected
 ESC
-	:	'\\'
-		(	'n'
-		|	'r'
-		|	't'
-		|	'b'
-		|	'f'
+	:	'\\'!
+		(	'n' 	{$setText("\n");}
+		|	'r' 	{$setText("\r");}
+		|	't' 	{$setText("\t");}
+		|	'b' 	{$setText("\b");}
+		|	'f' 	{$setText("\f");}
 		|	'"'
 		|	'\''
 		|	'\\'
-		|	('u')+ HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+		|	'$' 	//escape Groovy $ operator uniformly also
+		|	('u')+  {$setText("");}
+					HEX_DIGIT HEX_DIGIT HEX_DIGIT HEX_DIGIT
+					{char ch = (char)Integer.parseInt($getText,16); $setText(ch);}
 		|	'0'..'3'
 			(
 				options {
@@ -1183,6 +2271,7 @@ ESC
 				:	'0'..'7'
 				)?
 			)?
+					{char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
 		|	'4'..'7'
 			(
 				options {
@@ -1190,7 +2279,10 @@ ESC
 				}
 			:	'0'..'7'
 			)?
+					{char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
 		)
+	|!	'\\' ONE_NL
+	|!	ONE_NL		{ $setText('\n'); }		// always normalize to newline
 	;
 
 
@@ -1205,15 +2297,52 @@ HEX_DIGIT
 // that after we match the rule, we look in the literals table to see
 // if it's a literal or really an identifer
 IDENT
-	options {testLiterals=true;}
-	:	('a'..'z'|'A'..'Z'|'_'|'$') ('a'..'z'|'A'..'Z'|'_'|'0'..'9'|'$')*
+	//options {testLiterals=true;}
+	:	LETTER(LETTER|DIGIT)*
+		{
+			if (stringCtorState != 0) {
+				if (LA(1) == '.' && LA(2) != '$' &&
+						Character.isJavaIdentifierStart(LA(2))) {
+					// pick up another name component before going literal again:
+					restartStringCtor(false);
+				} else {
+					// go back to the string
+					restartStringCtor(true);
+				}
+			}
+			int ttype = testLiteralsTable(IDENT);
+			if (ttype != IDENT && lastToken.getType() == DOT) {
+				// A few keywords can follow a dot:
+				switch (ttype) {
+				case LITERAL_this: case LITERAL_super: case LITERAL_class:
+					break;
+				default:
+					ttype = LITERAL_in;  // the poster child for bad dotted names
+				}
+			}
+			$setType(ttype);
+		}
 	;
 
+protected
+LETTER
+	:   'a'..'z'|'A'..'Z'|'_'
+	// TO DO:  Recognize all the Java identifier starts here (except '$').
+	;
+
+protected
+DIGIT
+	:   '0'..'9'
+	// TO DO:  Recognize all the Java identifier parts here (except '$').
+	;
 
 // a numeric literal
+// Groovy numerals may not begin or end with dot, because 123.toString and 1.23.toString are valid expressions.
 NUM_INT
 	{boolean isDecimal=false; Token t=null;}
-    :   '.' {_ttype = DOT;}
+    :
+/*OBS*
+	   '.' {_ttype = DOT;}
             (	('0'..'9')+ (EXPONENT)? (f1:FLOAT_SUFFIX {t=f1;})?
                 {
 				if (t != null && t.getText().toUpperCase().indexOf('F')>=0) {
@@ -1225,7 +2354,10 @@ NUM_INT
 				}
             )?
 
-	|	(	'0' {isDecimal = true;} // special case for just '0'
+	|
+*OBS*/
+		// TO DO:  This complex pattern seems wrong.  Verify or fix. 
+		(	'0' {isDecimal = true;} // special case for just '0'
 			(	('x'|'X')
 				(											// hex
 					// the 'e'|'E' and float suffix stuff look
@@ -1241,26 +2373,30 @@ NUM_INT
 
 			|	//float or double with leading zero
 				(('0'..'9')+ ('.'|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
+				{isDecimal=true;}
 
 			|	('0'..'7')+									// octal
 			)?
 		|	('1'..'9') ('0'..'9')*  {isDecimal=true;}		// non-zero decimal
 		)
 		(	('l'|'L') { _ttype = NUM_LONG; }
+		|   BIG_SUFFIX { _ttype = NUM_BIG_INT; }
 
 		// only check to see if it's a float if looks like decimal so far
 		|	{isDecimal}?
-            (   '.' ('0'..'9')* (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;})?
-            |   EXPONENT (f3:FLOAT_SUFFIX {t=f3;})?
+            (   '.' ('0'..'9')+ (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;} | g2:BIG_SUFFIX {t=g2;})?
+            |   EXPONENT (f3:FLOAT_SUFFIX {t=f3;} | g3:BIG_SUFFIX {t=g3;})?
             |   f4:FLOAT_SUFFIX {t=f4;}
             )
-            {
-			if (t != null && t.getText().toUpperCase() .indexOf('F') >= 0) {
-                _ttype = NUM_FLOAT;
-			}
-            else {
-	           	_ttype = NUM_DOUBLE; // assume double
-			}
+			{
+				String txt = (t == null ? "" : t.getText().toUpperCase());
+				if (txt.indexOf('F') >= 0) {
+					_ttype = NUM_FLOAT;
+				} else if (txt.indexOf('G') >= 0) {
+					_ttype = NUM_BIG_DECIMAL;
+				} else {
+					_ttype = NUM_DOUBLE; // assume double
+				}
 			}
         )?
 	;
@@ -1278,4 +2414,14 @@ FLOAT_SUFFIX
 	:	'f'|'F'|'d'|'D'
 	;
 
+protected
+BIG_SUFFIX
+	:	'g'|'G'
+	;
 
+
+// Here's a little hint for you, Emacs:
+// Local Variables:
+// mode: java
+// tab-width: 4
+// End:
