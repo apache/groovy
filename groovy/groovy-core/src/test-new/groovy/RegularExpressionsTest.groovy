@@ -11,6 +11,21 @@ import java.util.regex.Pattern
 
 class RegularExpressionsTest extends GroovyTestCase {
 
+     void testSubscript() {
+         a = "cheesecheese"
+         b = a =~ "e+"
+         value = b[2]
+         assert value == "ee"
+
+         value = b[0, 2]
+
+         assert value == "eeee"
+
+         value = b[0, 1..2]
+
+         assert value == "eeeee"
+     }
+
      void testFindRegex() {
          assert "cheese" =~ "cheese"
 
@@ -39,7 +54,6 @@ class RegularExpressionsTest extends GroovyTestCase {
      }
 
      void testMatchRegex() {
-
          assert "cheese" ==~ "cheese"
 
          assert !("cheesecheese" ==~ "cheese")
@@ -56,38 +70,25 @@ class RegularExpressionsTest extends GroovyTestCase {
          assert i == 2
      }
 
-     /*
-     void testPatterns() {
+     void testSimplePattern() {
          pattern = ~"foo"
          assert pattern instanceof Pattern
          assert pattern.matcher("foo").matches()
          assert !pattern.matcher("bar").matches()
+     }
 
-         pattern = ~"""
-foo
-"""
+     void testMultiLinePattern() {
+         pattern = ~"""foo"""
+
+         assert pattern instanceof Pattern
          assert pattern.matcher("foo").matches()
          assert !pattern.matcher("bar").matches()
-         
+     }
+
+     void testPatternInAssertion() {
          assert "foofoofoo" =~ ~"foo"
      }
 
-     void testSubscript() {
-         a = "cheesecheese"
-         b = a =~ "e+"
-         value = b[2]
-         assert value == "ee"
-
-         value = b[0, 2]
-
-         assert value == "eeee"
-
-         value = b[0, 1..2]
-
-         assert value == "eeeee"
-     }
-
-     */
 
      void testMatcher() {
          matcher = "cheese-cheese" =~ "cheese"
@@ -116,4 +117,4 @@ foo
                 assert false
         }
     }
- }
+}

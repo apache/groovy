@@ -1298,7 +1298,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return (Expression) expressionList.get(0);
         }
         else {
-            return new TupleExpression(expressionList);
+            return new ListExpression(expressionList);
         }
     }
 

@@ -95,7 +95,6 @@ public class AllTests extends TestSuiteSupport {
 
         // TODO: AST bugs I think...
         "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
-        "RegularExpressionsTest.groovy",        // TODO: regex issue
         "ReturnTest.groovy",
         "PrimitiveTypeFieldTest.groovy",
         "PrintlnWithNewBug.groovy",
