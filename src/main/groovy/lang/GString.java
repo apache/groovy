@@ -49,7 +49,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable {
+public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence {
 
     private Object[] values;
     /** cached value of the GString */
@@ -163,4 +163,15 @@ public abstract class GString extends GroovyObjectSupport implements Comparable 
         return toString().compareTo(that.toString());
     }
 
+    public char charAt(int index) {
+        return toString().charAt(index);
+    }
+
+    public int length() {
+        return toString().length();
+    }
+
+    public CharSequence subSequence(int start, int end) {
+        return toString().subSequence(start, end);
+    }
 }
