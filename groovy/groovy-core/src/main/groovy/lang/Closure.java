@@ -81,6 +81,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     	else if ("call".equals(method)) {
     		return me.call(arguments);
     	}
+    	else if ("curry".equals(method)) {
+    		return me.curry(arguments);
+    	}
     	else {
     		try {
     			return me.getMetaClass().invokeMethod(me, method, arguments);
@@ -284,7 +287,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     private static class DelegatingClosure extends Closure {
     	protected final Closure closure;
     	/**
-    	 * @param delegate
+    	 * @param closure
     	 */
     	public DelegatingClosure(Closure closure) {
     		super(closure.delegate);
@@ -373,7 +376,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
 		 * @see groovy.lang.Closure#curry(java.lang.Object)
 		 */
 		public Closure curry(Object arguments) {
-			return this.closure.curry(arguments);
+			return (Closure)this.closure.invokeMethod("curry", arguments);
 		}
 
 		/* (non-Javadoc)
@@ -414,8 +417,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     
     private static class CurriedClosure extends DelegatingClosure {
     	protected final Object[] curried_args;
+    	
     	/**
-    	 * @param delegate
+    	 * @param closure
+    	 * @param arguments
     	 */
     	public CurriedClosure(Closure closure, Object arguments) {
     		super(closure);
@@ -427,18 +432,18 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     	 * @see groovy.lang.Closure#call()
     	 */
     	public Object call() {
-    		return call(null);
+    		return this.closure.call(this.curried_args);
     	}
     	
     	/* (non-Javadoc)
     	 * @see groovy.lang.Closure#call(java.lang.Object)
     	 */
     	public Object call(Object args) {
-    		Object[] new_args = getParameters(args);
-    		Object[] all_args = new Object[new_args.length + curried_args.length];
+    		Object[] new_args = (Object[])args;
+    		Object[] all_args = new Object[new_args.length + this.curried_args.length];
     		
-    		System.arraycopy(curried_args, 0, all_args, 0, curried_args.length);
-    		System.arraycopy(new_args, 0, all_args, curried_args.length, new_args.length);
+    		System.arraycopy(this.curried_args, 0, all_args, 0, this.curried_args.length);
+    		System.arraycopy(new_args, 0, all_args, this.curried_args.length, new_args.length);
     		
     		return this.closure.call(all_args);
     	}
@@ -521,7 +526,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     	 * @see groovy.lang.Closure#curry(java.lang.Object)
     	 */
     	public Closure curry(Object arguments) {
-    		Object[] args = getParameters(arguments);
+    		Object[] args = (Object[])arguments;
     		Object[] new_curried_args = new Object[curried_args.length + args.length];
     		
     		System.arraycopy(this.curried_args, 0, new_curried_args, 0, this.curried_args.length);
