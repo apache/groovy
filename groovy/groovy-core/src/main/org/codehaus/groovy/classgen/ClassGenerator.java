@@ -860,10 +860,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         onLineNumber(statement);
 
         Expression expression = statement.getExpression();
-        expression.visit(this);
+        visitAndAutobox(expression);
 
-        if (expression instanceof MethodCallExpression
-            && !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression)) {
+        if (isPopRequired(expression)) {
             cv.visitInsn(POP);
         }
     }
@@ -1504,6 +1503,22 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return superClass != null && superClass.equals("groovy.lang.Script") && methodNode != null && methodNode.getName().equals("run");
     }
 
+    /**
+     * @return true if this expression will have left a value on the stack
+     * that must be popped
+     */
+    protected boolean isPopRequired(Expression expression) {
+        if (expression instanceof MethodCallExpression) {
+            return !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression);
+        }
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binExp = (BinaryExpression) expression;
+            return binExp.getOperation().getType() != Token.EQUAL;
+        }
+        return true;
+    }
+
+    
     protected boolean firstStatementIsSuperMethodCall(Statement code) {
         if (code instanceof BlockStatement) {
             BlockStatement block = (BlockStatement) code;
