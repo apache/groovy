@@ -207,6 +207,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Christiaan ten Klooster</name>
+      <id>ckl</id>
+      <email>ckl@dacelo.nl</email>
+      <organization>Dacelo WebDevelopment</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
