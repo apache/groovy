@@ -119,6 +119,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 											"</methodResponse>\n").getBytes();
 	
 	private MinMLHTTPServer server = null;
+	private Closure defaultMethod = null;
 	private final int minWorkers;
 	private final int maxWorkers;
 	private final int maxKeepAlives;
@@ -195,11 +196,18 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							
 							final String methodName = requestParser.getMethodname();
 							final List params = requestParser.getParams();
-							final Object closure = XMLRPCServer.this.registeredMethods.get(methodName);
+							final Closure closure = (Closure)XMLRPCServer.this.registeredMethods.get(methodName);
+							Object result = null;
 							
-							if (closure == null) throw new GroovyRuntimeException("XML-RPC method " + methodName + " is not supported on this server");
-							
-							Object result = ((Closure)closure).call(params.toArray());
+							if (closure == null) {
+								if (XMLRPCServer.this.defaultMethod == null) {
+									throw new GroovyRuntimeException("XML-RPC method " + methodName + " is not supported on this server");
+								}
+								
+								result = XMLRPCServer.this.defaultMethod.call(new Object[] {methodName,params.toArray()});
+							} else {
+								result = closure.call( params.toArray());
+							}
 							
 							if (result == null) result = new Integer(0);
 							
@@ -244,6 +252,15 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	
 	public void stopServer() throws IOException {
 		this.server.shutDown();
+	}
+	
+	public void returnFault(String msg, int code) {
+		// TODO: implement this
+		throw new RuntimeException(msg);
+	}
+	
+	public void setupDefaultMethod(final Closure defaultMethod) {
+		this.defaultMethod = defaultMethod;
 	}
 	
 	/* (non-Javadoc)
