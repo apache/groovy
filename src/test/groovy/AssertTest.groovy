@@ -8,12 +8,5 @@ class AssertTest extends GroovyTestCase {
     
     void testAssert() {
 	    assert x != "foo";
-	    
-/*	    
-	    x = "abc";
-
-        assert x != "foo";
-	    assert x := "abc";
-*/
 	}
 }
