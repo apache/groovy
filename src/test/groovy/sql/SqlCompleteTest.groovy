@@ -93,7 +93,7 @@ class SqlCompleteTest extends TestHelper {
        sql = createSql()
        expected = "A narrow ? supported by a ?!!"
        gstring = "A narrow ${foo} supported by a ${bar}!!"
-       result = sql.asSql(gstring)
+       result = sql.asSql(gstring, gstring.values.toList())
        assert result == expected
     }
     
