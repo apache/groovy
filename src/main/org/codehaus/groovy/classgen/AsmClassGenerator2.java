@@ -227,7 +227,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
     {    //
         String ebSwitch = (String) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return System.getProperty(EB_SWITCH_NAME, "true"); // set default to true if early binding is on by default.
+                return System.getProperty(EB_SWITCH_NAME, "false"); // set default to true if early binding is on by default.
             }
         });
         //System.out.println("ebSwitch = " + ebSwitch);
