@@ -83,4 +83,9 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/UseStaticInClosureBug.groovy");
         object.invokeMethod("testBug2", null);
     } 
+    
+    public void testStaticMarkupBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
+        object.invokeMethod("testBug", null);
+    } 
 }

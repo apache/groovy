@@ -64,6 +64,7 @@ public class ClassNode extends MetadataNode implements Constants {
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
     private ModuleNode module;
+    private boolean staticClass = false;
 
     /**
      * @param name
@@ -381,6 +382,18 @@ public class ClassNode extends MetadataNode implements Constants {
             }
         }
         return null;
+    }
+
+    /**
+     * Is this class delcared in a static method (such as a closure / inner class declared in a static method)
+     * @return
+     */
+    public boolean isStaticClass() {
+        return staticClass;
+    }
+
+    public void setStaticClass(boolean staticClass) {
+        this.staticClass = staticClass;
     }
 
 }
