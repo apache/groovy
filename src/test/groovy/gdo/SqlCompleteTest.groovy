@@ -60,12 +60,32 @@ class SqlCompleteTest extends GroovyTestCase {
         assert results == expected
     }
     
+    void testUpdatingDataSet() {
+        sql = createSql()     
+        
+        results = []
+        features = sql.dataSet("FEATURE")
+        features.each { 
+            /** @todo Axion doesn't yet support ResultSet updating
+            if (it.id == 1) {
+                it.name = it.name + " Rocks!"
+                println("Changing name to ${it.name}")
+            }
+            */
+            results.add(it.name) 
+        }
+        
+        expected = ["GDO", "GPath", "GroovyMarkup"]
+        assert results == expected
+    }
+    
     protected createSql() {
         dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
         sql = new Sql(dataSource)
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")
+        sql.execute("create table FEATURE ( id integer, name varchar)")
         
         // now lets populate the datasets
         people = sql.dataSet("PERSON")
@@ -80,6 +100,10 @@ class SqlCompleteTest extends GroovyTestCase {
         food.add( type:"drink", name:"beer" )
         food.add( type:"drink", name:"coffee" )
         
+        features = sql.dataSet("FEATURE")
+        features.add( id:1, name:'GDO' )
+        features.add( id:2, name:'GPath' )
+        features.add( id:3, name:'GroovyMarkup' )
         return sql
     }
 }
