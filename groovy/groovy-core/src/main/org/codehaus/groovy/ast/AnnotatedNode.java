@@ -45,75 +45,69 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
-import org.objectweb.asm.Constants;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Iterator;
+
 
 /**
- * Represents a property (member variable, a getter and setter)
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Base class for any AST node which is capable of being annotationed
+ *
+ * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyNode extends AnnotatedNode implements Constants {
+public class AnnotatedNode extends ASTNode {
+    private Map annotations = new HashMap();
+    private boolean synthetic;
 
-    private FieldNode field;
-    private Statement getterBlock;
-    private Statement setterBlock;
-    private int modifiers;
-
-    public PropertyNode(
-        String name,
-        int modifiers,
-        String type,
-        String owner,
-        Expression initialValueExpression,
-        Statement getterBlock,
-        Statement setterBlock) {
-        this(new FieldNode(name, modifiers & ACC_STATIC, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
+    public AnnotatedNode() {
     }
 
-    public PropertyNode(FieldNode field, int modifiers, Statement getterBlock, Statement setterBlock) {
-        this.field = field;
-        this.modifiers = modifiers;
-        this.getterBlock = getterBlock;
-        this.setterBlock = setterBlock;
+    public Map getAnnotations() {
+        return annotations;
     }
 
-    public Statement getGetterBlock() {
-        return getterBlock;
+    public AnnotationNode getAnnotations(String name) {
+        return (AnnotationNode) annotations.get(name);
+    }
+    
+    public void addAnnotation(String name, AnnotationNode value) {
+        AnnotationNode oldValue = (AnnotationNode) annotations.get(name);
+
+        // TODO can we support many annotations of the same name?
+        if (oldValue == null) {
+            annotations.put(name, value);
+        }
+        else {
+            List list = null;
+            if (oldValue instanceof List) {
+                list = (List) oldValue;
+            }
+            else {
+                list = new ArrayList();
+                list.add(oldValue);
+                annotations.put(name, list);
+            }
+            list.add(value);
+        }
     }
 
-    public Expression getInitialValueExpression() {
-        return field.getInitialValueExpression();
+    public void addAnnotations(List annotations) {
+        for (Iterator iter = annotations.iterator(); iter.hasNext();) {
+            AnnotationNode node = (AnnotationNode) iter.next();
+            addAnnotation(node.getName(), node);
+        }
+
     }
 
-    public int getModifiers() {
-        return modifiers;
+    public boolean isSynthetic() {
+        return synthetic;
     }
 
-    public String getName() {
-        return field.getName();
-    }
-
-    public Statement getSetterBlock() {
-        return setterBlock;
-    }
-
-    public String getType() {
-        return field.getType();
-    }
-
-    public boolean isDynamicType() {
-        return field.isDynamicType();
-    }
-
-    public FieldNode getField() {
-        return field;
-    }
-
-    public boolean isPrivate() {
-        return (modifiers & ACC_PRIVATE) != 0;
+    public void setSynthetic(boolean synthetic) {
+        this.synthetic = synthetic;
     }
 
 }

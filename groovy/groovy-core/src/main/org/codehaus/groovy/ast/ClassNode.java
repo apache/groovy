@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassNode extends MetadataNode implements Constants {
+public class ClassNode extends AnnotatedNode implements Constants {
 
     private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
 

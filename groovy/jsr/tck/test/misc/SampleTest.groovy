@@ -3,6 +3,8 @@ package foo.bar
 import java.io.File
 import java.util.Date as UDate
 
+@bean(cool=true)
+
 class SampleTest extends GroovyTestCase {
 
     String foo = "John"
@@ -10,8 +12,9 @@ class SampleTest extends GroovyTestCase {
 
     void testStrings() {
         assert "\\" == '\\'
+        assert "\\" != "\\\\"
     }
-    
+
     void testNew() {
         x = new ArrayList()
         x.add(123)
@@ -174,6 +177,35 @@ class SampleTest extends GroovyTestCase {
     }
 
 
+    void testBug675() {
+        assert "\\"!="\\\\"
+
+        // Are the following valid now? Must $ be escaped?
+
+        // TODO  assert "\\$"=="\\"+"$"
+
+
+        assert ("\\\\"+"\\").length() == 3
+        // TODO assert "\\3 $1$2" == "\\" + "3" + " " + "$" + "1" + "$" + "2"
+        // TODO assert "\\\\3 \\$1$2" == "\\" + "\\" + "3" + " " + "\\"+ "$" + "1" + "$" + "2"
+        // TODO assert "\\\\\\3 \\\\$1$2" == "\\" + "\\\\" + "3" + " " + "\\\\"+ "$" + "1" + "$" + "2"
+        // TODO assert "\\\\\\\\3 \\\\\\$1$2" == "\\\\" + "\\\\" + "3" + " " + "\\\\\\"+ "$" + "1" + "$" + "2"
+
+        assert "\\\\" == "\\" + "\\"
+        assert "\\\\".length() == 2
+
+        z = 100 + 200
+        assert "Hello\\, \\World\\".charAt(4) == "o".charAt(0)
+        assert "Hello\\, \\World\\".charAt(5) == "\\".charAt(0)
+        assert "Hello\\, \\World\\".charAt(6) == ",".charAt(0)
+
+        // TODO failing tests...
+        // assert "\\"+"\\\\" == "\\"+"\\"+"\\" && "\\\\"+"\\" == "\\"+"\\"+"\\"
+        // assert "\\\\ \\ ${z}" == "\\\\ \\ 300"
+        // assert "\\\\ \\ ${z}" == "\\" + "\\" + " " + "\\" + " " + "300"
+    }
+
+
 
     /** TODO runtime breaks!
     void testPrePostFix() {
@@ -249,8 +281,45 @@ class SampleTest extends GroovyTestCase {
         if (x > 100) {
             y = 2
         }
+
+        // TODO the parser expects else...
         assert y == 2
     }
+
+    void testSwitch() {
+        x = 12
+        switch (x) {  // TODO the parser doesn't like newline here
+            case 1:
+                fail "not 1"
+                break
+
+            case  12:
+                println "Worked! Is 12!"
+                break
+
+            case "text":
+                fail "not text"
+                break
+
+            default:
+                fail "Not defailt"
+                break
+        }
+    }
+
+
+    // TODO annotation support - should we all the following???
+
+    @property foo
+    @property String name
+
+
+    @webService void whatnot() {
+        println "Hey"
+    }
+
+
+
     */
 
 

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.Expression;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,27 +54,35 @@ import java.util.Map;
 
 
 /**
- * Base class for any AST node which is capable of storing metadata
+ * Represents an annotation which can be attached to interfaces, classes, methods and fields.
  * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
  * @version $Revision$
  */
-public class MetadataNode extends ASTNode {
-    private Map attributes = new HashMap();
-    private boolean synthetic;
-    
-    public Map getAttributes() {
-        return attributes;
+public class AnnotationNode extends ASTNode {
+    private String name;
+    private Map members = new HashMap();
+
+    public AnnotationNode(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Map getMembers() {
+        return members;
     }
     
-    public Object getAttributes(String name) {
-        return attributes.get(name);
+    public Expression getMember(String name) {
+        return (Expression) members.get(name);
     }
     
-    public void addAttribute(String name, Object value) {
-        Object oldValue = attributes.get(name);
+    public void addMember(String name, Expression value) {
+        Expression oldValue = (Expression) members.get(name);
         if (oldValue == null) {
-            attributes.put(name, value);
+            members.put(name, value);
         }
         else {
             List list = null;
@@ -82,22 +92,14 @@ public class MetadataNode extends ASTNode {
             else {
                 list = new ArrayList();
                 list.add(oldValue);
-                attributes.put(name, list);
+                members.put(name, list);
             }
             list.add(value);
         }
     }
 
-    public void setAttribute(String name, Object value) {
-        attributes.put(name, value);
+    public void setMember(String name, Expression value) {
+        members.put(name, value);
     }
     
-    public boolean isSynthetic() {
-        return synthetic;
-    }
-
-    public void setSynthetic(boolean synthetic) {
-        this.synthetic = synthetic;
-    }
-
 }

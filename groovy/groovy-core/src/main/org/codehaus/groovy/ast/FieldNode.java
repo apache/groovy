@@ -57,7 +57,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class FieldNode extends MetadataNode implements Constants {
+public class FieldNode extends AnnotatedNode implements Constants {
 
     private String name;
     private int modifiers;
