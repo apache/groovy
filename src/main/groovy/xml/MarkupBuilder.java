@@ -58,6 +58,7 @@ import java.util.Map;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
+ * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  * @version $Revision$
  */
 public class MarkupBuilder extends BuilderSupport {
@@ -107,7 +108,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object createNode(Object name, Object value) {
         toState(2, name);
         out.print(">");
-        out.print(value.toString());
+        out.print(transformValue(value.toString()));
         return name;
     }
 
@@ -124,7 +125,7 @@ public class MarkupBuilder extends BuilderSupport {
         if (value != null)
         {
             nodeIsEmpty = false;
-            out.print(">" + value + "</" + name + ">");
+            out.print(">" + transformValue(value.toString()) + "</" + name + ">");
         }
         return name;
     }
@@ -151,8 +152,35 @@ public class MarkupBuilder extends BuilderSupport {
     	return name.replace('_', '-');
     }
 
+    /**
+     * Returns a String with special XML characters escaped as entities so that
+     * output XML is valid. Escapes the following characters as corresponding 
+     * entities:
+     * <ul>
+     *   <li>\' as &amp;quot;</li>
+     *   <li>&amp; as &amp;amp;</li>
+     *   <li>&lt; as &amp;lt;</li>
+     *   <li>&gt; as &amp;gt;</li>
+     * </ul>
+     * 
+     * @param value to be searched and replaced for XML special characters.
+     * @return value with XML characters escaped
+     */
     protected String transformValue(String value) {
-        return value.replaceAll("\\'", "&quot;");
+        // & has to be checked and replaced before others
+        if (value.matches(".*&.*")) {
+            value = value.replaceAll("&", "&amp;");
+        }
+        if (value.matches(".*\\'.*")) {
+            value = value.replaceAll("\\'", "&quot;");
+        }
+        if (value.matches(".*<.*")) {
+            value = value.replaceAll("<", "&lt;");
+        }
+        if (value.matches(".*>.*")) {
+            value = value.replaceAll(">", "&gt;");
+        }
+        return value;
     }
 
     private void toState(int next, Object name) {
