@@ -24,25 +24,29 @@ class PrimitiveTypesTest extends GroovyTestCase {
 		return 1;
 	}
 	
-	char getChar() {
-		return 1;
-	}
-	
 	long getLong() {
 		return 1;
 	}
 	
+	/*
+	char getChar() {
+		return 'a';
+	}
+	*/
+	
 	void testPrimitiveTypes() {
 		assert 1 == getInt()
-		/*
-		assert new Short(1) == getShort()
-		assert new Byte(1) == getByte()
-		assert new Character(1) == getChar()
-		assert new Long(1) == getLong()
+		assert 1 == getShort()
+		assert 1 == getByte()
+		assert 1 == getLong()
 		assert getBoolean()
-		assert getDouble > 0.99
-		assert getFloat > 0.99
-		*/
+		assert getDouble() > 0.99
+		assert getFloat() > 0.99
+		/* assert 'a' == getChar() */
+	}
+
+	static void main(args) {
+		new PrimitiveTypesTest().testPrimitiveTypes()
 	}
 	
 }
