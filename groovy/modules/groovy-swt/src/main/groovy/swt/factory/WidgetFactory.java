@@ -13,6 +13,7 @@ import java.util.Map;
 import org.codehaus.groovy.GroovyException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Shell;
@@ -125,6 +126,9 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         } else if (parent instanceof TabItem) {
             TabItem tabItem = (TabItem) parent;
             tabItem.setControl((Control) bean);
+        } else if (parent instanceof ScrolledComposite) {
+            ScrolledComposite scrolledComposite = (ScrolledComposite) parent;
+            scrolledComposite.setContent((Control) bean);
         } else if (bean instanceof Menu && parent instanceof Shell) {
             Menu menu = (Menu) bean;
             Shell shell = (Shell) parent;
