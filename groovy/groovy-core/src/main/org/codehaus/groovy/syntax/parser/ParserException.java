@@ -12,6 +12,8 @@ public class ParserException
     }
     
     public ParserException(String message, Token token) {
-        this(message + " at line: " + token.getStartLine() + " column: " + token.getStartColumn());
+        this((token == null)
+                ? message + ". No token"
+                : message + " at line: " + token.getStartLine() + " column: " + token.getStartColumn());
     }
 }
