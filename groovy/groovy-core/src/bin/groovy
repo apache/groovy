@@ -135,7 +135,7 @@ if [ "$cygwin" = "false" ]; then
     MAX_FD_LIMIT=`ulimit -H -n`
     if [ $? -eq 0 ]; then
         if [ "$MAX_FD" = "maximum" -o "$MAX_FD" = "max" ]; then
-            # use the system max
+            # use the businessSystem max
             MAX_FD="$MAX_FD_LIMIT"
         fi
         
@@ -144,7 +144,7 @@ if [ "$cygwin" = "false" ]; then
             warn "Could not set maximum file descriptor limit: $MAX_FD"
         fi
     else
-        warn "Could not query system maximum file descriptor limit: $MAX_FD_LIMIT"
+        warn "Could not query businessSystem maximum file descriptor limit: $MAX_FD_LIMIT"
     fi
 fi
 

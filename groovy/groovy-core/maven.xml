@@ -89,7 +89,36 @@
       </fileset>
     </chmod>
   </postGoal>
-  
+
+  <goal
+    name="dist:build-bin"
+    prereqs="dist:build-setup,dist:prepare-bin-filesystem"
+    description="Build the binary distribution.">
+
+    <!-- Create a tar.gz file -->
+    <tar longfile="gnu" tarfile="${maven.dist.dir}/${maven.final.name}.tar">
+      <tarfileset dir="${maven.dist.bin.archive.dir}" mode="755">
+        <include name="${maven.dist.bin.archive.dir}/bin/*"/>
+      </tarfileset>
+      <tarfileset dir="${maven.dist.bin.archive.dir}">
+        <exclude name="${maven.dist.bin.archive.dir}/bin/*"/>
+      </tarfileset>
+    </tar>
+
+    <gzip
+      zipfile="${maven.dist.dir}/${maven.final.name}.tar.gz"
+      src="${maven.dist.dir}/${maven.final.name}.tar"
+    />
+
+    <delete file="${maven.dist.dir}/${maven.final.name}.tar"/>
+
+    <!-- Create a zip file -->
+    <zip zipfile="${maven.dist.dir}/${maven.final.name}.zip">
+      <zipfileset dir="${maven.dist.bin.archive.dir}"/>
+    </zip>
+  </goal>
+
+
   <goal name="run" prereqs="test:compile"
     description="Runs the given compiled Groovy class">
     <j:if test="${empty(name)}">

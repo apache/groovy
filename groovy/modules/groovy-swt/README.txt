@@ -41,7 +41,7 @@ copy
 	eclipse/plugins/org.eclipse.swt.win32_3.0.0/os/win32/x86/swt-awt-win32-3062.dll
 	eclipse/plugins/org.eclipse.swt.win32_3.0.0/os/win32/x86/swt-win32-3062.dll 
 to 
-	a directory in your system environment variable $PATH	
+	a directory in your businessSystem environment variable $PATH
 (Alternatively you can run the examples by using the -Djava.library.path vm argument)
 
 All test cases will also fail when you do not have these libraries properly installed.
