@@ -12,6 +12,9 @@ jar xvf antlr-2.7.5.jar
 
 mkdir antlr-runtime
 mkdir antlr-runtime/antlr
+mkdir antlr-runtime/antlr/collections
+mkdir antlr-runtime/antlr/debug
+mkdir antlr-runtime/antlr/debug/misc
 
 cp antlr/ANTLRException.class antlr-runtime/antlr
 cp antlr/ANTLRHashString.class antlr-runtime/antlr
@@ -46,15 +49,15 @@ cp antlr/TokenStreamIOException.class antlr-runtime/antlr
 cp antlr/TokenStreamRecognitionException.class antlr-runtime/antlr
 cp antlr/TokenStream.class antlr-runtime/antlr
 cp antlr/Token.class antlr-runtime/antlr
-cp antlr/collections/ASTEnumeration.class antlr-runtime/antlr
-cp antlr/collections/AST.class antlr-runtime/antlr
-cp antlr/collections/impl/ASTArray.class antlr-runtime/antlr
-cp antlr/collections/impl/BitSet.class antlr-runtime/antlr
-cp antlr/debug/misc/ASTFrame\$1.class antlr-runtime/antlr
-cp antlr/debug/misc/ASTFrame\$MyTreeSelectionListener.class antlr-runtime/antlr
-cp antlr/debug/misc/ASTFrame.class antlr-runtime/antlr
-cp antlr/debug/misc/JTreeASTModel.class antlr-runtime/antlr
-cp antlr/debug/misc/JTreeASTPanel.class antlr-runtime/antlr
+cp antlr/collections/ASTEnumeration.class antlr-runtime/antlr/collections
+cp antlr/collections/AST.class antlr-runtime/antlr/collections
+cp antlr/collections/impl/ASTArray.class antlr-runtime/antlr/collections
+cp antlr/collections/impl/BitSet.class antlr-runtime/antlr/collections
+cp antlr/debug/misc/ASTFrame\$1.class antlr-runtime/antlr/debug/misc
+cp antlr/debug/misc/ASTFrame\$MyTreeSelectionListener.class antlr-runtime/antlr/debug/misc
+cp antlr/debug/misc/ASTFrame.class antlr-runtime/antlr/debug/misc
+cp antlr/debug/misc/JTreeASTModel.class antlr-runtime/antlr/debug/misc
+cp antlr/debug/misc/JTreeASTPanel.class antlr-runtime/antlr/debug/misc
 
 cd antlr-runtime
 jar cvf ../antlr-runtime.jar antlr
