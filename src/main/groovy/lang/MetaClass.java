@@ -300,7 +300,7 @@ public class MetaClass {
                 // lets try a static field
                 return getStaticProperty((Class) object, property);
             }
-            throw new InvokerException("No such property: " + property);
+            throw new InvokerException("Unknown property: " + property);
         }
     }
 

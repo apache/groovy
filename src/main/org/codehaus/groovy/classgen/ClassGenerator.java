@@ -950,7 +950,18 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
             else {
                 String name = variableName;
-                Variable variable = defineVariable(name, "java.lang.Object");
+                Variable variable = null;
+                if (!leftHandExpression) {
+                    variable = (Variable) variableStack.get(name);
+                }
+                else {
+                    variable = defineVariable(name, "java.lang.Object");
+                }
+                if (variable == null) {
+                    //System.out.println("No such variable '" + name + "' available, so trying property");
+                    visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), variableName));
+                    return;
+                }
                 String type = variable.getType();
                 int index = variable.getIndex();
                 lastVariableIndex = index;

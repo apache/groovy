@@ -1,10 +1,8 @@
+import org.codehaus.groovy.runtime.InvokerException
+
 class LocalVariableTest extends GroovyTestCase {
 
     void testAssert() {
-        assert x == null
-        assert x != "abc"
-        assert x != "foo"
-	    
         x = "abc"
 
         assert x != "foo"
@@ -14,4 +12,16 @@ class LocalVariableTest extends GroovyTestCase {
         
         assert x.equals("abc")
 	}
+    
+    void testUnknownVariable() {
+        try {
+	        y = x
+	        fail("x is undefined, should throw an exception")
+        }
+        catch (InvokerException e) {
+            text = e.message
+            assert text == "Unknown property: x"
+        }
+    }
+	    
 }
