@@ -5,6 +5,66 @@ class SubscriptTest extends GroovyTestCase {
 		
 		sub = list[2..4]
 		assert sub == ['c', 'd', 'e']
+        
+        value = list[-1]
+        assert value == 'e'
+        
+        sub = list[-4..-2]
+        assert sub == ['b', 'c', 'd']
+        
+    }
+    
+    void testObjectRangeRange() {
+        list = 'a'..'e'
+        
+        sub = list[2..4]
+        assert sub == ['c', 'd', 'e']
+        
+        value = list[-1]
+        assert value == 'e'
+        
+        sub = list[-4..-2]
+        assert sub == ['b', 'c', 'd']
+    }
+    
+    void testIntRangeRange() {
+        list = 10..15
+        
+        sub = list[2..4]
+        assert sub == [12, 13, 14]
+        
+        value = list[-1]
+        assert value == 15
+        
+        sub = list[-4..-2]
+        assert sub == [12, 13, 14]
+    }
+    
+    void testIntArrayRange() {
+        list = new Integer[] { 10, 11, 12, 13, 14, 15 }
+        
+        sub = list[2..4]
+        assert sub == [12, 13, 14]
+        
+        value = list[-1]
+        assert value == 15
+        
+        sub = list[-4..-2]
+        assert sub == [12, 13, 14]
+    }
+    
+    void testStringArrayRange() {
+        list = new String[] {'a', 'b', 'c', 'd', 'e'}
+        
+        sub = list[2..4]
+        assert sub == ['c', 'd', 'e']
+        
+        value = list[-1]
+        assert value == 'e'
+        
+        sub = list[-4..-2]
+        assert sub == ['b', 'c', 'd']
+        
     }
     
     void testStringSubscript() {
