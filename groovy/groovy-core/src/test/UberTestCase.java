@@ -12,7 +12,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(AmbiguousInvocationTest.class);
         suite.addTestSuite(ArrayAutoboxingTest.class);        
         suite.addTestSuite(ArrayParamMethodTest.class);
-        //todo suite.addTestSuite(ArrayTest.class);
+        suite.addTestSuite(ArrayTest.class);
         suite.addTestSuite(AssertNumberTest.class);
         suite.addTestSuite(AssertTest.class);
         suite.addTestSuite(AssignmentInsideExpressionBug.class);
@@ -35,7 +35,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(Bytecode7Bug.class);
         suite.addTestSuite(BytecodeBug.class);
         suite.addTestSuite(CallInnerClassCtorTest.class);
-        // todo suite.addTestSuite(CallingClosuresWithClosuresBug.class);
+        suite.addTestSuite(CallingClosuresWithClosuresBug.class);
         suite.addTestSuite(CastTest.class);
         suite.addTestSuite(CastWhenUsingClosuresBug.class);
         suite.addTestSuite(CategoryTest.class);
@@ -101,7 +101,7 @@ public class UberTestCase extends TestCase {
         //suite.addTestSuite(GeneratorTest.class);
         suite.addTestSuite(GetterBug.class);
         suite.addTestSuite(GlobalPrintlnTest.class);
-        // todo suite.addTestSuite(Groovy239_Bug.class);
+        suite.addTestSuite(Groovy239_Bug.class);
         // todo suite.addTestSuite(Groovy249_Bug.class);
         suite.addTestSuite(Groovy252_Bug.class);
         suite.addTestSuite(Groovy389_Bug.class);
@@ -231,7 +231,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(UnaryMinusTest.class);
         suite.addTestSuite(UnknownVariableBug.class);
         suite.addTestSuite(UnsafeNavigationTest.class);
-        //todo suite.addTestSuite(UseClosureInClosureBug.class);
+        suite.addTestSuite(UseClosureInClosureBug.class);
         suite.addTestSuite(UseStaticInClosureBug.class);
         suite.addTestSuite(VariableScopingBug.class);
         //todo suite.addTestSuite(VariblePrecedence.class);

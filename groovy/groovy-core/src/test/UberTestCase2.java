@@ -14,7 +14,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.ClassInScriptBug.class);
         suite.addTestSuite(groovy.bugs.ClosuresInScriptBug.class);
         suite.addTestSuite(groovy.bugs.ClosureWithStaticVariablesBug.class);
-        //todo suite.addTestSuite(groovy.bugs.ConstructorParameterBug.class);
+        suite.addTestSuite(groovy.bugs.ConstructorParameterBug.class);
         suite.addTestSuite(groovy.bugs.DoubleSizeParametersBug.class);
         suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
@@ -40,7 +40,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.ScriptBug.class);
         suite.addTestSuite(groovy.bugs.SeansBug.class);
         suite.addTestSuite(groovy.bugs.StaticMethodCallBug.class);
-        //todo suite.addTestSuite(groovy.bugs.SubscriptOnPrimitiveTypeArrayBug.class);
+        suite.addTestSuite(groovy.bugs.SubscriptOnPrimitiveTypeArrayBug.class);
         suite.addTestSuite(groovy.bugs.SubscriptOnStringArrayBug.class);
         suite.addTestSuite(groovy.lang.GroovyShellTest.class);
         suite.addTestSuite(groovy.lang.GStringTest.class);
