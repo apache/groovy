@@ -25,8 +25,8 @@ groovyObject.invokeMethod("run", args);
 
 1.1 Evaluate scripts or expressions using the shell
 
-You can evaluate any expression or script in Groovy using the {link:GroovyShell|apidocs/groovy/lang/GroovyShell}.
-The GroovyShell allows you to pass in and out variables via the {link:Binding|apidocs/groovy/lang/Binding} object.
+You can evaluate any expression or script in Groovy using the {link:GroovyShell|apidocs/groovy/lang/GroovyShell.html}.
+The GroovyShell allows you to pass in and out variables via the {link:Binding|apidocs/groovy/lang/Binding.html} object.
 
 {code:java}
 // call groovy expressions from Java code
