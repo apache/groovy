@@ -120,9 +120,9 @@ public class BaseMarkupBuilder extends Builder {
 			this.prefix = "";
 			
 			if (tagMap.containsKey(name)) {
-				return ((Closure)tagMap.get(name)).call(new Object[]{this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});
+				return ((Closure)tagMap.get(name)).call(new Object[]{this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});
 			} else {
-				return defaultTagClosure.call(new Object[]{name, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});		
+				return defaultTagClosure.call(new Object[]{name, this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});		
 			}
 		}
 		

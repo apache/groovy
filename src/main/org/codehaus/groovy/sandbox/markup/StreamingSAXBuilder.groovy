@@ -49,19 +49,19 @@ import org.xml.sax.ext.LexicalHandler
 	
 	class StreamingSAXBuilder extends AbstractStreamingBuilder {
 		pendingStack = []
-		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
 							if (contentHandler instanceof LexicalHandler) {
 								contentHandler.comment(body.toCharArray(), 0, body.length())
 							}
 						 }
-		noopClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
 						if (body instanceof Closure) {
 							body()
 						} else {
 							contentHandler.characters(body.toCharArray(), 0, body.length())
 						}
 					  }
-		tagClosure = {tag, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
 						attributes = new AttributesImpl()
 			
 					    attrs.each {key, value |					    				

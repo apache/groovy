@@ -1,4 +1,6 @@
 package org.codehaus.groovy.sandbox.util;
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
 
 import java.io.File;
@@ -20,6 +22,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.codehaus.groovy.sandbox.markup.Buildable;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -227,7 +230,7 @@ public class XmlSlurper extends DefaultHandler {
 	}
 }
 
-class XmlList extends GroovyObjectSupport {
+class XmlList extends GroovyObjectSupport implements Buildable {
 	final String name;
 	final Map attributes;
 	final Object[] children;
@@ -324,7 +327,7 @@ class XmlList extends GroovyObjectSupport {
 			return this.children;
 		} else if ("text".equals(name)) {
 		final StringBuffer buff = new StringBuffer();
-		
+
 			for (int i = 0; i != this.children.length; i++) {
 			final Object child = this.children[i];
 			
@@ -380,6 +383,30 @@ class XmlList extends GroovyObjectSupport {
     			return getMetaClass().invokeMethod(this, name, args);
     		}
     }
+    
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
+	 */
+	public void build(final GroovyObject builder) {
+		// TODO handle Namespaces
+	final Closure rest = new Closure(null) {
+		public Object doCall(final Object o) {
+			for (int i = 0; i != XmlList.this.children.length; i++) {
+				if (XmlList.this.children[i] instanceof Buildable) {
+					((Buildable)XmlList.this.children[i]).build(builder);
+				} else {
+					builder.getProperty("mkp");
+					builder.invokeMethod("yield", new Object[]{XmlList.this.children[i]});
+				}
+			}
+			
+			return null;
+		}
+	};
+
+		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
+		
+	}
 
     	protected int getNextXmlElement(final String name, final int lastFound) {
     		for (int i = lastFound + 1; i < this.children.length; i++) {
@@ -461,7 +488,23 @@ abstract class ElementCollection extends GroovyObjectSupport {
 	}
 	
 	protected abstract ElementCollection getResult(String property);
-	
+    
+    public synchronized Object getAt(int index) {
+	    	if (index >= 0) {
+		final Iterator iter = iterator();
+		
+			while (iter.hasNext()) {
+				if (index-- == 0) {
+					return iter.next();
+				} else {
+					iter.next();
+				}
+			}
+	    	}
+	    	
+	    	throw new ArrayIndexOutOfBoundsException(index);
+    }
+    
 	public synchronized int size() {
 		if (this.count == -1) {
 		final Iterator iter = iterator();
