@@ -151,7 +151,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
             current = node;
 
             // lets register the builder as the delegate
-            closure.setDelegate(this);
+            setClosureDelegate(closure, node);
             closure.call();
 
             current = oldCurrent;
@@ -159,6 +159,21 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
         proxyBuilder.nodeCompleted(current, node);
         return node;
+    }
+
+    /**
+     * A strategy method to allow derived builders to use
+     * builder-trees and switch in different kinds of builders.
+     * This method should call the setDelegate() method on the closure
+     * which by default passes in this but if node is-a builder
+     * we could pass that in instead (or do something wacky too)
+     *
+     * @param closure the closure on which to call setDelegate()
+     * @param node the node value that we've just created, which could be
+     * a builder
+     */
+    protected void setClosureDelegate(Closure closure, Object node) {
+        closure.setDelegate(this);
     }
 
     protected abstract void setParent(Object parent, Object child);
