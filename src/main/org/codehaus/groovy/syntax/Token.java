@@ -210,7 +210,7 @@ public class Token {
     /** Token type for floating-point number. */
     public static final int FLOAT_NUMBER = 351;
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     public static final int KEYWORD_ABSTRACT = 501;
     public static final int KEYWORD_AS = 502;
@@ -264,7 +264,7 @@ public class Token {
     public static final int KEYWORD_SHORT = 550;
     public static final int KEYWORD_BOOLEAN = 551;
     public static final int KEYWORD_DEF = 560;
-    
+
     public static final int SYNTH_METHOD = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
     public static final int SYNTH_LIST = 802;
@@ -280,7 +280,7 @@ public class Token {
         KEYWORDS.put(text, new Integer(type));
     }
 
-    static Map getKeywordMap() {
+    public static Map getKeywordMap() {
         return KEYWORDS;
     }
 
@@ -962,7 +962,7 @@ public class Token {
     public static Token leftShift(int startLine, int startColumn) {
         return newToken(LEFT_SHIFT, "<<", startLine, startColumn);
     }
-    
+
     /** Factory method for token for ">>".
      *
      *  @param startLine Line upon which the token starts.
@@ -973,7 +973,7 @@ public class Token {
     public static Token rightShift(int startLine, int startColumn) {
         return newToken(RIGHT_SHIFT, ">>", startLine, startColumn);
     }
-    
+
     /** Factory method for token for double-quoted string.
      *
      *  @param startLine Line upon which the token starts.
