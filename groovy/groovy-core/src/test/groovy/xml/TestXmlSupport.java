@@ -49,6 +49,7 @@ package groovy.xml;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import org.apache.xalan.serialize.SerializerToXML;
+import org.apache.xml.serialize.XMLSerializer;
 import org.codehaus.groovy.classgen.TestSupport;
 import org.w3c.dom.*;
 
@@ -60,7 +61,7 @@ import org.w3c.dom.*;
 public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {
-        SerializerToXML printer = createSerializer();
+        XMLSerializer printer = createSerializer();
         if (node instanceof Document) {
             printer.serialize((Document) node);
         }
@@ -70,15 +71,8 @@ public abstract class TestXmlSupport extends TestSupport {
         System.out.println();
     }
 
-    protected SerializerToXML createSerializer() {
-        try {
-            SerializerToXML ser = new SerializerToXML();
-            ser.init(System.out, null);
-            return ser;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();  
-        }
-        return null;
+    protected XMLSerializer createSerializer() {
+        return new XMLSerializer(System.out, null);
     }
 
     protected SAXBuilder createSAXBuilder() throws IOException {
