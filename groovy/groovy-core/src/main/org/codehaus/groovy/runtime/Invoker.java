@@ -426,6 +426,21 @@ public class Invoker {
         return format(arguments, false);
     }
 
+    /**
+	 * A helper method to format the arguments types as a comma-separated list
+	 */
+	public String toTypeString(Object[] arguments) {
+		if (arguments == null) {
+			return "null";
+		}
+	    StringBuffer argBuf = new StringBuffer();
+	    for (int i = 0; i < arguments.length; i++) {
+	    	if (i>0)argBuf.append(", ");
+			argBuf.append(arguments[i].getClass().getName());
+		}
+	    return argBuf.toString();
+	}
+    
     protected String format(Object arguments, boolean verbose) {
         if (arguments == null) {
             return "null";
@@ -728,7 +743,14 @@ public class Invoker {
                     return new Float(n.floatValue());
                 }
                 if (type == double.class) {
-                    return new Double(n.doubleValue());
+                    Double answer = new Double(n.doubleValue());
+                    //throw a runtime exception if conversion would be out-of-range for the type.
+                    if (!(n instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
+                            || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
+                        throw new  GroovyRuntimeException("Automatic coercion of "+n.getClass().getName()
+                                +" value "+n+" to double failed.  Value is out of range.");
+                    }
+                    return answer;
                 }
             }
             else {
@@ -752,7 +774,14 @@ public class Invoker {
                         return new Float(n.floatValue());
                     }
                     if (type == Double.class) {
-                        return new Double(n.doubleValue());
+                        Double answer = new Double(n.doubleValue());
+                        //throw a runtime exception if conversion would be out-of-range for the type.
+                        if (!(n instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
+                                || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
+                            throw new  GroovyRuntimeException("Automatic coercion of "+n.getClass().getName()
+                                    +" value "+n+" to double failed.  Value is out of range.");
+                        }
+                        return answer;
                     }
 
                 }
