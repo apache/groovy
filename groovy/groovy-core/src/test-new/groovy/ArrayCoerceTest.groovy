@@ -1,15 +1,26 @@
 class ArrayCoerceTest extends GroovyTestCase {
 
     Object[] field
+    Long[] numberField
 
     /*
       TODO parser bug - cannot parse!
+
+    int[] primitiveField
 
     void testStaticallyTypedPrimitiveTypeArrays() {
         int[] a = [1, 2, 3]
         assert a instanceof int[]
         assert a.length == 3
         dump(a)
+    }
+
+    void testStaticallyTypedPrimitiveFieldArrays() {
+        primitiveField = [1, 2, 3]
+        dump(primitiveField)
+
+        assert primitiveField instanceof int[]
+        assert primitiveField.length == 3
     }
 
     */
@@ -23,26 +34,44 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert et == Object.class
     }
 
-    void testFoo() {
-        Object[] foo = [1, 2, 3]
-        dump(foo)
-    }
-
-    void testStaticallyTypedArrays() {
+    void testStaticallyTypedObjectArrays() {
         Object[] b = [1, 2, 3]
         dump(b)
 
         assert b instanceof Object[]
         assert b.length == 3
+        def c = b.getClass()
+        def et = c.componentType
+        assert et == Object.class
 
     }
 
-    void testStaticallyTypedFieldArrays() {
+    void testStaticallyTypedArrays() {
+        Integer[] b = [1, 2, 3]
+        dump(b)
+
+        assert b instanceof Integer[]
+        assert b.length == 3
+        def c = b.getClass()
+        def et = c.componentType
+        assert et == Integer.class
+
+    }
+
+    void testStaticallyTypedObjectFieldArrays() {
         field = [1, 2, 3]
         dump(field)
 
         assert field instanceof Object[]
         assert field.length == 3
+    }
+
+    void testStaticallyTypedFieldArrays() {
+        numberField = [1, 2, 3]
+        dump(numberField)
+
+        assert numberField instanceof Long[]
+        assert numberField.length == 3
     }
 
     void testMakePrimitiveArrayTypes() {
