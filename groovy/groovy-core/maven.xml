@@ -36,7 +36,7 @@
    <attainGoal name="groovy:make-install"/>
   </goal>
   
-  <goal name="groovy:release" prereqs="clean, release, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
+  <goal name="groovy:release" prereqs="clean, jar:install, release, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
     description="Performs a release of the source, binary and jar distros">
   </goal>
 
@@ -82,6 +82,12 @@
         <exclude name="**/*.groovy"/>
       </fileset>
     </copy>
+    <chmod perm="ugo+x">
+      <fileset dir="${maven.dist.bin.assembly.dir}/bin">
+        <include name="*"/>
+        <include name="*.*"/>
+      </fileset>
+    </chmod>
   </postGoal>
   
   <goal name="run" prereqs="test:compile"
@@ -394,6 +400,7 @@
     <chmod perm="ugo+x">
       <fileset dir="${groovy.install.staging.dest}/bin">
         <include name="*"/>
+        <include name="*.*"/>
       </fileset>
     </chmod>
     <attainGoal name="groovy:embeddable-jar"/>
