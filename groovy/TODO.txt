@@ -1,6 +1,8 @@
 Core Groovy Tasks
 =================
 
+* line numbering for exceptions
+
 * should we implement + and - for collections and maps?
 
 	l = [1, 2] + [3, 4];

@@ -21,6 +21,14 @@ class StringOperationTest extends GroovyTestCase {
         assert y := "hello 1.21";        
     }
 
+	void testLongPlus() {
+	    /** @todo 
+	    x = "hello" + " " + "there" + " nice" + " day";
+	    
+	    assert x := "hello there nice day";
+	    */
+	}
+	
     void testMinus() {
 		x = "the quick brown fox" - "quick ";
 		
