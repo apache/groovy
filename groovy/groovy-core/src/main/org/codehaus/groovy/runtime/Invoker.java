@@ -261,7 +261,7 @@ public class Invoker {
 
     public Iterator asIterator(Object value) {
         if (value == null) {
-            Collections.EMPTY_LIST.iterator();
+            return Collections.EMPTY_LIST.iterator();
         }
         if (value instanceof Iterator) {
             return (Iterator) value;
@@ -824,7 +824,7 @@ public class Invoker {
         }
         else if (object instanceof Number) {
             Number n = (Number) object;
-            return n.intValue() != 0;
+            return n.doubleValue() != 0;
         }
         else {
             return object != null;
