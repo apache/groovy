@@ -35,14 +35,17 @@ public abstract class ParserPluginFactory {
             }
             catch (ClassNotFoundException e) {
                 try {
-                    type = Thread.currentThread().getContextClassLoader().loadClass(name);
+                    type = ParserPluginFactory.class.getClassLoader().loadClass(name);
                 }
                 catch (ClassNotFoundException e1) {
-                    try {
-                        type = ParserPluginFactory.class.getClassLoader().loadClass(name);
-                    }
-                    catch (ClassNotFoundException e2) {
-                        // ignore
+                    ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+                    if (contextClassLoader != null) {
+                        try {
+                            type = contextClassLoader.loadClass(name);
+                        }
+                        catch (ClassNotFoundException e2) {
+                            // ignore
+                        }
                     }
                 }
             }

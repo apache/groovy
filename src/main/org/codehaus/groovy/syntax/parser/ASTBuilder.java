@@ -122,53 +122,18 @@ import org.objectweb.asm.Constants;
  *  @author Chris Poirier
  */
 
-public class ASTBuilder
+public class ASTBuilder extends ASTHelper
 {
-
-    private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String[] DEFAULT_IMPORTS    = { "java.lang.", "groovy.lang.", "groovy.util." };
-
-
-
-  //---------------------------------------------------------------------------
-  // INITIALIZATION AND MEMBER ACCESS
-
-
-    private SourceUnit  controller;    // The SourceUnit controlling us
-    private ClassLoader classLoader;   // Our ClassLoader, which provides information on external types
-    private Map         imports;       // Our imports, simple name => fully qualified name
-    private String      packageName;   // The package name in which the module sits
-    private List newClasses = new ArrayList(); // temporarily store the class names that the current modulenode contains
-    private ModuleNode output;
-
-
-    /**
-    *  Initializes the <code>ASTBuilder</code>.
-    */
 
     public ASTBuilder( SourceUnit sourceUnit, ClassLoader classLoader )
     {
-        this.controller  = sourceUnit;
-        this.classLoader = classLoader;
-        this.imports     = new HashMap();
-        this.packageName = null;
-    }
-
-
-
-   /**
-    *  Returns our class loader (as supplied on construction).
-    */
-
-    public ClassLoader getClassLoader()
-    {
-        return this.classLoader;
+        super(sourceUnit, classLoader);
     }
 
 
 
 
-  //---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
   // ENTRY POINT
 
 
@@ -178,18 +143,15 @@ public class ASTBuilder
 
     public ModuleNode build( CSTNode input ) throws ParserException
     {
-        this.newClasses.clear();
-        this.output = new ModuleNode( controller );
-        resolutions.clear();
+        makeModule();
 
-        //
+       //
         // input structure:
         //    1: package
         //    2: imports
         //   3+: statements
 
-        packageName = packageDeclaration( input.get(1) );
-        output.setPackageName( packageName );
+        setPackageName( packageDeclaration( input.get(1) ));
 
         importStatements( output, input.get(2) );
 
@@ -209,7 +171,7 @@ public class ASTBuilder
 
 
 
-  //---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
   // DECLARATIONS
 
 
@@ -342,7 +304,7 @@ public class ASTBuilder
         // Calculate the easy stuff
 
         String   name = identifier( reduction );
-        this.newClasses.add(name);
+        addNewClassName(name);
         int modifiers = modifiers( reduction.get(1) );
         String parent = resolveName( reduction.get(2).get(1) );
 
@@ -363,8 +325,8 @@ public class ASTBuilder
 
         ClassNode classNode = (
             context == null
-                ? new ClassNode(               dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
-                : new InnerClassNode( context, dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                ? new ClassNode(               dot(getPackageName(), name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                : new InnerClassNode( context, dot(getPackageName(), name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
         );
 
         classNode.setCSTNode( reduction.get(0) );
@@ -373,8 +335,7 @@ public class ASTBuilder
     }
 
 
-
-   /**
+    /**
     *  Processes a type body for classDeclaration() and others.
     */
 
@@ -606,8 +567,8 @@ public class ASTBuilder
 
         ClassNode classNode = (
             context == null
-                ? new ClassNode(               dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
-                : new InnerClassNode( context, dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                ? new ClassNode(               dot(getPackageName(), name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
+                : new InnerClassNode( context, dot(getPackageName(), name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
         );
 
         classNode.setCSTNode( reduction.get(0) );
@@ -1902,11 +1863,8 @@ public class ASTBuilder
   //---------------------------------------------------------------------------
   // NAMING
 
-    private static HashMap resolutions = new HashMap();  // cleared on build(), to be safe
-    private static String NOT_RESOLVED = new String();
 
-
-   /**
+    /**
     *  Converts a CSTNode representation of a type name back into
     *  a string.
     */
@@ -1980,148 +1938,7 @@ public class ASTBuilder
     }
 
 
-
-   /**
-    *  Returns a fully qualified name for any given potential type
-    *  name.  Returns null if no qualified name could be determined.
-    */
-
-    protected String resolveName( String name, boolean safe )
-    {
-        //
-        // Use our cache of resolutions, if possible
-
-        String resolution = (String)resolutions.get( name );
-        if( resolution == NOT_RESOLVED )
-        {
-            return (safe ? name : null);
-        }
-        else if( resolution != null )
-        {
-            return (String)resolution;
-        }
-
-
-        do
-        {
-            //
-            // If the type name contains a ".", it's probably fully
-            // qualified, and we don't take it to verification here.
-
-            if( name.indexOf(".") >= 0 )
-            {
-                resolution = name;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Otherwise, we'll need the scalar type for checking, and
-            // the postfix for reassembly.
-
-            String scalar = name, postfix = "";
-            while( scalar.endsWith("[]") )
-            {
-                scalar = scalar.substring( 0, scalar.length() - 2 );
-                postfix += "[]";
-            }
-
-
-            //
-            // Primitive types are all valid...
-
-            if( Types.ofType(Types.lookupKeyword(scalar), Types.PRIMITIVE_TYPE) )
-            {
-                resolution = name;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Next, check our imports and return the qualified name,
-            // if available.
-
-            if( this.imports.containsKey(scalar) )
-            {
-                resolution = ((String)this.imports.get(scalar)) + postfix;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Next, see if our class loader can resolve it in the current package.
-
-            if( packageName != null && packageName.length() > 0 )
-            {
-                try
-                {
-                    getClassLoader().loadClass( dot(packageName, scalar) );
-                    resolution = dot(packageName, name);
-
-                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                }
-                catch( Throwable e )
-                {
-                    /* ignore */
-                }
-            }
-
-            // search the package imports path
-            List packageImports = output.getImportPackages();
-            for (int i = 0; i < packageImports.size(); i++) {
-                String pack = (String) packageImports.get(i);
-                String clsName = pack + name;
-                try {
-                    getClassLoader().loadClass( clsName );
-                    resolution  = clsName;
-                    break;
-                } catch (Throwable e) {
-                    //
-                }
-            }
-            if (resolution != null)
-                break;
-
-            //
-            // Last chance, check the default imports.
-
-            for( int i = 0; i < DEFAULT_IMPORTS.length; i++ )
-            {
-                try
-                {
-                    String qualified = DEFAULT_IMPORTS[i] + scalar;
-                    getClassLoader().loadClass( qualified );
-
-                    resolution = qualified + postfix;
-                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                }
-                catch( Throwable e )
-                {
-                    /* ignore */
-                }
-            }
-
-        } while( false );
-
-
-        //
-        // Cache the solution and return it
-
-        if( resolution == null )
-        {
-            resolutions.put( name, NOT_RESOLVED );
-            return (safe ? name : null);
-        }
-        else
-        {
-            resolutions.put( name, resolution );
-            return resolution;
-        }
-    }
-
-
-
-   /**
+    /**
     *  Builds a name from a CSTNode, then resolves it.  Returns the resolved name
     *  if available, or null, unless safe is set, in which case the built name
     *  is returned instead of null.
@@ -2135,16 +1952,11 @@ public class ASTBuilder
         String name = makeName( root );
         if (name.length() == 0)
             return "";
-        if (this.newClasses.contains(name)) {
-            return dot(packageName, name);
-        } else {
-            return resolveName( name, safe );
-        }
+        return resolveNewClassOrName(name, safe);
     }
 
 
-
-   /**
+    /**
     *  A synonym for <code>resolveName( root, true )</code>.
     */
 
@@ -2155,47 +1967,8 @@ public class ASTBuilder
 
 
 
-   /**
-    *  Returns true if the specified name is a known type name.
-    */
 
-    protected boolean isDatatype( String name )
-    {
-        return resolveName( name, false ) != null;
-    }
-
-
-
-   /**
-    *  Returns two names joined by a dot.  If the base name is
-    *  empty, returns the name unchanged.
-    */
-
-    protected String dot( String base, String name )
-    {
-        if( base != null && base.length() > 0 )
-        {
-            return base + "." + name;
-        }
-
-        return name;
-    }
-
-
-
-   /**
-    *  A synonym for <code>dot( base, "" )</code>.
-    */
-
-    protected String dot( String base )
-    {
-        return dot( base, "" );
-    }
-
-
-
-
-  //---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
   // ASM SUPPORT
 
 
