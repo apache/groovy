@@ -52,6 +52,7 @@ import java.util.logging.Logger;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
@@ -1350,48 +1351,64 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitPropertyExpression(PropertyExpression expression) {
 
         // lets check if we're a fully qualified class name
-
         String className = checkForQualifiedClass(expression);
         if (className != null) {
             visitClassExpression(new ClassExpression(className));
+            return;
         }
-        else {
-            Expression objectExpression = expression.getObjectExpression();
-
-            if (isThisExpression(objectExpression)) {
-                // lets use the field expression if its available
-                String name = expression.getProperty();
-                FieldNode field = classNode.getField(name);
-                if (field != null) {
-                    visitFieldExpression(new FieldExpression(field));
+        Expression objectExpression = expression.getObjectExpression();
+        if (expression.getProperty().equals("class")) {
+            if ((objectExpression instanceof ClassExpression)) {
+                visitClassExpression((ClassExpression) objectExpression);
+                return;
+            }
+            else if (objectExpression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) objectExpression;
+                className = varExp.getVariable();
+                try {
+                    className = resolveClassName(className);
+                    visitClassExpression(new ClassExpression(className));
                     return;
                 }
+                catch (Exception e) {
+                    // ignore
+                }
             }
+        }
 
-            boolean left = leftHandExpression;
-            // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
-            // rather than ALOAD
-            leftHandExpression = false;
+        if (isThisExpression(objectExpression)) {
+            // lets use the field expression if its available
+            String name = expression.getProperty();
+            FieldNode field = classNode.getField(name);
+            if (field != null) {
+                visitFieldExpression(new FieldExpression(field));
+                return;
+            }
+        }
 
-            objectExpression.visit(this);
+        boolean left = leftHandExpression;
+        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
+        // rather than ALOAD
+        leftHandExpression = false;
 
-            cv.visitLdcInsn(expression.getProperty());
+        objectExpression.visit(this);
 
-            if (expression.isSafe()) {
-                if (left) {
-                    setPropertySafeMethod2.call(cv);
-                }
-                else {
-                    getPropertySafeMethod.call(cv);
-                }
+        cv.visitLdcInsn(expression.getProperty());
+
+        if (expression.isSafe()) {
+            if (left) {
+                setPropertySafeMethod2.call(cv);
             }
             else {
-                if (left) {
-                    setPropertyMethod2.call(cv);
-                }
-                else {
-                    getPropertyMethod.call(cv);
-                }
+                getPropertySafeMethod.call(cv);
+            }
+        }
+        else {
+            if (left) {
+                setPropertyMethod2.call(cv);
+            }
+            else {
+                getPropertyMethod.call(cv);
             }
         }
     }
@@ -1403,10 +1420,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected String checkForQualifiedClass(PropertyExpression expression) {
         String text = expression.getText();
         try {
-            loadClass(text);
-            return text;
+            return resolveClassName(text);
         }
         catch (Exception e) {
+            if (text.endsWith(".class")) {
+                text = text.substring(0, text.length() - 6);
+                try {
+                    return resolveClassName(text);
+                }
+                catch (Exception e2) {
+                }
+            }
             return null;
         }
     }
@@ -2719,10 +2743,24 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
      */
     protected Class loadClass(String name) {
         try {
-            return getClassLoader().loadClass(name);
+            CompileUnit compileUnit = getCompileUnit();
+            if (compileUnit != null) {
+                return compileUnit.loadClass(name);
+            }
+            else {
+                throw new ClassGeneratorException("Could not load class: " + name);
+            }
         }
         catch (ClassNotFoundException e) {
             throw new ClassGeneratorException("Could not load class: " + name + " reason: " + e, e);
         }
+    }
+
+    protected CompileUnit getCompileUnit() {
+        CompileUnit answer = classNode.getCompileUnit();
+        if (answer == null) {
+            answer = context.getCompileUnit();
+        }
+        return answer;
     }
 }
