@@ -188,7 +188,6 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertMethodCall(new Integer(10), "divide", new Integer(2), new Double(5));
     }
 
-
     public void testBaseFailMethod() throws Throwable {
         Object value;
         try {
@@ -199,6 +198,19 @@ public class InvokeMethodTest extends GroovyTestCase {
         }
     }
 
+    public void testToArrayOnList() throws Throwable {
+        List object = new ArrayList();
+        object.add("Hello");
+
+        Object[] value = (Object[]) invoke(object, "toArray", null);
+        assertArrayEquals(object.toArray(), value);
+        assertEquals(1, value.length);
+        assertEquals("Hello", value[0]);
+
+        value = (Object[]) invoke(object, "toArray", new Object[0]);
+        assertArrayEquals(object.toArray(), value);
+       }
+
     public void testInvalidOverloading() throws Throwable {
         try {
             invoke(this, "badOverload", new Object[] { "a", "b" });
@@ -208,7 +220,7 @@ public class InvokeMethodTest extends GroovyTestCase {
             System.out.println("Caught: " + e);
         }
     }
-    
+
     public void testPlusWithNull() throws Throwable {
         String param = "called with: ";
         Object value = invoke(param, "plus", new Object[] { null });
