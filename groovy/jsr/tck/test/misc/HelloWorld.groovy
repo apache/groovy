@@ -10,6 +10,10 @@ class HelloWorld extends GroovyTestCase {
 
         println "Hello $foo!"
         println "Hello ${bar}!"
+
+        def x = 123
+
+        println "value is $x"
     }
 
 }

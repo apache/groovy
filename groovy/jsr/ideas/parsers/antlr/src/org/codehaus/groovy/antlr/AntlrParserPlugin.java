@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -37,6 +38,8 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Reduction;
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
 
@@ -259,6 +262,10 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     block.addStatement(methodCall(node));
                     break;
 
+                case VARIABLE_DEF:
+                    block.addStatement(variableDef(node));
+                    break;
+
                 default:
                     onUnknownAST(node);
             }
@@ -295,6 +302,30 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
         return new ExpressionStatement(expression);
+    }
+
+    protected Statement variableDef(AST variableDef) {
+        AST node = variableDef.getFirstChild();
+        dumpTree(variableDef);
+        String type = null;
+                if (isType(node, TYPE)) {
+            type = extractFirstChildText(node);
+            node = node.getNextSibling();
+        }
+
+        assertNodeType(IDENT, node);
+        String name = node.getText();
+        node = node.getNextSibling();
+
+        Expression leftExpression = new VariableExpression(name, type);
+
+        assertNodeType(ASSIGN, node);
+        Token token = Token.newSymbol(Types.ASSIGN, node.getLine(), node.getColumn());
+
+        Expression rightExpression = extractExpression(node.getFirstChild());
+
+        // TODO should we have a variable declaration statement?
+        return new ExpressionStatement(new BinaryExpression(leftExpression, token, rightExpression));
     }
 
     protected Expression extractExpression(AST expression) {
@@ -383,7 +414,8 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
 
     protected String extractFirstChildText(AST node) {
-        return node.getFirstChild().getText();
+        AST child = node.getFirstChild();
+        return child != null ? child.getText() : null;
     }
 
 
