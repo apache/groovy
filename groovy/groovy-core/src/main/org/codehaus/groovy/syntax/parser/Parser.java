@@ -10,8 +10,8 @@ import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;
 
 public class Parser {
-    private static final int[] identifierTokens = {Token.IDENTIFIER, Token.KEYWORD_CLASS, Token.KEYWORD_DEF };
-    
+    private static final int[] identifierTokens = { Token.IDENTIFIER, Token.KEYWORD_CLASS, Token.KEYWORD_DEF };
+
     private TokenStream tokenStream;
     private boolean lastTokenStatementSeparator;
 
@@ -1156,17 +1156,6 @@ public class Parser {
                     identifier = rootNode(lt_bare());
                     break PREFIX_SWITCH;
                 }
-            case (Token.IDENTIFIER) :
-                {
-                    //expr       = identifier;
-                    //expr       = new CSTNode( Token.keyword( -1,
-                    //                                        -1,
-                    //                                        "this" ) );
-                    identifier = rootNode(lt_bare());
-                    expr = identifier;
-
-                    break PREFIX_SWITCH;
-                }
             case (Token.PATTERN_REGEX) :
                 {
                     expr = regexPattern();
@@ -1174,8 +1163,12 @@ public class Parser {
                 }
             default :
                 {
-                    throwExpected(new int[] {
-                    });
+                    expectIdentifier();
+                    Token token = consume(lt_bare());
+                    identifier = new CSTNode(Token.identifier(token.getStartLine(), token.getStartColumn(), token.getText()));
+                    expr = identifier;
+
+                    break PREFIX_SWITCH;
                 }
         }
 
@@ -1358,8 +1351,7 @@ public class Parser {
     }
 
     protected boolean lookAheadForMethodCall() throws IOException, SyntaxException {
-        return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE)
-            && (isIdentifier(lt(2)));
+        return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE) && (isIdentifier(lt(2)));
     }
 
     protected CSTNode regexPattern() throws IOException, SyntaxException {
@@ -1487,9 +1479,9 @@ public class Parser {
 
         return parameterList;
     }
-    
+
     protected boolean isIdentifier(int type) {
-        for (int i = 0; i < identifierTokens.length; i++ ) {
+        for (int i = 0; i < identifierTokens.length; i++) {
             if (type == identifierTokens[i]) {
                 return true;
             }
@@ -1501,10 +1493,10 @@ public class Parser {
      * Tests that the next token is an identifier
      */
     protected void expectIdentifier() throws SyntaxException, IOException {
-        if (! isIdentifier(lt_bare())) {
+        if (!isIdentifier(lt_bare())) {
             throwExpected(identifierTokens);
         }
-       }
+    }
 
     protected CSTNode namedParameterList(int endOfListDemarc) throws IOException, SyntaxException {
         CSTNode parameterList = new CSTNode(Token.syntheticList());
