@@ -45,8 +45,7 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
     /*
      * @see groovy.swt.impl.Factory#newInstance(java.util.Map, java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-            throws GroovyException {
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
         String styleProperty = (String) properties.remove("style");
         if (styleProperty != null) {
             style = SwtUtils.parseStyle(SWT.class, styleProperty);
@@ -70,15 +69,16 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
      *         GroovyException
      */
     protected Object createWidget(Object parent) throws GroovyException {
-        if (beanClass == null) { throw new GroovyException(
-                "No Class available to create the new widget"); }
+        if (beanClass == null) {
+            throw new GroovyException("No Class available to create the new widget");
+        }
         try {
             if (parent == null) {
                 // lets try call a constructor with a single style
-                Class[] types = { int.class};
+                Class[] types = { int.class };
                 Constructor constructor = beanClass.getConstructor(types);
                 if (constructor != null) {
-                    Object[] arguments = { new Integer(style)};
+                    Object[] arguments = { new Integer(style) };
                     return constructor.newInstance(arguments);
                 }
             } else {
@@ -89,18 +89,16 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
                     for (int i = 0, size = constructors.length; i < size; i++) {
                         Constructor constructor = constructors[i];
                         Class[] types = constructor.getParameterTypes();
-                        if (types.length == 2
-                                && types[1].isAssignableFrom(int.class)) {
+                        if (types.length == 2 && types[1].isAssignableFrom(int.class)) {
                             if (types[0].isAssignableFrom(parent.getClass())) {
-                                Object[] arguments = { parent,
-                                        new Integer(style)};
+                                Object[] arguments = { parent, new Integer(style) };
                                 return constructor.newInstance(arguments);
                             }
                             // lets try to find the constructor with 1
                             // arguments
                         } else if (types.length == 1
                                 && types[0].isAssignableFrom(parent.getClass())) {
-                            Object[] arguments = { parent};
+                            Object[] arguments = { parent };
                             return constructor.newInstance(arguments);
                         }
                     }
@@ -114,8 +112,7 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         } catch (IllegalAccessException e) {
             throw new GroovyException(e.getMessage());
         } catch (InvocationTargetException e) {
-            throw new GroovyException(e.getTargetException()
-                    .getLocalizedMessage());
+            throw new GroovyException(e.getTargetException().getLocalizedMessage());
         }
     }
 
@@ -134,7 +131,7 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
             Shell shell = (Shell) parent;
             if (style == SWT.BAR) {
                 shell.setMenuBar(menu);
-            } else if (style == SWT.POP_UP) {
+            } else {
                 shell.setMenu(menu);
             }
         }
