@@ -57,7 +57,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Closure extends GroovyObjectSupport implements Cloneable {
+public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
 
     private static final Object noParameters[] = new Object[] { null };
 
@@ -277,6 +277,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
      */
     public Closure asWritable() {
         return new WritableClosure(this);
+    }
+
+    public void run() {
+        call();
     }
 
     /**
