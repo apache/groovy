@@ -376,7 +376,6 @@
       <artifactId>classworlds</artifactId>    
       <version>1.0</version>
     </dependency>
-
     <dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>    
@@ -429,7 +428,7 @@
       <url>http://jakarta.apache.org/bsf/</url>
     </dependency>
 
-  <!-- only used for JMX utilities -->
+    <!-- only used for JMX utilities -->
     <dependency>
       <groupId>mx4j</groupId>
       <artifactId>mx4j</artifactId>    
@@ -439,14 +438,14 @@
       </properties>
     </dependency>
 
-  <!-- only used for GroovyMock tools -->
+    <!-- only used for GroovyMock tools -->
     <dependency>
       <groupId>mockobjects</groupId>
       <artifactId>mockobjects</artifactId>    
       <version>core-0.09</version>
     </dependency>
 
-  <!-- only used for EJB browser -->
+    <!-- only used for EJB browser -->
     <dependency>
       <groupId>openejb</groupId>
       <artifactId>openejb</artifactId>    
@@ -454,7 +453,7 @@
       <version>0.9.2</version>
     </dependency>
 
-  <!-- only used for SQL library -->
+    <!-- only used for SQL library -->
     <dependency>
       <groupId>axion</groupId>
       <artifactId>axion</artifactId>    
@@ -478,14 +477,14 @@
       <version>1.2</version>
     </dependency>
   
-  <!-- only used for servlet / gsp -->
+    <!-- only used for servlet / gsp -->
     <dependency>
       <groupId>servletapi</groupId>
       <artifactId>servletapi</artifactId>    
       <version>2.3</version>
     </dependency>
   
-  <!-- only used for the Wiki Ant tasks -->
+    <!-- only used for the Wiki Ant tasks -->
     <dependency>
       <groupId>radeox</groupId>
       <artifactId>radeox</artifactId>    
@@ -496,18 +495,28 @@
       <artifactId>radeox-oro</artifactId>    
       <version>0.9</version>
     </dependency>
-  <!-- only used for the HTML to Wiki script -->
+
+    <!-- only used for the HTML to Wiki script -->
     <dependency>
       <groupId>nekohtml</groupId>
       <artifactId>nekohtml</artifactId>    
       <version>0.7.7</version>
     </dependency>
-  <!-- only used for the JavaDoc generator script -->
+
+    <!-- only used for the JavaDoc generator script -->
     <dependency>
       <groupId>qdox</groupId>
       <artifactId>qdox</artifactId>    
       <version>1.3</version>
     </dependency>
+
+    <!-- only used in the samples (BlogLines client) -->
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+
   </dependencies>
 
   <build>
