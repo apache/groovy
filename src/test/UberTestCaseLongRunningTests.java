@@ -15,17 +15,16 @@ public class UberTestCaseLongRunningTests extends TestCase {
         suite.addTestSuite(ClosureListenerTest.class);
         //todo suite.addTestSuite(ScriptTest.class);
         suite.addTestSuite(groovy.util.AntTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.bsf.BSFTest.class);
+        suite.addTestSuite(org.codehaus.groovy.bsf.BSFTest.class);
         suite.addTestSuite(org.codehaus.groovy.bsf.CacheBSFTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.ReflectorGeneratorTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.RunBugsTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.RunClosureTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
+        // todo suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
 
-        //todo suite.addTestSuite(org.codehaus.groovy.sandbox.markup.StreamingMarkupTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.syntax.parser.ASTBuilderTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.syntax.parser.CompilerErrorTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.wiki.RunHtml2WikiTest.class);
+        suite.addTestSuite(org.codehaus.groovy.sandbox.markup.StreamingMarkupTest.class);
+        suite.addTestSuite(org.codehaus.groovy.syntax.parser.ASTBuilderTest.class);
+        suite.addTestSuite(org.codehaus.groovy.syntax.parser.CompilerErrorTest.class);
         return suite;
     }
 

@@ -7,9 +7,9 @@ package org.codehaus.groovy.sandbox.markup
 class StreamingMarkupTest extends groovy.xml.TestXmlSupport {
     
     void testSmallTree() {
-        b = new StreamingMarkupBuilder()
+        def b = new StreamingMarkupBuilder()
         
-        m = {
+        def m = {
             root1(a:5, b:7) {
                 elem1('hello1')
                 elem2('hello2')
@@ -21,9 +21,9 @@ class StreamingMarkupTest extends groovy.xml.TestXmlSupport {
     }
     
     void testTree() {
-        b = new StreamingMarkupBuilder()
+        def b = new StreamingMarkupBuilder()
         
-        m = {
+        def m = {
             root2(a:5, b:7) {
                 elem1('hello1')
                 elem2('hello2')

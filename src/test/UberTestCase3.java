@@ -59,6 +59,7 @@ public class UberTestCase3 extends TestCase {
     }
 
 // todo - Are we still using wiki tests as none turn up on my build???
+// GL: no, we don't use them anymore, so let's ditch it
 //        suite.addTestSuite(org.codehaus.groovy.wiki.RunWikiTest.class);
 
 // no tests inside (should we have an AbstractGroovyTestCase???)
