@@ -943,6 +943,8 @@ public class MetaClass {
             catch (Exception e) {
                 // if the value is a List see if we can construct the value
                 // from a constructor
+                if (newValue == null)
+                    return;
                 if (newValue instanceof List) {
                     List list = (List) newValue;
                     int params = list.size();
