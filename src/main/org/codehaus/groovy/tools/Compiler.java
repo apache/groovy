@@ -19,6 +19,7 @@ import org.apache.log4j.Category;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
@@ -185,10 +186,13 @@ public class Compiler
         LOG.info( "stage-3 compiling: " + file );
         ASTBuilder astBuilder = new ASTBuilder( getClassLoader() );
 
+        Verifier verifier = new Verifier();
+        
         ClassNode[] classNodes = astBuilder.build( compilationUnit );
 
         for ( int i = 0 ; i < classNodes.length ; ++i )
         {
+            verifier.visitClass(classNodes[ i ]);
             dumpClass( new GeneratorContext(), classNodes[ i ], file );
         }
     }

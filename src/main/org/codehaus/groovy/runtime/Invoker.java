@@ -54,7 +54,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
  * 
@@ -64,6 +63,10 @@ import java.util.Map;
 public class Invoker {
 
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
+
+    public MetaClass getMetaClass(Object object) {
+        return metaRegistry.getMetaClass(object.getClass());
+    }
 
     /**
      * Invokes the given method on the object. 
@@ -97,6 +100,12 @@ public class Invoker {
                 return metaClass.invokeMethod(object, methodName, arguments, argumentList);
             }
         }
+    }
+
+    public Object invokeStaticMethod(String type, String method, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
+        List argumentList = asList(arguments);
+        return metaClass.invokeStaticMethod(null, method, arguments, argumentList);
     }
 
     public List asList(Object value) {
@@ -270,6 +279,24 @@ public class Invoker {
             return n.intValue();
         }
         throw new InvokerException("Could not convert object: " + value + " into an int");
+    }
+
+    /**
+     * Attempts to load the given class via name using the current class loader
+     * for this code or the thread context class loader
+     */
+    protected Class loadClass(String type) {
+        try {
+            return getClass().getClassLoader().loadClass(type);
+        }
+        catch (ClassNotFoundException e) {
+            try {
+                return Thread.currentThread().getContextClassLoader().loadClass(type);
+            }
+            catch (ClassNotFoundException e2) {
+                throw new InvokerException("Could not load type: " + type, e);
+            }
+        }
     }
 
 }

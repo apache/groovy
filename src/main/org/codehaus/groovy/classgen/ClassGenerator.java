@@ -87,6 +87,7 @@ import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
+import org.codehaus.groovy.ast.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -131,6 +132,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // cached values
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethod");
+    MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
@@ -167,8 +169,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private Set syntheticStaticFields = new HashSet();
 
-
-    public ClassGenerator(GeneratorContext context, ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
+    public ClassGenerator(
+        GeneratorContext context,
+        ClassVisitor classVisitor,
+        ClassLoader classLoader,
+        String sourceFile) {
         this.context = context;
         this.cw = classVisitor;
         this.classLoader = classLoader;
@@ -186,7 +191,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
-        syntheticStaticFields.clear();        
+        syntheticStaticFields.clear();
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
@@ -197,8 +202,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             internalBaseClassName,
             getClassInternalNames(classNode.getInterfaces()),
             sourceFile);
-
-        ensureClassNodeHasConstructor(classNode);
 
         // now lets visit the contents of the class
         for (Iterator iter = classNode.getProperties().iterator(); iter.hasNext();) {
@@ -646,7 +649,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         innerClasses.add(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
-
         ClassNode owner = innerClass.getOuterClass();
         if (classNode instanceof InnerClassNode) {
             // lets load the outer this
@@ -658,16 +660,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitTypeInsn(NEW, innerClassinternalName);
             cv.visitInsn(DUP);
             cv.visitVarInsn(ALOAD, paramIdx);
-        }     
+        }
         else {
             cv.visitTypeInsn(NEW, innerClassinternalName);
             cv.visitInsn(DUP);
             cv.visitVarInsn(ALOAD, 0);
-            
-        }   
+
+        }
 
         // we may need to pass in some other constructors
-        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + getClassInternalName(owner.getName()) + ";)V");
+        cv.visitMethodInsn(
+            INVOKESPECIAL,
+            innerClassinternalName,
+            "<init>",
+            "(L" + getClassInternalName(owner.getName()) + ";)V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -755,8 +761,28 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
 
         invokeMethodMethod.call(cv);
+    }
 
-        //cv.visitInsn(POP);
+    public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+        this.leftHandExpression = false;
+
+        Expression arguments = call.getArguments();
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            int size = tupleExpression.getExpressions().size();
+            if (size == 0) {
+                arguments = ConstantExpression.NULL;
+            }
+            else if (size == 1) {
+                arguments = (Expression) tupleExpression.getExpressions().get(0);
+            }
+        }
+
+        cv.visitLdcInsn(call.getType());
+        cv.visitLdcInsn(call.getMethod());
+        arguments.visit(this);
+
+        invokeStaticMethodMethod.call(cv);
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression expression) {
@@ -796,6 +822,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (!isStatic && !leftHandExpression) {
             cv.visitVarInsn(ALOAD, 0);
         }
+        if (leftHandExpression) {
+            // this may be superflous
+            cv.visitTypeInsn(CHECKCAST, getClassInternalName(field.getType()));
+        }
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
         String ownerName =
             (field.getOwner().equals(classNode.getName()))
@@ -812,15 +842,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected void visitOuterFieldExpression(FieldExpression expression) {
         ClassNode outerClassNode = classNode.getOuterClass();
-        
+
         int valueIdx = idx + 1;
-        
+
         if (leftHandExpression) {
             cv.visitVarInsn(ASTORE, valueIdx);
         }
         cv.visitVarInsn(ALOAD, 0);
         cv.visitFieldInsn(GETFIELD, internalClassName, "__outerInstance", getTypeDescription(outerClassNode.getName()));
-        
+
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
@@ -832,7 +862,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
     }
-
 
     public void visitVariableExpression(VariableExpression expression) {
         // lets see if the variable is a field
@@ -1039,17 +1068,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "outerInstance", null)};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
-    }
-
-    /**
-     * Adds a default constructor if there isn't one already
-     * 
-     * @todo refactor as part of the analyzer
-     */
-    protected void ensureClassNodeHasConstructor(ClassNode node) {
-        if (node.getConstructors().isEmpty()) {
-            node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        }
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {

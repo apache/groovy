@@ -68,6 +68,7 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends ClassLoader {
 
     private ClassWriter classWriter;
+    private Verifier verifier = new Verifier();
 
     public GroovyClassLoader() {
         this.classWriter = new ClassWriter(true);
@@ -136,6 +137,7 @@ public class GroovyClassLoader extends ClassLoader {
     }
 
     protected Class defineClass(GeneratorContext context, ClassNode classNode) {
+        verifier.visitClass(classNode);
         ClassGenerator visitor = new ClassGenerator(context, classWriter, this, null);
         visitor.visitClass(classNode);
 

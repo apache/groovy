@@ -65,12 +65,20 @@ import java.util.Map;
 public class InvokerHelper {
     private static final Invoker singleton = new Invoker();
 
+    public static MetaClass getMetaClass(Object object) {
+        return getInstance().getMetaClass(object);
+    }
+    
     public static Invoker getInstance() {
         return singleton;
     }
 
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         return getInstance().invokeMethod(object, methodName, arguments);
+    }
+
+    public static Object invokeStaticMethod(String type, String methodName, Object arguments) {
+        return getInstance().invokeStaticMethod(type, methodName, arguments);
     }
 
     public static Iterator asIterator(Object collection) {

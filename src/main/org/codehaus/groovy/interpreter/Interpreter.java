@@ -75,6 +75,7 @@ import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -270,6 +271,20 @@ public class Interpreter implements GroovyCodeVisitor {
         catch (InvokerInvocationException e) {
             throw new InterpreterException(
                 "Exception occurred when invoking method: " + call.getMethod() + " on: " + value + " reason: " + e,
+                e);
+        }
+    }
+
+    public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
+        Object arguments = evaluate(call.getArguments());
+
+        try {
+            Object answer = invoker.invokeStaticMethod(call.getType(), call.getMethod(), arguments);
+            pushExpressionValue(answer);
+        }
+        catch (InvokerInvocationException e) {
+            throw new InterpreterException(
+                "Exception occurred when invoking method: " + call.getMethod() + " on: " + call.getType() + " reason: " + e,
                 e);
         }
     }

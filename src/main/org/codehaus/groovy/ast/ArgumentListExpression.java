@@ -61,4 +61,8 @@ public class ArgumentListExpression extends TupleExpression {
     public ArgumentListExpression(List expressions) {
         super(expressions);
     }
+
+    public ArgumentListExpression(Expression[] expressions) {
+        super(expressions);
+    }
 }

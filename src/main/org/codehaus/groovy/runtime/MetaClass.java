@@ -177,6 +177,10 @@ public class MetaClass {
         list.add(method);
     }
 
+    public Object invokeMethod(Object object, String methodName, Object arguments) {
+        return invokeMethod(object, methodName, arguments, InvokerHelper.asList(arguments));
+    }
+
     /**
      * Invokes the given method on the object. 
      * 
@@ -361,6 +365,11 @@ public class MetaClass {
         }
         throw new InvokerException("No such property: " + property);
     }
+    
+    public String toString() {
+        return super.toString() + "[" + theClass + "]";
+    }
+
     /**
      * Lets walk the base class & interfaces list to see if we can find the method
      */
@@ -404,8 +413,9 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-        // System.out.println("Evaluating method: " + method);
-        // System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+//        System.out.println("Evaluating method: " + method);
+//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+//        System.out.println(this.theClass);
 
         try {
             if (registry.useAccessible()) {

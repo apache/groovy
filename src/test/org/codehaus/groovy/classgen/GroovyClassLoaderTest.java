@@ -50,8 +50,9 @@ import groovy.lang.GroovyObject;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClass;
 
 /**
  * Tests dynamically compiling a new class
@@ -69,12 +70,26 @@ public class GroovyClassLoaderTest extends TestSupport {
 
         System.out.println("Invoking main...");
         
-
-        Object object = groovyClass.newInstance();
-        InvokerHelper.invokeMethod(object, "main", null);
-
-        /** @todo once GroovyObject is implemented by the compiler */        
-//        GroovyObject object = (GroovyObject) groovyClass.newInstance();
-//        object.invokeMethod("main", null);
+        GroovyObject object = (GroovyObject) groovyClass.newInstance();
+        
+        assertTrue(object != null);
+        
+        Field field = object.getClass().getDeclaredField("metaClass");
+        assertTrue("Found metaclass field", field != null);
+        
+        Object metaClassObject = field.get(object);
+        assertTrue("Found metaclass", metaClassObject != null && metaClassObject instanceof MetaClass);
+        
+        MetaClass metaClass = (MetaClass) metaClassObject;
+        System.out.println("Metaclass: " + metaClass);
+        
+        Class type = object.getClass();
+        System.out.println("Type: " + type);
+        
+        // invoke via metaclass
+        metaClass.invokeMethod(object, "main", null);
+        
+        // invoke directly
+        object.invokeMethod("main", null);
     }
 }
