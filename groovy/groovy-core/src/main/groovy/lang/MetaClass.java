@@ -49,10 +49,12 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,11 +63,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.CompilerFacade;
 import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.objectweb.asm.ClassWriter;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -81,6 +86,7 @@ public class MetaClass {
 
     private MetaClassRegistry registry;
     private Class theClass;
+    private ClassNode classNode;
     private Map methodIndex = new HashMap();
     private Map staticMethodIndex = new HashMap();
     private Map newStaticInstanceMethodIndex = new HashMap();
@@ -229,10 +235,8 @@ public class MetaClass {
         if (constructor != null) {
             return doConstructorInvoke(constructor, argumentList.toArray());
         }
-        throw new InvokerException(
-            "Could not find matching constructor for class: " + theClass.getName());
+        throw new InvokerException("Could not find matching constructor for class: " + theClass.getName());
     }
-
 
     /**
      * @return the currently registered static methods against this class
@@ -308,9 +312,51 @@ public class MetaClass {
             return;
         }
 
-        /** @todo or are we an extenable class? */
+        /** @todo or are we an extensible class? */
 
         throw new InvokerException("No such property: " + property);
+    }
+
+    public ClassNode getClassNode() {
+        if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
+            // lets try load it from the classpath
+            String className = theClass.getName();
+            String groovyFile = className;
+            int idx = groovyFile.indexOf('$');
+            if (idx > 0) {
+                groovyFile = groovyFile.substring(0, idx);
+            }
+            groovyFile = groovyFile.replace('.', '/') + ".groovy";
+            
+            //System.out.println("Attempting to load: " + groovyFile);
+            URL url = theClass.getClassLoader().getResource(groovyFile);
+            if (url == null) {
+                url = Thread.currentThread().getContextClassLoader().getResource(groovyFile);
+            }
+            if (url != null) {
+                try {
+                    InputStream in = url.openStream();
+                    CompilerFacade compiler = new CompilerFacade(theClass.getClassLoader()) {
+                        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
+                            if (classNode.getName().equals(theClass.getName())) {
+                                //System.out.println("Found: " + classNode.getName());
+                                MetaClass.this.classNode = classNode;
+                            }
+                        }
+                    };
+                    compiler.parseClass(in, groovyFile);
+                }
+                catch (Exception e) {
+                    throw new InvokerException("Exception thrown parsing: " + groovyFile + ". Reason: " + e, e);
+                }
+            }
+
+        }
+        return classNode;
+    }
+
+    public String toString() {
+        return super.toString() + "[" + theClass + "]";
     }
 
     // Implementation methods
@@ -427,10 +473,6 @@ public class MetaClass {
             throw new InvokerException("Could not evaluate property: " + property, e);
         }
         throw new InvokerException("No such property: " + property);
-    }
-
-    public String toString() {
-        return super.toString() + "[" + theClass + "]";
     }
 
     /**
@@ -556,7 +598,6 @@ public class MetaClass {
                 e);
         }
     }
-
 
     /**
      * Chooses the correct method to use from a list of methods which match by name.
@@ -708,7 +749,7 @@ public class MetaClass {
 
     protected boolean isCompatibleInstance(Class type, Object value) {
         boolean answer = value == null || type.isInstance(value);
-        if (! answer) {
+        if (!answer) {
             if (type.isPrimitive() && value instanceof Number) {
                 if (type == int.class) {
                     return value instanceof Integer;
