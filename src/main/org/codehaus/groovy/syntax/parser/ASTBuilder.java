@@ -316,7 +316,12 @@ public class ASTBuilder {
      * move it into the verifier / analyser
      */
     protected String resolvedQualifiedName(CSTNode nameRoot) {
-        return resolveName(qualifiedName(nameRoot));
+        String name = qualifiedName(nameRoot);
+        String answer = resolveName(name);
+        if (answer == null) {
+            answer = name;
+        }
+        return answer;
     }
 
     /**

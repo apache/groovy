@@ -1,6 +1,5 @@
 import groovy.xml.MarkupBuilder
 
-
 /**
  * @author Ted Leung
  * @version $Revision$

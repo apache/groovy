@@ -68,7 +68,7 @@ public class Parameter {
     private String realType;
 
     public Parameter(String name) {
-        this("java.lang.Object", name);
+        this(null, name);
     }
 
     public Parameter(String type, String name) {

@@ -77,7 +77,7 @@ import org.objectweb.asm.Constants;
 public class ModuleNode extends ASTNode implements Constants {
 
     private BlockStatement statementBlock = new BlockStatement();
-    private List classes = new ArrayList();
+    List classes = new ArrayList();
     private List methods = new ArrayList();
     private List imports = new ArrayList();
     private List importPackages = new ArrayList();
@@ -105,9 +105,10 @@ public class ModuleNode extends ASTNode implements Constants {
     public List getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty())) {
             ClassNode mainClass = createStatementsClass();
+            createClassForStatements = false;
             classes.add(0, mainClass);
             mainClass.setModule(this);
-            createClassForStatements = false;
+            addToCompileUnit(mainClass);
         }
         return classes;
     }
@@ -144,6 +145,17 @@ public class ModuleNode extends ASTNode implements Constants {
     public void addClass(ClassNode node) {
         classes.add(node);
         node.setModule(this);
+        addToCompileUnit(node);
+    }
+
+    /**
+     * @param node
+     */
+    private void addToCompileUnit(ClassNode node) {
+        // register the new class with the compile unit
+        if (unit != null) {
+            unit.addClass(node);
+        }
     }
 
     public void addMethod(MethodNode node) {
@@ -170,22 +182,6 @@ public class ModuleNode extends ASTNode implements Constants {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    /**
-     * Appends all of the fully qualified class names in this
-     * module into the given map
-     */
-    public void addClasses(Map classMap) {
-        for (Iterator iter = classes.iterator(); iter.hasNext();) {
-            ClassNode node = (ClassNode) iter.next();
-            String name = node.getName();
-            if (classMap.containsKey(name)) {
-                throw new RuntimeException(
-                    "Error: duplicate class declaration for name: " + name + " and class: " + node);
-            }
-            classMap.put(name, node);
-        }
     }
 
     public CompileUnit getUnit() {

@@ -100,6 +100,10 @@ public class FieldNode extends MetadataNode implements Constants {
         return type;
     }
 
+    public void setType(String type) {
+        this.type = type;
+    }
+    
     public String getOwner() {
         return owner;
     }

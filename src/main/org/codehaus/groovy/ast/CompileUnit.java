@@ -46,7 +46,7 @@ import java.util.Map;
  * Represents the entire contents of a compilation step which consists of one
  * or more {@link ModuleNode}instances
  * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  * @version $Revision$
  */
 public class CompileUnit {
@@ -59,7 +59,7 @@ public class CompileUnit {
     public CompileUnit(ClassLoader classLoader, CompilerConfig config) {
         this.classLoader = classLoader;
         this.config = config;
-       }
+    }
 
     public List getModules() {
         return modules;
@@ -68,22 +68,20 @@ public class CompileUnit {
     public void addModule(ModuleNode node) {
         modules.add(node);
         node.setUnit(this);
-        node.addClasses(classes);
+        addClasses(node.classes);
     }
 
     /**
-     * @return the ClassNode for the given qualified name
-     * or returns null if the name does not exist in the
-     * current compilation unit (ignoring the .class files 
-     * on the classpath)
+     * @return the ClassNode for the given qualified name or returns null if
+     *         the name does not exist in the current compilation unit
+     *         (ignoring the .class files on the classpath)
      */
     public ClassNode getClass(String name) {
         return (ClassNode) classes.get(name);
     }
 
     /**
-     * @return a list of all the classes in each module in the compilation
-     * unit
+     * @return a list of all the classes in each module in the compilation unit
      */
     public List getClasses() {
         List answer = new ArrayList();
@@ -106,14 +104,23 @@ public class CompileUnit {
      * Loads a class on the compile classpath so that it can be introspected
      * 
      * @param type
-     * @return
-     * @throws ClassNotFoundException
+     * @return @throws
+     *         ClassNotFoundException
      */
     public Class loadClass(String type) throws ClassNotFoundException {
         try {
             return getClassLoader().loadClass(type);
         }
         catch (ClassNotFoundException e) {
+
+            // lets try the context class loader
+            try {
+                return Thread.currentThread().getContextClassLoader().loadClass(type);
+            }
+            catch (ClassNotFoundException e1) {
+                // fall through
+            }
+
             // lets try our class loader
             try {
                 return getClass().getClassLoader().loadClass(type);
@@ -131,6 +138,26 @@ public class CompileUnit {
             }
             throw e;
         }
+    }
+
+
+    /**
+     * Appends all of the fully qualified class names in this
+     * module into the given map
+     */
+    void addClasses(List classList) {
+        for (Iterator iter = classList.iterator(); iter.hasNext();) {
+            addClass((ClassNode) iter.next());
+        }
+    }
+    
+    void addClass(ClassNode node) {
+        String name = node.getName();
+        if (classes.containsKey(name)) {
+            throw new RuntimeException(
+                "Error: duplicate class declaration for name: " + name + " and class: " + node);
+        }
+        classes.put(name, node);
     }
 
 }

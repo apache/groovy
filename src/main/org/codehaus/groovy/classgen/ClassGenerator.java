@@ -249,6 +249,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             this.outermostClass = null;
             this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getName());
             
+            //System.out.println("Generating class: " + classNode.getName());
+            
             // lets check that the classes are all valid
             classNode.setSuperClass(checkValidType(classNode.getSuperClass(), classNode, "Must be a valid base class"));
             String[] interfaces = classNode.getInterfaces();
@@ -296,6 +298,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.methodNode = null;
         this.variableScope = null;
         
+        visitParameters(node, node.getParameters());
+        
         String methodType = BytecodeHelper.getMethodDescriptor("void", node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
         helper = new BytecodeHelper(cv);
@@ -324,6 +328,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.methodNode = node;
         this.variableScope = null;
 
+        visitParameters(node, node.getParameters());
+        node.setReturnType(checkValidType(node.getReturnType(), node, "Must be a valid return type"));
+        
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
         helper = new BytecodeHelper(cv);
@@ -349,8 +356,23 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         cv.visitMaxs(0, 0);
     }
 
+    protected void visitParameters(ASTNode node, Parameter[] parameters) {
+        for (int i = 0, size = parameters.length; i < size; i++ ) {
+            visitParameter(node, parameters[i]);
+        }
+    }
+
+    protected void visitParameter(ASTNode node, Parameter parameter) {
+        if (! parameter.isDynamicType()) {
+            parameter.setType(checkValidType(parameter.getType(), node, "Must be a valid parameter class"));
+        }
+    }
+
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode);
+
+        // lets check that the classes are all valid
+        fieldNode.setType(checkValidType(fieldNode.getType(), fieldNode, "Must be a valid field class for field: " + fieldNode.getName()));
 
         //System.out.println("Visiting field: " + fieldNode.getName() + " on
         // class: " + classNode.getName());
@@ -2985,7 +3007,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected String checkValidType(String type, ASTNode node, String message) {
-        if (helper.isPrimitiveType(type)) {
+        if (type.endsWith("[]")) {
+            String postfix = "[]";
+            String prefix = type.substring(0, type.length() - 2);
+            return checkValidType(prefix, node, message) + postfix;
+        }
+        int idx = type.indexOf('$');
+        if (idx > 0) {
+            String postfix = type.substring(idx);
+            String prefix = type.substring(0, idx);
+            return checkValidType(prefix, node, message) + postfix;
+        }
+        if (helper.isPrimitiveType(type) || "void".equals(type)) {
             return type;
         }
         String original = type;
@@ -2993,7 +3026,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (type != null) {
             return type;
         }
-        throw new MissingClassException(original, node, message);
+        throw new MissingClassException(original, node, message + " for class: " + classNode.getName());
     }
 
     protected String resolveClassName(String type) {

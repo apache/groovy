@@ -133,4 +133,7 @@ public class MethodNode extends MetadataNode implements Constants {
         return super.toString() + "[name: " + name + "]";
     }
 
+    public void setReturnType(String returnType) {
+        this.returnType = returnType;
+    }
 }

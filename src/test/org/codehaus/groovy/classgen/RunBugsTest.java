@@ -142,8 +142,8 @@ public class RunBugsTest extends TestSupport {
     
     */
         
-    public void testGroovy278_Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/Groovy278_Bug.groovy");
+    public void testGroovy303_Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Groovy303_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
     
