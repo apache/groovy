@@ -64,13 +64,13 @@ class ListTest extends GroovyTestCase {
     
     void testClosure() {
         l = [1, 2, 3, "abc"]
-        block = {i| i.println() }
+        block = {|i| i.println() }
         l.each(block)
         
-        l.each( {i| i.println() } )
+        l.each( {|i| i.println() } )
         
         /* @todo parser
-        l.each {i| i.println() }
+        l.each {|i| i.println() }
         */
     }
     

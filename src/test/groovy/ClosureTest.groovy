@@ -11,54 +11,54 @@ class ClosureTest extends GroovyTestCase {
     void testSimpleBlockCall() {
         count = 0
 
-        block = {owner| owner.incrementCallCount() }
+        block = {|owner| owner.incrementCallCount() }
         
         assertClosure(block)
         assert count := 1
 
-        assertClosure({owner| owner.incrementCallCount() })
+        assertClosure({|owner| owner.incrementCallCount() })
         assert count := 2
     }
 
     void testBlockAsParameter() {
         count = 0
         
-        callBlock(5, { owner | owner.incrementCallCount() })
+        callBlock(5, {|owner| owner.incrementCallCount() })
         assert count := 5
 
-        callBlock2(5, { owner | owner.incrementCallCount() })
+        callBlock2(5, {|owner| owner.incrementCallCount() })
         assert count := 10
     }
   
-  	void testMethodClosure() {
-  	    block = this.incrementCallCount
+    void testMethodClosure() {
+        block = this.incrementCallCount
+
+        count = 0
   	    
-  	    count = 0
+        block.call()
   	    
-  	    block.call()
+        assert count := 1
+  	        
+        block = System.out.println
   	    
-  	    assert count := 1
-  	    
-  	    block = System.out.println
-  	    
-  	    block.call("I just invoked a closure!")
-  	}
+        block.call("I just invoked a closure!")
+    }
   
-	incrementCallCount() {
-	    //System.out.println("invoked increment method!")
-	    count = count + 1
-	}
+    incrementCallCount() {
+        //System.out.println("invoked increment method!")
+        count = count + 1
+    }
 	
-	assertClosure(Closure block) {
-	    assert block != null
+    assertClosure(Closure block) {
+        assert block != null
         block.call(this)
-	}
+    }
 	
-	protected callBlock(Integer num, Closure block) {
-	    for i in 0..num {
-			block.call(this)
-	    }
-	}
+    protected callBlock(Integer num, Closure block) {
+        for i in 0..num {
+            block.call(this)
+        }
+    }
 
     protected callBlock2(num, block) {
         for i in 0..num {

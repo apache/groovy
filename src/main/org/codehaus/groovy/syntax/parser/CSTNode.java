@@ -100,6 +100,29 @@ public class CSTNode
     
     public String toString()
     {
-        return "[CSTNode: token=" + token + ",children=" + children + "]";
+        return dump();
+    }
+
+    public String dump()
+    {
+        String indent = "";
+
+        return dump( indent );
+    }
+
+    protected String dump(String indent)
+    {
+        StringBuffer buf = new StringBuffer();
+
+        buf.append( indent + "[CSTNode: token=" + token + "\n" );
+
+        CSTNode[] children = getChildren();
+
+        for ( int i = 0 ; i < children.length ; ++i )
+        {
+            buf.append( indent + "..." + children[ i ].dump( indent + "    " ) + "\n" );
+        }
+        
+        return buf.toString();
     }
 }

@@ -17,7 +17,7 @@ class ReturnTest extends GroovyTestCase {
     }
 
 	foo(x) {
-	    return x * 2
+	    return ( x * 2 )
 	}
 	
     bar(x) {

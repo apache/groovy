@@ -1326,7 +1326,7 @@ public class ParserTest
     public void testAssignmentExpression()
         throws Exception
     {
-        Parser parser = newParser( "answer = list.collect( { item | return item * 2 } )" );
+        Parser parser = newParser( "answer = list.collect( { | item | return item * 2 } )" );
 
         CSTNode root = parser.expression();
     }
@@ -1334,7 +1334,7 @@ public class ParserTest
     public void testStatement_CharacterizeMePlease()
         throws Exception
     {
-        Parser parser = newParser( "callBlock(5, { owner | owner.incrementCallCount() })" );
+        Parser parser = newParser( "callBlock(5, { | owner | owner.incrementCallCount() })" );
 
         CSTNode root = parser.statement();
     }
@@ -1342,11 +1342,9 @@ public class ParserTest
     public void testStatementBlock_CharacterizeMePlease()        
         throws Exception
     {
-        Parser parser = newParser( "keys = answer.collect( { entry | return entry.key } ) values = answer.collect( { entry | return entry.value })" );
+        Parser parser = newParser( "keys = answer.collect( { | entry | return entry.key } ) values = answer.collect( { | entry | return entry.value })" );
 
         CSTNode root = parser.statement();
-
-        System.err.println( "LA __ " + parser.la() );
 
         root = parser.statement();
     }

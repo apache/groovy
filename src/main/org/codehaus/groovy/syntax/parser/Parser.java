@@ -752,7 +752,9 @@ public class Parser
                                                 new int[] { } );
         }
 
-        statement.addChild( expression() );
+        CSTNode expr = expression();
+
+        statement.addChild( expr );
 
         if ( rightRequired )
         {
@@ -1074,8 +1076,12 @@ public class Parser
             }
             case ( Token.IDENTIFIER ):
             {
+                //expr       = identifier;
+                //expr       = new CSTNode( Token.keyword( -1,
+                 //                                        -1,
+                 //                                        "this" ) );
                 identifier = rootNode( lt() );
-                expr       = identifier;
+                expr = identifier;
                 break PREFIX_SWITCH;
             }
             default:
@@ -1084,51 +1090,98 @@ public class Parser
             }
         }
 
-        if ( lt() == Token.LEFT_PARENTHESIS
+        if ( identifier != null
              &&
-             identifier != null )
+             ( lt() == Token.LEFT_PARENTHESIS
+               ||
+               ( lt() == Token.LEFT_CURLY_BRACE
+                 &&
+                 lt( 2 ) == Token.PIPE ) ) )
         {
-            expr = new CSTNode( Token.keyword( -1,
-                                               -1,
-                                               "this" ) );
-
-            CSTNode methodExpr = rootNode( Token.LEFT_PARENTHESIS );
-            methodExpr.addChild( expr );
-            methodExpr.addChild( identifier );
-            methodExpr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
-            consume( Token.RIGHT_PARENTHESIS );
-            expr = methodExpr;
-        }
-
-      DOT_LOOP:
-        while ( lt() == Token.DOT )
-        {
-            CSTNode dotExpr = rootNode( Token.DOT );
-
-            if ( lt() == Token.IDENTIFIER )
+            if ( expr == identifier )
             {
-                identifier = rootNode( Token.IDENTIFIER );
-
-                if ( lt() == Token.LEFT_PARENTHESIS )
+                CSTNode replacementExpr = new CSTNode();
+                CSTNode resultExpr      = sugaryMethodCallExpression( replacementExpr,
+                                                                      identifier );
+                if ( resultExpr != replacementExpr )
                 {
-                    CSTNode methodExpr = rootNode( Token.LEFT_PARENTHESIS );
-                    methodExpr.addChild( expr );
-                    methodExpr.addChild( identifier );
-                    methodExpr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
-                    consume( Token.RIGHT_PARENTHESIS );
-                    expr = methodExpr;
-                }
-                else
-                {
-                    dotExpr.addChild( expr );
-                    dotExpr.addChild( identifier );
-                    expr = dotExpr;
+                    expr = resultExpr;
                 }
             }
             else
             {
-                throwExpected( new int[] { Token.IDENTIFIER } );
+                expr = sugaryMethodCallExpression( expr,
+                                                   identifier );
             }
+        }
+
+      DOT_LOOP:
+        while ( lt() == Token.DOT
+                &&
+                lt( 2 ) == Token.IDENTIFIER )
+        {
+            CSTNode dotExpr = rootNode( Token.DOT );
+
+            identifier = rootNode( Token.IDENTIFIER );
+
+          DOT_TYPE_SWITCH:
+            switch ( lt() )
+            {
+                case ( Token.LEFT_PARENTHESIS ):
+                case ( Token.LEFT_CURLY_BRACE ):
+                {
+                    expr = sugaryMethodCallExpression( expr,
+                                                       identifier );
+                    break DOT_TYPE_SWITCH;
+                }
+                default:
+                {
+                    dotExpr.addChild( expr );
+                    dotExpr.addChild( identifier );
+                    expr = dotExpr;
+                    break DOT_TYPE_SWITCH;
+                }
+            }
+        }
+
+        return expr;
+    }
+
+    protected CSTNode sugaryMethodCallExpression(CSTNode expr,
+                                                 CSTNode identifier)
+        throws IOException,SyntaxException
+    {
+        CSTNode methodExpr = null;
+        CSTNode paramList  = null;
+        
+        if ( lt() == Token.LEFT_PARENTHESIS )
+        {
+            methodExpr = rootNode( Token.LEFT_PARENTHESIS );
+            methodExpr.addChild( expr );
+            methodExpr.addChild( identifier );
+            paramList = parameterList( Token.RIGHT_PARENTHESIS );
+            methodExpr.addChild( paramList );
+            consume( Token.RIGHT_PARENTHESIS );
+        }
+
+        if ( isClosure() )
+        {
+            if ( methodExpr == null )
+            {
+                methodExpr = new CSTNode( Token.leftParenthesis( -1,
+                                                                 -1 ) );
+                methodExpr.addChild( expr );
+                methodExpr.addChild( identifier );
+                paramList = parameterList( Token.LEFT_CURLY_BRACE );
+                methodExpr.addChild( paramList );
+            }
+
+            paramList.addChild( closureExpression() );
+        }
+
+        if ( methodExpr != null )
+        {
+            expr = methodExpr;
         }
 
         return expr;
@@ -1184,32 +1237,54 @@ public class Parser
         return expr;
     }
 
+    protected boolean isClosure()
+        throws IOException, SyntaxException
+    {
+        return ( lt() == Token.LEFT_CURLY_BRACE
+                 &&
+                 lt( 2 ) == Token.PIPE );
+    }
+
     protected CSTNode closureExpression()
         throws IOException, SyntaxException
     {
         CSTNode expr = rootNode( Token.LEFT_CURLY_BRACE );
 
-        expr.addChild( parameterDeclarationList() );
+        consume( Token.PIPE );
 
-        boolean pipeRequired = true;
+        boolean pipeRequired = false;
 
-        if ( expr.getChild( 0 ).getChildren().length > 0 ) {
+        // { statement();
+        // { a |
+        // { a, b |
+        // { A a |
+        // { A a, B b |
+        
+        if ( lt( 2 ) == Token.PIPE
+             ||
+             lt( 2 ) == Token.COMMA
+             ||
+             lt( 3 ) == Token.PIPE
+             ||
+             lt( 3 ) == Token.COMMA )
+        {
+            expr.addChild( parameterDeclarationList() );
             pipeRequired = true;
         }
-
-        CSTNode block = null;
+        else
+        {
+            expr.addChild( new CSTNode() );
+        }
 
         if ( pipeRequired
              ||
              lt() == Token.PIPE )
         {
-            block = rootNode( Token.PIPE );
+            consume( Token.PIPE );
         }
-        else
-        { 
-            block = new CSTNode();
-        }
-            
+
+        CSTNode block = new CSTNode();
+
         statementsUntilRightCurly( block );
 
         consume( Token.RIGHT_CURLY_BRACE );
