@@ -2730,6 +2730,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void popScope() {
+        /*
         int lastID = scope.getLastVariableIndex();
         
         List removeKeys = new ArrayList();
@@ -2744,6 +2745,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (Iterator iter = removeKeys.iterator(); iter.hasNext();) {
             variableStack.remove(iter.next());
         }
+        */
         scope = scope.getParent();
     }
 
