@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.tools;
 
+import groovy.lang.CompilerConfig;
+
 import java.io.File;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -78,6 +80,7 @@ public class Compiler {
 
     private Verifier verifier; // Verifies and completes ASTs before byte code generation
     private CompilerClassLoader classLoader; // Our class loader
+    private CompilerConfig config = new CompilerConfig(); // compiler configuration
     private boolean verbose = false; // If set, extra output is generated
     private boolean debug = false; // If set, debugging output is generated
 
@@ -130,6 +133,14 @@ public class Compiler {
         while (paths.hasMoreTokens()) {
             getClassLoader().addPath(paths.nextToken());
         }
+    }
+
+    public CompilerConfig getConfig() {
+        return config;
+    }
+
+    public void setConfig(CompilerConfig config) {
+        this.config = config;
     }
 
     //---------------------------------------------------------------------------
@@ -204,7 +215,7 @@ public class Compiler {
         //
         // Next, compile the CSTs to ASTs, and from there to classes.
 
-        CompileUnit unit = new CompileUnit();
+        CompileUnit unit = new CompileUnit(config);
         ArrayList classes = new ArrayList();
 
         for (int i = 0; i < csts.length; ++i) {

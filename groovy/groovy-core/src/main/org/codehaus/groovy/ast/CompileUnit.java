@@ -34,6 +34,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.CompilerConfig;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,8 +53,10 @@ public class CompileUnit {
 
     private List modules = new ArrayList();
     private Map classes = new HashMap();
+    private CompilerConfig config;
 
-    public CompileUnit() {
+    public CompileUnit(CompilerConfig config) {
+        this.config = config;
     }
 
     public List getModules() {
@@ -86,5 +90,9 @@ public class CompileUnit {
             answer.addAll(module.getClasses());
         }
         return answer;
+    }
+    
+    public CompilerConfig getConfig() {
+        return config;
     }
 }

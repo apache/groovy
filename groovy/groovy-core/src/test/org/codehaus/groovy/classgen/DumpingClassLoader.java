@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.CompilerConfig;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.OutputStreamWriter;
@@ -100,7 +101,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Constants {
 
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
-    protected CompileUnit unit = new CompileUnit();
+    protected CompileUnit unit = new CompileUnit(new CompilerConfig());
     protected ClassGenerator checker =
         new ClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
     protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(unit), dumpVisitor, this, null);

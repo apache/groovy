@@ -68,7 +68,8 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
-        if (verifier.getClassNode().isScriptClass() && expression.getOperation().getType() == Token.EQUAL) {
+        /*
+        if (verifier.getClassNode().isScript() && expression.getOperation().getType() == Token.EQUAL) {
             // lets turn variable assignments into property assignments
             Expression left = expression.getLeftExpression();
             if (left instanceof VariableExpression) {
@@ -81,6 +82,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
                 expression.setLeftExpression(propExp);
             }
         }
+        */
         super.visitBinaryExpression(expression);
     }    
 }

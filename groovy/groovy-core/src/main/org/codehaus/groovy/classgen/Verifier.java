@@ -49,7 +49,6 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-import groovy.lang.Script;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -164,8 +163,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
                                         new VariableExpression("method"),
                                         new VariableExpression("arguments")})))
             }));
-
-            if (!superClass.equals(Script.class.getName())) {
+            
+            if (! node.isScript()) {
                 node.addSyntheticMethod(
                     "getProperty",
                     ACC_PUBLIC,

@@ -34,6 +34,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.Script;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,6 +71,7 @@ public class ClassNode extends MetadataNode implements Constants {
     private ModuleNode module;
     private boolean staticClass = false;
     private boolean scriptBody = false;
+    private boolean script;
 
     /**
      * @param name
@@ -416,10 +419,6 @@ public class ClassNode extends MetadataNode implements Constants {
         }
     }
 
-    public boolean isScriptClass() {
-        return "groovy.lang.GroovyShell".equals(superClass);
-    }
-
     public MethodNode getGetterMethod(String getterName) {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
@@ -466,4 +465,13 @@ public class ClassNode extends MetadataNode implements Constants {
     public void setScriptBody(boolean scriptBody) {
         this.scriptBody = scriptBody;
     }
+    
+    public boolean isScript() {
+        return script | superClass.equals(Script.class.getName());
+    }
+
+    public void setScript(boolean script) {
+        this.script = script;
+    }
+
 }
