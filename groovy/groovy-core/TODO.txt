@@ -1,14 +1,7 @@
 Things to Test
 ==============
 
-* write Groovy main that can run a groovy script from an IDE / command line
-* document the script stuff!
-
-* support methods in a script
-	-> makes them static
-	-> disallows abstract methods
-	
-* closures in static methods dont' work
+* document the script stuff and use of Groovy script!
 
 * test compiler errors when
 	- unknown class

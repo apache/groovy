@@ -129,6 +129,7 @@ public abstract class CompilerFacade {
         ASTBuilder astBuilder = new ASTBuilder(classLoader);
         ModuleNode module = astBuilder.build(compilationUnit);
         unit.addModule(module);
+        module.setDescription(file);
         
         GeneratorContext context = new GeneratorContext(unit);
         for (Iterator iter = module.getClasses().iterator(); iter.hasNext();) {

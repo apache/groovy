@@ -166,6 +166,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private int lastVariableIndex;
 
+    private MethodNode methodNode;
+
     public ClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
@@ -217,6 +219,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitConstructor(ConstructorNode node) {
         // creates a MethodWriter for the (implicit) constructor
         //String methodType = Type.getMethodDescriptor(VOID_TYPE, )
+        
+        this.methodNode = null;
 
         String methodType = getMethodDescriptor("void", node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null);
@@ -240,6 +244,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitMethod(MethodNode node) {
         //System.out.println("Visiting method: " + node.getName() + " with
         // return type: " + node.getReturnType());
+        this.methodNode = node;
 
         String methodType = getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null);
@@ -287,8 +292,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * Creates a getter, setter and field
-	 */
+     * Creates a getter, setter and field
+     */
     public void visitProperty(PropertyNode statement) {
         onLineNumber(statement);
     }
@@ -659,11 +664,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
         ClassNode owner = innerClass.getOuterClass();
+        String ownerTypeName = owner.getName();
+        if (isStaticMethod()) {
+            ownerTypeName = "java.lang.Class";
+        }
+
         if (classNode instanceof InnerClassNode) {
             // lets load the outer this
             int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
             cv.visitVarInsn(ALOAD, 0);
-            cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(owner.getName()));
+            cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(ownerTypeName));
             cv.visitVarInsn(ASTORE, paramIdx);
 
             cv.visitTypeInsn(NEW, innerClassinternalName);
@@ -673,12 +683,22 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         else {
             cv.visitTypeInsn(NEW, innerClassinternalName);
             cv.visitInsn(DUP);
-            cv.visitVarInsn(ALOAD, 0);
-
+            if (isStaticMethod()) {
+                visitClassExpression(new ClassExpression(ownerTypeName));
+            }
+            else {
+                cv.visitVarInsn(ALOAD, 0);
+            }
         }
 
         if (innerClass.getSuperClass().equals("groovy.lang.Closure")) {
-            cv.visitVarInsn(ALOAD, 0);
+            if (isStaticMethod()) {
+                /** @todo could maybe stash this expression in a JVM variable from previous statement above */
+                visitClassExpression(new ClassExpression(ownerTypeName));
+            }
+            else {
+                cv.visitVarInsn(ALOAD, 0);
+            }
         }
 
         // we may need to pass in some other constructors
@@ -686,7 +706,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             INVOKESPECIAL,
             innerClassinternalName,
             "<init>",
-            "(L" + getClassInternalName(owner.getName()) + ";Ljava/lang/Object;)V");
+            "(L" + getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;)V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -1161,6 +1181,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
+        if (isStaticMethod()) {
+            outerClassName = "java.lang.Class";
+        }
         Parameter[] parameters = expression.getParameters();
         if (parameters == null || parameters.length == 0) {
             // lets create a default 'it' parameter
@@ -1288,17 +1311,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return true if the given argument expression requires the stack, in
-	 *         which case the arguments are evaluated first, stored in the
-	 *         variable stack and then reloaded to make a method call
-	 */
+     * @return true if the given argument expression requires the stack, in
+     *         which case the arguments are evaluated first, stored in the
+     *         variable stack and then reloaded to make a method call
+     */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     }
 
     /**
-	 * @return true if the given expression represents a non-static field
-	 */
+     * @return true if the given expression represents a non-static field
+     */
     protected boolean isNonStaticField(Expression expression) {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
@@ -1387,8 +1410,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return the last ID used by the stack
-	 */
+     * @return the last ID used by the stack
+     */
     protected int getLastStackId() {
         return variableStack.size();
     }
@@ -1399,8 +1422,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // lets push this onto the stack
         definingParameters = true;
-        defineVariable("this", classNode.getName()).getIndex();
-        //cv.visitVarInsn(ALOAD, idx);
+        if (! isStaticMethod()) {
+            defineVariable("this", classNode.getName()).getIndex();
+        }
 
         // now lets create indices for the parameteres
         for (int i = 0; i < parameters.length; i++) {
@@ -1410,8 +1434,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * Defines the given variable in scope and assigns it to the stack
-	 */
+     * Defines the given variable in scope and assigns it to the stack
+     */
     protected Variable defineVariable(String name, String type) {
         return defineVariable(name, type, true);
     }
@@ -1446,10 +1470,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return if the type of the expression can be determined at compile time
-	 *         then this method returns the type - otherwise java.lang.Object
-	 *         is returned.
-	 */
+     * @return if the type of the expression can be determined at compile time
+     *         then this method returns the type - otherwise java.lang.Object
+     *         is returned.
+     */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
             return Boolean.class;
@@ -1459,9 +1483,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return true if the value is an Integer, a Float, a Long, a Double or a
-	 *         String .
-	 */
+     * @return true if the value is an Integer, a Float, a Long, a Double or a
+     *         String .
+     */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
@@ -1470,9 +1494,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             || value instanceof Float;
     }
 
+    protected boolean isStaticMethod() {
+        if (methodNode == null) {
+            // we're in a constructor
+            return false;
+        }
+        return methodNode.isStatic();
+    }
+
     /**
-	 * @return an array of ASM internal names of the type
-	 */
+     * @return an array of ASM internal names of the type
+     */
     private String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
@@ -1483,8 +1515,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return the ASM internal name of the type
-	 */
+     * @return the ASM internal name of the type
+     */
     protected String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
@@ -1497,8 +1529,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return the ASM method type descriptor
-	 */
+     * @return the ASM method type descriptor
+     */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
@@ -1512,8 +1544,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return the ASM type description
-	 */
+     * @return the ASM type description
+     */
     protected String getTypeDescription(String name) {
         // lets avoid class loading
         // return getType(name).getDescriptor();
@@ -1532,8 +1564,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return the ASM type for the given class name
-	 */
+     * @return the ASM type for the given class name
+     */
     protected Type getType(String className) {
         if (className.equals("void")) {
             return Type.VOID_TYPE;
@@ -1543,8 +1575,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-	 * @return loads the given type name
-	 */
+     * @return loads the given type name
+     */
     protected Class loadClass(String name) {
         try {
             return getClassLoader().loadClass(name);

@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.objectweb.asm.Constants;
 
 /**
  * Represents a method declaration
@@ -53,7 +54,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodNode extends MetadataNode {
+public class MethodNode extends MetadataNode implements Constants {
 
     private String name;
     private int modifiers;
@@ -108,5 +109,9 @@ public class MethodNode extends MetadataNode {
 
     public boolean isDynamicReturnType() {
         return dynamicReturnType;
+    }
+
+    public boolean isStatic() {
+        return (modifiers & ACC_STATIC) != 0;
     }
 }

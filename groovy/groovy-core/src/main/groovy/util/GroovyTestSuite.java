@@ -81,6 +81,7 @@ public class GroovyTestSuite extends TestSuite {
             suite.loadTestSuite();
         }
         catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Could not create the test suite: " + e, e);
         }
         return suite;
