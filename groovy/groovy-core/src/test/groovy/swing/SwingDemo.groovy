@@ -75,7 +75,7 @@ class SwingDemo {
         frame.show()
     }
     
-    showAbout() {
+    void showAbout() {
         // this version doesn't auto-size & position the dialog
         /*
         dialog = swing.dialog(owner:frame, title:'About GroovySwing') {
@@ -87,17 +87,17 @@ class SwingDemo {
          dialog.show()
     }
     
-    showGroovyTableDemo() {
+    void showGroovyTableDemo() {
         demo = new TableDemo()
         demo.run()
     }
 
-    showMVCDemo() {
+    void showMVCDemo() {
         demo = new MvcDemo()
         demo.run()
     }
 
-    showTableLayoutDemo() {
+    void showTableLayoutDemo() {
         demo = new TableLayoutDemo()
         demo.run()
     }
