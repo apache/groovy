@@ -760,43 +760,49 @@ public class Lexer
 
                     if ( c == '.' )
                     {
-                        isFloat = true;
-                        numericLiteral.append( consume() );
-                        c = la();
-                        boolean moreDigits = false;
-                        while ( c == '0' 
-                                ||
-                                c == '1'
-                                ||
-                                c == '2'
-                                ||
-                                c == '3'
-                                ||
-                                c == '4'
-                                ||
-                                c == '5'
-                                ||
-                                c == '6'
-                                ||
-                                c == '7'
-                                ||
-                                c == '8'
-                                ||
-                                c == '9' )
+                        if ( la( 2 ) == '.' )
                         {
-                            moreDigits = true;
+                            // int followed by range op, break out.
+                        }
+                        else
+                        {
+                            isFloat = true;
                             numericLiteral.append( consume() );
                             c = la();
+                            boolean moreDigits = false;
+                            while ( c == '0' 
+                                    ||
+                                    c == '1'
+                                    ||
+                                    c == '2'
+                                    ||
+                                    c == '3'
+                                    ||
+                                    c == '4'
+                                    ||
+                                    c == '5'
+                                    ||
+                                    c == '6'
+                                    ||
+                                    c == '7'
+                                    ||
+                                    c == '8'
+                                    ||
+                                    c == '9' )
+                            {
+                                moreDigits = true;
+                                numericLiteral.append( consume() );
+                                c = la();
+                            }
+                            
+                            if ( ! moreDigits )
+                            {
+                                throw new UnexpectedCharacterException( getStartLine(),
+                                                                        getStartColumn() + numericLiteral.length(),
+                                                                        c,
+                                                                        new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' } );
+                            }
                         }
-
-                        if ( ! moreDigits )
-                        {
-                            throw new UnexpectedCharacterException( getStartLine(),
-                                                                    getStartColumn() + numericLiteral.length(),
-                                                                    c,
-                                                                    new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' } );
-                        }
-
                     }
 
                     if ( isFloat )
