@@ -99,7 +99,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                     new VariableExpression("this")), null, null);
         FieldNode metaClassField = metaClassProperty.getField();
         // lets add the invokeMethod implementation
-        boolean addDelegateObject = node instanceof InnerClassNode && node.getSuperClass().equals("groovy/lang/Closure");
+        boolean addDelegateObject = node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
         if (addDelegateObject) {
             // don't do anything as the base class implements the invokeMethod
         }
