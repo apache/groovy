@@ -1,5 +1,14 @@
 class SampleTest extends GroovyTestCase {
 
+    void testNew() {
+        x = new ArrayList()
+        x.add(123)
+
+        assert x.size() == 1
+
+        println "created list $x"
+    }
+
     String foo = "John"
     String bar = "Jez"
 
@@ -31,13 +40,14 @@ class SampleTest extends GroovyTestCase {
         println "Now the answer is $answer"
     }
 
-    void testIf() {
+    void testIfElse() {
         def x = 123
         def y = 1
         if (x > 100) {
             y = 2
         }
-        else { // TODO remove this when the parser works!
+        else {
+            y = 3
         }
         assert y == 2
     }
@@ -90,24 +100,6 @@ class SampleTest extends GroovyTestCase {
         }
     }
 
-/*
-    void testTryCatchWithException() {
-        try {
-            methodThatThrowsException()
-            fail "Should have thrown an exception by now!"
-        }
-        catch (Exception e) {
-            println "Worked! Caught expected exception $e"
-
-        }
-    }
-
-    void methodThatThrowsException() {
-        // TODO parser doesn't return the thrown expression
-        throw new Exception("Test exception")
-    }
-*/
-
     void testTryCatch() {
         try {
             methodThatDoesNotThrowException()
@@ -132,4 +124,35 @@ class SampleTest extends GroovyTestCase {
     void methodThatDoesNotThrowException() {
         println "Normal method invocation..."
     }
+
+    /* TODO when parser fixed
+
+
+    void testTryCatchWithException() {
+        try {
+            methodThatThrowsException()
+            fail "Should have thrown an exception by now!"
+        }
+        catch (Exception e) {
+            println "Worked! Caught expected exception $e"
+
+        }
+    }
+
+    void methodThatThrowsException() {
+        // TODO parser doesn't return the thrown expression
+        throw new Exception("Test exception")
+    }
+    
+    void testIf() {
+        def x = 123
+        def y = 1
+        if (x > 100) {
+            y = 2
+        }
+        assert y == 2
+    }
+    */
+
+
 }

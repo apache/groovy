@@ -43,8 +43,8 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @version $Revision$
@@ -505,6 +505,12 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
     protected Statement throwStatement(AST node) {
         AST expressionNode = node.getFirstChild();
+        if (expressionNode == null) {
+            expressionNode = node.getNextSibling();
+        }
+        if (expressionNode == null) {
+            throw new RuntimeException("No expression available: " + description(node));
+        }
         return new ThrowStatement(expression(expressionNode));
     }
 
@@ -588,6 +594,15 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
             case METHOD_CALL:
                 return methodCallExpression(node);
+
+            case LITERAL_new:
+                return constructorCallExpression(node.getFirstChild());
+
+            case CTOR_CALL:
+                return constructorCallExpression(node);
+
+            case DOT:
+                return dotExpression(node);
 
             case IDENT:
                 return new VariableExpression(node.getText());
@@ -748,16 +763,29 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return booleanExpression;
     }
 
+    protected Expression dotExpression(AST node) {
+        // lets decide if this is a propery invocation or a method call
+        AST elist = node.getNextSibling();
+        if (elist != null) {
+            return methodCallExpression(node);
+        }
+        else {
+            AST leftNode = node.getFirstChild();
+            Expression leftExpression = expression(leftNode);
+
+            String property = identifier(leftNode.getNextSibling());
+            return new PropertyExpression(leftExpression, property);
+        }
+    }
+
     protected MethodCallExpression methodCallExpression(AST node) {
-        String name = null;
-        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
-
-        AST methodCallNode = node;
-        AST elist = null;
-
         if (isType(METHOD_CALL, node)) {
             node = node.getFirstChild();
         }
+        AST methodCallNode = node;
+
+        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
+        AST elist = null;
         if (isType(DOT, node)) {
             AST objectNode = node.getFirstChild();
             elist = node.getNextSibling();
@@ -766,12 +794,36 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
             node = objectNode.getNextSibling();
         }
-        name = identifier(node);
+        String name = identifier(node);
 
         if (elist == null) {
             elist = node.getNextSibling();
         }
 
+        ArgumentListExpression arguments = arguments(elist);
+
+        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
+        configureAST(expression, methodCallNode);
+        return expression;
+    }
+
+    protected ConstructorCallExpression constructorCallExpression(AST node) {
+        if (isType(CTOR_CALL, node)) {
+            node = node.getFirstChild();
+        }
+        AST constructorCallNode = node;
+
+        String name = identifier(node);
+        AST elist = node.getNextSibling();
+
+        ArgumentListExpression arguments = arguments(elist);
+        ConstructorCallExpression expression = new ConstructorCallExpression(name, arguments);
+        configureAST(expression, constructorCallNode);
+        return expression;
+    }
+
+    protected ArgumentListExpression arguments(AST elist) {
+        AST node;
         List expressionList = new ArrayList();
 
         for (node = elist; node != null; node = node.getNextSibling()) {
@@ -796,10 +848,8 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             }
 
         }
-
-        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
-        configureAST(expression, methodCallNode);
-        return expression;
+        ArgumentListExpression arguments = new ArgumentListExpression(expressionList);
+        return arguments;
     }
 
     protected Object closureExpression(AST node) {
@@ -863,7 +913,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
     protected String identifier(AST node) {
         assertNodeType(IDENT, node);
-        return  node.getText();
+        return node.getText();
     }
 
 
