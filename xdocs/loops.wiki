@@ -51,6 +51,21 @@ for ( i in array ) {
 }
 assert x == 10
 
+// iterate over a map
+map = ['abc':1, 'def':2, 'xyz':3]
+x = 0
+for ( e in map ) {
+    x += e.value
+}
+assert x == 6
+
+// iterate over values in a map
+x = 0
+for ( v in map.values() ) {
+    x += v
+}
+assert x == 6
+
 // iterate over the characters in a string
 text = "abc"
 list = []

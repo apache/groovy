@@ -21,7 +21,52 @@
         </p>
       </answer>
     </faq>
-
+    
+    <faq id="why-groovy">
+      <question>
+        Why Groovy? Why don't you just use Jython, JRuby, bsh, rhino, pnuts, ...
+      </question>
+      <answer>
+        <p>
+          Firstly ports of existing languages like Python, Ruby, Smalltalk and JavaScript to the JVM
+          are a good thing and we welcome them. If you already use and/or are fond of these languages
+          please be our guests to use the Java-port of them.
+        </p>
+        <p>
+          One of the main design goals of Groovy is to be a scripting language for Java developers to use.
+          So we wanted to reuse both Java's semantics and the whole set of J2SE APIs rather than introduce
+          a port of a different language with different semantics and APIs to learn and implement/maintain. 
+        </p>
+        <p>
+          e.g. in Groovy, java.lang.Object is the root of the object hierarchy, 
+          Object.equals(), Object.hashCode() and Comparable are used for comparions 
+          and lookups of objects, that java.util.List and java.util.Map are used for collections, 
+          Java Beans are fully supported and that Java and Groovy classes are interchangable 
+          inside the JVM.
+          Groovy is built on top of the J2SE APIs, rather than having 2 parallel platforms etc.
+        </p>
+        <p>
+          In other words we wanted the Groovy language to be very easy to pick up if you're already a Java developer
+          and for there to be a very small number of new APIs to learn.
+          By this statement we're not implying that Python / Ruby / JavaScript are hard to learn per se - its just
+          there's more to know, things are more different and there's more APIs to learn.
+        </p>
+        <p>
+          Think of Groovy as a Ruby or Python like language that is tightly integrated with
+          the Java platform (as opposed to the Unix/Posix command shell and C-libraries) 
+          - allowing you the same powerful and concise coding syntax as
+          Ruby or Pyton but allowing you to stay on the JVM and protect your investment in
+          J2SE, J2EE and all the plethora of great useful Java code out there without any adapter layers or
+          parallel API sets etc.
+        </p>
+        <p>
+ 	       There is a more detailed set of comparisions to other languages 
+    	    <a href="http://wiki.codehaus.org/groovy/ComparisonToOtherLanguages">here</a>
+        </p>
+        
+      </answer>
+    </faq>
+    
     <faq id="dependencies">
       <question>
         What are the dependencies for Groovy?
