@@ -8,6 +8,7 @@ import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
+import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.ExpressionStatement;
@@ -451,9 +452,18 @@ public class ASTBuilder
             {
                 return constantExpression( expressionRoot );
             }
+            case ( Token.IDENTIFIER ):
+            {
+                return variableExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException("Cannot create expression for node: " + expressionRoot);
+    }
+
+    protected VariableExpression variableExpression(CSTNode expressionRoot)
+    {
+        return new VariableExpression( expressionRoot.getToken().getText() );
     }
 
     protected ConstantExpression constantExpression(CSTNode expressionRoot)
