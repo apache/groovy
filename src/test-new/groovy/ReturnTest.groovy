@@ -39,7 +39,6 @@ class ReturnTest extends GroovyTestCase {
     }
 
     void explicitVoidReturnWithoutFinalReturn() {
-        return;
         x = 4;
         if (x == 3) {
             return;
