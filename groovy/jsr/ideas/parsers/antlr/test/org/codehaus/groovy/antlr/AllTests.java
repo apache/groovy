@@ -68,10 +68,6 @@ public class AllTests extends TestSuiteSupport {
 
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
-        "dom/DOMTest.groovy",                   // TODO: markup(class:foo) bug in parser
-        "ClassInNamedParamsBug.groovy",         // TODO: class in named param bug
-        "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
-
 
         "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
 
@@ -111,18 +107,21 @@ public class AllTests extends TestSuiteSupport {
 
 
         // Not sure of bug yet
-        "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
         "InvokeNormalMethodsFirstTest.groovy",  // TODO: not sure
 
         "ProcessTest.groovy",                   // TODO: is this a parser bug or just a not very good compiler error?
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
+
+
         // TODO: AST bugs I think...
+        "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
         "ReturnTest.groovy",
         "PrimitiveTypeFieldTest.groovy",
         "PrintlnWithNewBug.groovy",
-        "AntTest.groovy",                       // TODO: closure params
+        "AntTest.groovy",
+        "dom/DOMTest.groovy",
 
 
         // Ignored test cases

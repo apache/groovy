@@ -2418,13 +2418,14 @@ returns [boolean hasLabel = false]
  */
 argumentLabel
         :   (IDENT) =>
-            id:IDENT                    {#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
+            id:IDENT	           			{#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
+        | 		kw:keywordPropertyNames 	 {#kw.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
         |   primaryExpression                                           // dynamic expression
         ;
 
 /** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
 argumentLabelStart!
-        :   ( IDENT | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
+        :   ( IDENT | keywordPropertyNames | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
         ;
 
 /*OBS*

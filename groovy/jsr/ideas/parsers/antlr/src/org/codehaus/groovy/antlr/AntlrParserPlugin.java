@@ -1470,7 +1470,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + type);
         }
         if (node.getType() != type) {
-            throw new ASTRuntimeException(node, "Unexpected node type: " + node.getType() + " found");
+            throw new ASTRuntimeException(node, "Unexpected node type: " + node.getType() + " found when expecting type: " + type);
         }
     }
 
