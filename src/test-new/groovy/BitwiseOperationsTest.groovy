@@ -1,5 +1,5 @@
 /** 
- * Test Bitwise Operations in Classic Groovy
+ * Test Bitwise Operations in Classic/New Groovy
  * 
  * @author Pilho Kim
  * @version $Revision$
@@ -53,6 +53,17 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseAnd() {
+       /*
+        // Oprator Precedence Problem
+        // ^, &, | should be prior to ==, <, >, <=, >=
+        a = 13
+        assert a & 3 == 1    // 0x0000000D & 0x00000003
+        assert a & 7 == 5    // 0x0000000D & 0x00000007
+        b = -13
+        assert b & 3 == 3    // 0xFFFFFFF3 & 0x00000003
+        assert b & 7 == 3    // 0xFFFFFFF3 & 0x00000007
+       */
+
         a = 13
         assert (a & 3) == 1    // 0x0000000D & 0x00000003
         assert (a & 7) == 5    // 0x0000000D & 0x00000007
@@ -75,6 +86,17 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseOr() {
+       /*
+        // Oprator Precedence Problem
+        // ^, &, | should be prior to ==, <, >, <=, >=
+        a = 13
+        assert a | 8 == 13      // 0x0000000D | 0x00000008
+        assert a | 16 == 29     // 0x0000000D | 0x00000010
+        b = -13
+        assert b | 8 == -5      // 0xFFFFFFF3 | 0x00000008
+        assert b | 16 == -13    // 0xFFFFFFF3 | 0x00000010
+       */
+
         a = 13
         assert (a | 8) == 13      // 0x0000000D | 0x00000008
         assert (a | 16) == 29     // 0x0000000D | 0x00000010
@@ -97,6 +119,17 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseXor() {
+       /*
+        // Oprator Precedence Problem
+        // ^, &, | should be prior to ==, <, >, <=, >=
+        a = 13
+        assert a ^ 10 == 7     // 0x0000000D ^ 0x0000000A = 0x000000007
+        assert a ^ 15 == 2     // 0x0000000D ^ 0x0000000F = 0x000000002
+        b = -13
+        assert b ^ 10 == -7    // 0xFFFFFFF3 ^ 0x0000000A = 0xFFFFFFF9
+        assert b ^ 15 == -4    // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
+       */
+
         a = 13
         assert (a ^ 10) == 7     // 0x0000000D ^ 0x0000000A = 0x000000007
         assert (a ^ 15) == 2     // 0x0000000D ^ 0x0000000F = 0x000000002
@@ -126,6 +159,63 @@ class BitwiseOperationsTest extends GroovyTestCase {
         c2 = { |x, y| x | y }
         assert c2(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
         assert c2(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
+    }
+
+    void testAmbiguityOfBitwiseOr() {
+        c1 = { x, y | x | y }
+        assert c1(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
+        assert c1(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
+
+        c2 = { |x, y| x | y }
+        assert c2(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
+        assert c2(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
+
+        x = 3
+        y = 5
+        c1 = { x | y }      // | is a pipe
+        c2 = { x & y }      // & is a bitAnd
+        c3 = { x ^ y }      // & is a bitXor
+        c11 = {
+             x | y          // | is a pipe
+        }
+        c12 = {
+             (x | y)        // | is a bitOr
+        }
+        c13 = {| x | y      // two |'s are pipes
+        }
+        c14 = {|| x | y     // last | is a bitOr
+        }
+
+        assert c1() == 5
+        assert c2() == 1
+        assert c3() == 6
+        assert c11() == 5
+        assert c12() == 7
+        assert c13() == 5
+        assert c14() == 7
+
+        x = 0x03
+
+        d1 = { x | x }      // | is a pipe
+        d2 = { x & x }      // & is a bitAnd
+        d3 = { x ^ x }      // & is a bitXor
+        d11 = {
+             x | x          // | is a pipe
+        }
+        d12 = {
+             (x | x)        // | is a bitOr
+        }
+        d13 = {| x | x      // two |'s are pipes
+        }
+        d14 = {|| x | x     // last | is a bitOr
+        }
+        assert d1(0xF0) == 0xF0
+        assert d2(0xF0) == 0x03
+        assert d3(0xF0) == 0
+        assert d11(0xF0) == 0xF0
+        assert d12(0xF0) == 0x03
+        assert d13(0xF0) == 0xF0
+        assert d14(0xF0) == 0x03
     }
 
     void testBitwiseNegation() {
@@ -160,12 +250,12 @@ class BitwiseOperationsTest extends GroovyTestCase {
         assert neg(2L) instanceof java.lang.Long
         assert neg(2L) == ~2
 
-        // BigInnteger test
+        // BigInteger test
         assert neg(new java.math.BigInteger("2")).class == java.math.BigInteger
         assert neg(new java.math.BigInteger("2")) instanceof java.math.BigInteger
         assert neg(new java.math.BigInteger("2")) == ~2
 
-        // BigInnteger test
+        // BigInteger test
         assert neg(2G).class == java.math.BigInteger
         assert neg(2G) instanceof java.math.BigInteger
         assert neg(2G) == ~2
