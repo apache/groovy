@@ -45,7 +45,6 @@
  */
 package groovy.lang;
 
-
 /**
  * This object represents a Groovy script
  * 
@@ -58,17 +57,20 @@ public abstract class Script extends GroovyObjectSupport {
     public Binding getBindings() {
         return bindings;
     }
-    
+
     public void setBindings(Binding bindings) {
         this.bindings = bindings;
     }
 
     public Object getProperty(String property) {
+        //System.out.println("Script.getProperty for: " + property + " with bindings: " + bindings.getVariables());
         return bindings.getVariable(property);
     }
 
     public void setProperty(String property, Object newValue) {
-    	bindings.setVariable(property, newValue);
+        //System.out.println("Script.setProperty for: " + property + " with newValue: " + newValue);
+        bindings.setVariable(property, newValue);
+        //System.out.println("bindings are now: " + bindings.getVariables());
     }
 
     /**
