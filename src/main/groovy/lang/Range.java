@@ -49,6 +49,7 @@ import java.util.AbstractList;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
 /**
  * Represents a list of objects from a value to a value using
@@ -144,7 +145,39 @@ public class Range extends AbstractList {
         return result < 0 && to.compareTo(value) > 0;
     }
 
+    public void step(int step, Closure closure) {
+        if (step >= 0) {
+            Comparable value = from;
+            while (value.compareTo(to) <= 0) {
+                closure.call(value);
+                for (int i = 0; i < step; i++) {
+                    value = (Comparable) increment(value);
+                }
+            }
+        }
+        else {
+            step = -step;
+            Comparable value = to;
+            while (value.compareTo(from) >= 0) {
+                closure.call(value);
+                for (int i = 0; i < step; i++) {
+                    value = (Comparable) decrement(value);
+                }
+            }
+        }
+    }
+    
+    public List step(int step) {
+        IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
+        step(step, adapter);
+        return adapter.asList();
+    }
+    
     protected Object increment(Object value) {
         return InvokerHelper.invokeMethod(value, "increment", null);
     }
-}
+
+    protected Object decrement(Object value) {
+        return InvokerHelper.invokeMethod(value, "decrement", null);
+    }
+   }
