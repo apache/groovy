@@ -384,6 +384,7 @@
         <include name="*"/>
       </fileset>
     </chmod>
+    <attainGoal name="groovy:embeddable-jar"/>
   </goal>
 
   <goal name="groovy:make-full-install" prereqs="groovy:make-install">
@@ -400,4 +401,27 @@
     </copy>
   </goal>
 
+  <goal name="groovy:embeddable-jar">
+  	<mkdir dir="${groovy.embeddable.working.dir}"/>
+	<unzip dest="${groovy.embeddable.working.dir}">
+		<fileset dir="${groovy.install.staging.dest}/lib">
+			<include name="asm*.jar"/>
+			<exclude name="asm-attr*.jar"/>
+			<exclude name="asm-util*.jar"/>
+			<include name="groovy*.jar"/>
+		</fileset>
+	</unzip>
+	<copy toDir="${groovy.embeddable.working.dir}/META-INF">
+		<fileset dir="${basedir}">
+			<include name="ASM-LICENSE.txt"/>
+		</fileset>
+	</copy>
+	<mkdir dir="${groovy.install.staging.dest}/embeddable"/>
+	<jar jarfile="${groovy.install.staging.dest}/embeddable/groovy-all-${pom.currentVersion}.jar" 
+                                                        manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
+		<fileset dir="${groovy.embeddable.working.dir}"/>
+	</jar>
+	<delete dir="${groovy.embeddable.working.dir}"/>
+  </goal>
+ 
 </project>
