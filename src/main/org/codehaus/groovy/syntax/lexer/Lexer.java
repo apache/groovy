@@ -161,6 +161,8 @@ public class Lexer {
                     {
                         consume();
 
+                        token = Token.newline( getStartLine(), getStartColumn() - 1 );
+
                         CONSUME_LOOP : while (true) {
                             switch (la()) {
                                 case ('\r') :
@@ -188,7 +190,6 @@ public class Lexer {
                                     }
                             }
                         }
-                        token = null;
                         break ROOT_SWITCH;
                     }
                 case ('/') :
@@ -208,6 +209,7 @@ public class Lexer {
                             case ('/') :
                                 {
                                     consume();
+                                    token = Token.newline( getStartLine(), getStartColumn() - 2 );
 
                                     CONSUME_LOOP : while (true) {
                                         switch (la()) {
@@ -236,7 +238,6 @@ public class Lexer {
                                                 }
                                         }
                                     }
-                                    token = null;
                                     break MULTICHAR_SWITCH;
                                 }
                             case ('*') :

@@ -22,6 +22,7 @@ public class LexerTest extends GroovyTestCase {
     public void testSingleLineComment_Newline() throws Exception {
         newLexer("// I like cheese\ncheese");
 
+        assertNextToken(Token.NEWLINE, "<newline>");
         assertNextToken(Token.IDENTIFIER, "cheese");
 
         assertEnd();
@@ -30,6 +31,7 @@ public class LexerTest extends GroovyTestCase {
     public void testSingleLineComment_CarriageReturn() throws Exception {
         newLexer("// I like cheese\rcheese");
 
+        assertNextToken(Token.NEWLINE, "<newline>");
         assertNextToken(Token.IDENTIFIER, "cheese");
 
         assertEnd();
@@ -38,6 +40,7 @@ public class LexerTest extends GroovyTestCase {
     public void testSingleLineComment_CarriageReturn_Newline() throws Exception {
         newLexer("// I like cheese\r\ncheese");
 
+        assertNextToken(Token.NEWLINE, "<newline>");
         assertNextToken(Token.IDENTIFIER, "cheese");
 
         assertEnd();
@@ -46,6 +49,7 @@ public class LexerTest extends GroovyTestCase {
     public void testSingleLineHashComment_CarriageReturn() throws Exception {
         newLexer("# I like cheese\rcheese");
 
+        assertNextToken(Token.NEWLINE, "<newline>");
         assertNextToken(Token.IDENTIFIER, "cheese");
 
         assertEnd();

@@ -46,6 +46,8 @@
 package org.codehaus.groovy.ant;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -56,6 +58,7 @@ import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
 import org.codehaus.groovy.tools.FileSystemCompiler;
+import org.codehaus.groovy.tools.ErrorReporter;
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -388,13 +391,18 @@ public class Groovyc extends MatchingTask {
                 compiler.compile(compileList);
             }
             catch (Exception e) {
-                String message = "Compile failed: " + e;
+
+                StringWriter writer = new StringWriter();
+                new ErrorReporter( e, false ).write( new PrintWriter(writer) );
+                String message = writer.toString();
+
                 if (failOnError) {
                     throw new BuildException(message, e, getLocation());
                 }
                 else {
                     log(message, Project.MSG_ERR);
                 }
+
             }
         }
     }

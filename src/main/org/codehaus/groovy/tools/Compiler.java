@@ -162,7 +162,7 @@ public class Compiler {
      *  on error.  Other exceptions are bugs that need to be caught and encapsulated.
      */
 
-    public GroovyClass[] compile(CharStream[] sources) throws Exception {
+    public GroovyClass[] compile(CharStream[] sources) throws GroovyException {
         CompilationFailuresException failures = new CompilationFailuresException();
 
         //
@@ -196,6 +196,9 @@ public class Compiler {
                     throw failures;
                 }
             }
+            catch( Exception e ) {
+                throw new CompilerBugException( descriptors[i], "parse", e );
+            }
             finally {
                 try {
                     sources[i].close();
@@ -228,6 +231,9 @@ public class Compiler {
                     failures.add(descriptors[i], e);
                 }
             }
+            catch( Exception e ) {
+                throw new CompilerBugException( descriptors[i], "AST creation", e );
+            }
         }
 
         for (Iterator iter = unit.getModules().iterator(); iter.hasNext();) {
@@ -242,14 +248,15 @@ public class Compiler {
                     }
 
                     classes.addAll(generateClasses(new GeneratorContext(unit), classNode, module.getDescription()));
-                    //                    classes.addAll( generateClasses(new GeneratorContext(unit), classNode, descriptors[i]) );
                 }
             }
             catch (ExceptionCollector e) {
                 if (!e.isEmpty()) {
-                    //                    failures.add( descriptors[i], e );
                     failures.add(module.getDescription(), e);
                 }
+            }
+            catch( Exception e ) {
+                throw new CompilerBugException( module.getDescription(), "class generation", e );
             }
         }
 

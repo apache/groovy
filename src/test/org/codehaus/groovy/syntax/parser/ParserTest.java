@@ -958,13 +958,13 @@ public class ParserTest extends GroovyTestCase {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
     public void testIsModifier() throws Exception {
-        assertTrue(Parser.isModifier(Token.KEYWORD_PUBLIC));
-        assertTrue(Parser.isModifier(Token.KEYWORD_PROTECTED));
-        assertTrue(Parser.isModifier(Token.KEYWORD_PRIVATE));
-        assertTrue(Parser.isModifier(Token.KEYWORD_STATIC));
-        assertTrue(Parser.isModifier(Token.KEYWORD_FINAL));
-        assertTrue(Parser.isModifier(Token.KEYWORD_SYNCHRONIZED));
-        assertFalse(Parser.isModifier(Token.IDENTIFIER));
+        assertTrue(Token.isModifier(Token.KEYWORD_PUBLIC));
+        assertTrue(Token.isModifier(Token.KEYWORD_PROTECTED));
+        assertTrue(Token.isModifier(Token.KEYWORD_PRIVATE));
+        assertTrue(Token.isModifier(Token.KEYWORD_STATIC));
+        assertTrue(Token.isModifier(Token.KEYWORD_FINAL));
+        assertTrue(Token.isModifier(Token.KEYWORD_SYNCHRONIZED));
+        assertFalse(Token.isModifier(Token.IDENTIFIER));
     }
 
     public void testConsumeUntil_Found() throws Exception {
@@ -1017,11 +1017,28 @@ public class ParserTest extends GroovyTestCase {
 
     public void testStatementBlock_CharacterizeMePlease() throws Exception {
         Parser parser =
-            newParser("keys = answer.collect( { entry | return entry.key } ) values = answer.collect( { entry | return entry.value })");
+            newParser("keys = answer.collect( { entry | return entry.key } ); values = answer.collect( { entry | return entry.value })");
 
         CSTNode root = parser.statement();
 
         root = parser.statement();
+    }
+
+    public void testStatementBlock_MissingSemicolon() throws Exception {
+        Parser parser =
+            newParser("keys = answer.collect( { entry | return entry.key } )  values = answer.collect( { entry | return entry.value })");
+
+        try {
+            try {
+                parser.statement(); 
+                fail("should have thrown UnexpectedTokenException");
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
+        }
+        catch (UnexpectedTokenException e) {
+        }
     }
 
     public void testNewExpression() throws Exception {

@@ -114,6 +114,16 @@ public class CSTNode
 
 
    /**
+    *  Returns true if the node is empty (no token, no children).
+    */
+
+    public boolean isEmpty()
+    {
+        return token == null && children.size() == 0;
+    }
+
+
+   /**
     *  Appends a child node to the child list.
     */
 
@@ -129,6 +139,10 @@ public class CSTNode
 
     public CSTNode getChild(int index)
     {
+        if( index < 0 ) {
+            index = this.children.size() + index;
+        }
+
         return (CSTNode) this.children.get( index );
     }
 
