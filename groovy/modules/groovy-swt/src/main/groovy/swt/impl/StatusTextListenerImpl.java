@@ -30,8 +30,10 @@ public class StatusTextListenerImpl implements StatusTextListener, ClosureSuppor
      */
     public void changed(StatusTextEvent event)
     {
-        if (closure == null) { throw new NullPointerException(
-                "No closure has been configured for this Listener"); }
+        if (closure == null) { 
+            throw new NullPointerException(
+                "No closure has been configured for this Listener"); 
+        }
         
         closure.setProperty("event", new CustomStatusTextEvent(event));
         closure.call(event);

@@ -20,32 +20,29 @@ public class ProgressListenerImpl implements ProgressListener, ClosureSupport {
     /**
      * @param type
      */
-    public ProgressListenerImpl(String type)
-    {
+    public ProgressListenerImpl(String type) {
         this.type = type;
     }
 
-    public Closure getClosure()
-    {
+    public Closure getClosure() {
         return closure;
     }
 
-    public void setClosure(Closure closure)
-    {
+    public void setClosure(Closure closure) {
         this.closure = closure;
     }
 
     /*
      * @see org.eclipse.swt.browser.ProgressListener#changed(org.eclipse.swt.browser.ProgressEvent)
      */
-    public void changed(ProgressEvent event)
-    {
+    public void changed(ProgressEvent event) {
 
-        if (closure == null) { throw new NullPointerException(
-                "No closure has been configured for this Listener"); }
+        if (closure == null) { 
+            throw new NullPointerException(
+                "No closure has been configured for this Listener"); 
+        }
 
-        if ("changed".equals(type))
-        {
+        if ("changed".equals(type)) {
             closure.setProperty("event", new CustomProgressEvent(event));
             closure.call(event);
         }
@@ -55,13 +52,13 @@ public class ProgressListenerImpl implements ProgressListener, ClosureSupport {
     /*
      * @see org.eclipse.swt.browser.ProgressListener#completed(org.eclipse.swt.browser.ProgressEvent)
      */
-    public void completed(ProgressEvent event)
-    {
-        if (closure == null) { throw new NullPointerException(
-                "No closure has been configured for this Listener"); }
+    public void completed(ProgressEvent event) {
+        if (closure == null) { 
+            throw new NullPointerException(
+                "No closure has been configured for this Listener"); 
+        }
 
-        if ("completed".equals(type))
-        {
+        if ("completed".equals(type)) {
             closure.setProperty("event", new CustomProgressEvent(event));
             closure.call(event);
         }
@@ -72,18 +69,15 @@ public class ProgressListenerImpl implements ProgressListener, ClosureSupport {
 
         private ProgressEvent event;
 
-        public CustomProgressEvent(ProgressEvent event)
-        {
+        public CustomProgressEvent(ProgressEvent event) {
             this.event = event;
         }
 
-        public int getCurrent()
-        {
+        public int getCurrent() {
             return event.current;
         }
 
-        public int getTotal()
-        {
+        public int getTotal() {
             return event.total;
         }
     }

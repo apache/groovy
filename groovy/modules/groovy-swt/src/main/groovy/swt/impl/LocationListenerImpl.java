@@ -41,7 +41,8 @@ public class LocationListenerImpl implements LocationListener, ClosureSupport {
     public void changing(LocationEvent event)
     {
         if (closure == null) { throw new NullPointerException(
-                "No closure has been configured for this Listener"); }
+                "No closure has been configured for this Listener"); 
+        }
 
         if ("changing".equals(type))
         {
@@ -56,8 +57,10 @@ public class LocationListenerImpl implements LocationListener, ClosureSupport {
      */
     public void changed(LocationEvent event)
     {
-        if (closure == null) { throw new NullPointerException(
-                "No closure has been configured for this Action"); }
+        if (closure == null) { 
+            throw new NullPointerException(
+                "No closure has been configured for this Action"); 
+        }
 
         if ("changed".equals(type))
         {

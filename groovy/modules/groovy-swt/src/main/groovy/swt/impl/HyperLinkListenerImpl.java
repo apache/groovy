@@ -37,6 +37,10 @@ public class HyperLinkListenerImpl implements HyperlinkListener, ClosureSupport 
      * @see javax.swing.event.HyperlinkListener#hyperlinkUpdate(javax.swing.event.HyperlinkEvent)
      */
     public void hyperlinkUpdate(HyperlinkEvent event) {
+        if (closure == null){
+            throw new NullPointerException(
+            "No closure has been configured for this Listener");
+        }
         if ("hyperlinkUpdate".equals(type))
         {
             closure.call(event);
@@ -47,6 +51,10 @@ public class HyperLinkListenerImpl implements HyperlinkListener, ClosureSupport 
      * @see org.eclipse.ui.forms.events.HyperlinkListener#linkEntered(org.eclipse.ui.forms.events.HyperlinkEvent)
      */
     public void linkEntered(HyperlinkEvent event) {
+        if (closure == null){
+            throw new NullPointerException(
+            "No closure has been configured for this Listener");
+        }
         if ("linkEntered".equals(type))
         {
             closure.call(event);
@@ -57,6 +65,10 @@ public class HyperLinkListenerImpl implements HyperlinkListener, ClosureSupport 
      * @see org.eclipse.ui.forms.events.HyperlinkListener#linkExited(org.eclipse.ui.forms.events.HyperlinkEvent)
      */
     public void linkExited(HyperlinkEvent event) {
+        if (closure == null){
+            throw new NullPointerException(
+            "No closure has been configured for this Listener");
+        }
         if ("linkExited".equals(type))
         {
             closure.call(event);
@@ -67,6 +79,10 @@ public class HyperLinkListenerImpl implements HyperlinkListener, ClosureSupport 
      * @see org.eclipse.ui.forms.events.HyperlinkListener#linkActivated(org.eclipse.ui.forms.events.HyperlinkEvent)
      */
     public void linkActivated(HyperlinkEvent event) {
+        if (closure == null){
+            throw new NullPointerException(
+            "No closure has been configured for this Listener");
+        }
         if ("linkActivated".equals(type))
         {
             closure.call(event);
