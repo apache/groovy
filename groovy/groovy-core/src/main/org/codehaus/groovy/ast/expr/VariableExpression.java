@@ -70,7 +70,6 @@ public class VariableExpression extends Expression {
         }
         else {
             String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-            boxedType = BytecodeHelper.getObjectArrayTypeForPrimitiveArray(boxedType);
 
             super.setType(boxedType);  // todo delay setting until resolve()
             isDynamic = false;
