@@ -87,7 +87,7 @@
           depends="compile" 
           description="create distributables (jars etc)">
     <mkdir dir="${dist.dir}" />
-    <jar jarfile="${dist.dir}/groovyc-${version.number}.jar" 
+    <jar jarfile="${dist.dir}/groovy-jsr-${version.number}.jar"
          manifest="${src.dir}/manifest.txt">
       <fileset dir="${build.classes.dir}"/>
     </jar>
@@ -186,7 +186,7 @@
         <fileset dir="licenses"/>
     </copy>
     <mkdir dir="standalone"/>
-    <jar jarfile="standalone/groovyc-${version.number}.jar" 
+    <jar jarfile="standalone/groovy-jsr-${version.number}.jar"
          manifest="${src.dir}/manifest.txt">
     <fileset dir="${standalone.working.dir}"/>
   </jar>

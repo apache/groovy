@@ -67,6 +67,9 @@ import java.util.StringTokenizer;
 public class CompilerConfiguration {
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
 
+    /** Whether to use the JSR parser or not if no property is explicitly stated */
+    protected static final boolean DEFAULT_JSR_FLAG = false;
+
     private static boolean jsrGroovy;
 
     /**
@@ -519,7 +522,7 @@ public class CompilerConfiguration {
         if (property != null) {
             return "true".equalsIgnoreCase(property);
         }
-        return true;
+        return DEFAULT_JSR_FLAG;
     }
 
 }
