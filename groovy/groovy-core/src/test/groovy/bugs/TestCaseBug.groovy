@@ -5,7 +5,7 @@ import junit.framework.TestCase
  */
 class TestCaseBug extends TestCase {
     
-    def TestCaseBug(String name) {
+    TestCaseBug(String name) {
     		super(name)
     	}
     	
