@@ -100,6 +100,11 @@
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
+    <dependency>
+      <id>commons-cli</id>
+      <version>1.0</version>
+    </dependency>
+
 	<!-- only used for testing-->
     <dependency>
       <id>asm+util</id>
