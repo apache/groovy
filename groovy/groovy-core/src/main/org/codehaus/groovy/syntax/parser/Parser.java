@@ -716,7 +716,7 @@ public class Parser
         CSTNode statement = rootNode( Token.KEYWORD_BREAK );
 
         if ( lt() == Token.IDENTIFIER )
-           {    
+        {    
             statement.addChild( rootNode( lt() ) );
         }
         
@@ -729,7 +729,7 @@ public class Parser
         CSTNode statement = rootNode( Token.KEYWORD_CONTINUE );
 
         if ( lt() == Token.IDENTIFIER )
-           {    
+        {    
             statement.addChild( rootNode( lt() ) );
         }
         
