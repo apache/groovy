@@ -60,20 +60,28 @@ Core Groovy Tasks
 			x = null // error
 			
 * new GroovyMethods	to be added
+	- File.grep(pattern) -> List
+	- File.grep(pattern) { closure } 
+		allow iteration through a file for each line matching a regex pattern
+	- Collection.grep(pattern)  -> List
+	- Collection.grep(pattern)  { closure }
+		where pattern = regexp (could maybe be other kinds of patterns like Range?)
+		
+	- List.first(), List.last(), pop()
+	- Collection.removeIf { x | x > 0 }
+	- List.eachWithindex { item, idx | ... }
+	- List.reverseEach { ... }
+	- Collection.count(foo) -> returns number of objects that equal foo
+	- Collection.countIf { it > 5 } -> returns number of objects that match closure predicate
+	
 	- Object.getMetaClass()
 	- Object.eachProperty
 	- Object.eachPropertyName { object.getProperty(it) }
 	- Object.setProperties(foo:'abc', x:123)
 	
-	- removeIf { x | x > 0 }
-	- List.first, List.last, pop
-	- List.eachWithindex { item, idx | ... }
-	- reverseEach { ... }
 	- Map.eachKey, eachValue
 	- Map.index, Map.indexes
 	- Object.display (rather than toConsoleOutput)
-	- grep(pattern)  { closure }
-		where pattern = range / regexp
 	- eval("....")
 	- gets
 	- load(...)
