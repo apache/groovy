@@ -79,7 +79,7 @@ public class Invoker {
         if (object instanceof Class) {
             Class theClass = (Class) object;
 
-            MetaClass metaClass = metaRegistry.getMetaClass(Class.class);
+            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
             return metaClass.invokeMethod(object, methodName, arguments, argumentList);
         }
         else {

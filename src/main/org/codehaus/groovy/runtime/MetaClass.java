@@ -200,10 +200,10 @@ public class MetaClass {
         }
 
         // lets try a static method then
-        return invokeStaticMethod(methodName, arguments, argumentList);
+        return invokeStaticMethod(object, methodName, arguments, argumentList);
     }
 
-    public Object invokeStaticMethod(String methodName, Object arguments, List argumentList) {
+    public Object invokeStaticMethod(Object object, String methodName, Object arguments, List argumentList) {
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
@@ -212,7 +212,14 @@ public class MetaClass {
                 return doMethodInvoke(theClass, method, argumentList.toArray());
             }
         }
-        throw new InvokerException("Could not find matching method called: " + methodName + " for class: " + theClass.getName());
+        
+        if (object instanceof Class && object != Class.class) {
+            // lets try methods on Class
+            return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments, argumentList);
+        }
+        else {
+            throw new InvokerException("Could not find matching method called: " + methodName + " for class: " + theClass.getName());
+        }
     }
 
     /**
