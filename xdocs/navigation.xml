@@ -8,6 +8,7 @@
       <item name="JavaDoc"             href="apidocs/index.html"/>
       <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
       <item name="CVS"             	   href="cvs-usage.html"/>
+      <item name="Mail Lists"		   href="mail-lists.html"/>
       <item name="IRC"				   href="irc://irc.codehaus.org/groovy"/>
       <!--
       if ever Jerk comes back...
