@@ -20,4 +20,10 @@ class AssertTest extends GroovyTestCase {
         
         //assert x.equals("abc");
 	}
+	
+	void testAssertFail() {
+	    //x = 1234;
+	    
+	    //assert x := 5;
+	}
 }

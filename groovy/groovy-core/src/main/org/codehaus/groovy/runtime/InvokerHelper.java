@@ -153,7 +153,7 @@ public class InvokerHelper {
         return getInstance().asInt(value);
     }
     
-    public static void assertFailed(String expression, Object message) {
+    public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
         }
