@@ -154,6 +154,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller compareLessThanEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareLessThanEqual");
     MethodCaller compareGreaterThanMethod = MethodCaller.newStatic(InvokerHelper.class, "compareGreaterThan");
     MethodCaller compareGreaterThanEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareGreaterThanEqual");
+    MethodCaller matchesMethod = MethodCaller.newStatic(InvokerHelper.class, "matches");
 
     MethodCaller createListMethod = MethodCaller.newStatic(InvokerHelper.class, "createList");
     MethodCaller createTupleMethod = MethodCaller.newStatic(InvokerHelper.class, "createTuple");
@@ -180,6 +181,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     private int lastVariableIndex;
 
     private MethodNode methodNode;
+    private Label breakLabel;
+    private Label continueLabel;
+    private int switchVariableIndex;
 
     public ClassGenerator(
         GeneratorContext context,
@@ -334,12 +338,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         asIteratorMethod.call(cv);
 
-        int iteratorIdx = defineVariable(createIteratorName(), "java.util.Iterator", false).getIndex();
+        int iteratorIdx = defineVariable(createVariableName("iterator"), "java.util.Iterator", false).getIndex();
         cv.visitVarInsn(ASTORE, iteratorIdx);
 
         int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", false).getIndex();
 
         Label label1 = new Label();
+        Label previousContinueLable = continueLabel;
+        continueLabel = label1;
+
         cv.visitJumpInsn(GOTO, label1);
         Label label2 = new Label();
         cv.visitLabel(label2);
@@ -358,6 +365,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         iteratorHasNextMethod.call(cv);
 
         cv.visitJumpInsn(IFNE, label2);
+
+        continueLabel = previousContinueLable;
     }
 
     public void visitWhileLoop(WhileStatement loop) {
@@ -371,6 +380,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         */
 
         Label l0 = new Label();
+        Label previousContinueLable = continueLabel;
+        continueLabel = l0;
+
         cv.visitJumpInsn(GOTO, l0);
         Label l1 = new Label();
         cv.visitLabel(l1);
@@ -383,6 +395,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         loop.getBooleanExpression().visit(this);
 
         cv.visitJumpInsn(IFNE, l1);
+
+        continueLabel = previousContinueLable;
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
@@ -390,12 +404,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         Label l0 = new Label();
         cv.visitLabel(l0);
+        Label l1 = new Label();
+        Label previousContinueLable = continueLabel;
+        continueLabel = l1;
 
         loop.getLoopBlock().visit(this);
+
+        cv.visitLabel(l1);
 
         loop.getBooleanExpression().visit(this);
 
         cv.visitJumpInsn(IFNE, l0);
+
+        continueLabel = previousContinueLable;
     }
 
     public void visitIfElse(IfStatement ifElse) {
@@ -513,7 +534,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         String exceptionType = checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
 
-        String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createExceptionVariableName();
+        String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createVariableName("exception");
 
         int exceptionIndex = defineVariable(exceptionVar, exceptionType, false).getIndex();
         int index2 = exceptionIndex + 1;
@@ -578,29 +599,66 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitSwitch(SwitchStatement statement) {
-        // TODO Auto-generated method stub
+        onLineNumber(statement);
 
+        statement.getExpression().visit(this);
+
+        switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
+        cv.visitVarInsn(ASTORE, switchVariableIndex);
+        
+        Label lastBreakLabel = breakLabel;
+
+        breakLabel = new Label();
+
+        List caseStatements = statement.getCaseStatements();
+        
+        for (Iterator iter = caseStatements.iterator(); iter.hasNext();) {
+            CaseStatement caseStatement = (CaseStatement) iter.next();
+            visitCaseStatement(caseStatement);
+        }
+
+        statement.getDefaultStatement().visit(this);
+
+        cv.visitLabel(breakLabel);
+
+        // lets restore the break label
+        breakLabel = lastBreakLabel;
     }
 
     public void visitCaseStatement(CaseStatement statement) {
-        // TODO Auto-generated method stub
+        onLineNumber(statement);
 
+        cv.visitVarInsn(ALOAD, switchVariableIndex);
+        statement.getExpression().visit(this);
+
+        matchesMethod.call(cv);
+
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+
+        statement.getCode().visit(this);
+
+        cv.visitLabel(l0);
     }
 
     public void visitBreakStatement(BreakStatement statement) {
-        // TODO Auto-generated method stub
+        onLineNumber(statement);
 
+        cv.visitJumpInsn(GOTO, breakLabel);
     }
 
     public void visitContinueStatement(ContinueStatement statement) {
-        // TODO Auto-generated method stub
+        onLineNumber(statement);
 
+        cv.visitJumpInsn(GOTO, continueLabel);
     }
 
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
+        onLineNumber(statement);
+
         statement.getExpression().visit(this);
 
-        int index = defineVariable(createSynchronizedVariableName(), "java.lang.Integer").getIndex();
+        int index = defineVariable(createVariableName("synchronized"), "java.lang.Integer").getIndex();
 
         cv.visitVarInsn(ASTORE, index);
         cv.visitInsn(MONITORENTER);
@@ -629,10 +687,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitThrowStatement(ThrowStatement statement) {
         statement.getExpression().visit(this);
-        
+
         // we should infer the type of the exception from the expression
         cv.visitTypeInsn(CHECKCAST, "java/lang/Throwable");
-        
+
         cv.visitInsn(ATHROW);
     }
 
@@ -832,7 +890,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         if (classNode instanceof InnerClassNode) {
             // lets load the outer this
-            int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+            int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
             cv.visitVarInsn(ALOAD, 0);
             cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(ownerTypeName));
             cv.visitVarInsn(ASTORE, paramIdx);
@@ -956,7 +1014,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         else {
 
             if (argumentsUseStack(arguments)) {
-                int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+                int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
 
                 arguments.visit(this);
 
@@ -1361,7 +1419,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitInsn(AASTORE);
         }
 
-        int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+        int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, paramIdx);
 
         ClassNode innerClass = createGStringClass(expression);
@@ -1730,20 +1788,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         throw new NoSuchClassException(original, node, message);
     }
 
-    protected String createIteratorName() {
-        return "__iterator" + idx;
-    }
-
-    protected String createArgumentsName() {
-        return "__argumentList" + idx;
-    }
-
-    private String createExceptionVariableName() {
-        return "__exception" + idx;
-    }
-
-    private String createSynchronizedVariableName() {
-        return "__synchronized" + idx;
+    protected String createVariableName(String type) {
+        return "__" + type + idx;
     }
 
     /**
