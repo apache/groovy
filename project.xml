@@ -239,6 +239,16 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+        <name>Bing Ran</name>
+        <id>bran</id>
+        <email>b55r@sina.com</email>
+        <organization>Leadingcare</organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+    </developer>
+
   </developers>
 
   <contributors>
