@@ -1706,6 +1706,14 @@ public class DefaultGroovyMethods {
         return Math.round(number.doubleValue());
     }
 
+    public static Integer toInteger(String self) {
+      return Integer.valueOf(self); 
+    }
+
+    public static Integer toInteger(Number self) {
+      return new Integer(self.intValue()); 
+    }
+
     // File based methods
     //-------------------------------------------------------------------------
 
@@ -1713,31 +1721,92 @@ public class DefaultGroovyMethods {
      * Iterates through the given file line by line
      */
     public static void eachLine(File self, Closure closure) throws IOException {
-        BufferedReader reader = newReader(self);
-        try {
-            while (true) {
-                String line = reader.readLine();
-                if (line == null) {
-                    break;
-                }
-                else {
-                    closure.call(line);
-                }
+        eachLine(newReader(self), closure);
+    }
+
+  /**
+   * Iterates through the given reader line by line
+   */
+  public static void eachLine(Reader self, Closure closure) throws IOException {
+    BufferedReader br = null;
+    
+    if (self instanceof BufferedReader)
+      br = (BufferedReader) self;
+    else
+      br = new BufferedReader(self);
+    
+    try {
+        while (true) {
+            String line = br.readLine();
+            if (line == null) {
+                break;
             }
-            reader.close();
+            else {
+                closure.call(line);
+            }
         }
-        catch (IOException e) {
-            if (reader != null) {
-                try {
-                    reader.close();
-                }
-                catch (Exception e2) {
-                    // ignore as we're already throwing
-                }
-                throw e;
+      br.close();
+    }
+    catch (IOException e) {
+        if (self != null) {
+            try {
+              br.close();
             }
+            catch (Exception e2) {
+                // ignore as we're already throwing
+            }
+            throw e;
         }
     }
+  }
+
+  /**
+   * Iterates through the given file line by line, splitting on the seperator
+   */
+  public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
+    splitEachLine(newReader(self), sep, closure);
+  }
+
+  /**
+   * Iterates through the given reader line by line, splitting on the seperator
+   */
+  public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
+    BufferedReader br = null;
+    
+    if (self instanceof BufferedReader)
+      br = (BufferedReader) self;
+    else
+      br = new BufferedReader(self);
+      
+    List args = new ArrayList();
+    
+    try {
+        while (true) {
+            String line = br.readLine();
+            if (line == null) {
+                break;
+            }
+            else {
+                List vals = Arrays.asList(line.split(sep));
+                args.clear();
+                args.add(vals);
+                closure.call(args);
+            }
+        }
+      br.close();
+    }
+    catch (IOException e) {
+        if (self != null) {
+            try {
+              br.close();
+            }
+            catch (Exception e2) {
+                // ignore as we're already throwing
+            }
+            throw e;
+        }
+    }
+  }
 
     /**
      * Reads the file into a list of Strings for each line
@@ -1747,6 +1816,15 @@ public class DefaultGroovyMethods {
         eachLine(file, closure);
         return closure.asList();
     }
+
+  /**
+   * Reads the reader into a list of Strings for each line
+   */
+  public static List readLines(Reader reader) throws IOException {
+      IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
+      eachLine(reader, closure);
+      return closure.asList();
+  }
 
     /**
      * Invokes the closure for each file in the given directory
