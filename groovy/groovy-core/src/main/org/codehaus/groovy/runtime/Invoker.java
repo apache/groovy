@@ -275,6 +275,15 @@ public class Invoker {
      */
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
+        if (left == right) {
+            return 0;
+        }
+        if (left == null) {
+            return -1;
+        }
+        else if (right == null) {
+            return 1;
+        }
         if (left instanceof Comparable) {
             if (left instanceof Number) {
                 return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
@@ -285,7 +294,7 @@ public class Invoker {
             }
         }
         /** todo we might wanna do some type conversion here */
-        throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + " right");
+        throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + right);
     }
 
     /**
