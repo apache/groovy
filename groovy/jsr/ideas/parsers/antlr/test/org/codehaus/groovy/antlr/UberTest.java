@@ -27,7 +27,7 @@ import junit.framework.TestSuite;
  *
  * @version $Revision$
  */
-public class UberTest implements Test {
+public class UberTest extends TestSuiteSupport {
 
     static String[] classicTests = {
         // "AmbiguousInvocationTest.groovy",  - requires classpath stuff
@@ -78,8 +78,6 @@ public class UberTest implements Test {
         "misc/SampleTest.groovy",
     };
 
-    private String fullName;
-
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
@@ -88,25 +86,4 @@ public class UberTest implements Test {
         return suite;
     }
 
-    protected static void addTests(TestSuite suite, String root, String[] names) {
-        for (int i = 0; i < names.length; i++) {
-            String name = names[i];
-            String fullName = root + name;
-
-            UberTest uberTest = new UberTest();
-            uberTest.fullName = fullName;
-            TestSuite childSuite = new TestSuite(fullName);
-            childSuite.addTest(uberTest);
-            suite.addTest(childSuite);
-        }
-    }
-
-    public int countTestCases() {
-        return 1;
-    }
-
-    public void run(TestResult testResult) {
-        System.out.println("Running test: " + fullName);
-        GroovyMain.main(new String[]{fullName});
-    }
 }
