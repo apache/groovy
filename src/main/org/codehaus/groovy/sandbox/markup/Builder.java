@@ -74,7 +74,7 @@ public abstract class Builder extends GroovyObjectSupport {
 		final List value = (List)namespaceMethodMap.get(key);
 		final Closure dg = ((Closure)value.get(1)).asWritable();
 		
-			this.namespaceMethodMap.put(key, new Object[]{dg, fettleMethodMap(dg, (Map)value.get(2))});
+			this.namespaceMethodMap.put(key, new Object[]{value.get(0), fettleMethodMap(dg, (Map)value.get(2))});
 		}
 	}
 	
