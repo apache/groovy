@@ -50,6 +50,7 @@ import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.parser.ASTBuilder;
 import org.codehaus.groovy.syntax.parser.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -91,6 +92,9 @@ public abstract class CompilerFacade {
                 // ignore
             }
             throw e;
+        }
+        catch (RuntimeParserException e) {
+            e.throwParserException();
         }
         catch (IOException e) {
             try {

@@ -107,6 +107,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Constants;
@@ -1499,6 +1500,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (!variableName.equals("this")) {
             String className = resolveClassName(variableName);
             if (className != null) {
+                if (leftHandExpression) {
+                    throw new RuntimeParserException(
+                        "Cannot use a class expression on the left hand side of an assignment",
+                        expression);
+                }
                 visitClassExpression(new ClassExpression(className));
                 return;
             }
