@@ -2,6 +2,7 @@ package groovy.ui
 
 import groovy.swing.SwingBuilder
 import javax.swing.KeyStroke
+import javax.swing.JSplitPane
 import org.codehaus.groovy.runtime.InvokerHelper
 
 class Console {
@@ -52,15 +53,16 @@ class Console {
                     }
                 }
             }
-            splitPane() {
+            splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
                     owner.textArea = textArea()
                 }
                 scrollPane {
-                    owner.outputArea = textArea()
+                    owner.outputArea = textArea(editable:false)
                 }
             }
         }        
+        frame.setSize(500,400)
         frame.show()
     }
     
