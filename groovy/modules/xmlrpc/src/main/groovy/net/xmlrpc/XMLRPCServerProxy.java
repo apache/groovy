@@ -140,17 +140,15 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			
 			responseParser.parseMessage(connection.getInputStream());
 			
-			if (numberOfparams == params.length) {
 			final List response = responseParser.getParams();
 			
-				if (response == null) {
-					throw new GroovyRuntimeException("Empty response from server");
-				} else {
-					return response.get(0);
-				}
+			if (response == null) throw new GroovyRuntimeException("Empty response from server");
+			
+			if (numberOfparams == params.length) {
+				return response.get(0);
 			} else {	
 				// pass the result of the call to the closure
-				return ((Closure)params[numberOfparams]).call(new Object[] {responseParser.getParams().get(0)});
+				return ((Closure)params[numberOfparams]).call(new Object[] {response.get(0)});
 			}
 			
 		} catch (final IOException e) {
