@@ -513,11 +513,23 @@ public class DefaultGroovyMethods {
      * @return a List of the mapped values
      */
     public static List collect(Object self, Closure closure) {
-        List answer = new ArrayList();
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            answer.add(closure.call(iter.next()));
+        return (List)collect(self, new ArrayList(), closure);
+    }
+
+    /**
+     * Iterates through this object transforming each object into a new value using the closure 
+     * as a transformer and adding it to the collection, returning the resulting collection.
+     * 
+     * @param self the values of the object to map
+     * @param collection the Collection to which the mapped values are added
+     * @param closure the closure used to map each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collect(Object self, Collection collection, Closure closure) {
+         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+         	collection.add(closure.call(iter.next()));
         }
-        return answer;
+        return collection;
     }
 
     /**
@@ -529,14 +541,26 @@ public class DefaultGroovyMethods {
      * @return a List of the mapped values
      */
     public static List collect(Collection self, Closure closure) {
-        List answer = new ArrayList(self.size());
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            answer.add(closure.call(iter.next()));
+        return (List)collect(self, new ArrayList(self.size()), closure);
+    }
+
+    /**
+     * Iterates through this collection transforming each entry into a new value using the closure 
+     * as a transformer, returning a list of transformed values.
+     *
+     * @param self a collection
+     * @param collection the Collection to which the mapped values are added
+     * @param closure the closure used to map each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collect(Collection self, Collection collection, Closure closure) {
+         for (Iterator iter = self.iterator(); iter.hasNext();) {
+         	collection.add(closure.call(iter.next()));
             if (closure.getDirective() == Closure.DONE) {
             	break;
             }
         }
-        return answer;
+        return collection;
     }
 
     /**
@@ -547,12 +571,24 @@ public class DefaultGroovyMethods {
      * @param closure the closure used for mapping
      * @return a List of the mapped values
      */
-    public static List collect(Map self, Closure closure) {
-        List answer = new ArrayList(self.size());
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            answer.add(closure.call(iter.next()));
+    public static Collection collect(Map self, Collection collection, Closure closure) {
+         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+         	collection.add(closure.call(iter.next()));
         }
-        return answer;
+        return collection;
+    }
+
+    /**
+     * Iterates through this Map transforming each entry into a new value using the closure 
+     * as a transformer, returning a list of transformed values.
+     *
+     * @param self a Map
+     * @param collection the Collection to which the mapped values are added
+     * @param closure the closure used to map each element of the collection
+     * @return the resultant collection
+     */
+    public static List collect(Map self, Closure closure) {
+        return (List)collect(self, new ArrayList(self.size()), closure);
     }
 
     /**
