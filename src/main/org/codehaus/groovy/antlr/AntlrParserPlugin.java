@@ -172,6 +172,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             importClass(packageName, name, alias);
         }
         else {
+            if (node == null) {
+                throw new ASTRuntimeException(importNode, "You must specify a class to import!");
+            }
             AST packageNode = node.getFirstChild();
             String packageName = qualifiedName(packageNode);
             AST nameNode = packageNode.getNextSibling();
