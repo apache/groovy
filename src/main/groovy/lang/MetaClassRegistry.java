@@ -63,7 +63,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new HashMap());
     private boolean useAccessible;
-
+    private GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+    
     public MetaClassRegistry() {
         this(true);
     }
@@ -105,5 +106,16 @@ public class MetaClassRegistry {
 
     public boolean useAccessible() {
         return useAccessible;
+    }
+
+    /**
+     * A helper class to load meta class bytecode into the class loader
+     */
+    protected Class loadClass(String name, byte[] bytecode) throws ClassNotFoundException {
+        return loader.loadClass(name, bytecode);
+    }
+
+    protected Class loadClass(String name) throws ClassNotFoundException {
+        return loader.loadClass(name);
     }
 }
