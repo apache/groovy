@@ -150,6 +150,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         		return getDelegate();
         	} else if ("owner".equals(property)) {
         		return getOwner();
+        	} else if ("method".equals(property)) {
+        		return getMethod();
         	} else if ("parameterTypes".equals(property)) {
         		return getParameterTypes();
         	} else if ("metaClass".equals(property)) {
@@ -333,6 +335,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         
             return throwRuntimeException((cause == null) ? e : cause);
 		}
+    }
+    
+    /**
+     * Used when a closure wraps a method on a class
+     * 
+     * @return empty string
+     */
+    public String getMethod() {
+    		return "";
     }
 
     /**
