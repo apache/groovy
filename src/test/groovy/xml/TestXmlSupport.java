@@ -46,12 +46,15 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package groovy.xml;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import org.apache.xalan.serialize.SerializerToXML;
 import org.apache.xml.serialize.XMLSerializer;
+
 import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.*;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import java.io.IOException;
 
 /**
  * 
