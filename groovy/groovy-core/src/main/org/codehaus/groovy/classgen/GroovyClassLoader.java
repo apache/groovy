@@ -61,7 +61,7 @@ public class GroovyClassLoader extends ClassLoader {
 
     public GroovyClassLoader() {
         this.classWriter = new ClassWriter(true);
-        this.visitor = new ClassGenerator(classWriter, this);
+        this.visitor = new ClassGenerator(classWriter, this, null);
     }
 
     public Class defineClass(ClassNode classNode) {

@@ -77,6 +77,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
+import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -145,11 +146,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // current stack index
     private int idx;
-
-    public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader) {
-        this.classVisitor = classVisitor;
-        this.classLoader = classLoader;
-    }
 
     public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
         this.classVisitor = classVisitor;
@@ -232,6 +228,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitField(FieldNode fieldNode) {
+        onLineNumber(fieldNode);
+        
         //System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
 
         Object fieldValue = null;
@@ -253,7 +251,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     /**
      * Creates a getter, setter and field
      */
-    public void visitProperty(PropertyNode propertyNode) {
+    public void visitProperty(PropertyNode statement) {
+        onLineNumber(statement);
     }
 
     // GroovyCodeVisitor interface
@@ -263,6 +262,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
 
     public void visitForLoop(ForLoop loop) {
+        onLineNumber(loop);
         
         loop.getCollectionExpression().visit(this);
 
@@ -292,16 +292,22 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitWhileLoop(WhileLoop loop) {
+        onLineNumber(loop);
+        
         // TODO Auto-generated method stub
 
     }
 
     public void visitDoWhileLoop(DoWhileLoop loop) {
+        onLineNumber(loop);
+        
         // TODO Auto-generated method stub
 
     }
 
     public void visitIfElse(IfElse ifElse) {
+        onLineNumber(ifElse);
+        
         ifElse.getBooleanExpression().visit(this);
 
         Label l0 = new Label();
@@ -318,6 +324,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitAssertStatement(AssertStatement statement) {
+        onLineNumber(statement);
+        
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
 
@@ -339,12 +347,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l1);
     }
 
-    public void visitTryCatchFinally(TryCatchFinally finally1) {
+    public void visitTryCatchFinally(TryCatchFinally statement) {
+        onLineNumber(statement);
+        
         // TODO Auto-generated method stub
 
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
+        onLineNumber(statement);
+        
         statement.getExpression().visit(this);
 
         Class c = getExpressionType(statement.getExpression());
@@ -371,6 +383,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitExpressionStatement(ExpressionStatement statement) {
+        onLineNumber(statement);
+        
         statement.getExpression().visit(this);
     }
 
@@ -690,6 +704,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftHandExpression = true;
         expression.getLeftExpression().visit(this);
         leftHandExpression = false;
+    }
+
+    protected void onLineNumber(Statement statement) {
+        int number = statement.getLineNumber();
+        if (number >= 0) {
+            cv.visitLineNumber(number, new Label());
+        }
     }
 
     protected void pushConstant(int value) {
