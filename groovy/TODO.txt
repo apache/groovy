@@ -16,6 +16,8 @@ Things to Test
 	
 * test while, do while
 
+* test use of GroovyClassLoader with importing of other classes (e.g. java.lang.*)
+
 * test Button(actionPerformed:{event| event.println() }
 
 
