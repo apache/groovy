@@ -119,7 +119,7 @@ public class BytecodeHelper implements Constants {
     /**
      * @return the ASM type description
      */
-    public String getTypeDescription(String name) {
+    public static String getTypeDescription(String name) {
         // lets avoid class loading
         // return getType(name).getDescriptor();
         if (name == null) {
@@ -163,7 +163,7 @@ public class BytecodeHelper implements Constants {
     /**
      * @return the ASM internal name of the type
      */
-    protected String getClassInternalName(String name) {
+    protected static String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
         }
@@ -177,7 +177,7 @@ public class BytecodeHelper implements Constants {
     /**
      * @return the ASM method type descriptor
      */
-    protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
+    protected static String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < paramTypeNames.length; i++) {
@@ -191,7 +191,7 @@ public class BytecodeHelper implements Constants {
     /**
      * @return the ASM method type descriptor
      */
-    protected String getMethodDescriptor(Class returnType, Class[] paramTypes) {
+    protected static String getMethodDescriptor(Class returnType, Class[] paramTypes) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < paramTypes.length; i++) {
@@ -202,7 +202,7 @@ public class BytecodeHelper implements Constants {
         return buffer.toString();
     }
 
-    public String getTypeDescription(Class type) {
+    public static String getTypeDescription(Class type) {
         if (type.isArray()) {
             return type.getName().replace('.', '/');
         }
@@ -214,7 +214,7 @@ public class BytecodeHelper implements Constants {
     /**
      * @return an array of ASM internal names of the type
      */
-    protected String[] getClassInternalNames(String[] names) {
+    protected static String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
         for (int i = 0; i < size; i++) {
