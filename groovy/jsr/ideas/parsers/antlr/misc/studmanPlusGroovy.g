@@ -1315,17 +1315,6 @@ statement
 	// do-while statement
 	|	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
 	*OBS*/
-
-/* TODO - removed for some reason???
-	// get out of a loop (or switch)
-	|	"break"^ (IDENT)? SEMI!
-
-	// do next iteration of a loop
-	|	"continue"^ (IDENT)? SEMI!
-
-	// Return an expression
-	|	"return"^ (expression)? SEMI!
-*/
 	// With statement
         // (This is the Groovy scope-shift mechanism, used for builders.)
         |       "with"^ LPAREN! expression RPAREN! compoundStatement
@@ -1348,25 +1337,16 @@ statement
 	// exception try-catch block
 	|	tryBlock
 
-/*OBS???
-	// throw an exception
-	|	"throw"^ expression SEMI!
-*/
 	// synchronize a statement
 	|	"synchronized"^ LPAREN! expression RPAREN! compoundStatement
 
-	/* TODO - decide on definitive 'assert' statement in groovy (1.4 vs groovy)
-	// asserts (uncomment if you want 1.4 compatibility)
-	// 1.4+ ...
-	|	"assert"^ expression ( COLON! expression )? SEMI!
-	// groovy possibility ??? ...
-	|	"assert"^ expression
-	*/
 
 	/*OBS*
 	// empty statement
 	|	s:SEMI {#s.setType(EMPTY_STAT);}
 	*OBS*/
+
+	// NOTE: some alternations have been moved to 'branchExpression'
 	;
 
 forStatement
@@ -1404,8 +1384,6 @@ forInClause
                 shiftExpression
         ;
 
-//TODO - GOT TO HERE JRR --->
-
 /** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
  *  Support this practice, even though it isn't very Groovy.
  */
@@ -1416,6 +1394,7 @@ compatibleBodyStatement
                 statement
         ;
 
+/* TODO - QUESTION - why do we use 'assignmentExpression' instead of 'expression' inside each branchExpression production */
 /** In Groovy, return, break, continue, throw, and assert can be used in any expression context.
  *  Example:  println (x || return);  println assert x, "won't print a false value!"
  *  If an optional expression is missing, its value is void (this coerces to null when a value is required).
@@ -1437,11 +1416,17 @@ branchExpression
         // throw an exception
         |       "throw"^ assignmentExpression!
 
-        // asserts
+
+	/* TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
+	// asserts
+	// 1.4+ ...
+	|	"assert"^ expression ( COLON! expression )?
+	// groovy assertion...
         |       "assert"^ assignmentExpression
                 (   options {greedy=true;} :
                         COMMA! assignmentExpression
                 )?
+	*/
 
         // Note:  The colon is too special in Groovy; we modify the FOR and ASSERT syntax to dispense with it.
         ;
@@ -1481,8 +1466,6 @@ expressionStatement
                 branchExpression
         ;
 
-// TODO - PASTED FROM groovy.g up to here --->
-
 casesGroup
 	:	(	// CONFLICT: to which case group do the statements bind?
 			// ANTLR generates proper code: it groups the
@@ -1499,23 +1482,20 @@ casesGroup
 	;
 
 aCase
-	:	("case"^ expression | "default") COLON!
+	:	("case"^ expression | "default") COLON! nls!
 	;
 
 caseSList
-	:	(statement)*
+	:	statement (sep! (statement)?)*
 		{#caseSList = #(#[SLIST,"SLIST"],#caseSList);}
 	;
 
 // The initializer for a for loop
+// The controlExpressionList production includes declarations as a possibility
 forInit
-		// if it looks like a declaration, it is
-	:	((declaration)=> declaration
-		// otherwise it could be an expression list...
-		|	expressionList
-		)?
-		{#forInit = #(#[FOR_INIT,"FOR_INIT"],#forInit);}
-	;
+        :       (controlExpressionList)?
+                {#forInit = #(#[FOR_INIT,"FOR_INIT"],#forInit);}
+        ;
 
 forCond
 	:	(expression)?
@@ -1523,16 +1503,16 @@ forCond
 	;
 
 forIter
-	:	(expressionList)?
+	:	(controlExpressionList)?
 		{#forIter = #(#[FOR_ITERATOR,"FOR_ITERATOR"],#forIter);}
 	;
 
 // an exception handler try/catch block
 tryBlock
-	:	"try"^ compoundStatement
-		(handler)*
-		( finallyClause )?
-	;
+        :       "try"^ compoundStatement
+                ( options {greedy=true;} :  nls! handler)*
+                ( options {greedy=true;} :  nls! finallyClause)?
+        ;
 
 finallyClause
 	:	"finally"^ compoundStatement
@@ -1543,6 +1523,82 @@ handler
 	:	"catch"^ LPAREN! parameterDeclaration RPAREN! compoundStatement
 	;
 
+
+assignmentTail[AST head]
+        :
+                {#assignmentTail = head;}
+                (   ASSIGN^
+                |   PLUS_ASSIGN^
+                |   MINUS_ASSIGN^
+                |   STAR_ASSIGN^
+                |   DIV_ASSIGN^
+                |   MOD_ASSIGN^
+                |   SR_ASSIGN^
+                |   BSR_ASSIGN^
+                |   SL_ASSIGN^
+                |   BAND_ASSIGN^
+                |   BXOR_ASSIGN^
+                |   BOR_ASSIGN^
+                //|   USEROP_13^  //DECIDE: This is how user-define ops would show up.
+                )
+                nls!
+                assignmentExpression
+        |
+                {#assignmentTail = head;}
+                in:INC^ {#in.setType(POST_INC);}
+        |
+                {#assignmentTail = head;}
+                de:DEC^ {#de.setType(POST_DEC);}
+        ;
+
+/** A member name (x.y) or element name (x[y]) can serve as a command name,
+ *  which may be followed by a list of arguments.
+ */
+commandArguments[AST head]
+        :   {   #commandArguments = head;
+                        switch (LA(1)) {
+                        case PLUS: case MINUS: case INC: case DEC:
+                        case STAR: case DIV: case MOD:
+                        case SR: case BSR: case SL:
+                        case BAND: case BXOR: case BOR:
+                        require(false,
+                                        "garbage infix or prefix operator after command name f +x",
+                                        "parenthesize either the whole expression (f+x) or the command arguments f(+x)");
+                        }
+                }
+                expression (options { greedy=true; } : COMMA! nls! expression)*
+                // println 2+2 //BAD
+                // println(2+2) //OK
+                // println (2)+2 //BAD
+                // println((2)+2) //OK
+                // (println(2)+2) //OK
+                // compare (2), 2 //BAD
+                // compare( (2), 2 ) //OK
+                // foo.bar baz{bat}, bang{boz} //OK?!
+                {
+                        AST headid = getASTFactory().dup(#head);
+                        headid.setType(METHOD_CALL);
+                        headid.setText("<command>");
+                        #commandArguments = #(headid, #commandArguments);
+                }
+        ;
+
+assignmentOp
+        :
+        (   ASSIGN^
+        |   PLUS_ASSIGN^
+        |   MINUS_ASSIGN^
+        |   STAR_ASSIGN^
+        |   DIV_ASSIGN^
+        |   MOD_ASSIGN^
+        |   SR_ASSIGN^
+        |   BSR_ASSIGN^
+        |   SL_ASSIGN^
+        |   BAND_ASSIGN^
+        |   BXOR_ASSIGN^
+        |   BOR_ASSIGN^
+        )
+        ;
 
 // expressions
 // Note that most of these expressions follow the pattern
@@ -1579,126 +1635,358 @@ handler
 
 
 // the mother of all expressions
+// This nonterminal is not used for expression statements, which have a more restricted syntax
+// due to possible ambiguities with other kinds of statements.  This nonterminal is used only
+// in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression
-	:	assignmentExpression
-		{#expression = #(#[EXPR,"EXPR"],#expression);}
-	;
-
-
+        :   (declarationStart)=> singleDeclaration
+        |   branchExpression
+        |       assignmentExpression
+                {#expression = #(#[EXPR,"EXPR"],#expression);}
+        ;
 // This is a list of expressions.
-expressionList
-	:	expression (COMMA! expression)*
-		{#expressionList = #(#[ELIST,"ELIST"], expressionList);}
-	;
+controlExpressionList
+        :       controlExpression (COMMA! nls! controlExpression)*
+                {#controlExpressionList = #(#[ELIST,"ELIST"], controlExpressionList);}
+        ;
+
+/** Used for backward compatibility, in a few places where
+ *  Java expresion statements and declarations are required.
+ */
+controlExpression
+                {boolean zz; /*ignore*/ }
+        :       // if it looks like a declaration, it is
+                (declarationStart)=> singleDeclaration
+        |   // otherwise it's a plain statement expression
+                zz=head:pathExpression!
+                (       assignmentTail[#head]
+                |   {#controlExpression = #head;}  // no command syntax in this context
+                )
+        |
+                // Prefix increment; a special case of assignment statement.
+                (INC^ | DEC^) zz=pathExpression
+        ;
+
+/** A "path expression" is a name which can be used for value, assigned to, or called.
+ *  Uses include assignment targets, commands, and types in declarations.
+ *  It is called a "path" because it looks like a linear path through a data structure.
+ *  Example:  a.b[n].c(x).d{s}
+ *  (Compare to a C lvalue, or LeftHandSide in the JLS section 15.26.)
+ *  General expressions are built up from path expressions, using operators like '+' and '='.
+ *  Note:  A path expression cannot begin with a block or closure.
+ */
+pathExpression
+returns [boolean endBrackets = false]
+        :   pe:primaryExpression!
+                endBrackets=
+                pathExpressionTail[#pe]
+        ;
+
+pathExpressionTail[AST result]
+returns [boolean endBrackets = false]
+        :
+                // The primary can then be followed by a chain of .id, (a), [a], and {...}
+                (
+                        // Parsing of this chain is greedy.  For example, a pathExpression may be a command name
+                        // followed by a command argument, but that command argument cannot begin with an LPAREN,
+                        // since a parenthesized expression is greedily attached to the pathExpression as a method argument.
+                        options { greedy=true; }
+                        :
+
+                        endBrackets=
+                        pe:pathElement[result]!
+                        { result = #pe; }
+                )*
+                {   #pathExpressionTail = result;  }
+        ;
+
+pathExpressionFromBrackets
+                {boolean zz; /*ignore*/ }
+        :   pe:expressionBlock!
+                zz=pathExpressionTail[#pe]
+        |   pe2:listOrMapConstructorExpression!
+                zz=pathExpressionTail[#pe2]
+        ;
+
+pathElement[AST prefix]
+returns [boolean endBrackets = false]
+                {boolean zz; /*ignore*/ }
+        :
+                {   #pathElement = prefix;  }
+                // Stuff which can precede a DOT:
+                (   // Spread operator:  x*.y  ===  x?.collect{it.y}
+                        sp:STAR^                                {#sp.setType(SPREAD_ARG);}
+                |   // Optional-null operator:  x?.y  === (x==null)?null:x.y
+                        op:QUESTION^                    {#op.setType(OPTIONAL_ARG);}
+                )?
+                // The all-powerful dot.
+                DOT^ nls! namePart
+                {   endBrackets = false; }
+        |
+                mca:methodCallArgs[prefix]
+                {   #pathElement = #mca; endBrackets = true;  }
+        |
+                // Element selection is always an option, too.
+                // In Groovy, the stuff between brackets is a general argument list,
+                // since the bracket operator is transformed into a method call.
+                // This can also be a declaration head; square brackets are used to parameterize array types.
+                ata:arrayOrTypeArgs[prefix]
+                {   #pathElement = #ata; endBrackets = false;  }
+
+/*NYI*
+        |       DOT^ nls! "this"
+
+        |       DOT^ nls! "super"
+                (   // (new Outer()).super()  (create enclosing instance)
+                        lp3:LPAREN^ argList RPAREN!
+                        {#lp3.setType(SUPER_CTOR_CALL);}
+                |   DOT^ IDENT
+                        (       lps:LPAREN^ {#lps.setType(METHOD_CALL);}
+                                argList
+                                RPAREN!
+                        )?
+                )
+        |       DOT^ nls! newExpression
+*NYI*/
+        ;
+
+/** Lookahead pattern for pathElement. */
+pathElementStart!
+        :   (LPAREN | LBRACE | LBRACK | DOT | (STAR|QUESTION) DOT)
+        ;
+
+/** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
+ *  <p>The alternative for "in" is there just for error processing; it raises an error.
+ */
+namePart
+        :
+                (   amp:LAND^   {#amp.setType(REFLECT_MEMBER);} // foo.&bar reflects the 'bar' member of foo
+                |       ats:ATSIGN^ {#amp.setType(SELECT_SLOT);}        // foo.@bar selects the field (or attribute), not property
+                )?
+
+            (   IDENT
+                |   sl:STRING_LITERAL {#sl.setType(IDENT);}
+                        // foo.'bar' is in all ways same as foo.bar, except that bar can have an arbitrary spelling
+                |   dn:dynamicMemberName!
+                        {   #namePart = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dn);  }
+                        // DECIDE PROPOSAL:  foo.(bar), x.(p?'a':'b') means dynamic lookup on a dynamic name
+                |
+                        openBlock
+                        // PROPOSAL, DECIDE:  Is this inline form of the 'with' statement useful?
+                        // Definition:  a.{foo} === {with(a) {foo}}
+                        // May cover some path expression use-cases previously handled by dynamic scoping (closure delegates).
+                // Recover with a good diagnostic from a common error:
+                |   "in"  // poster child; the lexer makes all keywords after dot look like "in"
+                        {   String kwd = LT(1).getText();
+                                require(false,
+                                                "illegal keyword after dot in x."+kwd,
+                                                "put the keyword in quotes, as in x.'"+kwd+"'");
+                                // This helps the user recover from ruined Java identifiers, as in System.'in'.
+                                // DECIDE: Shall we just define foo.in to DTRT automagically, or do we want the syntax check?
+                        }
+                )
+
+                // (No, x.&@y is not needed; just say x.&y as Slot or some such.)
+        ;
+
+/** If a dot is followed by a parenthesized or quoted expression, the member is computed dynamically,
+ *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
+ */
+dynamicMemberName
+        :   (   parenthesizedExpression
+                |   stringConstructorExpression
+                )
+        {   #dynamicMemberName = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dynamicMemberName);  }
+        ;
+
+/** An expression may be followed by one or both of (...) and {...}.
+ *  Note: If either is (...) or {...} present, it is a method call.
+ *  The {...} is appended to the argument list, and matches a formal of type Closure.
+ *  If there is no method member, a property (or field) is used instead, and must itself be callable.
+ *  <p>
+ *  If the methodCallArgs are absent, it is a property (or field) reference, if possible.
+ *  If there is no property or field, it is treated as a method call (nullary) after all.
+ *  <p>
+ *  Arguments in the (...) can be labeled, and the appended block can be labeled also.
+ *  If there is a mix of unlabeled and labeled arguments,
+ *  all the labeled arguments must follow the unlabeled arguments,
+ *  except that the closure (labeled or not) is always a separate final argument.
+ *  Labeled arguments are collected up and passed as a single argument to a formal of type Map.
+ *  <p>
+ *  Therefore, f(x,y, a:p, b:q) {s} is equivalent in all ways to f(x,y, [a:p,b:q], {s}).
+ *  Spread arguments of sequence type count as unlabeled arguments,
+ *  while spread arguments of map type count as labeled arguments.
+ *  (This distinction must sometimes be checked dynamically.)
+ *
+ *  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
+ *  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
+ *  <p>
+ *  Returned AST is [METHOD_CALL, callee, ELIST?, CLOSED_BLOCK?].
+ */
+methodCallArgs[AST callee]
+        {boolean zz; /*ignore*/ }
+        :
+                {#methodCallArgs = callee;}
+                lp:LPAREN^ {#lp.setType(METHOD_CALL);}
+                zz=argList
+                RPAREN!
+                ( options {greedy=true;} : appendedBlock )?             // maybe append a closure
+        |
+                // else use a closure alone
+                {#methodCallArgs = callee;}
+                cb:appendedBlock
+                {   AST lbrace = getASTFactory().dup(#cb);
+                        lbrace.setType(METHOD_CALL);
+                        #methodCallArgs = #(lbrace, #methodCallArgs);
+                }
+        ;
+
+/** An expression may be followed by [...].
+ *  Unlike Java, these brackets may contain a general argument list,
+ *  which is passed to the array element operator, which can make of it what it wants.
+ *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
+ *  <p>Returned AST is [INDEX_OP, indexee, ELIST].
+ */
+arrayOrTypeArgs[AST indexee]
+        {boolean zz; /*ignore*/ }
+        :
+                {#arrayOrTypeArgs = indexee;}
+                (
+                        // it's convenient to be greedy here, though it doesn't affect correctness
+                        options { greedy = true; } :
+                        lb:LBRACK^ {#lb.setType(INDEX_OP);}
+                        zz=argList
+                        RBRACK!
+                )+
+        ;
 
 
 // assignment expression (level 13)
 assignmentExpression
-	:	conditionalExpression
-		(	(	ASSIGN^
-			|	PLUS_ASSIGN^
-			|	MINUS_ASSIGN^
-			|	STAR_ASSIGN^
-			|	DIV_ASSIGN^
-			|	MOD_ASSIGN^
-			|	SR_ASSIGN^
-			|	BSR_ASSIGN^
-			|	SL_ASSIGN^
-			|	BAND_ASSIGN^
-			|	BXOR_ASSIGN^
-			|	BOR_ASSIGN^
-			)
-			assignmentExpression
-		)?
-	;
-
+        :       conditionalExpression
+                (       
+                        (   ASSIGN^
+                        |   PLUS_ASSIGN^
+                        |   MINUS_ASSIGN^
+                        |   STAR_ASSIGN^
+                        |   DIV_ASSIGN^
+                        |   MOD_ASSIGN^
+                        |   SR_ASSIGN^
+                        |   BSR_ASSIGN^
+                        |   SL_ASSIGN^
+                        |   BAND_ASSIGN^
+                        |   BXOR_ASSIGN^
+                        |   BOR_ASSIGN^
+                        )
+                        nls!
+                        assignmentExpression
+                )?
+        ;
 
 // conditional test (level 12)
 conditionalExpression
-	:	logicalOrExpression
-		( QUESTION^ assignmentExpression COLON! conditionalExpression )?
-	;
+        :       logicalOrExpression
+                ( QUESTION^ nls! assignmentExpression COLON! nls! conditionalExpression )?
+        ;
 
 
-// logical or (||) (level 11)
+// logical or (||)  (level 11)
 logicalOrExpression
-	:	logicalAndExpression (LOR^ logicalAndExpression)*
-	;
+        :       logicalAndExpression (LOR^ nls! logicalAndExpression)*
+        ;
 
 
-// logical and (&&) (level 10)
+// logical and (&&)  (level 10)
 logicalAndExpression
-	:	inclusiveOrExpression (LAND^ inclusiveOrExpression)*
-	;
+        :       inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
+        ;
 
 
-// bitwise or non-short-circuiting or (|) (level 9)
+// bitwise or non-short-circuiting or (|)  (level 9)
 inclusiveOrExpression
-	:	exclusiveOrExpression (BOR^ exclusiveOrExpression)*
-	;
+        :       exclusiveOrExpression (BOR^ nls! exclusiveOrExpression)*
+        ;
 
 
-// exclusive or (^) (level 8)
+// exclusive or (^)  (level 8)
 exclusiveOrExpression
-	:	andExpression (BXOR^ andExpression)*
-	;
+        :       andExpression (BXOR^ nls! andExpression)*
+        ;
 
 
-// bitwise or non-short-circuiting and (&) (level 7)
+// bitwise or non-short-circuiting and (&)  (level 7)
 andExpression
-	:	equalityExpression (BAND^ equalityExpression)*
-	;
+        :       equalityExpression (BAND^ nls! equalityExpression)*
+        ;
 
 
 // equality/inequality (==/!=) (level 6)
 equalityExpression
-	:	relationalExpression ((NOT_EQUAL^ | EQUAL^) relationalExpression)*
-	;
+        :       relationalExpression ((NOT_EQUAL^ | EQUAL^) nls! relationalExpression)*
+        ;
 
 
 // boolean relational expressions (level 5)
 relationalExpression
-	:	shiftExpression
-		(	(	(	LT^
-				|	GT^
-				|	LE^
-				|	GE^
-				)
-				shiftExpression
-			)*
-		|	"instanceof"^ typeSpec[true]
-		)
-	;
+        :       shiftExpression
+                (       (       (       LT^
+                                |       GT^
+                                |       LE^
+                                |       GE^
+                                |       "in"^
+                                )
+                                nls!
+                                shiftExpression
+                        )?
+                |       "instanceof"^ nls! typeSpec[true]
+                |       "as"^         nls! typeSpec[true] //TO DO: Rework to allow type expression?
+                )
+        ;
+
 
 
 // bit shift expressions (level 4)
 shiftExpression
-	:	additiveExpression ((SL^ | SR^ | BSR^) additiveExpression)*
-	;
+        :       additiveExpression
+                (   ((SL^ | SR^ | BSR^) nls!
+                        |   RANGE_INCLUSIVE^
+                        |   DEC^ {#DEC.setType(RANGE_EXCLUSIVE);}
+                                // DECIDE: Maybe use a--b to denote C/Java-style index range ("exclusive")
+                        )
+                        additiveExpression
+                )*
+        ;
 
 
 // binary addition/subtraction (level 3)
 additiveExpression
-	:	multiplicativeExpression ((PLUS^ | MINUS^) multiplicativeExpression)*
-	;
+        :       multiplicativeExpression ((PLUS^ | MINUS^) nls! multiplicativeExpression)*
+        ;
 
 
 // multiplication/division/modulo (level 2)
 multiplicativeExpression
-	:	unaryExpression ((STAR^ | DIV^ | MOD^ ) unaryExpression)*
-	;
+        :       unaryExpression ((STAR^ | DIV^ | MOD^ ) nls! unaryExpression)*
+        ;
 
 unaryExpression
-	:	INC^ unaryExpression
-	|	DEC^ unaryExpression
-	|	MINUS^ {#MINUS.setType(UNARY_MINUS);} unaryExpression
-	|	PLUS^ {#PLUS.setType(UNARY_PLUS);} unaryExpression
-	|	unaryExpressionNotPlusMinus
-	;
+        :       INC^ nls! unaryExpression
+        |       DEC^ nls! unaryExpression
+        |       MINUS^ {#MINUS.setType(UNARY_MINUS);} nls! unaryExpression
+        |       PLUS^  {#PLUS.setType(UNARY_PLUS);} nls! unaryExpression
+        |       DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} nls! unaryExpression
+        |       unaryExpressionNotPlusMinus
+        ;
+
+// The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
+// If not within a "with" block, it pops the operand out of the static global scope,
+// into whatever dynamic (unchecked) global scope is available when the script is run,
+// regardless of package and imports.
+// Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
 
 unaryExpressionNotPlusMinus
-	:	BNOT^ unaryExpression
-	|	LNOT^ unaryExpression
+	:	BNOT^ nls! unaryExpression
+	|	LNOT^ nls! unaryExpression
 	|	(	// subrule allows option to shut off warnings
 			options {
 				// "(int" ambig with postfixExpr due to lack of sequence
@@ -1714,6 +2002,7 @@ unaryExpressionNotPlusMinus
 		// Have to backtrack to see if operator follows. If no operator
 		// follows, it's a typecast. No semantic checking needed to parse.
 		// if it _looks_ like a cast, it _is_ a cast; else it's a "(expr)"
+		// TO DO:  Rework this mess for Groovy.
 	|	(LPAREN classTypeSpec[true] RPAREN unaryExpressionNotPlusMinus)=>
 		lp:LPAREN^ {#lp.setType(TYPECAST);} classTypeSpec[true] RPAREN!
 		unaryExpressionNotPlusMinus
@@ -1721,6 +2010,8 @@ unaryExpressionNotPlusMinus
 	|	postfixExpression
 	)
 	;
+
+// ----- TODO - GOT TO HERE JRR ----->
 
 // qualified names, array expressions, method invocation, post inc/dec
 postfixExpression
