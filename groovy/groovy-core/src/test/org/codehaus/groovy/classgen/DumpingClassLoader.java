@@ -59,7 +59,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.DumpClassVisitor;
+import org.objectweb.asm.util.ASMifierClassVisitor;
 
 /**
  * A class loader used for debugging the bytecode generation. 
@@ -102,8 +102,8 @@ public class DumpingClassLoader extends GroovyClassLoader implements Constants {
         return new DebugCollector(this, unit);
     }
 
-    protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-    protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
+    protected ASMifierClassVisitor dumpVisitor = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
+    protected ASMifierClassVisitor invisibleDumpVisitor = new ASMifierClassVisitor(new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
         new AsmClassGenerator2(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
