@@ -1,10 +1,10 @@
 #!/bin/env groovy
-# 
-# output tests in a junit xml report that took greater than specified time
-#
-# by Jeremy Rayner - 15 Dec 2004
-#
-# usage:   groovy BigTests.groovy <TEST.xml> <time in secs>
+// 
+// output tests in a junit xml report that took greater than specified time
+//
+// by Jeremy Rayner - 15 Dec 2004
+//
+// usage:   groovy BigTests.groovy <TEST.xml> <time in secs>
 
 import groovy.util.XmlParser
 import java.io.File
