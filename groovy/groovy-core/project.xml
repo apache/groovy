@@ -546,6 +546,15 @@
   <build>
     <nagEmailAddress>groovy-scm@groovy.codehaus.org</nagEmailAddress>
     <sourceDirectory>src/main</sourceDirectory>
+    <sourceModifications>
+        <sourceModification>
+            <!-- a random test from the groovy test suite, exclude javac of UberTests if groovy tests not available -->
+            <className>CastTest</className>
+            <excludes>
+                <exclude>**/Uber*.java</exclude>
+            </excludes>
+        </sourceModification>
+    </sourceModifications>
     <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
     <aspectSourceDirectory/>
 
@@ -570,11 +579,14 @@
       </resource>
 	 </resources>
 
-      <includes>
+<!--      <includes>
         <include>**/*Test.*</include>
         <include>**/*Bug.*</include>
-      </includes>
-    	
+      </includes>-->
+        <includes>
+            <include>**/Uber*.*</include>
+        </includes>
+
       <excludes>
         <exclude>**/SignedJarTest.*</exclude>
       </excludes>
