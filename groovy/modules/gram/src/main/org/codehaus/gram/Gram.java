@@ -35,7 +35,7 @@ public class Gram {
             Gram gram = new Gram(service);
             for (int i = 1; i < args.length; i++) {
                 String script = args[i];
-                System.out.println("Evaluting Groovy script: " + srcDir);
+                System.out.println("Evaluting Groovy script: " + script);
                 gram.execute(new File(script));
             }
         }
