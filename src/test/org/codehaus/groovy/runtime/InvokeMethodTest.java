@@ -133,7 +133,11 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertMethodChooser("Object,Object", new Object[2]);
     }
 
-
+    public void testCollectionSize() throws Throwable {
+        Object list = InvokerHelper.createList(new Object[] {"a", "b"});
+        Object value = invoke(list, "size", null);
+        assertEquals("size of collection", new Integer(2), value);
+    }
     
     public void testInvokeUnknownMethod() throws Throwable {
         try {

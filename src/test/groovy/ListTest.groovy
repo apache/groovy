@@ -7,19 +7,17 @@ class ListTest extends GroovyTestCase {
     void testList() {
         x = [0, 1];
 
-		assert x.size() := 2;
-
-/*		        
-        x.add("hello");
-        
-        asssert x.size() := 3;
+		s = x.size();
 		
-        for i in [0, 1, 2, 3, 4] {
-            x = x + i;
-        }
+		assert s := 2;
+		
+		x.add("cheese");
+		
+		assert x.size() := 3;
+		
+		//assert x.contains(1);
+		//assert x.contains("cheese");
 
-        assert x := 10;
-*/        
     }
 
 }
