@@ -857,48 +857,19 @@ implementsClause
 								 #implementsClause);}
 	;
 
-// TODO - JRR GOT TO HERE ---->
-
 // Now the various things that can be defined inside a class
 classField!
 	:	// method, constructor, or variable declaration
-		mods:modifiers
+		(declarationStart)=>
+        d:declaration
+        {#field = #d;}
+    |
+        //TODO - unify typeDeclaration and typeDefinitionInternal names
+        // type declaration
+        (typeDeclarationStart)=>
+        ( mods:modifiers )?
 		(	td:typeDefinitionInternal[#mods]
 			{#classField = #td;}
-
-		|	(tp:typeParameters)?
-			(
-				h:ctorHead s:constructorBody // constructor
-				{#classField = #(#[CTOR_DEF,"CTOR_DEF"], mods, tp, h, s);}
-
-				|	// A generic method/ctor has the typeParameters before the return type.
-					// This is not allowed for variable definitions, but this production
-					// allows it, a semantic check could be used if you wanted.
-					t:typeSpec[false]		// method or variable declaration(s)
-					(	IDENT				// the name of the method
-
-						// parse the formal parameter declarations.
-						LPAREN! param:parameterDeclarationList RPAREN!
-
-						rt:declaratorBrackets[#t]
-
-						// get the list of exceptions that this method is
-						// declared to throw
-						(tc:throwsClause)?
-
-						( s2:compoundStatement | SEMI )
-						{#classField = #(#[METHOD_DEF,"METHOD_DEF"],
-									 mods,
-									 tp,
-									 #(#[TYPE,"TYPE"],rt),
-									 IDENT,
-									 param,
-									 tc,
-									 s2);}
-					|	v:variableDefinitions[#mods,#t] SEMI
-						{#classField = #v;}
-					)
-			)
 		)
 
 	// "static { ... }" class initializer
@@ -913,76 +884,103 @@ classField!
 // Now the various things that can be defined inside a interface
 interfaceField!
 	:	// method, constructor, or variable declaration
-		mods:modifiers
+        (declarationStart)=>
+        d:declaration
+        {#field = #d;}
+    |
+        //TODO - unify typeDeclaration and typeDefinitionInternal names
+        // type declaration
+        (typeDeclarationStart)=>
+        ( mods:modifiers )?
+
 		(	td:typeDefinitionInternal[#mods]
 			{#interfaceField = #td;}
-
-		|	(tp:typeParameters)?
-			// A generic method has the typeParameters before the return type.
-			// This is not allowed for variable definitions, but this production
-			// allows it, a semantic check could be used if you want a more strict
-			// grammar.
-			t:typeSpec[false]		// method or variable declaration(s)
-			(	IDENT				// the name of the method
-
-				// parse the formal parameter declarations.
-				LPAREN! param:parameterDeclarationList RPAREN!
-
-				rt:declaratorBrackets[#t]
-
-				// get the list of exceptions that this method is
-				// declared to throw
-				(tc:throwsClause)?
-
-				SEMI
-				
-				{#interfaceField = #(#[METHOD_DEF,"METHOD_DEF"],
-							 mods,
-							 tp,
-							 #(#[TYPE,"TYPE"],rt),
-							 IDENT,
-							 param,
-							 tc);}
-			|	v:variableDefinitions[#mods,#t] SEMI
-				{#interfaceField = #v;}
-			)
 		)
 	;
 
 constructorBody
-	:	lc:LCURLY^ {#lc.setType(SLIST);}
-			( options { greedy=true; } : explicitConstructorInvocation)?
-			(statement)*
-		RCURLY!
-	;
+	:	lc:LCURLY^ {#lc.setType(SLIST);} nls!
+        (   (explicitConstructorInvocation) =>   // Java compatibility hack
+                explicitConstructorInvocation (sep! blockBody)?
+            |   blockBody
+        )
+        RCURLY!
+    ;
+
 
 /** Catch obvious constructor calls, but not the expr.super(...) calls */
 explicitConstructorInvocation
+        {boolean zz; /*ignored*/ }
 	:	(typeArguments)?
-		(	"this"! lp1:LPAREN^ argList RPAREN! SEMI!
+		(	"this"! lp1:LPAREN^ zz=argList RPAREN!
 			{#lp1.setType(CTOR_CALL);}
-		|	"super"! lp2:LPAREN^ argList RPAREN! SEMI!
+		|	"super"! lp2:LPAREN^ zz=argList RPAREN!
 			{#lp2.setType(SUPER_CTOR_CALL);}
 		)
 	;
 
+/** The tail of a declaration.
+  * Either v1, v2, ... (with possible initializers) or else m(args){body}.
+  * The two arguments are the modifier list (if any) and the declaration head (if any).
+  * The declaration head is the variable type, or (for a method) the return type.
+  * If it is missing, then the variable type is taken from its initializer (if there is one).
+  * Otherwise, the variable type defaults to 'any'.
+  * DECIDE:  Method return types default to the type of the method body, as an expression.
+  */
 variableDefinitions[AST mods, AST t]
-	:	variableDeclarator[getASTFactory().dupTree(mods),
-							getASTFactory().dupTree(t)]
-		(	COMMA!
-			variableDeclarator[getASTFactory().dupTree(mods),
-							getASTFactory().dupTree(t)]
-		)*
-	;
+    :       variableDeclarator[getASTFactory().dupTree(mods),
+                                                   getASTFactory().dupTree(t)]
+        (       COMMA! nls!
+                        variableDeclarator[getASTFactory().dupTree(mods),
+                                                           getASTFactory().dupTree(t)]
+        )*
+    |
+                // The parser allows a method definition anywhere a variable definition is accepted.
+
+        (   id:IDENT
+        |   qid:STRING_LITERAL          {#qid.setType(IDENT);}  // use for operator defintions, etc.
+        )
+
+                // parse the formal parameter declarations.
+                LPAREN! param:parameterDeclarationList! RPAREN!
+
+                /*OBS*rt:declaratorBrackets[#t]*/
+
+                // get the list of exceptions that this method is
+                // declared to throw
+        (       tc:throwsClause!  )?
+
+                // the method body is an open block
+                // but, it may have an optional constructor call (for constructors only)
+        (
+            {isConstructorIdent(id)}?
+            {#id.setType(CTOR_IDENT);}
+                        cb:constructorBody!
+        |       mb:openBlock!
+        |   /*or nothing at all*/
+        )
+        {   if (#cb != null)   #mb = #cb;
+                        if (#qid != null)  #id = #qid;
+                        #variableDefinitions =
+                                #(#[METHOD_DEF,"METHOD_DEF"],
+                                  mods, #(#[TYPE,"TYPE"],t), id, param, tc, mb);
+        }
+    ;
+
 
 /** Declaration of a variable. This can be a class/instance variable,
  *  or a local variable in a method
  *  It can also include possible initialization.
  */
 variableDeclarator![AST mods, AST t]
-	:	id:IDENT d:declaratorBrackets[t] v:varInitializer
-		{#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],d), id, v);}
-	;
+    :
+                id:variableName
+                /*OBS*d:declaratorBrackets[t]*/
+                v:varInitializer
+        {#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id, v);}
+    ;
+
+// TODO - GOT TO HERE JRR --->
 
 declaratorBrackets[AST typ]
 	:	{#declaratorBrackets=typ;}
