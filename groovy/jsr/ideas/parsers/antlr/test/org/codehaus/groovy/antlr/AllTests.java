@@ -57,12 +57,10 @@ public class AllTests extends TestSuiteSupport {
 
 
         // TODO: Parser decisions to make
-        "BigDecimalOperationTest.groovy",       // TODO: do we disallow .1 as a number?
         "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
         "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
-        "IntegerOperationTest.groovy",          // TODO: what to do about integer divide?
-        "NumberMathTest.groovy",                // TODO: what to do about integer divide?
+        "NumberMathTest.groovy",                // TODO: literal numbers in new parser... 
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
 

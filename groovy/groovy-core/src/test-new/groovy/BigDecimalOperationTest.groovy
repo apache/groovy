@@ -7,21 +7,24 @@ class BigDecimalOperationTest extends GroovyTestCase {
 
     void testPlus() {
 
-        x = .1 + 1.1
-        assert x == 1.2
+        x = 0.1 + 1.1
         assert x instanceof BigDecimal;
+        assert x == 1.2
 
         x = 3 + 2.2
         assert x == 5.2
         assert x instanceof BigDecimal;
 
         x = 2.2 + 4
+        assert x instanceof BigDecimal;
         assert x == 6.2
 
         y = x + 1
+        assert y instanceof BigDecimal;
         assert y == 7.2
 
         z = y + x + 1 + 2
+        assert z instanceof BigDecimal;
         assert z == 16.4
     }
 

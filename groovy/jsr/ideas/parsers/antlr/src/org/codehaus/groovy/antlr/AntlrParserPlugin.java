@@ -29,6 +29,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.parser.ASTHelper;
 import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
@@ -39,6 +40,8 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.text.NumberFormat;
+import java.text.ParseException;
 
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
@@ -51,6 +54,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     private AST ast;
     private ClassNode classNode;
+    private NumberFormat numberFormat = NumberFormat.getInstance();
 
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
@@ -869,6 +873,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case QUESTION:
                 return ternaryExpression(node);
 
+            case OPTIONAL_ARG:
+                return binaryExpression(Types.NAVIGATE, node);
+
             case DOT:
                 return dotExpression(node);
 
@@ -913,23 +920,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case STRING_CONSTRUCTOR:
                 return gstring(node);
 
+            case NUM_DOUBLE:
+            case NUM_FLOAT:
             case NUM_BIG_DECIMAL:
-                return new ConstantExpression(new BigDecimal(node.getText()));
+                return decimalExpression(node);
 
             case NUM_BIG_INT:
-                return new ConstantExpression(new BigInteger(node.getText()));
-
-            case NUM_DOUBLE:
-                return new ConstantExpression(Double.valueOf(node.getText()));
-
-            case NUM_FLOAT:
-                return new ConstantExpression(Float.valueOf(node.getText()));
-
             case NUM_INT:
-                return new ConstantExpression(Integer.valueOf(node.getText()));
-
             case NUM_LONG:
-                return new ConstantExpression(parseLong(node));
+                return integerExpression(node);
 
             case LITERAL_this:
                 return VariableExpression.THIS_EXPRESSION;
@@ -1061,6 +1060,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SR_ASSIGN:
                 return binaryExpression(Types.RIGHT_SHIFT_EQUAL, node);
 
+            case BSR:
+                return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED, node);
 
                 // Regex
             case REGEX_FIND:
@@ -1415,12 +1416,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new ClosureExpression(parameters, code);
     }
 
-    protected Long parseLong(AST node) {
+    protected ConstantExpression decimalExpression(AST node) {
         String text = node.getText();
-        if (text.endsWith("L")) {
-            text = text.substring(0, text.length() - 1);
-        }
-        return Long.valueOf(text);
+        return new ConstantExpression(Numbers.parseDecimal(text));
+    }
+
+    protected ConstantExpression integerExpression(AST node) {
+        String text = node.getText();
+        return new ConstantExpression(Numbers.parseInteger(text));
     }
 
     protected Expression gstring(AST gstringNode) {
