@@ -27,6 +27,5 @@
 	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.7.7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.3.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/readline/jars/libreadline-java-SNAPSHOT-250804.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

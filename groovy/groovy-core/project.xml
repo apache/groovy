@@ -373,12 +373,6 @@
       <version>1.0</version>
     </dependency>
 
-    <dependency>
-      <groupId>readline</groupId>
-      <artifactId>libreadline-java</artifactId>    
-      <version>SNAPSHOT-250804</version>
-    </dependency>
-
     <!-- only used for Ant tasks & scripting tools -->
     <dependency>
       <groupId>ant</groupId>

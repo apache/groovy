@@ -53,56 +53,44 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.gnu.readline.ReadlineCompleter;
+import org.codehaus.groovy.sandbox.ui.Completer;
 
 /**
  *  Readline completion for InteractiveShell.
  * 
- * @TODO this should be refactored into reusable completion component for non readline tools.
  * @author Yuri Schimke
  * @version $Revision$
  */
-public class ShellCompleter implements ReadlineCompleter {
+public class ShellCompleter implements Completer {
   // The shell being handled
   private GroovyShell shell;
-  
-  // Current completions
-  private List completions = new ArrayList();
+  private ArrayList completions;
 
   public ShellCompleter(GroovyShell shell) {
     this.shell = shell;
   }
-
-  public String completer(String complete, int state) {
-    if (state == 0) {
-      findCompletions(complete);  
-    }
-    
-    if (state < completions.size())
-      return (String) completions.get(state);
-    else
-      return null;
-  }
   
   // @TODO add optimisations like check for . and rule out variables etc
-  public void findCompletions(String complete) {  
+  public List findCompletions(String token) {  
     completions.clear();
       
-    if (complete.length() == 0)
-      return;
+    if (token.length() == 0)
+      return completions;
     
     // completions of local variable names
-    findLocalVariables(complete);
+    findLocalVariables(token);
     
     // completions of local fields.
       
     // completions of local methods
-    findShellMethods(complete);
+    findShellMethods(token);
     
     // completions of methods invoked on a target
     //findTargetCompletions(complete);
     
     // completion of keywords.
+    
+    return completions;
   }
 
   private void findShellMethods(String complete) {
