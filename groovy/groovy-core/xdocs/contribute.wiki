@@ -1,0 +1,46 @@
+1 Contributing
+
+There are many ways you can help make Groovy a better piece of software - and we can use all the help we can get :)
+Please dive in and help!
+
+Try surf the documentation - if somethings confusing or not clear, let us know.
+Download the code & try it out and see what you think. Browse the source code.
+Got an itch to scratch, want to tune some operation or add some feature? 
+
+Want to do some hacking on Groovy? Try surfing the our 
+{link:issue tracker|http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242} for open issues
+or features that need to be implemented, take ownership of an issue and try fix it.
+
+If you'd rather a more gentle introduction to coding on the Groovy project, how about you 
+try look at the {link:test coverage report|http://groovy.codehaus.org/clover/} 
+and help us get it even more green by supplying more test cases to get us closer to 100% coverage.
+
+
+1.1 Getting in touch
+
+There are various ways of communicating with the Groovy community. 
+
+- subscribe to the {link:mailing lists|mail-lists.html} and take part in any conversations
+- pop by on {link:IRC|irc://irc.codehaus.org/groovy} and say hi
+- add some comments to the {link:wiki|http://wiki.codehaus.org/groovy/}
+- blog about it and hopefully folks are subscribed to your blog :)
+
+1.1 If you find a bug or problem
+
+Please raise a new issue in our {link:issue tracker|http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242}
+
+If you can create a JUnit test case (either via Groovy or Java code) then your issue is more likely to be resolved quicker.
+e.g. take a look at some of the existing unit tests cases 
+{link:here|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/?root=codehaus}, 
+find one and modify it to try reproduce your problem.
+
+Then we can add your issue to CVS and then we'll know when its really fixed and 
+we can ensure that the problem stays fixed in future releases.
+
+1.1 Using the issue tracker
+
+Before you can raise an issue in the issue tracker you need to register with it. This is quick & painless.
+
+If you want to have a go at fixing an issue you need to be in the list of groovy-developers on the issue tracker.
+To join the group, please mail the groovy-dev mail list with the email address you used to register with the issue tracker
+and we'll add you to the group.

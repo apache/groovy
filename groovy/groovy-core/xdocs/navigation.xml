@@ -22,6 +22,7 @@
       <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
       <item name="Syntax"              href="http://wiki.codehaus.org/groovy/CoreSyntax"/>
       <item name="Wish List"           href="http://wiki.codehaus.org/groovy/WishList"/>
+      <item name="Contributing"        href="contribute.html"/>
       <!--
       <item name="License"             href="/license.html"/>
       -->

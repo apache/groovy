@@ -36,6 +36,43 @@
       </answer>
     </faq>
 
+    <faq id="contribute">
+      <question>
+        How can I contribute to Groovy?
+      </question>
+      <answer>
+        <p>
+		  There are many ways you can help and contribute to Groovy. 
+		  Please read the <a href="contribute.html">contributing guide</a>
+       </p>
+      </answer>
+    </faq>   
+  </part>
+
+  <part id="using">
+    <title>Using Groovy</title>
+    
+    <faq id="how-compile">
+      <question>
+        How can I compile Groovy to bytecode either at runtime or build time?
+      </question>
+      <answer>
+        <p>
+		  Please see this description of <a href="compiling.html">compiling Groovy</a>
+       </p>
+      </answer>
+    </faq>   
+    
+    <faq id="how-run">
+      <question>
+        How can I run Groovy scripts?
+      </question>
+      <answer>
+        <p>
+		  Please see this description of <a href="running.html">running Groovy code</a>
+       </p>
+      </answer>
+    </faq>   
   </part>
 
   <part id="gdk">
