@@ -1397,10 +1397,15 @@ public class MetaClass {
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 MetaMethod aMethod = (MetaMethod) iter.next();
                 if (method.isSame(aMethod)) {
+                    method.setInterfaceClass(aMethod.getDeclaringClass());
+                    /** @todo fix?
+                    // this doesn't seem to work
                     return true;
+                    */
+                    return false;
                 }
             }
-            log.warning("Cannot invoke method on protected/private class so must use reflection instead: " + method);
+            //log.warning("Cannot invoke method on protected/private class so must use reflection instead: " + method);
             return false;
         }
         /*
