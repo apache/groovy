@@ -357,8 +357,7 @@ public class Groovyc extends MatchingTask {
         Compiler compiler = new Compiler();
 
         if (compileList.length > 0) {
-            log(
-                "Compiling "
+            log("Compiling "
                     + compileList.length
                     + " source file"
                     + (compileList.length == 1 ? "" : "s")

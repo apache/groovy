@@ -38,6 +38,8 @@ public class UnexpectedTokenException
         String startLine = "<end-of-file>";
         String description = "<end-of-file>";
 
+        message.append( getSourceLocator() + ":" );
+
         if ( getToken() != null )
         {
             startLine = "" + getToken().getStartLine();
@@ -73,7 +75,7 @@ public class UnexpectedTokenException
         }
 
         message.append( " expected but found " + description );
-            
+
         return message.toString();
     }
 }

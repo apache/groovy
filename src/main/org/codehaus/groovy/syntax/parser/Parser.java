@@ -411,14 +411,14 @@ public class Parser
         return methodDeclaration;
     }
 
-    protected CSTNode parameterList()
+    protected CSTNode parameterDeclarationList()
         throws IOException, SyntaxException
     {
-        CSTNode parameterList = new CSTNode();
+        CSTNode parameterDeclarationList = new CSTNode();
 
         while ( lt() == Token.IDENTIFIER )
         {
-            parameterList.addChild( parameterDeclaration() );
+            parameterDeclarationList.addChild( parameterDeclaration() );
 
             if ( lt() == Token.COMMA )
             {
@@ -430,7 +430,7 @@ public class Parser
             }
         }
 
-        return parameterList;
+        return parameterDeclarationList;
     }
 
     protected CSTNode parameterDeclaration()
@@ -1001,8 +1001,10 @@ public class Parser
     protected CSTNode primaryExpression()
         throws IOException, SyntaxException
     {
-        CSTNode expr = null;
+        CSTNode expr       = null;
+        CSTNode identifier = null;
 
+      PREFIX_SWITCH:
         switch ( lt() )
         {
             case ( Token.KEYWORD_TRUE ):
@@ -1010,82 +1012,17 @@ public class Parser
             case ( Token.KEYWORD_NULL ):
             {
                 expr = rootNode( lt() );
-                break;
+                break PREFIX_SWITCH;
+            }
+            case ( Token.KEYWORD_NEW ):
+            {
+                expr = newExpression();
+                break PREFIX_SWITCH;
             }
             case ( Token.LEFT_PARENTHESIS ):
             {
-                consume( Token.LEFT_PARENTHESIS );
-
-                expr = expression();
-
-                consume( Token.RIGHT_PARENTHESIS );
-                break;
-            }
-            case ( Token.KEYWORD_THIS ):
-            case ( Token.KEYWORD_SUPER ):
-            case ( Token.IDENTIFIER ):
-            {
-                CSTNode cur = rootNode( lt() );
-
-                while ( lt() == Token.DOT )
-                {
-                    cur = rootNode( Token.DOT,
-                                    cur );
-
-                    consume( cur,
-                             Token.IDENTIFIER );
-                }
-
-                // TODO fix the whole method invocation stuff.
-                if ( lt() == Token.LEFT_PARENTHESIS )
-                {
-                    // foo.bar.baz()
-                    // -----------
-
-                    // foo()
-                    // ---
-
-                    switch ( cur.getToken().getType() )
-                    {
-                        case ( Token.DOT ):
-                        {
-                            CSTNode newCur = rootNode( Token.LEFT_PARENTHESIS );
-
-                            newCur.addChild( cur.getChild( 0 ) );
-                            newCur.addChild( cur.getChild( 1 ) );
-
-                            cur = newCur;
-                            break;
-                        }
-
-                        case ( Token.IDENTIFIER ):
-                        {
-                            CSTNode newCur = rootNode( Token.LEFT_PARENTHESIS );
-
-                            newCur.addChild( new CSTNode() );
-                            newCur.addChild( cur );
-
-                            cur = newCur;
-                            break;
-                        }
-                        case ( Token.KEYWORD_SUPER ):
-                        case ( Token.KEYWORD_THIS ):
-                        {
-                            break;
-                        }
-                        default:
-                        {
-                            break;
-                        }
-                    }
-
-                    cur.addChild( argumentList() );
-
-                    consume( Token.RIGHT_PARENTHESIS );
-                }
-
-                expr = cur;
-                break;
+                expr = parentheticalExpression();
+                break PREFIX_SWITCH;
             }
             case ( Token.INTEGER_NUMBER ):
             case ( Token.FLOAT_NUMBER ):
@@ -1093,23 +1030,142 @@ public class Parser
             case ( Token.SINGLE_QUOTE_STRING ):
             {
                 expr = rootNode( lt() );
-                break;
+                break PREFIX_SWITCH;
             }
             case ( Token.LEFT_SQUARE_BRACKET ):
             {
                 expr = listOrMapExpression();
-                break;
+                break PREFIX_SWITCH;
             }
             case ( Token.LEFT_CURLY_BRACE ):
             {
                 expr = closureExpression();
-                break;
+                break PREFIX_SWITCH;
+            }
+            case ( Token.KEYWORD_THIS ):
+            {
+                expr = new CSTNode( Token.keyword( -1,
+                                                   -1,
+                                                   "this" ) );
+                identifier = rootNode( lt() );
+                break PREFIX_SWITCH;
+            }
+            case ( Token.KEYWORD_SUPER ):
+            {
+                expr = new CSTNode( Token.keyword( -1,
+                                                   -1,
+                                                   "super" ) );
+                identifier = rootNode( lt() );
+                break PREFIX_SWITCH;
+            }
+            case ( Token.IDENTIFIER ):
+            {
+                identifier = rootNode( lt() );
+                expr       = identifier;
+                break PREFIX_SWITCH;
             }
             default:
             {
                 throwExpected( new int[] { } );
             }
         }
+
+        if ( lt() == Token.LEFT_PARENTHESIS
+             &&
+             identifier != null )
+        {
+            expr = new CSTNode( Token.keyword( -1,
+                                               -1,
+                                               "this" ) );
+
+            CSTNode methodExpr = rootNode( Token.LEFT_PARENTHESIS );
+            methodExpr.addChild( expr );
+            methodExpr.addChild( identifier );
+            methodExpr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
+            consume( Token.RIGHT_PARENTHESIS );
+            expr = methodExpr;
+        }
+
+      DOT_LOOP:
+        while ( lt() == Token.DOT )
+        {
+            CSTNode dotExpr = rootNode( Token.DOT );
+
+            if ( lt() == Token.IDENTIFIER )
+            {
+                identifier = rootNode( Token.IDENTIFIER );
+
+                if ( lt() == Token.LEFT_PARENTHESIS )
+                {
+                    CSTNode methodExpr = rootNode( Token.LEFT_PARENTHESIS );
+                    methodExpr.addChild( expr );
+                    methodExpr.addChild( identifier );
+                    methodExpr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
+                    consume( Token.RIGHT_PARENTHESIS );
+                    expr = methodExpr;
+                }
+                else
+                {
+                    dotExpr.addChild( expr );
+                    dotExpr.addChild( identifier );
+                    expr = dotExpr;
+                }
+            }
+            else
+            {
+                throwExpected( new int[] { Token.IDENTIFIER } );
+            }
+        }
+
+        return expr;
+    }
+
+    protected CSTNode parentheticalExpression()
+        throws IOException, SyntaxException
+    {
+        consume( Token.LEFT_PARENTHESIS );
+        
+        CSTNode expr = expression();
+        
+        consume( Token.RIGHT_PARENTHESIS );
+
+        return expr;
+    }
+
+    protected CSTNode parameterList(int endOfListDemarc)
+        throws IOException, SyntaxException
+    {
+        CSTNode parameterList = new CSTNode( Token.syntheticList() );
+
+        while ( lt() != endOfListDemarc )
+        {
+            parameterList.addChild( expression() );
+
+            if ( lt() == Token.COMMA )
+            {
+                consume( Token.COMMA );
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return parameterList;
+    }
+
+    protected CSTNode newExpression()
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = rootNode( Token.KEYWORD_NEW );
+
+        expr.addChild( datatype() );
+
+        consume( Token.LEFT_PARENTHESIS );
+
+        expr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
+
+        consume( Token.RIGHT_PARENTHESIS );
 
         return expr;
     }
@@ -1119,7 +1175,7 @@ public class Parser
     {
         CSTNode expr = rootNode( Token.LEFT_CURLY_BRACE );
 
-        expr.addChild( parameterList() );
+        expr.addChild( parameterDeclarationList() );
 
         boolean pipeRequired = true;
 
@@ -1375,6 +1431,7 @@ public class Parser
             throw new UnexpectedTokenException( la(),
                                                 type );
         }
+
         return getTokenStream().consume( type );
     }
 

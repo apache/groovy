@@ -8,12 +8,24 @@ public abstract class AbstractTokenStream
     private Token[] buf;
     private int first;
     private int avail;
+    private String sourceLocator;
 
     public AbstractTokenStream()
     {
-        this.buf   = new Token[5];
-        this.first  = -1;
-        this.avail = 0;
+        this( "<unknown>" );
+    }
+
+    public AbstractTokenStream(String sourceLocator)
+    {
+        this.buf           = new Token[5];
+        this.first         = -1;
+        this.avail         = 0;
+        this.sourceLocator = sourceLocator;
+    }
+
+    public String getSourceLocator()
+    {
+        return this.sourceLocator;
     }
 
     protected abstract Token nextToken()

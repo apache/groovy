@@ -31,6 +31,8 @@ public class UnexpectedCharacterException
     {
         StringBuffer message = new StringBuffer();
 
+        message.append( getSourceLocator() + ":" );
+
         message.append( getLine() );
         message.append( ":" );
         message.append( getColumn() );

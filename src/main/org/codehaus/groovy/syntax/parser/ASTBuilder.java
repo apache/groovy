@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.EmptyStatement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.ConstructorCallExpression;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
@@ -621,9 +622,23 @@ public class ASTBuilder
             {
                 return closureExpression( expressionRoot );
             }
+            case ( Token.KEYWORD_NEW ):
+            {
+                return newExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected ConstructorCallExpression newExpression(CSTNode expressionRoot)
+    {
+        String datatype = resolvedQualifiedName( expressionRoot.getChild( 0 ) );
+
+        TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
+
+        return new ConstructorCallExpression( datatype,
+                                              args );
     }
 
     protected ClosureExpression closureExpression(CSTNode expressionRoot)
