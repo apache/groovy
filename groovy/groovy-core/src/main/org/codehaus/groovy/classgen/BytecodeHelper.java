@@ -256,8 +256,11 @@ public class BytecodeHelper implements Constants {
                 if (value > Byte.MIN_VALUE && value < Byte.MAX_VALUE) {
                     cv.visitIntInsn(BIPUSH, value);
                 }
-                else {
+                else if (value > Short.MIN_VALUE && value < Short.MAX_VALUE) {
                     cv.visitIntInsn(SIPUSH, value);
+                }
+                else {
+                    cv.visitLdcInsn(new Integer(value));
                 }
         }
     }
