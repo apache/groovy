@@ -198,4 +198,7 @@ public class DumpClass {
         x = InvokerHelper.invokeMethod(z, "length", null);
     }
     
+    public void setBoolean() {
+        x = Boolean.TRUE;
+    }
 }

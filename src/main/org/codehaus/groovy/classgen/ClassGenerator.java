@@ -371,7 +371,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     first = false;
                 }
                 else {
-                    text = ", " + name;
+                    text = ", " + text;
                 }
 
                 cv.visitVarInsn(ALOAD, idx);
@@ -557,6 +557,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitLdcInsn(n);
             cv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
         }
+        else if (value instanceof Boolean) {
+            Boolean bool = (Boolean) value;
+            String text = (bool.booleanValue()) ? "TRUE" : "FALSE";
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", text, "Ljava/lang/Boolean;");
+        }
         else {
             throw new ClassGeneratorException(
                 "Cannot generate bytecode for constant: " + value + " of type: " + value.getClass().getName());
@@ -566,9 +571,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
         
-        if (expression.getExpression() instanceof MethodCallExpression) {
-            // lets convert the return value to a boolean
-            asBool.call(cv);
+        if (! comparisonExpression(expression.getExpression())) {
+            asBool.call(cv);        
         }
     }
 
@@ -841,6 +845,23 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         if (field != null) {
             return !field.isStatic();
+        }
+        return false;
+    }
+
+    protected boolean comparisonExpression(Expression expression) {
+        if (expression instanceof BinaryExpression) {
+            BinaryExpression binExpr = (BinaryExpression) expression;
+            switch (binExpr.getOperation().getType()) {
+                case Token.COMPARE_EQUAL:
+                case Token.COMPARE_GREATER_THAN:
+                case Token.COMPARE_GREATER_THAN_EQUAL:
+                case Token.COMPARE_LESS_THAN:
+                case Token.COMPARE_LESS_THAN_EQUAL:
+                case Token.COMPARE_IDENTICAL:
+                case Token.COMPARE_NOT_EQUAL:
+                    return true;
+            }
         }
         return false;
     }
