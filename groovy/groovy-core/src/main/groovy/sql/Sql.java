@@ -235,7 +235,7 @@ public class Sql {
             closure.call(results);
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -259,7 +259,7 @@ public class Sql {
             closure.call(results);
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -302,7 +302,7 @@ public class Sql {
             }
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -337,7 +337,7 @@ public class Sql {
             }
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -376,7 +376,7 @@ public class Sql {
             return isResultSet;
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -399,7 +399,7 @@ public class Sql {
             return this.updateCount;
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -422,7 +422,7 @@ public class Sql {
             return isResultSet;
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -446,7 +446,7 @@ public class Sql {
             return this.updateCount;
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -493,7 +493,7 @@ public class Sql {
             return statement.executeUpdate();
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
