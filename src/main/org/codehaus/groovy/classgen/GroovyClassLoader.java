@@ -46,10 +46,12 @@
 package org.codehaus.groovy.classgen;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.lexer.CharStream;
+import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.parser.ASTBuilder;
@@ -87,7 +89,34 @@ public class GroovyClassLoader extends ClassLoader {
      * @param charStream
      * @return the main class defined in the given script
      */
-    public Class parseClass(CharStream charStream) throws SyntaxException, IOException {
+    public Class parseClass(InputStream in) throws SyntaxException, IOException {
+        Class answer = null;
+        try {
+            answer = parseClass(new InputStreamCharStream(in));
+        }
+        catch (SyntaxException e) {
+            try {
+                in.close();
+            }
+            catch (Exception hide) {
+                // ignore
+            }
+            throw e;
+        }
+        catch (IOException e) {
+            try {
+                in.close();
+            }
+            catch (Exception hide) {
+                // ignore
+            }
+            throw e;
+        }
+        in.close();
+        return answer;
+    }
+    
+    protected Class parseClass(CharStream charStream) throws SyntaxException, IOException {
         Lexer lexer = new Lexer(charStream);
         Parser parser = new Parser(new LexerTokenStream(lexer));
         CSTNode compilationUnit = parser.compilationUnit();
