@@ -66,4 +66,8 @@ public class BooleanExpression extends Expression {
         visitor.visitBooleanExpression(this);
     }
 
+    public String getText() {
+        return expression.getText();
+    }
+
 }

@@ -158,6 +158,8 @@ public class Invoker {
      * @return
      */
     public int compareTo(Object left, Object right) {
+        //System.out.println("Comparing: " + left + " to: " + right);
+        
         if (left instanceof Comparable) {
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);

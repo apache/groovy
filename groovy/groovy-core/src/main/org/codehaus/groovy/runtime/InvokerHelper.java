@@ -149,7 +149,7 @@ public class InvokerHelper {
     }
     
     public static void assertFailed(String expression, Object message) {
-        if (message == null) {
+        if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
         }
         else {

@@ -12,12 +12,13 @@ class CompilerBugsTest extends GroovyTestCase {
     
 	void testAssert() {
         x = "abc";
-        /*	    
 	    
-	    assert x == 123;
-	    this.x = "abc";
+	    assert x := "abc";
 	    
-        assert x := "abc";
-*/
+/*	    
+	    this.x = "def";
+	    
+        assert x := "def";
+*/        
 	}
 }
