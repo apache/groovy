@@ -13,7 +13,7 @@ class MapConstructionTest extends GroovyTestCase {
     void testMap() {
         m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ];
 
-        //System.err.println( m );
+        System.err.println( m );
 
         mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ];
 

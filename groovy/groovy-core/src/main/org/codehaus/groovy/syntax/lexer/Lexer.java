@@ -363,10 +363,9 @@ public class Lexer
                         }
                         default:
                         {
-                            throw new UnexpectedCharacterException( getStartLine(),
-                                                                    getStartColumn()+1,
-                                                                    c,
-                                                                    new char[] { '|' } );
+                            token = Token.pipe( getStartLine(),
+                                                getStartColumn() );
+                            break MULTICHAR_SWITCH;
                         }
                     }
                     break ROOT_SWITCH;
