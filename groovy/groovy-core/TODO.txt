@@ -19,6 +19,8 @@ Things to Test
 
 * do wiki plugin to auto-test the examples
 
+* test synchronized statement
+
 * export script variables when using the console
 
 * test do while
@@ -59,8 +61,6 @@ Things to Test
 	
 Core Groovy Tasks
 =================
-
-* test synchronized statement
 
 * allow maps to be created using identifiers?
 	{name:'James', address:'London'}

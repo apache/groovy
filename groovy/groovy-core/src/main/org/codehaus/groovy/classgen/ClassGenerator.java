@@ -846,16 +846,32 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression("plus", expression);
                 break;
 
+            case Token.PLUS_EQUAL :
+                evaluateBinaryExpressionWithAsignment("plus", expression);
+                break;
+
             case Token.MINUS :
                 evaluateBinaryExpression("minus", expression);
+                break;
+
+            case Token.MINUS_EQUAL :
+                evaluateBinaryExpressionWithAsignment("minus", expression);
                 break;
 
             case Token.MULTIPLY :
                 evaluateBinaryExpression("multiply", expression);
                 break;
 
+            case Token.MULTIPLY_EQUAL :
+                evaluateBinaryExpressionWithAsignment("multiply", expression);
+                break;
+
             case Token.DIVIDE :
                 evaluateBinaryExpression("divide", expression);
+                break;
+
+            case Token.DIVIDE_EQUAL :
+                evaluateBinaryExpressionWithAsignment("divide", expression);
                 break;
 
             case Token.KEYWORD_INSTANCEOF :
@@ -1180,7 +1196,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         String type = field.getType();
         int tempIndex = defineVariable(createVariableName("field"), "java.lang.Object", false).getIndex();
-        
 
         if (leftHandExpression && !holder) {
             // this may be superflous
@@ -1287,7 +1302,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
                 if (leftHandExpression) {
                     if (holder) {
-                        int tempIndex = defineVariable(createVariableName("reference"), "java.lang.Object", false).getIndex();
+                        int tempIndex =
+                            defineVariable(createVariableName("reference"), "java.lang.Object", false).getIndex();
                         cv.visitVarInsn(ASTORE, tempIndex);
 
                         cv.visitVarInsn(ALOAD, index);
@@ -1682,6 +1698,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         invokeMethodMethod.call(cv);
     }
 
+    protected void evaluateBinaryExpressionWithAsignment(String method, BinaryExpression expression) {
+        evaluateBinaryExpression(method, expression);
+
+        Expression leftExpression = expression.getLeftExpression();
+        leftHandExpression = true;
+        leftExpression.visit(this);
+        leftHandExpression = false;
+    }
+
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (isNonStaticField(leftExpression)) {
@@ -1736,15 +1761,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String classInternalName = getClassInternalName(className);
         cv.visitTypeInsn(INSTANCEOF, classInternalName);
     } /**
-                                                      * @return true if the given argument expression requires the stack, in
-                                                      *         which case the arguments are evaluated first, stored in the
-                                                      *         variable stack and then reloaded to make a method call
-                                                      */
+                                                         * @return true if the given argument expression requires the stack, in
+                                                         *         which case the arguments are evaluated first, stored in the
+                                                         *         variable stack and then reloaded to make a method call
+                                                         */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     } /**
-                                                      * @return true if the given expression represents a non-static field
-                                                      */
+                                                         * @return true if the given expression represents a non-static field
+                                                         */
     protected boolean isNonStaticField(Expression expression) {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
@@ -2009,19 +2034,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String createVariableName(String type) {
         return "__" + type + idx;
     } /**
-                                                      * @return if the type of the expression can be determined at compile time
-                                                      *         then this method returns the type - otherwise java.lang.Object
-                                                      *         is returned.
-                                                      */
+                                                         * @return if the type of the expression can be determined at compile time
+                                                         *         then this method returns the type - otherwise java.lang.Object
+                                                         *         is returned.
+                                                         */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
             return Boolean.class;
         } /** @todo we need a way to determine this from an expression */
         return Object.class;
     } /**
-                                                      * @return true if the value is an Integer, a Float, a Long, a Double or a
-                                                      *         String .
-                                                      */
+                                                         * @return true if the value is an Integer, a Float, a Long, a Double or a
+                                                         *         String .
+                                                         */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
@@ -2042,8 +2067,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         return methodNode.isStatic();
     } /**
-                                                      * @return an array of ASM internal names of the type
-                                                      */
+                                                         * @return an array of ASM internal names of the type
+                                                         */
     private String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
@@ -2052,8 +2077,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         return answer;
     } /**
-                                                      * @return the ASM internal name of the type
-                                                      */
+                                                         * @return the ASM internal name of the type
+                                                         */
     protected String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
@@ -2064,8 +2089,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         return answer;
     } /**
-                                                      * @return the ASM method type descriptor
-                                                      */
+                                                         * @return the ASM method type descriptor
+                                                         */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
@@ -2076,8 +2101,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         buffer.append(getTypeDescription(returnTypeName));
         return buffer.toString();
     } /**
-                                                      * @return the ASM type description
-                                                      */
+                                                         * @return the ASM type description
+                                                         */
     protected String getTypeDescription(String name) { // lets avoid class loading
         // return getType(name).getDescriptor();
         if (name == null) {
@@ -2093,8 +2118,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         return prefix + "L" + name.replace('.', '/') + ";";
     } /**
-                                                      * @return the ASM type for the given class name
-                                                      */
+                                                         * @return the ASM type for the given class name
+                                                         */
     protected Type getType(String className) {
         if (className.equals("void")) {
             return Type.VOID_TYPE;
@@ -2102,8 +2127,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return Type.getType(loadClass(className));
         //return Type.getType(className);
     } /**
-                                                      * @return loads the given type name
-                                                      */
+                                                         * @return loads the given type name
+                                                         */
     protected Class loadClass(String name) {
         try {
             return getClassLoader().loadClass(name);

@@ -709,10 +709,15 @@ public class ASTBuilder
             case ( Token.COMPARE_GREATER_THAN ):
             case ( Token.COMPARE_GREATER_THAN_EQUAL ):
             case ( Token.PLUS ):
+            case ( Token.PLUS_EQUAL ):
             case ( Token.MINUS ):
-            case ( Token.DIVIDE ):
+            case ( Token.MINUS_EQUAL ):
             case ( Token.MULTIPLY ):
+            case ( Token.MULTIPLY_EQUAL ):
+            case ( Token.DIVIDE ):
+            case ( Token.DIVIDE_EQUAL ):
             case ( Token.MOD ):
+            case ( Token.MOD_EQUAL ):
             case ( Token.EQUAL ):
             case ( Token.KEYWORD_INSTANCEOF ):
             case ( Token.LOGICAL_AND ):
