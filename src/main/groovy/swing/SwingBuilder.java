@@ -104,6 +104,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
@@ -379,6 +380,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("table", JTable.class);
 
         registerBeanFactory("textArea", JTextArea.class);
+        registerBeanFactory("textPane", JTextPane.class);
         registerBeanFactory("textField", JTextField.class);
         registerBeanFactory("toggleButton", JToggleButton.class);
         registerBeanFactory("tree", JTree.class);
