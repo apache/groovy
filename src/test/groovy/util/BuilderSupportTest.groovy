@@ -1,5 +1,7 @@
 package groovy.util
 
+import groovy.lang.MissingMethodException
+
 /**
  	Testing BuilderSupport and reveal how calling
 	methods on it result in implementation callbacks.
@@ -42,6 +44,50 @@ class BuilderSupportTest extends GroovyTestCase{
 			'set_parent', 'x', 'x',
 				'node_completed','x','x',
 			'node_completed',null,'x']
+	}
+
+	void testSimpleNodeWithOneAttributeAndValue() {
+		b = new SpoofBuilder()
+		node = b.foo(bar:'baz', 'value')
+		assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+	}
+
+	void testSimpleNodeWithValueAndOneAttribute() {
+		b = new SpoofBuilder()
+		node = b.foo('value', bar:'baz')
+		assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+	}
+
+	void testSimpleNodeWithOneAttributeAndValueAndClosure() {
+		b = new SpoofBuilder()
+		node = b.foo(bar:'baz', 'value') { 1 }
+		assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+	}
+
+	void testSimpleNodeWithValueAndOneAttributeAndClosure() {
+		b = new SpoofBuilder()
+		node = b.foo('value', bar:'baz') { 1 }
+		assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
+	}
+
+	void testSimpleNodeTwoValues() {
+		b = new SpoofBuilder()
+		shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2')})
+	}
+
+	void testSimpleNodeTwoValuesClosure() {
+		b = new SpoofBuilder()
+		shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2') { 1 } })
+	}
+
+	void testSimpleNodeThreeValues() {
+		b = new SpoofBuilder()
+		shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3') })
+	}
+
+	void testSimpleNodeFourValues() {
+		b = new SpoofBuilder()
+		shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
 	}
 }
 
