@@ -109,6 +109,7 @@ public abstract class BuilderSupport implements GroovyObject {
 
             current = oldCurrent;
         }
+        nodeCompleted(node);
         return node;
     }
 
@@ -124,6 +125,13 @@ public abstract class BuilderSupport implements GroovyObject {
     protected abstract Object createNode(Object name);
     protected abstract Object createNode(Object name, Object value);
     protected abstract Object createNode(Object name, Map attributes);
+
+    /**
+     * A hook to allow nodes to be processed once they have had all of their
+     * children applied
+     */
+    protected void nodeCompleted(Object node) {
+    }
 
     protected Object getCurrent() {
         return current;
