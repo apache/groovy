@@ -76,6 +76,10 @@ public class MetaBeanProperty extends MetaProperty {
 		}
 
 		try {
+			// we'll convert a GString to String if needed
+			if(getType() == String.class && !(newValue instanceof String))
+				newValue = newValue.toString();
+
 			setter.invoke(object, new Object[] { newValue });
 		}
 		catch(Exception e) {
