@@ -980,17 +980,29 @@ variableDeclarator![AST mods, AST t]
         {#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id, v);}
     ;
 
-// TODO - GOT TO HERE JRR --->
+/** Used in cases where a declaration cannot have commas, or ends with the "in" operator instead of '='. */
+singleVariable![AST mods, AST t]
+        :
+                id:variableName
+                {#singleVariable = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id);}
+        ;
 
+variableName
+        :   (IDENT | "it")
+        ;
+
+/*OBS*
 declaratorBrackets[AST typ]
 	:	{#declaratorBrackets=typ;}
 		(lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!)*
 	;
+*OBS*/
 
 varInitializer
-	:	( ASSIGN^ initializer )?
+	:	( ASSIGN^ nls! initializer )?
 	;
 
+/*OBS*
 // This is an initializer used to set up an array.
 arrayInitializer
 	:	lc:LCURLY^ {#lc.setType(ARRAY_INIT);}
@@ -1010,15 +1022,18 @@ arrayInitializer
 			)?
 		RCURLY!
 	;
-
+*OBS*/
 
 // The two "things" that can initialize an array element are an expression
 // and another (nested) array initializer.
 initializer
 	:	expression
+/*OBS*  // Use [...] for initializing all sorts of sequences, including arrays.
 	|	arrayInitializer
+*OBS*/
 	;
 
+/*OBS???
 // This is the header of a method. It includes the name and parameters
 // for the method.
 // This also watches for a list of exception classes in a "throws" clause.
@@ -1031,10 +1046,11 @@ ctorHead
 		// get the list of exceptions that this method is declared to throw
 		(throwsClause)?
 	;
+*OBS*/
 
 // This is a list of exception classes that the method is declared to throw
 throwsClause
-	:	"throws"^ identifier ( COMMA! identifier )*
+	:	"throws"^ nls! identifier ( COMMA! nls! identifier )* nls!
 	;
 
 // A list of formal parameters
@@ -1044,8 +1060,8 @@ parameterDeclarationList
 	// The semantic check in ( .... )* block is flagged as superfluous, and seems superfluous but
 	// is the only way I could make this work. If my understanding is correct this is a known bug
 	:	(	( parameterDeclaration )=> parameterDeclaration
-			( options {warnWhenFollowAmbig=false;} : ( COMMA! parameterDeclaration ) => COMMA! parameterDeclaration )*
-			( COMMA! variableLengthParameterDeclaration )?
+			( options {warnWhenFollowAmbig=false;} : ( COMMA! nls! parameterDeclaration ) => COMMA! nls! parameterDeclaration )*
+			( COMMA! nls! variableLengthParameterDeclaration )?
 		|
 			variableLengthParameterDeclaration
 		)?
@@ -1055,12 +1071,14 @@ parameterDeclarationList
 
 // A formal parameter.
 parameterDeclaration!
-	:	pm:parameterModifier t:typeSpec[false] id:IDENT
-		pd:declaratorBrackets[#t]
-		{#parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-									pm, #([TYPE,"TYPE"],pd), id);}
-	;
+        :       ("def"!)?  // useless but permitted for symmetry
+                pm:parameterModifier ( options {greedy=true;} : t:typeSpec[false])? id:parameterIdent
+                /*OBS*pd:declaratorBrackets[#t]*/
+                {#parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
+                                                                        pm, #([TYPE,"TYPE"],t), id);}
+        ;
 
+// TODO - possibly add nls! somewhere within variableLengthParameterDeclaration
 variableLengthParameterDeclaration!
 	:	pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
 		pd:declaratorBrackets[#t]
@@ -1074,6 +1092,62 @@ parameterModifier
 	:	(options{greedy=true;} : annotation)* (f:"final")? (annotation)*
 		{#parameterModifier = #(#[MODIFIERS,"MODIFIERS"], #parameterModifier);}
 	;
+
+closureParameters
+        :   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
+                {#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
+        |   LPAREN! parameterDeclarationList RPAREN! BOR!
+                // Yes, you can have a full parameter declaration list.
+                // Yes, you must parenthesize it (as for a named method) unless it's really, really simple.
+        ;
+
+closureParametersStart!
+        :   BOR
+        |       parameterIdent! nls! (BOR | COMMA)
+        |   LPAREN balancedTokens! RPAREN nls! BOR
+        ;
+
+/** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
+closureParameter!
+        :   parameterIdent!
+                {#closureParameter = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
+                                                                #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"]),
+                                                                #closureParameter);}
+        ;
+
+/** A formal parameter name can be decorated with the optionality operator, meaning that
+ *  the argument can be omitted by the caller.
+ *  (This has the same effect as creating a new wrapper overloading that
+ *  passes the appropriate null value in place of the missing argument.)
+ *  <p>
+ *  A formal parameter name can be decorated with a spread operator f(*x),
+ *  which means the name will be bound to a list of argument values.
+ *  This spread argument must be the last argument, except perhaps for
+ *  a Map argument (which may also be spread), and except perhaps for
+ *  a final Closure argument.  The Map and Closure parameters must be
+ *  explicitly typed, in order to provide a clear basis for dividing
+ *  incoming arguments into unlabeled, labeled, and closure categories.
+ *  <p>
+ *  Examples:
+ *    {(*al) | al}(0,1,2)  ===  [0,1,2]
+ *    {(*al) | al}(0,a:1,b:2)  ===  [0,[a:1,b:2]]
+ *    {(*al) | al}(0){s}  ===  [0,{s}]
+ *    {(*al,Closure c) | al}(0){s}  ===  [0]
+ *    {(*al,Map m) | al}(0,a:1,b:2)  ===  [0]
+ *    {(*al,Map m) | m}(0)  ===  [:]
+ */
+parameterIdent
+        :   (   // Spread operator:  {(*y)|y}(1,2,3)  ===  [1,2,3]
+                        sp:STAR^                                {#sp.setType(SPREAD_ARG);}
+                |   // Optional-null operator:  {(?x,?y)|[x,y]}(1)  ===  [1,null]
+                        op:QUESTION^                    {#op.setType(OPTIONAL_ARG);}
+                )?
+                (   IDENT
+                |   "it"                // allow keyword "it", but only as a method or closure parameter
+                )
+        ;
+
+//TODO - GOT TO HERE JRR --->
 
 // Compound statement. This is used in many contexts:
 // Inside a class definition prefixed with "static":
