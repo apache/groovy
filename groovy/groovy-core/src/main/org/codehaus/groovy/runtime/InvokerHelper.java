@@ -45,17 +45,16 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.ObjectRange;
 import groovy.lang.Script;
-import groovy.lang.Binding;
 import groovy.lang.Tuple;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -291,8 +290,7 @@ public class InvokerHelper {
 
     public static Script createScript(Class scriptClass, Binding context) {
         try {
-            Constructor constructor = scriptClass.getConstructor(new Class[] {});
-            final GroovyObject object = (GroovyObject) constructor.newInstance(new Object[] {});
+            final GroovyObject object = (GroovyObject) scriptClass.newInstance();
             Script script = null;
             if (object instanceof Script) {
                 script = (Script) object;
@@ -306,8 +304,7 @@ public class InvokerHelper {
                         return null;
                     } };
             }
-            Method setBindings = script.getClass().getMethod("setBindings", new Class[] { Binding.class });
-            setBindings.invoke(script, new Object[] { context });
+            script.setBinding(context);
             return script;
         }
         catch (Exception e) {
