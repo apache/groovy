@@ -702,7 +702,11 @@ public class MetaClass {
     protected void addMethods(Class theClass) {
         Method[] methodArray = theClass.getDeclaredMethods();
         for (int i = 0; i < methodArray.length; i++) {
-            MetaMethod method = createMetaMethod(methodArray[i]);
+        	Method reflectionMethod = methodArray[i];
+            if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
+        		continue;
+        	}
+            MetaMethod method = createMetaMethod(reflectionMethod);
             addMethod(method);
         }
     }
