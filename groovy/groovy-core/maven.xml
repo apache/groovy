@@ -257,12 +257,13 @@
     <mkdir dir="${basedir}/target/test-classes/wiki"/>
     <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
     
+<!-- TODO: temp. commented out so that groovy-core builds whilst we migrate these .groovy files over to JSR syntax
     <copy todir="${basedir}/target/classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
         <exclude name="CVS/*"/>
       </fileset>
-    </copy>
+    </copy>-->
     <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
