@@ -1,6 +1,6 @@
 1 Introduction to Groovy
 
-Groovy is a powerful new high level dynamic language for the JVM combining lots of great features from languages like Python, Ruby and Smalltalk 
+Groovy is a powerful new agile language for the JVM combining lots of great features from languages like Python, Ruby and Smalltalk 
 and making them available to the Java developers using a Java-like syntax. 
 
 Groovy is designed to help you get things done on the Java platform in a quicker, more concise and fun way - bringing the power
