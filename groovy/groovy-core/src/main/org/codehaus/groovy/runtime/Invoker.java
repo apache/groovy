@@ -313,11 +313,19 @@ public class Invoker {
         return false;
     }
 
+    public String inspect(Object self) {
+        return format(self, true);
+    }
+    
     /**
      * A helper method to provide some better toString() behaviour such as turning arrays
      * into tuples
      */
     public String toString(Object arguments) {
+        return format(arguments, false);
+    }
+    
+    protected String format(Object arguments, boolean verbose) {
         if (arguments == null) {
             return "null";
         }
@@ -328,7 +336,7 @@ public class Invoker {
                 if (i > 0) {
                     buffer.append(", ");
                 }
-                buffer.append(toString(array[i]));
+                buffer.append(format(array[i], verbose));
             }
             buffer.append("]");
             return buffer.toString();
@@ -336,9 +344,9 @@ public class Invoker {
         else if (arguments instanceof Range) {
             Range range = (Range) arguments;
             StringBuffer buffer = new StringBuffer();
-            buffer.append(toString(range.getFrom()));
+            buffer.append(format(range.getFrom(), verbose));
             buffer.append("..");
-            buffer.append(toString(range.getTo()));
+            buffer.append(format(range.getTo(), verbose));
             return buffer.toString();
         }
         else if (arguments instanceof List) {
@@ -352,7 +360,7 @@ public class Invoker {
                 else {
                     buffer.append(", ");
                 }
-                buffer.append(toString(iter.next()));
+                buffer.append(format(iter.next(), verbose));
             }
             buffer.append("]");
             return buffer.toString();
@@ -372,21 +380,28 @@ public class Invoker {
                     buffer.append(", ");
                 }
                 Map.Entry entry = (Map.Entry) iter.next();
-                buffer.append(toString(entry.getKey()));
+                buffer.append(format(entry.getKey(), verbose));
                 buffer.append(":");
-                buffer.append(toString(entry.getValue()));
+                buffer.append(format(entry.getValue(), verbose));
             }
             buffer.append("]");
             return buffer.toString();
         }
         else if (arguments instanceof String) {
-            return (String) arguments;
+            if (verbose) {
+                return "\"" + arguments + "\"";
+            }
+            else {
+                return (String) arguments;
+            }
         }
         else {
             return arguments.toString();
         }
     }
 
+
+    
     /**
      * Sets the property on the given object
      * 

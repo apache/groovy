@@ -36,6 +36,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyObject;
 import groovy.lang.Range;
 import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
@@ -93,10 +94,10 @@ public class DefaultGroovyMethods {
     private static final Integer ONE = new Integer(1);
 
     /**
-     * Generates a detailed inspection string of an object showing its class,
+     * Generates a detailed dump string of an object showing its class,
      * hashCode and fields
      */
-    public static String inspect(Object self) {
+    public static String dump(Object self) {
         if (self == null) {
             return "null";
         }
@@ -105,11 +106,15 @@ public class DefaultGroovyMethods {
         buffer.append(klass.getName());
         buffer.append("@");
         buffer.append(Integer.toHexString(self.hashCode()));
+        boolean groovyObject = self instanceof GroovyObject;
         while (true) {
             Field[] fields = klass.getDeclaredFields();
             for (int i = 0; i < fields.length; i++) {
                 Field field = fields[i];
                 if ((field.getModifiers() & Modifier.STATIC) == 0) {
+                    if (groovyObject && field.getName().equals("metaClass")) {
+                        continue;
+                    }
                     field.setAccessible(true);
                     buffer.append(" ");
                     buffer.append(field.getName());
@@ -146,11 +151,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * @return the String that would be printend on the console if the object
-     *         were displayed in interactive mode
+     * @return a String that matches what would be typed into a terminal to 
+     * create this object. e.g. [1, 'hello'].inspect() -> [1, "hello"]
      */
-    public static String toConsoleOutput(Object self) {
-        return InvokerHelper.toString(self);
+    public static String inspect(Object self) {
+        return InvokerHelper.inspect(self);
     }
 
     /**

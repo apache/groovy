@@ -131,6 +131,10 @@ public class InvokerHelper {
         return getInstance().toString(arguments);
     }
 
+    public static String inspect(Object self) {
+        return getInstance().inspect(self);
+    }
+    
     public static Object getProperty(Object object, String property) {
         return getInstance().getProperty(object, property);
     }
