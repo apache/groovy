@@ -263,7 +263,8 @@ public class Token {
     public static final int KEYWORD_LONG = 549;
     public static final int KEYWORD_SHORT = 550;
     public static final int KEYWORD_BOOLEAN = 551;
-
+    public static final int KEYWORD_DEF = 560;
+    
     public static final int SYNTH_METHOD = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
     public static final int SYNTH_LIST = 802;
@@ -292,6 +293,7 @@ public class Token {
         addKeyword("class", KEYWORD_CLASS);
         addKeyword("const", KEYWORD_CONST);
         addKeyword("continue", KEYWORD_CONTINUE);
+        addKeyword("def", KEYWORD_DEF);
         addKeyword("default", KEYWORD_DEFAULT);
         addKeyword("do", KEYWORD_DO);
         addKeyword("else", KEYWORD_ELSE);
