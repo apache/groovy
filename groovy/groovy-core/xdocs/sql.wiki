@@ -5,9 +5,14 @@ You can perform queries and SQL statements, passing in variables easily with pro
 of statements, connections and exception handling thanks to closures. 
 
 {code:groovysh}
+import groovy.sql.Sql
+import groovy.sql.TestHelper
+
 foo = 'cheese'
+sql = TestHelper.makeSql()
+
 sql.queryEach("select * from FOOD where type=${foo}") { 
-    println("Gromit likes ${it.name}") 
+    println "Gromit likes ${it.name}" 
 }
 {code}
 
@@ -15,9 +20,14 @@ Or you can create a DataSet which allows you to query SQL using familar closure 
 so that the same query could work easily on in memory objects or via SQL. e.g. 
 
 {code:groovysh}
+import groovy.sql.Sql
+import groovy.sql.TestHelper
+
+sql = TestHelper.makeSql()
+
 food = sql.dataSet('FOOD')
 cheese = food.findAll { it.type == 'cheese' }
-cheese.each { println("Eat ${it.name}") }
+cheese.each { println "Eat ${it.name}" }
 {code}
 
 1.1 Examples
@@ -25,40 +35,39 @@ cheese.each { println("Eat ${it.name}") }
 Here's an example of using Groovy SQL along with {link:GroovyMarkup|markup.html} . 
 
 {code:groovysh}
+import groovy.sql.Sql
+import groovy.sql.TestHelper
+import groovy.xml.MarkupBuilder
+
+sql = TestHelper.makeSql()
+
 # lets output some XML builder 
 # could be SAX / StAX / DOM / TrAX / text etc
-xml = createXmlBuilder()
+xml = new MarkupBuilder()
 
 xml.customers() {
-    loc = 'London'
-    sql.queryEach ("select * from customer where location = ${loc}) {
-
-    æææ # lets process each row by emitting some markup
-        xml.customer(id:it.id, type:'Customer', foo:someVariable)) {
-            if (it.parter == 'Y') {
-                role("partner") 
-            }
-            name(it.customer_name)
-            location(id:it.location_id, name:it.location_name)
-        }
+    ignore = 'James'
+    sql.queryEach ("select * from person where firstname != ${ignore}") {
+	    # lets process each row by emitting some markup
+	    xml.customer(id:it.id, type:'Customer')) {
+	        name(it.firstname + " " + it.lastname)
+	        location(id:it.location_id, name:it.location_name)
+	    }
     }
 }
 {code}
 
 This could generate, dynamically something like 
 
-{code:groovysh}
+{code:output}
 <customers>
   <customer id="123" type="Customer" foo="whatever">
     <role>partner</role>
     <name>James</name>
     <location id="5" name="London"/>
   </customer>
-  ...
 </customers>
 {code}
 
-There's an example {link:test case which demonstrates|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/sql/SqlCompleteTest.groovy?rev=HEAD&view=auto} all of these query mechanisms in action. 
-
-
-
+There's an example {link:test case which demonstrates|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/sql/SqlCompleteTest.groovy?rev=HEAD&view=auto} 
+all of these query mechanisms in action. 
