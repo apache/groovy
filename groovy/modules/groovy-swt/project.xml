@@ -40,23 +40,7 @@
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm</artifactId>
-            <version>1.4.1</version>
-            <type>jar</type>
-            <url>http://asm.objectweb.org/</url>
-            <properties/>
-        </dependency>
-        <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm-util</artifactId>
-            <version>1.4.1</version>
-            <type>jar</type>
-            <url>http://asm.objectweb.org/</url>
-            <properties/>
-        </dependency>
-        <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm-attrs</artifactId>
-            <version>1.4.1</version>
+            <version>1.4.3</version>
             <type>jar</type>
             <url>http://asm.objectweb.org/</url>
             <properties/>
@@ -78,7 +62,7 @@
         <dependency>
             <groupId>groovy</groupId>
             <artifactId>groovy</artifactId>
-            <version>1.0-beta-5</version>
+            <version>1.0-beta-6</version>
             <type>jar</type>
             <properties/>
         </dependency>

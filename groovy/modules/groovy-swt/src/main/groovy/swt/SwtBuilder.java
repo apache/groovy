@@ -146,7 +146,7 @@ public class SwtBuilder extends BuilderSupport {
             try {
                 widget = factory.newInstance(attributes, current);
             } catch (Exception e) {
-                log.log(Level.WARNING, e.toString());
+                log.log(Level.WARNING, "Node " + name + " returned : " + e.toString());
             }
         } else {
              log.log(Level.WARNING, "Could not find match for name: " + name);

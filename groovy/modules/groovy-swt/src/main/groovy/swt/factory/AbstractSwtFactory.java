@@ -18,6 +18,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.ui.forms.widgets.Section;
 
 /**
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
@@ -35,6 +36,7 @@ public abstract class AbstractSwtFactory {
      * @param properties
      */
     protected void setBeanProperties(Object bean, Map properties) {
+        
         if (bean instanceof Control) {
             Control control = (Control) bean;
 
