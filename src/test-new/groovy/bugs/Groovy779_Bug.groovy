@@ -1,4 +1,4 @@
-package bugs
+package groovy.bugs
 
 
 public class Groovy779_Bug extends GroovyTestCase {
