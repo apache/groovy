@@ -193,11 +193,18 @@ public class InvokerHelper {
         return !bool;
     }
 
-    public static Number negate(Number number) {
-    	if (number instanceof Double) {
+    public static Object negate(Object value) {
+    	if (value instanceof Double) {
+    	    Double number = (Double) value;
     		return new Double(-number.doubleValue());
     	}
-   		return new Integer(-number.intValue());
+    	else if (value instanceof Number) {
+    	    Number number = (Number) value;
+    	    return new Integer(-number.intValue());
+    	}
+    	else {
+    	    return value;
+    	}
     }
     
     public static boolean isCase(Object switchValue, Object caseExpression) {
