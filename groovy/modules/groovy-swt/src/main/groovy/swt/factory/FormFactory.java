@@ -16,6 +16,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.forms.widgets.ScrolledPageBook;
 import org.eclipse.ui.forms.widgets.Section;
 
@@ -83,8 +84,12 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             form.setText(text);
             return form;
         }
-        if ("scrolledForm".equals(type)) { return toolkit
-                .createScrolledForm(parentComposite); }
+        if ("scrolledForm".equals(type)) {
+            ScrolledForm scrolledForm = toolkit
+                    .createScrolledForm(parentComposite);
+            scrolledForm.setText(text);
+            return scrolledForm;
+        }
         if ("formButton".equals(type)) { return toolkit.createButton(
                 parentComposite, text, style); }
         if ("formColors".equals(type)) { return toolkit.getColors(); }
@@ -137,7 +142,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 parentComposite, style); }
         if ("formTable".equals(type)) { return toolkit.createTable(
                 parentComposite, style); }
-        if ("formToolkit".equals(type)) { return toolkit; }        
+        if ("formToolkit".equals(type)) { return toolkit; }
         if ("formFormattedText".equals(type)) {
             boolean parseTags = false;
             boolean expandURLs = false;
