@@ -2819,7 +2819,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected void onLineNumber(ASTNode statement) {
         int number = statement.getLineNumber();
         if (number >= 0 && cv != null) {
-            cv.visitLineNumber(number, new Label());
+            Label l = new Label();
+            cv.visitLabel(l);
+            cv.visitLineNumber(number, l);
         }
     }
 
