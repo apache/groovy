@@ -230,6 +230,7 @@ public class GroovyTestCase extends TestCase {
         }
         catch (Exception e) {
             failed = true;
+            System.out.println("Worked: caught expected exception: " + e);
         }
         assertTrue("Closure " + code + " should have failed", failed);
     }
@@ -241,7 +242,8 @@ public class GroovyTestCase extends TestCase {
         }
         catch (Exception e) {
             if (clazz.isInstance(e)) {
-            		failed = true;
+                failed = true;
+                System.out.println("Worked: caught expected exception: " + e);
             }
         }
         assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), failed);

@@ -483,6 +483,15 @@ public class ASTBuilderTest extends TestParserSupport {
         System.out.println(statement.getStatements());
     }
 
+    public void testDionsTypo() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { println ${foo}\n}}", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+    }
+
     public void testMethodWithArrayTypeParam() throws Exception {
         ModuleNode module = parse("class Foo { void main(String[] args) { println(args) } }", "Dummy.groovy");
 
