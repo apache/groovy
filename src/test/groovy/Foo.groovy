@@ -32,6 +32,17 @@ class Foo implements Serializable {
  	    return blah
  	}
 	
+    // declare a bean with explicit typing
+    private String body
+
+    public String getBody() {
+        return this.body
+    }
+
+    public void setBody(String body) {
+        this.body = body
+    }
+
 	String toString() {
 		return super.toString() + " name: ${name} location: ${location}"
 	}

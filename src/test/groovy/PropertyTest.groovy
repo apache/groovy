@@ -108,5 +108,11 @@ class PropertyTest extends GroovyTestCase {
 		// verify we can't set this property, it's read-only
 		shouldFail { i.length = 6 }
 	}
+
+    void testGstringAssignment() {
+        foo = new Foo()
+        foo.body = "${foo.name}"
+        assert foo.body == "James"
+    }
 }
 
