@@ -68,6 +68,11 @@ public class RunGroovyTest extends TestSupport {
         object.invokeMethod("testListMap", null);
     }
 
+    public void testClosureWithDefaultParam() throws Exception {
+        GroovyObject object = compile("src/test/groovy/ClosureWithDefaultParamTest.groovy");
+        object.invokeMethod("testListMap", null);
+    }
+
     public void testOptionalReturn() throws Exception {
         GroovyObject object = compile("src/test/groovy/OptionalReturnTest.groovy");
         object.invokeMethod("testSingleExpression", null);

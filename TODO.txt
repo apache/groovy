@@ -40,6 +40,10 @@ Core Groovy Tasks
 
 * new GroovyMethods	to be added
 	- Object.getMetaClass()
+	- Object.eachProperty
+	- Object.eachPropertyName { object.getProperty(it) }
+	- Object.setProperties(foo:'abc', x:123)
+	
 	- removeIf { x | x > 0 }
 	- List.first, List.last, pop
 	- List.eachWithindex { item, idx | ... }
@@ -52,13 +56,26 @@ Core Groovy Tasks
 	- eval("....")
 	- gets
 	- load(...)
-	- Object.setProperties(foo:'abc', x:123)
 	- File.eachByte
 	- configure method on beans?
 		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
+
+* special variables
+	this 
+	class
+	it (closure parameter)
+	super (base class)
 		
+* BeanBuilder - builder which creates a tree of beans
+	builder.bean(class:SomeClass, x:123, b:'hello') {
+		nestedProperty(a:123)
+		nestedProperty2(class:DerivedClass, b:43)
+	}
+	using adder method as well as setter methods
+
+			
 * closures - handle passing in of variables from outer scope?	
 	use a Holder object for all local variables and pass holder
 	into the closure

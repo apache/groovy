@@ -1160,6 +1160,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
         Parameter[] parameters = expression.getParameters();
+        if (parameters == null || parameters.length == 0) {
+            // lets create a default 'it' parameter
+            parameters = new Parameter[] { new Parameter("it") };
+        }
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
