@@ -94,7 +94,7 @@ be passed into methods like any other object
 
 {code:groovysh}
 closure = { param | param + 1 }
-answer = [1, 2].map(closure)
+answer = [1, 2].collect(closure)
 assert answer == [2, 3]
 {code}
 
@@ -102,7 +102,7 @@ Though there is some syntax sugar to make calling methods which take a closure e
 Instead of specifying parenthesis, you can just specify a closure. e.g.
 
 {code:groovysh}
-answer = [1, 2].map { param | param + 1 }
+answer = [1, 2].collect { param | param + 1 }
 assert answer == [2, 3]
 {code}
 

@@ -13,7 +13,7 @@ class GPathTest extends GroovyTestCase {
         assert tree.people.name == ['James', 'Bob']
 
         expected = ['James works on 2 project(s)', 'Bob works on 2 project(s)']
-        assert tree.people.findAll { it.projects.size() > 1 }.map { it.name + ' works on ' + it.projects.size() + " project(s)" } == expected
+        assert tree.people.findAll { it.projects.size() > 1 }.collect { it.name + ' works on ' + it.projects.size() + " project(s)" } == expected
 }
     
     protected createTree() {       

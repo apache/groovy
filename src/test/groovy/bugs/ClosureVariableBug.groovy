@@ -3,7 +3,7 @@
  */
 class ClosureVariableBug extends GroovyTestCase {
     
-    void testBug() {
+    void testClosurePassingBug() {
         count = 0
         closure = { assert count == it }
         closure(0)
@@ -25,7 +25,7 @@ class ClosureVariableBug extends GroovyTestCase {
     	assert value == 123
     }
     
-    void testPassingInUndefinedVariable() {
+    void testBug() {
     	value = callClosure([1, 2])
     	assert value == 2
     }

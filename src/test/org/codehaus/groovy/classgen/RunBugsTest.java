@@ -118,8 +118,8 @@ public class RunBugsTest extends TestSupport {
     
     
     
-    public void testClosureTypedVariableBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/ClosureTypedVariableBug.groovy");
+    public void testClosureVariableBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ClosureVariableBug.groovy");
         object.invokeMethod("testBug", null);
     }
         
