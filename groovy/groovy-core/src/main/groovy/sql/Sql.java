@@ -390,10 +390,13 @@ public class Sql {
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
         }
+        Object[] values = gstring.getValues();
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < strings.length; i++) {
             buffer.append(strings[i]);
-            buffer.append("?");
+            if(i<values.length){
+                buffer.append("?");
+            }
         }
         return buffer.toString();
     }

@@ -43,6 +43,16 @@ class SqlTest extends GroovyTestCase {
         food.findAll { it.type == "cheese" }.each { println("Cheese ${it.name}") }
     }
     
+    void testExecuteUpdate(){
+        foo='food-drink'
+        bar='guinness'
+        sql = createSql();
+        nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
+        if(nRows == 0){
+            sql.executeUpdate("insert into FOOD (type,name) values (${foo},${bar})");
+    	}
+    }
+    
     protected createSql() {
         dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
         sql = new Sql(dataSource)

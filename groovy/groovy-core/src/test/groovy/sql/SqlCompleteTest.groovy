@@ -91,4 +91,35 @@ class SqlCompleteTest extends TestHelper {
         expected = ["GDO", "GPath", "GroovyMarkup"]
         assert results == expected
     }
+    
+    void testGStringToSqlConversion(){
+       foo = 'loincloth'
+       bar = 'wasteband'
+       sql = createSql()
+       expected = "A narrow ? supported by a ?!!"
+       gstring = "A narrow ${foo} supported by a ${bar}!!"
+       result = sql.asSql(gstring)
+       assert result == expected
+    }
+    
+    void testExecuteUpdate(){
+        foo='food-drink'
+        food = 'food'
+        drink = 'drink'
+        bar='guinness'
+        sql = createSql();
+        expected = 0
+        result = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
+        assert result == expected
+        expected  = 1
+        result = sql.executeUpdate("insert into FOOD (type,name) values (${food},${bar})");
+    	assert result == expected
+        result = sql.executeUpdate("insert into FOOD (type,name) values (${drink},${bar})");
+    	assert result == expected
+        result = sql.executeUpdate("insert into FOOD (type,name) values ('drink','guinness')");
+    	assert result == expected
+        expected = 3
+        result = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
+        assert result == expected
+    }    
 }
