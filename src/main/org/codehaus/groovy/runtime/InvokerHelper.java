@@ -98,6 +98,10 @@ public class InvokerHelper {
         return getInstance().invokeConstructorOf(type, arguments);
     }
 
+    public static Object invokeClosure(Object closure, Object arguments) {
+        return getInstance().invokeMethod(closure, "doCall", arguments);
+    }
+
     public static Iterator asIterator(Object collection) {
         return getInstance().asIterator(collection);
     }

@@ -136,6 +136,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethod");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
+    MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
@@ -635,7 +636,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         int switchVariableIndex,
         Label thisLabel,
         Label nextLabel) {
-        
+
         onLineNumber(statement);
 
         cv.visitVarInsn(ALOAD, switchVariableIndex);
@@ -1031,28 +1032,39 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         else {
 
-            if (argumentsUseStack(arguments)) {
-                int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
+            String method = call.getMethod();
 
+            // are we a local variable
+            if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(call.getMethod())) {
+                // lets invoke the closure method
+                visitVariableExpression(new VariableExpression(method));
                 arguments.visit(this);
-
-                cv.visitVarInsn(ASTORE, paramIdx);
-
-                call.getObjectExpression().visit(this);
-
-                cv.visitLdcInsn(call.getMethod());
-
-                cv.visitVarInsn(ALOAD, paramIdx);
-
-                idx--;
+                invokeClosureMethod.call(cv);
             }
             else {
-                call.getObjectExpression().visit(this);
-                cv.visitLdcInsn(call.getMethod());
-                arguments.visit(this);
-            }
+                if (argumentsUseStack(arguments)) {
+                    int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
 
-            invokeMethodMethod.call(cv);
+                    arguments.visit(this);
+
+                    cv.visitVarInsn(ASTORE, paramIdx);
+
+                    call.getObjectExpression().visit(this);
+
+                    cv.visitLdcInsn(method);
+
+                    cv.visitVarInsn(ALOAD, paramIdx);
+
+                    idx--;
+                }
+                else {
+                    call.getObjectExpression().visit(this);
+                    cv.visitLdcInsn(method);
+                    arguments.visit(this);
+                }
+
+                invokeMethodMethod.call(cv);
+            }
         }
     }
 
@@ -1741,6 +1753,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             defineVariable(parameters[i].getName(), parameters[i].getType());
         }
         definingParameters = false;
+    }
+
+    /** @return true if the given name is a local variable or a field */
+    protected boolean isFieldOrVariable(String name) {
+        return variableStack.containsKey(name) || classNode.getField(name) != null;
     }
 
     /**
