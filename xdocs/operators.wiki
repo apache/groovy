@@ -19,6 +19,7 @@ a++ or ++a | a.increment()
 a\-\- or \-\-a | a.decrement()
 a\[b\] | a.getAt(b)
 a\[b\] = c | a.putAt(b, c)
+a << b | a.leftShift(b)
 {table}
 
 Note that all the following comparison operators handle nulls gracefully avoiding 
