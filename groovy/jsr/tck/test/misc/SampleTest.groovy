@@ -5,18 +5,6 @@ import java.util.Date as UDate
 
 class SampleTest extends GroovyTestCase {
 
-    void testNewWithImports() {
-        f = new File("foo.txt")
-
-        def name = f.name
-        def name2 = f.getName()
-        assert name == name2
-
-        println "File name $name"
-
-        println new UDate()
-    }
-
     String foo = "John"
     String bar = "Jez"
 
@@ -27,6 +15,18 @@ class SampleTest extends GroovyTestCase {
         assert x.size() == 1
 
         println "created list $x"
+    }
+
+    void testNewWithImports() {
+        f = new File("foo.txt")
+
+        def name = f.name
+        def name2 = f.getName()
+        assert name == name2
+
+        println "File name $name"
+
+        println new UDate()
     }
 
     void testCase() {
