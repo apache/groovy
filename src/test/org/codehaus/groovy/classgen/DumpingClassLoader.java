@@ -47,26 +47,13 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyObject;
-import groovy.util.GroovyTestCase;
 
-import java.beans.BeanInfo;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;

@@ -751,38 +751,45 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // we may need to cast
         String returnType = methodNode.getReturnType();
         if (returnType.equals("double")) {
-        	MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
-        	cv.visitInsn(DRETURN);
-        } else if (returnType.equals("float")) {
-        	MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
-        	cv.visitInsn(FRETURN);
-        } else if (returnType.equals("long")) {
-        	MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
-        	cv.visitInsn(LRETURN);
-        } else if (returnType.equals("boolean")) {
-        	MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
-        	cv.visitInsn(IRETURN);
-        } else if (returnType.equals("char") ||
-        		   returnType.equals("byte") ||
-        		   returnType.equals("int") ||
-        		   returnType.equals("short")) { //byte,short,boolean,int are all IRETURN
-          	MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
+            MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
+            cv.visitInsn(DRETURN);
+        }
+        else if (returnType.equals("float")) {
+            MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
+            cv.visitInsn(FRETURN);
+        }
+        else if (returnType.equals("long")) {
+            MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
+            cv.visitInsn(LRETURN);
+        }
+        else if (returnType.equals("boolean")) {
+            MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
             cv.visitInsn(IRETURN);
-        } else {
-        	if (c == Boolean.class) {
-        		Label l0 = new Label();
-        		cv.visitJumpInsn(IFEQ, l0);
-        		cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-        		cv.visitInsn(ARETURN);
-        		cv.visitLabel(l0);
-        		cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-        		cv.visitInsn(ARETURN);
-        	} else {
-        		if (returnType != null && !returnType.equals("java.lang.Object") && !returnType.equals(c.getName())) {
-        			doCast(returnType);
-        		}
-        		cv.visitInsn(ARETURN);
-        	}
+        }
+        else if (
+            returnType.equals("char")
+                || returnType.equals("byte")
+                || returnType.equals("int")
+                || returnType.equals("short")) { //byte,short,boolean,int are all IRETURN
+            MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
+            cv.visitInsn(IRETURN);
+        }
+        else {
+            if (c == Boolean.class) {
+                Label l0 = new Label();
+                cv.visitJumpInsn(IFEQ, l0);
+                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+                cv.visitInsn(ARETURN);
+                cv.visitLabel(l0);
+                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+                cv.visitInsn(ARETURN);
+            }
+            else {
+                if (returnType != null && !returnType.equals("java.lang.Object") && !returnType.equals(c.getName())) {
+                    doCast(returnType);
+                }
+                cv.visitInsn(ARETURN);
+            }
         }
 
         outputReturn = true;
@@ -1268,7 +1275,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (leftHandExpression) {
             cv.visitVarInsn(ASTORE, valueIdx);
         }
-        
+
         // lets load an extra one just in case as we may be getting & putting a field
         // @todo this is not ideal; need a better way of doing this
         cv.visitVarInsn(ALOAD, 0);
@@ -1283,6 +1290,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         if (leftHandExpression) {
             cv.visitVarInsn(ALOAD, valueIdx);
+            boolean holder = field.isHolder() && !isInClosureConstructor();
+            if (!holder) {
+                doCast(field.getType());
+            }
         }
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
     }
@@ -2254,28 +2265,28 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return "V";
         }
         if (name.equals("int")) {
-        	return "I";
+            return "I";
         }
         if (name.equals("long")) {
-        	return "J";
+            return "J";
         }
         if (name.equals("short")) {
-        	return "S";
+            return "S";
         }
         if (name.equals("float")) {
-        	return "F";
+            return "F";
         }
         if (name.equals("double")) {
-        	return "D";
+            return "D";
         }
         if (name.equals("byte")) {
-        	return "B";
+            return "B";
         }
         if (name.equals("char")) {
-        	return "C";
+            return "C";
         }
         if (name.equals("boolean")) {
-        	return "Z";
+            return "Z";
         }
         String prefix = "";
         if (name.endsWith("[]")) {

@@ -9,9 +9,9 @@ class MapFromList {
         args.each { 
 	    talk(it)
 	    /** @todo fixme
-	    l.put(it,i++)
-	    l.put(it,i)
+	     l.put(it,i++)
 	     */
+	     l.put(it,i)
    	    i = i + 1
 	    }
         l.each {
