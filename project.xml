@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-alpha-1</currentVersion>
+  <currentVersion>1.0-alpha-1-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -117,19 +117,19 @@
       <version>1.0</version>
     </dependency>
 
-	<!-- only used for maven plugin-->
+  <!-- only used for maven plugin-->
     <dependency>
       <id>ant</id>
       <version>1.5.2</version>
     </dependency>
 
-	<!-- only used for testing helper classes -->
+  <!-- only used for testing helper classes -->
     <dependency>
       <id>junit</id>
       <version>3.8.1</version>
     </dependency>
 
-	<!-- only used for testing-->
+  <!-- only used for testing-->
     <dependency>
       <id>asm+util</id>
       <version>1.3.4</version>
