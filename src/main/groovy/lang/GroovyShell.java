@@ -291,6 +291,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * }
      */
     private void runMainOrTestOrRunnable(Class scriptClass, String[] args) {
+        if (scriptClass == null) {
+            return;
+        }
         try {
             // let's find a main method
             scriptClass.getMethod("main", new Class[]{String[].class});

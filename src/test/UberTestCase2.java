@@ -82,7 +82,6 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.xml.SmallNamespaceDOMTest.class);
         suite.addTestSuite(groovy.xml.VerboseDOMTest.class);
         suite.addTestSuite(groovy.xml.XmlTest.class);
-        //suite.addTestSuite(groovy.swing.SwingBuilderTest.class);
         return suite;
     }
 
