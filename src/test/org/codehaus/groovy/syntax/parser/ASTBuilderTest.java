@@ -39,9 +39,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.syntax.Token;
 
 /**
  * Test case for the AST builder
@@ -116,9 +119,19 @@ public class ASTBuilderTest extends TestParserSupport {
 
         ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
         Expression exp = exprStmt.getExpression();
-
         assertTrue(exp instanceof BinaryExpression);
+        BinaryExpression binExpr = (BinaryExpression) exp;
+        assertTrue("RHS is constant", binExpr.getRightExpression() instanceof ConstantExpression);
+        
+        Expression lhs = binExpr.getLeftExpression();
+        assertTrue("LHS is binary expression", lhs instanceof BinaryExpression);
 
+        BinaryExpression lhsBinExpr = (BinaryExpression) lhs;
+        assertEquals(Token.LEFT_SQUARE_BRACKET, lhsBinExpr.getOperation().getType());
+        
+        assertTrue("Left of LHS is a variable", lhsBinExpr.getLeftExpression() instanceof VariableExpression);
+        assertTrue("Right of LHS is a constant", lhsBinExpr.getRightExpression() instanceof ConstantExpression);
+        
     }
 
     protected BlockStatement getCode(ModuleNode module, String name) {
