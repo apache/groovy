@@ -318,7 +318,13 @@ public class GroovyShell extends GroovyObjectSupport {
     		}
     	});
         Class scriptClass = parseClass(gcs);
-        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        if (isUnitTestCase(scriptClass)) {
+            runTest(scriptClass);
+            return null;
+        }
+        else {
+            return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
+        }
     }
 
     public Object getVariable(String name) {
