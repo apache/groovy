@@ -480,9 +480,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_finally:
                 statement = statementList(node);
                 break;
-
+                            
             case METHOD_CALL:
-            case IDENT:
                 statement = methodCall(node);
                 break;
 
