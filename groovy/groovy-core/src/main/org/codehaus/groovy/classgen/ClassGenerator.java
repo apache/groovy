@@ -665,8 +665,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         expression.getRightExpression().visit(this);
 
         invokeMethodMethod.call(cv);
-
-        cv.visitInsn(POP);
     }
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {

@@ -1,6 +1,16 @@
 Core Groovy Tasks
 =================
 
+* assertion expressions to generate a string of the values of variables. e.g.
+
+	assert a != 7;
+	
+	would make
+	
+	assert a != 7 : "Expression: a != 7. a = ${a}"
+
+* output line numbers! - need the compiler to generate line numbers from expressions for stack traces
+	
 * test local variables
 
 * test try / catch

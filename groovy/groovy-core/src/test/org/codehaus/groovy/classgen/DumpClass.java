@@ -175,4 +175,8 @@ public class DumpClass {
             InvokerHelper.assertFailed("expression", "message");
         }
     }
+    
+    public void doPlus() {
+        x = InvokerHelper.invokeMethod(new Integer(2), "plus", new Integer(2));
+    }
 }
