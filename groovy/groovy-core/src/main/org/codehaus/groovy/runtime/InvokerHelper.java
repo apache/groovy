@@ -371,11 +371,11 @@ public class InvokerHelper {
     }
 
     public static SpreadList spreadList(Object value) {
-        if (value instanceof ArrayList) {
+        if (value instanceof List) {
             // value is a list.
-            Object[] values = new Object[((ArrayList) value).size()];
+            Object[] values = new Object[((List) value).size()];
             int index = 0;
-            Iterator it = ((ArrayList) value).iterator();
+            Iterator it = ((List) value).iterator();
             for (; it.hasNext();) {
                 values[index++] = it.next();
             }
