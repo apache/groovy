@@ -209,9 +209,15 @@ public class MetaClass {
 
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, methods, arguments);
+            Method method = (Method) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(object, method, arguments);
+            }
+            else {
+                method = (Method) chooseMethod(methodName, methods, arguments, true);
+                if (method != null) {
+                    return doMethodInvoke(object, method, arguments);
+                }
             }
         }
 
@@ -227,7 +233,7 @@ public class MetaClass {
 
         Method method = null;
         if (!newStaticInstanceMethods.isEmpty()) {
-            method = (Method) chooseMethod(methodName, newStaticInstanceMethods, staticArguments);
+            method = (Method) chooseMethod(methodName, newStaticInstanceMethods, staticArguments, false);
         }
         if (method == null) {
             method = findNewStaticInstanceMethod(methodName, staticArguments);
@@ -268,7 +274,7 @@ public class MetaClass {
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, methods, arguments);
+            Method method = (Method) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(theClass, method, arguments);
             }
@@ -286,14 +292,21 @@ public class MetaClass {
     }
 
     public Object invokeConstructor(Object[] arguments) {
-        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments);
+        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments, false);
         if (constructor != null) {
             return doConstructorInvoke(constructor, arguments);
         }
+        else {
+            constructor = (Constructor) chooseMethod("<init>", constructors, arguments, true);
+            if (constructor != null) {
+                return doConstructorInvoke(constructor, arguments);
+            }
+        }
+
         if (arguments.length == 1) {
             Object firstArgument = arguments[0];
             if (firstArgument instanceof Map) {
-                constructor = (Constructor) chooseMethod("<init>", constructors, EMPTY_ARRAY);
+                constructor = (Constructor) chooseMethod("<init>", constructors, EMPTY_ARRAY, false);
                 if (constructor != null) {
                     Object bean = doConstructorInvoke(constructor, EMPTY_ARRAY);
                     setProperties(bean, ((Map) firstArgument));
@@ -302,12 +315,6 @@ public class MetaClass {
             }
         }
 
-        if (coerceGStrings(arguments)) {
-            constructor = (Constructor) chooseMethod("<init>", constructors, arguments);
-            if (constructor != null) {
-                return doConstructorInvoke(constructor, arguments);
-            }
-        }
         throw new GroovyRuntimeException("Could not find matching constructor for class: " + theClass.getName());
     }
 
@@ -728,7 +735,7 @@ public class MetaClass {
         MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
         List list = superClass.getNewStaticInstanceMethods(methodName);
         if (!list.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, list, staticArguments);
+            Method method = (Method) chooseMethod(methodName, list, staticArguments, false);
             if (method != null) {
                 // lets cache it for next invocation
                 addNewStaticInstanceMethod(method);
@@ -783,20 +790,23 @@ public class MetaClass {
         }
         catch (IllegalArgumentException e) {
             if (coerceGStrings(argumentArray)) {
-                return doMethodInvoke(object, method, argumentArray);
+                try {
+                    return doMethodInvoke(object, method, argumentArray);
+                }
+                catch (Exception e2) {
+                    // allow fall through
+                }
             }
-            else {
-                throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                        + method
-                        + " on: "
-                        + object
-                        + " with arguments: "
-                        + InvokerHelper.toString(argumentArray)
-                        + " reason: "
-                        + e,
-                    e);
-            }
+            throw new GroovyRuntimeException(
+                "failed to invoke method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
         }
         catch (Exception e) {
             throw new GroovyRuntimeException(
@@ -832,6 +842,24 @@ public class MetaClass {
             }
             throw new InvokerInvocationException(e);
         }
+        catch (IllegalArgumentException e) {
+            if (coerceGStrings(argumentArray)) {
+                try {
+                    return constructor.newInstance(argumentArray);
+                }
+                catch (Exception e2) {
+                    // allow fall through
+                }
+            }
+            throw new GroovyRuntimeException(
+                "failed to invoke constructor: "
+                    + constructor
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
+        }
         catch (IllegalAccessException e) {
             throw new GroovyRuntimeException(
                 "could not access constructor: "
@@ -864,14 +892,14 @@ public class MetaClass {
      *            the original argument to the method
      * @return
      */
-    protected Object chooseMethod(String methodName, List methods, Object[] arguments) {
+    protected Object chooseMethod(String methodName, List methods, Object[] arguments, boolean coerce) {
         int methodCount = methods.size();
         if (methodCount <= 0) {
             return null;
         }
         else if (methodCount == 1) {
             Object method = methods.get(0);
-            if (isValidMethod(method, arguments, true)) {
+            if (isValidMethod(method, arguments, coerce)) {
                 return method;
             }
             return null;
@@ -889,7 +917,9 @@ public class MetaClass {
             for (Iterator iter = methods.iterator(); iter.hasNext();) {
                 Object method = iter.next();
                 Class[] paramTypes;
-                if (isValidMethod(method, arguments, false)) {
+
+                // making this false helps find matches
+                if (isValidMethod(method, arguments, coerce)) {
                     matchingMethods.add(method);
                 }
             }
@@ -1093,7 +1123,7 @@ public class MetaClass {
     protected boolean isAssignableFrom(Class mostSpecificType, Class type) {
         boolean answer = type.isAssignableFrom(mostSpecificType);
         if (!answer) {
-            return autoboxType(type).isAssignableFrom(autoboxType(mostSpecificType));
+            answer = autoboxType(type).isAssignableFrom(autoboxType(mostSpecificType));
         }
         return answer;
     }
@@ -1144,7 +1174,7 @@ public class MetaClass {
         }
         return coerced;
     }
-    
+
     protected boolean isGenericSetMethod(Method method) {
         return (method.getName().equals("set") || method.getName().equals("setAttribute"))
             && method.getParameterTypes().length == 2;

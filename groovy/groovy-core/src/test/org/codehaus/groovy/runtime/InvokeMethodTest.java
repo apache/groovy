@@ -251,6 +251,16 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("converted GString to string", param.toString(), value);
     }
 
+    public void testCoerceGStringToStringOnGetBytes() throws Throwable {
+        GString param = new GString(new Object[] { "US-ASCII" }) {
+            public String[] getStrings() {
+                return new String[] { "" };
+            }
+        };
+        Object value = invoke("test", "getBytes", new Object[] { param });
+        assertEquals("converted GString to string", "test".getBytes("US-ASCII").getClass(), value.getClass());
+    }
+
     public void testClassMethod() throws Throwable {
         Class c = String.class;
         Object value = invoke(c, "getName", null);
