@@ -10,6 +10,8 @@ import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;
 
 public class Parser {
+    private static final int[] identifierTokens = {Token.IDENTIFIER, Token.KEYWORD_CLASS, Token.KEYWORD_DEF };
+    
     private TokenStream tokenStream;
     private boolean lastTokenStatementSeparator;
 
@@ -1357,7 +1359,7 @@ public class Parser {
 
     protected boolean lookAheadForMethodCall() throws IOException, SyntaxException {
         return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE)
-            && (lt(2) == Token.IDENTIFIER || lt(2) == Token.KEYWORD_CLASS);
+            && (isIdentifier(lt(2)));
     }
 
     protected CSTNode regexPattern() throws IOException, SyntaxException {
@@ -1465,7 +1467,7 @@ public class Parser {
     }
 
     protected CSTNode parameterList(int endOfListDemarc) throws IOException, SyntaxException {
-        if ((lt_bare() == Token.IDENTIFIER || lt_bare() == Token.KEYWORD_CLASS) && lt_bare(2) == Token.COLON) {
+        if (isIdentifier(lt_bare()) && lt_bare(2) == Token.COLON) {
             return namedParameterList(endOfListDemarc);
         }
 
@@ -1485,14 +1487,30 @@ public class Parser {
 
         return parameterList;
     }
+    
+    protected boolean isIdentifier(int type) {
+        for (int i = 0; i < identifierTokens.length; i++ ) {
+            if (type == identifierTokens[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tests that the next token is an identifier
+     */
+    protected void expectIdentifier() throws SyntaxException, IOException {
+        if (! isIdentifier(lt_bare())) {
+            throwExpected(identifierTokens);
+        }
+       }
 
     protected CSTNode namedParameterList(int endOfListDemarc) throws IOException, SyntaxException {
         CSTNode parameterList = new CSTNode(Token.syntheticList());
 
         while (lt() != endOfListDemarc) {
-            if (lt_bare() != Token.IDENTIFIER && lt_bare() != Token.KEYWORD_CLASS) {
-                throwExpected(new int[] { Token.IDENTIFIER, Token.KEYWORD_CLASS });
-            }
+            expectIdentifier();
             CSTNode name = rootNode(lt_bare());
 
             CSTNode namedParam = rootNode_bare(Token.COLON, name);
