@@ -81,7 +81,7 @@ public class ReflectorGenerator implements Constants {
         }
         fileName += ".java";
 
-        classInternalName = helper.getClassInternalName(className);
+        classInternalName = BytecodeHelper.getClassInternalName(className);
         cw.visit(ACC_PUBLIC + ACC_SUPER, classInternalName, "org/codehaus/groovy/runtime/Reflector", null, fileName);
 
         cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -163,8 +163,8 @@ public class ReflectorGenerator implements Constants {
         else {
             useInterface = true;
         }
-        String type = helper.getClassInternalName(ownerClass.getName());
-        String descriptor = helper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
+        String type = BytecodeHelper.getClassInternalName(ownerClass.getName());
+        String descriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
 
         //        System.out.println("Method: " + method);
         //        System.out.println("Descriptor: " + descriptor);

@@ -4,15 +4,13 @@
 class SuperMethodBug extends GroovyTestCase {
      
     void testBug() {
-    	base = new TestBase()
+    	base = new TestBase("yyy")
     	value = base.doSomething()
     	assert value == "TestBase"
     	
-    	/** @todo fix bug
-    	base = new TestDerived()
+    	base = new TestDerived("abc")
     	value = base.doSomething()
-    	assert value == "TestDerived"
-    	*/
+    	assert value == "TestDerivedTestBase"
     }
 
 }

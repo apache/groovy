@@ -3,20 +3,21 @@
  * 
  * @version $Revision$
  */
-class TestBase {
 
-    String foo
-    
-    TestBase() {
-    }
-    
-    /** @todo fix bug
-    TestBase(String aFoo) {
-        this.foo = aFoo
-    }
-    */
-    
-    doSomething() {
-    	"TestBase"
-    }
-}
+ class TestBase {
+
+     String foo
+     
+     TestBase() {
+     }
+     
+     TestBase(String aFoo) {
+         this.foo = aFoo
+     }
+     /** @todo fix bug
+     */
+     
+     doSomething() {
+     	"TestBase"
+     }
+ }

@@ -37,6 +37,7 @@ package org.codehaus.groovy.ast;
 import groovy.lang.GroovyObject;
 import groovy.lang.Script;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,6 +47,7 @@ import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Constants;
 
@@ -70,6 +72,7 @@ public class ClassNode extends MetadataNode implements Constants {
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
     private ModuleNode module;
+    private CompileUnit compileUnit;
     private boolean staticClass = false;
     private boolean scriptBody = false;
     private boolean script;
@@ -150,6 +153,9 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public void setModule(ModuleNode module) {
         this.module = module;
+        if (module != null) {
+            this.compileUnit = module.getUnit();
+        }
     }
 
     public void addField(FieldNode node) {
@@ -189,6 +195,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public void addMethod(MethodNode node) {
         methods.add(node);
+        node.declaringClass = this;
     }
 
     /**
@@ -204,7 +211,7 @@ public class ClassNode extends MetadataNode implements Constants {
         String returnType,
         Parameter[] parameters,
         Statement code) {
-        MethodNode other = getMethod(name, parameters);
+        MethodNode other = getDeclaredMethod(name, parameters);
         // lets not add duplicate methods
         if (other != null) {
             return other;
@@ -289,10 +296,14 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public void addStaticInitializerStatements(List staticStatements) {
-        MethodNode method = getMethod("<clinit>");
-        if (method == null) {
+        MethodNode method = null;
+        List methods = getDeclaredMethods("<clinit>");
+        if (methods.isEmpty()) {
             method =
                 addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+        }
+        else {
+            method = (MethodNode) methods.get(0);
         }
         BlockStatement block = null;
         Statement statement = method.getCode();
@@ -309,20 +320,43 @@ public class ClassNode extends MetadataNode implements Constants {
         block.addStatements(staticStatements);
     }
 
-    public MethodNode getMethod(String name) {
+    /**
+     * @return a list of methods which match the given name
+     */
+    public List getDeclaredMethods(String name) {
+        List answer = new ArrayList();
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (name.equals(method.getName())) {
-                return method;
+                answer.add(method);
             }
         }
-        return null;
+        return answer;
+    }
+
+    /**
+     * @return a list of methods which match the given name
+     */
+    public List getMethods(String name) {
+        List answer = new ArrayList();
+        ClassNode node = this;
+        do {
+            for (Iterator iter = node.methods.iterator(); iter.hasNext();) {
+                MethodNode method = (MethodNode) iter.next();
+                if (name.equals(method.getName())) {
+                    answer.add(method);
+                }
+            }
+            node = node.getSuperClassNode();
+        }
+        while (node != null);
+        return answer;
     }
 
     /**
      * @return the method matching the given name and parameters or null
      */
-    public MethodNode getMethod(String name, Parameter[] parameters) {
+    public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (name.equals(method.getName()) && parametersEqual(method.getParameters(), parameters)) {
@@ -388,7 +422,7 @@ public class ClassNode extends MetadataNode implements Constants {
      * @return the ClassNode of the super class of this type
      */
     public ClassNode getSuperClassNode() {
-        if (superClassNode == null && !superClass.equals("java.lang.Object")) {
+        if (superClass != null && superClassNode == null && !name.equals("java.lang.Object")) {
             // lets try find the class in the compile unit
             superClassNode = findClassNode(superClass);
         }
@@ -428,14 +462,45 @@ public class ClassNode extends MetadataNode implements Constants {
         for (int i = 0; i < size; i++) {
             interfaceNames[i] = interfaces[i].getName();
         }
+        
+        String name = null;
+        if (theClass.getSuperclass() != null) {
+            name = theClass.getSuperclass().getName();
+        }
         ClassNode answer =
             new ClassNode(
                 theClass.getName(),
                 theClass.getModifiers(),
-                theClass.getSuperclass().getName(),
+                name,
                 interfaceNames,
                 MixinNode.EMPTY_ARRAY);
+        answer.compileUnit = getCompileUnit();
+        Method[] methods = theClass.getDeclaredMethods();
+        for (int i = 0; i < methods.length; i++ ) {
+            answer.addMethod(createMethodNode(methods[i]));
+        }
         return answer;
+    }
+
+
+    /**
+     * Factory method to create a new MethodNode for the given Method
+     */
+    protected MethodNode createMethodNode(Method method) {
+        Parameter[] parameters = Parameter.EMPTY_ARRAY;
+        Class[] types = method.getParameterTypes();
+        int size = types.length;
+        if (size > 0) {
+            parameters = new Parameter[size];
+            for (int i = 0; i < size; i++) {
+                parameters[i] = createParameter(method, types[i], i);
+            }
+        }
+        return new MethodNode(method.getName(), method.getModifiers(), method.getReturnType().getName(), parameters, EmptyStatement.INSTANCE);
+    }
+
+    protected Parameter createParameter(Method method, Class parameterType, int idx) {
+        return new Parameter(parameterType.getName(), "param" + idx);
     }
 
     /**
@@ -534,7 +599,10 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public CompileUnit getCompileUnit() {
-        return (module != null) ? module.getUnit() : null;
+        if (compileUnit == null && module != null) {
+            compileUnit = module.getUnit();
+        }
+        return compileUnit;
     }
 
     /**

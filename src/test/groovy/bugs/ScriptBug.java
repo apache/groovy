@@ -43,94 +43,19 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.objectweb.asm.Constants;
+package groovy.bugs;
+
+import org.codehaus.groovy.classgen.TestSupport;
+
 
 /**
- * Represents a method declaration
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodNode extends MetadataNode implements Constants {
+public class ScriptBug extends TestSupport {
 
-    private String name;
-    private int modifiers;
-    private String returnType;
-    private Parameter[] parameters;
-    private Statement code;
-    private boolean dynamicReturnType;
-    private VariableScope variableScope;
-    ClassNode declaringClass;
-
-    public MethodNode(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
-        this.name = name;
-        this.modifiers = modifiers;
-        this.returnType = returnType;
-        this.parameters = parameters;
-        this.code = code;
-        if (returnType == null) {
-            this.returnType = "java.lang.Object";
-            this.dynamicReturnType = true;
-        }
+    public void testBug() throws Exception {
+        assertScript( "println 'hello world'" );
     }
-
-    public boolean isVoidMethod() {
-        return "void".equals(returnType);
-    }
-
-    public Statement getCode() {
-        return code;
-    }
-
-    public void setCode(Statement code) {
-        this.code = code;
-    }
-
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    public void setModifiers(int modifiers) {
-        this.modifiers = modifiers;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Parameter[] getParameters() {
-        return parameters;
-    }
-
-    public String getReturnType() {
-        return returnType;
-    }
-
-    public VariableScope getVariableScope() {
-        return variableScope;
-    }
-
-    public void setVariableScope(VariableScope variableScope) {
-        this.variableScope = variableScope;
-    }
-
-    public boolean isDynamicReturnType() {
-        return dynamicReturnType;
-    }
-
-    public ClassNode getDeclaringClass() {
-        return declaringClass;
-    }
-    
-    public boolean isStatic() {
-        return (modifiers & ACC_STATIC) != 0;
-    }
-    
-    public String toString() {
-        return super.toString() + "[name: " + name + "]";
-    }
-
 }

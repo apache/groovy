@@ -18,9 +18,9 @@ class ConstructorBug extends GroovyTestCase {
 
         println "created type: ${type} of type: ${type.class}"
 
-        /** @todo fix bug
         test = InvokerHelper.invokeConstructorOf(type, new Object[] { "Hello" })
         assert test.foo == "Hello"
+        /** @todo fix bug
         */
         
         /*
@@ -30,8 +30,8 @@ class ConstructorBug extends GroovyTestCase {
         
 //foo = new type('hello')
         /*
+        */
         test = new TestDerived("Hello")
         assert test.foo == "Hello"
-        */
     }
 }
