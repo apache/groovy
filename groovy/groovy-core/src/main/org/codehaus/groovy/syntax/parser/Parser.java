@@ -24,9 +24,18 @@ public class Parser
     }
 
     public void optionalSemicolon()
-        throws IOException, SyntaxException
+    throws IOException, SyntaxException
     {
         while ( lt_bare() == Token.SEMICOLON || lt_bare() == Token.NEWLINE )
+        {
+            consume_bare( lt_bare() );
+        }
+    }
+
+    public void optionalNewlines()
+    throws IOException, SyntaxException
+    {
+        while ( lt_bare() == Token.NEWLINE )
         {
             consume_bare( lt_bare() );
         }
@@ -915,6 +924,8 @@ public class Parser
     protected CSTNode expression()
         throws IOException, SyntaxException
     {
+        optionalNewlines();
+        
         return assignmentExpression();
     }
 
@@ -923,7 +934,7 @@ public class Parser
     {
         CSTNode expr = conditionalExpression();
 
-        switch ( lt() )
+        switch ( lt_bare() )
         {
             case ( Token.EQUAL ):
             case ( Token.PLUS_EQUAL ):
@@ -932,8 +943,9 @@ public class Parser
             case ( Token.MULTIPLY_EQUAL ):
             case ( Token.MOD_EQUAL ):
             {
-                expr = rootNode( lt(),
+                expr = rootNode( lt_bare(),
                                  expr );
+                optionalNewlines();
                 expr.addChild( conditionalExpression() );
                 break;
             }
@@ -947,14 +959,18 @@ public class Parser
     {
         CSTNode expr = logicalOrExpression();
 
-        if ( lt() == Token.QUESTION )
+        if ( lt_bare() == Token.QUESTION )
         {
             rootNode( Token.QUESTION,
                       expr );
+            optionalNewlines();
             expr.addChild( assignmentExpression() );
+
+            optionalNewlines();
 
             consume( Token.COLON );
 
+            optionalNewlines();
             expr.addChild( conditionalExpression() );
         }
 
@@ -966,10 +982,11 @@ public class Parser
     {
         CSTNode expr = logicalAndExpression();
 
-        while ( lt() == Token.LOGICAL_OR )
+        while ( lt_bare() == Token.LOGICAL_OR )
         {
             expr = rootNode( Token.LOGICAL_OR,
                              expr );
+            optionalNewlines();
             expr.addChild( logicalAndExpression() );
         }
 
@@ -981,10 +998,11 @@ public class Parser
     {
         CSTNode expr = equalityExpression();
 
-        while ( lt() == Token.LOGICAL_AND )
+        while ( lt_bare() == Token.LOGICAL_AND )
         {
             expr = rootNode( Token.LOGICAL_AND,
                              expr );
+            optionalNewlines();
             expr.addChild( equalityExpression() );
         }
 
@@ -996,14 +1014,15 @@ public class Parser
     {
         CSTNode expr = relationalExpression();
 
-        switch ( lt() )
+        switch ( lt_bare() )
         {
             case ( Token.COMPARE_EQUAL ):
             case ( Token.COMPARE_NOT_EQUAL ):
             case ( Token.COMPARE_IDENTICAL ):
             {
-                expr = rootNode( lt(),
+                expr = rootNode( lt_bare(),
                                  expr );
+                optionalNewlines();
                 expr.addChild( relationalExpression() );
                 break;
             }
@@ -1017,7 +1036,7 @@ public class Parser
     {
         CSTNode expr = rangeExpression();
 
-        switch ( lt() )
+        switch ( lt_bare() )
         {
             case ( Token.COMPARE_LESS_THAN ):
             case ( Token.COMPARE_LESS_THAN_EQUAL ):
@@ -1027,17 +1046,20 @@ public class Parser
             case ( Token.MATCH_REGEX ):
             case ( Token.KEYWORD_INSTANCEOF ):
             {
-                expr = rootNode( lt(),
+                expr = rootNode( lt_bare(),
                                  expr );
+                optionalNewlines();
                 expr.addChild( rangeExpression() );
                 break;
             }
             
             case ( Token.LEFT_SQUARE_BRACKET ):
             {
-                expr = rootNode( lt(),
+                expr = rootNode( lt_bare(),
                         expr );
+                optionalNewlines();
                 expr.addChild( rangeExpression() );
+                optionalNewlines();
                 consume(Token.RIGHT_SQUARE_BRACKET);
                 break;
             }
@@ -1051,10 +1073,11 @@ public class Parser
     {
         CSTNode expr = additiveExpression();
 
-        if ( lt() == Token.DOT_DOT )
+        if ( lt_bare() == Token.DOT_DOT )
         {
             expr = rootNode( Token.DOT_DOT,
                              expr );
+            optionalNewlines();
             expr.addChild( additiveExpression() );
         }
 
@@ -1070,13 +1093,14 @@ public class Parser
         while( true )
         {
           SWITCH:
-            switch ( lt() )
+            switch ( lt_bare() )
             {
                 case ( Token.PLUS ):
                 case ( Token.MINUS ):
                 {
-                    expr = rootNode( lt(),
+                    expr = rootNode( lt_bare(),
                                      expr );
+                    optionalNewlines();
                     expr.addChild( multiplicativeExpression() );
                     break SWITCH;
                 }
@@ -1099,15 +1123,16 @@ public class Parser
         while ( true )
         {
           SWITCH:
-            switch ( lt() )
+            switch ( lt_bare() )
             {
                 case ( Token.MULTIPLY ):
                 case ( Token.DIVIDE ):
                 case ( Token.MOD ):
                 case ( Token.COMPARE_TO ):
                 {
-                    expr = rootNode( lt(),
+                    expr = rootNode( lt_bare(),
                                      expr );
+                    optionalNewlines();
                     expr.addChild( unaryExpression() );
                     break SWITCH;
                 }
@@ -1126,13 +1151,13 @@ public class Parser
     {
         CSTNode expr = null;
 
-        switch ( lt() )
+        switch ( lt_bare() )
         {
 			case ( Token.NOT ):
             case ( Token.PLUS ):
             case ( Token.MINUS ):
             {
-                expr = rootNode( lt() );
+                expr = rootNode( lt_bare() );
                 expr.addChild( postfixExpression() );
                 break;
             }
@@ -1140,7 +1165,7 @@ public class Parser
             case ( Token.MINUS_MINUS ):
             {
                 expr = new CSTNode(Token.syntheticPrefix());
-                CSTNode prefixExpr = rootNode( lt() );
+                CSTNode prefixExpr = rootNode( lt_bare() );
                 expr.addChild(prefixExpr);
                 prefixExpr.addChild(primaryExpression());
                 break;
@@ -1170,7 +1195,7 @@ public class Parser
                 {
                     CSTNode primaryExpr = expr;
                     expr = new CSTNode(Token.syntheticPostfix());
-                    expr.addChild(rootNode(lt(), primaryExpr));
+                    expr.addChild(rootNode(lt_bare(), primaryExpr));
                 }
             }
         }
@@ -1185,13 +1210,13 @@ public class Parser
         CSTNode identifier = null;
 
       PREFIX_SWITCH:
-        switch ( lt() )
+        switch ( lt_bare() )
         {
             case ( Token.KEYWORD_TRUE ):
             case ( Token.KEYWORD_FALSE ):
             case ( Token.KEYWORD_NULL ):
             {
-                expr = rootNode( lt() );
+                expr = rootNode( lt_bare() );
                 break PREFIX_SWITCH;
             }
             case ( Token.KEYWORD_NEW ):
@@ -1208,7 +1233,7 @@ public class Parser
             case ( Token.FLOAT_NUMBER ):
             case ( Token.SINGLE_QUOTE_STRING ):
             {
-                expr = rootNode( lt() );
+                expr = rootNode( lt_bare() );
                 break PREFIX_SWITCH;
             }
             case ( Token.DOUBLE_QUOTE_STRING ):
@@ -1231,7 +1256,7 @@ public class Parser
                 expr = new CSTNode( Token.keyword( -1,
                                                    -1,
                                                    "this" ) );
-                identifier = rootNode( lt() );
+                identifier = rootNode( lt_bare() );
                 break PREFIX_SWITCH;
             }
             case ( Token.KEYWORD_SUPER ):
@@ -1239,7 +1264,7 @@ public class Parser
                 expr = new CSTNode( Token.keyword( -1,
                                                    -1,
                                                    "super" ) );
-                identifier = rootNode( lt() );
+                identifier = rootNode( lt_bare() );
                 break PREFIX_SWITCH;
             }
             case ( Token.IDENTIFIER ):
@@ -1248,7 +1273,7 @@ public class Parser
                 //expr       = new CSTNode( Token.keyword( -1,
                  //                                        -1,
                  //                                        "this" ) );
-                identifier = rootNode( lt() );
+                identifier = rootNode( lt_bare() );
                 expr = identifier;
                 break PREFIX_SWITCH;
             }
@@ -1265,9 +1290,9 @@ public class Parser
 
         if ( identifier != null
              &&
-             ( lt() == Token.LEFT_PARENTHESIS
+             ( lt_bare() == Token.LEFT_PARENTHESIS
                ||
-               lt() == Token.LEFT_CURLY_BRACE ) )
+               lt_bare() == Token.LEFT_CURLY_BRACE ) )
         {
             if ( expr == identifier )
             {
@@ -1287,18 +1312,18 @@ public class Parser
         }
 
       DOT_LOOP:
-        while ( (lt() == Token.DOT || lt() == Token.NAVIGATE)
+        while ( (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE)
                 &&
                 ( lt( 2 ) == Token.IDENTIFIER
                   ||
                   lt( 2 ) == Token.KEYWORD_CLASS ) )
         {
-            CSTNode dotExpr = rootNode( lt() );
+            CSTNode dotExpr = rootNode( lt_bare() );
 
-            identifier = rootNode( lt() );
+            identifier = rootNode( lt_bare() );
             
           DOT_TYPE_SWITCH:
-            switch ( lt() )
+            switch ( lt_bare() )
             {
                 case ( Token.LEFT_PARENTHESIS ):
                 case ( Token.LEFT_CURLY_BRACE ):
@@ -1327,7 +1352,7 @@ public class Parser
         CSTNode methodExpr = null;
         CSTNode paramList  = null;
         
-        if ( lt() == Token.LEFT_PARENTHESIS )
+        if ( lt_bare() == Token.LEFT_PARENTHESIS )
         {
             methodExpr = rootNode( Token.LEFT_PARENTHESIS );
             methodExpr.addChild( expr );
@@ -1337,7 +1362,7 @@ public class Parser
             consume( Token.RIGHT_PARENTHESIS );
         }
 
-        if ( lt() == Token.LEFT_CURLY_BRACE )
+        if ( lt_bare() == Token.LEFT_CURLY_BRACE )
         {
             if ( methodExpr == null )
             {
