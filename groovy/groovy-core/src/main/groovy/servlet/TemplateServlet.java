@@ -395,9 +395,17 @@ public class TemplateServlet extends HttpServlet {
     protected Template getTemplate(HttpServletRequest request) throws Exception {
 
         /*
+         * If its an include we need to get the included path, not the main request path.
+         */
+        String path = (String) request.getAttribute("javax.servlet.include.servlet_path");
+        if (path == null) {
+            path = request.getServletPath();
+        }
+
+        /*
          * Delegate to resolveTemplateName(String). Twice if necessary.
          */
-        URL url = resolveTemplateName(request.getServletPath());
+        URL url = resolveTemplateName(path);
         if (url == null) {
             url = resolveTemplateName(request.getRequestURI());
         }
