@@ -17,6 +17,9 @@ class Foo implements Serializable {
 	private blah = 9
 	private invisible = "invisible"
 
+    // declare a protected variable
+    protected prot = "hide me!"
+
  	// provide a getter method
  	getCount() {
  	    if (count == null) {

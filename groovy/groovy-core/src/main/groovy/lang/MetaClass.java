@@ -1586,6 +1586,18 @@ public class MetaClass {
         //System.out.println(this.theClass);
 
         try {
+			// the following patch was provided by Mori Kouhei to fix JIRA 435
+			/* but it opens the ctor up to everyone, so it is no longer private!
+            final Constructor ctor = constructor;
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    ctor.setAccessible(ctor.getDeclaringClass().equals(theClass));
+                    return null;
+                }
+            });
+			*/
+			// end of patch
+
             return constructor.newInstance(argumentArray);
         }
         catch (InvocationTargetException e) {
