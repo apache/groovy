@@ -268,7 +268,7 @@ public class GroovyMain {
         } else {
             s = groovy.parse(script, "main");
         }
-        new GroovySocketServer(s,port);
+        new GroovySocketServer(groovy,isScriptFile,script,port);
     }
     
     /**
