@@ -88,7 +88,9 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.NoSuchClassException;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
@@ -105,7 +107,7 @@ import org.objectweb.asm.Type;
 public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Constants {
 
     protected static final Log log = LogFactory.getLog(ClassGenerator.class);
-    
+
     private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
@@ -192,30 +194,40 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
-        syntheticStaticFields.clear();
-        this.classNode = classNode;
-        this.internalClassName = getClassInternalName(classNode.getName());
-        this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
+        try {
+            syntheticStaticFields.clear();
+            this.classNode = classNode;
+            this.internalClassName = getClassInternalName(classNode.getName());
+            this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
 
-        cw.visit(
-            classNode.getModifiers(),
-            internalClassName,
-            internalBaseClassName,
-            getClassInternalNames(classNode.getInterfaces()),
-            sourceFile);
+            cw.visit(
+                classNode.getModifiers(),
+                internalClassName,
+                internalBaseClassName,
+                getClassInternalNames(classNode.getInterfaces()),
+                sourceFile);
 
-        classNode.visitContents(this);
+            classNode.visitContents(this);
 
-        createSyntheticStaticFields();
+            createSyntheticStaticFields();
 
-        for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
-            ClassNode innerClass = (ClassNode) iter.next();
-            String innerClassName = innerClass.getName();
-            String innerClassInternalName = getClassInternalName(innerClassName);
-            cw.visitInnerClass(innerClassInternalName, internalClassName, innerClassName, innerClass.getModifiers());
+            for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
+                ClassNode innerClass = (ClassNode) iter.next();
+                String innerClassName = innerClass.getName();
+                String innerClassInternalName = getClassInternalName(innerClassName);
+                cw.visitInnerClass(
+                    innerClassInternalName,
+                    internalClassName,
+                    innerClassName,
+                    innerClass.getModifiers());
+            }
+
+            cw.visitEnd();
         }
-
-        cw.visitEnd();
+        catch (InvokerException e) {
+            e.setModule(classNode.getModule());
+            throw e;
+        }
     }
 
     public void visitConstructor(ConstructorNode node) {
@@ -342,6 +354,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitWhileLoop(WhileStatement loop) {
         onLineNumber(loop);
 
+        /*
+        // quick hack
+        if (!methodNode.isStatic()) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
+        */
+
         Label l0 = new Label();
         cv.visitJumpInsn(GOTO, l0);
         Label l1 = new Label();
@@ -350,7 +369,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         loop.getLoopBlock().visit(this);
 
         cv.visitLabel(l0);
-        cv.visitVarInsn(ALOAD, 0);
+        //cv.visitVarInsn(ALOAD, 0);
 
         loop.getBooleanExpression().visit(this);
 
@@ -480,9 +499,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         onLineNumber(statement);
 
         CatchStatement catchStatement = statement.getCatchStatement(0);
+        String exceptionType = catchStatement.getExceptionType();
+
+        checkValidType(exceptionType, catchStatement, "in catch statement");
+
         String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createExceptionVariableName();
 
-        int exceptionIndex = defineVariable(exceptionVar, catchStatement.getExceptionType(), false).getIndex();
+        int exceptionIndex = defineVariable(exceptionVar, exceptionType, false).getIndex();
         int index2 = exceptionIndex + 1;
         int index3 = index2 + 1;
 
@@ -532,12 +555,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // rest of code goes here...
 
-        final String exceptionType =
-            (catchStatement != null) ? getTypeDescription(catchStatement.getExceptionType()) : null;
+        final String exceptionTypeInternalName = (catchStatement != null) ? getTypeDescription(exceptionType) : null;
 
         exceptionBlocks.add(new Runnable() {
             public void run() {
-                cv.visitTryCatchBlock(l0, l1, l5, exceptionType);
+                cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
                 cv.visitTryCatchBlock(l0, l3, l7, null);
                 cv.visitTryCatchBlock(l5, l6, l7, null);
                 cv.visitTryCatchBlock(l7, l8, l7, null);
@@ -575,13 +597,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitInsn(ARETURN);
         }
         else if (!c.isPrimitive()) {
-            
+
             // we may need to cast
             String returnType = methodNode.getReturnType();
-            if (returnType != null && ! returnType.equals("java.lang.Object")) {
+            if (returnType != null && !returnType.equals("java.lang.Object")) {
                 doCast(returnType);
             }
-            
+
             cv.visitInsn(ARETURN);
         }
         else {
@@ -912,7 +934,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String type = call.getType();
 
         // lets check that the type exists
-        checkValidType(type);
+        checkValidType(type, call, "in constructor call");
 
         cv.visitLdcInsn(type);
         arguments.visit(this);
@@ -1578,18 +1600,40 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return answer;
     }
 
-    protected void checkValidType(String type) {
-        if (context.getCompileUnit().getClass(type) != null) {
-            return;
-        }
-        else {
-            try {
-                classLoader.loadClass(type);
+    protected void checkValidType(String type, ASTNode node, String message) {
+        String original = type;
+        if (type != null) {
+            for (int i = 0; i < 2; i++) {
+                if (context.getCompileUnit().getClass(type) != null) {
+                    return;
+                }
+
+                try {
+                    classLoader.loadClass(type);
+                    return;
+                }
+                catch (Throwable e) {
+                    // fall through
+                }
+
+                // lets try the system class loader
+                try {
+                    Class.forName(type);
+                    return;
+                }
+                catch (Throwable e) {
+                    // fall through
+                }
+
+                // lets try class in same package
+                String packageName = classNode.getPackageName();
+                if (packageName == null || packageName.length() <= 0) {
+                    break;
+                }
+                type = packageName + "." + type;
             }
-            catch (ClassNotFoundException e) {
-                throw new RuntimeException("Unknown type: " + type, e);
-            }
         }
+        throw new NoSuchClassException(original, node, message);
     }
 
     protected String createIteratorName() {

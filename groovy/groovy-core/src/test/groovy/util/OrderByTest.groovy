@@ -11,7 +11,10 @@ class OrderByTest extends GroovyTestCase {
         
         people = tree.children()
         
-        order = new OrderBy( { i | return i.get('@cheese') } )
+        /** @todo parser should allow this syntax sugar
+        order = new OrderBy { it.get('@cheese') }
+        */
+        order = new OrderBy( { it.get('@cheese') } )
         sorted = people.sort(order)
         
         assert sorted.get(0).get('@name') == 'Joe'
@@ -19,7 +22,7 @@ class OrderByTest extends GroovyTestCase {
         assert sorted.get(2).get('@name') == 'James'
         assert sorted.get(3).get('@name') == 'Chris'
         
-        order = new OrderBy( { i | return i.get('@name') } )
+        order = new OrderBy( { it.get('@name') } )
         sorted = people.sort(order)
         
         assert sorted.get(0).get('@name') == 'Bob'
@@ -40,12 +43,7 @@ class OrderByTest extends GroovyTestCase {
         
         people = tree.children()
 
-		/** @todo         
-        order = new OrderBy({ i | return i.get('@location') }, { i | return i.get('@cheese') })
-        */
-        order = new OrderBy({ i | return i.get('@location') })
-        order.add({ i | return i.get('@cheese') })
-        
+        order = new OrderBy([ { it.get('@location') }, { it.get('@cheese') } ])
         sorted = people.sort(order)
         
         assert sorted.get(0).get('@name') == 'Bob'

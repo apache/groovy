@@ -48,6 +48,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
+import groovy.lang.Tuple;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,6 +64,8 @@ import java.util.Map;
  * @version $Revision$
  */
 public class Invoker {
+    
+    protected static final Object[] EMPTY_ARGUMENTS = {};
 
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
 
@@ -79,6 +82,19 @@ public class Invoker {
      * @return
      */
     public Object invokeMethod(Object object, String methodName, Object arguments) {
+        /*
+        System
+            .out
+            .println(
+                "Invoker - Invoking method on object: "
+                    + object
+                    + " method: "
+                    + methodName
+                    + " arguments: "
+                    + InvokerHelper.toString(arguments));
+                    
+                    */
+        
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
@@ -88,18 +104,17 @@ public class Invoker {
             return groovy.invokeMethod(methodName, arguments);
         }
         else {
-            List argumentList = asList(arguments);
             if (object instanceof Class) {
                 Class theClass = (Class) object;
 
                 MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-                return metaClass.invokeStaticMethod(object, methodName, arguments, argumentList);
+                return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
             }
             else {
                 Class theClass = object.getClass();
 
                 MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-                return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+                return metaClass.invokeMethod(object, methodName, asArray(arguments));
             }
         }
     }
@@ -107,7 +122,7 @@ public class Invoker {
     public Object invokeStaticMethod(String type, String method, Object arguments) {
         MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
         List argumentList = asList(arguments);
-        return metaClass.invokeStaticMethod(null, method, arguments, argumentList);
+        return metaClass.invokeStaticMethod(null, method, asArray(arguments));
     }
 
 
@@ -117,9 +132,29 @@ public class Invoker {
 
     public Object invokeConstructorOf(Class type, Object arguments) {
         MetaClass metaClass = metaRegistry.getMetaClass(type);
-        List argumentList = asList(arguments);
-        return metaClass.invokeConstructor(arguments, argumentList);
+        return metaClass.invokeConstructor(asArray(arguments));
     }
+
+    /**
+     * Converts the given object into an array; if its an array then just
+     * cast otherwise wrap it in an array
+     */
+    public Object[] asArray(Object arguments) {
+        if (arguments == null) {
+            return EMPTY_ARGUMENTS;
+        }
+        if (arguments instanceof Tuple) {
+            Tuple tuple = (Tuple) arguments;
+            return tuple.toArray();
+        }
+        if (arguments instanceof Object[]) {
+            return (Object[]) arguments;
+        }
+        else {
+            return new Object[] { arguments };
+        }
+    }
+    
 
     public List asList(Object value) {
         if (value == null) {

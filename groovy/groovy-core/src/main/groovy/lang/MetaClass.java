@@ -60,6 +60,7 @@ import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -69,11 +70,14 @@ import java.util.Map;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.classgen.CompilerFacade;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.NoSuchMethodException;
+import org.codehaus.groovy.runtime.NoSuchPropertyException;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -180,73 +184,92 @@ public class MetaClass {
     }
 
     public Object invokeMethod(Object object, String methodName, Object arguments) {
-        return invokeMethod(object, methodName, arguments, InvokerHelper.asList(arguments));
+        /*
+        System.out.println(
+            "MetaClass: Invoking method on object: " + object + " method: " + methodName + " arguments: " + arguments);
+        */
+        return invokeMethod(object, methodName, asArray(arguments));
     }
 
     /**
      * Invokes the given method on the object. 
      * 
-     * @param object
-     * @param methodName
-     * @param arguments
-     * @return
      */
-    public Object invokeMethod(Object object, String methodName, Object arguments, List argumentList) {
+    public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+        /*
+        System
+            .out
+            .println(
+                "MetaClass(Object[]) Invoking method on object: "
+                    + object
+                    + " method: "
+                    + methodName
+                    + " arguments: "
+                    + InvokerHelper.toString(arguments));
+        
+        //System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
+        */
+
         if (object == null) {
             throw new InvokerException("Cannot invoke method: " + methodName + " on null object");
         }
 
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methods, arguments, argumentList);
+            Method method = (Method) chooseMethod(methodName, methods, arguments);
             if (method != null) {
-                return doMethodInvoke(object, method, arguments, argumentList);
+                return doMethodInvoke(object, method, arguments);
             }
         }
 
         // lets see if there's a new static method we've added in groovy-land to this class
         List newStaticInstanceMethods = getNewStaticInstanceMethods(methodName);
-        List staticArgumentList = new ArrayList(argumentList.size() + 1);
-        staticArgumentList.add(object);
-        staticArgumentList.addAll(argumentList);
-        Method method = (Method) chooseMethod(newStaticInstanceMethods, staticArgumentList, staticArgumentList);
+        Object[] staticArguments = new Object[arguments.length + 1];
+        staticArguments[0] = object;
+        System.arraycopy(arguments, 0, staticArguments, 1, arguments.length);
+
+        Method method = null;
+        if (!newStaticInstanceMethods.isEmpty()) {
+            method = (Method) chooseMethod(methodName, newStaticInstanceMethods, staticArguments);
+        }
         if (method == null) {
-            method = findNewStaticInstanceMethod(methodName, staticArgumentList);
+            method = findNewStaticInstanceMethod(methodName, staticArguments);
         }
         if (method != null) {
-            return doMethodInvoke(null, method, staticArgumentList.toArray());
+            return doMethodInvoke(null, method, staticArguments);
         }
 
         // lets try a static method then
-        return invokeStaticMethod(object, methodName, arguments, argumentList);
+        return invokeStaticMethod(object, methodName, arguments);
     }
 
-    public Object invokeStaticMethod(Object object, String methodName, Object arguments, List argumentList) {
+    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+        // System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
+
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methods, arguments, argumentList);
+            Method method = (Method) chooseMethod(methodName, methods, arguments);
             if (method != null) {
-                return doMethodInvoke(theClass, method, argumentList.toArray());
+                return doMethodInvoke(theClass, method, arguments);
             }
         }
 
         if (theClass != Class.class) {
             try {
-                return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments, argumentList);
+                return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments);
             }
             catch (InvokerException e) {
-                // ignore
+                // throw our own exception
             }
         }
-        throw new InvokerException(
-            "Could not find matching method called: " + methodName + " for class: " + theClass.getName());
+        throw new NoSuchMethodException(methodName, theClass);
     }
 
-    public Object invokeConstructor(Object arguments, List argumentList) {
-        Constructor constructor = (Constructor) chooseMethod(constructors, arguments, argumentList);
+    public Object invokeConstructor(Object[] arguments) {
+        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments);
         if (constructor != null) {
-            return doConstructorInvoke(constructor, argumentList.toArray());
+            return doConstructorInvoke(constructor, arguments);
         }
         throw new InvokerException("Could not find matching constructor for class: " + theClass.getName());
     }
@@ -295,11 +318,18 @@ public class MetaClass {
             return null;
         }
         else {
+            /** @todo these special cases should be special MetaClasses maybe */
             if (object instanceof Class) {
                 // lets try a static field
                 return getStaticProperty((Class) object, property);
             }
-            throw new InvokerException("Unknown property: " + property);
+            if (object instanceof Collection) {
+                return DefaultGroovyMethods.get((Collection) object, property);
+            }
+            if (object instanceof Object[]) {
+                return DefaultGroovyMethods.get(Arrays.asList((Object[]) object), property);
+            }
+            throw new NoSuchPropertyException(property, theClass);
         }
     }
 
@@ -345,9 +375,9 @@ public class MetaClass {
             // lets create a dynamic proxy
             Object proxy = createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
             doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
-            return;    
-        } 
-        
+            return;
+        }
+
         if (genericSetMethod != null) {
             Object[] arguments = { property, newValue };
             doMethodInvoke(object, genericSetMethod, arguments);
@@ -358,7 +388,7 @@ public class MetaClass {
 
         // lets try invoke the set method
         String method = "set" + property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
-        invokeMethod(object, method, newValue);
+        invokeMethod(object, method, new Object[] { newValue });
     }
 
     public ClassNode getClassNode() {
@@ -380,7 +410,7 @@ public class MetaClass {
             if (url != null) {
                 try {
                     InputStream in = url.openStream();
-                    
+
                     /** @todo there is no CompileUnit in scope so class name 
                      * checking won't work but that mostly affects the bytecode generation
                      * rather than viewing the AST
@@ -412,6 +442,25 @@ public class MetaClass {
     //-------------------------------------------------------------------------
 
     /**
+     * Converts the given object into an array; if its an array then just
+     * cast otherwise wrap it in an array
+     */
+    protected Object[] asArray(Object arguments) {
+        if (arguments == null) {
+            return EMPTY_ARRAY;
+        }
+        if (arguments instanceof Tuple) {
+            Tuple tuple = (Tuple) arguments;
+            return tuple.toArray();
+        }
+        if (arguments instanceof Object[]) {
+            return (Object[]) arguments;
+        }
+        else {
+            return new Object[] { arguments };
+        }
+    }
+    /**
      * @param listenerType the interface of the listener to proxy
      * @param listenerMethodName the name of the method in the listener API to call the closure on
      * @param closure the closure to invoke on the listenerMethodName method invocation
@@ -425,7 +474,8 @@ public class MetaClass {
                     closure.call(arguments[0]);
                 }
                 return null;
-            }};
+            }
+        };
         return Proxy.newProxyInstance(listenerType.getClassLoader(), new Class[] { listenerType }, handler);
     }
 
@@ -545,14 +595,14 @@ public class MetaClass {
     /**
      * Lets walk the base class & interfaces list to see if we can find the method
      */
-    protected Method findNewStaticInstanceMethod(String methodName, List staticArgumentList) {
+    protected Method findNewStaticInstanceMethod(String methodName, Object[] staticArguments) {
         if (theClass.equals(Object.class)) {
             return null;
         }
         MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
         List list = superClass.getNewStaticInstanceMethods(methodName);
         if (!list.isEmpty()) {
-            Method method = (Method) chooseMethod(list, staticArgumentList, staticArgumentList);
+            Method method = (Method) chooseMethod(methodName, list, staticArguments);
             if (method != null) {
                 // lets cache it for next invocation
                 addNewStaticInstanceMethod(method);
@@ -560,28 +610,7 @@ public class MetaClass {
 
             return method;
         }
-        return superClass.findNewStaticInstanceMethod(methodName, staticArgumentList);
-    }
-
-    protected Object doMethodInvoke(Object object, Method method, Object arguments, List argumentList) {
-        Object[] argumentArray = EMPTY_ARRAY;
-        int length = method.getParameterTypes().length;
-        // null will generate a zero sized list
-        if (length > 0) {
-            if (length == 1) {
-                if (argumentList.isEmpty()) {
-                    argumentArray = ARRAY_WITH_NULL;
-                }
-                else if (argumentList.size() > 0) {
-                    argumentArray = new Object[] { arguments };
-                }
-            }
-            else {
-                argumentArray = argumentList.toArray();
-            }
-        }
-
-        return doMethodInvoke(object, method, argumentArray);
+        return superClass.findNewStaticInstanceMethod(methodName, staticArguments);
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
@@ -592,6 +621,9 @@ public class MetaClass {
         try {
             if (registry.useAccessible()) {
                 method.setAccessible(true);
+            }
+            if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
+                argumentArray = ARRAY_WITH_NULL;
             }
             return method.invoke(object, argumentArray);
         }
@@ -679,10 +711,9 @@ public class MetaClass {
      * 
      * @param methods the possible methods to choose from
      * @param arguments the original argument to the method
-     * @param argumentList the argument to the method morphed into a List (maybe of 1 item)
      * @return
      */
-    protected Object chooseMethod(List methods, Object arguments, List argumentList) {
+    protected Object chooseMethod(String methodName, List methods, Object[] arguments) {
         int methodCount = methods.size();
         if (methodCount <= 0) {
             return null;
@@ -691,85 +722,115 @@ public class MetaClass {
             return methods.get(0);
         }
         Object answer = null;
-        if (arguments == null) {
+        if (arguments.length == 1 && arguments[0] == null) {
             answer = chooseMostGeneralMethodWith1Param(methods);
         }
-        else if (argumentList.isEmpty()) {
+        else if (arguments.length == 0) {
             answer = chooseEmptyMethodParams(methods);
         }
         else {
-
-            // lets look for methods with 1 argument which matches the type of the arguments
-            Class closestClass = null;
-            Object singleParameterMatch = null;
-            boolean wasMethodWithMultiArgs = false;
+            int size = arguments.length;
+            List matchingMethods = new ArrayList();
 
             for (Iterator iter = methods.iterator(); iter.hasNext();) {
                 Object method = iter.next();
                 Class[] paramTypes = getParameterTypes(method);
-                if (paramTypes.length == 1) {
-                    Class theType = paramTypes[0];
-                    if (isCompatibleInstance(theType, arguments)) {
-                        if (closestClass == null || !theType.isAssignableFrom(closestClass)) {
-                            closestClass = theType;
-                            singleParameterMatch = method;
+                if (paramTypes.length == size) {
+                    // lets check the parameter types match
+                    boolean validMethod = true;
+                    for (int i = 0; i < size; i++) {
+                        Object value = arguments[i];
+                        if (!isCompatibleInstance(paramTypes[i], value)) {
+                            validMethod = false;
                         }
                     }
-                    else {
-                        wasMethodWithMultiArgs = true;
-                    }
-                }
-            }
-
-            // lets compare number of arguments
-            Object multiParamMatch = null;
-            int size = argumentList.size();
-            int matches = 0;
-            if (size > 1) {
-                for (Iterator iter = methods.iterator(); iter.hasNext();) {
-                    Object method = iter.next();
-                    Class[] paramTypes = getParameterTypes(method);
-                    if (paramTypes.length == size) {
-                        // lets check the parameter types match
-                        boolean validMethod = true;
-                        for (int i = 0; i < size; i++) {
-                            Object value = argumentList.get(i);
-                            if (!isCompatibleInstance(paramTypes[i], value)) {
-                                validMethod = false;
-                            }
-                        }
-                        if (validMethod && multiParamMatch == null) {
-                            multiParamMatch = method;
-                            matches++;
-                        }
+                    if (validMethod) {
+                        matchingMethods.add(method);
                     }
                 }
             }
-            if (singleParameterMatch != null) {
-                if (multiParamMatch == null) {
-                    return singleParameterMatch;
-                }
-
-                // how do we choose between them...
-                int answerSize = getParameterTypes(singleParameterMatch).length;
-                int matchingArgSize = getParameterTypes(multiParamMatch).length;
-
-                if (answerSize == matchingArgSize) {
-                    return singleParameterMatch;
-                }
-                else {
-                    return multiParamMatch;
-                }
+            if (matchingMethods.isEmpty()) {
+                return null;
             }
-            else if (multiParamMatch != null) {
-                return multiParamMatch;
+            else if (matchingMethods.size() == 1) {
+                return matchingMethods.get(0);
             }
+            return chooseMostSpecificParams(methodName, matchingMethods, arguments);
+
         }
         if (answer != null) {
             return answer;
         }
         throw new InvokerException(
-            "Could not find which method to invoke from this list: " + methods + " for arguments: " + arguments);
+            "Could not find which method to invoke from this list: "
+                + methods
+                + " for arguments: "
+                + InvokerHelper.toString(arguments));
+    }
+
+    protected Object chooseMostSpecificParams(String name, List matchingMethods, Object[] arguments) {
+        Object answer = null;
+        int size = arguments.length;
+        Class[] mostSpecificTypes = null;
+        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
+            if (answer == null) {
+                answer = method;
+                mostSpecificTypes = paramTypes;
+            }
+            else {
+                boolean useThisMethod = false;
+                for (int i = 0; i < size; i++) {
+                    Class mostSpecificType = mostSpecificTypes[i];
+                    Class type = paramTypes[i];
+
+                    if (!type.isAssignableFrom(mostSpecificType)) {
+
+                        useThisMethod = true;
+                        break;
+                    }
+
+                }
+                if (useThisMethod) {
+
+                    if (size > 1) {
+                        checkForInvalidOverloading(name, mostSpecificTypes, paramTypes);
+                    }
+
+                    answer = method;
+                    mostSpecificTypes = paramTypes;
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Checks that one of the parameter types is a superset of the other
+     * and that the two lists of types don't conflict. e.g.
+     * foo(String, Object) and foo(Object, String) would conflict if called with
+     * foo("a", "b").
+     * 
+     * Note that this method is only called with 2 possible signnatures. i.e. possible
+     * invalid combinations will already have been filtered out. So if there were
+     * methods foo(String, Object) and foo(Object, String) then one of these would be
+     * already filtered out if foo was called as foo(12, "a")
+     */
+    protected void checkForInvalidOverloading(String name, Class[] baseTypes, Class[] derivedTypes) {
+        for (int i = 0, size = baseTypes.length; i < size; i++) {
+            Class baseType = baseTypes[i];
+            Class derivedType = derivedTypes[i];
+            if (!baseType.isAssignableFrom(derivedType)) {
+                throw new InvokerException(
+                    "Ambiguous method overloading for method: "
+                        + name
+                        + ". Cannot resolve which method to invoke due to overlapping prototypes between: "
+                        + InvokerHelper.toString(baseTypes)
+                        + " and: "
+                        + InvokerHelper.toString(derivedTypes));
+            }
+        }
     }
 
     protected Class[] getParameterTypes(Object methodOrConstructor) {
@@ -857,7 +918,11 @@ public class MetaClass {
     }
 
     protected boolean isGenericGetMethod(Method method) {
-        return method.getName().equals("get") && method.getParameterTypes().length == 1;
+        if (method.getName().equals("get")) {
+            Class[] parameterTypes = method.getParameterTypes();
+            return parameterTypes.length == 1 && parameterTypes[0] == String.class;
+        }
+        return false;
     }
 
 }

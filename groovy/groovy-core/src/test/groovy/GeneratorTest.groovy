@@ -31,8 +31,7 @@ class GeneratorTest extends GroovyTestCase {
     }
     
 	
-	/** @todo validator bug, should detect this as a property if no variable/field in scope 
-	void testMissingThisBug() {
+    void testMissingThisBug() {
         result = ''
         for (i in sampleGenerator) {
             result = result + i
@@ -40,7 +39,6 @@ class GeneratorTest extends GroovyTestCase {
 	    
         assert result == "ABC"
     }
-    */
 	
 	void sampleGenerator(closure) {
 	    // kinda like yield statements

@@ -83,4 +83,16 @@ public class DumpClass3 extends DumpClass2 {
             System.out.println("False");
         }
     }
+    
+    public Object testWhile(Object x, Object m) {
+        while ( InvokerHelper.compareLessThan(x, m)) {
+            x = increment(x);
+        }
+        return x;
+    }
+
+    private Object increment(Object x) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

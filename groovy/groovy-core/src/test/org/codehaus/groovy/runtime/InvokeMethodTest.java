@@ -55,7 +55,6 @@ import java.util.List;
 
 import junit.framework.AssertionFailedError;
 
-
 /**
  * Tests method invocation
  * 
@@ -72,6 +71,9 @@ public class InvokeMethodTest extends GroovyTestCase {
     public void testInvokeMethodNoParams() throws Throwable {
         Object value = invoke(this, "mockCallWithNoParams", null);
         assertEquals("return value", "NoParams", value);
+
+        value = invoke(this, "mockCallWithNoParams", new Object[0]);
+        assertEquals("return value", "NoParams", value);
     }
 
     public void testInvokeMethodOneParam() throws Throwable {
@@ -80,14 +82,17 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testInvokeMethodOneParamWhichIsNull() throws Throwable {
-        Object value = invoke(this, "mockCallWithOneNullParam", null);
+        Object value = invoke(this, "mockCallWithOneNullParam", new Object[] { null });
+        assertEquals("return value", "OneParamWithNull", value);
+
+        value = invoke(this, "mockCallWithOneNullParam", null);
         assertEquals("return value", "OneParamWithNull", value);
     }
 
     public void testInvokeMethodOneCollectionParameter() throws Throwable {
         Object[] foo = { "a", "b", "c" };
 
-        Object value = invoke(this, "mockCallWithOneCollectionParam", foo);
+        Object value = invoke(this, "mockCallWithOneCollectionParam", new Object[] { foo });
         assertEquals("return value", new Integer(3), value);
 
         List list = new ArrayList();
@@ -103,12 +108,11 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testMethodChooserNull() throws Throwable {
-        assertMethodChooser("Object", null);
+        assertMethodChooser("Object", new Object[] { null });
     }
 
     public void testMethodChooserNoParams() throws Throwable {
-        assertMethodChooser("void", new Object[0]);
-        assertMethodChooser("void", new ArrayList());
+        assertMethodChooser("void", null);
     }
 
     public void testMethodChooserObject() throws Throwable {
@@ -124,16 +128,31 @@ public class InvokeMethodTest extends GroovyTestCase {
         //assertMethodChooser("String", new Character('a');
     }
 
+    public void testMethodChooserNumber() throws Throwable {
+        assertMethodChooser("Number", new Integer(2));
+        assertMethodChooser("Number", new Double(2));
+    }
+
     public void testMethodChooserTwoParams() throws Throwable {
         List list = new ArrayList();
         list.add("foo");
         list.add("bar");
-        assertMethodChooser("Object,Object", list);
+        assertMethodChooser("Object,Object", list.toArray());
 
         Object[] blah = { "a", "b" };
         assertMethodChooser("Object,Object", blah);
+    }
 
-        assertMethodChooser("Object,Object", new Object[2]);
+    public void testInstanceofWorksForArray() {
+        Class type = Object[].class;
+        Object value = new Object[1];
+        assertTrue("instanceof works for array", type.isInstance(value));
+    }
+
+    public void testMethodChooserTwoParamsWithSecondAnObjectArray() throws Throwable {
+        Object[] blah = { "a", new Object[] { "b" }
+        };
+        assertMethodChooser("Object,Object[]", blah);
     }
 
     public void testCollectionMethods() throws Throwable {
@@ -162,6 +181,14 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("toString", object.toString(), value);
     }
 
+    public void testDivideNumbers() throws Throwable {
+        assertMethodCall(new Double(10), "divide", new Double(2), new Double(5));
+        assertMethodCall(new Double(10), "divide", new Integer(2), new Double(5));
+        assertMethodCall(new Integer(10), "divide", new Double(2), new Double(5));
+        assertMethodCall(new Integer(10), "divide", new Integer(2), new Double(5));
+    }
+
+
     public void testBaseFailMethod() throws Throwable {
         Object value;
         try {
@@ -169,6 +196,16 @@ public class InvokeMethodTest extends GroovyTestCase {
         }
         catch (AssertionFailedError e) {
             // worked
+        }
+    }
+
+    public void testInvalidOverloading() throws Throwable {
+        try {
+            invoke(this, "badOverload", new Object[] { "a", "b" });
+            fail("Should fail as an unambiguous method is invoked");
+        }
+        catch (InvokerException e) {
+            System.out.println("Caught: " + e);
         }
     }
 
@@ -198,8 +235,8 @@ public class InvokeMethodTest extends GroovyTestCase {
         Object value = invoke(object, "substring", new Integer(2));
         assertEquals("substring(2)", object.substring(2), value);
 
-        value = invoke(object, "substring", new Object[] { new Integer(1), new Integer(3) });
-        assertEquals("substring(1,3)", object.substring(1,3), value);
+        value = invoke(object, "substring", new Object[] { new Integer(1), new Integer(3)});
+        assertEquals("substring(1,3)", object.substring(1, 3), value);
     }
 
     public void testInvokeUnknownMethod() throws Throwable {
@@ -263,6 +300,10 @@ public class InvokeMethodTest extends GroovyTestCase {
         return "Object";
     }
 
+    public Object mockOverloadedMethod(Number object) {
+        return "Number";
+    }
+
     public Object mockOverloadedMethod(String object) {
         return "String";
     }
@@ -271,9 +312,21 @@ public class InvokeMethodTest extends GroovyTestCase {
         return "Object,Object";
     }
 
+    public Object mockOverloadedMethod(Object object, Object[] array) {
+        return "Object,Object[]";
+    }
+
+    public Object badOverload(String a, Object b) {
+        return "String, Object";
+    }
+
+    public Object badOverload(Object a, String b) {
+        return "Object, String";
+    }
+
     // Implementation methods
     //-------------------------------------------------------------------------
-    
+
     protected Object aProtectedMethod(String param) {
         return param + " there!";
     }
@@ -282,6 +335,10 @@ public class InvokeMethodTest extends GroovyTestCase {
         return param + " James!";
     }
 
+    protected void assertMethodCall(Object object, String method, Object param, Object expected) {
+        Object value = InvokerHelper.invokeMethod(object, method, new Object[] { param });
+        assertEquals("result of method: " + method, expected, value);
+    }
 
     /**
      * Asserts that invoking the method chooser finds the right overloaded method implementation

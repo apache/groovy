@@ -95,7 +95,7 @@ public class MethodTest extends TestSupport {
     }
 
     protected void assertCallMethod(Object object, String method, Object expected) {
-        Object value = InvokerHelper.invokeMethod(object, method, Collections.EMPTY_LIST);
+        Object value = InvokerHelper.invokeMethod(object, method, new Object[0]);
         assertEquals("Result of calling method: " + method + " on: " + object + " with empty list", expected, value);
 
         value = InvokerHelper.invokeMethod(object, method, null);

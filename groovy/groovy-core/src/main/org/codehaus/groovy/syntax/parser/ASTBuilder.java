@@ -237,7 +237,8 @@ public class ASTBuilder
         String answer = resolvedQualifiedName(child);
         if (answer == null) 
         {
-            throw new ParserException("Unknown type: " + child.getToken().getText() + " could not be resolved", child.getToken());
+            return qualifiedName( child );
+            //throw new ParserException("Unknown type: " + child.getToken().getText() + " could not be resolved", child.getToken());
         }
         return answer;
     }
@@ -385,7 +386,7 @@ public class ASTBuilder
                                                       null,
                                                       null,
                                                       null );
-        setLineNumber(propertyNode, propertyRoot);
+        propertyNode.setCSTNode(propertyRoot);
         return propertyNode;
     }
 
@@ -405,7 +406,7 @@ public class ASTBuilder
                                                 parameters,
                                                 statementBlock( methodRoot.getChild( 4 ) ) );
 
-        setLineNumber(methodNode, methodRoot);
+        methodNode.setCSTNode(methodRoot);
         return methodNode;
     }
 
@@ -442,8 +443,7 @@ public class ASTBuilder
             CSTNode statementRoot = statementRoots[ i ];
             Statement statement = statement( statementRoot );
             statementBlock.addStatement( statement );
-            setLineNumber( statement,
-                           statementRoot);
+            statement.setCSTNode(statementRoot);
         }
 
         return statementBlock;
@@ -490,7 +490,7 @@ public class ASTBuilder
                 statement = expressionStatement( statementRoot );
             }
         }
-        setLineNumber(statement, statementRoot);
+        statement.setCSTNode(statementRoot);
 
         return statement;
     }
@@ -596,7 +596,9 @@ public class ASTBuilder
 
     protected Statement expressionStatement(CSTNode statementRoot) throws ParserException
     {
-        return new ExpressionStatement( expression( statementRoot ) );
+        Expression expression = expression( statementRoot );
+        expression.setCSTNode(statementRoot);
+        return new ExpressionStatement( expression );
     }
 
     protected Expression expression(CSTNode expressionRoot) throws ParserException
@@ -713,8 +715,7 @@ public class ASTBuilder
 
     protected ConstructorCallExpression newExpression(CSTNode expressionRoot) throws ParserException
     {
-        //String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
-        String datatype = resolvedQualifiedName( expressionRoot.getChild( 0 ) );
+        String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
 
         TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
 
@@ -1036,16 +1037,6 @@ public class ASTBuilder
     protected String identifier(CSTNode identifierRoot)
     {
         return identifierRoot.getToken().getText();
-    }
-
-    /**
-     * Stores the line number information in the new AST node
-     * @param text
-     * @return
-     */
-    protected void setLineNumber(ASTNode astNode, CSTNode cstNode) 
-    {
-        astNode.setLineNumber(cstNode.getToken().getStartLine());
     }
 
     boolean matches(CSTNode root,

@@ -72,13 +72,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         keys = answer.map {it.key }
         values = answer.map {it.value }
 
-		/** @todo parser        
         System.out.println("keys " + keys + " values " + values)
-        System.out.println("keys " + keys)
-        System.out.println("values " + values)
-        "keys " + keys + " values " + values.println()
-        text = "keys " + keys + " values " + values
-        */
 		
         // maps are in hash order so lets sort the results       
         keys.sort() 

@@ -54,20 +54,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Closure implements GroovyObject {
+public abstract class Closure extends GroovyObjectSupport {
 
     private Object delegate;
 
     public Closure(Object delegate) {
         this.delegate = delegate;
-    }
-
-    public Object getProperty(String property) {
-        return getMetaClass().getProperty(this, property);
-    }
-
-    public void setProperty(String property, Object newValue) {
-         getMetaClass().setProperty(this, property, newValue);
     }
 
     public Object invokeMethod(String method, Object arguments) {
@@ -76,10 +68,20 @@ public abstract class Closure implements GroovyObject {
             return getMetaClass().invokeMethod(this, method, arguments);
         }
         catch (InvokerException e) {
-            // lets try invoke method on delegate
-            return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+            Object delegate = getDelegate();
+            if (delegate != this) {
+                try {
+                    // lets try invoke method on delegate
+                    return InvokerHelper.invokeMethod(delegate, method, arguments);
+                }
+                catch (InvokerException e2) {
+                    // ignore, we'll throw e
+                }
+            }
+            throw e;
         }
     }
+
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
      * 

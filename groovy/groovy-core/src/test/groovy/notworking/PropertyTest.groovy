@@ -32,10 +32,10 @@ class PropertyTest extends Test {
 	testCannotSeePrivateProperties() {
 	    foo = Foo()
 	    
-	    // @todo should property access return null for invisible stuff?
+	    // should property access return null for invisible stuff?
 	    assertEquals(foo.q, null)
 	    
-	    // @todo should methods fail on non-existent method calls
+	    // should methods fail on non-existent method calls
 	    shouldFail( {
 	    	foo.getQ()
 	    })

@@ -1,4 +1,4 @@
-import org.codehaus.groovy.runtime.InvokerException
+import org.codehaus.groovy.runtime.NoSuchPropertyException
 
 class LocalVariableTest extends GroovyTestCase {
 
@@ -18,9 +18,10 @@ class LocalVariableTest extends GroovyTestCase {
 	        y = x
 	        fail("x is undefined, should throw an exception")
         }
-        catch (InvokerException e) {
+        catch (NoSuchPropertyException e) {
+			assert e.getProperty() == "x"            
             text = e.message
-            assert text == "Unknown property: x"
+            assert text == "No such property: x for class: LocalVariableTest"
         }
     }
 	    

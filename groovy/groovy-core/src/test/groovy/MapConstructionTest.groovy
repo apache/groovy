@@ -1,3 +1,6 @@
+import java.util.HashMap
+import java.util.Map
+
 /** 
  * Tests creating Maps in Groovy
  * 
@@ -31,8 +34,8 @@ class MapConstructionTest extends GroovyTestCase {
     }
 
     assertMap(m) {
-        /** @todo parser
         assert m instanceof Map
+        /** @todo parser
         */
         assert m.getClass().getName() == "java.util.HashMap"
         

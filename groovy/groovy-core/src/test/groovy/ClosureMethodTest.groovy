@@ -72,13 +72,7 @@ class ClosureMethodTest extends GroovyTestCase {
         keys = answer.map( {entry| return entry.key })
         values = answer.map {entry| return entry.value }
 
-		/** @todo parser        
         println("keys " + keys + " values " + values)
-        println("keys " + keys)
-        println("values " + values)
-        "keys " + keys + " values " + values.println()
-        text = "keys " + keys + " values " + values
-        */
 		
         // maps are in hash order so lets sort the results       
         keys.sort() 
@@ -109,11 +103,9 @@ class ClosureMethodTest extends GroovyTestCase {
 
         assert count == 20
         
-        /** @todo parser
         map.each({e| count = count + e.value + e.key })
 		
-        assert count == 30
-        */
+        assert count == 50
     }
     
     void testListEvery() {
@@ -161,10 +153,7 @@ class ClosureMethodTest extends GroovyTestCase {
 		assert lines != null
 		assert lines.size() > 0
 
-		/** @todo parser		        
-        println("File has: " + lines.size() + " lines")
-        */
-        println("File has number of lines: " + lines.size())
+        println("File has: " + lines.size() + " line(s)")
     }
     
     void testEachFile() {

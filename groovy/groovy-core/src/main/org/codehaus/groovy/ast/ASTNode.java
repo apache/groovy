@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.parser.CSTNode;
+
 /**
  * Base class for any AST node
  * 
@@ -82,4 +85,9 @@ public class ASTNode {
         this.columnNumber = columnNumber;
     }
 
+    public void setCSTNode(CSTNode node) {
+        Token token = node.getToken();
+        setColumnNumber(token.getStartColumn());
+        setLineNumber(token.getStartLine());
+    }
 }
