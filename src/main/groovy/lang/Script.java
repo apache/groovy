@@ -106,10 +106,18 @@ public abstract class Script extends GroovyObjectSupport {
                 // if the method was not found in the current scope (the script's methods)
                 // let's try to see if there's a method closure with the same name in the binding
         catch (MissingMethodException mme) {
-            Object boundClosure = binding.getVariable(name);
-            if (boundClosure != null && boundClosure instanceof Closure) {
-                return ((Closure) boundClosure).call(args);
-            } else {
+            try {
+                if (name.equals(mme.getMethod())) {
+                    Object boundClosure = binding.getVariable(name);
+                    if (boundClosure != null && boundClosure instanceof Closure) {
+                        return ((Closure) boundClosure).call(args);
+                    } else {
+                        throw mme;
+                    }
+                } else {
+                    throw mme;
+                }
+            } catch (MissingPropertyException mpe) {
                 throw mme;
             }
         }

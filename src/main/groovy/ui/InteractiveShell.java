@@ -45,8 +45,8 @@
  */
 package groovy.ui;
 
-import groovy.lang.GroovyShell;
 import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -60,23 +60,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Iterator;
 
 /**
- *  A simple interactive shell for evaluating groovy expressions
- *  on the command line
+ * A simple interactive shell for evaluating groovy expressions
+ * on the command line
  *
- *  @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- *  @author <a href="mailto:cpoirier@dreaming.org"   >Chris Poirier</a>
- *  @author Yuri Schimke
- *  @author Brian McCallistair
- *  @author Guillaume Laforge
- *  @version $Revision$
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:cpoirier@dreaming.org"   >Chris Poirier</a>
+ * @author Yuri Schimke
+ * @author Brian McCallistair
+ * @author Guillaume Laforge
+ * @version $Revision$
  */
-public class InteractiveShell
-{
+public class InteractiveShell {
     private final GroovyShell shell;
     private final Prompt prompt;
     private final InputStream in;
@@ -87,15 +86,11 @@ public class InteractiveShell
     /**
      * Entry point when called directly.
      */
-    public static void main(String args[])
-    {
-        try
-        {
+    public static void main(String args[]) {
+        try {
             final InteractiveShell groovy = new InteractiveShell();
             groovy.run(args);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             System.err.println("Caught: " + e);
             e.printStackTrace();
         }
@@ -105,19 +100,16 @@ public class InteractiveShell
     /**
      * Default constructor.
      */
-    public InteractiveShell()
-    {
+    public InteractiveShell() {
         this(System.in, System.out, System.err);
     }
 
 
-    public InteractiveShell(final InputStream in, final PrintStream out, final PrintStream err)
-    {
+    public InteractiveShell(final InputStream in, final PrintStream out, final PrintStream err) {
         this(new Binding(), in, out, err);
     }
 
-    public InteractiveShell(Binding binding, final InputStream in, final PrintStream out, final PrintStream err)
-    {
+    public InteractiveShell(Binding binding, final InputStream in, final PrintStream out, final PrintStream err) {
         this.in = in;
         this.out = out;
         this.err = err;
@@ -132,8 +124,7 @@ public class InteractiveShell
     /**
      * Reads commands and statements from input stream and processes them.
      */
-    public void run(String[] args) throws Exception
-    {
+    public void run(String[] args) throws Exception {
         final String version = InvokerHelper.getVersion();
 
         out.println("Lets get Groovy!");
@@ -145,34 +136,26 @@ public class InteractiveShell
 
         int counter = 1;
         boolean running = true;
-        while (running)
-        {
+        while (running) {
             // Read a single top-level statement from the command line,
             // trapping errors as they happen.  We quit on null.
             final String command = read();
-            if (command == null)
-            {
+            if (command == null) {
                 close();
                 break;
             }
 
             reset();
 
-            if (command.length() > 0)
-            {
+            if (command.length() > 0) {
                 // We have a command that parses, so evaluate it.
-                try
-                {
+                try {
                     shell.evaluate(command, "CommandLine" + counter++ + ".groovy");
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     err.println("Exception: " + e.getMessage());
                     e.printStackTrace(err);
                     new ErrorReporter(e, false).write(err);
-                }
-                catch (Throwable e)
-                {
+                } catch (Throwable e) {
                     err.println("Unrecoverable Error: " + e.getMessage());
                     e.printStackTrace(err);
                     new ErrorReporter(e, false).write(err);
@@ -186,8 +169,7 @@ public class InteractiveShell
     }
 
 
-    protected void close()
-    {
+    protected void close() {
         prompt.close();
     }
 
@@ -212,8 +194,7 @@ public class InteractiveShell
      * Resets the command-line processing machinery after use.
      */
 
-    protected void reset()
-    {
+    protected void reset() {
         stale = true;
         pending = null;
         line = 1;
@@ -234,37 +215,31 @@ public class InteractiveShell
      * 'execute', the statement must be complete.
      */
 
-    protected String read()
-    {
+    protected String read() {
         reset();
         out.println("");
 
         boolean complete = false;
         boolean done = false;
 
-        while (/* !complete && */ !done)
-        {
+        while (/* !complete && */ !done) {
 
             // Read a line.  If IOException or null, or command "exit", terminate
             // processing.
 
-            try
-            {
+            try {
                 pending = prompt.readLine();
+            } catch (IOException e) {
             }
-            catch (IOException e) { }
 
-            if (pending == null || (COMMAND_MAPPINGS.containsKey(pending) && ((Integer) COMMAND_MAPPINGS.get(pending)).intValue() == COMMAND_ID_EXIT))
-            {
+            if (pending == null || (COMMAND_MAPPINGS.containsKey(pending) && ((Integer) COMMAND_MAPPINGS.get(pending)).intValue() == COMMAND_ID_EXIT)) {
                 return null;                                  // <<<< FLOW CONTROL <<<<<<<<
             }
 
             // First up, try to process the line as a command and proceed accordingly.
-            if (COMMAND_MAPPINGS.containsKey(pending))
-            {
+            if (COMMAND_MAPPINGS.containsKey(pending)) {
                 int code = ((Integer) COMMAND_MAPPINGS.get(pending)).intValue();
-                switch (code)
-                {
+                switch (code) {
                     case COMMAND_ID_HELP:
                         displayHelp();
                         break;
@@ -287,12 +262,9 @@ public class InteractiveShell
                         break;
 
                     case COMMAND_ID_EXECUTE:
-                        if (complete)
-                        {
+                        if (complete) {
                             done = true;
-                        }
-                        else
-                        {
+                        } else {
                             err.println("statement not complete");
                         }
                         break;
@@ -308,25 +280,19 @@ public class InteractiveShell
 
             freshen();
 
-            if (pending.trim() == "")
-            {
+            if (pending.trim().equals("")) {
                 accept();
                 continue;                                     // <<<< LOOP CONTROL <<<<<<<<
             }
 
             final String code = current();
 
-            if (parse(code, 1))
-            {
+            if (parse(code, 1)) {
                 accept();
                 complete = true;
-            }
-            else if (error == null)
-            {
+            } else if (error == null) {
                 accept();
-            }
-            else
-            {
+            } else {
                 report();
             }
 
@@ -341,10 +307,8 @@ public class InteractiveShell
      * Returns the accepted statement as a string.  If not <code>complete</code>,
      * returns the empty string.
      */
-    private String accepted(boolean complete)
-    {
-        if (complete)
-        {
+    private String accepted(boolean complete) {
+        if (complete) {
             return accepted.toString();
         }
         return "";
@@ -354,8 +318,7 @@ public class InteractiveShell
     /**
      * Returns the current statement, including pending text.
      */
-    private String current()
-    {
+    private String current() {
         return accepted.toString() + pending + "\n";
     }
 
@@ -363,8 +326,7 @@ public class InteractiveShell
     /**
      * Accepts the pending text into the statement.
      */
-    private void accept()
-    {
+    private void accept() {
         accepted.append(pending).append("\n");
         line += 1;
     }
@@ -373,10 +335,8 @@ public class InteractiveShell
     /**
      * Clears accepted if stale.
      */
-    private void freshen()
-    {
-        if (stale)
-        {
+    private void freshen() {
+        if (stale) {
             accepted.setLength(0);
             stale = false;
         }
@@ -394,8 +354,7 @@ public class InteractiveShell
      * The attempts to identify and suppress errors resulting from the
      * unfinished source text.
      */
-    private boolean parse(String code, int tolerance)
-    {
+    private boolean parse(String code, int tolerance) {
         boolean parsed = false;
 
         parser = null;
@@ -404,8 +363,7 @@ public class InteractiveShell
         tree = null;
 
         // Create the parser and attempt to parse the text as a top-level statement.
-        try
-        {
+        try {
             parser = SourceUnit.create("groovysh script", code, tolerance);
             parser.parse();
             tree = parser.getCST();
@@ -420,17 +378,12 @@ public class InteractiveShell
             parsed = true;
         }
 
-        // We report errors other than unexpected EOF to the user.
-        catch (CompilationFailedException e)
-        {
-            if (parser.getErrorCount() > 1 || !parser.failedWithUnexpectedEOF())
-            {
+                // We report errors other than unexpected EOF to the user.
+        catch (CompilationFailedException e) {
+            if (parser.getErrorCount() > 1 || !parser.failedWithUnexpectedEOF()) {
                 error = e;
             }
-        }
-
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             error = e;
         }
 
@@ -442,8 +395,7 @@ public class InteractiveShell
      * Reports the last parsing error to the user.
      */
 
-    private void report()
-    {
+    private void report() {
         err.println("Discarding invalid text:");
         new ErrorReporter(error, false).write(err);
     }
@@ -451,39 +403,36 @@ public class InteractiveShell
     //-----------------------------------------------------------------------
     // COMMANDS
 
-    private static final int COMMAND_ID_EXIT    = 0;
-    private static final int COMMAND_ID_HELP    = 1;
+    private static final int COMMAND_ID_EXIT = 0;
+    private static final int COMMAND_ID_HELP = 1;
     private static final int COMMAND_ID_DISCARD = 2;
     private static final int COMMAND_ID_DISPLAY = 3;
     private static final int COMMAND_ID_EXPLAIN = 4;
     private static final int COMMAND_ID_EXECUTE = 5;
     private static final int COMMAND_ID_BINDING = 6;
 
-    private static final int LAST_COMMAND_ID    = 6;
+    private static final int LAST_COMMAND_ID = 6;
 
     private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding"};
 
     private static final Map COMMAND_MAPPINGS = new HashMap();
 
-    static
-    {
-        for (int i = 0; i <= LAST_COMMAND_ID; i++)
-        {
+    static {
+        for (int i = 0; i <= LAST_COMMAND_ID; i++) {
             COMMAND_MAPPINGS.put(COMMANDS[i], new Integer(i));
         }
 
         // A few synonyms
 
         COMMAND_MAPPINGS.put("quit", new Integer(COMMAND_ID_EXIT));
-        COMMAND_MAPPINGS.put("go",   new Integer(COMMAND_ID_EXECUTE));
+        COMMAND_MAPPINGS.put("go", new Integer(COMMAND_ID_EXECUTE));
     }
 
     private static final Map COMMAND_HELP = new HashMap();
 
-    static
-    {
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT],    "exit/quit  - terminates processing");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP],    "help       - displays this help text");
+    static {
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT], "exit/quit  - terminates processing");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP], "help       - displays this help text");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD], "discard    - discards the current statement");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISPLAY], "display    - displays the current statement");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain    - explains the parsing of the current statement");
@@ -495,11 +444,9 @@ public class InteractiveShell
     /**
      * Displays help text about available commands.
      */
-    private void displayHelp()
-    {
+    private void displayHelp() {
         out.println("Available commands (must be entered without extraneous characters):");
-        for (int i = 0; i <= LAST_COMMAND_ID; i++)
-        {
+        for (int i = 0; i <= LAST_COMMAND_ID; i++) {
             out.println((String) COMMAND_HELP.get(COMMANDS[i]));
         }
     }
@@ -508,11 +455,9 @@ public class InteractiveShell
     /**
      * Displays the accepted statement.
      */
-    private void displayStatement()
-    {
+    private void displayStatement() {
         final String[] lines = accepted.toString().split("\n");
-        for (int i = 0; i < lines.length; i++)
-        {
+        for (int i = 0; i < lines.length; i++) {
             out.println((i + 1) + "> " + lines[i]);
         }
     }
@@ -520,21 +465,16 @@ public class InteractiveShell
     /**
      * Displays the current binding used when instanciating the shell.
      */
-    private void displayBinding()
-    {
+    private void displayBinding() {
         out.println("Avaialble variables in the current binding");
         Binding context = shell.getContext();
         Map variables = context.getVariables();
         Set set = variables.keySet();
-        if (set.isEmpty())
-        {
+        if (set.isEmpty()) {
             out.println("The current binding is empty.");
-        }
-        else
-        {
-            for (Iterator it = set.iterator(); it.hasNext();)
-            {
-                String key = (String)it.next();
+        } else {
+            for (Iterator it = set.iterator(); it.hasNext();) {
+                String key = (String) it.next();
                 out.println(key + " = " + variables.get(key));
             }
         }
@@ -545,15 +485,11 @@ public class InteractiveShell
      * Attempts to parse the accepted statement and display the
      * parse tree for it.
      */
-    private void explainStatement()
-    {
-        if (parse(accepted(true), 10) || error == null)
-        {
+    private void explainStatement() {
+        if (parse(accepted(true), 10) || error == null) {
             out.println("Parse tree:");
             out.println(tree);
-        }
-        else
-        {
+        } else {
             out.println("Statement does not parse");
         }
     }

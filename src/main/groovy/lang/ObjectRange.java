@@ -45,17 +45,17 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-
 /**
  * Represents an inclusive list of objects from a value to a value using
  * comparators
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -67,20 +67,20 @@ public class ObjectRange extends AbstractList implements Range {
     private final boolean reverse;
 
     public ObjectRange(Comparable from, Comparable to) {
-    	this.reverse = InvokerHelper.compareGreaterThan(from, to);
-    	if (this.reverse) {
-    		constructorHelper(to, from);
-    	} else {
-    		constructorHelper(from, to);
-    	}
+        this.reverse = InvokerHelper.compareGreaterThan(from, to);
+        if (this.reverse) {
+            constructorHelper(to, from);
+        } else {
+            constructorHelper(from, to);
+        }
     }
 
     public ObjectRange(Comparable from, Comparable to, boolean reverse) {
-    	constructorHelper(from, to);
-    	
+        constructorHelper(from, to);
+
         this.reverse = reverse;
     }
-    
+
     private void constructorHelper(Comparable from, Comparable to) {
         if (from == null) {
             throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
@@ -88,13 +88,13 @@ public class ObjectRange extends AbstractList implements Range {
         if (to == null) {
             throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
         }
-    	if (from.getClass() == to.getClass()) {
-    		this.from = from;
-    		this.to = to;
-    	} else {
-    		this.from = normaliseType(from);
-    		this.to = normaliseType(to);
-    	}
+        if (from.getClass() == to.getClass()) {
+            this.from = from;
+            this.to = to;
+        } else {
+            this.from = normaliseType(from);
+            this.to = normaliseType(to);
+        }
     }
 
     public int hashCode() {
@@ -105,8 +105,7 @@ public class ObjectRange extends AbstractList implements Range {
     public boolean equals(Object that) {
         if (that instanceof ObjectRange) {
             return equals((ObjectRange) that);
-        }
-        else if (that instanceof List) {
+        } else if (that instanceof List) {
             return equals((List) that);
         }
         return false;
@@ -114,8 +113,8 @@ public class ObjectRange extends AbstractList implements Range {
 
     public boolean equals(ObjectRange that) {
         return this.reverse == that.reverse
-            && InvokerHelper.compareEqual(this.from, that.from)
-            && InvokerHelper.compareEqual(this.to, that.to);
+                && InvokerHelper.compareEqual(this.from, that.from)
+                && InvokerHelper.compareEqual(this.to, that.to);
     }
 
     public boolean equals(List that) {
@@ -153,14 +152,11 @@ public class ObjectRange extends AbstractList implements Range {
         Object value = null;
         if (reverse) {
             value = to;
-            System.out.println("get(" + index + ")");
-            
+
             for (int i = 0; i < index; i++) {
-                System.out.println("decrement: " + i + " value: " + value);
                 value = decrement(value);
             }
-        }
-        else {
+        } else {
             value = from;
             for (int i = 0; i < index; i++) {
                 value = increment(value);
@@ -182,12 +178,10 @@ public class ObjectRange extends AbstractList implements Range {
                 if (index++ > 0) {
                     if (index > size()) {
                         value = null;
-                    }
-                    else {
+                    } else {
                         if (reverse) {
                             value = decrement(value);
-                        }
-                        else {
+                        } else {
                             value = increment(value);
                         }
                     }
@@ -227,8 +221,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
         if (--toIndex >= size) {
             return new ObjectRange((Comparable) get(fromIndex), getTo(), reverse);
-        }
-        else {
+        } else {
             return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex), reverse);
         }
     }
@@ -263,8 +256,7 @@ public class ObjectRange extends AbstractList implements Range {
                     value = (Comparable) increment(value);
                 }
             }
-        }
-        else {
+        } else {
             step = -step;
             Comparable value = to;
             while (value.compareTo(from) >= 0) {
@@ -289,19 +281,19 @@ public class ObjectRange extends AbstractList implements Range {
     protected Object decrement(Object value) {
         return InvokerHelper.invokeMethod(value, "previous", null);
     }
-    
+
     private static Comparable normaliseType(final Comparable operand) {
-    	if (operand instanceof Character) {
-    		return new Integer(((Character)operand).charValue());
-    	} else if (operand instanceof String) {
-    	final String string = (String)operand;
-    	
-    		if (string.length() == 1)
-    			return new Integer(string.charAt(0));
-    		else
-    			return string;
-    	} else {
-    		return operand;
-    	}
+        if (operand instanceof Character) {
+            return new Integer(((Character) operand).charValue());
+        } else if (operand instanceof String) {
+            final String string = (String) operand;
+
+            if (string.length() == 1)
+                return new Integer(string.charAt(0));
+            else
+                return string;
+        } else {
+            return operand;
+        }
     }
 }

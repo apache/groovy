@@ -1,46 +1,40 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyException;
+
 import java.io.IOException;
 
 /**
- *  Encapsulates non-specific i/o exceptions.
+ * Encapsulates non-specific i/o exceptions.
  */
 
-public class ReadException extends GroovyException
-{
+public class ReadException extends GroovyException {
     private IOException cause = null;
 
-    public ReadException( IOException cause )
-    {
+    public ReadException(IOException cause) {
         super();
         this.cause = cause;
     }
 
-    public ReadException( String message, IOException cause )
-    {
-        super( message );
+    public ReadException(String message, IOException cause) {
+        super(message);
         this.cause = cause;
     }
 
-    public IOException getIOCause()
-    {
+    public IOException getIOCause() {
         return this.cause;
     }
 
-    public String toString()
-    {
-       String message = super.getMessage();
-       if( message == null || message.trim() == "" )
-       {
-          message = cause.getMessage();
-       }
+    public String toString() {
+        String message = super.getMessage();
+        if (message == null || message.trim().equals("")) {
+            message = cause.getMessage();
+        }
 
-       return message;
+        return message;
     }
 
-    public String getMessage()
-    {
-       return toString();
+    public String getMessage() {
+        return toString();
     }
 }

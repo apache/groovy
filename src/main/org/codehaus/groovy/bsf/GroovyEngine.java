@@ -79,7 +79,7 @@ public class GroovyEngine extends BSFEngineImpl {
      * with "_".
      */
     private String convertToValidJavaClassname(String inName) {
-        if (inName == null || inName == "") {
+        if (inName == null || inName.equals("")) {
             return "_";
         }
         StringBuffer output = new StringBuffer(inName.length());
