@@ -198,9 +198,9 @@ public class ObjectRange extends AbstractList implements Range {
     public int size() {
         if (size == -1) {
             // lets lazily calculate the size
-            size = 0;
+            size = 1;
             Object value = from;
-            while (to.compareTo(value) >= 0) {
+            while (to.compareTo(value) != 0) {
                 value = increment(value);
                 size++;
             }
