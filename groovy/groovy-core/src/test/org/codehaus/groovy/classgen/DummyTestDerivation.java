@@ -46,7 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 /**
  * A dummy test case

@@ -43,9 +43,8 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.ant;
+package groovy.util;
 
-import groovy.util.BuilderSupport;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -68,7 +67,7 @@ import org.apache.tools.ant.types.DataType;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * A helper class for creating a W3C D
+ * Allows Ant tasks to be used with GroovyMarkup 
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

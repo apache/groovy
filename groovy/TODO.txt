@@ -1,6 +1,8 @@
 Things to Test
 ==============
 
+* tidy up javadoc
+
 * test date range using Range object
 
 * test max, min, sort with closure comparator

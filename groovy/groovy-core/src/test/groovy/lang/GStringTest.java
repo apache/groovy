@@ -46,6 +46,8 @@
 
 package groovy.lang;
 
+import groovy.util.GroovyTestCase;
+
 /**
  * Tests the use of the structured Attribute type
  * 

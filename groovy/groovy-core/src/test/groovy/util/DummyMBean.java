@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.jmx;
+package groovy.util;
 
 public interface DummyMBean {
     public void start();

@@ -43,52 +43,42 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.jmx;
 
-public class Dummy implements DummyMBean {
+package groovy.util;
 
-    private String name = "James";
-    private String location = "London";
-    private int size = 12;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
 
-    public Dummy() {
-    }
-    
-    public Dummy(String name, String location) {
-        this.name = name;
-        this.location = location;
-    }
-    
-    public void start() {
-        System.out.println("Started!");
-    }
-    
-    public void stop() {
-        System.out.println("Stopped!");
-    }
-    
-    public String getLocation() {
-        return location;
-    }
+import groovy.lang.GroovyObject;
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
+import org.codehaus.groovy.classgen.TestSupport;
 
-    public String getName() {
-        return name;
-    }
+/**
+ * Tests using the GroovyObject API from Java to access MBeans via 
+ * the normal properties API (to simulate normal Groovy property access)
+ * 
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @version $Revision$
+ */
+public class MBeanTest extends TestSupport {
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public void testGetProperty() throws Exception {
+        MBeanServer mbeanServer = MBeanServerFactory.createMBeanServer();
+        ObjectName name = new ObjectName("groovy.test:role=TestMBean,type=Dummy");
+        mbeanServer.registerMBean(new Dummy(), name);
 
-    public int getSize() {
-        return size;
-    }
+        assertEquals("JMX value of Name", "James", mbeanServer.getAttribute(name, "Name"));
 
-    public void setSize(int size) {
-        this.size = size;
-    }
+        GroovyObject object = new GroovyMBean(mbeanServer, name);
+        
+        Object value = object.getProperty("Name");
+        assertEquals("Name property", "James", value);
 
+        object.setProperty("Name", "Bob");
+        assertEquals("Name property", "Bob", object.getProperty("Name"));
+        
+        // now lets look up the name via JMX to checki
+        assertEquals("JMX value of Name", "Bob", mbeanServer.getAttribute(name, "Name"));
+    }
 }

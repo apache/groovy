@@ -46,7 +46,7 @@
 
 package org.codehaus.groovy.tools;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import java.io.File;
 import java.io.FileInputStream;

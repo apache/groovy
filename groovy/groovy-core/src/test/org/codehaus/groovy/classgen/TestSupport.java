@@ -47,7 +47,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;

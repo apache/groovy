@@ -1,4 +1,4 @@
-package groovy.ant
+package groovy.util
 
 import java.io.File
 
@@ -25,7 +25,7 @@ class AntTest extends GroovyTestCase {
             echo('done')
         }
         
-        file = new File('target/AntTest/groovy/ant/AntTest.groovy')
+        file = new File('target/AntTest/groovy/util/AntTest.groovy')
         assert file.exists()
     }
 }
