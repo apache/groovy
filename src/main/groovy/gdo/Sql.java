@@ -248,10 +248,10 @@ public class Sql {
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
         }
-        StringBuffer buffer = new StringBuffer(strings[0]);
-        for (int i = 1; i < strings.length; i++) {
-            buffer.append("?");
+        StringBuffer buffer = new StringBuffer();
+        for (int i = 0; i < strings.length; i++) {
             buffer.append(strings[i]);
+            buffer.append("?");
         }
 
         String sql = buffer.toString();

@@ -4,11 +4,25 @@ import org.axiondb.jdbc.AxionDataSource
 
 class SqlTest extends GroovyTestCase {
 
-    void testSqlQueries() {
+    void testSqlQuery() {
         sql = createSql()     
         
         sql.queryEach("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
-        sql.queryEach("select * from FOOD where type='drink'") { println("Drink ${it.name}") }
+    }
+    
+    void testSqlQueryWithWhereClause() {
+        sql = createSql()     
+        
+        foo = 'drink'
+        sql.queryEach("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
+    }
+    
+    void testSqlQueryWithWhereClauseWith2Arguments() {
+        sql = createSql()     
+        
+        foo = 'cheese'
+        bar = 'edam'
+        sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
     }
     
     void testDataSets() {
