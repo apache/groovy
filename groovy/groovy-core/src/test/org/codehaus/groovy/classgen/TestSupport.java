@@ -67,7 +67,6 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;
@@ -83,19 +82,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected static boolean CHECK_CLASS = false;
     protected static boolean DUMP_CLASS = false;
 
-    protected GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader()) {
-        protected void onClassNode(ClassWriter classWriter, ClassNode classNode) {
-            // lets test out the class verifier
-            if (DUMP_CLASS) {
-                dumper.visitClass(classNode);
-            }
-
-            if (CHECK_CLASS) {
-                checker.visitClass(classNode);
-            }
-            super.onClassNode(classWriter, classNode);
-        }
-    };
+    protected GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit();
