@@ -76,7 +76,7 @@ public class BSFTest extends TestCase {
             "Test1.groovy",
             0,
             0,
-            "println('testing Exec'); assert bsf != null : 'should have a bsf variable'");
+            "println('testing Exec'); assert bsf != null , 'should have a bsf variable'");
     }
 
     public void testBracketName() throws Exception {
@@ -85,7 +85,7 @@ public class BSFTest extends TestCase {
             "Test1<groovy>",
             0,
             0,
-            "println('testing Exec'); assert bsf != null : 'should have a bsf variable'");
+            "println('testing Exec'); assert bsf != null , 'should have a bsf variable'");
     }
 
     public void testEval() throws Exception {

@@ -10,11 +10,11 @@ class PropertyTest extends GroovyTestCase {
         
         println("About to create Foo")
         
-        foo = new Foo()
+        def foo = new Foo()
 
         println("created ${foo}")
         
-        value = foo.getMetaClass()
+        def value = foo.getMetaClass()
         
         println("metaClass ${value}")
         
@@ -43,7 +43,7 @@ class PropertyTest extends GroovyTestCase {
     
     void testOverloadedGetter() {
         
-        foo = new Foo()
+        def foo = new Foo()
 
         println("count ${foo.count}")
         
@@ -57,7 +57,7 @@ class PropertyTest extends GroovyTestCase {
     }
 
     void testNoSetterAvailableOnPrivateProperty() {
-        foo = new Foo()
+        def foo = new Foo()
         
         // methods should fail on non-existent method calls
         shouldFail { foo.blah = 4 }
@@ -65,7 +65,7 @@ class PropertyTest extends GroovyTestCase {
     }
     
     void testCannotSeePrivateProperties() {
-        foo = new Foo()
+        def foo = new Foo()
 
         // def access fails on non-existent def
         shouldFail { x = foo.invisible }
@@ -75,7 +75,7 @@ class PropertyTest extends GroovyTestCase {
     }
 
     void testConstructorWithNamedProperties() {
-        foo = new Foo(name:'Gromit', location:'Moon')
+        def foo = new Foo(name:'Gromit', location:'Moon')
         
         assert foo.name == 'Gromit'
         assert foo.location == 'Moon'
@@ -84,7 +84,7 @@ class PropertyTest extends GroovyTestCase {
     }
     
     void testToString() {
-        foo = new Foo(name:'Gromit', location:'Moon')
+        def foo = new Foo(name:'Gromit', location:'Moon')
 
         println foo
     }
@@ -92,8 +92,8 @@ class PropertyTest extends GroovyTestCase {
     void testArrayLengthProperty() {
         // create two arrays, since all use the same MetaArrayLengthProperty object -
         // make sure it can work for all types and sizes
-        i = new Integer[5]
-        s = new String[10]
+        def i = new Integer[5]
+        def s = new String[10]
 
         // put something in it to make sure we're returning the *allocated* length, and
         // not the *used* length
@@ -110,7 +110,7 @@ class PropertyTest extends GroovyTestCase {
     }
 
     void testGstringAssignment() {
-        foo = new Foo()
+        def foo = new Foo()
         foo.body = "${foo.name}"
         assert foo.body == "James"
     }
