@@ -106,7 +106,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     break;
 
                 default:
-                    onUnknownAST(node);
+                    unknownAST(node);
             }
             node = node.getNextSibling();
         }
@@ -222,7 +222,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     break;
 
                 default:
-                    onUnknownAST(node);
+                    unknownAST(node);
             }
         }
     }
@@ -507,8 +507,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             AST typeNode = variableNode.getFirstChild();
             assertNodeType(TYPE, typeNode);
 
-            // TODO intern types?
-            type = new Type(resolvedName(typeNode.getFirstChild()));
+            type = type(typeNode);
             variableNode = typeNode.getNextSibling();
         }
         String variable = identifier(variableNode);
@@ -586,10 +585,33 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new ReturnStatement(expression);
     }
 
-    protected Statement switchStatement(AST node) {
-        dumpTree(node);
-        notImplementedYet(node);
-        return null; /** TODO */
+    protected Statement switchStatement(AST switchNode) {
+        AST node = switchNode.getFirstChild();
+        Expression expression = expression(node);
+        Statement defaultStatement = EmptyStatement.INSTANCE;
+
+        List list = new ArrayList();
+        for (node = node.getNextSibling(); isType(CASE_GROUP, node); node = node.getNextSibling()) {
+            AST child = node.getFirstChild();
+            if (isType(LITERAL_case, child)) {
+            list.add(caseStatement(child));
+            }
+            else {
+                defaultStatement = statement(child.getNextSibling());
+            }
+        }
+        if (node != null) {
+            unknownAST(node);
+        }
+        return new SwitchStatement(expression, list, defaultStatement);
+    }
+
+    protected CaseStatement caseStatement(AST node) {
+        Expression expression = expression(node.getFirstChild());
+        Statement statement = statement(node.getNextSibling());
+        CaseStatement answer = new CaseStatement(expression, statement);
+        configureAST(answer, node);
+        return answer;
     }
 
     protected Statement synchronizedStatement(AST syncNode) {
@@ -857,7 +879,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
 
             default:
-                onUnknownAST(node);
+                unknownAST(node);
         }
         return null;
     }
@@ -1107,7 +1129,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     break;
 
                 default:
-                    onUnknownAST(node);
+                    unknownAST(node);
             }
         }
         return new GStringExpression(buffer.toString(), strings, values);
@@ -1116,6 +1138,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected ClassExpression classExpression(AST node) {
         String typeName = resolvedName(node);
         return new ClassExpression(typeName);
+    }
+
+    protected Type type(AST typeNode) {
+        // TODO intern types?
+        return new Type(resolvedName(typeNode.getFirstChild()));
     }
 
     protected String label(AST labelNode) {
@@ -1197,7 +1224,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         throw new RuntimeException("AST node not implemented yet for type: " + node.getType() + description(node));
     }
 
-    protected void onUnknownAST(AST node) {
+    protected void unknownAST(AST node) {
         throw new RuntimeException("Unknown type: " + node.getType() + description(node));
     }
 

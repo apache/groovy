@@ -171,7 +171,7 @@ class SampleTest extends GroovyTestCase {
         // TODO parser doesn't return the thrown expression
         throw new Exception("Test exception")
     }
-    
+
     void testSwitch() {
         x = 12
         switch (x) {
@@ -180,7 +180,7 @@ class SampleTest extends GroovyTestCase {
                 break
 
             case  12:
-                println "Worked! Is 12!"
+                println "Switch worked! answer is 12!"
                 break
 
             case "text":
@@ -191,8 +191,26 @@ class SampleTest extends GroovyTestCase {
                 fail "Not defailt"
                 break
         }
-    }
 
+        x = 5
+        switch (x) {
+            case 1:
+                fail "not 1"
+                break
+
+            case  12:
+                fail "not 12"
+                break
+
+            case "text":
+                fail "not text"
+                break
+
+            default:
+                println "worked, the default answer"
+                break
+        }
+    }
 
 
     void testFor() {
@@ -265,7 +283,6 @@ class SampleTest extends GroovyTestCase {
         // assert "\\\\ \\ ${z}" == "\\\\ \\ 300"
         // assert "\\\\ \\ ${z}" == "\\" + "\\" + " " + "\\" + " " + "300"
     }
-
 
 
     /** TODO runtime breaks!

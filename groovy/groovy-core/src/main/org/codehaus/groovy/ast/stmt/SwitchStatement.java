@@ -72,7 +72,13 @@ public class SwitchStatement extends Statement {
         this.expression = expression;
         this.defaultStatement = defaultStatement;
     }
-    
+
+    public SwitchStatement(Expression expression, List caseStatements, Statement defaultStatement) {
+        this.expression = expression;
+        this.caseStatements = caseStatements;
+        this.defaultStatement = defaultStatement;
+    }
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitSwitch(this);
     }
