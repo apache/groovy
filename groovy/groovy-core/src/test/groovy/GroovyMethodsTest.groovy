@@ -6,13 +6,11 @@
  */
 class GroovyMethodsTest extends GroovyTestCase {
 
-	property count
-	
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
         
-        print( ["abc", 5, 2.34].join(", ") )
+        println( ["abc", 5, 2.34].join(", ") )
     }
     
     void testTimes() {
@@ -38,5 +36,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         array[0] = 9
         
        	assert array[0] == 9
+    }
+    
+    void testToCharacterMethod() {
+    	s = 'c'
+    	x = s.toCharacter()
+    	
+    	assert x instanceof Character
     }
 }
