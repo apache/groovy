@@ -40,7 +40,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -217,8 +216,8 @@ public class XMLRPCMessageProcessor extends MinML {
 				buffer.append("</struct></value>");
 			} else if (param instanceof GString) {	 // GString can be subclassed so the initial elements.get() can fail
 				((Emitter)elements.get(GString.class)).emit(buffer, param);
-			} else if (param instanceof BigInteger) {	 // BigInteger can be subclassed so the initial elements.get() can fail
-				((Emitter)elements.get(BigInteger.class)).emit(buffer, param);
+			} else if (param instanceof BigDecimal) {	 // BigDecimal can be subclassed so the initial elements.get() can fail
+				((Emitter)elements.get(BigDecimal.class)).emit(buffer, param);
 			} else if (param instanceof Date) {	 // Date can be subclassed so the initial elements.get() can fail
 				((Emitter)elements.get(Date.class)).emit(buffer, param);
 			} else {
