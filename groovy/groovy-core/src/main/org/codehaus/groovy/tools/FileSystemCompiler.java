@@ -86,6 +86,7 @@ public class FileSystemCompiler
         System.err.println("where possible options include: ");
         System.err.println("  --classpath <path>        Specify where to find user class files");
         System.err.println("  -d <directory>            Specify where to place generated class files");
+        System.err.println("  --encoding <encoding>     Specify the encoding of the user class files");
         System.err.println("  --strict                  Turn on strict type safety");
         System.err.println("  --version                 Print the verion");
         System.err.println("  --help                    Print a synopsis of standard options");
@@ -95,8 +96,8 @@ public class FileSystemCompiler
 
     public static void displayVersion() 
     {
-        System.err.println("groovy compiler version 1.0-alpha-1");
-        System.err.println("Copyright 2003 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("groovy compiler version 1.0-rc1");
+        System.err.println("Copyright 2003-2004 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
@@ -143,6 +144,7 @@ public class FileSystemCompiler
     
             options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("classpath").create());
             options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("sourcepath").create());
+            options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").create());
             options.addOption(OptionBuilder.hasArg().create('d'));
             options.addOption(OptionBuilder.withLongOpt("strict").create('s'));
             options.addOption(OptionBuilder.withLongOpt("help").create('h'));
@@ -179,7 +181,11 @@ public class FileSystemCompiler
             {
                 configuration.setTargetDirectory( cli.getOptionValue('d') );
             }
-    
+
+            if (cli.hasOption("encoding")) {
+                configuration.setSourceEncoding(cli.getOptionValue("encoding"));
+            }
+
             displayStackTraceOnError = cli.hasOption('e');
             
             

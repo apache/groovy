@@ -48,6 +48,7 @@ package org.codehaus.groovy.ant;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -88,6 +89,7 @@ public class Groovyc extends MatchingTask {
     private File destDir;
     private Path compileClasspath;
     private Path compileSourcepath;
+    private String encoding;
 
     protected boolean failOnError = true;
     protected boolean listFiles = false;
@@ -247,6 +249,21 @@ public class Groovyc extends MatchingTask {
         createClasspath().setRefid(r);
     }
 
+    public String createEncoding() {
+        if (encoding == null) {
+            encoding = System.getProperty("file.encoding");
+        }
+        return encoding;
+    }
+
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
     /**
      * If true, list the source files being handed off to the compiler.
      * @param list if true list the source files
@@ -365,6 +382,10 @@ public class Groovyc extends MatchingTask {
                 "destination directory \"" + destDir + "\" does not exist " + "or is not a directory",
                 getLocation());
         }
+
+        if (encoding != null && !Charset.isSupported(encoding)) {
+            throw new BuildException("encoding \"\" not supported");
+        }
     }
 
     protected void compile() {
@@ -390,7 +411,11 @@ public class Groovyc extends MatchingTask {
                     configuration.setClasspath(classpath.toString());
                 }
                 configuration.setTargetDirectory(destDir);
-                
+
+                if (encoding != null) {
+                    configuration.setSourceEncoding(encoding);
+                }
+
                 CompilationUnit unit = new CompilationUnit( configuration );
                 unit.addSources( compileList );
                 unit.compile( );
