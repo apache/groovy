@@ -669,7 +669,8 @@ public class ASTBuilder
 
     protected ConstructorCallExpression newExpression(CSTNode expressionRoot)
     {
-        String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
+        //String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
+        String datatype = resolvedQualifiedName( expressionRoot.getChild( 0 ) );
 
         TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
 
