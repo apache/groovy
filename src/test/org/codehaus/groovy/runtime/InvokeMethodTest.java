@@ -51,6 +51,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import junit.framework.AssertionFailedError;
+
 import org.codehaus.groovy.GroovyTestCase;
 
 /**
@@ -151,6 +153,22 @@ public class InvokeMethodTest extends GroovyTestCase {
     public void testStaticMethod() throws Throwable {
         Object value = invoke(DummyBean.class, "dummyStaticMethod", "abc");
         assertEquals("size of string", "ABC", value);
+    }
+    
+    public void testBaseClassMethod() throws Throwable {
+        Object object = new DummyBean();
+        Object value = invoke(object, "toString", null);
+        assertEquals("toString", object.toString(), value);
+    }
+    
+    public void testBaseFailMethod() throws Throwable {
+        Object value;
+        try {
+            value = invoke(this, "fail", "hello");
+        }
+        catch (AssertionFailedError e) {
+            // worked
+        }
     }
     
     public void testInvokeUnknownMethod() throws Throwable {

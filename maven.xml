@@ -61,6 +61,12 @@
     <attainGoal name="groovy:test"/>
   </goal>
 
+  <goal name="test:test" 
+        description="Test the application"
+        prereqs="">
+    <attainGoal name="groovy:test"/>
+  </goal>
+
   <goal name="groovy:test"
         description="Test the application with any Java or Groovy unit tests"
         prereqs="test:compile">
