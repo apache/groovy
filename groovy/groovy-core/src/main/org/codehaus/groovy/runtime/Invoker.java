@@ -56,6 +56,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -329,13 +331,21 @@ public class Invoker {
         else {
             try {
                 // lets try see if there's an iterator() method
-                Method method = value.getClass().getMethod("iterator", EMPTY_TYPES);
-                if (method != null) {
+                final Method method = value.getClass().getMethod("iterator", EMPTY_TYPES);
+                 
+                if (method != null) {                  
+	            		AccessController.doPrivileged(new PrivilegedAction() {
+	    					public Object run() {
+	    						method.setAccessible(true);
+	    						return null;
+	    					}
+	    				});
+            		
                     return (Iterator) method.invoke(value, EMPTY_ARGUMENTS);
                 }
             }
             catch (Exception e) {
-                // ignore
+            		//  ignore
             }
         }
         return asCollection(value).iterator();
