@@ -35,7 +35,7 @@ public class ASTBuilder
         return this.classLoader;
     }
 
-    public ClassNode[] build(CSTNode unitRoot)
+    public ClassNode[] build(CSTNode unitRoot) throws ParserException
     {
         CSTNode[] children = unitRoot.getChildren();
 
@@ -166,8 +166,6 @@ public class ASTBuilder
                 // swallow
             }
         }
-
-        /** @todo throw exception if not found? */
         return null;
     }
 
@@ -231,7 +229,7 @@ public class ASTBuilder
         return resolveName( qualifiedName( nameRoot ) );
     }
 
-    protected String resolvedQualifiedNameNotNull(CSTNode child) 
+    protected String resolvedQualifiedNameNotNull(CSTNode child) throws ParserException 
     {
         String answer = resolvedQualifiedName(child);
         if (answer == null) 
@@ -253,7 +251,7 @@ public class ASTBuilder
         return qualifiedNames;
     }
 
-    protected String[] resolvedQualifiedNamesNotNull(CSTNode[] nameRoots)
+    protected String[] resolvedQualifiedNamesNotNull(CSTNode[] nameRoots) throws ParserException
     {
         String[] qualifiedNames = qualifiedNames( nameRoots );
 
@@ -271,7 +269,7 @@ public class ASTBuilder
     }
 
     protected ClassNode datatypeDeclaration(String packageName,
-                                            CSTNode datatypeCst)
+                                            CSTNode datatypeCst) throws ParserException
     {
         if ( matches( datatypeCst,
                       Token.KEYWORD_CLASS ) )
@@ -287,7 +285,7 @@ public class ASTBuilder
     }
 
     protected ClassNode classDeclaration(String packageName,
-                                         CSTNode classRoot)
+                                         CSTNode classRoot) throws ParserException
     {
         int modifiers = modifiers( classRoot.getChild( 0 ) );
 
@@ -385,7 +383,7 @@ public class ASTBuilder
         return propertyNode;
     }
 
-    protected MethodNode methodDeclaration(CSTNode methodRoot)
+    protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException
     {
         int modifiers = modifiers( methodRoot.getChild( 0 ) );
 
@@ -427,7 +425,7 @@ public class ASTBuilder
         return null;
     }
 
-    protected BlockStatement statementBlock(CSTNode blockRoot)
+    protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException
     {
         BlockStatement statementBlock = new BlockStatement();
 
@@ -445,7 +443,7 @@ public class ASTBuilder
         return statementBlock;
     }
 
-    protected Statement statement(CSTNode statementRoot)
+    protected Statement statement(CSTNode statementRoot) throws ParserException
     {
         Statement statement = null;
 
@@ -491,7 +489,7 @@ public class ASTBuilder
         return statement;
     }
 
-    protected WhileStatement whileStatement(CSTNode statementRoot)
+    protected WhileStatement whileStatement(CSTNode statementRoot) throws ParserException
     {
         Expression expr = expression( statementRoot.getChild( 0 ) );
         BlockStatement statementBlock = statementBlock( statementRoot.getChild( 1 ) );
@@ -500,7 +498,7 @@ public class ASTBuilder
                                    statementBlock );
     }
 
-    protected IfStatement ifStatement(CSTNode statementRoot)
+    protected IfStatement ifStatement(CSTNode statementRoot) throws ParserException
     {
         CSTNode[]         children   = statementRoot.getChildren();
 
@@ -530,7 +528,7 @@ public class ASTBuilder
                            elseBlock );
     }
 
-    protected TryCatchStatement tryStatement(CSTNode statementRoot)
+    protected TryCatchStatement tryStatement(CSTNode statementRoot) throws ParserException
     {
         TryCatchStatement tcf = new TryCatchStatement( statementBlock( statementRoot.getChild( 0 ) ),
                                                    statementBlock( statementRoot.getChild( 1 ) ) );
@@ -551,12 +549,12 @@ public class ASTBuilder
         return tcf;
     }
 
-    protected ReturnStatement returnStatement(CSTNode statementRoot)
+    protected ReturnStatement returnStatement(CSTNode statementRoot) throws ParserException
     {
         return new ReturnStatement( expression( statementRoot.getChild( 0 ) ) );
     }
 
-    protected ForStatement forStatement(CSTNode statementRoot)
+    protected ForStatement forStatement(CSTNode statementRoot) throws ParserException
     {
         String variable = statementRoot.getChild( 0 ).getToken().getText();
 
@@ -569,7 +567,7 @@ public class ASTBuilder
                             bodyBlock );
     }
 
-    protected AssertStatement assertStatement(CSTNode statementRoot)
+    protected AssertStatement assertStatement(CSTNode statementRoot) throws ParserException
     {
         BooleanExpression assertExpr = new BooleanExpression( expression( statementRoot.getChild( 0 ) ) );
 
@@ -590,12 +588,12 @@ public class ASTBuilder
                                     messageExpr );
     }
 
-    protected Statement expressionStatement(CSTNode statementRoot)
+    protected Statement expressionStatement(CSTNode statementRoot) throws ParserException
     {
         return new ExpressionStatement( expression( statementRoot ) );
     }
 
-    protected Expression expression(CSTNode expressionRoot)
+    protected Expression expression(CSTNode expressionRoot) throws ParserException
     {
         switch ( expressionRoot.getToken().getType() )
         {
@@ -667,7 +665,7 @@ public class ASTBuilder
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
     }
 
-    protected ConstructorCallExpression newExpression(CSTNode expressionRoot)
+    protected ConstructorCallExpression newExpression(CSTNode expressionRoot) throws ParserException
     {
         //String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
         String datatype = resolvedQualifiedName( expressionRoot.getChild( 0 ) );
@@ -678,7 +676,7 @@ public class ASTBuilder
                                               args );
     }
 
-    protected ClosureExpression closureExpression(CSTNode expressionRoot)
+    protected ClosureExpression closureExpression(CSTNode expressionRoot) throws ParserException
     {
         Parameter[] parameters = parameters( expressionRoot.getChild( 0 ).getChildren() );
 
@@ -686,7 +684,7 @@ public class ASTBuilder
                                       statementBlock( expressionRoot.getChild( 1 ) ) );
     }
 
-    protected MethodCallExpression methodCallExpression(CSTNode expressionRoot)
+    protected MethodCallExpression methodCallExpression(CSTNode expressionRoot) throws ParserException
     {
         CSTNode objectExpressionRoot = expressionRoot.getChild( 0 );
 
@@ -710,7 +708,7 @@ public class ASTBuilder
                                          paramList );
     }
 
-    protected Expression actualParameterList(CSTNode paramRoot)
+    protected Expression actualParameterList(CSTNode paramRoot) throws ParserException
     {
         Expression paramList = null;
 
@@ -731,7 +729,7 @@ public class ASTBuilder
         return paramList;
     }
 
-    protected Expression namedActualParameterList(CSTNode paramRoot)
+    protected Expression namedActualParameterList(CSTNode paramRoot) throws ParserException
     {
         //NamedArgumentListExpression paramList = new NamedArgumentListExpression();
         //ListExpression paramList = new ListExpression();
@@ -779,12 +777,12 @@ public class ASTBuilder
         return paramList;
     }
 
-    protected Expression nonNamedActualParameterList(CSTNode paramRoot)
+    protected Expression nonNamedActualParameterList(CSTNode paramRoot) throws ParserException
     {
         return tupleExpression( paramRoot );
     }
 
-    protected TupleExpression tupleExpression(CSTNode expressionRoot)
+    protected TupleExpression tupleExpression(CSTNode expressionRoot) throws ParserException
     {
         TupleExpression tupleExpression = new TupleExpression();
 
@@ -798,7 +796,7 @@ public class ASTBuilder
         return tupleExpression;
     }
 
-    protected ListExpression listExpression(CSTNode expressionRoot)
+    protected ListExpression listExpression(CSTNode expressionRoot) throws ParserException
     {
         ListExpression listExpression = new ListExpression();
 
@@ -812,7 +810,7 @@ public class ASTBuilder
         return listExpression;
     }
 
-    protected MapExpression mapExpression(CSTNode expressionRoot)
+    protected MapExpression mapExpression(CSTNode expressionRoot) throws ParserException
     {
         MapExpression mapExpression = new MapExpression();
 
@@ -831,13 +829,13 @@ public class ASTBuilder
         return mapExpression;
     }
 
-    protected RangeExpression rangeExpression(CSTNode expressionRoot)
+    protected RangeExpression rangeExpression(CSTNode expressionRoot) throws ParserException
     {
         return new RangeExpression( expression( expressionRoot.getChild( 0 ) ),
                                     expression( expressionRoot.getChild( 1 ) ) );
     }
 
-    protected Expression propertyExpression(CSTNode expressionRoot)
+    protected Expression propertyExpression(CSTNode expressionRoot) throws ParserException
     {
         Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
 
@@ -931,7 +929,7 @@ public class ASTBuilder
         return answer;
     }
     
-    protected BinaryExpression binaryExpression(CSTNode expressionRoot)
+    protected BinaryExpression binaryExpression(CSTNode expressionRoot) throws ParserException
     {
         Expression lhsExpression = expression( expressionRoot.getChild( 0 ) );
         Expression rhsExpression = expression( expressionRoot.getChild( 1 ) );

@@ -28,6 +28,8 @@ Things to Test
 		in exception catching
 		in general class expression
 	- unknown variable
+
+* fix PrintTest
 	
 Core Groovy Tasks
 =================
