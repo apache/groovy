@@ -1,5 +1,7 @@
 class LeftShiftTest extends GroovyTestCase {
 
+    def foo = [1, 2, 3]
+
     void testShift() {
         def x = 4
 
@@ -21,4 +23,11 @@ class LeftShiftTest extends GroovyTestCase {
 
         println "List is $list"
     }
+
+    void testLeftShiftOnExpression() {
+        this.foo << 4
+
+        assert foo == [1, 2, 3, 4]
+    }
+
 }

@@ -2036,7 +2036,7 @@ andExpression
 
 // equality/inequality (==/!=) (level 6)
 equalityExpression
-        :       relationalExpression ((NOT_EQUAL^ | EQUAL^ ) nls! relationalExpression)*
+        :       relationalExpression ((NOT_EQUAL^ | EQUAL^ | COMPARE_TO^) nls! relationalExpression)*
         ;
 
 
@@ -2047,7 +2047,6 @@ relationalExpression
                                 |       GT^
                                 |       LE^
                                 |       GE^
-                                |						 COMPARE_TO^
                                 |       "in"^
                                 )
                                 nls!

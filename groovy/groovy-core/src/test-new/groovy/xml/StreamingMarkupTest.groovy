@@ -17,7 +17,7 @@ class StreamingMarkupTest extends groovy.xml.TestXmlSupport {
             }
         }
 
-        System.out << b.bind m
+        System.out << b.bind(m)
     }
     
     void testTree() {
@@ -39,6 +39,6 @@ class StreamingMarkupTest extends groovy.xml.TestXmlSupport {
             }
         }
 
-        System.out << b.bind m
+        System.out << b.bind(m)
     }
 }
