@@ -133,6 +133,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // cached values
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethod");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
+    MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
@@ -737,7 +738,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
             if (size == 0) {
-                arguments = ConstantExpression.NULL;
+                arguments = ConstantExpression.EMPTY_ARRAY;
             }
             else if (size == 1) {
                 arguments = (Expression) tupleExpression.getExpressions().get(0);
@@ -785,7 +786,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
             if (size == 0) {
-                arguments = ConstantExpression.NULL;
+                arguments = ConstantExpression.EMPTY_ARRAY;
             }
             else if (size == 1) {
                 arguments = (Expression) tupleExpression.getExpressions().get(0);
@@ -799,9 +800,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         invokeStaticMethodMethod.call(cv);
     }
 
-    public void visitConstructorCallExpression(ConstructorCallExpression expression) {
-        // TODO Auto-generated method stub
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+        this.leftHandExpression = false;
 
+        Expression arguments = call.getArguments();
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            int size = tupleExpression.getExpressions().size();
+            if (size == 0) {
+                arguments = ConstantExpression.EMPTY_ARRAY;
+            }
+            else if (size == 1) {
+                arguments = (Expression) tupleExpression.getExpressions().get(0);
+            }
+        }
+
+        cv.visitLdcInsn(call.getType());
+        arguments.visit(this);
+
+        invokeConstructorMethod.call(cv);
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

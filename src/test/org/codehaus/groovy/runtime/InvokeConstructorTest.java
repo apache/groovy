@@ -44,46 +44,45 @@
 
  */
 
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
-import groovy.lang.MetaClass;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.lang.GroovyTestCase;
 
 
 /**
- * This is a scratch class used to experiment with ASM to see what kind of 
- * stuff is output for normal Java code
+ * Tests method invocation
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DumpClass2 {
+public class InvokeConstructorTest extends GroovyTestCase {
 
-    private String bar = (String) InvokerHelper.invokeStaticMethod("InvokerHelper", "getMetaClass", null);
+    protected Invoker invoker = new Invoker();
 
-    public DumpClass2(Object foo) {
+    public void testInvokeConstructorNoParams() throws Throwable {
+        assertConstructor(new DummyBean(), new Object[0]);
     }
-    
-    public Object makeClosure() {
-        return new Closure(this) {
-            public void doCall() {
-                
-            }  
-            public MetaClass getMetaClass() {
-                return null;
-            }
-            
-            public void setMetaClass(MetaClass metaClass) {
-            }
-        };
+
+    public void testInvokeConstructorOneParam() throws Throwable {
+        assertConstructor(new DummyBean("Bob"), "Bob");
     }
-    public String getBar() {
-        return bar;
+
+    public void testInvokeConstructorOneParamWhichIsNull() throws Throwable {
+        assertConstructor(new DummyBean("Bob", new Integer(1707)), new Object[] {"Bob", new Integer(1707)});
     }
-    
-    public Object callConstructor() {
-        return InvokerHelper.invokeConstructor("java.lang.String", "hello");
+
+    protected void assertConstructor(Object expected, Object arguments) throws Throwable {
+        Object value = invoke(expected.getClass().getName(), arguments);
+
+        assertEquals("Invoking overloaded method for arguments: " + InvokerHelper.toString(arguments), expected, value);
+    }
+
+    protected Object invoke(String type, Object args) throws Throwable {
+        try {
+            return invoker.invokeConstructor(type, args);
+        }
+        catch (InvokerInvocationException e) {
+            throw e.getCause();
+        }
     }
 }

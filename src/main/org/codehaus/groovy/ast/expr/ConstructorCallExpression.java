@@ -67,6 +67,10 @@ public class ConstructorCallExpression extends Expression {
         visitor.visitConstructorCallExpression(this);
     }
     
+    public String getType() {
+        return type;
+    }
+
     public Expression getArguments() {
         return arguments;
     }

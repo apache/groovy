@@ -60,6 +60,18 @@ public class DummyBean {
     private Integer i = new Integer(123);
     private Map dynamicProperties = new HashMap();
 
+    public DummyBean() {
+    }
+
+    public DummyBean(String name) {
+        this.name = name;
+    }
+
+    public DummyBean(String name, Integer i) {
+        this.name = name;
+        this.i = i;
+    }
+
     public Integer getI() {
         return i;
     }
@@ -84,8 +96,24 @@ public class DummyBean {
     public void set(String property, Object newValue) {
         dynamicProperties.put(property, newValue);
     }
-    
+
     public static String dummyStaticMethod(String text) {
         return text.toUpperCase();
     }
+    
+    public boolean equals(Object that) {
+        if (that instanceof DummyBean) {
+            return equals((DummyBean) that);
+        }
+        return false;
+    }
+    
+    public boolean equals(DummyBean that) {
+        return this.name.equals(that.name) && this.i.equals(that.i);
+    }
+
+    public String toString() {
+        return super.toString() + "[name=" + name + ";i=" + i + "]";
+    }
+
 }

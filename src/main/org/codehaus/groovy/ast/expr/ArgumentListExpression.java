@@ -55,6 +55,8 @@ import java.util.List;
  */
 public class ArgumentListExpression extends TupleExpression {
 
+    public static final Object[] EMPTY_ARRAY = {};
+    
     public ArgumentListExpression() {
     }
     
