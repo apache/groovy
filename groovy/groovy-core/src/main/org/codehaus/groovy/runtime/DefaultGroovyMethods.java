@@ -58,9 +58,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 
 import org.codehaus.groovy.lang.Closure;
 import org.codehaus.groovy.lang.Range;
@@ -296,6 +301,59 @@ public class DefaultGroovyMethods {
         return list.subList(range.getFrom(), range.getTo());
     }
 
+
+    /**
+     * A convenience method for creating an immutable map
+     */
+    public Map immutable(Map self) {
+        return Collections.unmodifiableMap(self);
+    }
+    
+    /**
+     * A convenience method for creating an immutable sorted map
+     */
+    public SortedMap immutable(SortedMap self) {
+        return Collections.unmodifiableSortedMap(self);
+    }
+    
+    /**
+     * A convenience method for creating an immutable list
+     */
+    public List immutable(List self) {
+        return Collections.unmodifiableList(self);
+    }
+
+    /**
+     * A convenience method for creating an immutable list
+     */
+    public Set immutable(Set self) {
+        return Collections.unmodifiableSet(self);
+    }
+
+    /**
+     * A convenience method for creating an immutable sorted set
+     */
+    public SortedSet immutable(SortedSet self) {
+        return Collections.unmodifiableSortedSet(self);
+    }
+
+    /**
+     * A convenience method for sorting a List
+     */
+    public void sort(List self) {
+        Collections.sort(self);
+    }
+
+    /**
+     * A convenience method for sorting a List with a specific comparator
+     */
+    public void sort(List self, Comparator comparator) {
+        Collections.sort(self, comparator);
+    }
+
+
+    
+    
     /**
      * Helper method to create a buffered reader for a file
      * 
