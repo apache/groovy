@@ -96,9 +96,34 @@ public class Sql {
      * @param url
      * @return a new Sql instance with a connection
      */
-    public static Sql newInstance(String url, Properties properties, String driverClassName) throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(String url, Properties properties, String driverClassName)
+        throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
+    }
+
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL, username and password
+     * 
+     * @param url
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url, String user, String password) throws SQLException {
+        Connection connection = DriverManager.getConnection(url, user, password);
+        return new Sql(connection);
+    }
+
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL, username, password
+     * and driver class name
+     * 
+     * @param url
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url, String user, String password, String driverClassName)
+        throws SQLException, ClassNotFoundException {
+        loadDriver(driverClassName);
+        return newInstance(url, user, password);
     }
 
     /**
@@ -113,7 +138,6 @@ public class Sql {
         loadDriver(driverClassName);
         return newInstance(url);
     }
-    
 
     /**
      * Attempts to load the JDBC driver on the thread, current or system class loaders
@@ -123,18 +147,18 @@ public class Sql {
      */
     public static void loadDriver(String driverClassName) throws ClassNotFoundException {
         // lets try the thread context class loader first
+        // lets try to use the system class loader
         try {
-            Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
+            Class.forName(driverClassName);
         }
         catch (ClassNotFoundException e) {
-            // now lets try the classloader which loaded us
             try {
-                Sql.class.getClassLoader().loadClass(driverClassName);
+                Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
             }
             catch (ClassNotFoundException e2) {
-                // lets make one final attempt to use the system class loader
+                // now lets try the classloader which loaded us
                 try {
-                    Class.forName(driverClassName);
+                    Sql.class.getClassLoader().loadClass(driverClassName);
                 }
                 catch (ClassNotFoundException e3) {
                     throw e;
@@ -142,7 +166,7 @@ public class Sql {
             }
         }
     }
-    
+
     /**
      * Constructs an SQL instance using the given DataSource. 
      * Each operation will use a Connection
