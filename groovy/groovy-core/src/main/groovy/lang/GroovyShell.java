@@ -254,8 +254,6 @@ public class GroovyShell extends GroovyObjectSupport {
         try {
             // let's find a main method
             scriptClass.getMethod("main", new Class[]{String[].class});
-            // if that main method exist, invoke it
-            InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
         } catch (NoSuchMethodException e) {
             // As no main() method was found, let's see if it's a unit test
             // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
@@ -303,7 +301,10 @@ public class GroovyShell extends GroovyObjectSupport {
                         "- be a class extending GroovyTestCase, \n" +
                         "- or implement the Runnable interface.");
             }
+            return;
         }
+        // if that main method exist, invoke it
+        InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
     }
 
     /**
