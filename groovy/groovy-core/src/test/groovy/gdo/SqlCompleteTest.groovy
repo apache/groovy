@@ -38,6 +38,16 @@ class SqlCompleteTest extends GroovyTestCase {
         assert results == expected
     }
 
+    void testSqlQueryWith2ParametersUsingQuestionMarkNotation() {
+        sql = createSql()     
+        
+        results = []
+        sql.queryEach("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
+        
+        expected = ["brie", "cheddar"]
+        assert results == expected
+    }
+
     void testDataSet() {
         sql = createSql()     
         

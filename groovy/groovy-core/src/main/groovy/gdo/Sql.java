@@ -49,6 +49,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.sql.*;
 
@@ -101,6 +105,38 @@ public class Sql {
     }
 
     /**
+     * Performs the given SQL query with parameters calling the closure with the result set
+     */
+    public void query(String sql, List params, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+        try {
+            log.debug(sql);
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
+            results = statement.executeQuery();
+            closure.call(results);
+        }
+        catch (SQLException e) {
+            log.warn("Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }
+
+    /**
+     * Performs the given SQL query calling the closure with the result set
+     */
+    public void query(GString gstring, Closure closure) throws SQLException {
+        String sql = asSql(gstring);
+        List params = getParameters(gstring);
+        query(sql, params, closure);
+    }
+    
+    /**
      * Performs the given SQL query calling the closure with each row of the result set
      */
     public void queryEach(String sql, Closure closure) throws SQLException {
@@ -128,33 +164,14 @@ public class Sql {
     /**
      * Performs the given SQL query calling the closure with the result set
      */
-    public void query(GString sql, Closure closure) throws SQLException {
+    public void queryEach(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            statement = createPreparedStatement(connection, sql);
-            results = statement.executeQuery();
-            closure.call(results);
-        }
-        catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, results);
-        }
-    }
-
-    /**
-     * Performs the given SQL query calling the closure with the result set
-     */
-    public void queryEach(GString sql, Closure closure) throws SQLException {
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        ResultSet results = null;
-        try {
-            statement = createPreparedStatement(connection, sql);
+            log.debug(sql);
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
             results = statement.executeQuery();
 
             GroovyResultSet groovyRS = new GroovyResultSet(results);
@@ -173,14 +190,47 @@ public class Sql {
 
     
     /**
+     * Performs the given SQL query calling the closure with the result set
+     */
+    public void queryEach(GString gstring, Closure closure) throws SQLException {
+        String sql = asSql(gstring);
+        List params = getParameters(gstring);
+        queryEach(sql, params, closure);
+        
+    }
+
+    
+    /**
      * Executes the given piece of SQL
      */
     public boolean execute(String sql) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = null;
         try {
             log.debug(sql);
+            statement = connection.createStatement();
             return statement.execute(sql);
+        }
+        catch (SQLException e) {
+            log.warn("Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters
+     */
+    public boolean execute(String sql, List params) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            log.debug(sql);
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
+            return statement.execute();
         }
         catch (SQLException e) {
             log.warn("Failed to execute: " + sql, e);
@@ -194,15 +244,32 @@ public class Sql {
     /**
      * Executes the given SQL with embedded expressions inside
      */
-    public int execute(GString gstring) throws Exception {
+    public boolean execute(GString gstring) throws SQLException {
+        String sql = asSql(gstring);
+        List params = getParameters(gstring);
+        return execute(sql, params);
+    }
+
+    /**
+     * Performs a stored procedure call
+     */
+    public int call(String sql) throws Exception {
+        return call(sql, Collections.EMPTY_LIST);
+    }
+    
+    /**
+     * Performs a stored procedure call with the given parameters
+     */
+    public int call(String sql, List params) throws Exception {
         Connection connection = createConnection();
-        PreparedStatement statement = null;
+        CallableStatement statement = connection.prepareCall(sql);
         try {
-            statement = createPreparedStatement(connection, gstring);
+            log.debug(sql);
+            setParameters(params, statement);
             return statement.executeUpdate();
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + gstring, e);
+            log.warn("Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -214,35 +281,18 @@ public class Sql {
      * Performs a stored procedure call with the given parameters
      */
     public int call(GString gstring) throws Exception {
-        Connection connection = createConnection();
         String sql = asSql(gstring);
-        CallableStatement statement = connection.prepareCall(sql);
-        try {
-            log.debug(gstring);
-            setParameters(gstring, statement);
-            return statement.executeUpdate();
-        }
-        catch (SQLException e) {
-            log.warn("Failed to execute: " + gstring, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement);
-        }
+        List params = getParameters(gstring);
+        return call(sql, params);
     }
-
+    
     public DataSource getDataSource() {
         return dataSource;
     }
 
-    protected PreparedStatement createPreparedStatement(Connection connection, GString gstring) throws SQLException {
-        log.debug(gstring);
-        String sql = asSql(gstring);
-        PreparedStatement statement = connection.prepareStatement(sql);
-        setParameters(gstring, statement);
-        return statement;
-    }
-
+    /**
+     * @return the SQL version of the given query using ? instead of any parameter
+     */
     protected String asSql(GString gstring) {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
@@ -253,16 +303,29 @@ public class Sql {
             buffer.append(strings[i]);
             buffer.append("?");
         }
-
-        String sql = buffer.toString();
-        return sql;
+        return buffer.toString();
     }
 
-    protected void setParameters(GString gstring, PreparedStatement statement) throws SQLException {
+    /**
+     * @return extracts the parameters from the expression as a List
+     */
+    protected List getParameters(GString gstring) {
         Object[] values = gstring.getValues();
+        List answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
-            Object value = values[i];
-            setObject(statement, i + 1, value);
+            answer.add(values[i]);
+        }
+        return answer;
+    }
+
+    /**
+     * Appends the parameters to the given statement
+     */
+    protected void setParameters(List params, PreparedStatement statement) throws SQLException {
+        int i = 1;
+        for (Iterator iter = params.iterator(); iter.hasNext(); ) {
+            Object value = iter.next();
+            setObject(statement, i++, value);
         }
     }
 

@@ -1,5 +1,8 @@
 package groovy.gdo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -16,6 +19,7 @@ import org.codehaus.groovy.syntax.Token;
 public class SqlWhereVisitor extends CodeVisitorSupport {
 
     private StringBuffer buffer = new StringBuffer();
+    private List parameters = new ArrayList();
 
     public String getWhere() {
         return buffer.toString();
@@ -31,10 +35,10 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
 
         left.visit(this);
         buffer.append(" ");
-        
+
         Token token = expression.getOperation();
         buffer.append(tokenAsSql(token));
-        
+
         buffer.append(" ");
         right.visit(this);
     }
@@ -44,30 +48,27 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     }
 
     public void visitConstantExpression(ConstantExpression expression) {
-        Object value = expression.getValue();
-        if (value instanceof Number) {
-            buffer.append(value);
-        }
-        else {
-            buffer.append("'");
-            buffer.append(value);
-            buffer.append("'");
-        }
+        getParameters().add(expression.getValue());
+        buffer.append("?");
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
         buffer.append(expression.getProperty());
     }
-
+    
+    public List getParameters() {
+        return parameters;
+    }
+    
     protected String tokenAsSql(Token token) {
         switch (token.getType()) {
-            case Token.COMPARE_EQUAL:
+            case Token.COMPARE_EQUAL :
                 return "=";
-            case Token.LOGICAL_AND:
+            case Token.LOGICAL_AND :
                 return "and";
-            case Token.LOGICAL_OR:
+            case Token.LOGICAL_OR :
                 return "or";
-            default:
+            default :
                 return token.getText();
         }
     }
