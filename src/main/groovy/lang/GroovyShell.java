@@ -71,6 +71,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private int counter;
 
     public static void main(String args[]) {
+        MetaClass.setUseReflection(true);
         int length = args.length;
         if (length <= 0) {
             System.out.println("Usage: Groovy groovyScript [arguments]");
