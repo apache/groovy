@@ -71,10 +71,6 @@ Core Groovy Tasks
 	- Map.get(key, defaultValue)
 	- Map.setDefault(key, defaultValue) for things like
   		 map.setDefault(key, []).add(newValue)
-	- list.sortBy { [it.name, it.location] }
-	- list.sort { a, b | a.name <=> b.name }
-	
-		to ensure the map has a list of things
 	
 	- Object.getMetaClass()
 	- Object.eachProperty
@@ -83,10 +79,6 @@ Core Groovy Tasks
 	
 	- Map.eachKey, eachValue
 	- Map.index, Map.indexes
-	- Object.display (rather than toConsoleOutput)
-	- eval("....")
-	- gets
-	- load(...)
 	- configure method on beans?
 		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
@@ -102,9 +94,6 @@ Core Groovy Tasks
 
 	listener = bean.property + { some closure }
 	bean.property - listener
-	
-* .@ support on W3C DOM trees...
-	though we might wanna use @ to refer to attributes?
 	
 * BeanBuilder - builder which creates a tree of beans
 	builder.bean(class:SomeClass, x:123, b:'hello') {
