@@ -47,7 +47,6 @@ import groovy.util.OrderBy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -2123,27 +2122,7 @@ public class DefaultGroovyMethods {
      * @return the addition of both Numbers
      */
     public static Number plus(Number left, Number right) {
-        /** @todo maybe a double dispatch thing to handle new large numbers? */
-        if (isBigDecimal(left) || isBigDecimal(right)) {
-            return toBigDecimal(left).add(toBigDecimal(right));
-        }
-        else if (isFloatingPoint(left) || isFloatingPoint(right)) {
-            return new Double(left.doubleValue() + right.doubleValue());
-        }
-        else if (isLong(left) || isLong(right)) {
-            return new Long(left.longValue() + right.longValue());
-        }
-        else {
-            return new Integer(left.intValue() + right.intValue());
-        }
-    }
-
-    public static boolean isBigDecimal(Number number) {
-        return number instanceof BigDecimal;
-    }
-
-    public static BigDecimal toBigDecimal(Number n) {
-        return (n instanceof BigDecimal ? (BigDecimal) n : new BigDecimal(n.toString()));
+        return NumberMath.add(left, right);
     }
 
     /**
@@ -2188,33 +2167,7 @@ public class DefaultGroovyMethods {
      */
     public static int compareTo(Number left, Number right) {
         /** @todo maybe a double dispatch thing to handle new large numbers? */
-        if (isFloatingPoint(left) || isFloatingPoint(right)) {
-            double diff = left.doubleValue() - right.doubleValue();
-            if (diff == 0) {
-                return 0;
-            }
-            else {
-                return (diff > 0) ? 1 : -1;
-            }
-        }
-        else if (isLong(left) || isLong(right)) {
-            long diff = left.longValue() - right.longValue();
-            if (diff == 0) {
-                return 0;
-            }
-            else {
-                return (diff > 0) ? 1 : -1;
-            }
-        }
-        else {
-            int diff = left.intValue() - right.intValue();
-            if (diff == 0) {
-                return 0;
-            }
-            else {
-                return (diff > 0) ? 1 : -1;
-            }
-        }
+        return NumberMath.compareTo(left, right);
     }
 
     /**
@@ -2258,18 +2211,7 @@ public class DefaultGroovyMethods {
      * @return the substraction
      */
     public static Number minus(Number left, Number right) {
-        if (isBigDecimal(left) || isBigDecimal(right)) {
-            return toBigDecimal(left).subtract(toBigDecimal(right));
-        }
-        else if (isFloatingPoint(left) || isFloatingPoint(right)) {
-            return new Double(left.doubleValue() - right.doubleValue());
-        }
-        else if (isLong(left) || isLong(right)) {
-            return new Long(left.longValue() - right.longValue());
-        }
-        else {
-            return new Integer(left.intValue() - right.intValue());
-        }
+    	return NumberMath.subtract(left,right);
     }
 
     /**
@@ -2312,19 +2254,10 @@ public class DefaultGroovyMethods {
      * @param right another Number
      * @return the multiplication of both
      */
+	//Note:  This method is NOT called if left AND right are both BigIntegers or BigDecimals because
+	//those classes implement a method with a better exact match.
     public static Number multiply(Number left, Number right) {
-        if (isBigDecimal(left) || isBigDecimal(right)) {
-            return toBigDecimal(left).multiply(toBigDecimal(right));
-        }
-        else if (isFloatingPoint(left) || isFloatingPoint(right)) {
-            return new Double(left.doubleValue() * right.doubleValue());
-        }
-        else if (isLong(left) || isLong(right)) {
-            return new Long(left.longValue() * right.longValue());
-        }
-        else {
-            return new Integer(left.intValue() * right.intValue());
-        }
+    	return NumberMath.multiply(left, right);
     }
 
     /**
@@ -2335,16 +2268,16 @@ public class DefaultGroovyMethods {
      * @return a Number to the power of a certain exponent
      */
     public static Number power(Number self, Number exponent) {
-        double answer = Math.pow(self.doubleValue(), exponent.doubleValue());
-        if (isFloatingPoint(self) || isFloatingPoint(exponent) || answer < 1) {
-            return new Double(answer);
-        }
-        else if (isLong(self) || isLong(exponent) || answer > Integer.MAX_VALUE) {
-            return new Long((long) answer);
-        }
-        else {
-            return new Integer((int) answer);
-        }
+		double answer = Math.pow(self.doubleValue(), exponent.doubleValue());
+		if (NumberMath.isFloatingPoint(self) || NumberMath.isFloatingPoint(exponent) || answer < 1) {
+			return new Double(answer);
+		}
+		else if (NumberMath.isLong(self) || NumberMath.isLong(exponent) || answer > Integer.MAX_VALUE) {
+			return new Long((long) answer);
+		}
+		else {
+			return new Integer((int) answer);
+		}
     }
 
     /**
@@ -2354,8 +2287,8 @@ public class DefaultGroovyMethods {
      * @param right a Number
      * @return the multiplication of both
      */
-    public static Number divide(Character left, Number right) {
-        return divide(new Integer(left.charValue()), right);
+    public static Number div(Character left, Number right) {
+        return div(new Integer(left.charValue()), right);
     }
 
     /**
@@ -2365,8 +2298,8 @@ public class DefaultGroovyMethods {
      * @param right a Character
      * @return the multiplication of both
      */
-    public static Number divide(Number left, Character right) {
-        return divide(left, new Integer(right.charValue()));
+    public static Number div(Number left, Character right) {
+        return div(left, new Integer(right.charValue()));
     }
 
     /**
@@ -2376,44 +2309,21 @@ public class DefaultGroovyMethods {
      * @param right another Character
      * @return the multiplication of both
      */
-    public static Number divide(Character left, Character right) {
-        return divide(new Integer(left.charValue()), right);
+    public static Number div(Character left, Character right) {
+        return div(new Integer(left.charValue()), right);
     }
 
     /**
      * Divide two Numbers
-     *
+     * 
      * @param left a Number
      * @param right another Number
      * @return a Number resulting of the divide operation
      */
-    public static Number divide(Number left, Number right) {
-        // lets use double for division?
-        if (isBigDecimal(left) || isBigDecimal(right)) {
-            return toBigDecimal(left).divide(toBigDecimal(right), BigDecimal.ROUND_HALF_EVEN);
-        }
-        else
-            return new Double(left.doubleValue() / right.doubleValue());
-    }
-
-    /**
-     * Tell whether the Number is a Long
-     *
-     * @param number a Number
-     * @return true if the Number is a Long
-     */
-    public static boolean isLong(Number number) {
-        return number instanceof Long;
-    }
-
-    /**
-     * Tell whether the Number is a floating point Number (ie. Float or Double)
-     *
-     * @param number a Number
-     * @return true if the Number is a Double or a Float
-     */
-    public static boolean isFloatingPoint(Number number) {
-        return number instanceof Float || number instanceof Double;
+	//Method name changed from 'divide' to avoid collision with BigInteger method that has
+	//different semantics.  We want a BigDecimal result rather than a BigInteger.
+    public static Number div(Number left, Number right) {
+    	return NumberMath.divide(left, right);
     }
 
     /**
@@ -2461,6 +2371,8 @@ public class DefaultGroovyMethods {
      * @param number a Number
      * @return the absolute value of that Number
      */
+    //Note:  This method is NOT called if number is a BigInteger or BigDecimal because
+    //those classes implement a method with a better exact match.
     public static int abs(Number number) {
         return Math.abs(number.intValue());
     }

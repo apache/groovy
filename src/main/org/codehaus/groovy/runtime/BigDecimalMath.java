@@ -1,0 +1,62 @@
+package org.codehaus.groovy.runtime;
+
+import java.math.BigDecimal;
+
+/**
+ * BigDecimal NumberMath operations
+ * 
+ * @author Steve Goetze
+ */
+public class BigDecimalMath extends NumberMath {
+
+	//This is an arbitrary value, picked as a reasonable choice for a rounding point
+	//for typical user math.
+	public static final int MAX_DIVISION_SCALE = 10;
+	
+	protected static BigDecimalMath instance = new BigDecimalMath();
+	
+	private BigDecimalMath() {}
+
+	protected Number absImpl(Number number) {
+		return toBigDecimal(number).abs();
+	}
+	
+	protected Number addImpl(Number left, Number right) {
+		return toBigDecimal(left).add(toBigDecimal(right));
+	}
+
+	protected Number subtractImpl(Number left, Number right) {
+		return toBigDecimal(left).subtract(toBigDecimal(right));
+	}
+
+	protected Number multiplyImpl(Number left, Number right) {
+		return toBigDecimal(left).multiply(toBigDecimal(right));
+	}
+
+	protected Number divideImpl(Number left, Number right) {
+		//Hack until Java 1.5 BigDecimal is available.  For now, pick
+		//a result scale which is the maximum of the scale of the
+		//two operands and an arbitrary maximum (similar to what a
+		//handheld calculator would do).  Then, normalize the result
+		//by removing any trailing zeros.
+		BigDecimal bigLeft = toBigDecimal(left);
+		BigDecimal bigRight = toBigDecimal(right);
+		int scale = Math.max(bigLeft.scale(), bigRight.scale());
+		return normalize(bigLeft.divide(bigRight, Math.max(scale, MAX_DIVISION_SCALE), BigDecimal.ROUND_HALF_UP));
+	}
+	
+	protected int compareToImpl(Number left, Number right) {
+		return toBigDecimal(left).compareTo(toBigDecimal(right));
+	}
+	
+	private BigDecimal normalize(BigDecimal number) {
+		try {
+			while (true) {
+				number = number.setScale(number.scale()-1);
+			} 
+		} catch (ArithmeticException e) {
+			return number;
+		}
+	}
+
+}
