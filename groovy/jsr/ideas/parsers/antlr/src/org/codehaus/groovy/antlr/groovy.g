@@ -2424,8 +2424,7 @@ newExpression
 		(	LPAREN! zz=argList RPAREN! 
 			/*TODO - NYI* (anonymousInnerClassBlock)? *NYI*/
 
-/*OBS*
-			//java 1.1
+		//java 1.1
 			// Note: This will allow bad constructs like
 			//	new int[4][][3] {exp,exp}.
 			//	There needs to be a semantic check here...
@@ -2433,12 +2432,11 @@ newExpression
 			//   a) [ expr ] and [ ] are not mixed
 			//   b) [ expr ] and an init are not used together
 
-		|	newArrayDeclarator (arrayInitializer)?
+		|	newArrayDeclarator //(arrayInitializer)?
 			// Groovy does not support Java syntax for initialized new arrays.
                         // Use sequence constructors instead.
 
-*OBS*/
-		)
+	)
 	// DECIDE:  Keep 'new x()' syntax?
 	;
 
@@ -2508,7 +2506,6 @@ argumentLabelStart!
         :   ( IDENT | keywordPropertyNames | constant | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
         ;
 
-/*OBS*
 newArrayDeclarator
 	:	(
 			// CONFLICT:
@@ -2525,7 +2522,6 @@ newArrayDeclarator
 			RBRACK!
 		)+
 	;
-*OBS*/
 
 constant
         :       NUM_INT
