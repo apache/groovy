@@ -291,13 +291,6 @@
       </fileset>
     </copy>
 
-      <!-- lets fork a JVM to avoid classpath hell -->
-      <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
-        <classpath refid="test.classpath"/>
-        <arg value="${basedir}/target/classes"/>
-        <arg value="${basedir}/target/classes"/>
-      </java>
-
     <!--<groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>-->
@@ -336,6 +329,8 @@
 
 
         <!-- Parser decisions to make -->
+
+        <!-- do {} while() not supported -->
 
         <!-- do {} while() not supported -->
         <exclude name="**/DoWhileLoopTest.groovy"/>
