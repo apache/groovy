@@ -104,14 +104,14 @@ public class SwtBuilder extends BuilderSupport {
     protected Object createNode(Object name) {
         return createNode(name, Collections.EMPTY_MAP);
     }
-    
+
     /* 
      * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map, java.lang.Object)
      */
     protected Object createNode(Object name, Map attributes, Object value) {
         return createNode(name, attributes);
     }
-    
+
     /*
      * @see groovy.util.BuilderSupport#createNode(java.lang.Object,
      *      java.util.Map)
@@ -130,7 +130,7 @@ public class SwtBuilder extends BuilderSupport {
                 }
             }
         }
-        
+
         return widget;
     }
 
@@ -140,6 +140,11 @@ public class SwtBuilder extends BuilderSupport {
      * @return
      */
     protected Object createWidget(Object name, Map attributes, Object current) {
+
+        if (name.equals("doCall")) {
+            return current;
+        }
+
         Object widget = null;
         SwtFactory factory = (SwtFactory) factories.get(name);
         if (factory != null) {
@@ -149,7 +154,7 @@ public class SwtBuilder extends BuilderSupport {
                 log.log(Level.WARNING, "Node " + name + " returned : " + e.toString());
             }
         } else {
-             log.log(Level.WARNING, "Could not find match for name: " + name);
+            log.log(Level.WARNING, "Could not find match for name: " + name);
         }
         return widget;
     }
@@ -166,8 +171,7 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory(name, new WidgetFactory(beanClass));
     }
 
-    protected void registerBeanFactory(String name, final Class beanClass,
-            final int style) {
+    protected void registerBeanFactory(String name, final Class beanClass, final int style) {
         registerFactory(name, new WidgetFactory(beanClass, style));
     }
 
@@ -179,21 +183,19 @@ public class SwtBuilder extends BuilderSupport {
 
         // widgets
         registerFactory("awtFrame", new AwtSwtFactory());
-        registerBeanFactory("button", Button.class, SWT.BORDER | SWT.PUSH
-                | SWT.CENTER);
+        registerBeanFactory("button", Button.class, SWT.BORDER | SWT.PUSH | SWT.CENTER);
         registerBeanFactory("canvas", Canvas.class);
         registerBeanFactory("caret", Caret.class);
         registerBeanFactory("combo", Combo.class, SWT.DROP_DOWN);
         registerBeanFactory("composite", Composite.class);
-        registerBeanFactory("scrolledComposite", ScrolledComposite.class,
-                SWT.H_SCROLL | SWT.V_SCROLL);
+        registerBeanFactory("scrolledComposite", ScrolledComposite.class, SWT.H_SCROLL
+                | SWT.V_SCROLL);
         registerBeanFactory("coolBar", CoolBar.class, SWT.VERTICAL);
         registerBeanFactory("coolItem", CoolItem.class);
         registerBeanFactory("decorations", Decorations.class);
         registerFactory("font", new Fontfactory());
         registerBeanFactory("group", Group.class);
-        registerBeanFactory("label", Label.class, SWT.HORIZONTAL
-                | SWT.SHADOW_IN);
+        registerBeanFactory("label", Label.class, SWT.HORIZONTAL | SWT.SHADOW_IN);
         registerBeanFactory("list", List.class);
         registerBeanFactory("menu", Menu.class, SWT.DEFAULT);
         //        registerMenuTag("menuBar", SWT.BAR);
@@ -204,13 +206,12 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("progressBar", ProgressBar.class, SWT.HORIZONTAL);
         registerBeanFactory("sash", Sash.class);
         registerBeanFactory("scale", Scale.class);
-        registerBeanFactory("shell", Shell.class, SWT.BORDER | SWT.CLOSE
-                | SWT.MIN | SWT.MAX | SWT.RESIZE | SWT.TITLE);
+        registerBeanFactory("shell", Shell.class, SWT.BORDER | SWT.CLOSE | SWT.MIN | SWT.MAX
+                | SWT.RESIZE | SWT.TITLE);
         registerBeanFactory("slider", Slider.class);
         registerBeanFactory("tabFolder", TabFolder.class);
         registerBeanFactory("tabItem", TabItem.class);
-        registerBeanFactory("table", Table.class, SWT.MULTI | SWT.BORDER
-                | SWT.FULL_SELECTION);
+        registerBeanFactory("table", Table.class, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
         registerBeanFactory("tableColumn", TableColumn.class);
         registerBeanFactory("tableItem", TableItem.class);
         registerBeanFactory("text", Text.class);
@@ -254,12 +255,9 @@ public class SwtBuilder extends BuilderSupport {
 
         // browser tags
         registerBeanFactory("browser", Browser.class, SWT.NONE);
-        registerFactory("locationListener", new ListenerFactory(
-                LocationListener.class));
-        registerFactory("progressListener", new ListenerFactory(
-                ProgressListener.class));
-        registerFactory("statusTextListener", new ListenerFactory(
-                StatusTextListener.class));
+        registerFactory("locationListener", new ListenerFactory(LocationListener.class));
+        registerFactory("progressListener", new ListenerFactory(ProgressListener.class));
+        registerFactory("statusTextListener", new ListenerFactory(StatusTextListener.class));
 
         // forms api
         registerFactory("form", new FormFactory("form"));
@@ -267,14 +265,11 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory("formButton", new FormFactory("formButton"));
         registerFactory("formColors", new FormFactory("formColors"));
         registerFactory("formComposite", new FormFactory("formComposite"));
-        registerFactory("formCompositeSeparator", new FormFactory(
-                "formCompositeSeparator"));
-        registerFactory("formExpandableComposite",
-                new FormFactory("formButton"));
+        registerFactory("formCompositeSeparator", new FormFactory("formCompositeSeparator"));
+        registerFactory("formExpandableComposite", new FormFactory("formButton"));
         registerFactory("formText", new FormFactory("formText"));
         registerFactory("formHyperlink", new FormFactory("formHyperlink"));
-        registerFactory("formImageHyperlink", new FormFactory(
-                "formImageHyperlink"));
+        registerFactory("formImageHyperlink", new FormFactory("formImageHyperlink"));
         registerFactory("formLabel", new FormFactory("formLabel"));
         registerFactory("formPageBook", new FormFactory("formPageBook"));
         registerFactory("formPageBookPage", new FormFactory("formPageBookPage"));
@@ -282,35 +277,29 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory("formSeparator", new FormFactory("formSeparator"));
         registerFactory("formTable", new FormFactory("formTable"));
         registerFactory("formToolkit", new FormFactory("formToolkit"));
-        registerFactory("formFormattedText", new FormFactory(
-                "formFormattedText"));
+        registerFactory("formFormattedText", new FormFactory("formFormattedText"));
         registerFactory("formTree", new FormFactory("formTree"));
 
         // forms layout
-        registerFactory("tableWrapLayout", new LayoutFactory(
-                TableWrapLayout.class));
-        registerFactory("tableWrapData", new LayoutDataFactory(
-                TableWrapData.class));
-        registerFactory("columnLayout", new LayoutFactory(
-                ColumnLayout.class));
-        registerFactory("columnLayoutData", new LayoutDataFactory(
-                ColumnLayoutData.class));
+        registerFactory("tableWrapLayout", new LayoutFactory(TableWrapLayout.class));
+        registerFactory("tableWrapData", new LayoutDataFactory(TableWrapData.class));
+        registerFactory("columnLayout", new LayoutFactory(ColumnLayout.class));
+        registerFactory("columnLayoutData", new LayoutDataFactory(ColumnLayoutData.class));
 
         // forms listeners
-        registerFactory("hyperlinkListener", new ListenerFactory(
-                IHyperlinkListener.class));
-        registerFactory("expansionListener", new ListenerFactory(
-                IExpansionListener.class));
+        registerFactory("hyperlinkListener", new ListenerFactory(IHyperlinkListener.class));
+        registerFactory("expansionListener", new ListenerFactory(IExpansionListener.class));
 
         // none eclipse widgets
         // registerBeanFactory("tDateText", TDateText.class);
         // registerBeanFactory("tCalendar", TCalendar.class);
         // registerBeanFactory("textEditor", TextEditor.class);
-    } /*
-       * @see groovy.util.BuilderSupport#setParent(java.lang.Object,
-       *      java.lang.Object)
-       */
-
+    } 
+    
+    /*
+     * @see groovy.util.BuilderSupport#setParent(java.lang.Object,
+     *      java.lang.Object)
+     */
     protected void setParent(Object parent, Object child) {
 
         //  TODO implement this
@@ -331,7 +320,7 @@ public class SwtBuilder extends BuilderSupport {
     public void setCurrent(Object current) {
         super.setCurrent(current);
     }
-    
+
     /* 
      * override to make public
      * 
@@ -340,7 +329,5 @@ public class SwtBuilder extends BuilderSupport {
     public Object getCurrent() {
         return super.getCurrent();
     }
-
-  
 
 }
