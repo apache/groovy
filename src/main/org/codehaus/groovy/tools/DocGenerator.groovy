@@ -73,42 +73,49 @@ class DocGenerator
 			writer.println(" <head>")
 			writer.println("  <title>GDK : Groovy methods</title>")
 			writer.println(' <style type="text/css">')
-			writer.println('@import url("./style/maven-base.css");')
+			writer.println('   @import url("./style/maven-base.css");')
 			writer.println(' </style>')
 			writer.println(' <style type="text/css">')
-			writer.println('@import url("./style/codehaus-style.css");')
+			writer.println('   @import url("http://codehaus.org/codehaus-style.css");')
 			writer.println(' </style>')
+			//writer.println(" <style>")
+			//writer.println("   body, h1, h2, h3, p, div, span { font-family: sans-serif; font-size: 10pt }")
+			//writer.println("   h1 { padding: 6px; font-size: 24pt; color: #008800; font-weight: bold; font-size: 24pt}")
+			//writer.println("   h2 { padding: 4px; font-size: 14pt; color: #008800; padding: 4px; border: 1px solid #aaaaaa; font-size: larger; background-color: #eeeeee;}")
+			//writer.println("   h3 { margin: 10px }")
+			//writer.println("   p { margin: 20px }")
+			//writer.println(" </style>")
 			writer.println(" </head>")
 			writer.println(" <body>")
 			writer.println(" <h1>Groovy JDK methods</h1>")
 			writer.println(" <p>New methods added to the JDK to make it more groovy.</p>")
 
 			writer2 = writer
-		
+            sb = new StringBuffer()
+            counter = 0
+
 			// lets iterate in sorted class name order
 			sortedClasses = [] + jdkEnhancedClasses.keySet()
 			for (className in sortedClasses.sort()) {
-				writer2.print("<h2>${getObjectType(className)}</h2>")
+
+				sb.append("<h2>${getObjectType(className)}</h2>")
+				writer2.println("<ul><b>${className}</b>")
 
 				listOfMethods = jdkEnhancedClasses[className]
-				
-				// lets sort the methods by name
-				methodNames = []
-				methodMap = [:]
+
 				for (meth in listOfMethods) {
-				    name = meth.name
-				    methodNames << name
-				    methodMap[name] = meth
+                    counter++
+                    anchor = "meth${counter}"
+                    writer2.println("<li><a href='#${anchor}'>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</a></li>")
+
+                    sb.append("  <a name='${anchor}'></a>")
+				    sb.append("  <p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
+					sb.append("  <ul>${getComment(meth)}")
+					sb.append("  ${getParametersReturnAndEx(meth)}</ul></p>")
 				}
-				
-				for (name in methodNames.sort()) {
-				    meth = methodMap[name]
-				    //writer2.println("<p><b>${e.key.getName()}.${meth.getName()}(${getParametersDecl(meth)})</b></p>")
-				    writer2.println("<p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
-					writer2.println("<p>${getComment(meth)}</p>")
-					writer2.println("${getExceptions(meth)}</p>")
-				}
+				writer2.println("</ul>")
 			}
+            writer.println(sb.toString())
 
 			writer.println(" </body>")
 			writer.println("</html>")
@@ -117,6 +124,9 @@ class DocGenerator
 
 	/**
 	 * Retrives a String representing the return type of the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the return type of the method
 	 */
 	private String getReturn(method)
 	{
@@ -124,17 +134,21 @@ class DocGenerator
 		returnType = method.getReturns()
 		if (returnType != null)
 		{
-			s += "<li><b>returns</b>: ${getObjectType(returnType)}"
-			returnTag = method.getTagByName("return")
-			if (returnTag != null)
-				s += " - <i>${returnTag.getValue()}</i>"
-			s += "</li>"
+		    type = getObjectType(returnType)
+		    if (type != "void")
+		    {
+                s += "<li><b>returns</b>: ${type}"
+                returnTag = method.getTagByName("return")
+                if (returnTag != null)
+                    s += " - <i>${returnTag.getValue()}</i>"
+                s += "</li>"
+            }
 		}
 		return s
 	}
 
 	/**
-	 * Retrives a String representing the return type
+	 * Retrieves a String representing the return type
 	 */
 	private String getReturnType(method)
 	{
@@ -145,9 +159,12 @@ class DocGenerator
 	    }
 	    return s
 	}
-	
+
 	/**
-	 * Retrives a String representing the Exceptions thrown by method passed as parameter.
+	 * Retrieves a String representing the Exceptions thrown by method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the exceptions thrown by the method
 	 */
 	private String getExceptions(method)
 	{
@@ -169,11 +186,13 @@ class DocGenerator
 
 	/**
 	 * Retrieve a String representing the list of the parameters of the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @retrun a HTML list of parameters of the method
 	 */
 	private String getParametersReturnAndEx(method)
 	{
-		//s = "<ul><li>returns ${getObjectType(method.getReturns())}</li>"
-		s = "<ul>${getReturn(method)} ${getExceptions(method)}"
+		s = "<ul>"
 		params = method.getTags()
 		counter = 0
 		if (params != null)
@@ -184,25 +203,37 @@ class DocGenerator
 				counter++
 			}
 		}
-		s += "</ul>"
+		s += "${getReturn(method)} ${getExceptions(method)}</ul>"
 		return s
 	}
-	
+
 	/**
 	 * Retrieve a String representing the declaration of the parameters of the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the declaration of the method (long version)
 	 */
 	private String getParametersDecl(method)
 	{
 		parms = getParameters(method).map{ "${getObjectType(it.getType())} ${it.getName()}" }.join(", ")
 	}
 
-	protected getParameters(method) 
+	/**
+	 * Retrieve the parameters of the method.
+	 *
+	 * @param method a method
+	 * @return a list of parameters without the first one
+	 */
+	protected getParameters(method)
 	{
-		return method.getParameters().toList()[1..-1]		    
+		return method.getParameters().toList()[1..-1]
 	}
-	
+
 	/**
 	 * Retrieve the JavaDoc comment associated with the method passed as parameter.
+	 *
+	 * @param method a method
+	 * @return the JavaDoc comment associated with this method
 	 */
 	private String getComment(method)
 	{
@@ -213,16 +244,13 @@ class DocGenerator
 
 	/**
 	 * Retrieve the object type corresponding to the object passed as parameter.
+	 *
+	 * @param type a Type
+	 * @return the String representing the type of that parameter
 	 */
 	private String getObjectType(type)
     {
 	    return type.toString()
-	    /*
-	    s = type.getValue()
-        for (i in 1..type.getDimensions())
-            s += "[]"
-        return s
-        */
     }
 
     /**
@@ -231,8 +259,10 @@ class DocGenerator
     static void main(args)
     {
         defaultGroovyMethodSource =
+            //new File("D:/cvs-groovy/groovy/groovy-core/src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
             new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
         outFileName =
+            //new File("D:/cvs-groovy/groovy/groovy-core/target/html/groovy-jdk.html")
             new File("target/html/groovy-jdk.html")
 
         docGen = new DocGenerator(defaultGroovyMethodSource, outFileName)
