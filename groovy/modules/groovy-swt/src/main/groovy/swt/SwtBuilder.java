@@ -284,4 +284,12 @@ public class SwtBuilder extends BuilderSupport {
         //  }
         
     }
+    
+    /* 
+     * overrride to make public
+     * @see groovy.util.BuilderSupport#setCurrent(java.lang.Object)
+     */
+    public void setCurrent(Object current) {
+        super.setCurrent(current);
+    }
 }

@@ -3,7 +3,6 @@
 	<name>groovy-swt</name>
 	<comment>groovy-swt</comment>
 	<projects>
-		<project>groovy-core</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -11,8 +10,14 @@
 			<arguments>
 			</arguments>
 		</buildCommand>
+		<buildCommand>
+			<name>org.codehaus.groovy.eclipse.groovyBuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
 	</buildSpec>
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
+		<nature>org.codehaus.groovy.eclipse.groovyNature</nature>
 	</natures>
 </projectDescription>

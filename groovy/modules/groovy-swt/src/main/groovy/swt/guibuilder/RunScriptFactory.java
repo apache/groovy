@@ -20,8 +20,8 @@ import org.eclipse.swt.widgets.Composite;
 /**
  * Run another script
  * 
- * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> $Id:
- *         RunScriptFactory.java,v 1.1 2004/03/18 08:51:48 ckl Exp $
+ * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> 
+ * $Id$
  */
 public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
 
@@ -61,6 +61,14 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
         if (parentComposite == null && parent instanceof Composite) {
             parentComposite = (Composite) parent;
         }
+        guiBuilder.setCurrent(parentComposite);
+
+        // dispose children
+        Boolean rebuild = (Boolean) properties.remove("rebuild");
+        if (parentComposite != null && rebuild != null
+                && rebuild.booleanValue()) {
+            SwtUtils.disposeChildren(parentComposite);
+        }
 
         // run script
         return runScript(src, parentComposite, binding);
@@ -74,8 +82,6 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      */
     private Object runScript(String script, Composite parent, Binding binding)
             throws GroovyException {
-        // TODO dispose children as an option
-        // SwtUtils.disposeChildren(parent);
 
         // script binding
         binding.setVariable("guiBuilder", guiBuilder);
@@ -88,6 +94,10 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
         } catch (Exception e) {
             log.log(Level.WARNING, e.getMessage());
         }
+
+        // layout parent
+        parent.layout();
+
         return obj;
     }
 }

@@ -16,5 +16,9 @@
 	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/runtime-3.0m7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/osgi-3.0m7.jar"/>
 	<classpathentry kind="src" path="/groovy-core"/>
+	<classpathentry kind="lib" path="D:/eclipse/plugins/org.codehaus.groovy_1.0.0/asm-1.4.1.jar"/>
+	<classpathentry kind="lib" path="D:/eclipse/plugins/org.codehaus.groovy_1.0.0/asm-attrs-1.4.1.jar"/>
+	<classpathentry kind="lib" path="D:/eclipse/plugins/org.codehaus.groovy_1.0.0/asm-util-1.4.1.jar"/>
+	<classpathentry kind="lib" path="D:/eclipse/plugins/org.codehaus.groovy_1.0.0/groovy-1.0-rc1-snapshot.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
