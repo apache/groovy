@@ -52,6 +52,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.lang.GroovyObject;
+
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
  * 
@@ -75,18 +77,24 @@ public class Invoker {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        List argumentList = asList(arguments);
-        if (object instanceof Class) {
-            Class theClass = (Class) object;
-
-            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-            return metaClass.invokeStaticMethod(object, methodName, arguments, argumentList);
+        if (object instanceof GroovyObject) {
+            GroovyObject groovy = (GroovyObject) object;
+            return groovy.invokeMethod(methodName, arguments);
         }
         else {
-            Class theClass = object.getClass();
+            List argumentList = asList(arguments);
+            if (object instanceof Class) {
+                Class theClass = (Class) object;
 
-            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-            return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+                MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+                return metaClass.invokeStaticMethod(object, methodName, arguments, argumentList);
+            }
+            else {
+                Class theClass = object.getClass();
+
+                MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+                return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+            }
         }
     }
 
