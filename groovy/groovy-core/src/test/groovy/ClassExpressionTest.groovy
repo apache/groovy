@@ -32,4 +32,15 @@ class ClassExpressionTest extends GroovyTestCase {
 
         System.out.println("x: " + x)
     }
+
+    void testClassPsuedoProperty() {
+
+        x = "cheese";
+
+        assert x.class != null
+
+        assert x.class == x.getClass();
+
+        System.err.println( "x.class: " + x.class );
+    }
 }

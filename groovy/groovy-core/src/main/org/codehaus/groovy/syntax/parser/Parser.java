@@ -85,6 +85,7 @@ public class Parser
         {
             CSTNode dot = rootNode( Token.DOT,
                                     cur );
+
             consume( dot,
                      Token.IDENTIFIER );
 
@@ -1159,12 +1160,14 @@ public class Parser
       DOT_LOOP:
         while ( lt() == Token.DOT
                 &&
-                lt( 2 ) == Token.IDENTIFIER )
+                ( lt( 2 ) == Token.IDENTIFIER
+                  ||
+                  lt( 2 ) == Token.KEYWORD_CLASS ) )
         {
             CSTNode dotExpr = rootNode( Token.DOT );
 
-            identifier = rootNode( Token.IDENTIFIER );
-
+            identifier = rootNode( lt() );
+            
           DOT_TYPE_SWITCH:
             switch ( lt() )
             {
