@@ -610,7 +610,15 @@ public class GroovyLexerBase extends LexerBase
                         case ('>') :
                         {
                             consume();
-                            token = symbol( Types.RIGHT_SHIFT );
+                            if( la() == '>' )
+                            {
+                                consume();
+                                token = symbol( Types.RIGHT_SHIFT_UNSIGNED );
+                            } 
+                            else
+                            {	
+                            	token = symbol( Types.RIGHT_SHIFT );
+                            }
                             break MULTICHAR_SWITCH;
                         }
                         default :

@@ -128,4 +128,49 @@ class IntegerOperationTest extends GroovyTestCase {
      	
      	assert x ==5
     }
+    
+    void testShiftOperators() {
+
+    	x = 8 >> 1
+    	assertTrue(x == 4)
+    	assertTrue(x instanceof Integer)
+
+    	x = 8 << 2
+    	assertTrue(x == 32)
+    	assertTrue(x instanceof Integer)
+
+    	x = 8L << 2
+    	assertTrue(x == 32)
+    	assertTrue(x instanceof Long)
+
+		x = -16 >> 4
+		assertTrue(x == -1)
+
+		x = -16 >>> 4
+		assertTrue(x == 0xFFFFFFF)
+		
+		//Ensure that the type of the right operand (shift distance) is ignored when calculating the
+		//result.  This is how java works, and for these operators, it makes sense to keep that behavior.
+		x = Integer.MAX_VALUE << 1L
+		assertTrue(x == -2)
+    	assertTrue(x instanceof Integer)
+    	
+		x = new Long(Integer.MAX_VALUE).longValue() << 1
+		assertTrue(x == 0xfffffffe)
+    	assertTrue(x instanceof Long)
+    	
+    	//The left operand (shift value) must be an integral type
+    	try {
+    		x = 8.0F >> 2
+    		fail("Should catch UnsupportedOperationException");
+    	} catch (UnsupportedOperationException uoe) {
+    	} 
+
+    	//The right operand (shift distance) must be an integral type
+    	try {
+    		x = 8 >> 2.0
+    		fail("Should catch UnsupportedOperationException");
+    	} catch (UnsupportedOperationException uoe) {
+    	} 
+    }
 }

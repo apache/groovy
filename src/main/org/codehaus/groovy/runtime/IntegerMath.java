@@ -61,4 +61,15 @@ public class IntegerMath extends NumberMath {
         return new Integer(-left.intValue());
     }
 
+	protected Number leftShiftImpl(Number left, Number right) {
+		return new Integer(left.intValue() << right.intValue());
+	}
+
+	protected Number rightShiftImpl(Number left, Number right) {
+		return new Integer(left.intValue() >> right.intValue());
+	}
+
+	protected Number rightShiftUnsignedImpl(Number left, Number right) {
+		return new Integer(left.intValue() >>> right.intValue());
+	}
 }
