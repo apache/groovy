@@ -1091,6 +1091,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 evaluateBinaryExpression("rightShift", expression);
                 break;
 
+            case Types.RIGHT_SHIFT_UNSIGNED :
+                evaluateBinaryExpression("rightShiftUnsigned", expression);
+                break;
+
             case Types.KEYWORD_INSTANCEOF :
                 evaluateInstanceof(expression);
                 break;

@@ -1756,6 +1756,30 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Implementation of the left shift operator for integral types.  Non integral
+     * Number types throw UnsupportedOperationException.
+     */
+    public static Number leftShift(Number left, Number right) {
+    	return NumberMath.leftShift(left, right);
+    }
+    
+    /**
+     * Implementation of the right shift operator for integral types.  Non integral
+     * Number types throw UnsupportedOperationException.
+     */
+    public static Number rightShift(Number left, Number right) {
+    	return NumberMath.rightShift(left, right);
+    }
+    
+    /**
+     * Implementation of the right shift (unsigned) operator for integral types.  Non integral
+     * Number types throw UnsupportedOperationException.
+     */
+    public static Number rightShiftUnsigned(Number left, Number right) {
+    	return NumberMath.rightShiftUnsigned(left, right);
+    }
+    
+    /**
      * A helper method so that dynamic dispatch of the writer.write(object) method
      * will always use the more efficient Writable.writeTo(writer) mechanism if the
      * object implements the Writable interface.

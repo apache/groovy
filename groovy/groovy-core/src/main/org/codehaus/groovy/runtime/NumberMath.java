@@ -13,10 +13,6 @@ import java.math.BigInteger;
  * subclass creates a singleton instance to minimize garbage.  All methods
  * must be thread-safe.
  * 
- * The methods here represent only the operations supported by <b>all</b> Number
- * subclasses.  For example power() is not implemented here because it is not 
- * currently supported by BigDecimal (but will be in Java 1.5).
- * 
  * The design goals of this class are as follows:
  * <ol>
  * <li>Support a 'least surprising' math model to scripting language users.  This
@@ -73,10 +69,48 @@ public abstract class NumberMath extends Object {
         return getMath(left,right).modImpl(left, right);
     }
 
+    /**
+     * For this operation, consider the operands independently.  Throw an exception if the right operand
+     * (shift distance) is not an integral type.  For the left operand (shift value) also require an integral
+     * type, but do NOT promote from Integer to Long.  This is consistent with Java, and makes sense for the
+     * shift operators.
+     */
+    public static Number leftShift(Number left, Number right) {
+		if (isFloatingPoint(right) || isBigDecimal(right)) {
+	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+		}
+    	return getMath(left).leftShiftImpl(left,right);
+    }
+    
+    /**
+     * For this operation, consider the operands independently.  Throw an exception if the right operand
+     * (shift distance) is not an integral type.  For the left operand (shift value) also require an integral
+     * type, but do NOT promote from Integer to Long.  This is consistent with Java, and makes sense for the
+     * shift operators.
+     */
+    public static Number rightShift(Number left, Number right) {
+		if (isFloatingPoint(right) || isBigDecimal(right)) {
+	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+		}
+    	return getMath(left).rightShiftImpl(left,right);
+    }
+    
+    /**
+     * For this operation, consider the operands independently.  Throw an exception if the right operand
+     * (shift distance) is not an integral type.  For the left operand (shift value) also require an integral
+     * type, but do NOT promote from Integer to Long.  This is consistent with Java, and makes sense for the
+     * shift operators.
+     */
+    public static Number rightShiftUnsigned(Number left, Number right) {
+		if (isFloatingPoint(right) || isBigDecimal(right)) {
+	        throw new UnsupportedOperationException("Shift distance must be an integral type, but " +  right + " (" + right.getClass().getName() + ") was supplied");
+		}
+    	return getMath(left).rightShiftUnsignedImpl(left,right);
+    }
+    
     public static Number negate(Number left) {
         return getMath(left).negateImpl(left);
     }
-    
     
     public static boolean isFloatingPoint(Number number) {
 		return number instanceof Double || number instanceof Float;
@@ -181,7 +215,19 @@ public abstract class NumberMath extends Object {
         throw createUnsupportedException("or()", left);
     }
     
+    protected Number leftShiftImpl(Number left, Number right) {
+        throw createUnsupportedException("leftShift()", left);
+    }
+
+    protected Number rightShiftImpl(Number left, Number right) {
+        throw createUnsupportedException("rightShift()", left);
+    }
+
+    protected Number rightShiftUnsignedImpl(Number left, Number right) {
+        throw createUnsupportedException("rightShiftUnsigned()", left);
+    }
+
     protected UnsupportedOperationException createUnsupportedException(String operation, Number left) {
-        return new UnsupportedOperationException("Cannot use " + operation + " on this number type: " + left.getClass().getName() + " with value: + left");
+        return new UnsupportedOperationException("Cannot use " + operation + " on this number type: " + left.getClass().getName() + " with value: " + left);
     }
 }

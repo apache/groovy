@@ -149,6 +149,7 @@ public class Types
 
     public static final int LEFT_SHIFT                  = 280;   // <<
     public static final int RIGHT_SHIFT                 = 281;   // >>
+    public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
 
     public static final int STAR                        = MULTIPLY;
 
@@ -429,7 +430,7 @@ public class Types
                 return specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO;
 
             case MATH_OPERATOR:
-                return (specific >= PLUS && specific <= RIGHT_SHIFT) || (specific >= NOT && specific <= LOGICAL_AND);
+                return (specific >= PLUS && specific <= RIGHT_SHIFT_UNSIGNED) || (specific >= NOT && specific <= LOGICAL_AND);
 
             case LOGICAL_OPERATOR:
                 return specific >= NOT && specific <= LOGICAL_AND;
@@ -488,6 +489,7 @@ public class Types
                     case LOGICAL_AND:
                     case LEFT_SHIFT:
                     case RIGHT_SHIFT:
+                    case RIGHT_SHIFT_UNSIGNED:
                     case FIND_REGEX:
                     case MATCH_REGEX:
                     case DOT_DOT:
@@ -730,7 +732,7 @@ public class Types
 
 
             case OPERATOR_EXPRESSION:
-                return specific >= DOT && specific <= RIGHT_SHIFT;
+                return specific >= DOT && specific <= RIGHT_SHIFT_UNSIGNED;
 
             case SYNTH_EXPRESSION:
                 switch( specific )
@@ -763,7 +765,7 @@ public class Types
                 return specific == LEFT_SQUARE_BRACKET;
 
             case EXPRESSION:
-                if( specific >= DOT && specific <= RIGHT_SHIFT )
+                if( specific >= DOT && specific <= RIGHT_SHIFT_UNSIGNED )
                 {
                     return true;
                 }
@@ -1008,6 +1010,7 @@ public class Types
 
             case LEFT_SHIFT:
             case RIGHT_SHIFT:
+            case RIGHT_SHIFT_UNSIGNED:
                 return 35;
 
             case PLUS:
@@ -1195,6 +1198,7 @@ public class Types
 
         addTranslation( "<<"          , LEFT_SHIFT                  );
         addTranslation( ">>"          , RIGHT_SHIFT                 );
+        addTranslation( ">>>"         , RIGHT_SHIFT_UNSIGNED        );
 
         addTranslation( ","           , COMMA                       );
         addTranslation( ":"           , COLON                       );

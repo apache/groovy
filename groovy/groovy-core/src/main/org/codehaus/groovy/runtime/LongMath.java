@@ -60,4 +60,16 @@ public class LongMath extends NumberMath {
     protected Number orImpl(Number left, Number right) {
         return new Long(left.longValue() | right.longValue());
     }
+
+	protected Number leftShiftImpl(Number left, Number right) {
+		return new Long(left.longValue() << right.longValue());
+	}
+
+	protected Number rightShiftImpl(Number left, Number right) {
+		return new Long(left.longValue() >> right.longValue());
+	}
+
+	protected Number rightShiftUnsignedImpl(Number left, Number right) {
+		return new Long(left.longValue() >>> right.longValue());
+	}
 }
