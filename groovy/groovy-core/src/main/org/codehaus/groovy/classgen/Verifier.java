@@ -261,13 +261,15 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
         }
         else {
+        	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
-                BlockStatement block = (BlockStatement) statement;
-                node.setCode(new BlockStatement(filterStatements(block.getStatements())));
+                newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
             }
             else {
-                node.setCode(filterStatement(statement));
+                newBlock.addStatement(filterStatement(statement));
             }
+            newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
+            node.setCode(newBlock);
         }
         if (node.getName().equals("main") && node.isStatic()) {
             Parameter[] params = node.getParameters();

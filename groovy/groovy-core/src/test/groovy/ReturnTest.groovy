@@ -5,7 +5,6 @@
  * @version $Revision$
  */
 class ReturnTest extends GroovyTestCase {
-
     void testIntegerReturnValues() {
         value = foo(5)
         assert value == 10
@@ -23,4 +22,48 @@ class ReturnTest extends GroovyTestCase {
     bar(x) {
         return x > 5
     }
+    
+    void testVoidReturn() {
+    	explicitVoidReturn()
+    	implicitVoidReturn()
+		explicitVoidReturnWithoutFinalReturn()
+		implicitVoidReturnWithoutFinalReturn()
+	}
+	 
+	void explicitVoidReturn() {
+		return
+	}
+
+	implicitVoidReturn() {
+		return
+	}
+	
+    void explicitVoidReturnWithoutFinalReturn() {
+    	return;
+    	x = 4;
+    	if (x == 3) {
+    		return;
+    	} else {
+    		try {
+    			x = 3;
+    			return;
+    		} finally {
+    			//do nothing
+    		}
+    	}
+    }
+
+    implicitVoidReturnWithoutFinalReturn() {
+    	x = 4;
+    	if (x == 3) {
+    		return;
+    	} else {
+    		try {
+    			x = 3;
+    			return;
+    		} finally {
+    			//do nothing
+    		}
+    	}
+    } 
 }

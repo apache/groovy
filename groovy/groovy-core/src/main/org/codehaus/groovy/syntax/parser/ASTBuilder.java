@@ -901,7 +901,7 @@ public class ASTBuilder
             return new ReturnStatement( expression(reduction.get(1)) );
         }
 
-        return ReturnStatement.RETURN_VOID;
+        return ReturnStatement.RETURN_NULL_OR_VOID;
     }
 
 
