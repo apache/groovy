@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
@@ -1388,7 +1389,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLdcInsn(method);
 
         leftHandExpression = false;
-        expression.getRightExpression().visit(this);
+        
+        new ArgumentListExpression(new Expression[] { expression.getRightExpression() }).visit(this);
+        // expression.getRightExpression().visit(this);
 
         invokeMethodMethod.call(cv);
     }
