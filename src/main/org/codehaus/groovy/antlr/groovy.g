@@ -3159,7 +3159,7 @@ ESC
                 :   '0'..'7'
                 )?
             )?
-            {char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
+            {char ch = (char)Integer.parseInt($getText,8); $setText(ch);}
         |   '4'..'7'
             (
                 options {
@@ -3167,7 +3167,7 @@ ESC
                 }
             :   '0'..'7'
             )?
-            {char ch = (char)Integer.parseInt($getText.substring(1),8); $setText(ch);}
+            {char ch = (char)Integer.parseInt($getText,8); $setText(ch);}
         )
     |!  '\\' ONE_NL
     |!  ONE_NL          { $setText('\n'); }             // always normalize to newline

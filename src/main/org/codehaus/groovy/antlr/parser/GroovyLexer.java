@@ -1921,7 +1921,7 @@ tryAgain:
 				
 				}
 				if ( inputState.guessing==0 ) {
-					char ch = (char)Integer.parseInt(new String(text.getBuffer(),_begin,text.length()-_begin).substring(1),8); text.setLength(_begin); text.append(ch);
+					char ch = (char)Integer.parseInt(new String(text.getBuffer(),_begin,text.length()-_begin),8); text.setLength(_begin); text.append(ch);
 				}
 				break;
 			}
@@ -1940,7 +1940,7 @@ tryAgain:
 				
 				}
 				if ( inputState.guessing==0 ) {
-					char ch = (char)Integer.parseInt(new String(text.getBuffer(),_begin,text.length()-_begin).substring(1),8); text.setLength(_begin); text.append(ch);
+					char ch = (char)Integer.parseInt(new String(text.getBuffer(),_begin,text.length()-_begin),8); text.setLength(_begin); text.append(ch);
 				}
 				break;
 			}
