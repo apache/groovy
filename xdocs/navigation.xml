@@ -1,6 +1,6 @@
 <project name="angel" repository="angel" href="http://angel.codehaus.org">
 
-  <title>Angel</title>
+  <title>Groovy : a powerful dynamically typed language for the JVM</title>
 
   <body>
     <links>
@@ -14,6 +14,9 @@
 
     <menu name="Groovy">
       <item name="Index"               href="/index.html"/>
+      <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
+      <item name="Syntax"              href="http://wiki.codehaus.org/groovy/CoreSyntax"/>
+      <item name="Wish List"           href="http://wiki.codehaus.org/groovy/WishList"/>
       <!--
       <item name="License"             href="/license.html"/>
       <item name="Download"            href="/download.html"/>
