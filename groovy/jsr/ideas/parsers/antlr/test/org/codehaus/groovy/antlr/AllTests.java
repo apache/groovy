@@ -66,13 +66,6 @@ public class AllTests extends TestSuiteSupport {
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
 
-
-        // TODO: AST bugs I think...
-        "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
-        "ReturnTest.groovy",
-
-
-
         // Ignored test cases which can't easily be run in this harness
         // due to classpath issues
         // (run them when we migrate New Groovy into groovy/groovy-core)

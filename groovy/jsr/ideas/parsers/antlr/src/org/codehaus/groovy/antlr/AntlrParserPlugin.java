@@ -712,18 +712,23 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement returnStatement(AST node) {
-        Expression expression = null;
         AST exprNode = node.getFirstChild();
         if (exprNode == null) {
             exprNode = node.getNextSibling();
         }
         if (exprNode != null) {
-            expression = expression(exprNode);
+            Expression expression = expression(exprNode);
+            if (expression instanceof ConstantExpression) {
+                ConstantExpression constantExpr = (ConstantExpression) expression;
+                if (constantExpr.getValue() == null) {
+                    return ReturnStatement.RETURN_NULL_OR_VOID;
+                }
+            }
+            return new ReturnStatement(expression);
         }
         else {
-            expression = ConstantExpression.NULL;
+            return ReturnStatement.RETURN_NULL_OR_VOID;
         }
-        return new ReturnStatement(expression);
     }
 
     protected Statement switchStatement(AST switchNode) {
