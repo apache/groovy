@@ -99,17 +99,15 @@ import org.codehaus.groovy.tools.Utilities;
 public class SourceUnit extends ProcessingUnit
 {
     
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
-    
+    private static ParserPlugin parserPlugin;
+
     protected ReaderSource source;    // Where we can get Readers for our source unit
     protected String       name;      // A descriptive name of the source unit
     protected Reduction    cst;       // A Concrete Syntax Tree of the source
     protected ModuleNode   ast;       // The root of the Abstract Syntax Tree for the source
-    
 
-    
-   /**
+
+    /**
     *  Initializes the SourceUnit from existing machinery.
     */
     
@@ -284,18 +282,8 @@ public class SourceUnit extends ProcessingUnit
         {
             reader = source.getReader();
 
-            //
-            // Create a lexer and token stream
+            cst = getParserPlugin().parseCST(this, reader);
 
-            GroovyLexer lexer  = new GroovyLexer( new ReaderCharStream(reader) );
-            TokenStream stream = new LexerTokenStream( lexer );
-            
-            //
-            // Do the parsing
-            
-            Parser parser = new Parser( this, stream );
-            this.cst = parser.parse();
-            
             completePhase();
         }
         catch( IOException e )
@@ -310,10 +298,9 @@ public class SourceUnit extends ProcessingUnit
             }
         }
     }
-    
-    
-    
-   /**
+
+
+    /**
     *  Generates an AST from the CST.  You can retrieve it with getAST().
     */
 
@@ -335,8 +322,8 @@ public class SourceUnit extends ProcessingUnit
         
         try
         {
-            ASTBuilder builder = new ASTBuilder( this, this.classLoader );
-            this.ast = builder.build( this.cst );
+            this.ast = getParserPlugin().buildAST(this, this.classLoader, this.cst);
+
             this.ast.setDescription( this.name );
         }
         catch( SyntaxException e )
@@ -446,7 +433,14 @@ public class SourceUnit extends ProcessingUnit
 
         return sample;
     }
-    
+
+    public static ParserPlugin getParserPlugin() {
+        if (parserPlugin == null) {
+            parserPlugin = ParserPlugin.newInstance();
+        }
+        return parserPlugin;
+    }
+
     /**
      * to quickly create a ModuleNode from a piece of Groovy code
      * @param code
