@@ -38,4 +38,20 @@ public class ServletCategory {
         return context.getAttribute(key);
     }
 
+    public static void set(ServletContext context, String key, Object value) {
+        context.setAttribute(key, value);
+    }
+
+    public static void set(HttpSession session, String key, Object value) {
+        session.setAttribute(key, value);
+    }
+
+    public static void set(ServletRequest request, String key, Object value) {
+        request.setAttribute(key, value);
+    }
+
+    public static void set(PageContext context, String key, Object value) {
+        context.setAttribute(key, value);
+    }
+
 }
