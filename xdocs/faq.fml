@@ -72,6 +72,22 @@
        </p>
       </answer>
     </faq>   
+    
+    <faq id="problems">
+      <question>
+        I get errors when trying to run groovy, groovysh or groovyConsole. Whats wrong?
+      </question>
+      <answer>
+        <p>
+          Groovy depends on JDK 1.4 or later. Common errors people have when trying to run
+          Groovy is that there's an old groovy jar on the CLASSPATH somewhere (have you 
+          checked in java/lib/ext?) or that JAVA_HOME points to an old JDK before JDK 1.4.x.
+        </p>
+        <p>
+		  For more help please see this description of <a href="running.html">running Groovy code</a>
+       </p>
+      </answer>
+    </faq>   
   </part>
 
   <part id="gdk">
