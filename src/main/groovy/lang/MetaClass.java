@@ -80,8 +80,7 @@ import org.objectweb.asm.ClassWriter;
 public class MetaClass {
 
     private static final Logger log = Logger.getLogger(MetaClass.class.getName());
-    
-    
+
     protected static final Object[] EMPTY_ARRAY = {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
@@ -1398,21 +1397,12 @@ public class MetaClass {
                 MetaMethod aMethod = (MetaMethod) iter.next();
                 if (method.isSame(aMethod)) {
                     method.setInterfaceClass(aMethod.getDeclaringClass());
-                    /** @todo fix?
-                    // this doesn't seem to work
                     return true;
-                    */
-                    return false;
                 }
             }
-            //log.warning("Cannot invoke method on protected/private class so must use reflection instead: " + method);
+            log.warning("Cannot invoke method on protected/private class which isn't visible on an interface so must use reflection instead: " + method);
             return false;
         }
-        /*
-        if (! Modifier.isPublic(declaringClass.getModifiers())) {
-            return ! declaringClass.getName().startsWith("java.");
-        }
-        */
         return true;
     }
 
