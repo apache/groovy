@@ -27,12 +27,12 @@ class GroovyMethodsTest extends GroovyTestCase {
     
     void testTimes() {
         count = 0
-        5.times { i | count = count + i }
+        5.times { i :: count = count + i }
         assert count == 10
         
         count = 0
         temp = 5
-        temp.times { i | count = count + i }
+        temp.times { i :: count = count + i }
         
         assert count == 10
     }
@@ -145,7 +145,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         println "Read the following lines..."
 
         /** @todo we should simplify the following line!!! */
-        new InputStreamReader(process.in).eachLine { line |
+        new InputStreamReader(process.in).eachLine { line ::
             println line
             ++count
         }

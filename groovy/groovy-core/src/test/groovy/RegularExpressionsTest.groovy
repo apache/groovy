@@ -62,7 +62,7 @@ class RegularExpressionsTest extends GroovyTestCase {
 
      void testRegexEach() {
          def i = 0
-         ("cheesecheese" =~ "cheese").each {value | println(value); i = i + 1}
+         ("cheesecheese" =~ "cheese").each {value :: println(value); i = i + 1}
          assert i == 2
 
          i = 0

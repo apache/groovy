@@ -16,10 +16,10 @@ class GeneratorTest extends GroovyTestCase {
     void testFindAll() {
         x = this.sampleGenerator
  	    
-        value = x.findAll { item | return item == "C" }
+        value = x.findAll { item :: return item == "C" }
         assert value == ["C"]
  	    
-        value = x.findAll { item | return item != "B" }
+        value = x.findAll { item :: return item != "B" }
         assert value == ["A", "C"]
     }
     

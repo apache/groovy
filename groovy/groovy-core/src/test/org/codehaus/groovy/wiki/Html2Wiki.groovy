@@ -64,7 +64,7 @@ class Html2Wiki {
                 out.println()
                 break
             case "a":
-                out.print "{link:${node.text()}|${node.attribute('href')}} "
+                out.print "{link:${node.text()}${node.attribute('href')}} "
                 break
             case "b":
                 out.print "__${node.text()}__ "

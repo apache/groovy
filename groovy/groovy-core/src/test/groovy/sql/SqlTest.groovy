@@ -32,7 +32,7 @@ class SqlTest extends GroovyTestCase {
         first = null
         last = null
 
-            sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
+            sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row ::
                 first = row[-2]
                 last = row[-1]
             }

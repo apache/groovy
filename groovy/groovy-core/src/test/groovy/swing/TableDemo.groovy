@@ -33,8 +33,8 @@ class TableDemo {
     	                model = [['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]
     	                
     	                tableModel(list:model) {
-                            closureColumn(header:'Name', read:{row| return row.name})
-                            closureColumn(header:'Location', read:{row| return row.location})
+                            closureColumn(header:'Name', read:{row :: return row.name})
+                            closureColumn(header:'Location', read:{row :: return row.location})
     	                }
     	            }
     	        }
