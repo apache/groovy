@@ -115,6 +115,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
         PropertyNode metaClassProperty =
             node.addProperty("metaClass", ACC_PUBLIC, MetaClass.class.getName(), initMetaClassCall, null, null);
+        metaClassProperty.setSynthetic(true);
         FieldNode metaClassField = metaClassProperty.getField();
         metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
 
@@ -126,7 +127,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 new ExpressionStatement(new BinaryExpression(metaClassVar, Token.equal(-1, -1), initMetaClassCall)),
                 EmptyStatement.INSTANCE);
 
-        node.addMethod(
+        node.addSyntheticMethod(
             "getMetaClass",
             ACC_PUBLIC,
             MetaClass.class.getName(),
@@ -143,7 +144,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
         // don't do anything as the base class implements the invokeMethod
         if (!addDelegateObject) {
-            node.addMethod(
+            node.addSyntheticMethod(
                 "invokeMethod",
                 ACC_PUBLIC,
                 Object.class.getName(),
@@ -165,7 +166,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }));
 
             if (!superClass.equals(Script.class.getName())) {
-                node.addMethod(
+                node.addSyntheticMethod(
                     "getProperty",
                     ACC_PUBLIC,
                     Object.class.getName(),
@@ -183,7 +184,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                                             new VariableExpression("property")})))
                 }));
 
-                node.addMethod(
+                node.addSyntheticMethod(
                     "setProperty",
                     ACC_PUBLIC,
                     "void",
@@ -207,7 +208,9 @@ public class Verifier implements GroovyClassVisitor, Constants {
         }
 
         if (node.getConstructors().isEmpty()) {
-            node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
+            ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
+            constructor.setSynthetic(true);
+            node.addConstructor(constructor);
         }
 
         addFieldInitialization(node);
@@ -297,6 +300,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
         if (getterBlock != null) {
             MethodNode getter =
                 new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+            getter.setSynthetic(true);
             classNode.addMethod(getter);
             visitMethod(getter);
         }
@@ -304,6 +308,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
             MethodNode setter =
                 new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
+            setter.setSynthetic(true);
             classNode.addMethod(setter);
             visitMethod(setter);
         }

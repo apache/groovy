@@ -23,7 +23,6 @@ import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.parser.ASTBuilder;
 import org.codehaus.groovy.syntax.parser.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
-import org.codehaus.groovy.syntax.parser.SemanticVerifier;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.DumpClassVisitor;
 
@@ -114,8 +113,6 @@ public class Compiler
             throw new MultiException( (Exception[]) this.errors.toArray( EMPTY_EXCEPTION_ARRAY ) );
         }
 
-        stageTwoCompile( compilationUnits );
-
         List results = new ArrayList();
 
         CompileUnit unit = new CompileUnit();
@@ -148,14 +145,6 @@ public class Compiler
         {
             charStream.close();
         }
-    }
-
-    protected void stageTwoCompile(CSTNode[] compilationUnits)
-        throws Exception
-    {
-        SemanticVerifier verifier = new SemanticVerifier();
-
-        verifier.verify( compilationUnits );
     }
 
     /**

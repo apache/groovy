@@ -59,6 +59,7 @@ import java.util.Map;
  */
 public class MetadataNode extends ASTNode {
     private Map attributes = new HashMap();
+    private boolean synthetic;
     
     public Map getAttributes() {
         return attributes;
@@ -90,4 +91,13 @@ public class MetadataNode extends ASTNode {
     public void setAttribute(String name, Object value) {
         attributes.put(name, value);
     }
+    
+    public boolean isSynthetic() {
+        return synthetic;
+    }
+
+    public void setSynthetic(boolean synthetic) {
+        this.synthetic = synthetic;
+    }
+
 }

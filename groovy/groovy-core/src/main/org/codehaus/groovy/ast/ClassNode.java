@@ -55,7 +55,7 @@ import org.objectweb.asm.Constants;
 public class ClassNode extends MetadataNode implements Constants {
 
     private Logger log = Logger.getLogger(getClass().getName());
-    
+
     private String name;
     private int modifiers;
     private String superClass;
@@ -69,7 +69,7 @@ public class ClassNode extends MetadataNode implements Constants {
     private ModuleNode module;
     private boolean staticClass = false;
     private boolean scriptBody = false;
-    
+
     /**
      * @param name
      *            is the full name of the class
@@ -208,6 +208,20 @@ public class ClassNode extends MetadataNode implements Constants {
         return node;
     }
 
+    /** 
+     * Adds a synthetic method as part of the compilation process
+     */
+    public MethodNode addSyntheticMethod(
+        String name,
+        int modifiers,
+        String returnType,
+        Parameter[] parameters,
+        Statement code) {
+        MethodNode answer = addMethod(name, modifiers, returnType, parameters, code);
+        answer.setSynthetic(true);
+        return answer;
+    }
+
     public FieldNode addField(String name, int modifiers, String type, Expression initialValue) {
         FieldNode node = new FieldNode(name, modifiers, type, getName(), initialValue);
         addField(node);
@@ -318,8 +332,8 @@ public class ClassNode extends MetadataNode implements Constants {
     protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
         if (a.length == b.length) {
             boolean answer = true;
-            for ( int i = 0; i < a.length; i++) {
-                if (! a[i].getType().equals(b[i].getType())) {
+            for (int i = 0; i < a.length; i++) {
+                if (!a[i].getType().equals(b[i].getType())) {
                     answer = false;
                     break;
                 }
@@ -452,5 +466,4 @@ public class ClassNode extends MetadataNode implements Constants {
     public void setScriptBody(boolean scriptBody) {
         this.scriptBody = scriptBody;
     }
-
 }
