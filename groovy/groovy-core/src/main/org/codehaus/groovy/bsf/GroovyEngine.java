@@ -69,7 +69,7 @@ public class GroovyEngine extends BSFEngineImpl {
     private static final String[] EMPTY_ARGS = {
     };
 
-    GroovyShell shell;
+    protected GroovyShell shell;
 
     /**
      * Allow an anonymous function to be declared and invoked
