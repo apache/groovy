@@ -82,7 +82,11 @@ public class InteractiveShell {
     public void run(String[] args) throws Exception {
         reader = new BufferedReader(new InputStreamReader(System.in));
 
+        String version = InvokerHelper.getVersion();
+        
         System.out.println("Lets get Groovy!");
+        System.out.println("================");
+        System.out.println("Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
         System.out.println("Hit carriage return twice to execute a command");
         System.out.println("The command 'quit' will terminate the shell");
         

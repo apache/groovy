@@ -292,4 +292,16 @@ public class InvokerHelper {
                 e);
         }
     }
+
+    public static String getVersion() {
+        String version = null;
+        Package p = Package.getPackage("groovy.lang");
+        if (p != null) {
+            version = p.getImplementationVersion();
+        }
+        if (version == null) {
+            version = "";
+        }
+        return version;
+    }
 }
