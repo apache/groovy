@@ -1,0 +1,44 @@
+* AST for maps, tuples, sequences, closures
+
+* AST's to handle null for types & set the isDynamic flag
+
+* finish expresssion support in classgen
+
+* support metadata (like JDK 1.5) as well as tree based metadata...
+
+Ê Ê window = @layout {
+Ê Ê Ê Ê frame text="My Window" size=[300,300] {
+Ê Ê Ê Ê Ê Ê label text="Save changes?" bounds=[10,10,290,30]
+Ê Ê Ê Ê Ê Ê panel bounds=[10,40,290,290] {
+Ê Ê Ê Ê Ê Ê Ê Ê button text="OK" action={ save() ; window.close() }
+Ê Ê Ê Ê Ê Ê Ê Ê button text="Cancel" action={ Êwindow.close() }
+Ê Ê Ê Ê Ê Ê }
+Ê Ê Ê Ê }
+Ê Ê };
+
+* refactor ast into expression, statement packages
+
+* maybe split up ClassGenerator - do code gen & class gen separately
+
+* create static groovyMetaClass field in all groovy classes (& bytecode weave?)
+
+* create MetaClass for JMX - so we can treat JMX objects as if they're normal objects
+
+* mixin support...
+
+	SomeClass.addMixin(Foo);
+	
+	MetaClass.addInterceptor( new Interceptor() {
+		filter(method) {
+			return method.isPublic();
+		}
+		invoke(method, args) {
+			// do something
+			method.invoke(args);
+		}
+	});
+
+	* allow meta classes to be added dynamically using closure syntax?
+	e.g. Map?
+	
+	
