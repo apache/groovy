@@ -1,7 +1,7 @@
 maven.log
 bin
-*.properties
 target
+*.properties
 velocity.log
 logs
 lib
