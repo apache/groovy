@@ -55,6 +55,6 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class MarkupInScriptBug extends TestSupport {
 
     public void testBug() throws Exception {
-        assertScriptFile( "src/test-new/groovy/script/AtomTestScript.groovy" );
+        assertScriptFile( "src/test/groovy/script/AtomTestScript.groovy" );
     }
 }

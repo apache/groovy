@@ -8,16 +8,16 @@
 
      String foo
      
-     def TestBase() {
+     TestBase() {
      }
      
-     def TestBase(String aFoo) {
+     TestBase(String aFoo) {
          this.foo = aFoo
      }
      /** @todo fix bug
      */
      
-     def doSomething() {
+     doSomething() {
      	"TestBase"
      }
  }
