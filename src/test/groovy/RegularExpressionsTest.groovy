@@ -1,8 +1,9 @@
 /**
  * Tests the regular expression syntax.
  *
- * @author
- * @version
+ * @author Sam Pullara
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @version $Revision$
  */
  
 import java.util.regex.Matcher
@@ -80,5 +81,20 @@ EOS
  	    
  	    cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
  	    assert cheese == "nice cheese!"
+ 	}
+ 	
+ 	void testSubscript() {
+ 	    a = "cheesecheese"
+ 	    b = a =~ "e+"
+ 	    value = b[2]
+ 	    assert value == "ee"
+ 	    
+ 	    value = b[0, 2]
+ 	    
+ 	    assert value == "eeee"
+ 	    
+ 	    value = b[0, 1..3]
+ 	    
+ 	    assert value == "eeeee"
  	}
  }

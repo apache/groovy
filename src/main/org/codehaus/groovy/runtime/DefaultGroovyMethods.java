@@ -70,6 +70,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -78,6 +79,7 @@ import java.util.regex.Pattern;
  * first parameter the destination class.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Rod Cope
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -571,7 +573,33 @@ public class DefaultGroovyMethods {
     public static Object get(String text, Range range) {
         return text.substring(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
-
+    
+    /**
+     * Support the subscript operator for a regex Matcher
+     * 
+     * @returns the group at the given index
+     */
+    public static String get(Matcher matcher, int idx) {
+        matcher.reset();
+        // are we using groups?
+        if ( matcher.groupCount() > 0 )
+           {
+            // yes, so return the specified group
+            matcher.find();
+            return matcher.group(idx);
+        }
+        else
+           {
+            // not using groups, so return the nth
+            // occurrence of the pattern
+            for ( int i = 0; i <= idx; i++ )
+               {
+                matcher.find();
+            }
+            return matcher.group();
+        }
+    }
+    
     /**
 	 * Support the range subscript operator for a List
 	 * 
@@ -617,8 +645,8 @@ public class DefaultGroovyMethods {
             if (value instanceof Range) {
                 answer.addAll(get(self, (Range) value));
             }
-            else if (value instanceof List) {
-                answer.addAll(get(self, (List) value));
+            else if (value instanceof Collection) {
+                answer.addAll(get(self, (Collection) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
@@ -640,8 +668,31 @@ public class DefaultGroovyMethods {
             if (value instanceof Range) {
                 answer.append(get(self, (Range) value));
             }
-            else if (value instanceof List) {
-                answer.append(get(self, (List) value));
+            else if (value instanceof Collection) {
+                answer.append(get(self, (Collection) value));
+            }
+            else {
+                int idx = InvokerHelper.asInt(value);
+                answer.append(get(self, idx));
+            }
+        }
+        return answer.toString();
+    }
+
+    /**
+     * Allows a List to be used as the indices to be used on a Matcher
+     * 
+     * @returns a String of the values at the given indices
+     */
+    public static String get(Matcher self, Collection indices) {
+        StringBuffer answer = new StringBuffer();
+        for (Iterator iter = indices.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value instanceof Range) {
+                answer.append(get(self, (Range) value));
+            }
+            else if (value instanceof Collection) {
+                answer.append(get(self, (Collection) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
