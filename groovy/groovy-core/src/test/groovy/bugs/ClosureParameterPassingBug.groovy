@@ -16,8 +16,8 @@ class ClosureParameterPassingBug extends GroovyTestCase {
 		c([1]) 
     }
     
-/** @todo this reproduces John's bug...
     
+/** @todo this reproduces John's bug...
     void testBugInScript() {
     	assertScript <<<EOF
 c = { x | 

@@ -18,11 +18,8 @@ class ClosureInClosureTest extends GroovyTestCase
 		l = [1..11, 2..12, 3..13, 4..14]
 
 		l.each{
-			println(text)
 			it.each{
-			    /** @todo 
-				println(text)
-				*/
+			    println(text)
 			}
 		}
 	}

@@ -59,6 +59,8 @@ public class ArgumentListExpression extends TupleExpression {
 
     public static final Object[] EMPTY_ARRAY = {
     };
+    
+    public static final ArgumentListExpression EMPTY_ARGUMENTS = new ArgumentListExpression();
 
     public ArgumentListExpression() {
     }

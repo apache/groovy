@@ -85,11 +85,6 @@ public class RunBugsTest extends TestSupport {
         object.invokeMethod("testBug2", null);
     }
 
-    public void testStaticMarkupBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
-        object.invokeMethod("testBug", null);
-    }
-    
     public void testPrimitiveTypeFieldTest() throws Exception {
         GroovyObject object = compile("src/test/groovy/PrimitiveTypeFieldTest.groovy");
         object.invokeMethod("testPrimitiveField", null);
@@ -103,9 +98,18 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/NestedClosureBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    */
     public void testSuperMethod2Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/SuperMethod2Bug.groovy");
         object.invokeMethod("testBug", null);
     }
+    public void testClosureInClosureTest() throws Exception {
+        GroovyObject object = compile("src/test/groovy/ClosureInClosureTest.groovy");
+        object.invokeMethod("testInvisibleVariable", null);
+    }
+    */
+    public void testStaticMarkupBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    
    }
