@@ -82,6 +82,10 @@ public class InvokerHelper {
         return singleton;
     }
 
+    public static Object invokeVoidMethod(Object object, String methodName) {
+        return getInstance().invokeMethod(object, methodName, EMPTY_ARGS);
+    }
+
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         return getInstance().invokeMethod(object, methodName, arguments);
     }

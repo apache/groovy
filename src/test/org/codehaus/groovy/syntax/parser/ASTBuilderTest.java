@@ -33,6 +33,8 @@
  */
 package org.codehaus.groovy.syntax.parser;
 
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 
@@ -50,6 +52,27 @@ public class ASTBuilderTest extends TestParserSupport {
         BlockStatement block = module.getStatementBlock();
         assertTrue("Contains some statements", !block.getStatements().isEmpty());
         
-        System.out.println("Statements: " + block.getStatements());
+        //System.out.println("Statements: " + block.getStatements());
     }
+    
+    public void testBlock() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { x = someMethod(); callMethod(x) } }", "Dummy.groovy");
+
+        assertEquals("class count", 1, module.getClasses().size());
+
+        ClassNode node = (ClassNode) module.getClasses().get(0);
+
+        assertNotNull(node);
+        
+        MethodNode method = node.getMethod("testMethod");
+        assertNotNull(method);
+        
+        BlockStatement statement = (BlockStatement) method.getCode();
+        
+        assertEquals("Statements size: " + statement.getStatements(), 2, statement.getStatements().size());
+        
+        System.out.println(statement.getStatements());
+    }
+    
+    
 }

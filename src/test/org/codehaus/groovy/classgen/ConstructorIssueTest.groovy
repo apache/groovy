@@ -1,16 +1,20 @@
 package org.codehaus.groovy.classgen
 
-class ConstructorIssueTest extends GroovyTestCase {
+import groovy.bugs.TestSupport
+
+class ConstructorIssueTest extends TestSupport {
     
     ConstructorIssueTest() {
         println("Created test case!")
     }
     
     static void main(args) {
-        System.out.println("About to create test");
+        //println("in main() - called with ${array}")
+        
         foo = new ConstructorIssueTest()
         foo.done()
-        System.out.println("Done");
+
+        //System.out.println("Done");
     }
     
     void done() {
@@ -18,6 +22,8 @@ class ConstructorIssueTest extends GroovyTestCase {
     }
     
     void testConstructorIssue() {
-        main([null].toArray())
+        array = getMockArguments()
+        
+        main(array)
     }
 }
