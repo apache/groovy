@@ -47,6 +47,7 @@ package groovy.net.xmlrpc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -102,8 +103,8 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 		final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
 		int numberOfparams = params.length;
 		
-			if (params[numberOfparams - 1] instanceof Closure) {
-				numberOfparams--;	// the closure is not to be passes to the remote method
+			if (numberOfparams != 0 && params[numberOfparams - 1] instanceof Closure) {
+				numberOfparams--;	// the closure is not to be passed to the remote method
 			}
 			
 			final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
@@ -140,7 +141,13 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			responseParser.parseMessage(connection.getInputStream());
 			
 			if (numberOfparams == params.length) {
-				return responseParser.getParams().get(0);
+			final List response = responseParser.getParams();
+			
+				if (response == null) {
+					throw new GroovyRuntimeException("Empty response from server");
+				} else {
+					return response.get(0);
+				}
 			} else {	
 				// pass the result of the call to the closure
 				return ((Closure)params[numberOfparams]).call(new Object[] {responseParser.getParams().get(0)});
