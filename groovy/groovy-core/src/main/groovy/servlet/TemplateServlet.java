@@ -45,10 +45,8 @@ import groovy.text.TemplateEngine;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -96,6 +94,7 @@ import javax.servlet.http.HttpServletResponse;
  * </code></pre>
  * 
  * @author <a mailto:sormuras@web.de>Christian Stein </a>
+ * @author Guillaume Laforge
  * @version 1.3
  */
 public class TemplateServlet extends HttpServlet {
@@ -105,10 +104,6 @@ public class TemplateServlet extends HttpServlet {
     private ServletContext servletContext;
 
     protected TemplateEngine templateEngine;
-
-    protected boolean bindDefaultVariables;
-
-    protected boolean bindRequestParameters;
 
     /**
      * Initializes the servlet.
@@ -128,12 +123,6 @@ public class TemplateServlet extends HttpServlet {
          */
         String className = getClass().getName();
         servletContext.log("Initializing on " + className + "...");
-
-        /*
-         * Configure from servlet config.
-         */
-        this.bindDefaultVariables = init(config, "bindDefaultVariables", false);
-        this.bindRequestParameters = init(config, "bindRequestParameters", false);
 
         /*
          * Get TemplateEngine instance.
@@ -175,7 +164,7 @@ public class TemplateServlet extends HttpServlet {
      * @return The underlying template engine.
      * @param config
      *            This serlvet configuration passed by the container.
-     * @see #createTemplateEngine()
+     * @see #createTemplateEngine(javax.servlet.ServletConfig)
      */
     protected TemplateEngine createTemplateEngine(ServletConfig config) {
         String templateEngineClassName = config.getInitParameter("templateEngine");
@@ -219,8 +208,6 @@ public class TemplateServlet extends HttpServlet {
      *            The http response.
      * @throws ServletException
      *             ...
-     * @throws IOException
-     *             ...
      */
     protected void doRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException {
 
@@ -231,7 +218,7 @@ public class TemplateServlet extends HttpServlet {
             /*
              * Create binding.
              */
-            binding = createBinding(request, response);
+            binding = new ServletBinding(request, response, servletContext);
 
             /*
              * Set default content type.
@@ -265,75 +252,6 @@ public class TemplateServlet extends HttpServlet {
             requestDone(request, response, binding);
 
         }
-
-    }
-
-    /**
-     * Creates the application context.
-     * 
-     * Sets 5 variables if and only if <code>bindDefaultParameters</code> is
-     * <code>true</code>:
-     * 
-     * <pre><code>
-     * binding.setVariable(&quot;request&quot;, request);
-     * binding.setVariable(&quot;response&quot;, response);
-     * binding.setVariable(&quot;context&quot;, servletContext);
-     * binding.setVariable(&quot;session&quot;, request.getSession(true));
-     * binding.setVariable(&quot;out&quot;, response.getWriter());
-     * </code></pre>
-     * 
-     * Binds all form parameters, too. This is, where we leave the clean MVC
-     * pattern and Velocity behind. (...) Nobody told you to quit Velocity
-     * anyway. :)
-     * 
-     * @return Groovy Binding also known as application context.
-     * @param request
-     *            The HTTP request.
-     * @param response
-     *            The HTTP response.
-     * @throws Exception
-     *             Any exception.
-     */
-    protected Binding createBinding(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        /*
-         * Create empty binding.
-         */
-        Binding binding = new Binding();
-
-        /*
-         * Bind default variables.
-         */
-        if (bindDefaultVariables) {
-            binding.setVariable("request", request);
-            binding.setVariable("response", response);
-            binding.setVariable("context", servletContext);
-            binding.setVariable("session", request.getSession(true));
-            binding.setVariable("out", response.getWriter());
-        }
-
-        /*
-         * Bind form (aka request) parameters.
-         */
-        if (bindRequestParameters) {
-            Enumeration parameterNames = request.getParameterNames();
-            while (parameterNames.hasMoreElements()) {
-                String key = (String) parameterNames.nextElement();
-                if (binding.getVariables().containsKey(key)) {
-                    servletContext.log("Key \"" + key + "\" already bound.");
-                    continue;
-                }
-                String[] values = request.getParameterValues(key);
-                if (values.length == 1) {
-                    binding.setVariable(key, values[0]);
-                }
-                else {
-                    binding.setVariable(key, values);
-                }
-            }
-        }
-
-        return binding;
 
     }
 
@@ -387,8 +305,8 @@ public class TemplateServlet extends HttpServlet {
      * Gets the template by its name.
      * 
      * @return The template that will be merged.
-     * @param templateName
-     *            The name of the template.
+     * @param request
+     *            The HttpServletRequest.
      * @throws Exception
      *             Any exception.
      */
@@ -507,7 +425,7 @@ public class TemplateServlet extends HttpServlet {
         /*
          * Set binding and write response.
          */
-        template.make(binding.getVariables()).writeTo(response.getWriter());
+        template.make(binding.getVariables()).writeTo((Writer) binding.getVariable("out"));
 
     }
 
