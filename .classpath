@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main"/>
-	<classpathentry output="target/test-classes" kind="src" path="src/test"/>
+	<classpathentry kind="src" path="src/test"/>
 	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.4.1.jar"/>
@@ -27,8 +27,8 @@
 	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.7.7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.3.jar"/>
-	<classpathentry kind="lib" path="target/test-reports"/>
 	<classpathentry kind="lib" path="security/GroovyJarTest.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO"/>
+	<classpathentry kind="lib" path="target/test-classes"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
