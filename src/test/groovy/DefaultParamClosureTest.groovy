@@ -2,7 +2,7 @@ class DefaultParamClosureTest extends GroovyTestCase {
 
     void testDefaultParameters() {
     /** @todo get default parameters working for closures 
-		doSomething = { | a, b = 'defB', c = 'defC' |
+		doSomething = { a, b = 'defB', c = 'defC' ::
 			println "Called with a: ${a}, b ${b}, c ${c}"
 			
 			return a + "-" + b + "-" + c
@@ -24,7 +24,7 @@ class DefaultParamClosureTest extends GroovyTestCase {
     void testDefaultTypedParameters() {
 		/** @todo parser to handle typed parameters 
 		
-		doTypedSomething = { | String a = 'defA', String b = 'defB', String c = 'defC' |
+		doTypedSomething = { String a = 'defA', String b = 'defB', String c = 'defC' ::
 			println "Called typed method with a: ${a}, b ${b}, c ${c}"
 			
 			return a + "-" + b + "-" + c

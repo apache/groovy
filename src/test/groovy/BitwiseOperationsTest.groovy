@@ -152,38 +152,38 @@ class BitwiseOperationsTest extends GroovyTestCase {
     }
 
     void testBitwiseOrInClosure() {
-        c1 = { x, y | x | y }
+        c1 = { x, y :: x | y }
         assert c1(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
         assert c1(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
 
-        c2 = { |x, y| x | y }
+        c2 = { x, y :: x | y }
         assert c2(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
         assert c2(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
     }
 
     void testAmbiguityOfBitwiseOr() {
-        c1 = { x, y | x | y }
+        c1 = { x, y :: x | y }
         assert c1(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
         assert c1(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
 
-        c2 = { |x, y| x | y }
+        c2 = { x, y :: x | y }
         assert c2(14, 5) == 15          // 0x0000000E | 0x00000005 = 0x0000000F
         assert c2(0x0D, 0xFE) == 255    // 0x0000000D | 0x000000FE = 0x000000FF
 
         x = 3
         y = 5
-        c1 = { x | y }      // | is a pipe
+        c1 = { x :: y }      // :: is a closure delimiter
         c2 = { x & y }      // & is a bitAnd
         c3 = { x ^ y }      // & is a bitXor
         c11 = {
-             x | y          // | is a pipe
+             x :: y          // :: is a closure delimiter
         }
         c12 = {
              (x | y)        // | is a bitOr
         }
-        c13 = {| x | y      // two |'s are pipes
+        c13 = { x :: y      // :: is a closure delimiter
         }
-        c14 = {|| x | y     // last | is a bitOr
+        c14 = {:: x | y     // last | is a bitOr
         }
 
         assert c1() == 5
@@ -196,18 +196,18 @@ class BitwiseOperationsTest extends GroovyTestCase {
 
         x = 0x03
 
-        d1 = { x | x }      // | is a pipe
+        d1 = { x :: x }      // :: is a closure delimiter
         d2 = { x & x }      // & is a bitAnd
         d3 = { x ^ x }      // & is a bitXor
         d11 = {
-             x | x          // | is a pipe
+             x :: x          // :: is a closure delimiter
         }
         d12 = {
              (x | x)        // | is a bitOr
         }
-        d13 = {| x | x      // two |'s are pipes
+        d13 = {x :: x      // :: is a closure delimiter
         }
-        d14 = {|| x | x     // last | is a bitOr
+        d14 = {:: x | x     // last | is a bitOr
         }
         assert d1(0xF0) == 0xF0
         assert d2(0xF0) == 0x03

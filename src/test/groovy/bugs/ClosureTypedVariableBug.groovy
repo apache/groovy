@@ -40,7 +40,7 @@ class ClosureTypedVariableBug extends GroovyTestCase {
     }
     
     Closure getElementClosure(tag) {
-        return { body |
+        return { body ::
             if (true) {
                 return {"${body}"}
             }

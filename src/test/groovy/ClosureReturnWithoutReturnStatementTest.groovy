@@ -1,7 +1,7 @@
 class ClosureReturnWithoutReturnStatementTest extends GroovyTestCase {
 
     void testReturnValues() {
-        block = {x| x > 5}
+        block = {x:: x > 5}
         
         value = block.call(10)
         assert value
@@ -11,7 +11,7 @@ class ClosureReturnWithoutReturnStatementTest extends GroovyTestCase {
     }
 	
     void testReturnValueUsingFunction() {
-        block = {x| someFunction(x) }
+        block = {x:: someFunction(x) }
         
         value = block.call(10)
         assert value

@@ -7,7 +7,7 @@
 class ClosureAsParamTest extends GroovyTestCase {
 
     void testSimpleBlockCall() {
-        assertClosure({owner| println(owner) })
+        assertClosure({owner:: println(owner) })
     }
   
     def assertClosure(Closure block) {

@@ -11,7 +11,7 @@ class ForAndSqlBug extends GroovyTestCase {
         
         li = ["a", "b"]
         for (x in li) {
-            sql.eachRow("SELECT count(*) FROM FOOD") { e |
+            sql.eachRow("SELECT count(*) FROM FOOD") { e ::
             	println " ${x}"
             
 	            assert x != null
@@ -26,7 +26,7 @@ sql = TestHelper.makeSql()
 
 li = ["a", "b"]
 for (x in li) {
-    sql.eachRow("SELECT count(*) FROM FOOD") { e |
+    sql.eachRow("SELECT count(*) FROM FOOD") { e ::
     	println " \${x}"
     	
     	assert x != null

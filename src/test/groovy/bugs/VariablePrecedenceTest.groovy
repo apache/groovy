@@ -1,7 +1,7 @@
 class VariablePrecedenceTest {
     def x = 100
     def y = 93
-    def c = {|x| assert x == 1; assert y == 93; }
+    def c = {x :: assert x == 1; assert y == 93; }
 
     void testFoo() {
         String[] args = ["a"]

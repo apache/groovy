@@ -10,7 +10,7 @@ class VariblePrecedence extends GroovyTestCase {
             class VariableFoo {
                 x = 100
                 y = 93
-                c = {|x| assert x == 1; assert y == 93; }
+                c = {x :: assert x == 1; assert y == 93; }
                 static void main(args) {
                     vfoo = new VariableFoo()
                     vfoo.c.call(1)
@@ -42,7 +42,7 @@ class VariblePrecedence extends GroovyTestCase {
  *
     void testVariablePrecedenceInScript() {
         assertScript( """
-            c = { |x| assert x == 1; assert y == 93; }
+            c = { x :: assert x == 1; assert y == 93; }
             x = 100;
             y = 93;
 

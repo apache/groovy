@@ -113,7 +113,7 @@ class ArrayTest extends GroovyTestCase {
     void testArrayDeclaration() {
         String[] array = [ "a", "b", "c" ]
 
-        array.each { |element| println( element ) }
+        array.each { element :: println( element ) }
 
         assert array.size() == 3
 

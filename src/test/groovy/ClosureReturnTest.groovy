@@ -7,7 +7,7 @@
 class ClosureReturnTest extends GroovyTestCase {
 
     void testReturnValues() {
-        block = {x| return x > 5}
+        block = {x:: return x > 5}
         
         value = block.call(10)
         assert value
@@ -17,7 +17,7 @@ class ClosureReturnTest extends GroovyTestCase {
     }
 	
     void testReturnValueUsingFunction() {
-        block = {x| return someFunction(x) }
+        block = {x:: return someFunction(x) }
         
         value = block.call(10)
         assert value
