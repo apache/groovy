@@ -59,22 +59,22 @@ class SuperBase {
         this.name = name
     }
     
-    doSomething() {
+    def doSomething() {
     	"TestBase"
     }
 
-    foo(param) {
+    def foo(param) {
     	"TestBase" + param
     }
     
-    foo(x, y) {
+    def foo(x, y) {
     	"foo(x,y)Base" + x + "," + y
     }
 }
 
 class SuperDerived extends SuperBase {
     
-	calls = 0
+	def calls = 0
 	
 	SuperDerived() {
 	}
@@ -83,7 +83,7 @@ class SuperDerived extends SuperBase {
 	    super(name + "Derived")
 	}
 	
-    doSomething() {
+    def doSomething() {
     	/** @todo ++calls causes bug */
     	//calls++
     	/*
@@ -94,11 +94,11 @@ class SuperDerived extends SuperBase {
     	"TestDerived" + super.doSomething()
     }
 	
-    foo(param) {
+    def foo(param) {
     	"TestDerived" + param + super.foo(param)
     }
 	
-    foo(x, y) {
+    def foo(x, y) {
     	"foo(x,y)Derived" + x + "," + y + super.foo(x, y)
     }
 }

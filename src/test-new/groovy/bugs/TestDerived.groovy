@@ -10,7 +10,7 @@
          super(aFoo)
      }
      
-     doSomething() {
+     def doSomething() {
      	"TestDerived" + super.doSomething()
      }
  }
