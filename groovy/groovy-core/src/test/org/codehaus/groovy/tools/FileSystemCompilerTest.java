@@ -56,9 +56,9 @@ import java.io.File;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompilerTest extends GroovyTestCase {
+public class FileSystemCompilerTest extends GroovyTestCase {
 
-    Compiler compiler = new Compiler();
+    FileSystemCompiler compiler = new FileSystemCompiler();
     boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
@@ -81,8 +81,6 @@ public class CompilerTest extends GroovyTestCase {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
         compiler.setOutputDir(dir);
-
-        compiler.setDebug(dumpClass);
     }
 
 }

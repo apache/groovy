@@ -112,4 +112,7 @@ public interface CharStream
      */
     char consume()
         throws IOException;
+
+    void close()
+        throws IOException;
 }

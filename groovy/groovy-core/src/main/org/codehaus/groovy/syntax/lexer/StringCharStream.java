@@ -28,4 +28,10 @@ public class StringCharStream
         
         return c;
     }
+
+    public void close()
+        throws IOException
+    {
+        // do nothing
+    }
 }
