@@ -12,8 +12,6 @@ import org.codehaus.groovy.syntax.lexer.FileCharStream;
 
 public class FileSystemCompiler
 {
-    private static final File[] EMPTY_FILE_ARRAY = new File[0];
-
     private Compiler compiler;
     private File outputDir;
 

@@ -170,7 +170,6 @@ public class DefaultTableModel extends AbstractTableModel {
 
     public void setValueAt(Object value, int rowIndex, int columnIndex) {
         List rows = getRows();
-        Object answer = null;
         if (rowIndex < 0 || rowIndex >= rows.size()) {
             return;
         }

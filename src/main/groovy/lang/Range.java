@@ -68,6 +68,22 @@ public class Range extends AbstractList {
         this.to = to;
     }
 
+    public int hashCode() {
+        /** @todo should code this the Josh Bloch way */
+        return from.hashCode() ^ to.hashCode();
+    }
+
+    public boolean equals(Object that) {
+        if (that instanceof Range) {
+            return equals((Range) that);
+        }
+        return false;
+    }
+
+    public boolean equals(Range that) {
+        return InvokerHelper.compareEqual(this.from, that.from) && InvokerHelper.compareEqual(this.to, that.to);
+    }
+
     public Comparable getFrom() {
         return from;
     }
@@ -101,11 +117,6 @@ public class Range extends AbstractList {
             }
         }
         return size;
-    }
-
-    public int hashCode() {
-        /** @todo should code this the Josh Bloch way */
-        return from.hashCode() ^ to.hashCode();
     }
 
     public List subList(int fromIndex, int toIndex) {

@@ -48,6 +48,7 @@ package groovy.swing.impl;
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.LayoutManager;
 
 import javax.swing.JPanel;
@@ -62,7 +63,7 @@ public class TableLayout implements ComponentFacade {
 
     private JPanel panel = new JPanel();
     private int rowCount;
-    private int space; /** @todo whats the cell spacing thingy called in HTML4? */
+    private int cellpadding;
 
     public TableLayout() {
         panel.setLayout(createLayoutManager());
@@ -72,12 +73,20 @@ public class TableLayout implements ComponentFacade {
         return panel;
     }
     
+    public int getCellpadding() {
+        return cellpadding;
+    }
+
+    public void setCellpadding(int cellpadding) {
+        this.cellpadding = cellpadding;
+    }
+
     /**
      * Adds a new cell to the current grid
      */
     public void addCell(TableLayoutCell cell) {
         GridBagConstraints constraints = cell.getConstraints();
-        //constraints.insets = new Insets()
+        constraints.insets = new Insets(cellpadding, cellpadding, cellpadding, cellpadding);
         panel.add(cell.getComponent(), constraints);
     }
 

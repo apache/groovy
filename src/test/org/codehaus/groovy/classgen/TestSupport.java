@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.util.GroovyTestCase;
 

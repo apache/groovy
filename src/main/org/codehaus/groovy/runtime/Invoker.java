@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
 import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
 
 import java.util.Arrays;
 import java.util.Collection;

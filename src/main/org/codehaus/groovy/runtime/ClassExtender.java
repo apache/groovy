@@ -91,9 +91,11 @@ public class ClassExtender {
         if (closure != null) {
             closure.call(params);
         }
+        /*
         else {
-            // throw DoesNotUnderstandException();
+            throw DoesNotUnderstandException();
         }
+        */
     }
 
     public synchronized void addMethod(String name, Closure closure) {

@@ -83,7 +83,6 @@ public class Groovyc extends MatchingTask {
     private File destDir;
     private Path compileClasspath;
     private Path compileSourcepath;
-    private String target;
 
     protected boolean failOnError = true;
     protected boolean listFiles = false;

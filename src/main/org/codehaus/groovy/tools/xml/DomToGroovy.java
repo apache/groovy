@@ -142,11 +142,8 @@ public class DomToGroovy {
             else if (mixedContent(list)) {
                 println(" [");
                 out.incrementIndent();
-                boolean first = true;
-                int idx = 0;
                 for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
                     boolean useComma = node.getNextSibling() != null;
-
                     print(node, namespaces, useComma);
                 }
                 out.decrementIndent();

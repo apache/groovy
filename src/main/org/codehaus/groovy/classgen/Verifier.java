@@ -105,10 +105,9 @@ public class Verifier implements GroovyClassVisitor, Constants {
         // lets add the invokeMethod implementation
         boolean addDelegateObject =
             node instanceof InnerClassNode && node.getSuperClass().equals("groovy.lang.Closure");
-        if (addDelegateObject) {
-            // don't do anything as the base class implements the invokeMethod
-        }
-        else {
+
+        // don't do anything as the base class implements the invokeMethod
+        if (!addDelegateObject) {
             node.addMethod(
                 "invokeMethod",
                 ACC_PUBLIC,

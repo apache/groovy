@@ -102,9 +102,6 @@ import org.objectweb.asm.Type;
  */
 public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Constants {
 
-    private static final String[] EMPTY_PARAMETER_TYPES = {
-    };
-
     private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
@@ -410,7 +407,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitLdcInsn(expressionText);
         }
         else {
-            int line = statement.getLineNumber();
             boolean first = true;
 
             // lets create a new expression
@@ -1515,7 +1511,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         else {
             try {
-                Class typeClass = classLoader.loadClass(type);
+                classLoader.loadClass(type);
             }
             catch (ClassNotFoundException e) {
                 throw new RuntimeException("Unknown type: " + type, e);

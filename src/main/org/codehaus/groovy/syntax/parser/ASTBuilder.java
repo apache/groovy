@@ -47,8 +47,6 @@ public class ASTBuilder
         
         importStatements( answer, children[ 1 ] );
 
-        ClassNode[] datatypes = new ClassNode[ children.length - 2 ];
-
         for ( int i = 2 ; i < children.length ; ++i )
         {
             datatypeDeclaration( answer, packageName, children[ i ] );

@@ -29,7 +29,6 @@ import org.objectweb.asm.util.DumpClassVisitor;
 
 public class Compiler
 {
-    private static final File[] EMPTY_FILE_ARRAY = new File[0];
     private static final Exception[] EMPTY_EXCEPTION_ARRAY = new Exception[0];
 
     private Verifier verifier;

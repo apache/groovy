@@ -196,7 +196,6 @@ public class MetaClass {
             throw new InvokerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        Class theClass = object.getClass();
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
             Method method = (Method) chooseMethod(methods, arguments, argumentList);

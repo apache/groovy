@@ -65,6 +65,18 @@ public class IntRange extends AbstractList {
         this.to = to;
     }
 
+    public boolean equals(Object that) {
+        if (that instanceof IntRange) {
+            return equals((IntRange) that);
+        }
+        return false;
+    }
+
+    public boolean equals(IntRange that) {
+        return this.from == that.from && this.to == that.to;
+    }
+
+
     public int getFrom() {
         return from;
     }

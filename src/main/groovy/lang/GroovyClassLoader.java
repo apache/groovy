@@ -32,7 +32,7 @@
  * DAMAGE.
  *  
  */
-package org.codehaus.groovy.classgen;
+package groovy.lang;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,6 +40,8 @@ import java.io.InputStream;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
+import org.codehaus.groovy.classgen.CompilerFacade;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.ClassWriter;
 
@@ -51,7 +53,6 @@ import org.objectweb.asm.ClassWriter;
  */
 public class GroovyClassLoader extends ClassLoader {
 
-    private Verifier verifier = new Verifier();
     private Class generatedClass = null;
 
     public GroovyClassLoader() {

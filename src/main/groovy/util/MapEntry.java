@@ -47,6 +47,8 @@ package groovy.util;
 
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * Represents a list of Integer objects key a specified Object up to but not including
  * a given and to.
@@ -62,6 +64,17 @@ public class MapEntry implements Map.Entry {
     public MapEntry(Object key, Object value) {
         this.key = key;
         this.value = value;
+    }
+
+    public boolean equals(Object that) {
+        if (that instanceof MapEntry) {
+            return equals((MapEntry) that);
+        }
+        return false;
+    }
+
+    public boolean equals(MapEntry that) {
+        return InvokerHelper.compareEqual(this.key, that.key) && InvokerHelper.compareEqual(this.value, that.value);
     }
 
     public int hashCode() {
