@@ -161,7 +161,7 @@ public class InvokeMethodTest extends GroovyTestCase {
             invoke(null, "mockCallWithNoParams", null);
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (NullPointerException e) {
             // worked
         }
     }
