@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
@@ -514,6 +516,7 @@ public class Sql {
      *         parameter
      */
     protected String asSql(GString gstring) {
+    	boolean nulls = false;
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
@@ -523,11 +526,99 @@ public class Sql {
         for (int i = 0; i < strings.length; i++) {
             buffer.append(strings[i]);
             if (i < values.length) {
-                buffer.append("?");
+            	if(values[i]!=null){
+                   buffer.append("?");
+            	}else{
+            		nulls = true;
+            		buffer.append("?'\"?"); // will replace these with nullish values
+            	}
             }
         }
-        return buffer.toString();
+        String sql =  buffer.toString();
+        if(nulls){
+        		sql = nullify(sql);
+        }
+        return sql;
     }
+    
+	/**
+	 * replace ?'"? references with NULLish
+	 * @param sql
+	 * @return
+	 */
+	protected String nullify(String sql) {
+		/*
+		 * Some drivers (Oracle classes12.zip) have difficulty resolving data type
+		 * if setObject(null).  We will modify the query to pass 'null', 'is null', and 'is not null'
+		 */
+		//could be more efficient by compiling expressions in advance.
+		int firstWhere = findWhereKeyword(sql);
+		if (firstWhere >= 0) {
+			Pattern[] patterns =
+				{
+					Pattern.compile(
+						"(?is)^(.{"
+							+ firstWhere
+							+ "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+					Pattern.compile(
+						"(?is)^(.{"
+							+ firstWhere
+							+ "}.*?)<>\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+					Pattern.compile(
+						"(?is)^(.{"
+							+ firstWhere
+							+ "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+					};
+			String[] replacements =
+				{
+					"$1 is not $2null$3",
+					"$1 is not $2null$3",
+					"$1 is $2null$3",
+					};
+			for (int i = 0; i < patterns.length; i++) {
+				Matcher matcher = patterns[i].matcher(sql);
+				while (matcher.matches()) {
+					sql = matcher.replaceAll(replacements[i]);
+					matcher = patterns[i].matcher(sql);
+				}
+			}
+		}
+		return sql.replaceAll("\\?'\"\\?", "null");
+	}
+
+	/**
+	 * Find the first 'where' keyword in the sql.
+	 * @param sql
+	 * @return
+	 */
+	protected int findWhereKeyword(String sql) {
+		char[] chars = sql.toLowerCase().toCharArray();
+		char[] whereChars = "where".toCharArray();
+		int i = 0;
+		boolean inString = false; //TODO: Cater for comments?
+		boolean noWhere = true;
+		int inWhere = 0;
+		while (i < chars.length && noWhere) {
+			switch (chars[i]) {
+				case '\'' :
+					if (inString) {
+						inString = false;
+					} else {
+						inString = true;
+					}
+					break;
+				default :
+					if (!inString && chars[i] == whereChars[inWhere]) {
+						inWhere++;
+						if (inWhere == whereChars.length) {
+							return i;
+						}
+					}
+			}
+			i++;
+		}
+		return -1;
+	}
 
     /**
      * @return extracts the parameters from the expression as a List
@@ -536,7 +627,9 @@ public class Sql {
         Object[] values = gstring.getValues();
         List answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
-            answer.add(values[i]);
+        	if(values[i] != null){
+            	answer.add(values[i]);
+        	}
         }
         return answer;
     }
