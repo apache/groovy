@@ -64,6 +64,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.classgen.ClassCompletionVerifier;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
@@ -102,6 +103,8 @@ public class CompilationUnit extends ProcessingUnit
     protected ArrayList   classes;    // The classes generated during classgen.
     
     protected Verifier    verifier;   // For use by verify().
+    
+    protected ClassCompletionVerifier completionVerifier; // for use by checkClassCompletion
     
     protected boolean     debug;      // Controls behaviour of classgen() and other routines.
     protected boolean     configured; // Set true after the first configure() operation
@@ -157,6 +160,7 @@ public class CompilationUnit extends ProcessingUnit
         this.classes  = new ArrayList();
         
         this.verifier = new Verifier();
+        this.completionVerifier = new ClassCompletionVerifier();
         
         this.classgenCallback = null;
     }
@@ -614,7 +618,7 @@ public class CompilationUnit extends ProcessingUnit
             // Run the Verifier on the outer class
       
             verifier.visitClass( classNode );
-
+            
              
             //
             // Prep the generator machinery
@@ -637,12 +641,15 @@ public class CompilationUnit extends ProcessingUnit
             // Run the generation and create the class (if required)
 
             generator.visitClass( classNode );
+            completionVerifier.visitClass(classNode);
              
             if( !debug )
             {
                 byte[] bytes = ((ClassWriter)visitor).toByteArray();
                 /* this. */classes.add( new GroovyClass(classNode.getName(), bytes) );
             }
+            
+            
             
             
             //
@@ -667,17 +674,19 @@ public class CompilationUnit extends ProcessingUnit
                     classgenCallback.call( visitor, classNode );
                 }
             }
-             
-
+            
+            
             //
             // Recurse for inner classes
-
+            
             LinkedList innerClasses = generator.getInnerClasses();
             while( !innerClasses.isEmpty() ) 
             {
                 classgen.call( source, context, (ClassNode)innerClasses.removeFirst() );
             }
-        } 
+                        
+        }
+
     };
     
     
