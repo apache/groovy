@@ -266,14 +266,25 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows objects to be iterated through using a closure
+     * Allows a Map to be iterated through using a closure. If the
+     * closure takes one parameter then it will be passed the Map.Entry
+     * otherwise if the closure takes two parameters then it will be
+     * passed the key and the value.
      *
      * @param self    the map over which we iterate
      * @param closure the closure applied on each entry of the map
      */
     public static void each(Map self, Closure closure) {
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            closure.call(iter.next());
+        if (closure.getParameterTypes().length == 2) {
+            for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                closure.call(new Object[] { entry.getKey(), entry.getValue()});
+            }
+        }
+        else {
+            for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+                closure.call(iter.next());
+            }
         }
     }
 
@@ -1706,11 +1717,11 @@ public class DefaultGroovyMethods {
      * @param self a String
      * @return a String with an incremented digit at the end
      */
-    public static String increment(String self) {
+    public static String next(String self) {
         StringBuffer buffer = new StringBuffer(self);
         char firstCh = firstCharacter();
         for (int idx = buffer.length() - 1; idx >= 0; idx--) {
-            char ch = increment(buffer.charAt(idx));
+            char ch = next(buffer.charAt(idx));
             int value = ch;
             if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
@@ -1737,11 +1748,11 @@ public class DefaultGroovyMethods {
      * @param self a String
      * @return a String with a decremented digit at the end
      */
-    public static String decrement(String self) {
+    public static String previous(String self) {
         StringBuffer buffer = new StringBuffer(self);
         char lastCh = lastCharacter();
         for (int idx = buffer.length() - 1; idx >= 0; idx--) {
-            char ch = decrement(buffer.charAt(idx));
+            char ch = previous(buffer.charAt(idx));
             if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
                 break;
@@ -1759,7 +1770,7 @@ public class DefaultGroovyMethods {
         return buffer.toString();
     }
 
-    private static char increment(char ch) {
+    private static char next(char ch) {
         if (Character.isLetterOrDigit(++ch)) {
             return ch;
         }
@@ -1768,7 +1779,7 @@ public class DefaultGroovyMethods {
         }
     }
 
-    private static char decrement(char ch) {
+    private static char previous(char ch) {
         if (Character.isLetterOrDigit(--ch)) {
             return ch;
         }
@@ -1830,7 +1841,7 @@ public class DefaultGroovyMethods {
      * @param self a Number
      * @return an incremented Number
      */
-    public static Number increment(Number self) {
+    public static Number next(Number self) {
         return plus(self, ONE);
     }
 
@@ -1840,7 +1851,7 @@ public class DefaultGroovyMethods {
      * @param self a Number
      * @return a decremented Number
      */
-    public static Number decrement(Number self) {
+    public static Number previous(Number self) {
         return minus(self, ONE);
     }
 

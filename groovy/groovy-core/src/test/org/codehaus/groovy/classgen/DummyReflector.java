@@ -35,6 +35,8 @@
 
 package org.codehaus.groovy.classgen;
 
+import java.util.List;
+
 import groovy.lang.MetaMethod;
 
 import org.codehaus.groovy.runtime.Reflector;
@@ -78,6 +80,8 @@ public class DummyReflector extends Reflector {
         switch (method.getMethodIndex()) {
             case 1 :
                 return ((String) object).toCharArray();
+            case 2 :
+                return new Boolean(((List) object).contains(arguments[0]));
             default :
                 return noSuchMethod(method, object, arguments);
         }

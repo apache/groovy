@@ -1010,10 +1010,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitPostfixExpression(PostfixExpression expression) {
         switch (expression.getOperation().getType()) {
             case Token.PLUS_PLUS :
-                evaluatePostfixMethod("increment", expression.getExpression());
+                evaluatePostfixMethod("next", expression.getExpression());
                 break;
             case Token.MINUS_MINUS :
-                evaluatePostfixMethod("decrement", expression.getExpression());
+                evaluatePostfixMethod("previous", expression.getExpression());
                 break;
         }
     }
@@ -1021,10 +1021,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitPrefixExpression(PrefixExpression expression) {
         switch (expression.getOperation().getType()) {
             case Token.PLUS_PLUS :
-                evaluatePrefixMethod("increment", expression.getExpression());
+                evaluatePrefixMethod("next", expression.getExpression());
                 break;
             case Token.MINUS_MINUS :
-                evaluatePrefixMethod("decrement", expression.getExpression());
+                evaluatePrefixMethod("previous", expression.getExpression());
                 break;
         }
     }

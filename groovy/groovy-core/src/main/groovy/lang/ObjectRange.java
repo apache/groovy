@@ -270,10 +270,10 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     protected Object increment(Object value) {
-        return InvokerHelper.invokeMethod(value, "increment", null);
+        return InvokerHelper.invokeMethod(value, "next", null);
     }
 
     protected Object decrement(Object value) {
-        return InvokerHelper.invokeMethod(value, "decrement", null);
+        return InvokerHelper.invokeMethod(value, "previous", null);
     }
 }

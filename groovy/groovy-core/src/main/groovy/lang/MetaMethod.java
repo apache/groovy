@@ -84,7 +84,9 @@ public class MetaMethod implements Cloneable {
             return reflector.invoke(this, object, arguments);
         }
         else {
-            //log.warning("No reflector available for method: " + method);
+            /** @todo */
+            // log.warning("No reflector available for method: " + method);
+            //throw new RuntimeException("Can't invoke method: " + method);
             method.setAccessible(true);
             return method.invoke(object, arguments);
         }

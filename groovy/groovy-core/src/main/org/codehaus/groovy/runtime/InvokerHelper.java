@@ -277,10 +277,10 @@ public class InvokerHelper {
     public static List createRange(Object from, Object to, boolean inclusive) {
         if (!inclusive) {
             if (compareGreaterThan(from, to)) {
-                to = invokeMethod(to, "increment", EMPTY_ARGS);
+                to = invokeMethod(to, "next", EMPTY_ARGS);
             }
             else {
-                to = invokeMethod(to, "decrement", EMPTY_ARGS);
+                to = invokeMethod(to, "previous", EMPTY_ARGS);
             }
         }
         if (from instanceof Integer && to instanceof Integer) {

@@ -214,6 +214,13 @@ public class MetaClass {
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         checkInitialised();
 
+        /** @todo...
+        if (object instanceof MetaClass && methodName.equals("invokeMethod")) {
+            MetaClass other = (MetaClass) object; 
+            return other.invokeMethod(arguments[0], (String) arguments[1], arguments[2]);
+            // we should throw an exception to find out why this happens
+        }
+        */
         /*
          * Class type = arguments == null ? null : arguments.getClass(); System
          * .out .println( "MetaClass(Object[]) Invoking method on object: " +
@@ -1400,7 +1407,8 @@ public class MetaClass {
                     return true;
                 }
             }
-            log.warning("Cannot invoke method on protected/private class which isn't visible on an interface so must use reflection instead: " + method);
+            /** @todo */
+            //log.warning("Cannot invoke method on protected/private class which isn't visible on an interface so must use reflection instead: " + method);
             return false;
         }
         return true;
