@@ -16,7 +16,7 @@ DIRNAME=`dirname "$0"`
 MAX_FD="maximum"
 
 # The version of classworlds to boot with
-CLASSWORLDS_VERSION="1.0"
+CLASSWORLDS_VERSION="1.1-alpha-1"
 
 warn() {
     echo "${PROGNAME}: $*"
@@ -170,5 +170,5 @@ else
         -Dclassworlds.conf="$CLASSWORLDS_CONF" \
         -Dgroovy.home="$GROOVY_HOME" \
         -Dtools.jar="$TOOLS_JAR" \
-        org.codehaus.classworlds.Launcher "$@"
+        org.codehaus.classworlds.Launcher grok "$@"
 fi

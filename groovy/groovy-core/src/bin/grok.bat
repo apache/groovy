@@ -13,7 +13,7 @@
 if "%OS%"=="Windows_NT" setlocal
 
 @rem The version of classworlds to boot with
-set CLASSWORLDS_VERSION=1.0
+set CLASSWORLDS_VERSION=1.1-alpha-1
 
 :begin
 @rem Determine what directory it is in.
@@ -98,7 +98,7 @@ set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dclassworlds.conf="%CLASSWORLDS_CONF%"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %JAVA_OPTS% -classpath "%CLASSWORLDS_CLASSPATH%" %CLASSWORLDS_MAIN_CLASS% %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JAVA_OPTS% -classpath "%CLASSWORLDS_CLASSPATH%" %CLASSWORLDS_MAIN_CLASS% grok %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
