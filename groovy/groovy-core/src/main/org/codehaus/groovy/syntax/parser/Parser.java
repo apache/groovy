@@ -503,6 +503,14 @@ public class Parser {
         }
 
         //
+        // If it starts "synchronized(", it's a statement.  This check
+        // is necessary because "synchronized" is also a class modifier.
+
+        else if( lt() == Token.KEYWORD_SYNCHRONIZED && lt(2) == Token.LEFT_PARENTHESIS ) {
+            result = synchronizedStatement();
+        }
+
+        //
         // If it starts with a modifier, "class", or "interface", 
         // it's a type declaration.
 
