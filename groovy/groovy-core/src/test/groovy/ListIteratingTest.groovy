@@ -46,8 +46,8 @@ class ListIteratingTest extends GroovyTestCase {
         assert(result == 10)
         assert(s.size() == 4)
         
-        /** @todo parser
         assert(s[2] == 3)
+        /** @todo parser
         result = 0
         for ( i in s[1:2] ) {
             result += i

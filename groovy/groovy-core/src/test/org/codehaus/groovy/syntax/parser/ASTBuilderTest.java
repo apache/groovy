@@ -33,6 +33,8 @@
  */
 package org.codehaus.groovy.syntax.parser;
 
+import java.util.Iterator;
+
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -57,17 +59,7 @@ public class ASTBuilderTest extends TestParserSupport {
     
     public void testBlock() throws Exception {
         ModuleNode module = parse("class Foo { void testMethod() { x = someMethod(); callMethod(x) } }", "Dummy.groovy");
-
-        assertEquals("class count", 1, module.getClasses().size());
-
-        ClassNode node = (ClassNode) module.getClasses().get(0);
-
-        assertNotNull(node);
-        
-        MethodNode method = node.getMethod("testMethod");
-        assertNotNull(method);
-        
-        BlockStatement statement = (BlockStatement) method.getCode();
+        BlockStatement statement = getCode(module, "testMethod");
         
         assertEquals("Statements size: " + statement.getStatements(), 2, statement.getStatements().size());
         
@@ -75,4 +67,30 @@ public class ASTBuilderTest extends TestParserSupport {
     }
     
     
+    public void testSubscript() throws Exception {
+        /** @todo handle \n as well as ; in the following */
+        ModuleNode module = parse("class Foo { void testMethod() { x = 1;\n [1].each { println(it) }} }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+        
+        assertEquals("Statements size: " + statement.getStatements(), 2, statement.getStatements().size());
+        
+        for (Iterator iter = statement.getStatements().iterator(); iter.hasNext(); ) {
+            System.out.println(iter.next());
+        }
+    }
+    
+    protected BlockStatement getCode(ModuleNode module, String name) {
+        assertEquals("class count", 1, module.getClasses().size());
+
+        ClassNode node = (ClassNode) module.getClasses().get(0);
+
+        assertNotNull(node);
+        
+        MethodNode method = node.getMethod(name);
+        assertNotNull(method);
+        
+        BlockStatement statement = (BlockStatement) method.getCode();
+        assertNotNull(statement);
+        return statement;
+    }    
 }

@@ -36,6 +36,13 @@
 		  Think of closures as being like anonymous inner classes in Java that have only a single (anonymous) method.
 		  They are very handy for passing blocks of code around from method to method.
        </p>
+        <p>
+		  One difference from inner classes is that Groovy supports <i>true closures</i> 
+		  where state can be passed into and out of closures. Any local variables in scope
+		  when the closure is created can be used and modified and any variables created within
+		  the closure are visible outside as local variables. No 'final' keyword is required
+		  like with Java.
+       </p>
       </answer>
     </faq>   
   </part>

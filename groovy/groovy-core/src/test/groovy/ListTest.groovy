@@ -19,12 +19,12 @@ class ListTest extends GroovyTestCase {
         assert x.get(2) == "cheese"
 
 		// subscript operator
-        /** @todo parser
 		assert x[0] == 10
         assert x[1] == 11
-        assert x[2] == "cheese
+        assert x[2] == "cheese"
 		
-		x[3] = 12
+        /** @todo parser
+        x[3] = 12
 		
 		assert x[3] == 12
 		*/
@@ -56,9 +56,7 @@ class ListTest extends GroovyTestCase {
 
         assert x.size() == 1
 
-        /** @todo parser
        	assert x[0] == "cheese"
-       	*/
     }
     
     
@@ -67,11 +65,7 @@ class ListTest extends GroovyTestCase {
         block = {i| println(i) }
         l.each(block)
         
-        l.each( {i| println(i) } )
-        
-        /* @todo parser
         l.each {i| println(i) }
-        */
     }
     
     void testMax() {
@@ -135,6 +129,4 @@ class ListTest extends GroovyTestCase {
         l= [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
         assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
     }
-    
-    
 }

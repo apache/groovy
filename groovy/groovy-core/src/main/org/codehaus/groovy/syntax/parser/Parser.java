@@ -26,9 +26,9 @@ public class Parser
     public void optionalSemicolon()
         throws IOException, SyntaxException
     {
-        if ( lt() == Token.SEMICOLON )
+        while ( lt_bare() == Token.SEMICOLON || lt_bare() == Token.NEWLINE )
         {
-            consume( Token.SEMICOLON );
+            consume_bare( lt_bare() );
         }
     }
 
@@ -63,7 +63,6 @@ public class Parser
         {
             imports.addChild( importStatement() );
             optionalSemicolon();
-            //consume( Token.SEMICOLON );
         }
 
         while ( lt() != -1 )
@@ -621,21 +620,18 @@ public class Parser
             {
                 statement = returnStatement();
                 optionalSemicolon();
-                //consume( Token.SEMICOLON );
                 break;
             }
             case ( Token.KEYWORD_ASSERT ):
             {
                 statement = assertStatement();
                 optionalSemicolon();
-                //consume( Token.SEMICOLON );
                 break;
             }
             default:
             {
                 statement = expression();
                 optionalSemicolon();
-                //consume( Token.SEMICOLON );
             }
         }
 
@@ -1034,6 +1030,15 @@ public class Parser
                 expr = rootNode( lt(),
                                  expr );
                 expr.addChild( rangeExpression() );
+                break;
+            }
+            
+            case ( Token.LEFT_SQUARE_BRACKET ):
+            {
+                expr = rootNode( lt(),
+                        expr );
+                expr.addChild( rangeExpression() );
+                consume(Token.RIGHT_SQUARE_BRACKET);
                 break;
             }
         }
