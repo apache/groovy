@@ -48,9 +48,14 @@ package groovy.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaExpandoProperty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 
 /**
@@ -79,6 +84,18 @@ public class Expando extends GroovyObjectSupport {
         }
         return expandoProperties;
     }
+	
+	public List getProperties() {
+		// run through all our current properties and create MetaProperty objects
+		List ret = new ArrayList();
+		Iterator itr = getExpandoProperties().entrySet().iterator();
+		while(itr.hasNext()) {
+			Entry entry = (Entry) itr.next();
+			ret.add(new MetaExpandoProperty(entry));
+		}
+		
+		return ret;
+	}
 
     public Object getProperty(String property) {
         try {

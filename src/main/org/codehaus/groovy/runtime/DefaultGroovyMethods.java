@@ -208,13 +208,21 @@ public class DefaultGroovyMethods {
         List props = new ArrayList();
         MetaClass metaClass = InvokerHelper.getMetaClass(self);
         
-        // get the MetaProperty list from the MetaClass
-        List mps = metaClass.getProperties();
-        for(Iterator itr = mps.iterator(); itr.hasNext();) {
-            MetaProperty mp = (MetaProperty) itr.next();
-            PropertyValue pv = new PropertyValue(self, mp);
-            props.add(pv);
-        }
+		List mps;
+		
+		if(self instanceof groovy.util.Expando) {
+			mps = ((groovy.util.Expando) self).getProperties();
+		}
+		else {
+			// get the MetaProperty list from the MetaClass
+			mps = metaClass.getProperties();
+		}
+		
+		for(Iterator itr = mps.iterator(); itr.hasNext();) {
+			MetaProperty mp = (MetaProperty) itr.next();
+			PropertyValue pv = new PropertyValue(self, mp);
+			props.add(pv);
+		}
         
         return props;
     }
