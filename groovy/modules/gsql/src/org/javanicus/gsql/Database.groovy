@@ -41,6 +41,6 @@ public class Database {
     }
     
     public String toString() {
-        "Table[name=${name};tableCount=${tables.size()}]"
+        "Database[name=${name};tableCount=${tables.size()}]"
     }
 }

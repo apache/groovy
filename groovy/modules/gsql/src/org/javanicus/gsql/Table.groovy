@@ -108,4 +108,9 @@ public class Table implements Cloneable {
     public Column getAutoIncrementColumn() {
         getColumns().find() {it.isAutoIncrement()}
     }
+    
+    public String toString() {
+        "Table[name=${name};columnCount=${columns.size()}]"
+    }
+
 }
