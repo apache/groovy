@@ -324,10 +324,6 @@
 
         <!-- handling fully qualified class names in variable declarations -->
         <exclude name="**/FullyQualifiedVariableTypeBug.groovy"/>
-
-        <!-- TODO - unsure about this test case - to do with string literals with backspace and $ -->
-        <exclude name="**/Groovy675_Bug.groovy"/>
-
       </fileset>
     </copy>
     <!--
