@@ -83,6 +83,9 @@ public class Token
     /** Token type for ".". */
     public static final int DOT = 70;
 
+    /** Token type for "..". */
+    public static final int DOT_DOT = 75;
+
     /** Token type for "!". */
     public static final int NOT = 80;
 
@@ -410,6 +413,8 @@ public class Token
                              ")" );
         addTokenDescription( DOT,
                              "." );
+        addTokenDescription( DOT_DOT,
+                             ".." );
         addTokenDescription( NOT,
                              "!" );
         addTokenDescription( COMPARE_NOT_EQUAL,
@@ -676,6 +681,15 @@ public class Token
     {
         return newToken( DOT,
                          ".",
+                         startLine,
+                         startColumn );
+    }
+
+    public static Token dotDot(int startLine,
+                               int startColumn)
+    {
+        return newToken( DOT_DOT,
+                         "..",
                          startLine,
                          startColumn );
     }

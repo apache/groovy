@@ -102,6 +102,16 @@ public class TokenTest
                      "." );
     }
 
+    public void testDotDot()
+    {
+        Token token = Token.dotDot( LINE,
+                                    COLUMN );
+
+        assertToken( token,
+                     Token.DOT_DOT,
+                     ".." );
+    }
+
     public void testNot()
     {
         Token token = Token.not( LINE,

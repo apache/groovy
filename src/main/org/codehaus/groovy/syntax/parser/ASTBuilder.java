@@ -10,6 +10,7 @@ import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.PropertyExpression;
+import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.ExpressionStatement;
@@ -499,6 +500,10 @@ public class ASTBuilder
             {
                 return binaryExpression( expressionRoot );
             }
+            case ( Token.DOT_DOT ):
+            {
+                return rangeExpression( expressionRoot );
+            }
             case ( Token.SINGLE_QUOTE_STRING ):
             case ( Token.DOUBLE_QUOTE_STRING ):
             case ( Token.INTEGER_NUMBER ):
@@ -522,6 +527,12 @@ public class ASTBuilder
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected RangeExpression rangeExpression(CSTNode expressionRoot)
+    {
+        return new RangeExpression( expression( expressionRoot.getChild( 0 ) ),
+                                    expression( expressionRoot.getChild( 1 ) ) );
     }
 
     protected Expression propertyExpression(CSTNode expressionRoot)

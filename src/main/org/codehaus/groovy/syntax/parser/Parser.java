@@ -811,7 +811,7 @@ public class Parser
     protected CSTNode relationalExpression()
         throws IOException, SyntaxException
     {
-        CSTNode expr = additiveExpression();
+        CSTNode expr = rangeExpression();
 
         switch ( lt() )
         {
@@ -823,9 +823,24 @@ public class Parser
             {
                 expr = rootNode( lt(),
                                  expr );
-                expr.addChild( additiveExpression() );
+                expr.addChild( rangeExpression() );
                 break;
             }
+        }
+
+        return expr;
+    }
+
+    protected CSTNode rangeExpression()
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = additiveExpression();
+
+        if ( lt() == Token.DOT_DOT )
+        {
+            expr = rootNode( Token.DOT_DOT,
+                             expr );
+            expr.addChild( additiveExpression() );
         }
 
         return expr;
