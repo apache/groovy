@@ -186,4 +186,9 @@ public class DumpClass {
         buffer.append(x);
         InvokerHelper.assertFailed(buffer, "message");
     }
+    
+    public void setLocalVar() {
+        Object l = "foo";
+        InvokerHelper.invokeMethod(l, "foo", "whatever");
+    }
 }
