@@ -1,5 +1,6 @@
 /*
- * $Id$version Nov 23, 2003 9:02:55 PM $user Exp $
+ * $Id$version
+ * Nov 23, 2003 9:02:55 PM $user Exp $
  * 
  * Copyright 2003 (C) Sam Pullara. All Rights Reserved.
  * 
@@ -31,7 +32,7 @@
  * DAMAGE.
  *  
  */
- package groovy.lang;
+package groovy.lang;
 
 import groovy.util.GroovyTestCase;
 
@@ -41,47 +42,48 @@ import java.util.Map;
 
 /**
  * @author sam
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
+ * 
+ * To change the template for this generated type comment go to Window -
+ * Preferences - Java - Code Generation - Code and Comments
  */
 public class GroovyShellTest extends GroovyTestCase {
 
-	private String script1 = "test = 1";
-	
-	public void testExecuteScript() {
-		GroovyShell shell = new GroovyShell();
-		try {
-			Object result = shell.evaluate(new ByteArrayInputStream(script1.getBytes()), "test.groovy");
-			assertEquals(new Integer(1), result);
-		} catch (Exception e) {
-			assertTrue(false);
-		}
-	}
-	
-	private static class PropertyHolder {
-		private Map map = new HashMap();
-		public void set(String key, Object value) {
-			map.put(key, value);
-		}
-		public Object get(String key) {
-			return map.get(key);
-		}
-	}
-	
-	private String script2 = "test.prop = 2\nreturn test.prop";
-	
-	public void testExecuteScriptWithContext() {
-		Binding context = new Binding();
-		context.setVariable("test", new PropertyHolder());
-		GroovyShell shell = new GroovyShell(context);
-		try {
-			Object result = shell.evaluate(new ByteArrayInputStream(script2.getBytes()), "test.groovy");
-			assertEquals(new Integer(2), result);
-		} catch (Exception e) {
-			fail(e.toString());
-		}
-	}
-	
-	
+    private String script1 = "test = 1";
+
+    public void testExecuteScript() {
+        GroovyShell shell = new GroovyShell();
+        try {
+            Object result = shell.evaluate(new ByteArrayInputStream(script1.getBytes()), "Test.groovy");
+            assertEquals(new Integer(1), result);
+        }
+        catch (Exception e) {
+            assertTrue(false);
+        }
+    }
+
+    private static class PropertyHolder {
+        private Map map = new HashMap();
+        public void set(String key, Object value) {
+            map.put(key, value);
+        }
+        public Object get(String key) {
+            return map.get(key);
+        }
+    }
+
+    private String script2 = "test.prop = 2\nreturn test.prop";
+
+    public void testExecuteScriptWithContext() {
+        Binding context = new Binding();
+        context.setVariable("test", new PropertyHolder());
+        GroovyShell shell = new GroovyShell(context);
+        try {
+            Object result = shell.evaluate(new ByteArrayInputStream(script2.getBytes()), "Test.groovy");
+            assertEquals(new Integer(2), result);
+        }
+        catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
 }
