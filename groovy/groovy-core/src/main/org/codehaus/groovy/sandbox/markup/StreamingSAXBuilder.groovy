@@ -74,7 +74,6 @@ import org.xml.sax.ext.LexicalHandler
 //			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
 // workround for bug GROOVY-309
 			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
-			    						contentHandler.startPrefixMapping(parts[0], namespaceUri)
 			    					} else {
 			    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
 			    					} 
@@ -91,6 +90,7 @@ import org.xml.sax.ext.LexicalHandler
 //							attributes.addAttribute("http://www.w3.org/XML/1998/namespace", key, "xmlns:${key}", "CDATA", value)
 // workround for bug GROOVY-309
 							attributes.addAttribute("http://www.w3.org/XML/1998/namespace", key, "xmlns:${key}".toString(), "CDATA", value)
+			    				contentHandler.startPrefixMapping(key, value)
 						}
 					
 						// setup the tag info
