@@ -626,6 +626,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new int[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Number) ia[i]).intValue();
             }
         }
@@ -642,6 +643,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Boolean) ia[i]).booleanValue();
             }
         }
@@ -691,6 +693,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new char[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Character) ia[i]).charValue();
             }
         }
@@ -707,6 +710,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new long[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Number) ia[i]).longValue();
             }
         }
@@ -723,6 +727,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new float[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Number) ia[i]).floatValue();
             }
         }
@@ -739,6 +744,7 @@ public class InvokerHelper {
             Object[] ia = (Object[]) a;
             ans = new double[ia.length];
             for (int i = 0; i < ia.length; i++) {
+                if (ia[i]==null) continue;
                 ans[i] = ((Number) ia[i]).doubleValue();
             }
         }
