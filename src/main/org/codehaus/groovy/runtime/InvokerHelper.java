@@ -53,6 +53,7 @@ import groovy.lang.Script;
 import groovy.lang.Binding;
 import groovy.lang.Tuple;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -326,5 +327,19 @@ public class InvokerHelper {
             version = "";
         }
         return version;
+    }
+
+    /**
+     * Allows conversion of arrays into a mutable List
+     * 
+     * @returns the array as a List
+     */
+    protected static List primitiveArrayToList(Object array) {
+        int size = Array.getLength(array);
+        List list = new ArrayList(size);
+        for (int i = 0; i < size; i++) {
+            list.add(Array.get(array, i));
+        }
+        return list;
     }
 }

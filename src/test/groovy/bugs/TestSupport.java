@@ -68,7 +68,7 @@ public class TestSupport extends GroovyTestCase {
         return "cheese";
     }
     
-    public int[] getIntArray() {
+    public static int[] getIntArray() {
         return new int[] { 1, 2, 3, 4, 5 };
     }
 }

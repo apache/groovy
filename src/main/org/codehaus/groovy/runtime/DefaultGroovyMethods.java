@@ -1246,25 +1246,25 @@ public class DefaultGroovyMethods {
     }
 
     public static List toList(byte[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(char[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(short[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(int[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(long[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(float[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
     public static List toList(double[] array) {
-        return primitiveArrayToList(array);
+        return InvokerHelper.primitiveArrayToList(array);
     }
 
     /**
@@ -1312,20 +1312,6 @@ public class DefaultGroovyMethods {
      */
     protected static void primitiveArrayPut(Object array, int idx, Object newValue) {
         Array.set(array, normaliseIndex(idx, Array.getLength(array)), newValue);
-    }
-
-    /**
-     * Allows conversion of arrays into a mutable List
-     * 
-     * @returns the array as a List
-     */
-    protected static List primitiveArrayToList(Object array) {
-        int size = Array.getLength(array);
-        List list = new ArrayList(size);
-        for (int i = 0; i < size; i++) {
-            list.add(Array.get(array, i));
-        }
-        return list;
     }
 
     // String methods
