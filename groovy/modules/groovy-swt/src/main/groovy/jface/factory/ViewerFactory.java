@@ -4,6 +4,7 @@
  */
 package groovy.jface.factory;
 
+import groovy.swt.SwtUtils;
 import groovy.swt.factory.SwtFactory;
 import groovy.swt.factory.WidgetFactory;
 
@@ -14,6 +15,7 @@ import org.eclipse.jface.viewers.CheckboxTreeViewer;
 import org.eclipse.jface.viewers.TableTreeViewer;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableTree;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.Tree;
@@ -46,6 +48,11 @@ public class ViewerFactory extends WidgetFactory implements SwtFactory {
     public Object newInstance(Map properties, Object parent) throws GroovyException {
         Object bean;
 
+        String styleProperty = (String) properties.remove("style");
+        if (styleProperty != null) {
+            style = SwtUtils.parseStyle(SWT.class, styleProperty);
+        }
+
         if (beanClass.equals(TableViewer.class) && (parent instanceof Table)) {
             bean = new TableViewer((Table) parent, style);
 
@@ -59,10 +66,15 @@ public class ViewerFactory extends WidgetFactory implements SwtFactory {
             bean = new CheckboxTreeViewer((Tree) parent, style);
 
         } else {
-            bean = super.newInstance(properties, parent);
+            Object parentWidget = SwtUtils.getParentWidget(parent, properties);
+            bean = createWidget(parentWidget);
         }
 
-        setBeanProperties(bean, properties);
+        if (bean != null) {
+            setBeanProperties(bean, properties);
+        }
+
+        setControl(bean, parent);
 
         return bean;
     }
