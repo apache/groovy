@@ -63,4 +63,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert l.containsAll(c)
         assert c.size() == l.size()
     }
+
+    void testJoinString() {
+        arr = new String[] {"a", "b", "c", "d"}
+        joined = arr.join(", ")
+
+        assert joined == "a, b, c, d"
+    }
 }
