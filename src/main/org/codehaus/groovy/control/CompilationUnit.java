@@ -50,11 +50,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
-import org.codehaus.groovy.classgen.ClassCompletionVerifier;
-import org.codehaus.groovy.classgen.ClassGenerator;
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -63,19 +59,11 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.CodeSource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -176,8 +164,7 @@ public class CompilationUnit extends ProcessingUnit {
                 try {
                     this.configured = true;
                     loader.addPath((String) iterator.next());
-                }
-                catch (MalformedURLException e) {
+                } catch (MalformedURLException e) {
                     throw new ConfigurationException(e);
                 }
             }
@@ -229,9 +216,8 @@ public class CompilationUnit extends ProcessingUnit {
 
         try {
             applyToPrimaryClassNodes(handler);
-        }
-        catch (CompilationFailedException e) {
-            e.printStackTrace();
+        } catch (CompilationFailedException e) {
+            if (debug) e.printStackTrace();
         }
         return result[0];
     }
@@ -458,8 +444,7 @@ public class CompilationUnit extends ProcessingUnit {
 
             gotoPhase(Phases.FINALIZATION);
 
-        }
-        while (false);
+        } while (false);
 
     }
 
@@ -594,13 +579,11 @@ public class CompilationUnit extends ProcessingUnit {
                 if (debug) {
                     try {
                         classgenCallback.call(visitor, classNode);
-                    }
-                    catch (Throwable t) {
+                    } catch (Throwable t) {
                         output.println("Classgen callback threw: " + t);
                         t.printStackTrace(output);
                     }
-                }
-                else {
+                } else {
                     classgenCallback.call(visitor, classNode);
                 }
             }
@@ -673,17 +656,14 @@ public class CompilationUnit extends ProcessingUnit {
             try {
                 stream = new FileOutputStream(path);
                 stream.write(bytes, 0, bytes.length);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 addError(Message.create(e.getMessage()));
                 failures = true;
-            }
-            finally {
+            } finally {
                 if (stream != null) {
                     try {
                         stream.close();
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                     }
                 }
             }
@@ -791,11 +771,9 @@ public class CompilationUnit extends ProcessingUnit {
             if (source.phase <= phase) {
                 try {
                     body.call(source);
-                }
-                catch (CompilationFailedException e) {
+                } catch (CompilationFailedException e) {
                     failures = true;
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     throw new GroovyBugError(e);
                 }
             }
@@ -844,15 +822,11 @@ public class CompilationUnit extends ProcessingUnit {
                         body.call(module.getContext(), new GeneratorContext(this.ast), classNode);
                     }
                 }
-            }
-            catch (CompilationFailedException e) {
-                e.printStackTrace();
+            } catch (CompilationFailedException e) {
                 failures = true;
                 addError(new ExceptionMessage(e));
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 failures = true;
-                e.printStackTrace();
 //                String msg = e.getMessage();
 //                if (e instanceof RuntimeParserException) {
 //                    RuntimeParserException rpe = (RuntimeParserException) e;

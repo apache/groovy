@@ -83,9 +83,7 @@ public class GroovyTestSuite extends TestSuite {
         GroovyTestSuite suite = new GroovyTestSuite();
         try {
             suite.loadTestSuite();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new RuntimeException("Could not create the test suite: " + e, e);
         }
         return suite;
@@ -102,8 +100,7 @@ public class GroovyTestSuite extends TestSuite {
         if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
             // lets treat the script as a Test
             addTest(new ScriptTestAdapter(type, args));
-        }
-        else {
+        } else {
             addTestSuite(type);
         }
     }

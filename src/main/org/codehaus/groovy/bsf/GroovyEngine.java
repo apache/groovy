@@ -47,9 +47,6 @@ package org.codehaus.groovy.bsf;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
-
-import java.util.Vector;
-
 import org.apache.bsf.BSFDeclaredBean;
 import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
@@ -57,10 +54,12 @@ import org.apache.bsf.util.BSFEngineImpl;
 import org.apache.bsf.util.BSFFunctions;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
+import java.util.Vector;
+
 /**
- * A BSF Engine for the <a href="http://groovy.codehaus.org/">Groovy</a> 
+ * A BSF Engine for the <a href="http://groovy.codehaus.org/">Groovy</a>
  * scripting language.
- * 
+ * <p/>
  * It's derived from the Jython / JPython engine
  *
  * @author James Strachan
@@ -90,7 +89,7 @@ public class GroovyEngine extends BSFEngineImpl {
             if (firstChar && !Character.isJavaIdentifierStart(ch)) {
                 ch = '_';
             } else if (!firstChar
-                       && !(Character.isJavaIdentifierPart(ch) || ch == '.')) {
+                    && !(Character.isJavaIdentifierPart(ch) || ch == '.')) {
                 ch = '_';
             }
             firstChar = (ch == '.');
@@ -98,19 +97,18 @@ public class GroovyEngine extends BSFEngineImpl {
         }
         return output.toString();
     }
-    
+
     /**
      * Allow an anonymous function to be declared and invoked
      */
-    public Object apply(
-        java.lang.String source,
-        int lineNo,
-        int columnNo,
-        Object funcBody,
-        Vector paramNames,
-        Vector arguments)
-        throws BSFException {
-        
+    public Object apply(java.lang.String source,
+                        int lineNo,
+                        int columnNo,
+                        Object funcBody,
+                        Vector paramNames,
+                        Vector arguments)
+            throws BSFException {
+
         Object object = eval(source, lineNo, columnNo, funcBody);
         if (object instanceof Closure) {
             // lets call the function
@@ -145,15 +143,13 @@ public class GroovyEngine extends BSFEngineImpl {
             source = convertToValidJavaClassname(source);
             Object result = getEvalShell().evaluate(script.toString(), source);
             return result;
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }
 
     /**
-     * Execute a script. 
+     * Execute a script.
      */
     public void exec(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
@@ -161,9 +157,7 @@ public class GroovyEngine extends BSFEngineImpl {
             source = convertToValidJavaClassname(source);
             getEvalShell().evaluate(script.toString(), source);
             //getEvalShell().run(script.toString(), source, EMPTY_ARGS);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }

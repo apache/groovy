@@ -325,10 +325,8 @@ public class GroovyClassLoader extends SecureClassLoader {
                                 try {
                                     return parseClass(files[j]);
                                 } catch (CompilationFailedException e) {
-                                    e.printStackTrace();
                                     throw new ClassNotFoundException("Syntax error in groovy file: " + files[j].getAbsolutePath(), e);
                                 } catch (IOException e) {
-                                    e.printStackTrace();
                                     throw new ClassNotFoundException("Error reading groovy file: " + files[j].getAbsolutePath(), e);
                                 }
                             }
@@ -344,10 +342,8 @@ public class GroovyClassLoader extends SecureClassLoader {
                             try {
                                 return parseClass(new GroovyCodeSource(new ByteArrayInputStream(bytes), filename, path, certs));
                             } catch (CompilationFailedException e1) {
-                                e1.printStackTrace();
                                 throw new ClassNotFoundException("Syntax error in groovy file: " + filename, e1);
                             } catch (IOException e1) {
-                                e1.printStackTrace();
                                 throw new ClassNotFoundException("Error reading groovy file: " + filename, e1);
                             }
                         }
@@ -556,7 +552,6 @@ public class GroovyClassLoader extends SecureClassLoader {
                         cls = parseClass(source);
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
                     synchronized (cache) {
                         cache.put(name, NOT_RESOLVED.class);
                     }

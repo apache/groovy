@@ -37,32 +37,28 @@ package org.codehaus.groovy.ast;
 import groovy.lang.GroovyObject;
 import groovy.lang.MissingClassException;
 import groovy.lang.Script;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.logging.Logger;
-
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Constants;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.security.AccessControlException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Represents a class declaration
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class ClassNode extends MetadataNode implements Constants {
 
-    private static final String[] defaultImports = { "java.lang", "java.util", "groovy.lang", "groovy.util" };
+    private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
 
     private Logger log = Logger.getLogger(getClass().getName());
 
@@ -86,37 +82,33 @@ public class ClassNode extends MetadataNode implements Constants {
 
     //br added to track the enclosing method for local inner classes
     private MethodNode enclosingMethod = null;
+
     public MethodNode getEnclosingMethod() {
         return enclosingMethod;
     }
+
     public void setEnclosingMethod(MethodNode enclosingMethod) {
         this.enclosingMethod = enclosingMethod;
     }
 
 
     /**
-     * @param name
-     *            is the full name of the class
-     * @param modifiers
-     *            the modifiers,
+     * @param name       is the full name of the class
+     * @param modifiers  the modifiers,
+     * @param superClass the base class name - use "java.lang.Object" if no direct
+     *                   base class
      * @see org.objectweb.asm.Constants
-     * @param superClass
-     *            the base class name - use "java.lang.Object" if no direct
-     *            base class
      */
     public ClassNode(String name, int modifiers, String superClass) {
         this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
-     * @param name
-     *            is the full name of the class
-     * @param modifiers
-     *            the modifiers,
+     * @param name       is the full name of the class
+     * @param modifiers  the modifiers,
+     * @param superClass the base class name - use "java.lang.Object" if no direct
+     *                   base class
      * @see org.objectweb.asm.Constants
-     * @param superClass
-     *            the base class name - use "java.lang.Object" if no direct
-     *            base class
      */
     public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
         this.name = name;
@@ -126,7 +118,7 @@ public class ClassNode extends MetadataNode implements Constants {
         this.mixins = mixins;
 
         //br for better JVM comformance
-        if ((modifiers & ACC_SUPER ) == 0) {
+        if ((modifiers & ACC_SUPER) == 0) {
             this.modifiers += ACC_SUPER;
         }
     }
@@ -138,7 +130,7 @@ public class ClassNode extends MetadataNode implements Constants {
     public void setSuperClass(String superClass) {
         this.superClass = superClass;
     }
-    
+
     public List getFields() {
         return fields;
     }
@@ -204,7 +196,7 @@ public class ClassNode extends MetadataNode implements Constants {
                 MethodNode inheritedMethod = (MethodNode) result.get(sig);
                 if (inheritedMethod.isAbstract()) {
                     result.put(sig, method);
-                }                
+                }
             } else {
                 result.put(sig, method);
             }
@@ -216,7 +208,8 @@ public class ClassNode extends MetadataNode implements Constants {
         for (int i = 0; i < methods.size(); i++) {
             MethodNode someMeth = (MethodNode) methods.get(i);
             if (someMeth.getName().equals(method.getName())
-                    && parametersEqual(someMeth.getParameters(), method.getParameters())) return i;
+                    && parametersEqual(someMeth.getParameters(), method.getParameters()))
+                return i;
         }
         return -1;
     }
@@ -249,7 +242,7 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public void addField(FieldNode node) {
-    	node.setOwner(getName());
+        node.setOwner(getName());
         fields.add(node);
         fieldIndex.put(node.getName(), node);
     }
@@ -261,15 +254,14 @@ public class ClassNode extends MetadataNode implements Constants {
         properties.add(node);
     }
 
-    public PropertyNode addProperty(
-        String name,
-        int modifiers,
-        String type,
-        Expression initialValueExpression,
-        Statement getterBlock,
-        Statement setterBlock) {
+    public PropertyNode addProperty(String name,
+                                    int modifiers,
+                                    String type,
+                                    Expression initialValueExpression,
+                                    Statement getterBlock,
+                                    Statement setterBlock) {
         PropertyNode node =
-            new PropertyNode(name, modifiers, type, getName(), initialValueExpression, getterBlock, setterBlock);
+                new PropertyNode(name, modifiers, type, getName(), initialValueExpression, getterBlock, setterBlock);
         addProperty(node);
         return node;
     }
@@ -296,12 +288,11 @@ public class ClassNode extends MetadataNode implements Constants {
      * be a method defined in a class and  so the default implementations should not be added
      * if already present.
      */
-    public MethodNode addMethod(
-        String name,
-        int modifiers,
-        String returnType,
-        Parameter[] parameters,
-        Statement code) {
+    public MethodNode addMethod(String name,
+                                int modifiers,
+                                String returnType,
+                                Parameter[] parameters,
+                                Statement code) {
         MethodNode other = getDeclaredMethod(name, parameters);
         // lets not add duplicate methods
         if (other != null) {
@@ -312,15 +303,14 @@ public class ClassNode extends MetadataNode implements Constants {
         return node;
     }
 
-    /** 
+    /**
      * Adds a synthetic method as part of the compilation process
      */
-    public MethodNode addSyntheticMethod(
-        String name,
-        int modifiers,
-        String returnType,
-        Parameter[] parameters,
-        Statement code) {
+    public MethodNode addSyntheticMethod(String name,
+                                         int modifiers,
+                                         String returnType,
+                                         Parameter[] parameters,
+                                         Statement code) {
         MethodNode answer = addMethod(name, modifiers, returnType, parameters, code);
         answer.setSynthetic(true);
         return answer;
@@ -379,7 +369,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     /**
      * Helper method to avoid casting to inner class
-     * 
+     *
      * @return
      */
     public ClassNode getOuterClass() {
@@ -391,20 +381,17 @@ public class ClassNode extends MetadataNode implements Constants {
         List declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
             method =
-                addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
-        }
-        else {
+                    addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+        } else {
             method = (MethodNode) declaredMethods.get(0);
         }
         BlockStatement block = null;
         Statement statement = method.getCode();
         if (statement == null) {
             block = new BlockStatement();
-        }
-        else if (statement instanceof BlockStatement) {
+        } else if (statement instanceof BlockStatement) {
             block = (BlockStatement) statement;
-        }
-        else {
+        } else {
             block = new BlockStatement();
             block.addStatement(statement);
         }
@@ -439,8 +426,7 @@ public class ClassNode extends MetadataNode implements Constants {
                 }
             }
             node = node.getSuperClassNode();
-        }
-        while (node != null);
+        } while (node != null);
         return answer;
     }
 
@@ -473,7 +459,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     /**
      * @return true if this class is derived from a groovy object
-     * i.e. it implements GroovyObject
+     *         i.e. it implements GroovyObject
      */
     public boolean isDerivedFromGroovyObject() {
         return implementsInteface(GroovyObject.class.getName());
@@ -490,8 +476,7 @@ public class ClassNode extends MetadataNode implements Constants {
                 return true;
             }
             node = node.getSuperClassNode();
-        }
-        while (node != null);
+        } while (node != null);
         return false;
     }
 
@@ -501,7 +486,7 @@ public class ClassNode extends MetadataNode implements Constants {
      */
     public boolean declaresInterface(String name) {
         int size = interfaces.length;
-        for (int i = 0; i < size; i++ ) {
+        for (int i = 0; i < size; i++) {
             if (name.equals(interfaces[i])) {
                 return true;
             }
@@ -513,13 +498,12 @@ public class ClassNode extends MetadataNode implements Constants {
      * @return the ClassNode of the super class of this type
      */
     public ClassNode getSuperClassNode() {
-        if (superClass != null &&  superClass.length() > 0 && superClassNode == null && !name.equals("java.lang.Object")) {
+        if (superClass != null && superClass.length() > 0 && superClassNode == null && !name.equals("java.lang.Object")) {
             // lets try find the class in the compile unit
             String temp = resolveClassName(superClass);
             if (temp == null) {
                 throw new MissingClassException(superClass, this, "No such superclass");
-            }
-            else {
+            } else {
                 superClass = temp;
             }
             superClassNode = findClassNode(superClass);
@@ -529,7 +513,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     /**
      * Attempts to lookup the fully qualified class name in the compile unit or classpath
-     * 
+     *
      * @param type fully qulified type name
      * @return the ClassNode for this type or null if it could not be found
      */
@@ -543,11 +527,9 @@ public class ClassNode extends MetadataNode implements Constants {
                 try {
                     theClass = theCompileUnit.loadClass(type);
                     answer = createClassNode(theClass);
-                }
-                catch (ClassNotFoundException e) {
+                } catch (ClassNotFoundException e) {
                     // lets ignore class not found exceptions
-                    log.warning("Cannot find class: " + type + " due to: " + e);
-                    e.printStackTrace();
+                    log.log(Level.WARNING, "Cannot find class: " + type, e);
                 }
             }
         }
@@ -561,25 +543,24 @@ public class ClassNode extends MetadataNode implements Constants {
         for (int i = 0; i < size; i++) {
             interfaceNames[i] = classInterfaces[i].getName();
         }
-        
+
         String className = null;
         if (theClass.getSuperclass() != null) {
             className = theClass.getSuperclass().getName();
         }
         ClassNode answer =
-            new ClassNode(
-                theClass.getName(),
-                theClass.getModifiers(),
-                className,
-                interfaceNames,
-                MixinNode.EMPTY_ARRAY);
+                new ClassNode(theClass.getName(),
+                        theClass.getModifiers(),
+                        className,
+                        interfaceNames,
+                        MixinNode.EMPTY_ARRAY);
         answer.compileUnit = getCompileUnit();
         Method[] declaredMethods = theClass.getDeclaredMethods();
-        for (int i = 0; i < declaredMethods.length; i++ ) {
+        for (int i = 0; i < declaredMethods.length; i++) {
             answer.addMethod(createMethodNode(declaredMethods[i]));
         }
         Constructor[] declaredConstructors = theClass.getDeclaredConstructors();
-        for (int i = 0; i < declaredConstructors.length; i++ ) {
+        for (int i = 0; i < declaredConstructors.length; i++) {
             answer.addConstructor(createConstructorNode(declaredConstructors[i]));
         }
         return answer;
@@ -622,72 +603,63 @@ public class ClassNode extends MetadataNode implements Constants {
         return new Parameter(parameterType.getName(), "param" + idx);
     }
 
-  
+
     public String resolveClassName(String type) {
         String answer = null;
         if (type != null) {
             if (getName().equals(type) || getNameWithoutPackage().equals(type)) {
                 return getName();
             }
-			// try to resolve Class names
+            // try to resolve Class names
             answer = tryResolveClassAndInnerClass(type);
 
             // try to resolve a public static inner class' name
             String replacedPointType = type;
-			while (answer == null && replacedPointType.indexOf('.') > -1) {
+            while (answer == null && replacedPointType.indexOf('.') > -1) {
                 int lastPoint = replacedPointType.lastIndexOf('.');
                 replacedPointType = new StringBuffer()
-                                    .append(replacedPointType.substring(0, lastPoint)).append("$")
-                                    .append(replacedPointType.substring(lastPoint + 1)).toString();
+                        .append(replacedPointType.substring(0, lastPoint)).append("$")
+                        .append(replacedPointType.substring(lastPoint + 1)).toString();
                 answer = tryResolveClassAndInnerClass(replacedPointType);
-			}
+            }
         }
         return answer;
     }
 
-	private String tryResolveClassAndInnerClass(String type) {
-		String answer = tryResolveClassFromCompileUnit(type);
-		if (answer == null)
-		{
-			// lets try class in same package
-			String packageName = getPackageName();
-			if (packageName != null && packageName.length() > 0)
-			{
-				answer = tryResolveClassFromCompileUnit(packageName + "." + type);
-			}
-		}
-		if (answer == null)
-		{
-			// lets try use the packages imported in the module
-			if (module != null)
-			{
-				//System.out.println("Looking up inside the imported packages: " + module.getImportPackages());
+    private String tryResolveClassAndInnerClass(String type) {
+        String answer = tryResolveClassFromCompileUnit(type);
+        if (answer == null) {
+            // lets try class in same package
+            String packageName = getPackageName();
+            if (packageName != null && packageName.length() > 0) {
+                answer = tryResolveClassFromCompileUnit(packageName + "." + type);
+            }
+        }
+        if (answer == null) {
+            // lets try use the packages imported in the module
+            if (module != null) {
+                //System.out.println("Looking up inside the imported packages: " + module.getImportPackages());
 
-				for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext();)
-				{
-					String packageName = (String) iter.next();
-					answer = tryResolveClassFromCompileUnit(packageName + type);
-					if (answer != null)
-					{
-						return answer;
-					}
-				}
-			}
-		}
-		if (answer == null)
-		{
-			for (int i = 0, size = defaultImports.length; i < size; i++)
-			{
-				String packagePrefix = defaultImports[i];
-				answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
-				if (answer != null)
-				{
-					return answer;
-				}
-			}
-		}
-		return answer;
-	}
+                for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext();) {
+                    String packageName = (String) iter.next();
+                    answer = tryResolveClassFromCompileUnit(packageName + type);
+                    if (answer != null) {
+                        return answer;
+                    }
+                }
+            }
+        }
+        if (answer == null) {
+            for (int i = 0, size = defaultImports.length; i < size; i++) {
+                String packagePrefix = defaultImports[i];
+                answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
+                if (answer != null) {
+                    return answer;
+                }
+            }
+        }
+        return answer;
+    }
 
     /**
      * @param type
@@ -703,12 +675,10 @@ public class ClassNode extends MetadataNode implements Constants {
             try {
                 theCompileUnit.loadClass(type);
                 return type;
-            }
-            catch (AccessControlException ace) {
-            	//Percolate this for better diagnostic info
-            	throw ace;
-            }
-            catch (Throwable e) {
+            } catch (AccessControlException ace) {
+                //Percolate this for better diagnostic info
+                throw ace;
+            } catch (Throwable e) {
                 // fall through
             }
         }
@@ -741,7 +711,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     /**
      * @return the name of the class for the given identifier if it is a class
-     * otherwise return null
+     *         otherwise return null
      */
     public String getClassNameForExpression(String identifier) {
         // lets see if it really is a class name
@@ -751,8 +721,7 @@ public class ClassNode extends MetadataNode implements Constants {
             if (className == null) {
                 if (module.getUnit().getClass(identifier) != null) {
                     className = identifier;
-                }
-                else {
+                } else {
                     // lets prepend the package name to see if its in our
                     // package
                     String packageName = getPackageName();
@@ -760,15 +729,13 @@ public class ClassNode extends MetadataNode implements Constants {
                         String guessName = packageName + "." + identifier;
                         if (module.getUnit().getClass(guessName) != null) {
                             className = guessName;
-                        }
-                        else if (guessName.equals(name)) {
+                        } else if (guessName.equals(name)) {
                             className = name;
                         }
                     }
                 }
             }
-        }
-        else {
+        } else {
             System.out.println("No module for class: " + getName());
         }
         return className;
@@ -816,8 +783,8 @@ public class ClassNode extends MetadataNode implements Constants {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (getterName.equals(method.getName())
-                && !"void".equals(method.getReturnType())
-                && method.getParameters().length == 0) {
+                    && !"void".equals(method.getReturnType())
+                    && method.getParameters().length == 0) {
                 return method;
             }
         }
@@ -828,8 +795,8 @@ public class ClassNode extends MetadataNode implements Constants {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (getterName.equals(method.getName())
-                && "void".equals(method.getReturnType())
-                && method.getParameters().length == 1) {
+                    && "void".equals(method.getReturnType())
+                    && method.getParameters().length == 1) {
                 return method;
             }
         }
@@ -838,6 +805,7 @@ public class ClassNode extends MetadataNode implements Constants {
 
     /**
      * Is this class delcared in a static method (such as a closure / inner class declared in a static method)
+     *
      * @return
      */
     public boolean isStaticClass() {
@@ -871,4 +839,4 @@ public class ClassNode extends MetadataNode implements Constants {
         return super.toString() + "[name: " + name + "]";
     }
 
-   }
+}
