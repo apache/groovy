@@ -1,6 +1,8 @@
 PARSER CHANGES REQUIRED
 =======================
 
+* allow closures to be passed as a parameter in a method call
+
 * support method invocation where last parameter can be specified as a closure
 
 	collection.each {i| print(i); }
@@ -13,6 +15,8 @@ PARSER CHANGES REQUIRED
 	
 * support named parameter arguments. e.g. foo(a:1234, b:542);
 	which uses NamedParameterExpression
+
+* support parsing of Foo.class which should create a ConstantExpression
 
 * support for new object expressions
 

@@ -19,9 +19,11 @@ class ClosureTest extends GroovyTestCase {
 
         block = {owner|owner.incrementCallCount(); }
         
-        // block.call(this);
+        assertClosure(block);
         
-        // assert(callCount == 1);
+        block.call(this);
+        
+        assert callCount := 1;
     }
 
 /** @todo parser        
@@ -31,13 +33,18 @@ class ClosureTest extends GroovyTestCase {
         
         callBlock(5, { | owner | owner.incrementCallCount(); });
         
-        assert(callCount == 5);
+        assert callCount == 5;
     }
 */
 
 
 	incrementCallCount() {
+	    System.out.println("invoked increment method!");
 	    callCount = callCount + 1;
+	}
+	
+	assertClosure(Closure block) {
+	    assert block != null
 	}
 	
 	protected callBlock(count, block) {

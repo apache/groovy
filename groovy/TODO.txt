@@ -21,6 +21,8 @@ Core Groovy Tasks
 
 * test [] on lists & maps?
 
+* constructors - test use of super()
+
 * test use of method calls: foo() this.foo() class.foo() for local, inherited & global methods
 
 * += and -= operators
