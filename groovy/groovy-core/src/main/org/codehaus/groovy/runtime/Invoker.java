@@ -132,6 +132,17 @@ public class Invoker {
         }
     }
 
+    public Object invokeSuperMethod(Object object, String methodName, Object arguments) {
+        if (object == null) {
+            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
+        }
+
+        Class theClass = object.getClass();
+
+        MetaClass metaClass = metaRegistry.getMetaClass(theClass.getSuperclass());
+        return metaClass.invokeMethod(object, methodName, asArray(arguments));
+    }
+
     public Object invokeStaticMethod(String type, String method, Object arguments) {
         MetaClass metaClass = metaRegistry.getMetaClass(loadClass(type));
         List argumentList = asList(arguments);
@@ -356,7 +367,7 @@ public class Invoker {
                     return ((Character) left).compareTo(asCharacter((String) right));
                 }
                 else if (right instanceof Number) {
-                	return ((Character) left).compareTo(asCharacter((Number)right));
+                    return ((Character) left).compareTo(asCharacter((Number) right));
                 }
             }
             else if (right instanceof Number) {
@@ -750,4 +761,5 @@ public class Invoker {
         }
         return false;
     }
+
 }

@@ -93,12 +93,16 @@ public class InvokerHelper {
         return singleton;
     }
 
-    public static Object invokeVoidMethod(Object object, String methodName) {
+    public static Object invokeNoArgumentsMethod(Object object, String methodName) {
         return getInstance().invokeMethod(object, methodName, EMPTY_ARGS);
     }
 
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         return getInstance().invokeMethod(object, methodName, arguments);
+    }
+
+    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) {
+        return getInstance().invokeSuperMethod(object, methodName, arguments);
     }
 
     public static Object invokeMethodSafe(Object object, String methodName, Object arguments) {
@@ -110,6 +114,10 @@ public class InvokerHelper {
 
     public static Object invokeStaticMethod(String type, String methodName, Object arguments) {
         return getInstance().invokeStaticMethod(type, methodName, arguments);
+    }
+
+    public static Object invokeStaticNoArgumentsMethod(String type, String methodName) {
+        return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
     }
 
     public static Object invokeConstructor(String type, Object arguments) {
