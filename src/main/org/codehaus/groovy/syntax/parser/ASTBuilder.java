@@ -17,6 +17,8 @@ public class ASTBuilder
     private ClassLoader classLoader;
     private Map imports;
 
+    private String packageName;
+
     public ASTBuilder(ClassLoader classLoader)
     {
         this.classLoader = classLoader;
@@ -32,7 +34,7 @@ public class ASTBuilder
     {
         CSTNode[] children = unitRoot.getChildren();
 
-        String packageName = packageDeclaration( children[ 0 ] );
+        packageName = packageDeclaration( children[ 0 ] );
 
         importStatements( children[ 1 ] );
 
@@ -124,7 +126,21 @@ public class ASTBuilder
         {
             return (String) this.imports.get( name );
         }
-        
+
+        if (packageName != null && packageName.length() > 0)
+        {
+            try
+            {
+                getClassLoader().loadClass( packageName + "." + name );
+
+                return packageName + "." + name;
+            }
+            catch (ClassNotFoundException e)
+            {
+                // swallow
+            }
+            
+        }        
         try
         {
             getClassLoader().loadClass( "java.lang." + name );

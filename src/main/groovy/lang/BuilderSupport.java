@@ -45,54 +45,87 @@
  */
 package groovy.lang;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
- * A helper class for creating nested trees of Node objects for 
- * handling arbitrary data
+ * An abstract base class for creating arbitrary nested trees of objects
+ * or events
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NodeBuilder extends BuilderSupport {
+public abstract class BuilderSupport implements GroovyObject {
 
-    public static NodeBuilder newInstance() {
-        return new NodeBuilder();
-    }
+    private Object current;
+    MetaClass metaClass = InvokerHelper.getMetaClass(this);
 
-    protected void setParent(Object parent, Object child) {
-        Node current = (Node) parent;
-        Node node = (Node) child;
+    public Object invokeMethod(String name, Object args) {
+        Object node = null;
+        Closure closure = null;
+        List list = InvokerHelper.asList(args);
 
-        // lets add it to the parents children
-        Object parentValue = current.value();
-        List parentList = null;
-        if (parentValue instanceof List) {
-            parentList = (List) parentValue;
+        //System.out.println("Called invokeMethod with arguments: " + list);
+
+        if (!list.isEmpty()) {
+            Object object = list.get(0);
+            if (object instanceof Map) {
+                node = createNode(name, (Map) object);
+            }
+            else if (object instanceof Closure) {
+                closure = (Closure) object;
+                node = createNode(name);
+            }
+            else {
+                node = createNode(name, object);
+            }
+            if (list.size() > 1) {
+                object = list.get(1);
+                if (object instanceof Closure) {
+                    closure = (Closure) object;
+                }
+            }
         }
         else {
-            parentList = new ArrayList();
-            parentList.add(parentValue);
-            current.setValue(parentList);
+            node = createNode(name);
         }
-        parentList.add(node);
+        if (current != null) {
+            setParent(current, node);
+        }
+
+        //System.out.println("Created node: " + node);
+
+        if (closure != null) {
+            // push new node on stack
+            Object oldCurrent = current;
+            current = node;
+
+            // lets register the builder as the delegate
+            closure.setDelegate(this);
+            closure.call();
+
+            current = oldCurrent;
+        }
+        return node;
     }
 
-    protected Object createNode(Object name) {
-        return new Node(getCurrentNode(), name, new ArrayList());
+    public MetaClass getMetaClass() {
+        return metaClass;
     }
 
-    protected Object createNode(Object name, Object value) {
-        return new Node(getCurrentNode(), name, value);
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
     }
 
-    protected Object createNode(Object name, Map attributes) {
-        return new Node(getCurrentNode(), name, attributes, new ArrayList());
-    }
+    protected abstract void setParent(Object parent, Object child);
+    protected abstract Object createNode(Object name);
+    protected abstract Object createNode(Object name, Object value);
+    protected abstract Object createNode(Object name, Map attributes);
 
-    protected Node getCurrentNode() {
-        return (Node) getCurrent();
+    protected Object getCurrent() {
+        return current;
     }
 }

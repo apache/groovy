@@ -1,15 +1,19 @@
+package groovy.xml
 
+/** @todo parser we should be able to remove these */
+import groovy.xml.DOMBuilder
+import groovy.xml.TestXmlSupport
 
 /**
- * This test uses the verbose syntax to test the building of trees
- * using GroovyMarkup
+ * This test uses the verbose syntax to test the building of 
+ * W3C DOM trees using GroovyMarkup
  */
-class VerboseTreeTest extends GroovyTestCase {
+class VerboseDOMTest extends TestXmlSupport {
     
     property b
 
     void testSmallTree() {
-        b = NodeBuilder.newInstance()
+        b = DOMBuilder.newInstance()
         
         root = b.root1(['a':5, 'b':7], {|
             elem1('hello1')
@@ -19,11 +23,11 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        dump(root)
     }
     
     void testTree() {
-        b = NodeBuilder.newInstance()
+        b = DOMBuilder.newInstance()
         
         root = b.root2(['a':5, 'b':7], {|
             elem1('hello1')
@@ -41,8 +45,9 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        dump(root)
 
+/*
 		elem1 = root.elem1
         assert elem1.value() := 'hello1'
         
@@ -72,10 +77,11 @@ class VerboseTreeTest extends GroovyTestCase {
         assert root.nestedElem.attributes().y := 'def'
         assert root.nestedElem2.attributes().z := 'zzz'
         assert root.nestedElem2.child.attributes().z := 'def'
-        
+*/        
         /** @todo parser add .@ as an operation
                 assert root.@a := 5
                 assert root.@b := 7
         */        
     }
+    
 }
