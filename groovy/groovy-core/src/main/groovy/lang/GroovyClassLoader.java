@@ -40,8 +40,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.zip.ZipEntry;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -143,13 +149,114 @@ public class GroovyClassLoader extends ClassLoader {
     public Class parseClass(InputStream in, String fileName) throws SyntaxException, IOException {
         Class answer = (Class) cache.get(fileName);
         if (answer == null) {
-            CompileUnit unit = new CompileUnit(getParent(), config);
+            CompileUnit unit = new CompileUnit(this, config);
             ClassCollector compiler = createCollector(unit);
             compiler.parseClass(in, fileName);
             answer = compiler.generatedClass;
             cache.put(fileName, answer);
         }
         return answer;
+    }
+
+    /**
+     * Using this classloader you can load groovy classes from the system classpath as though they were already compiled.
+     */
+    protected Class findClass(String name) throws ClassNotFoundException {
+        String filename = name.replace('.', File.separatorChar) + ".groovy";
+        String[] paths = getClassPath();
+        for (int i = 0; i < paths.length; i++) {
+            String pathName = paths[i];
+            File path = new File(pathName);
+            if (path.exists()) {
+                if (path.isDirectory()) {
+                    File file = new File(path, filename);
+                    if (file.exists()) {
+                        try {
+                            return parseClass(file);
+                        } catch (SyntaxException e) {
+                            e.printStackTrace();
+                            throw new ClassNotFoundException(
+                                    "Syntax error in groovy file: " + filename,
+                                    e);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            throw new ClassNotFoundException(
+                                    "Error reading groovy file: " + filename, e);
+                        }
+                    }
+                } else {
+                    try {
+                        JarFile jarFile = new JarFile(path);
+                        ZipEntry entry = jarFile.getEntry(filename);
+                        if (entry != null) {
+                            InputStream is = jarFile.getInputStream(entry);
+                            try {
+                                return parseClass(is, filename);
+                            } catch (SyntaxException e1) {
+                                e1.printStackTrace();
+                                throw new ClassNotFoundException(
+                                        "Syntax error in groovy file: " + filename,
+                                        e1);
+                            } catch (IOException e1) {
+                                e1.printStackTrace();
+                                throw new ClassNotFoundException(
+                                        "Error reading groovy file: " + filename, e1);
+                            }
+                        }
+                        
+                    } catch (IOException e) {
+                        // Bad jar in classpath, ignore
+                    }
+                }
+            }
+        }
+    	throw new ClassNotFoundException(name);
+    }
+    
+    private String[] paths;
+    
+    /**
+     * @return
+     */
+    private String[] getClassPath() {
+        if (paths == null) {
+            List pathList = new ArrayList();
+            String classpath = System.getProperty("java.class.path", ".");
+            expandClassPath(pathList, "", classpath);
+            paths = new String[pathList.size()];
+            paths = (String[]) pathList.toArray(paths);
+            System.out.println(pathList);
+        }
+        return paths;
+    }
+
+    /**
+     * @param pathList
+     * @param classpath
+     */
+    private void expandClassPath(List pathList, String base, String classpath) {
+        paths = classpath.split(File.pathSeparator);
+        for (int i = 0; i < paths.length; i++) {
+            File path = new File(base, paths[i]);
+            if (path.exists()) {
+                if (!path.isDirectory()) {
+                    try {
+                        // Get the manifest classpath entry from the jar
+                        JarFile jar = new JarFile(path);
+                        pathList.add(paths[i]);
+                        Manifest manifest = jar.getManifest();
+                        Attributes classPathAttributes = manifest.getMainAttributes();
+                        String manifestClassPath = classPathAttributes.getValue("Class-Path");
+                        expandClassPath(pathList, paths[i], manifestClassPath);
+                    } catch (IOException e) {
+                        // Bad jar, ignore
+                        continue;
+                    }
+                } else {
+                    pathList.add(paths[i]);
+                }
+            }
+        }
     }
 
     /**
