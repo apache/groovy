@@ -22,4 +22,17 @@ class ForLoopTest extends GroovyTestCase {
         assert x == 10
     }
 
+    void testArray() {
+        array = (0..4).toArray()
+        
+        println "Class: ${array.class} for array ${array}"
+        
+        x = 0
+        
+        for ( i in array ) {
+            x = x + i
+        }
+
+        assert x == 10
+	}
 }
