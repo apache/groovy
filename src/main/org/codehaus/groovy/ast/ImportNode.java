@@ -53,7 +53,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ImportNode extends MetadataNode implements Constants {
+public class ImportNode extends AnnotatedNode implements Constants {
 
     private String className;
     private String alias;
