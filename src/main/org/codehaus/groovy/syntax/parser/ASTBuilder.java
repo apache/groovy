@@ -727,10 +727,13 @@ public class ASTBuilder
             {
                 return binaryExpression( expressionRoot );
             }
-            case ( Token.PLUS_PLUS ):
-            case ( Token.MINUS_MINUS ):
+            case ( Token.SYNTH_POSTFIX ):
             {
                 return postfixExpression( expressionRoot );
+            }
+            case ( Token.SYNTH_PREFIX ):
+            {
+                return prefixExpression( expressionRoot );
             }
             case ( Token.DOT_DOT ):
             {
@@ -802,11 +805,13 @@ public class ASTBuilder
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
     }
 
-    protected Expression postfixExpression(CSTNode expressionRoot) throws ParserException {
+    protected Expression postfixExpression(CSTNode root) throws ParserException {
+        CSTNode expressionRoot = root.getChild(0);
         return new PostfixExpression( expression( expressionRoot.getChild( 0 )), expressionRoot.getToken() );
     }
 
-    protected Expression prefixExpression(CSTNode expressionRoot) throws ParserException {
+    protected Expression prefixExpression(CSTNode root) throws ParserException {
+        CSTNode expressionRoot = root.getChild(0);
         return new PrefixExpression( expressionRoot.getToken(), expression( expressionRoot.getChild( 0 ) ));
     }
 

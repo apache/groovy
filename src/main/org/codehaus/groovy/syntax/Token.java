@@ -248,7 +248,10 @@ public class Token
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
     public static final int SYNTH_LIST = 802;
     public static final int SYNTH_MAP = 803;
-
+    
+    public static final int SYNTH_POSTFIX = 810;
+    public static final int SYNTH_PREFIX = 811;
+    
     private static final Map KEYWORDS = new HashMap();
 
     private static void addKeyword(String text,
@@ -1339,6 +1342,22 @@ public class Token
                          "<synthetic>",
                          -1,
                          -1 );
+    }
+
+    public static Token syntheticPostfix()
+    {
+        return newToken( SYNTH_POSTFIX,
+                "<synthetic>",
+                -1,
+                -1 );
+    }
+
+    public static Token syntheticPrefix()
+    {
+        return newToken( SYNTH_PREFIX,
+                "<synthetic>",
+                -1,
+                -1 );
     }
 
     // ----------------------------------------------------------------------

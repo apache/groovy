@@ -12,15 +12,17 @@ class PostfixTest extends GroovyTestCase {
         assert x == 3
     }
     
-    /*
     void testDoublePostfix() {
         x = 1.2
-        x++
-        
-        assert x == 2.2
+        y = x++
+
+        assert y == 1.2
+        assert x++ == 2.2
+        assert x == 3.2
     }
 
-    void testStringPostfix() {
+    /*
+     void testStringPostfix() {
         x = "bbc"
         x++
         
