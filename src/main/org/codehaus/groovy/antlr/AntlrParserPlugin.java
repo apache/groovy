@@ -20,7 +20,6 @@ package org.codehaus.groovy.antlr;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.NoViableAltException;
-import antlr.BaseAST;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -57,6 +56,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     private AST ast;
     private ClassNode classNode;
+    private String[] tokenNames;
 
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
@@ -68,6 +68,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
         GroovyRecognizer parser = GroovyRecognizer.make(lexer);
+        tokenNames = parser.getTokenNames();
         parser.setFilename(sourceUnit.getName());
 
         // start parsing at the compilationUnit rule
@@ -1877,7 +1878,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private String getTokenName(int token) {
-        String[] tokenNames = BaseAST.getTokenNames();
         if (tokenNames==null) return ""+token;
         return tokenNames[token];
     }
