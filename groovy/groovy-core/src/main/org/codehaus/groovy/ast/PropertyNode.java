@@ -70,7 +70,7 @@ public class PropertyNode extends Statement implements Constants {
         Expression initialValueExpression,
         Statement getterBlock,
         Statement setterBlock) {
-        this(new FieldNode(name, 0, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
+        this(new FieldNode(name, modifiers & ACC_STATIC, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
     }
 
     public PropertyNode(FieldNode field, int modifiers, Statement getterBlock, Statement setterBlock) {
