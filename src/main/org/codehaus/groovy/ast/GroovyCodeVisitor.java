@@ -66,6 +66,7 @@ public interface GroovyCodeVisitor {
     public void visitReturnStatement(ReturnStatement statement);
     public void visitAssertStatement(AssertStatement statement);
     public void visitTryCatchFinally(TryCatchStatement finally1);
+    public void visitSwitch(SwitchStatement statement);
 
     // expressions
     //-------------------------------------------------------------------------

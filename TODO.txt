@@ -99,8 +99,6 @@ Core Groovy Tasks
 * closures - handle passing in of variables from outer scope?	
 	use a Holder object for all local variables and pass holder
 	into the closure
-	
-* support instanceof operator
 			
 * Switch statement to use matches to handle classes, ranges, regexp etc		
 	- matches(object) for Range or Regexp or Class

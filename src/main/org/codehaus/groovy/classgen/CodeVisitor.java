@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
@@ -61,6 +62,9 @@ public class CodeVisitor implements GroovyCodeVisitor {
     }
 
     public void visitTryCatchFinally(TryCatchStatement finally1) {
+    }
+
+    public void visitSwitch(SwitchStatement statement) {
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
