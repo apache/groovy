@@ -87,7 +87,10 @@ public class DefaultGroovyMethods {
     public static Object invokeMethod(Object object, String method, Object arguments) {
         return InvokerHelper.invokeMethod(object, method, arguments);
     }
-    
+
+    // Collection based methods
+    //-------------------------------------------------------------------------
+
     /**
      * Allows objects to be iterated through using a closure
      * @param source
@@ -267,8 +270,8 @@ public class DefaultGroovyMethods {
      * @param text
      * @return
      */
-    public int size(String text) {
-        return text.length();    
+    public static int size(String text) {
+        return text.length();
     }
 
     /**
@@ -277,7 +280,7 @@ public class DefaultGroovyMethods {
      * @param text
      * @return the Character object at the given index
      */
-    public Object get(String text, int index) {
+    public static Object get(String text, int index) {
         return new Character(text.charAt(index));
     }
 
@@ -287,7 +290,7 @@ public class DefaultGroovyMethods {
      * @param text
      * @return
      */
-    public Object get(String text, Range range) {
+    public static Object get(String text, Range range) {
         return text.substring(range.getFrom(), range.getTo());
     }
 
@@ -297,63 +300,127 @@ public class DefaultGroovyMethods {
      * @param text
      * @return
      */
-    public Object get(List list, Range range) {
+    public static Object get(List list, Range range) {
         return list.subList(range.getFrom(), range.getTo());
     }
-
 
     /**
      * A convenience method for creating an immutable map
      */
-    public Map immutable(Map self) {
+    public static Map immutable(Map self) {
         return Collections.unmodifiableMap(self);
     }
-    
+
     /**
      * A convenience method for creating an immutable sorted map
      */
-    public SortedMap immutable(SortedMap self) {
+    public static SortedMap immutable(SortedMap self) {
         return Collections.unmodifiableSortedMap(self);
     }
-    
+
     /**
      * A convenience method for creating an immutable list
      */
-    public List immutable(List self) {
+    public static List immutable(List self) {
         return Collections.unmodifiableList(self);
     }
 
     /**
      * A convenience method for creating an immutable list
      */
-    public Set immutable(Set self) {
+    public static Set immutable(Set self) {
         return Collections.unmodifiableSet(self);
     }
 
     /**
      * A convenience method for creating an immutable sorted set
      */
-    public SortedSet immutable(SortedSet self) {
+    public static SortedSet immutable(SortedSet self) {
         return Collections.unmodifiableSortedSet(self);
     }
 
     /**
      * A convenience method for sorting a List
      */
-    public void sort(List self) {
+    public static void sort(List self) {
         Collections.sort(self);
     }
 
     /**
      * A convenience method for sorting a List with a specific comparator
      */
-    public void sort(List self, Comparator comparator) {
+    public static void sort(List self, Comparator comparator) {
         Collections.sort(self, comparator);
     }
 
+    // Number based methods
+    //-------------------------------------------------------------------------
+    public static String plus(String left, Object value) {
+        return left + toString(value);
+    }
 
-    
-    
+    public static String minus(String left, Object value) {
+        String text = toString(value);
+        return left.replaceFirst(text, "");
+    }
+
+    protected static String toString(Object value) {
+        return (value == null) ? "null" : value.toString();
+    }
+
+    public static Number plus(Number left, Number right) {
+        /** @todo maybe a double dispatch thing to handle new large numbers? */
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            return new Double(left.doubleValue() + right.doubleValue());
+        }
+        else if (isLong(left) || isLong(right)) {
+            return new Long(left.longValue() + right.longValue());
+        }
+        else {
+            return new Integer(left.intValue() + right.intValue());
+        }
+    }
+
+    public static Number minus(Number left, Number right) {
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            return new Double(left.doubleValue() - right.doubleValue());
+        }
+        else if (isLong(left) || isLong(right)) {
+            return new Long(left.longValue() - right.longValue());
+        }
+        else {
+            return new Integer(left.intValue() - right.intValue());
+        }
+    }
+
+    public static Number multiply(Number left, Number right) {
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            return new Double(left.doubleValue() * right.doubleValue());
+        }
+        else if (isLong(left) || isLong(right)) {
+            return new Long(left.longValue() * right.longValue());
+        }
+        else {
+            return new Integer(left.intValue() * right.intValue());
+        }
+    }
+
+    public static Number divide(Number left, Number right) {
+        // lets use double for division?
+        return new Double(left.doubleValue() / right.doubleValue());
+    }
+
+    public static boolean isLong(Number number) {
+        return number instanceof Long;
+    }
+
+    public static boolean isFloatingPoint(Number number) {
+        return number instanceof Float || number instanceof Double;
+    }
+
+    // File based methods
+    //-------------------------------------------------------------------------
+
     /**
      * Helper method to create a buffered reader for a file
      * 
@@ -376,6 +443,8 @@ public class DefaultGroovyMethods {
         return new BufferedWriter(new FileWriter(file));
     }
 
+    // SQL based methods
+    //-------------------------------------------------------------------------
 
     /**
      * Iterates through the result set of an SQL query passing the result set into 
@@ -388,23 +457,23 @@ public class DefaultGroovyMethods {
     public static void query(Connection connection, TextExpression expression, Closure closure) throws SQLException {
         // lets turn the expression into an SQL string
         String sql = null;
-        ResultSet results = null;    
+        ResultSet results = null;
         PreparedStatement statement = connection.prepareStatement(sql);
         try {
             // lets bind the values to the statement
- 
+
             results = statement.executeQuery();
-                       
+
             closure.call(results);
         }
         finally {
             if (results != null) {
-            try {
-                results.close();
-            }
-            catch (SQLException e) {
-                // ignore
-            }
+                try {
+                    results.close();
+                }
+                catch (SQLException e) {
+                    // ignore
+                }
             }
             try {
                 statement.close();
