@@ -7,8 +7,8 @@ class DateTest extends GroovyTestCase {
         y = x + 2
         
         assert x < y
-        x++
-        y--
+        ++x
+        --y
         
         assert x == y
         x += 2

@@ -42,8 +42,9 @@ public class UberTests extends TestSuiteSupport {
         //"ClosureCloneTest.groovy",            TODO parser bug: doesn't like 'it * foo' expressions
         "ClosureInClosureTest.groovy",
         "CompilerErrorTest.groovy",
+        "DateTest.groovy",
         "Foo.groovy",
-        "ForLoopTest.groovy",           
+        "ForLoopTest.groovy",
         "ForLoopWithLocalVariablesTest.groovy",
         "GStringTest.groovy",
         "HeredocsTest.groovy",
@@ -60,7 +61,9 @@ public class UberTests extends TestSuiteSupport {
         "NegationTests.groovy",
         // "OptionalReturnTest.groovy",         TODO parser currently requires mandatory return for last exp = booleanExpr
         // "PrimitiveTypeFieldTest.groovy",     TODO when parser can do closure arguments
+        "PostfixTest.groovy",
         "PrimitiveTypesTest.groovy",
+        "PrefixTest.groovy",
         // "ReturnTest.groovy",                 TODO parser bug
         "RangeTest.groovy",
         "StringOperationTest.groovy",

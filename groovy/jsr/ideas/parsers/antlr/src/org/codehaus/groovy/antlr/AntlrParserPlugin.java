@@ -887,17 +887,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
                 // Prefix expressions
             case INC:
-                return prefixExpression(node, Types.PLUS);
+                return prefixExpression(node, Types.PLUS_PLUS);
 
             case DEC:
-                return prefixExpression(node, Types.MINUS);
+                return prefixExpression(node, Types.MINUS_MINUS);
 
                 // Postfix expressions
             case POST_INC:
-                return postfixExpression(node, Types.PLUS);
+                return postfixExpression(node, Types.PLUS_PLUS);
 
             case POST_DEC:
-                return postfixExpression(node, Types.MINUS);
+                return postfixExpression(node, Types.MINUS_MINUS);
 
                 
                 // Binary expressions

@@ -218,7 +218,6 @@ many lines
     }
 
     void methodThatThrowsException() {
-        // TODO parser doesn't return the thrown expression
         throw new Exception("Test exception")
     }
 
@@ -343,26 +342,26 @@ many lines
         println "Hey, I'm synchronized and static"
     }
 
-    /** TODO runtime breaks!
     void testPrePostFix() {
-        def x = 124
+        def x = 123
 
         println("value is $x")
 
         if (x > 100) {
-        ++x
+            ++x
         }
 
         assert x == 124
         assert ++x == 125
 
         assert x++ == 125
-        assert --x == 124
-        assert x-- == 124
+        assert --x == 125
+        assert x-- == 125
 
-        //println("value is now ${x}")
+        println("value is now ${x}")
+        
+        assert x == 124
     }
-    */
 
 
     // TODO when parser fixed
