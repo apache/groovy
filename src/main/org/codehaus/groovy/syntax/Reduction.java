@@ -77,8 +77,8 @@ public class Reduction extends CSTNode
   //---------------------------------------------------------------------------
   // INITIALIZATION AND SUCH
 
-    private List    elements = null;    // The set of child nodes   
-    private boolean marked   = false;   // Used for completion marking by some parts of the parser
+    private List    elements  = null;    // The set of child nodes   
+    private boolean marked    = false;   // Used for completion marking by some parts of the parser
 
 
    /**
@@ -97,8 +97,8 @@ public class Reduction extends CSTNode
     */
 
     private Reduction() 
-	{
-    	elements = Collections.EMPTY_LIST;
+    {
+        elements = Collections.EMPTY_LIST;
     }
 
 
@@ -167,14 +167,14 @@ public class Reduction extends CSTNode
 
     public Token getRoot() 
     {
-    	if( size() > 0 )
-    	{
+        if( size() > 0 )
+        {
             return (Token)elements.get(0);
-    	}
-    	else
-    	{
-    	    return null;
-    	}
+        }
+        else
+        {
+            return null;
+        }
     }
 
 
