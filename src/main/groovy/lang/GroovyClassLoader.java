@@ -55,8 +55,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -335,21 +337,27 @@ public class GroovyClassLoader extends SecureClassLoader {
     private void expandClassPath(List pathList, String base, String classpath) {
         paths = classpath.split(File.pathSeparator);
         for (int i = 0; i < paths.length; i++) {
-            File path = new File(base, paths[i]);
+            File path = null;
+
+            if ("".equals(base)) {
+                path = new File(paths[i]);
+            } else {
+                path = new File(base, paths[i]);
+            }
+
             if (path.exists()) {
                 if (!path.isDirectory()) {
                     try {
+                        // Get the manifest classpath entry from the jar
                         JarFile jar = new JarFile(path);
                         pathList.add(paths[i]);
-                        // Get the manifest classpath entry from the jar
-                        /*
                         Manifest manifest = jar.getManifest();
                         Attributes classPathAttributes = manifest.getMainAttributes();
                         String manifestClassPath = classPathAttributes.getValue("Class-Path");
-                        if (manifestClassPath != null) {
-                        	expandClassPath(pathList, paths[i], manifestClassPath);
-                        }
-                        */
+
+                        if (manifestClassPath != null)
+                            expandClassPath(pathList, paths[i], manifestClassPath);
+
                     } catch (IOException e) {
                         // Bad jar, ignore
                         continue;
@@ -359,8 +367,8 @@ public class GroovyClassLoader extends SecureClassLoader {
                 }
             }
         }
-    }
-
+    } 
+ 
     /**
      * A helper method to allow bytecode to be loaded.
      * spg changed name to defineClass to make it more consistent with other ClassLoader methods 
