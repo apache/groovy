@@ -70,7 +70,11 @@ public class CastExpression extends Expression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCastExpression(this);
     }
-
+    
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new CastExpression(type, transformer.transform(expression));
+    }
+    
     public String getText() {
         return "(" + type + ") " + expression.getText();
     }

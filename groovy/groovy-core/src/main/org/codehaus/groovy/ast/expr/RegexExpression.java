@@ -56,18 +56,22 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class RegexExpression extends Expression {
     
-    private Expression gstring;
+    private Expression string;
     
-    public RegexExpression(Expression gstring) {
-        this.gstring = gstring;
+    public RegexExpression(Expression string) {
+        this.string = string;
     }
     
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitRegexExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new RegexExpression(transformer.transform(string));
+    }
+    
     public Expression getRegex() {
-        return gstring;
+        return string;
     }
 
 }

@@ -74,6 +74,10 @@ public class ConstantExpression extends Expression {
         visitor.visitConstantExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+    
     /**
      * @return the value of this constant expression
      */    

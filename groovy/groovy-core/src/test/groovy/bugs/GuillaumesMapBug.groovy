@@ -4,7 +4,7 @@
  */
 class GuillaumesMapBug extends GroovyTestCase {
     
-    void testBug() {
+    void testBug2() {
         list = [1, 2, 3]
         map = [:]
         
@@ -18,29 +18,23 @@ class GuillaumesMapBug extends GroovyTestCase {
     void doLoop(list, map) {
         i = 0
         for (it in list) {
-            set(map, i++, it)
-            
-            /** @todo fix this bug
-            //map[i] = it
-            //i++
-             */
+            map[i++] = it
         }
     }
     
-    void set(map, i, it) {
-        map[i] = it
-    }
     
-    /** @todo fix this bug
-    void testBug2() {
-        i = 0
+    void testBug() {
         list = [1, 2, 3]
         map = [:]
-        list.each { map[i++] = it }
+        doClosureLoop(list, map)
         
         assert map[0] == 1 
         assert map[1] == 2 
         assert map[2] == 3 
     }
-    */
+    
+    void doClosureLoop(list, map) {
+        i = 0
+        list.each { map[i++] = it }
+    }    
 }

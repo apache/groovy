@@ -385,5 +385,4 @@ public class Verifier implements GroovyClassVisitor, Constants {
         return new ExpressionStatement(
             new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
     }
-
 }

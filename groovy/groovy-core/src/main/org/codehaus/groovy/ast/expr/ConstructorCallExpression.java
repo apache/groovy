@@ -67,6 +67,10 @@ public class ConstructorCallExpression extends Expression {
         visitor.visitConstructorCallExpression(this);
     }
     
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new ConstructorCallExpression(type, transformer.transform(arguments)); 
+    }
+    
     public String getType() {
         if (type == null) {
             return "java.lang.Object";

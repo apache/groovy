@@ -59,17 +59,24 @@ public class MethodCallExpression extends Expression {
     private String method;
     private Expression arguments;
     private boolean safe;
-    
+
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this.objectExpression = objectExpression;
         this.method = method;
         this.arguments = arguments;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitMethodCallExpression(this);
     }
-    
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        MethodCallExpression answer =
+            new MethodCallExpression(transformer.transform(objectExpression), method, transformer.transform(arguments));
+        answer.setSafe(safe);
+        return answer;
+    }
+
     public Expression getArguments() {
         return arguments;
     }
@@ -99,7 +106,14 @@ public class MethodCallExpression extends Expression {
     }
 
     public String toString() {
-        return super.toString() + "[object: " + objectExpression + " method: " + method + " arguments: " + arguments + "]";
+        return super.toString()
+            + "[object: "
+            + objectExpression
+            + " method: "
+            + method
+            + " arguments: "
+            + arguments
+            + "]";
     }
 
     public static boolean isSuperMethodCall(MethodCallExpression call) {

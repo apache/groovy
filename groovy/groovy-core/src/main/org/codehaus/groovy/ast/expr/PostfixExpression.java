@@ -72,6 +72,10 @@ public class PostfixExpression extends Expression {
         visitor.visitPostfixExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new PostfixExpression(transformer.transform(expression), operation);
+    }
+    
     public void setExpression(Expression expression) {
         this.expression = expression;
     }

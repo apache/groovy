@@ -61,4 +61,9 @@ public class NamedArgumentListExpression extends MapExpression {
     public NamedArgumentListExpression(List mapEntryExpressions) {
         super(mapEntryExpressions);
     }
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new NamedArgumentListExpression(transformExpressions(getMapEntryExpressions(), transformer));
+    }
+    
 }
