@@ -10,8 +10,13 @@ import groovy.swt.factory.WidgetFactory;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyException;
+import org.eclipse.jface.viewers.CheckboxTreeViewer;
+import org.eclipse.jface.viewers.TableTreeViewer;
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.swt.custom.TableTree;
 import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.Tree;
 
 /**
  * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a>
@@ -39,11 +44,26 @@ public class ViewerFactory extends WidgetFactory implements SwtFactory {
      *      java.lang.Object)
      */
     public Object newInstance(Map properties, Object parent) throws GroovyException {
+        Object bean;
 
         if (beanClass.equals(TableViewer.class) && (parent instanceof Table)) {
-            return new TableViewer((Table) parent, style);
+            bean = new TableViewer((Table) parent, style);
+
+        } else if (beanClass.equals(TableTreeViewer.class) && (parent instanceof TableTree)) {
+            bean = new TableTreeViewer((TableTree) parent, style);
+
+        } else if (beanClass.equals(TreeViewer.class) && (parent instanceof Tree)) {
+            bean = new TreeViewer((Tree) parent, style);
+
+        } else if (beanClass.equals(CheckboxTreeViewer.class) && (parent instanceof Tree)) {
+            bean = new CheckboxTreeViewer((Tree) parent, style);
+
+        } else {
+            bean = super.newInstance(properties, parent);
         }
 
-        return newInstance(properties, parent);
+        setBeanProperties(bean, properties);
+
+        return bean;
     }
 }
