@@ -2407,6 +2407,18 @@ public class DefaultGroovyMethods {
         return toString(value) + right;
     }
 
+	/**
+	 * Appends a String
+	 *
+	 * @param left a StringBuffer
+	 * @param value a String
+	 * @return a String
+	 */
+	public static String plus(StringBuffer left, String value) {
+		return left + value;
+	}
+
+
     /**
      * Remove a part of a String
      *
