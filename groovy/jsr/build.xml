@@ -15,11 +15,21 @@
   />
   
   <target name="clean" description="remove all built files">
+    <!--workaround for biscuit local dir issue -->
+    <delete file="SearchAndReplace"/>
+    <delete file="SearchAndReplaceRegex"/>
+    <delete file="TemplatePage.html"/>
+
     <ant dir="spec" target="clean"/> 
     <ant dir="ideas/parsers/antlr" target="clean"/>
   </target>
 
   <target name="dist" description="create distributables">
+    <!--workaround for biscuit local dir issue -->
+    <copy file="spec/SearchAndReplace" todir="."/>
+    <copy file="spec/SearchAndReplaceRegex" todir="."/>
+    <copy file="spec/TemplatePage.html" todir="."/>
+
     <ant dir="ideas/parsers/antlr" target="standalone" inheritAll="false"/>
     <ant dir="spec" target="render" inheritAll="false"/>
   </target>
