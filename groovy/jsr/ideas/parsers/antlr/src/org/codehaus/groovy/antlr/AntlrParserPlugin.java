@@ -125,7 +125,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
         String name = qualifiedName(node);
-        output.setPackageName(name);
+        setPackageName(name);
     }
 
     protected void importDef(AST importNode) {
@@ -170,6 +170,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             superClass = getFirstChildText(node);
             node = node.getNextSibling();
         }
+        if (superClass == null) {
+            superClass = "java.lang.Object";
+        }
 
         String[] interfaces = {};
         if (isType(IMPLEMENTS_CLAUSE, node)) {
@@ -181,7 +184,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         MixinNode[] mixins = {};
 
         addNewClassName(name);
-        classNode = new ClassNode(name, modifiers, superClass, interfaces, mixins);
+        String fullClassName = dot(getPackageName(), name);
+        classNode = new ClassNode(fullClassName, modifiers, superClass, interfaces, mixins);
         classNode.addAnnotations(annotations);
         configureAST(classNode, classDef);
 
@@ -247,7 +251,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List annotations = new ArrayList();
         AST node = fieldDef.getFirstChild();
 
-        int modifiers = Constants.ACC_PRIVATE;
+        int modifiers = 0;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
@@ -274,7 +278,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         configureAST(fieldNode, fieldDef);
 
         // lets check for a property annotation first
-        if (fieldNode.getAnnotations("property") != null) {
+        if (fieldNode.getAnnotations("Property") != null) {
             // lets set the modifiers on the field
             int fieldModifiers = Constants.ACC_PRIVATE;
             int flags = Constants.ACC_STATIC | Constants.ACC_TRANSIENT | Constants.ACC_VOLATILE | Constants.ACC_FINAL;
@@ -282,9 +286,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // lets pass along any other modifiers we need
             fieldModifiers |= (modifiers & flags);
             fieldNode.setModifiers(fieldModifiers);
+
+            if (!hasVisibility(modifiers)) {
+                modifiers |= Constants.ACC_PUBLIC;
+            }
             classNode.addProperty(new PropertyNode(fieldNode, modifiers, null, null));
         }
         else {
+            if (!hasVisibility(modifiers)) {
+                modifiers |= Constants.ACC_PRIVATE;
+                fieldNode.setModifiers(modifiers);
+            }
+
             classNode.addField(fieldNode);
         }
     }
@@ -945,10 +958,23 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return binaryExpression(Types.MOD_EQUAL, node);
 
 
+            case RANGE_INCLUSIVE:
+                return rangeExpression(node, true);
+
+            case RANGE_EXCLUSIVE:
+                return rangeExpression(node, false);
+
             default:
                 unknownAST(node);
         }
         return null;
+    }
+
+    protected Expression rangeExpression(AST rangeNode, boolean inclusive) {
+        AST node = rangeNode.getFirstChild();
+        Expression left = expression(node);
+        Expression right = expression(node.getNextSibling());
+        return new RangeExpression(left, right, inclusive);
     }
 
     protected Expression listExpression(AST listNode) {
@@ -1296,6 +1322,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     // Helper methods
     //-------------------------------------------------------------------------
+
+
+    /**
+     * Returns true if the modifiers flags contain a visibility modifier
+     */
+    protected boolean hasVisibility(int modifiers) {
+        return (modifiers & (Constants.ACC_PRIVATE | Constants.ACC_PROTECTED | Constants.ACC_PUBLIC)) != 0;
+    }
 
     protected void configureAST(ASTNode node, AST ast) {
         node.setColumnNumber(ast.getColumn());

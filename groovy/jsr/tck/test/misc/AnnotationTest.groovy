@@ -1,12 +1,12 @@
 class AnotationTest {
-    @property String foo
-    @property protected def bar
-    protected @property def mooky
+    @Property String foo
+    @Property protected def bar
+    protected @Property def mooky
     
-    @property
+    @Property
     String wibble = "wobble"
 
-    @property Cheese gouda, edam, wensleydale, gorgonzola, parmesan,
+    @Property Cheese gouda, edam, wensleydale, gorgonzola, parmesan,
     mozarella, 
     cheddar
 

@@ -3,14 +3,27 @@ package foo.bar
 import java.io.File
 import java.util.Date as UDate
 
-@bean(cool=true)
+// TODO allow annotations on classes again :)
+//@Bean(cool=true)
 
 class SampleTest extends GroovyTestCase {
 
     String foo = "John"
     String bar = "Jez"
-    private static  dummyx = 123
-    protected final dummyY = 456
+    private static def dummyx = 123
+    protected final def dummyY = 456
+
+    void testRange() {
+        def range = 1..3
+        assert range == [1, 2, 3]
+
+        for (i in 1..10) {
+            println "Range loop at $i"
+        }
+
+        (10..1).each { println "Range closure loop at $it" }
+    }
+
 
     void testListClosure() {
         def list = [1, 2, 3]
@@ -18,7 +31,7 @@ class SampleTest extends GroovyTestCase {
         println "list is $list"
 
         // TODO sort out parser
-        //list.each { (e)| println("List contains $e") }
+        // list.each {|e| println("List contains $e") }
     }
 
     void testMap() {
@@ -72,6 +85,7 @@ many lines
         def name = f.name
         def name2 = f.getName()
         assert name == name2
+
 
         println "File name $name"
 
@@ -320,10 +334,14 @@ many lines
         // assert "\\\\ \\ ${z}" == "\\" + "\\" + " " + "\\" + " " + "300"
     }
 
+
+    @webService void methodWithAnnotations() {
+        println "Hey"
+    }
+
     protected synchronized static void something() {
         println "Hey, I'm synchronized and static"
     }
-
 
     /** TODO runtime breaks!
     void testPrePostFix() {
@@ -371,25 +389,6 @@ many lines
         m.each { (k, v)| println "key $k and value $v" }
     }
 
-    void testRange() {
-        def range = [1..3]
-        assert range == [1, 2, 3]
-    }
-
-
-    // TODO annotation support - should we all the following???
-
-    @property foo
-    @property String name
-
-
-    @webService void whatnot() {
-        println "Hey"
-    }
-
-
-
     */
-
 
 }

@@ -22,14 +22,14 @@ import org.codehaus.groovy.syntax.parser.ParserException;
 
 /**
  * Thrown when trying to parse the AST
- * 
+ *
  * @version $Revision$
  */
 public class ASTParserException extends ParserException {
     private AST ast;
 
     public ASTParserException(ASTRuntimeException e) {
-        super(e.getMessage(), e, e.getAst().getLine(), e.getAst().getColumn());
+        super(e.getMessage(), e, e.getLine(), e.getColumn());
         this.ast = e.getAst();
     }
 

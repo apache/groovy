@@ -478,6 +478,13 @@ public abstract class ProcessingUnit
                    break;
                }
            }
+           if (message instanceof SyntaxErrorMessage) {
+               SyntaxErrorMessage exceptionMessage = (SyntaxErrorMessage) message;
+               firstException = exceptionMessage.getCause();
+               if (firstException != null) {
+                   break;
+               }
+           }
        }
 
        if (firstException != null) {

@@ -26,10 +26,6 @@ import antlr.collections.AST;
 public class ASTRuntimeException extends RuntimeException {
     private AST ast;
 
-    public AST getAst() {
-        return ast;
-    }
-
     public ASTRuntimeException(AST ast, String message) {
         super(message + description(ast));
         this.ast = ast;
@@ -40,6 +36,19 @@ public class ASTRuntimeException extends RuntimeException {
     }
 
     protected static String description(AST node) {
-        return " at line: " + node.getLine() + " column: " + node.getColumn();
+        return (node != null) ? " at line: " + node.getLine() + " column: " + node.getColumn() : "";
     }
+
+    public AST getAst() {
+        return ast;
+    }
+
+    public int getLine() {
+        return ast != null ? ast.getLine() : -1;
+    }
+
+    public int getColumn() {
+        return ast != null ? ast.getColumn() : -1;
+    }
+
 }
