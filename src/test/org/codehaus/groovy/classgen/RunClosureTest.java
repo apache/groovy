@@ -66,19 +66,31 @@ public class RunClosureTest extends TestSupport {
         object.invokeMethod("testCallStaticClosure", null);
     }
 
-    public void testBytecodeBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/BytecodeBug.groovy");
-        object.invokeMethod("testTedsBytecodeBug", null);
-    }
-
-    public void testBytecode2Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
-        object.invokeMethod("testTedsBytecodeBug", null);
-    }
-
     public void testZoharsBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ZoharsBug.groovy");
         object.invokeMethod("testBug", null);
     }
 
+    public void testBytecodeBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/BytecodeBug.groovy");
+        object.invokeMethod("testTedsBytecodeBug", null);
+    }
+    
+    public void testBytecode2Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
+        object.invokeMethod("testTedsBytecodeBug", null);
+    }
+    
+    public void testBytecode3Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Bytecode3Bug.groovy");
+        //object.invokeMethod("testInject", null);
+        object.invokeMethod("testIncrementPropertyInclosure", null);
+    }
+    
+    public void testBytecode4Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Bytecode4Bug.groovy");
+        object.invokeMethod("testInject", null);
+        object.invokeMethod("testUsingProperty", null);
+        //object.invokeMethod("testUsingLocalVar", null);
+    }
 }

@@ -2,7 +2,7 @@
  * @version $Revision$
  */
 class BytecodeBug extends GroovyTestCase {
-    
+     
     void testTedsBytecodeBug() {
         //a = ['tom','dick','harry']
         a = [1, 2, 3, 4]
@@ -13,16 +13,13 @@ class BytecodeBug extends GroovyTestCase {
         m = [:]
         i = 1
         args.each { 
-            //talk(it)
+            talk(it)
             m.put(it, i++)
         }
-        //println(i)
-        //assert i == 5
-        /*
-        l.each {
+        assert i == 5
+        m.each {
             println(it)
         }
-        */
     }
     
     talk(a) {
