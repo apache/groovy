@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
@@ -127,7 +128,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	private Closure defaultMethod = null;
 	private Closure preCallMethod = null;
 	private Closure postCallMethod = null;
-	private Closure exceptionMethod = null;
+	private Closure faultMethod = null;
 	private final int minWorkers;
 	private final int maxWorkers;
 	private final int maxKeepAlives;
@@ -253,8 +254,8 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 								codeValue = 0;
 							}
 							
-							if (XMLRPCServer.this.exceptionMethod != null) {
-								XMLRPCServer.this.exceptionMethod.call(new Object[] {message, new Integer(codeValue)});
+							if (XMLRPCServer.this.faultMethod != null) {
+								XMLRPCServer.this.faultMethod.call(new Object[] {message, new Integer(codeValue)});
 							}
 							
 							final byte[] error = ((message == null) ? e.getClass().getName() : message).getBytes();
@@ -367,10 +368,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * The name of the method being called is not passed as the fault could have been 
 	 * generated before the method name was known.
 	 * 
-	 * @param exceptionMethod The closure to be called - if this is null the setting is not changed
+	 * @param faultMethod The closure to be called - if this is null the setting is not changed
 	 */
-	public void setupExceptionMethod(final Closure exceptionMethod) {
-		if (exceptionMethod != null) this.exceptionMethod = exceptionMethod;
+	public void setupFaultMethod(final Closure faultMethod) {
+		if (faultMethod != null) this.faultMethod = faultMethod;
 	}
 	
 	/* (non-Javadoc)
@@ -414,41 +415,68 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 				// never thrown
 			}
 		} else if (method instanceof Class) {
-			closure = null;
+		//
+		// calling a static method on a class
+		//
+		
+		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC | Modifier.STATIC, ((Class)method).getMethods(), property);			
+		
+			if (numberofParameters != -1) {
+				closure = makeMethodProxy(property, numberofParameters, ((Class)method).getName());
+			} else {
+				throw new GroovyRuntimeException("No static method "
+						                         + property
+											    + " on class "
+												+ ((Class)method).getName());
+			}
 		} else {
 		//
 		// calling a method on an instance of a class
 		//
 			
-		final Method methods[] = method.getClass().getMethods();
-		boolean foundMatch = false;
-		int numberofParameters = 0;
+		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC, method.getClass().getMethods(), property);			
 		
-			for (int i = 0; i != methods.length; i++) {
-				if (methods[i].getName().equals(methodName)) {
-					if (foundMatch) {
-						if (numberofParameters != methods[i].getParameterTypes().length)
-							;// TODO: throw exception
-					} else {
-						foundMatch = true;
-						numberofParameters = methods[i].getParameterTypes().length;
-					}
-				}
-			}
-			
-			if (foundMatch) {
-				closure = makeObjectProxy(methodName, numberofParameters);
+			if (numberofParameters != -1) {
+				closure = makeMethodProxy(property, numberofParameters, "delegate");
 				closure.setDelegate(method);
 			} else {
-				// TODO: throw execption
-				closure = null;
+				throw new GroovyRuntimeException("No method "
+                        + property
+					    + " on class "
+						+ method.getClass().getName());
 			}
 		}
 		
 		this.registeredMethods.put(methodName, closure);
 	}
 	
-	private Closure makeObjectProxy(final String methodName, final int numberOfParameters) {
+	private int getNumberOfParameters(final int type, final Method methods[], final String property) {
+	boolean foundMatch = false;
+	int numberofParameters = -1;
+	
+		for (int i = 0; i != methods.length; i++) {
+			if ((methods[i].getModifiers() & type) == type) {
+				if (methods[i].getName().equals(property)) {
+					if (foundMatch) {
+						if (numberofParameters != methods[i].getParameterTypes().length) {
+							throw new GroovyRuntimeException("More than one methods "
+			                        + property
+								    + " on class "
+									+ methods[i].getDeclaringClass().getName()
+									+ " with different numbers of parameters");
+						}
+					} else {
+						foundMatch = true;
+						numberofParameters = methods[i].getParameterTypes().length;
+					}
+				}
+			}
+		}
+		
+		return numberofParameters;
+	}
+	
+	private Closure makeMethodProxy(final String methodName, final int numberOfParameters, final String qualifier) {
 	final String paramIn, paramOut;
 	
 		if (numberOfParameters == 0) {
@@ -464,8 +492,8 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 			paramIn = paramOut + " |";
 		}
 		
-	final String generatedCode = "class X { closure = {" + paramIn + " this." + methodName + "(" + paramOut + ") }}";
-	System.out.println(generatedCode);
+	final String generatedCode = "class X { closure = {" + paramIn + " " + qualifier + "." + methodName + "(" + paramOut + ") }}";
+//	System.out.println(generatedCode);
 	
 		try {
 		final InputStream in = new ByteArrayInputStream(generatedCode.getBytes());
