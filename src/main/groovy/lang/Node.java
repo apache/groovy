@@ -63,27 +63,25 @@ import java.util.Map;
  */
 public class Node {
 
+    private Node parent;
     private Object name;
     private Map attributes;
     private Object value;
 
-    public Node(Object name) {
-        this(name, Collections.EMPTY_MAP, Collections.EMPTY_LIST);
+    public Node(Node parent, Object name) {
+        this(parent, name, Collections.EMPTY_MAP, Collections.EMPTY_LIST);
     }
 
-    public Node(Object name, Object value) {
-        this.name = name;
-        if (value instanceof Map) {
-            this.attributes = (Map) value;
-            this.value = Collections.EMPTY_LIST;
-        }
-        else {
-            this.attributes = Collections.EMPTY_MAP;
-            this.value = value;
-        }
+    public Node(Node parent, Object name, Object value) {
+        this(parent, name, Collections.EMPTY_MAP, value);
     }
 
-    public Node(Object name, Map attributes, Object value) {
+    public Node(Node parent, Object name, Map attributes) {
+        this(parent, name, attributes, Collections.EMPTY_LIST);
+    }
+
+    public Node(Node parent, Object name, Map attributes, Object value) {
+        this.parent = parent;
         this.name = name;
         this.attributes = attributes;
         this.value = value;
@@ -150,4 +148,17 @@ public class Node {
         return value;
     }
 
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
+    public Node getParent() {
+        return parent;
+    }
+
+    public String toString() {
+        return name + "[attributes=" + attributes + "; value=" + value + "]";
+    }
+
+    
 }

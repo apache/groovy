@@ -61,7 +61,7 @@ import java.util.Map;
 public class NodeTest extends GroovyTestCase {
 
     public void testSimpleAttribute() {
-        Node attribute = new Node("transactional");
+        Node attribute = new Node(null, "transactional");
         assertEquals("name", "transactional", attribute.getName());
         assertEquals("attributes", 0, attribute.getAttributes().size());
         assertEquals("value", 0, attribute.getChildren().size());
@@ -72,7 +72,7 @@ public class NodeTest extends GroovyTestCase {
         Map attributes = new HashMap();
         attributes.put("a", "xyz");
         
-        Node attribute = new Node("foo", attributes);
+        Node attribute = new Node(null, "foo", attributes);
         assertEquals("name", "foo", attribute.getName());
         assertEquals("attributes", 1, attribute.getAttributes().size());
         assertEquals("value", 0, attribute.getChildren().size());
@@ -80,7 +80,7 @@ public class NodeTest extends GroovyTestCase {
     }
 
     public void testAttributeWithText() {
-        Node attribute = new Node("foo", "the text");
+        Node attribute = new Node(null, "foo", "the text");
         assertEquals("name", "foo", attribute.getName());
         assertEquals("attributes", 0, attribute.getAttributes().size());
         assertEquals("value", 1, attribute.getChildren().size());
@@ -92,11 +92,11 @@ public class NodeTest extends GroovyTestCase {
         attributes.put("a", "xyz");
         
         List children = new ArrayList();
-        children.add(new Node("person", "James"));
-        children.add(new Node("person", "Bob"));
+        children.add(new Node(null, "person", "James"));
+        children.add(new Node(null, "person", "Bob"));
         children.add("someText");
         
-        Node attribute = new Node("foo", attributes, children);
+        Node attribute = new Node(null, "foo", attributes, children);
         assertEquals("name", "foo", attribute.getName());
         assertEquals("attributes", 1, attribute.getAttributes().size());
         assertEquals("value", 3, attribute.getChildren().size());
@@ -109,12 +109,12 @@ public class NodeTest extends GroovyTestCase {
         
         List children = new ArrayList();
         children.add("someText");
-        children.add(new Node("person", "James"));
+        children.add(new Node(null, "person", "James"));
         children.add("moreText");
-        children.add(new Node("person", "Bob"));
+        children.add(new Node(null, "person", "Bob"));
         children.add("moreText");
         
-        Node attribute = new Node("foo", attributes, children);
+        Node attribute = new Node(null, "foo", attributes, children);
         assertEquals("name", "foo", attribute.getName());
         assertEquals("attributes", 1, attribute.getAttributes().size());
         assertEquals("value", 5, attribute.getChildren().size());

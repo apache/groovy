@@ -81,6 +81,10 @@ public class InvokerHelper {
         return getInstance().asCollection(collection);
     }
 
+    public static List asList(Object args) {
+        return getInstance().asList(args);
+    }
+
     public static String toString(Object arguments) {
         return getInstance().toString(arguments);
     }
