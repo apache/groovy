@@ -50,6 +50,13 @@ public class BigDecimalMath extends NumberMath {
 	}
 	
 	private BigDecimal normalize(BigDecimal number) {
+        // we have to take care of the case number==0, because 0 can have every
+        // scale and the test in the while loop would never end
+        if (number.signum()==0) {
+            // the smallest scale for 0 is 0
+            return number.setScale(0);
+        }
+        // rescale until we found the smallest possible scale
 		try {
 			while (true) {
 				number = number.setScale(number.scale()-1);
