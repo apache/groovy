@@ -19,7 +19,7 @@ You can see an example of this in action inside Groovy's maven.xml file (just se
 Another option is to use a {link:GroovyClassLoader|apidocs/groovy/lang/GroovyClassLoader.html} to load classes dynamically into a Java program and execute them (or use them) directly.
 The following Java code shows an example... 
 
-{code:groovysh}
+{code:java}
 ClassLoader parent = getClass().getClassLoader();
 GroovyClassLoader loader = new GroovyClassLoader(parent);
 Class groovyClass = loader.parse("src/test/groovy/script/HelloWorld.groovy");

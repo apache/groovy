@@ -2,7 +2,11 @@
 
 Groovy has native support for various markup languages from XML, HTML,
 SAX, W3C DOM, Ant tasks, Swing user interfaces and so forth. 
-This is all accomplished via the following syntax... {code:groovysh}
+This is all accomplished via the following syntax... 
+
+{code:groovysh}
+someBuilder = new NodeBuilder()
+
 someBuilder.people(kind:'folks', groovy:true) {
   person(x:123,  name:'James', cheese:'edam') {
     project(name:'groovy')
@@ -30,8 +34,9 @@ Whats more is this is native Groovy syntax; so you can mix and match
 this markup syntax with any other Groovy features (iteration,
 branching, method calls, variables, expressions etc). e.g.
 
-// lets create a form with a label & text field for each property
-of a bean< {code:groovysh}
+{code:java}
+// lets create a form with a label & text field for each property of a bean 
+swing = new SwingBuilder()
 widget = swing.frame(title:'My Frame') {
     panel() {
        for (entry in someBean) {
@@ -56,6 +61,7 @@ naturally map to SAX event processing too.
 Out of the box Groovy comes with a few different markup builders you
 can use * NodeBuilder - creates a tree of Node instances which can be
 easily navigated in Groovy using an XPath-like syntax 
+
 * DOMBuilder - creates a W3C DOM document from the markup its given 
 * SAXBuilder - fires SAX events into a given SAX ContentHandler 
 * MarkupBuilder - outputs XML / HTML markup to some PrintWriter for
@@ -70,9 +76,9 @@ processing build tasks
 Here's a simple example which shows how you could iterate through some SQL result set
 and output a dynamic XML document containing the results in a custom format using GroovyMarkup 
 
-{code:groovysh}
+{code:java}
 // lets output some XML builder (could be SAX / DOM / TrAX / text)
-xml = createXmlBuilder()
+xml = new NodeBuilder()
 xml.customers() {
 	loc = 'London'
 	sql.queryEach ("select * from customer where location = ${loc}) {
@@ -100,8 +106,4 @@ To see more examples of using GroovyMarkup try looking at our unit test cases
 * {link:Ant unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/ant/} 
 * {link:Swing demos|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/} 
 
-
 There is more {link:detail on markup here|http://wiki.codehaus.org/groovy/TreeBasedSyntax} . 
-
-
-
