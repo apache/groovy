@@ -53,7 +53,6 @@ public class RunWikiTest extends TestSupport {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
-        /* temporary disable to get the build working
         File dir = new File("xdocs");
         File[] files = dir.listFiles();
         for (int i = 0; i < files.length; i++) {
@@ -65,7 +64,6 @@ public class RunWikiTest extends TestSupport {
                 suite.addTest(GroovyTestSuite.suite());
             }
         }
-        */
         return suite; 
     }    
 }
