@@ -73,8 +73,9 @@ import java.util.regex.Pattern;
  * @version $Revision$
  */
 public class Invoker {
-    
-    protected static final Object[] EMPTY_ARGUMENTS = {};
+
+    protected static final Object[] EMPTY_ARGUMENTS = {
+    };
 
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
 
@@ -103,7 +104,7 @@ public class Invoker {
                     + InvokerHelper.toString(arguments));
                     
                     */
-        
+
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
@@ -134,7 +135,6 @@ public class Invoker {
         return metaClass.invokeStaticMethod(null, method, asArray(arguments));
     }
 
-
     public Object invokeConstructor(String type, Object arguments) {
         System.out.println("Invoking constructor of type: " + type);
         return invokeConstructorOf(loadClass(type), arguments);
@@ -164,7 +164,6 @@ public class Invoker {
             return new Object[] { arguments };
         }
     }
-    
 
     public List asList(Object value) {
         if (value == null) {
@@ -178,7 +177,7 @@ public class Invoker {
         }
         else if (value instanceof Enumeration) {
             List answer = new ArrayList();
-            for ( Enumeration e = (Enumeration) value; e.hasMoreElements(); ) {
+            for (Enumeration e = (Enumeration) value; e.hasMoreElements();) {
                 answer.add(e.nextElement());
             }
             return answer;
@@ -232,31 +231,33 @@ public class Invoker {
             return (Iterator) value;
         }
         else if (value instanceof Matcher) {
-        	final Matcher matcher = (Matcher) value;
-        	return new Iterator() {
-        		private boolean found = false;
-        		private boolean done = false;
-				public boolean hasNext() {
-					if (done) return false;
-					if (!found) {
-						found = matcher.find();
-						if (!found) done = true;
-					}
-					return found;
-				}
-				public Object next() {
-					if (!found) {
-						if (!hasNext()) {
-							throw new NoSuchElementException();
-						}
-					}
-					found = false;
-					return matcher.group();
-				}
-				public void remove() {
-					throw new UnsupportedOperationException();
-				}
-        	};
+            final Matcher matcher = (Matcher) value;
+            return new Iterator() {
+                private boolean found = false;
+                private boolean done = false;
+                public boolean hasNext() {
+                    if (done)
+                        return false;
+                    if (!found) {
+                        found = matcher.find();
+                        if (!found)
+                            done = true;
+                    }
+                    return found;
+                }
+                public Object next() {
+                    if (!found) {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                    }
+                    found = false;
+                    return matcher.group();
+                }
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            };
         }
         return asCollection(value).iterator();
     }
@@ -269,9 +270,11 @@ public class Invoker {
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
 
-    	if (left instanceof Float) left = new Double(((Float)left).doubleValue());
-    	if (right instanceof Float) right = new Double(((Float)left).doubleValue());
-    	
+        if (left instanceof Float)
+            left = new Double(((Float) left).doubleValue());
+        if (right instanceof Float)
+            right = new Double(((Float) left).doubleValue());
+
         if (left instanceof Comparable) {
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);
@@ -288,23 +291,24 @@ public class Invoker {
             return true;
         }
         if (left != null) {
-        	if (left.equals(right)) {
-        		return true;
-        	}
-        	if (left instanceof Number && right instanceof Number) {
-        		Number leftNumber = (Number) left;
-        		Number rightNumber = (Number) right;
-        		if (leftNumber.byteValue() != rightNumber.byteValue() ||
-        			leftNumber.intValue() != rightNumber.intValue() ||
-        			leftNumber.shortValue() != rightNumber.shortValue() ||
-        			leftNumber.longValue() != rightNumber.longValue() ||
-        			leftNumber.floatValue() != rightNumber.floatValue() ||
-        			leftNumber.doubleValue() != rightNumber.doubleValue()) {
-        			return false;
-        		} else {
-        			return true;
-        		}
-        	}
+            if (left.equals(right)) {
+                return true;
+            }
+            if (left instanceof Number && right instanceof Number) {
+                Number leftNumber = (Number) left;
+                Number rightNumber = (Number) right;
+                if (leftNumber.byteValue() != rightNumber.byteValue()
+                    || leftNumber.intValue() != rightNumber.intValue()
+                    || leftNumber.shortValue() != rightNumber.shortValue()
+                    || leftNumber.longValue() != rightNumber.longValue()
+                    || leftNumber.floatValue() != rightNumber.floatValue()
+                    || leftNumber.doubleValue() != rightNumber.doubleValue()) {
+                    return false;
+                }
+                else {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -341,7 +345,7 @@ public class Invoker {
             List list = (List) arguments;
             StringBuffer buffer = new StringBuffer("[");
             boolean first = true;
-            for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
                 }
@@ -360,7 +364,7 @@ public class Invoker {
             }
             StringBuffer buffer = new StringBuffer("[");
             boolean first = true;
-            for (Iterator iter = map.entrySet().iterator(); iter.hasNext(); ) {
+            for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
                 }
@@ -471,23 +475,26 @@ public class Invoker {
      * @return
      */
     public Matcher objectFindRegex(Object left, Object right) {
-    	String stringToCompare;
-    	if (left instanceof String) {
-    		stringToCompare = (String) left;
-    	} else {
-    		stringToCompare = toString(left);
-    	}
-    	String regexToCompareTo;
-    	if (right instanceof String) {
-    		regexToCompareTo = (String) right;
-    	} else if (right instanceof Pattern) {
-    		Pattern pattern = (Pattern) right;
-    		return pattern.matcher(stringToCompare);
-    	} else {
-    		regexToCompareTo = toString(right);
-    	}
-    	Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
-		return matcher;
+        String stringToCompare;
+        if (left instanceof String) {
+            stringToCompare = (String) left;
+        }
+        else {
+            stringToCompare = toString(left);
+        }
+        String regexToCompareTo;
+        if (right instanceof String) {
+            regexToCompareTo = (String) right;
+        }
+        else if (right instanceof Pattern) {
+            Pattern pattern = (Pattern) right;
+            return pattern.matcher(stringToCompare);
+        }
+        else {
+            regexToCompareTo = toString(right);
+        }
+        Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
+        return matcher;
     }
 
     /**
@@ -498,24 +505,111 @@ public class Invoker {
      * @return
      */
     public boolean objectMatchRegex(Object left, Object right) {
-    	Pattern pattern;
-    	if (right instanceof Pattern) {
-    		pattern = (Pattern) right; 
-    	} else {
-    		pattern = Pattern.compile(toString(right));
-    	}
-    	String stringToCompare = toString(left);
-    	return pattern.matcher(stringToCompare).matches();
+        Pattern pattern;
+        if (right instanceof Pattern) {
+            pattern = (Pattern) right;
+        }
+        else {
+            pattern = Pattern.compile(toString(right));
+        }
+        String stringToCompare = toString(left);
+        return pattern.matcher(stringToCompare).matches();
     }
 
-	/**
-	 * Compile a regular expression from a string.
-	 * 
-	 * @param regex
-	 * @return
-	 */
-	public Pattern regexPattern(String regex) {
-		return Pattern.compile(regex);
-	}
+    /**
+     * Compile a regular expression from a string.
+     * 
+     * @param regex
+     * @return
+     */
+    public Pattern regexPattern(String regex) {
+        return Pattern.compile(regex);
+    }
+
+    public Object asType(Class type, Object object) {
+        if (type.isInstance(object)) {
+            return object;
+        }
+        if (type.equals(String.class)) {
+            return (object != null) ? object.toString() : "null";
+        }
+        if (object instanceof Number) {
+            Number n = (Number) object;
+            if (type.isPrimitive()) {
+                if (type == byte.class) {
+                    return new Byte(n.byteValue());
+                }
+                if (type == char.class) {
+                    return new Character((char) n.intValue());
+                }
+                if (type == short.class) {
+                    return new Short(n.shortValue());
+                }
+                if (type == int.class) {
+                    return new Integer(n.intValue());
+                }
+                if (type == long.class) {
+                    return new Long(n.longValue());
+                }
+                if (type == float.class) {
+                    return new Float(n.floatValue());
+                }
+                if (type == double.class) {
+                    return new Double(n.doubleValue());
+                }
+            }
+            else {
+                if (Number.class.isAssignableFrom(type)) {
+                    if (type == Byte.class) {
+                        return new Byte(n.byteValue());
+                    }
+                    if (type == Character.class) {
+                        return new Character((char) n.intValue());
+                    }
+                    if (type == Short.class) {
+                        return new Short(n.shortValue());
+                    }
+                    if (type == Integer.class) {
+                        return new Integer(n.intValue());
+                    }
+                    if (type == Long.class) {
+                        return new Long(n.longValue());
+                    }
+                    if (type == Float.class) {
+                        return new Float(n.floatValue());
+                    }
+                    if (type == Double.class) {
+                        return new Double(n.doubleValue());
+                    }
+
+                }
+            }
+        }
+        if (type == Boolean.class) {
+            return asBool(object) ? Boolean.TRUE : Boolean.FALSE;
+        }
+        return object;
+    }
+
+    public boolean asBool(Object object) {
+        if (object instanceof Boolean) {
+            Boolean booleanValue = (Boolean) object;
+            return booleanValue.booleanValue();
+        }
+        else if (object instanceof Matcher) {
+            Matcher matcher = (Matcher) object;
+            return matcher.find();
+        }
+        else if (object instanceof Collection) {
+            Collection collection = (Collection) object;
+            return !collection.isEmpty();
+        }
+        else if (object instanceof String) {
+            String text = (String) object;
+            return text.equalsIgnoreCase("true");
+        }
+        throw new GroovyRuntimeException(
+            object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
+    }
 
 }

@@ -1562,6 +1562,26 @@ public class Parser
     {
         consume( Token.LEFT_PARENTHESIS );
         
+        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.RIGHT_PARENTHESIS) {
+            // we could be a cast
+            boolean valid = true;
+            switch (lt_bare(3)) {
+               case Token.SEMICOLON:
+               case Token.NEWLINE:
+               case Token.RIGHT_CURLY_BRACE:
+               case -1:
+                   valid = false;
+            }
+            if (valid) {
+                // lets assume we're a cast expression
+                CSTNode castExpr = new CSTNode(Token.syntheticCast());
+                castExpr.addChild(new CSTNode(consume_bare(lt_bare())));
+                consume_bare(lt_bare());
+                castExpr.addChild(expression());
+                return castExpr;
+            }
+        }
+        
         CSTNode expr = expression();
         
         consume( Token.RIGHT_PARENTHESIS );

@@ -875,9 +875,19 @@ public class ASTBuilder
             {
             	return notExpression( expressionRoot );
             }
+            case ( Token.SYNTH_CAST ):
+            {
+                return castExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected Expression castExpression(CSTNode root) throws ParserException {
+        CSTNode typeExpression = root.getChild(0);
+        CSTNode expressionRoot = root.getChild(1);
+        return new CastExpression( resolveName(typeExpression.getToken().getText()), expression( expressionRoot ) );
     }
 
     protected Expression postfixExpression(CSTNode root) throws ParserException {

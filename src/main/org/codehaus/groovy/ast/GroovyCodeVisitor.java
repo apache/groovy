@@ -101,4 +101,5 @@ public interface GroovyCodeVisitor {
     public void visitArrayExpression(ArrayExpression expression);
 	public void visitNotExpression(NotExpression expression);
 	public void visitNegationExpression(NegationExpression expression);
+	public void visitCastExpression(CastExpression expression);
 }

@@ -263,6 +263,7 @@ public class Token
     
     public static final int SYNTH_POSTFIX = 810;
     public static final int SYNTH_PREFIX = 811;
+    public static final int SYNTH_CAST = 815;
     
     private static final Map KEYWORDS = new HashMap();
 
@@ -1419,7 +1420,14 @@ public class Token
                 -1,
                 -1 );
     }
-
+    
+    public static Token syntheticCast() {
+        return newToken( SYNTH_CAST,
+                "<synthetic>",
+                -1,
+				-1 );
+    }
+    
     // ----------------------------------------------------------------------
     // ----------------------------------------------------------------------
 
@@ -1460,4 +1468,5 @@ public class Token
         }
         return false;
     }
+
 }

@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -144,6 +145,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructorOf");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
+    MethodCaller asTypeMethod = MethodCaller.newStatic(InvokerHelper.class, "asType");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller getPropertySafeMethod = MethodCaller.newStatic(InvokerHelper.class, "getPropertySafe");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
@@ -1097,6 +1099,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
    		negation.call(cv);
     }
     
+    public void visitCastExpression(CastExpression expression) {
+        String type = expression.getType();
+        type = checkValidType(type, expression, "in cast");
+        visitClassExpression(new ClassExpression(type));
+        expression.getExpression().visit(this);
+        
+        asTypeMethod.call(cv);
+        
+        // now lets cast
+        doCast(type);
+    }
+
     public void visitNotExpression(NotExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);

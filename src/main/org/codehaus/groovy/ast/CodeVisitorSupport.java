@@ -51,6 +51,7 @@ import java.util.List;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -247,8 +248,13 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     }
 
     public void visitNegationExpression(NegationExpression expression) {
+        expression.getExpression().visit(this);
     }
     
+    public void visitCastExpression(CastExpression expression) {
+        expression.getExpression().visit(this);
+    }
+
     public void visitConstantExpression(ConstantExpression expression) {
     }
 
