@@ -182,7 +182,7 @@ public class GroovyMain {
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line and print result").create('p'));
         
-        options.addOption(OptionBuilder.withArgName("port").hasOptionalArg().withDescription("process socket i/o").create('w'));
+        options.addOption(OptionBuilder.withArgName("port").hasOptionalArg().withDescription("listen on a port and process inbound lines").create('l'));
         return options;
     }
 
@@ -224,9 +224,9 @@ public class GroovyMain {
             main.script = line.getOptionValue('e');
         }
         
-        main.processSockets = line.hasOption('w');
+        main.processSockets = line.hasOption('l');
         if (main.processSockets) {
-            String p = line.getOptionValue('w',"1960"); // default port to listen to
+            String p = line.getOptionValue('l',"1960"); // default port to listen to
             main.port = new Integer(p).intValue();
         }
         main.args = args;
@@ -268,7 +268,7 @@ public class GroovyMain {
         } else {
             s = groovy.parse(script, "main");
         }
-        new GroovySocketServer(groovy,isScriptFile,script,port);
+        new GroovySocketServer(groovy,isScriptFile,script,autoOutput,port);
     }
     
     /**

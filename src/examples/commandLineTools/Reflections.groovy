@@ -3,7 +3,7 @@
  * @author <a href="mailto:jeremy.rayner@gmail.com">Jeremy Rayner</a>
  * 
  * invoke using
- *    groovy -w 80 Reflections.groovy
+ *    groovy -l 80 Reflections.groovy
  * 
  *       (where 80 is the port to listen for requests upon)
  */
@@ -12,6 +12,7 @@
 println "${line} <br>"
 
 //assume no input means we've finished...
-if (line.size() == 0) {
+if (line == "") {
+    // clean up gracefully, closing sockets etc
     return "success"
 }
