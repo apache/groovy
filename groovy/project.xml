@@ -149,8 +149,7 @@
       </resources>
 
       <includes>
-        <include>**/*Test.java</include>
-        <include>**/*Test.groovy</include>
+        <include>**/*Test.*</include>
       </includes>
 
     </unitTest>

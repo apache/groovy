@@ -1,4 +1,4 @@
-<project default="jar:jar" xmlns:j="jelly:core">
+<project default="jar:jar" xmlns:j="jelly:core" xmlns:u="jelly:util" >
 
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
@@ -41,6 +41,74 @@
       <include name="**/*.groovy"/>
       <exclude name="**/notworking/*.groovy"/>
     </groovyc>
+  </goal>
+
+
+  <goal name="test" 
+        description="Test the application"
+        prereqs="">
+    <attainGoal name="groovy:test"/>
+  </goal>
+
+  <goal name="groovy:test"
+        description="Test the application with any Java or Groovy unit tests"
+        prereqs="test:compile">
+      
+    <j:if test="${unitTestSourcesPresent == 'true' and context.getVariable('maven.test.skip') != 'true'}">
+      
+      <taskdef
+        name="junit"
+        classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
+      />
+      
+      <junit printSummary="yes" 
+             failureProperty="maven.test.failure"
+             fork="${maven.junit.fork}"
+             dir="${maven.junit.dir}">
+        <sysproperty key="basedir" value="${basedir}"/>
+        <u:tokenize var="listOfProperties" delim=" ">${maven.junit.sysproperties}</u:tokenize>
+        <j:forEach var="someProperty" items="${listOfProperties}">
+          <sysproperty key="${someProperty}" value="${context.getVariable(someProperty)}"/>
+        </j:forEach>
+        <u:tokenize var="listOfJvmArgs" delim=" ">${maven.junit.jvmargs}</u:tokenize>
+        <j:forEach var="somejvmarg" items="${listOfJvmArgs}">
+          <jvmarg value="${somejvmarg}"/>
+        </j:forEach>
+        <formatter type="xml"/>
+        <formatter type="plain" usefile="${maven.junit.usefile}"/>
+        <classpath>
+          <path refid="maven.dependency.classpath"/>
+          <pathelement location="${basedir}/target/classes"/>
+          <pathelement location="${basedir}/target/test-classes"/>
+          <pathelement path="${plugin.getDependencyPath('junit')}"/>
+        </classpath>
+        <batchtest todir="${maven.test.reportsDirectory}">
+          <fileset dir="${basedir}/target/test-classes">
+            <j:forEach var="pat" items="${pom.build.unitTest.includes}">
+              <include name="${pat}"/>
+            </j:forEach>
+            <j:forEach var="pat" items="${pom.build.unitTest.excludes}">
+              <exclude name="${pat}"/>
+            </j:forEach>
+              <!-- KEEP ALL ABSTRACT TESTS FROM BEING RUN! -->
+              <exclude name="**/*AbstractTestCase.*"/>
+          </fileset>
+        </batchtest>
+      </junit>
+
+      <j:if test="${maven.test.failure}">
+        <j:set var="ignore__" value="${maven.test.failure.ignore}X"/>
+        <j:if test="${ignore__ == 'X'}">
+          <fail message="There were test failures."/>
+        </j:if>
+      </j:if>
+
+    </j:if>
+    
+    <j:if test="${!unitTestSourcesPresent}">
+      <echo>No tests to run.</echo>
+    </j:if>
+
   </goal>
 
   <goal name="groovy:make-install" prereqs="jar:jar">
