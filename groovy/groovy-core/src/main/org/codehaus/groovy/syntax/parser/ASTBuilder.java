@@ -26,7 +26,9 @@ import org.codehaus.groovy.ast.MapEntryExpression;
 import org.codehaus.groovy.ast.ListExpression;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
+import org.codehaus.groovy.ast.IfElse;
 import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.EmptyStatement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -413,7 +415,8 @@ public class ASTBuilder
             CSTNode statementRoot = statementRoots[ i ];
             Statement statement = statement( statementRoot );
             statementBlock.addStatement( statement );
-            setLineNumber(statement, statementRoot);
+            setLineNumber( statement,
+                           statementRoot);
         }
 
         return statementBlock;
@@ -445,6 +448,11 @@ public class ASTBuilder
                 statement = returnStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_IF ):
+            {
+                statement = ifStatement( statementRoot );
+                break;
+            }
             default:
             {
                 statement = expressionStatement( statementRoot );
@@ -453,6 +461,36 @@ public class ASTBuilder
         setLineNumber(statement, statementRoot);
 
         return statement;
+    }
+
+    protected IfElse ifStatement(CSTNode statementRoot)
+    {
+        CSTNode[]         children   = statementRoot.getChildren();
+
+        BooleanExpression expression = new BooleanExpression( expression( children[ 0 ] ) );
+        StatementBlock    ifBlock    = statementBlock( children[ 1 ] );
+
+        Statement elseBlock = null;
+
+        if ( children.length == 3
+             &&
+             matches( children[ 2 ],
+                      Token.KEYWORD_IF ) )
+        {
+            elseBlock = ifStatement( children[ 2 ] );
+        }
+        else if ( children.length == 3 )
+        {
+            elseBlock = statementBlock( children[ 2 ].getChild( 0 ) );
+        }
+        else
+        {
+            elseBlock = EmptyStatement.INSTANCE;
+        }
+
+        return new IfElse( expression,
+                           ifBlock,
+                           elseBlock );
     }
 
     protected TryCatchFinally tryStatement(CSTNode statementRoot)

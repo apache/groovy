@@ -573,6 +573,7 @@ public class Parser
             }
             case ( Token.KEYWORD_IF ):
             {
+                statement = ifStatement();
                 break;
             }
             case ( Token.KEYWORD_TRY ):
@@ -612,6 +613,50 @@ public class Parser
                 optionalSemicolon();
                 //consume( Token.SEMICOLON );
             }
+        }
+
+        return statement;
+    }
+
+    protected CSTNode ifStatement()
+        throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_IF );
+
+        boolean parenRequired = false;
+
+        if ( lt() == Token.LEFT_PARENTHESIS )
+        {
+            consume( Token.LEFT_PARENTHESIS );
+            parenRequired = true;
+        }
+
+        statement.addChild( expression() );
+
+        if ( parenRequired )
+        {
+            consume( Token.RIGHT_PARENTHESIS );
+        }
+
+        statement.addChild( statementBlock() );
+
+        CSTNode cur = statement;
+
+        while ( lt() == Token.KEYWORD_ELSE
+                &&
+                lt( 2 ) == Token.KEYWORD_IF )
+        {
+            consume( Token.KEYWORD_ELSE );
+            CSTNode next = ifStatement();
+            cur.addChild( next );
+            cur = next;
+        }
+
+        if ( lt() == Token.KEYWORD_ELSE )
+        {
+            CSTNode next = rootNode( Token.KEYWORD_ELSE );
+            next.addChild( statementBlock() );
+            cur.addChild( next );
         }
 
         return statement;
