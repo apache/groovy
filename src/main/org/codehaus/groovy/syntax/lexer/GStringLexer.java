@@ -105,7 +105,6 @@ public class GStringLexer extends LexerBase
                 {
                     ESCAPE_SWITCH: switch( la(2) )
                     {
-                        case '\\':
                         case '$':
                         {
                             consume();
