@@ -21,7 +21,7 @@ public class StringCharStream
         this.cur  = 0;
     }
     
-    public char nextChar()
+    public char consume()
         throws IOException
     {
         if ( this.cur >= this.text.length() )

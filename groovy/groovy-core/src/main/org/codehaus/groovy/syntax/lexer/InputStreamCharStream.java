@@ -25,7 +25,7 @@ public class InputStreamCharStream
         return in;
     }
 
-    protected char nextChar()
+    public char consume()
         throws IOException
     {
         return (char) getInputStream().read();
