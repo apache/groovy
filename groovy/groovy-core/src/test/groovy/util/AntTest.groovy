@@ -76,5 +76,37 @@ class AntTest extends GroovyTestCase {
     	println "Found path of type ${value.class.name}"
     	println value
     }
+
+    void testTaskContainerAddTaskIsCalled() {
+        ant = new AntBuilder()
+        taskContainer = ant.parallel(){ // "Parallel" serves as a sample TaskContainer
+            ant.echo()                  // "Echo" without message to keep tests silent
+        }
+        // not very elegant, but the easiest way to get the ant internals...
+        assert taskContainer.dump() =~ 'nestedTasks=\\[org.apache.tools.ant.taskdefs.Echo@\\w+\\]'
+    }
+
+    void testTaskContainerExecutionSequence() {
+        ant = new AntBuilder()
+        SpoofTaskContainer.getSpoof().length = 0
+        PATH = 'task.path'
+        ant.path(id:PATH){ant.pathelement(location:'classes')}
+        ['spoofcontainer':'SpoofTaskContainer', 'spoof':'SpoofTask'].each{ |pair|
+            ant.taskdef(name:pair.key, classname:'groovy.util.'+pair.value, classpathref:PATH)
+        }
+        ant.spoofcontainer(){
+            ant.spoof()
+        }
+        expectedSpoof =
+            "SpoofTaskContainer ctor\n"+
+            "SpoofTask ctor\n"+
+            "in addTask\n"+
+            "begin SpoofTaskContainer execute\n"+
+            "begin SpoofTask execute\n"+
+            "end SpoofTask execute\n"+
+            "end SpoofTaskContainer execute\n"
+        assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
+    }
+
     
 }
