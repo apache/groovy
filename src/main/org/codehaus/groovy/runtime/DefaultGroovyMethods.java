@@ -75,6 +75,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
+import java.util.StringTokenizer;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -631,6 +632,13 @@ public class DefaultGroovyMethods {
 
     // String methods
     //-------------------------------------------------------------------------
+    public static Object tokenize(String self, String token) {
+        return InvokerHelper.asList(new StringTokenizer(self, token));
+    }
+    
+    public static Object tokenize(String self) {
+        return InvokerHelper.asList(new StringTokenizer(self));
+    }
     
     // Number based methods
     //-------------------------------------------------------------------------
