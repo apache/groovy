@@ -1147,8 +1147,6 @@ parameterIdent
                 )
         ;
 
-//TODO - GOT TO HERE JRR --->
-
 // Compound statement. This is used in many contexts:
 // Inside a class definition prefixed with "static":
 // it is a class initializer
@@ -1157,59 +1155,168 @@ parameterIdent
 // As the body of a method
 // As a completely indepdent braced block of code inside a method
 // it starts a new scope for variable definitions
+// In Groovy, this is called an "open block".  It cannot have closure arguments.
 
 compoundStatement
-	:	lc:LCURLY^ {#lc.setType(SLIST);}
-			// include the (possibly-empty) list of statements
-			(statement)*
-		RCURLY!
+	:	openBlock
 	;
 
+/** An open block is not allowed to have closure arguments. */
+openBlock
+        :       lc:LCURLY^ {#lc.setType(SLIST);}   // AST type of SLIST means "never gonna be a closure"
+                blockBody
+                RCURLY!
+        ;
+
+/** A block body is either a single expression, with no additional newlines or separators,
+  * or else the usual parade of zero or more statements.
+  */
+blockBody
+        :   // Allow almost any expression, as long as it stands completely alone in the block.
+                // The expression must not contain line breaks outside of parentheses.
+                // DECIDE: Illegality of line breaks.  Forces coders to place the RCURLY right after the expression:  {1+1}.
+                // This makes expression-bearing blocks look more distinct.
+                (balancedTokensNoSep (RCURLY | EOF)) => (assignmentExpression (RCURLY | EOF)) => expressionNotBOR
+
+        |       // include the (possibly-empty) list of statements
+                (statement)? (sep! (statement)?)*
+        ;
+
+// Special restriction:  Logical OR expressions cannot occur at statement level, not even as {a...|b...}.
+// This restriction helps programmers avoid inadvertantly creating closure arguments.
+// Note pernicious case #1:  {it|1}.  Does this mean set the low-order bit of the argument, or return constant 1?
+// Note pernicious case #2:  {xx|1}.  Does this mean add the low-order bit into xx, or return constant 1?
+// In both cases, the bar is "eagerly" taken to be a closure argument delimiter.
+expressionNotBOR
+        :   e:expression
+                {require(#e.getType() != BOR,
+                                "expression in block; cannot be of the form a|b",
+                                "enclose the expression parentheses (a|b)");}
+        ;
+
+/** A block which is known to be a closure, even if it has no apparent arguments.
+ */
+closedBlock
+        :       lc:LCURLY^ {#lc.setType(CLOSED_BLOCK);}
+                ( ( nls closureParametersStart ) =>
+                        nls! closureParameters
+                |
+                        implicitParameters  // implicit {it|...} or {?noname|...}
+                )
+                blockBody
+                RCURLY!
+        ;
+
+/** A block inside an expression is assumed to be a closure, unless it is double braced.
+ *  DECIDE: PROPOSAL: Double bracing always forces an open block.
+ *  This syntax is useful for passing on a pre-existing closure to a call, rather than building another.
+ *  Example:  <code>def forEachTwice(Closure y) { forEach{{y}}; forEach{{y}} }</code>
+ *  In the absence of double bracing, the block may always be interpreted as a closure,
+ *  even though its syntactic context may require that the closure be immediately invoked.
+ */
+expressionBlock
+        :   (LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
+                LCURLY! openBlock RCURLY!
+        |   closedBlock
+        ;
+
+/** An appended block follows a method name or method argument list.
+ *  It is optionally labeled.  DECIDE:  A good rule?
+ */
+appendedBlock
+        :
+        /*
+            (IDENT COLON nls LCURLY)=>
+                IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
+                expressionBlock
+        |
+        */
+                expressionBlock
+        ;
+
+/** A block known to be a closure, but which omits its arguments, is given this placeholder.
+ *  A subsequent pass is responsible for deciding if there is an implicit 'it' parameter,
+ *  or if the parameter list should be empty.
+ */
+implicitParameters
+        :   {   #implicitParameters = #(#[IMPLICIT_PARAMETERS,"IMPLICIT_PARAMETERS"]);  }
+        ;
+
+/** A sub-block of a block can be either open or closed.
+ *  It is closed if and only if there are explicit closure arguments.
+ *  Compare this to a block which is appended to a method call,
+ *  which is given closure arguments, even if they are not explicit in the code.
+ */
+openOrClosedBlock
+        :   (LCURLY nls closureParametersStart ) =>
+                closedBlock
+        |       openBlock
+        ;
 
 statement
 	// A list of statements in curly braces -- start a new scope!
-	:	compoundStatement
+	// Free-floating blocks must be labeled or double-braced, to defend against typos.
+        :       (LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
+                LCURLY! openOrClosedBlock RCURLY!
+        |       compoundStatement
+		{require(false,
+                                "ambiguous free-floating block head{...} needs context to determine if it's open or closed",
+                                "surround {...} with extra braces {{...}} or use it as a closure in an expression x={...}");}
 
 	// declarations are ambiguous with "ID DOT" relative to expression
 	// statements. Must backtrack to be sure. Could use a semantic
 	// predicate to test symbol table to see what the type was coming
 	// up, but that's pretty hard without a symbol table ;)
-	|	(declaration)=> declaration SEMI!
+	|	(declaration)=> 
+                declaration
 
 	// An expression statement. This could be a method call,
 	// assignment statement, or any other expression evaluated for
 	// side-effects.
-	|	expression SEMI!
+	|	expressionStatement 
 
 	//TODO: what abour interfaces, enums and annotations
 	// class definition
-	|	m:modifiers! classDefinition[#m]
+	|	(m:modifiers!)? classDefinition[#m]
 
 	// Attach a label to the front of a statement
-	|	IDENT c:COLON^ {#c.setType(LABELED_STAT);} statement
+        // This block is executed for effect, unless it has an explicit closure argument.
+        |       IDENT c:COLON^ {#c.setType(LABELED_STAT);}
+                (   (LCURLY) => openOrClosedBlock
+                |   statement
+                )
 
 	// If-else statement
-	|	"if"^ LPAREN! expression RPAREN! statement
-		(
-			// CONFLICT: the old "dangling-else" problem...
-			// ANTLR generates proper code matching
-			// as soon as possible. Hush warning.
-			options {
-				warnWhenFollowAmbig = false;
-			}
-		:
-			"else"! statement
-		)?
+        // Note:  There is no nls next to either paren, even though it would be increase compatibility
+        // with various styles of Java indenting.  The "if" statement has the same constraints on white
+        // space as a method call statement like "iflikemethod (args) { body }".  By restricting
+        // newlines in both constructs in similar ways, we make Groovy internally consistent,
+        // at a minor cost to compatibility with Java.
+        |       "if"^ LPAREN! expression RPAREN! compatibleBodyStatement
+                (
+                        // CONFLICT: the old "dangling-else" problem...
+                        //           ANTLR generates proper code matching
+                        //                       as soon as possible.  Hush warning.
+                        options {
+                                warnWhenFollowAmbig = false;
+                        }
+                :
+                        (sep!)?  // allow SEMI here for compatibility with Java
+                        "else"! nls! compatibleBodyStatement
+                )?
 
 	// For statement
 	|	forStatement
 
 	// While statement
-	|	"while"^ LPAREN! expression RPAREN! statement
+	|	"while"^ LPAREN! expression RPAREN! compatibleBodyStatement
 
+	/*OBS* no do-while statement in Groovy (too ambiguous)
 	// do-while statement
 	|	"do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
+	*OBS*/
 
+/* TODO - removed for some reason???
 	// get out of a loop (or switch)
 	|	"break"^ (IDENT)? SEMI!
 
@@ -1218,6 +1325,20 @@ statement
 
 	// Return an expression
 	|	"return"^ (expression)? SEMI!
+*/
+	// With statement
+        // (This is the Groovy scope-shift mechanism, used for builders.)
+        |       "with"^ LPAREN! expression RPAREN! compoundStatement
+        
+        // Splice statement, meaningful only inside a "with" expression.
+        // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
+        |   sp:STAR^ nls!                       {#sp.setType(SPREAD_ARG);}
+                expressionStatement
+        // Example:  with(htmlbuilder) { head{} body{ *"some text" } }
+        // Equivalent to:  { htmlbuilder.head{} htmlbuilder.body{ (htmlbuilder as Collection).add("some text") } }
+
+        // Import statement.  Can be used in any scope.  Has "import x as y" also.
+        |   importStatement
 
 	// switch/case statement
 	|	"switch"^ LPAREN! expression RPAREN! LCURLY!
@@ -1227,27 +1348,37 @@ statement
 	// exception try-catch block
 	|	tryBlock
 
+/*OBS???
 	// throw an exception
 	|	"throw"^ expression SEMI!
-
+*/
 	// synchronize a statement
 	|	"synchronized"^ LPAREN! expression RPAREN! compoundStatement
 
+	/* TODO - decide on definitive 'assert' statement in groovy (1.4 vs groovy)
 	// asserts (uncomment if you want 1.4 compatibility)
+	// 1.4+ ...
 	|	"assert"^ expression ( COLON! expression )? SEMI!
+	// groovy possibility ??? ...
+	|	"assert"^ expression
+	*/
 
+	/*OBS*
 	// empty statement
 	|	s:SEMI {#s.setType(EMPTY_STAT);}
+	*OBS*/
 	;
 
 forStatement
 	:	f:"for"^
 		LPAREN!
 			(	(forInit SEMI)=>traditionalForClause
-			|	forEachClause
+			|	(parameterDeclaration COLON)=> forEachClause
+			|       // the coast is clear; it's a modern Groovy for statement
+				forInClause
 			)
 		RPAREN!
-		statement					 // statement to loop over
+		compatibleBodyStatement					 // statement to loop over
 	;
 
 traditionalForClause
@@ -1262,6 +1393,95 @@ forEachClause
 		p:parameterDeclaration COLON! expression
 		{#forEachClause = #(#[FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE"], #forEachClause);}
 	;
+
+forInClause
+        :       (   (declarationStart)=>
+                        singleDeclarationNoInit
+                |   IDENT
+                |   "it"
+                )
+                i:"in"^         {#i.setType(FOR_IN_ITERABLE);}
+                shiftExpression
+        ;
+
+//TODO - GOT TO HERE JRR --->
+
+/** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
+ *  Support this practice, even though it isn't very Groovy.
+ */
+compatibleBodyStatement
+        :   (LCURLY)=>
+                compoundStatement
+        |
+                statement
+        ;
+
+/** In Groovy, return, break, continue, throw, and assert can be used in any expression context.
+ *  Example:  println (x || return);  println assert x, "won't print a false value!"
+ *  If an optional expression is missing, its value is void (this coerces to null when a value is required).
+ */
+branchExpression
+        :
+        // Return an expression
+                "return"^ (assignmentExpression)?
+
+        // break:  get out of a loop, or switch, or method call
+        // continue:  do next iteration of a loop, or leave a closure
+        |       ("break"^ | "continue"^)
+                (   IDENT
+                        (   options {greedy=true;} :
+                                COLON! assignmentExpression
+                        )?
+                )?
+
+        // throw an exception
+        |       "throw"^ assignmentExpression!
+
+        // asserts
+        |       "assert"^ assignmentExpression
+                (   options {greedy=true;} :
+                        COMMA! assignmentExpression
+                )?
+
+        // Note:  The colon is too special in Groovy; we modify the FOR and ASSERT syntax to dispense with it.
+        ;
+
+
+/** Any statement which begins with an expression, called the "head".
+ *  The head can be followed by command arguments:  {x.y a,b}, {x[y] a,b}, even {f(x) y}.
+ *  Or, the head can be followed by an assignment operator:  {x.y = z}, {x.y[a] ++}, {x.y(a) += z}, etc.
+ *  To catch simple errors, expressions at statement level have a limited set of syntaxes.
+ *  For example, {print x; +y} is a syntax error.  (Java does this trick also.)
+ *  If you really want something weird, wrap it in parentheses or curly braces.
+ */
+//  id(a), x.id(a), (x).id(a), etc.; id{...}, x.id{...}, (x).id{...}, etc.
+expressionStatement
+                { boolean endBrackets = false; }
+        :   endBrackets=
+                head:pathExpression!
+                (       {!endBrackets}?
+                        commandArguments[#head]
+                |   assignmentTail[#head]
+                |   {#expressionStatement = #head;}  // no command arguments
+                )
+                {   // Do an error check on the following token:
+                        switch (LA(1)) {
+                        case RCURLY: case RBRACK: case RPAREN: case SEMI: case NLS: case EOF:
+                                break;
+                        default:
+                                require(false,
+                                                "command followed by garbage in f...",
+                                                "parenthesize correct argument list f(...) or whole expression (f()...)");
+                        }
+                }
+        |
+                // Prefix increment; a special case of assignment statement.
+                (INC^ | DEC^) endBrackets=pathExpression
+        |
+                branchExpression
+        ;
+
+// TODO - PASTED FROM groovy.g up to here --->
 
 casesGroup
 	:	(	// CONFLICT: to which case group do the statements bind?
