@@ -550,7 +550,11 @@ main: while(true) {
   }
 
   private void fatalError(final String msg, final int lineNumber, final int columnNumber) throws SAXException {
-    this.errorHandler.fatalError(new SAXParseException(msg, null, null, lineNumber, columnNumber));
+  	final SAXParseException e = new SAXParseException(msg, null, null, lineNumber, columnNumber);
+  	
+    this.errorHandler.fatalError(e);
+    
+    throw e;
   }
 
   private class MinMLBuffer extends Writer {
