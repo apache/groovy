@@ -1808,7 +1808,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitClassExpression(ClassExpression expression) {
         String type = expression.getText();
-        type = checkValidType(type, expression, "Must be a valid type name for a constructor call");
+        //type = checkValidType(type, expression, "Must be a valid type name for a constructor call");
 
 
         if (helper.isPrimitiveType(type)) {
