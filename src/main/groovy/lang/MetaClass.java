@@ -960,12 +960,14 @@ public class MetaClass {
                 invokeMethod(object, method, new Object[] { newValue });
             }
             catch (MissingMethodException e1) {
+                Field field = null;
                 try {
-                    Field field = object.getClass().getDeclaredField(property);
-                    field.setAccessible(true);
+                    field = object.getClass().getDeclaredField(property);
+                    //field.setAccessible(true);
                     field.set(object, newValue);
-                }
-                catch (Exception e2) {
+                } catch (IllegalAccessException iae) {
+                    throw new IllegalPropertyAccessException(field,object.getClass());
+                } catch (Exception e2) {
                     throw new MissingPropertyException(property, theClass, e2);
                 }
             }
@@ -975,8 +977,6 @@ public class MetaClass {
             throw new MissingPropertyException(property, theClass, e);
         }
         
-        // if we got here, the damn thing just aint there...
-        throw new MissingPropertyException(property, theClass);
     }
 
 
