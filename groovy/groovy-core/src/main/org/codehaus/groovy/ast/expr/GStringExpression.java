@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -84,7 +85,7 @@ public class GStringExpression extends Expression {
     }
 
 
-    public void addString(Expression text) {
+    public void addString(String text) {
         strings.add(text);
     }
     
@@ -94,5 +95,17 @@ public class GStringExpression extends Expression {
 
     public Expression getValue(int idx) {
         return (Expression) values.get(idx);
+    }
+
+    public boolean isConstantString() {
+        return values.isEmpty();
+    }
+
+    public Expression asConstantString() {
+        StringBuffer buffer = new StringBuffer();
+        for (Iterator iter = strings.iterator(); iter.hasNext(); ) {
+            buffer.append(iter.next());
+        }
+        return new ConstantExpression(buffer.toString());
     }
 }
