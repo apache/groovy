@@ -22,7 +22,6 @@ class MapConstructionTest extends GroovyTestCase {
         assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ])
     }
 
-    /** @todo parser
     testMapViaHashMap() {
         m = new HashMap()
         m.put(1, 'abc')
@@ -31,9 +30,6 @@ class MapConstructionTest extends GroovyTestCase {
         assertMap(m)
     }
 
-
-    */
-    
     assertMap(m) {
         /** @todo parser
         assert m instanceof Map
