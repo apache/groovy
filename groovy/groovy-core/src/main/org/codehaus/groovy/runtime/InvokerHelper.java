@@ -283,7 +283,7 @@ public class InvokerHelper {
         return getInstance().objectMatchRegex(left, right);
     }
 
-    public static Pattern regexPattern(String regex) {
+    public static Pattern regexPattern(Object regex) {
         return getInstance().regexPattern(regex);
     }
 
