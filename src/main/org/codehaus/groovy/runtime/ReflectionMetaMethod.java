@@ -42,6 +42,7 @@ import java.security.PrivilegedAction;
 
 public class ReflectionMetaMethod extends MetaMethod {
     private Method method;
+    boolean alreadySetAccessible;
 
     public ReflectionMetaMethod(Method method) {
         super(method);
@@ -49,12 +50,15 @@ public class ReflectionMetaMethod extends MetaMethod {
     }
 
     public Object invoke(Object object, Object[] arguments) throws Exception {
-    	AccessController.doPrivileged(new PrivilegedAction() {
-    		public Object run() {
-    			method.setAccessible(true);
-                return null;
-    		}
-    	});
+    	if ( !alreadySetAccessible ) {
+	    	AccessController.doPrivileged(new PrivilegedAction() {
+	    		public Object run() {
+	    			method.setAccessible(true);
+	                return null;
+	    		}
+	    	});
+	    	alreadySetAccessible = true;
+    	}
 
         //        System.out.println("About to invoke method: " + method);
         //        System.out.println("Object: " + object);
