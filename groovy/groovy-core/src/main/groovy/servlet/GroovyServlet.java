@@ -33,6 +33,7 @@ package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.lang.MetaClass;
+import groovy.lang.Closure;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
@@ -54,6 +55,8 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
 /**
  * This servlet should be registered to *.groovy in the web.xml.
@@ -126,10 +129,10 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 
 		// Get the name of the Groovy script
 		int contextLength = httpRequest.getContextPath().length();
-		String scriptFilename = httpRequest.getRequestURI().substring(contextLength).substring(1);
+		final String scriptFilename = httpRequest.getRequestURI().substring(contextLength).substring(1);
 
 		// Set up the script context
-		Binding binding = new Binding();
+		final Binding binding = new Binding();
 		binding.setVariable("request", httpRequest);
 		binding.setVariable("response", httpResponse);
 		binding.setVariable("application", sc);
@@ -154,12 +157,31 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 		
 		// Run the script
 		try {
-			gse.run(scriptFilename, binding);
-		} catch (ScriptException se) {
-			httpResponse.sendError(500);
-		} catch (ResourceException re) {
-			httpResponse.sendError(404);
-		}
+            Closure closure = new Closure(gse) {
+                public Object call() {
+                    try {
+                        return ((GroovyScriptEngine)getDelegate()).run(scriptFilename, binding);
+                    } catch (ResourceException e) {
+                        throw new RuntimeException(e);
+                    } catch (ScriptException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            };
+            GroovyCategorySupport.use(ServletCategory.class, closure);
+        } catch (RuntimeException re) {
+            Throwable e = re.getCause();
+            if (e instanceof ResourceException) {
+                httpResponse.sendError(404);
+            } else {
+                if (e != null) {
+                    sc.log("An error occurred processing the request", e);
+                } else {
+                    sc.log("An error occurred processing the request", re);
+                }
+    			httpResponse.sendError(500);
+            }
+        }
 	}
 
 }
