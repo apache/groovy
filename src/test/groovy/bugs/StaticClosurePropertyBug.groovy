@@ -1,5 +1,5 @@
 /** 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Robert Kuzelj
  * @version $Revision$
  */
 class StaticClosurePropertyBug extends GroovyTestCase {
