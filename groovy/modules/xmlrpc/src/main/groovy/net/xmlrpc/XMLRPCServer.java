@@ -514,7 +514,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 		}
 		
 	final String generatedCode = "class X { closure = {" + paramIn + " " + qualifier + "." + methodName + "(" + paramOut + ") }}";
-	System.out.println(generatedCode);
+	// System.out.println(generatedCode);
 	
 		try {
 		final InputStream in = new ByteArrayInputStream(generatedCode.getBytes());
