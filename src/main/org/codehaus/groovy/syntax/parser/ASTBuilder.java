@@ -679,10 +679,14 @@ public class ASTBuilder {
             case (Token.COMPARE_TO) :
             case (Token.LEFT_SQUARE_BRACKET) :
             case (Token.LEFT_SHIFT) :
-            case (Token.RIGHT_SHIFT) :
-                {
-                    return binaryExpression(expressionRoot);
-                }
+           case (Token.RIGHT_SHIFT) :
+            {
+                return binaryExpression(expressionRoot);
+            }
+           case (Token.QUESTION) :
+           {
+               return ternaryExpression(expressionRoot);
+           }
             case (Token.SYNTH_POSTFIX) :
                 {
                     return postfixExpression(expressionRoot);
@@ -1108,6 +1112,14 @@ public class ASTBuilder {
         }
 
         return new BinaryExpression(lhsExpression, expressionRoot.getToken(), rhsExpression);
+    }
+
+    protected TernaryExpression ternaryExpression(CSTNode expressionRoot) throws ParserException {
+        BooleanExpression booleanExpression = new BooleanExpression(expression(expressionRoot.getChild(0)));
+        Expression trueExpression = expression(expressionRoot.getChild(1));
+        Expression falseExpression = expression(expressionRoot.getChild(2));
+
+        return new TernaryExpression(booleanExpression, trueExpression, falseExpression);
     }
 
     protected int modifiers(CSTNode modifiersRoot) {

@@ -84,6 +84,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -466,6 +467,23 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         cv.visitLabel(l0);
 
         ifElse.getElseBlock().visit(this);
+        cv.visitLabel(l1);
+    }
+
+    public void visitTernaryExpression(TernaryExpression expression) {
+        onLineNumber(expression);
+
+        expression.getBooleanExpression().visit(this);
+
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+        expression.getTrueExpression().visit(this);
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        expression.getFalseExpression().visit(this);
         cv.visitLabel(l1);
     }
 

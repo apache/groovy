@@ -71,6 +71,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TernaryExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -197,6 +198,12 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitBinaryExpression(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
         expression.getRightExpression().visit(this);
+    }
+
+    public void visitTernaryExpression(TernaryExpression expression) {
+        expression.getBooleanExpression().visit(this);
+        expression.getTrueExpression().visit(this);
+        expression.getFalseExpression().visit(this);
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
