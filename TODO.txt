@@ -1,5 +1,18 @@
 * AST closures and range
 
+* test the use of PropertyExpression
+	a.b = c.d
+	
+* test use of invokeMethod(methodName, arguments) to test dynamic proxy features
+
+* test use of methods-as-closures
+	foo = bean.someMethod;
+	foo.call(arguments);
+	
+* support static new() method for constructors
+
+* add methods plus(), minus(), multiply and so forth to Number etc
+
 * AST's to handle null for types & set the isDynamic flag
 
 * finish expresssion support in classgen
