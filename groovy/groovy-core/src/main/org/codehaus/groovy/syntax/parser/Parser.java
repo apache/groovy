@@ -651,11 +651,62 @@ public class Parser
 
         consume( Token.RIGHT_PARENTHESIS );
 
-        statement.addChild( statementBlock() );
+        consume( Token.LEFT_CURLY_BRACE );
+        
+        while ( lt() == Token.KEYWORD_CASE )
+           {
+            CSTNode caseBlock = rootNode( Token.KEYWORD_CASE );
+
+            caseBlock.addChild( expression() );
+            
+            consume( Token.COLON );
+
+            while ( lt() != Token.RIGHT_CURLY_BRACE && lt() != Token.KEYWORD_CASE && lt() != Token.KEYWORD_DEFAULT)
+               {
+                caseBlock.addChild( statement() );
+
+                if ( lt() == Token.RIGHT_CURLY_BRACE )
+                   {
+                    break;
+                }
+                else if ( lt() == -1 )
+                   {
+                    throwExpected( new int[] { Token.RIGHT_CURLY_BRACE } );
+                }
+            }
+            
+            statement.addChild(caseBlock);
+        }
+
+        if ( lt() == Token.KEYWORD_DEFAULT )
+           {
+            CSTNode caseBlock = rootNode( Token.KEYWORD_DEFAULT );
+
+            consume( Token.COLON );
+            
+            while ( lt() != Token.RIGHT_CURLY_BRACE )
+               {
+                caseBlock.addChild( statement() );
+
+                if ( lt() == Token.RIGHT_CURLY_BRACE )
+                   {
+                    break;
+                }
+                else if ( lt() == -1 )
+                   {
+                    throwExpected( new int[] { Token.RIGHT_CURLY_BRACE } );
+                }
+            }
+            
+            statement.addChild(caseBlock);
+           }
+
+        consume( Token.RIGHT_CURLY_BRACE );
         
         return statement;
     }
 
+    
     protected CSTNode ifStatement()
         throws IOException, SyntaxException
     {
@@ -733,6 +784,7 @@ public class Parser
         return statement;
     }
 
+    
     protected CSTNode returnStatement()
         throws IOException, SyntaxException
     {

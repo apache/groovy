@@ -480,6 +480,11 @@ public class ASTBuilder
                 statement = returnStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_SWITCH ):
+            {
+               statement = switchStatement( statementRoot );
+               break;
+            }
             case ( Token.KEYWORD_IF ):
             {
                 statement = ifStatement( statementRoot );
@@ -514,24 +519,59 @@ public class ASTBuilder
         Statement elseBlock = null;
 
         if ( children.length == 3
-             &&
-             matches( children[ 2 ],
-                      Token.KEYWORD_IF ) )
-        {
+                &&
+                matches( children[ 2 ],
+                        Token.KEYWORD_IF ) )
+           {
             elseBlock = ifStatement( children[ 2 ] );
         }
         else if ( children.length == 3 )
-        {
+           {
             elseBlock = statementBlock( children[ 2 ].getChild( 0 ) );
         }
         else
-        {
+           {
             elseBlock = EmptyStatement.INSTANCE;
         }
 
         return new IfStatement( expression,
-                           ifBlock,
-                           elseBlock );
+                ifBlock,
+                elseBlock );
+    }
+
+    protected SwitchStatement switchStatement(CSTNode statementRoot) throws ParserException
+    {
+        CSTNode[] children = statementRoot.getChildren();
+
+        Expression expression = expression( children[ 0 ] );
+        
+        
+        /*
+        BlockStatement    ifBlock    = statementBlock( children[ 1 ] );
+
+        Statement elseBlock = null;
+
+        if ( children.length == 3
+                &&
+                matches( children[ 2 ],
+                        Token.KEYWORD_IF ) )
+           {
+            elseBlock = ifStatement( children[ 2 ] );
+        }
+        else if ( children.length == 3 )
+           {
+            elseBlock = statementBlock( children[ 2 ].getChild( 0 ) );
+        }
+        else
+           {
+            elseBlock = EmptyStatement.INSTANCE;
+        }
+        */
+        Statement defaultBlock = null;
+        if (defaultBlock == null) {
+            defaultBlock = EmptyStatement.INSTANCE;
+        }
+        return new SwitchStatement( expression, defaultBlock );
     }
 
     protected TryCatchStatement tryStatement(CSTNode statementRoot) throws ParserException
