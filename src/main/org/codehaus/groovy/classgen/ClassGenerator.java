@@ -680,7 +680,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitLabel(l2);
 
-        cv.visitLdcInsn(new Integer(1));
+        visitConstantExpression(ConstantExpression.TRUE);
 
         Label l1 = new Label();
         cv.visitJumpInsn(GOTO, l1);
@@ -690,7 +690,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitJumpInsn(IFNE, l2);
 
-        cv.visitLdcInsn(new Integer(0));
+        visitConstantExpression(ConstantExpression.FALSE);
         cv.visitLabel(l1);
     }
 
@@ -703,13 +703,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitJumpInsn(IFEQ, l0);
 
-        cv.visitLdcInsn(new Integer(1));
+        visitConstantExpression(ConstantExpression.TRUE);
 
         Label l1 = new Label();
         cv.visitJumpInsn(GOTO, l1);
         cv.visitLabel(l0);
 
-        cv.visitLdcInsn(new Integer(0));
+        visitConstantExpression(ConstantExpression.FALSE);
+
         cv.visitLabel(l1);
     }
 

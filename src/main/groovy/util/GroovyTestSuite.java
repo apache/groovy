@@ -90,7 +90,7 @@ public class GroovyTestSuite extends TestSuite {
     public void loadTestSuite() throws Exception {
         String fileName = System.getProperty("test", file);
         if (fileName == null) {
-            throw new RuntimeException("No filename given so cannot run a Groovy unit test");
+            throw new RuntimeException("No filename given in the 'test' system property so cannot run a Groovy unit test");
         }
         System.out.println("Compiling: " + fileName);
         Class type = compile(fileName);
