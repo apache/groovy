@@ -45,7 +45,6 @@ class DOMTest extends GroovyTestCase {
 
     if (!benchmark) { assertCorrect doc.documentElement }
   }
-
   void assertCorrect(html) {
     use (groovy.xml.dom.DOMCategory) {
 	  assert html.head.title.textContent == "Test";
@@ -62,11 +61,11 @@ class DOMTest extends GroovyTestCase {
   	// Parser:    1.0
   	// Builder:   1.05
   	// Streaming: 0.77
-  	x = Integer.parseInt(args[0]);
-  	domtest = new DOMTest();
+  	x = args.size() == 0 ? 1000 : Integer.parseInt(args[0]);
+  	mydomtest = new DOMTest();
   	standard = 0;
-  	domtest.benchmark = true;
-  	[domtest.testDOMParser, domtest.testDOMBuilder, domtest.testStreamingDOMBuilder].each {
+  	mydomtest.benchmark = true;
+  	[mydomtest.testDOMParser, mydomtest.testDOMBuilder, mydomtest.testStreamingDOMBuilder].each {
   		// Run the method once to fill any caches and to load classes
   		it();
 	  	start = System.currentTimeMillis();
