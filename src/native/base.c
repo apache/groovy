@@ -1,22 +1,29 @@
-#include <errno.h>
-#include <sys/syslimits.h>
-
 #ifdef __APPLE__
 #ifdef __MACH__
-#include <mach-o/dyld.h>
+#define MACOSX
+#define UNIX
 #endif
+#endif
+
+#ifdef UNIX
+#include <errno.h>
+#include <sys/syslimits.h>
+#endif
+
+#ifdef MACOSX
+#include <mach-o/dyld.h>
 #endif
 
 int main(int argc, char* argv[]) {
 
   // Get the location of the executable -- platform specific
+#ifdef UNIX
   char jarexe[PATH_MAX];
+#endif  
 
-#ifdef __APPLE__
-#ifdef __MACH__
+#ifdef MACOSX
   unsigned long length;
   _NSGetExecutablePath(jarexe, &length);
-#endif
 #endif
 
   // Setup the command line.
@@ -41,11 +48,15 @@ int main(int argc, char* argv[]) {
   argv2[argc+1] = 0;
 
   // Execute java
+#ifdef UNIX
   execvp("java", argv2);
+#endif
 
   // Report if the exec fails
   printf("Cannot execute '");
   for (i = 0; i < argc+1; i ++) { printf("%s ", argv2[i]); }
+#ifdef UNIX
   printf("', caused by error: %d\n", errno);
+#endif
 
 }
