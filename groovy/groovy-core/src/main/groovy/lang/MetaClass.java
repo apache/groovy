@@ -2206,7 +2206,7 @@ public class MetaClass {
                 }
             });
         }
-        return registry.loadClass(name, bytecode);
+        return registry.loadClass(loader, name, bytecode);
     }
 
     protected Class loadReflectorClass(String name) throws ClassNotFoundException {
@@ -2215,7 +2215,7 @@ public class MetaClass {
             GroovyClassLoader gloader = (GroovyClassLoader) loader;
             return gloader.loadClass(name);
         }
-        return registry.loadClass(name);
+        return registry.loadClass(loader, name);
     }
 
     public List getMethods() {
