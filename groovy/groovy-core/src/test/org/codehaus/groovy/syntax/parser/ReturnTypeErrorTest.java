@@ -36,17 +36,10 @@ public class ReturnTypeErrorTest extends TestSupport {
         try {
             loader.parseClass(new ByteArrayInputStream(code.getBytes()), getMethodName() + ".groovy");
         }
-        /** todo we don't support non ANTLR Exception at the moment
-        catch( CompilationFailedException e ) {
-            Exception cause = e.getUnit().getException(0);
-            if( cause instanceof RuntimeParserException ) {
-                return;
-            }
-            throw e;
-        }
-        **/
-        catch(Exception e ) {
-            return;
+        catch(CompilationFailedException e ) {
+			if (e.getCause() instanceof RuntimeParserException) {
+				return;
+			}
         }
         
         fail("Should have caught a RuntimeParserException");
