@@ -1183,6 +1183,11 @@ public class Parser
                 expr = identifier;
                 break PREFIX_SWITCH;
             }
+            case ( Token.PATTERN_REGEX ):
+            {
+            	expr = regexPattern();
+            	break PREFIX_SWITCH;
+            }
             default:
             {
                 throwExpected( new int[] { } );
@@ -1286,6 +1291,16 @@ public class Parser
         return expr;
     }
 
+    protected CSTNode regexPattern()
+    	throws IOException, SyntaxException
+    {
+    	Token token = consume( Token.PATTERN_REGEX );
+    	CSTNode expr = new CSTNode(token);
+    	CSTNode regexString = doubleQuotedString();
+    	expr.addChild(regexString);
+    	return expr;    	
+    }
+    
     protected CSTNode doubleQuotedString()
         throws IOException, SyntaxException
     {
