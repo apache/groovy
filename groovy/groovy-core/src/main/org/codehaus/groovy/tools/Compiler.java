@@ -13,6 +13,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.lexer.CharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
@@ -81,6 +82,10 @@ public class Compiler
             }
             catch (Exception e)
             {
+                if ( e instanceof SyntaxException )
+                {
+                    ((SyntaxException)e).setSourceLocator( sources[ i ].getDescription() );
+                }
                 this.errors.add( e );
             }
             finally
