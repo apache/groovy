@@ -26,7 +26,7 @@ assert x == 5
 
 1.1 for loop
 
-The for loop in Java is much simpler and works with any kind of array, collection, Map etc.
+The for loop in Groovy is much simpler and works with any kind of array, collection, Map etc.
 
 {code:groovy}
 // iterate over a range
