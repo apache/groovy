@@ -4578,6 +4578,12 @@ public class AsmClassGenerator2 extends ClassGenerator {
                 answer.setHolder(true);
             }
             variableStack.put(name, answer);
+            if (isDoubleSizeVariable(type)) {
+                // lets put a dummy veriable on the stack to increase the next variable size
+                String generatedName = createVariableName("doubleSizeVariablePadding");
+                variableStack.put(generatedName, answer);
+            }
+
             Label startLabel  = new Label();
             answer.setStartLabel(startLabel);
             if (define) {
@@ -4616,6 +4622,10 @@ public class AsmClassGenerator2 extends ClassGenerator {
             }
         }
         return answer;
+    }
+
+    private boolean isDoubleSizeVariable(Type type) {
+        return "long".equals(type.getName()) || "double".equals(type.getName());
     }
 
     private int getNextVariableID() {
