@@ -125,7 +125,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Collects the values of the closure
+     * Maps the values of a collection to new values using the 
      * 
      * @param source
      * @param closure
@@ -358,15 +358,17 @@ public class DefaultGroovyMethods {
     /**
      * A convenience method for sorting a List
      */
-    public static void sort(List self) {
+    public static List sort(List self) {
         Collections.sort(self);
+        return self;
     }
 
     /**
      * A convenience method for sorting a List with a specific comparator
      */
-    public static void sort(List self, Comparator comparator) {
+    public static List sort(List self, Comparator comparator) {
         Collections.sort(self, comparator);
+        return self;
     }
 
     // Number based methods

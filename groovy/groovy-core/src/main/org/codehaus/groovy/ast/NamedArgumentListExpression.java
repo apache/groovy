@@ -45,61 +45,20 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- * Represents a list expression [1, 2, 3] which creates a mutable List
+ * Represents one or more arguments being passed into a method by name
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ListExpression extends Expression {
-    private List expressions;
+public class NamedArgumentListExpression extends MapExpression {
 
-    public ListExpression() {
-        this(new ArrayList());
+    public NamedArgumentListExpression() {
     }
     
-    public ListExpression(List expressions) {
-        this.expressions = expressions;
-    }
-    
-    public void addExpression(Expression expression) {
-        expressions.add(expression);
-    }
-    
-    public List getExpressions() {
-        return expressions;
-    }
-
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitListExpression(this);
-    }
-
-    public Expression getExpression(int i) {
-        return (Expression) expressions.get(i);
-    }
-
-    public String getText() {
-        StringBuffer buffer = new StringBuffer("[");
-        boolean first = true;
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
-            if (first) {
-                first = false;
-            }
-            else {
-                buffer.append(", ");
-            }
-            
-            buffer.append(((Expression)iter.next()).getText());
-        }
-        buffer.append("]");
-        return buffer.toString();
-    }
-
-    public String toString() {
-        return super.toString() + expressions;
+    public NamedArgumentListExpression(List mapEntryExpressions) {
+        super(mapEntryExpressions);
     }
 }

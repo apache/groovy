@@ -105,6 +105,19 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("class name property", c.getName(), value);
     }
     
+    public void testMapEntryProperty() throws Exception {
+        HashMap map = new HashMap();
+        map.put("a", "x");
+        Object[] array = map.entrySet().toArray();
+        Object entry = array[0];
+        
+        Object key = InvokerHelper.getProperty(entry, "key");
+        assertEquals("key property", "a", key);
+        
+        Object value = InvokerHelper.getProperty(entry, "value");
+        assertEquals("value property", "x", value);
+    }
+    
     // Implementation methods
     //-------------------------------------------------------------------------
 

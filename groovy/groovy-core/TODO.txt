@@ -1,6 +1,8 @@
 Core Groovy Tasks
 =================
 
+* closures need to be able to access fields of outer class
+
 * remove log4j dependency
 
 * test the various closure methods - map, each, collect etc
@@ -262,16 +264,32 @@ class Foo extends MarkupBuilder {
       td(valign : "centre") {
   	    b("some text);
 	    a(href : "http://blah", title : "whatnot") {
-	      p("hello there");
-	    };       
-      };
+	      p("hello there")
+	    }
+      }
       for i in [1, 2, 3] {
         td(valign: "right") {
           p("hello there ${i});
         }
       }
-    };
+    }
   }
 }
 
-If we could remove the ; it'd be even cleaner
+
+THINGS TO PONDER
+================
+
+* should we follow ruby rules where the last statement, if its an expression, then its an explicit return.
+
+e.g.
+
+foo() {
+   2 * x
+}
+
+would implicitly mean
+
+foo() {
+   return 2 * x
+}

@@ -124,6 +124,21 @@ public class MetaClass {
             PropertyDescriptor descriptor = descriptors[i];
             propertyDescriptors.put(descriptor.getName(), descriptor);
         }
+
+        // now lets see if there are any methods on one of my interfaces
+        Class[] interfaces = theClass.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            addNewStaticMethodsFrom(interfaces[i]);
+        }
+        // lets add all the base class methods
+        Class c = theClass;
+        while (true) {
+            c = c.getSuperclass();
+            if (c == null) {
+                break;
+            }
+            addNewStaticMethodsFrom(c);
+        }
     }
 
     /**
@@ -214,7 +229,12 @@ public class MetaClass {
         }
 
         if (theClass != Class.class) {
-            return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments, argumentList);
+            try {
+                return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments, argumentList);
+            }
+            catch (InvokerException e) {
+                // ignore
+            }
         }
         throw new InvokerException(
             "Could not find matching method called: " + methodName + " for class: " + theClass.getName());
@@ -307,6 +327,32 @@ public class MetaClass {
     //-------------------------------------------------------------------------
 
     /**
+     * Adds all of the newly defined methods from the given class to this
+     * metaclass
+     * 
+     * @param theClass
+     */
+    protected void addNewStaticMethodsFrom(Class theClass) {
+        MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
+        Iterator iter = interfaceMetaClass.newStaticInstanceMethodIndex.entrySet().iterator();
+        while (iter.hasNext()) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String name = (String) entry.getKey();
+            List values = (List) entry.getValue();
+
+            if (values != null) {
+                // lets add these methods to me
+                List list = (List) newStaticInstanceMethodIndex.get(name);
+                if (list == null) {
+                    list = new ArrayList();
+                    newStaticInstanceMethodIndex.put(name, list);
+                }
+                list.addAll(values);
+            }
+        }
+    }
+
+    /**
      * @return the value of the static property of the given class
      */
     protected Object getStaticProperty(Class aClass, String property) {
@@ -377,6 +423,31 @@ public class MetaClass {
                 throw error;
             }
             throw new InvokerInvocationException(e);
+        }
+        catch (IllegalAccessException e) {
+            /** @todo a dirty hack - no idea why getKey() fails on HashMaps' entry class */
+            if (object instanceof Map.Entry) {
+                String name = method.getName();
+                if (name.equals("getKey")) {
+                    return ((Map.Entry) object).getKey();
+                }
+                else if (name.equals("getValue")) {
+                    return ((Map.Entry) object).getValue();
+                }
+                else if (name.equals("setValue")) {
+                    return ((Map.Entry) object).setValue(argumentArray[0]);
+                }
+            }
+            throw new InvokerException(
+                "could not access method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
         }
         catch (Exception e) {
             throw new InvokerException(
