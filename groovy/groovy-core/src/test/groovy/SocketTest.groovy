@@ -15,6 +15,26 @@ class SocketTest extends GroovyTestCase {
         mySocket = new MockSocket()
     }
     
+    void testSocketAppendBytes() {
+        myBytes = "mooky".getBytes()
+                  
+        mySocket << myBytes
+                  
+        result = mySocket.outputStream.toByteArray()          
+        assert result != null
+        assert Arrays.equals(myBytes,result)
+    }
+    void testSocketAppendTwoByteArrays() {
+        myBytes1 = "foo".getBytes()
+        myBytes2 = "bar".getBytes()
+                  
+        mySocket << myBytes1 << myBytes2
+                  
+        result = mySocket.outputStream.toByteArray()
+        assert result != null
+        assert result.size() == myBytes1.size() + myBytes2.size()          
+    }
+    
     void testSocketAppend() {
         mySocket << "mooky"
         assert "mooky" == mySocket.outputStream.toString()

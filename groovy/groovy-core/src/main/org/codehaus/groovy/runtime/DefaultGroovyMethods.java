@@ -1940,6 +1940,19 @@ public class DefaultGroovyMethods {
         leftShift(writer, value);
         return writer;
     }
+    
+    /**
+     * Overloads the left shift operator to provide an append mechanism to add bytes to a stream
+     *
+     * @param self an OutputStream
+     * @param value a value to append
+     * @return an OutputStream
+     */
+    public static OutputStream leftShift(OutputStream self, byte[] value) throws IOException {
+        self.write(value);
+        self.flush();
+        return self;
+    }
 
     private static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
@@ -4193,6 +4206,18 @@ public class DefaultGroovyMethods {
     }
     
     /**
+     * Overloads the left shift operator to provide an append mechanism
+     * to add bytes to the output stream of a socket
+     *
+     * @param self a Socket
+     * @param value a value to append
+     * @return an OutputStream
+     */
+    public static OutputStream leftShift(Socket self, byte[] value) throws IOException {
+        return leftShift(self.getOutputStream(), value);
+    }
+    
+    /**
      * Allow to pass a Closure to the accept methods of ServerSocket
      *
      * @param serverSocket a ServerSocket
@@ -4305,6 +4330,18 @@ public class DefaultGroovyMethods {
      * @return a Writer
      */
     public static Writer leftShift(Process self, Object value) throws IOException {
+        return leftShift(self.getOutputStream(), value);
+    }
+    
+    /**
+     * Overloads the left shift operator to provide an append mechanism
+     * to pipe into a Process
+     *
+     * @param self a Process
+     * @param value a value to append
+     * @return an OutputStream
+     */
+    public static OutputStream leftShift(Process self, byte[] value) throws IOException {
         return leftShift(self.getOutputStream(), value);
     }
 
