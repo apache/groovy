@@ -480,32 +480,54 @@ public class ClassNode extends MetadataNode implements Constants {
     */
 
     public String resolveClassName(String type) {
+        String answer = null;
         if (type != null) {
             if (getNameWithoutPackage().equals(type)) {
                 return getName();
             }
-            for (int i = 0; i < 2; i++) {
-                CompileUnit compileUnit = getCompileUnit();
-                if (compileUnit != null) {
-                    if (compileUnit.getClass(type) != null) {
-                        return type;
-                    }
-
-                    try {
-                        compileUnit.loadClass(type);
-                        return type;
-                    }
-                    catch (Throwable e) {
-                        // fall through
-                    }
-                }
-
+            answer = tryResolveClassFromCompileUnit(type);
+            if (answer == null) {
                 // lets try class in same package
                 String packageName = getPackageName();
-                if (packageName == null || packageName.length() <= 0) {
-                    break;
+                if (packageName != null && packageName.length() > 0) {
+                    answer = tryResolveClassFromCompileUnit(packageName + "." + type);
                 }
-                type = packageName + "." + type;
+            }
+            if (answer == null) {
+                // lets try use the packages imported in the module
+                if (module != null) {
+                    //System.out.println("Looking up inside the imported packages: " + module.getImportPackages());
+                    
+                    for (Iterator iter = module.getImportPackages().iterator(); iter.hasNext(); ) {
+                        String packageName = (String) iter.next();
+                        answer = tryResolveClassFromCompileUnit(packageName + type);
+                        if (answer != null) {
+                            return answer;
+                        }
+                    }
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * @param type
+     * @return
+     */
+    protected String tryResolveClassFromCompileUnit(String type) {
+        CompileUnit compileUnit = getCompileUnit();
+        if (compileUnit != null) {
+            if (compileUnit.getClass(type) != null) {
+                return type;
+            }
+
+            try {
+                compileUnit.loadClass(type);
+                return type;
+            }
+            catch (Throwable e) {
+                // fall through
             }
         }
         return null;

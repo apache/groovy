@@ -21,6 +21,17 @@ class VariableScopingBug extends TestSupport {
 	   	}
 	}
 
+    void testVariableReuse() {
+		for (z in 0..2) {
+    		x = makeCollection()
+		}
+	   	
+	   	for (t in 0..3) {
+    	    x = 123
+    		println x
+	   	}
+	}
+
 	protected makeCollection() {
 		return [1, 2, 3]
 	}   

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main"/>
-	<classpathentry output="target/test-classes" kind="src" path="src/test"/>
+	<classpathentry kind="src" path="src/test"/>
 	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
 	<classpathentry sourcepath="JRE_SRC" kind="var" path="JRE_LIB"/>
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.4.1.jar"/>
@@ -29,5 +29,5 @@
 	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/asm-attrs-1.4.1.jar"/>
 	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/asm-util-1.4.1.jar"/>
 	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/groovy-1.0-beta-3.jar"/>
-	<classpathentry kind="output" path="target/classes"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
