@@ -61,16 +61,26 @@ import java.util.Map;
  */
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new HashMap());
+    private boolean useAccessible;
 
     public MetaClassRegistry() {
+        this(true);
+    }
+
+    /**
+     * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
+     * method will be called to enable access to all methods when using reflection
+     */
+    public MetaClassRegistry(boolean useAccessible) {
+        this.useAccessible = useAccessible;
+
         // lets register the default methods
         registerStaticMethods(DefaultGroovyMethods.class);
     }
-   
-     
+
     public MetaClass getMetaClass(Class theClass) {
         /** @todo use static field to get the MetaClass from Groovy classes*/
-        
+
         MetaClass answer = (MetaClass) metaClasses.get(theClass);
         if (answer == null) {
             try {
@@ -86,7 +96,7 @@ public class MetaClassRegistry {
 
     public void registerStaticMethods(Class methodsClass) {
         Method[] methods = methodsClass.getMethods();
-        for (int i = 0; i < methods.length; i++ ) {
+        for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
             if (MethodHelper.isPublicStatic(method)) {
                 Class[] paramTypes = method.getParameterTypes();
@@ -96,5 +106,9 @@ public class MetaClassRegistry {
                 }
             }
         }
+    }
+    
+    public boolean useAccessible() {
+        return useAccessible;
     }
 }

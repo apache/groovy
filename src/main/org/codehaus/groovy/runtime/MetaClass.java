@@ -414,6 +414,9 @@ public class MetaClass {
         // System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
 
         try {
+            if (registry.useAccessible()) {
+                method.setAccessible(true);
+            }
             return method.invoke(object, argumentArray);
         }
         catch (InvocationTargetException e) {
@@ -425,19 +428,6 @@ public class MetaClass {
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
-            /** @todo a dirty hack - no idea why getKey() fails on HashMaps' entry class */
-            if (object instanceof Map.Entry) {
-                String name = method.getName();
-                if (name.equals("getKey")) {
-                    return ((Map.Entry) object).getKey();
-                }
-                else if (name.equals("getValue")) {
-                    return ((Map.Entry) object).getValue();
-                }
-                else if (name.equals("setValue")) {
-                    return ((Map.Entry) object).setValue(argumentArray[0]);
-                }
-            }
             throw new InvokerException(
                 "could not access method: "
                     + method
