@@ -400,6 +400,27 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+
+    /**
+     * Iterates through the given collection, passing in the initial
+     * value to the closure along with the current iterated item
+     * then passing into the next iteration the value of the previous 
+     * closure.
+     * 
+     * @param source
+     * @param closure
+     */
+    public static Object inject(Collection self, Object value, Closure closure) {
+        Object[] params = new Object[2];
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object item = iter.next();
+            params[0] = value;
+            params[1] = item;
+            value = closure.call(params);
+        }
+        return value;
+    }
+    
     /**
      * Concatenates all of the items of the collection together with the
      * given string as a separator
