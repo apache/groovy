@@ -618,6 +618,7 @@ public class ASTBuilder
             case ( Token.MULTIPLY ):
             case ( Token.MOD ):
             case ( Token.EQUAL ):
+            case ( Token.KEYWORD_INSTANCEOF ):
             {
                 return binaryExpression( expressionRoot );
             }
