@@ -38,6 +38,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MissingClassException;
 import groovy.lang.Script;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -46,7 +47,11 @@ import org.objectweb.asm.Constants;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.security.AccessControlException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,12 +157,16 @@ public class ClassNode extends AnnotatedNode implements Constants {
         List result = new ArrayList();
         for (Iterator methIt = getAllDeclaredMethods().iterator(); methIt.hasNext();) {
             MethodNode method = (MethodNode) methIt.next();
-            if (method.isAbstract()) result.add(method);
+            if (method.isAbstract()) {
+                result.add(method);
+            }
         }
-        if (result.size() == 0)
+        if (result.size() == 0) {
             return null;
-        else
+        }
+        else {
             return result;
+        }
     }
 
     public List getAllDeclaredMethods() {
@@ -169,10 +178,12 @@ public class ClassNode extends AnnotatedNode implements Constants {
         // Start off with the methods from the superclass.
         ClassNode parent = getSuperClassNode();
         Map result = null;
-        if (parent != null)
+        if (parent != null) {
             result = parent.getDeclaredMethodsMap();
-        else
+        }
+        else {
             result = new HashMap();
+        }
 
         // add in unimplemented abstract methods from the interfaces
         for (int i = 0; i < interfaces.length; i++) {
@@ -197,7 +208,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
                 if (inheritedMethod.isAbstract()) {
                     result.put(sig, method);
                 }
-            } else {
+            }
+            else {
                 result.put(sig, method);
             }
         }
@@ -208,8 +220,9 @@ public class ClassNode extends AnnotatedNode implements Constants {
         for (int i = 0; i < methods.size(); i++) {
             MethodNode someMeth = (MethodNode) methods.get(i);
             if (someMeth.getName().equals(method.getName())
-                    && parametersEqual(someMeth.getParameters(), method.getParameters()))
+                    && parametersEqual(someMeth.getParameters(), method.getParameters())) {
                 return i;
+            }
         }
         return -1;
     }
@@ -382,16 +395,19 @@ public class ClassNode extends AnnotatedNode implements Constants {
         if (declaredMethods.isEmpty()) {
             method =
                     addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
-        } else {
+        }
+        else {
             method = (MethodNode) declaredMethods.get(0);
         }
         BlockStatement block = null;
         Statement statement = method.getCode();
         if (statement == null) {
             block = new BlockStatement();
-        } else if (statement instanceof BlockStatement) {
+        }
+        else if (statement instanceof BlockStatement) {
             block = (BlockStatement) statement;
-        } else {
+        }
+        else {
             block = new BlockStatement();
             block.addStatement(statement);
         }
@@ -426,7 +442,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
                 }
             }
             node = node.getSuperClassNode();
-        } while (node != null);
+        }
+        while (node != null);
         return answer;
     }
 
@@ -476,7 +493,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
                 return true;
             }
             node = node.getSuperClassNode();
-        } while (node != null);
+        }
+        while (node != null);
         return false;
     }
 
@@ -503,7 +521,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
             String temp = resolveClassName(superClass);
             if (temp == null) {
                 throw new MissingClassException(superClass, this, "No such superclass");
-            } else {
+            }
+            else {
                 superClass = temp;
             }
             superClassNode = findClassNode(superClass);
@@ -527,7 +546,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
                 try {
                     theClass = theCompileUnit.loadClass(type);
                     answer = createClassNode(theClass);
-                } catch (ClassNotFoundException e) {
+                }
+                catch (ClassNotFoundException e) {
                     // lets ignore class not found exceptions
                     log.log(Level.WARNING, "Cannot find class: " + type, e);
                 }
@@ -675,10 +695,12 @@ public class ClassNode extends AnnotatedNode implements Constants {
             try {
                 theCompileUnit.loadClass(type);
                 return type;
-            } catch (AccessControlException ace) {
+            }
+            catch (AccessControlException ace) {
                 //Percolate this for better diagnostic info
                 throw ace;
-            } catch (Throwable e) {
+            }
+            catch (Throwable e) {
                 // fall through
             }
         }
@@ -721,7 +743,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
             if (className == null) {
                 if (module.getUnit().getClass(identifier) != null) {
                     className = identifier;
-                } else {
+                }
+                else {
                     // lets prepend the package name to see if its in our
                     // package
                     String packageName = getPackageName();
@@ -729,13 +752,15 @@ public class ClassNode extends AnnotatedNode implements Constants {
                         String guessName = packageName + "." + identifier;
                         if (module.getUnit().getClass(guessName) != null) {
                             className = guessName;
-                        } else if (guessName.equals(name)) {
+                        }
+                        else if (guessName.equals(name)) {
                             className = name;
                         }
                     }
                 }
             }
-        } else {
+        }
+        else {
             System.out.println("No module for class: " + getName());
         }
         return className;
@@ -839,4 +864,28 @@ public class ClassNode extends AnnotatedNode implements Constants {
         return super.toString() + "[name: " + name + "]";
     }
 
+    /**
+     * Returns true if the given method has a possibly matching method with the given name and arguments
+     */
+    public boolean hasPossibleMethod(String name, Expression arguments) {
+        int count = 0;
+
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tuple = (TupleExpression) arguments;
+            // TODO this won't strictly be true when using list expension in argument calls
+            count = tuple.getExpressions().size();
+        }
+        ClassNode node = this;
+        do {
+            for (Iterator iter = node.methods.iterator(); iter.hasNext();) {
+                MethodNode method = (MethodNode) iter.next();
+                if (name.equals(method.getName()) && method.getParameters().length == count) {
+                    return true;
+                }
+            }
+            node = node.getSuperClassNode();
+        }
+        while (node != null);
+        return false;
+    }
 }

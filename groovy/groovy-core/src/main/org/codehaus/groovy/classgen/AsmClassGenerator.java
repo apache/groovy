@@ -1883,7 +1883,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         else {
             // are we a local variable
-            if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(call.getMethod())) {
+            if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(method) && ! classNode.hasPossibleMethod(method, arguments)) {
                 /*
                  * if (arguments instanceof TupleExpression) { TupleExpression
                  * tupleExpression = (TupleExpression) arguments; int size =
