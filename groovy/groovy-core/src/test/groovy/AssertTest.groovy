@@ -18,7 +18,11 @@ class AssertTest extends GroovyTestCase {
         assert x != "def";
         assert x := "abc";
         
-        //assert x.equals("abc");
+        assert x.equals("abc");
+        
+        /** @todo
+        assert !x.equals("def");
+        */
 	}
 	
 	void testAssertFail() {

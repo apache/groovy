@@ -44,8 +44,10 @@
       <fileset dir="${basedir}/src/test">
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
+        <!--
         <exclude name="**/LocalField*.groovy"/>
         <exclude name="**/ListTest*.groovy"/>
+        -->
       </fileset>
     </copy>
     <touch>

@@ -16,6 +16,6 @@ class LocalVariableTest extends GroovyTestCase {
         assert x != "def";
         assert x := "abc";
         
-        //assert x.equals("abc");
+        assert x.equals("abc");
 	}
 }

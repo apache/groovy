@@ -66,7 +66,6 @@ import org.codehaus.groovy.ast.MethodCallExpression;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;
-import org.objectweb.asm.util.PrintClassVisitor;
 
 /**
  * Base class for test cases
