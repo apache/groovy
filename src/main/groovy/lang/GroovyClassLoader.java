@@ -270,27 +270,58 @@ public class GroovyClassLoader extends SecureClassLoader {
     
     protected Class findGroovyClass(String name) throws ClassNotFoundException {
         //Use a forward slash here for the path separator.  It will work as a separator
-    	//for the File class on all platforms, AND it is required as a jar file entry separator.
-    	String filename = name.replace('.', '/') + ".groovy";
+        //for the File class on all platforms, AND it is required as a jar file entry separator.
+        String filename = name.replace('.', '/') + ".groovy";
         String[] paths = getClassPath();
+        // put the absolute classname in a File object so we can easily
+        // pluck off the class name and the package path
+        File classnameAsFile = new File(filename); 
+        // pluck off the classname without the package
+        String classname = classnameAsFile.getName();
+        String pkg = classnameAsFile.getParent();
+        String pkgdir;
         for (int i = 0; i < paths.length; i++) {
             String pathName = paths[i];
             File path = new File(pathName);
             if (path.exists()) {
                 if (path.isDirectory()) {
-                    File file = new File(path, filename);
-                    if (file.exists()) {
-                        try {
-                            return parseClass(file);
-                        } catch (CompilationFailedException e) {
-                            e.printStackTrace();
-                            throw new ClassNotFoundException(
-                                    "Syntax error in groovy file: " + filename,
-                                    e);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            throw new ClassNotFoundException(
-                                    "Error reading groovy file: " + filename, e);
+                    // patch to fix case preserving but case insensitive file systems (like macosx)
+                    // JIRA issue 414
+                    //
+                    // first see if the file even exists, no matter what the case is
+                    File nocasefile = new File(path, filename);
+                    if(!nocasefile.exists())
+                        continue;
+                    
+                    // now we know the file is there is some form or another, so
+                    // let's look up all the files to see if the one we're really
+                    // looking for is there
+                    if(pkg == null)
+                        pkgdir = pathName;
+                    else
+                        pkgdir = pathName + "/" + pkg;
+                    File pkgdirF = new File(pkgdir);
+                    // make sure the resulting path is there and is a dir
+                    if(pkgdirF.exists() && pkgdirF.isDirectory()) {
+                        File files[] = pkgdirF.listFiles();
+                        for(int j = 0; j < files.length; j++) {
+                            // do the case sensitive comparison
+                            if(files[j].getName().equals(classname)) {
+                                try {
+                                    return parseClass(files[j]);
+                                } catch (CompilationFailedException e) {
+                                    e.printStackTrace();
+                                    throw new ClassNotFoundException(
+                                            "Syntax error in groovy file: " + 
+                                                files[j].getAbsolutePath(),
+                                            e);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                    throw new ClassNotFoundException(
+                                            "Error reading groovy file: " + 
+                                                files[j].getAbsolutePath(), e);
+                                }
+                            }
                         }
                     }
                 } else {
