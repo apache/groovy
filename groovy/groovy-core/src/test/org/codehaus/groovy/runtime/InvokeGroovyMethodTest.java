@@ -114,7 +114,7 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
         assertEquals(
             "Switch on: " + switchValue + " Case: " + caseValue,
             expected,
-            InvokerHelper.matches(switchValue, caseValue));
+            InvokerHelper.isCase(switchValue, caseValue));
     }
 
 }

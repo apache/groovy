@@ -163,8 +163,8 @@ public class InvokerHelper {
 		return !bool;
 	}
 	
-    public static boolean matches(Object switchValue, Object caseExpression) {
-        return asBool(invokeMethod(caseExpression, "matches", new Object[] { switchValue}));
+    public static boolean isCase(Object switchValue, Object caseExpression) {
+        return asBool(invokeMethod(caseExpression, "isCase", new Object[] { switchValue}));
     }
 
     public static boolean compareIdentical(Object left, Object right) {
