@@ -50,23 +50,17 @@ import org.codehaus.groovy.ast.expr.Expression;
 
 
 /**
- * Represents a case statement in a switch statement
+ * Represents a throw statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CaseStatement extends Statement {
+public class ThrowStatement extends Statement {
 
-    private Statement code;
     private Expression expression;
     
-    public CaseStatement(Expression expression, Statement code) {
+    public ThrowStatement(Expression expression) {
         this.expression = expression;
-        this.code = code;
-    }
-    
-    public Statement getCode() {
-        return code;
     }
     
     public Expression getExpression() {
@@ -74,6 +68,6 @@ public class CaseStatement extends Statement {
     }
 
     public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitCaseStatement(this);
+        visitor.visitThrowStatement(this);
     }
 }
