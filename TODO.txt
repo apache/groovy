@@ -13,6 +13,12 @@ Refactorings / Tidying things up
 Things to Test
 ==============
 
+* why Swing setters stopped working
+
+* do wiki plugin to auto-test the examples
+
+* export script variables when using the console
+
 * test do while
 
 * test compiler errors when

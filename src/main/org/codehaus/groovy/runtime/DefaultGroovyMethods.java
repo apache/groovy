@@ -542,12 +542,17 @@ public class DefaultGroovyMethods {
      * 
      * @return
      */
-    public static Object get(Collection coll, String property) {
+    public static List get(Collection coll, String property) {
         List answer = new ArrayList(coll.size());
         for (Iterator iter = coll.iterator(); iter.hasNext();) {
             Object item = iter.next();
             Object value = InvokerHelper.getProperty(item, property);
-            answer.add(value);
+            if (value instanceof Collection) {
+                answer.addAll((Collection) value);
+            }
+            else {
+                answer.add(value);
+            }
         }
         return answer;
     }
@@ -643,11 +648,11 @@ public class DefaultGroovyMethods {
     public static Number increment(Number self) {
         return plus(self, ONE);
     }
-    
+
     public static Number decrement(Number self) {
         return minus(self, ONE);
     }
-    
+
     public static Number plus(Number left, Number right) {
         /** @todo maybe a double dispatch thing to handle new large numbers? */
         if (isFloatingPoint(left) || isFloatingPoint(right)) {

@@ -409,6 +409,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitAssertStatement(AssertStatement statement) {
         onLineNumber(statement);
+        
+        //System.out.println("Assert: " + statement.getLineNumber() + " for: " + statement.getText());
 
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
@@ -499,9 +501,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         onLineNumber(statement);
 
         CatchStatement catchStatement = statement.getCatchStatement(0);
-        String exceptionType = catchStatement.getExceptionType();
 
-        checkValidType(exceptionType, catchStatement, "in catch statement");
+        String exceptionType = checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
 
         String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createExceptionVariableName();
 
@@ -931,10 +932,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
 
-        String type = call.getType();
-
         // lets check that the type exists
-        checkValidType(type, call, "in constructor call");
+        String type = checkValidType(call.getType(), call, "in constructor call");
 
         cv.visitLdcInsn(type);
         arguments.visit(this);
@@ -1600,17 +1599,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return answer;
     }
 
-    protected void checkValidType(String type, ASTNode node, String message) {
+    protected String checkValidType(String type, ASTNode node, String message) {
         String original = type;
         if (type != null) {
             for (int i = 0; i < 2; i++) {
                 if (context.getCompileUnit().getClass(type) != null) {
-                    return;
+                    return type;
                 }
 
                 try {
                     classLoader.loadClass(type);
-                    return;
+                    return type;
                 }
                 catch (Throwable e) {
                     // fall through
@@ -1619,7 +1618,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 // lets try the system class loader
                 try {
                     Class.forName(type);
-                    return;
+                    return type;
                 }
                 catch (Throwable e) {
                     // fall through

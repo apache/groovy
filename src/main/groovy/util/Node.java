@@ -172,16 +172,17 @@ public class Node {
         }
         else {
             // iterate through list looking for node with name 'key'
+            List answer = new ArrayList();
             for (Iterator iter = children().iterator(); iter.hasNext();) {
                 Object child = iter.next();
                 if (child instanceof Node) {
                     Node childNode = (Node) child;
                     if (key.equals(childNode.name())) {
-                        return childNode;
+                        answer.add(childNode);
                     }
                 }
             }
-            return InvokerHelper.getProperty(value, key);
+            return answer;
         }
     }
 

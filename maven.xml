@@ -2,6 +2,38 @@
 
   <goal name="default" prereqs="clean, groovy:make-install"/>
   
+  <goal name="run" prereqs="test:compile"
+		description="Runs the given Groovy script by compiling it first to bytecode">
+
+	<j:if test="${empty(name)}">
+      <j:set var="name" value="HelloWorld"/>
+	</j:if>
+	
+	<echo>Running class $$name = ${name}</echo>
+    <java classname="${name}" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${args}"/>
+    </java>
+  </goal>
+
+
+  <goal name="console" prereqs="test:compile"
+		description="Runs the Groovy command console">
+    <java classname="groovy.lang.GroovyShell" fork="yes">
+      <arg value="src/main/groovy/ui/Console.groovy"/>
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+  <goal name="swing:demo" prereqs="test:compile"
+		description="Runs the GroovySwing demo">
+    <java classname="groovy.swing.Demo" fork="yes">
+      <classpath refid="test.classpath"/>
+    </java>
+  </goal>
+
+
+
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
   </preGoal>
@@ -20,29 +52,6 @@
 	</path>
   </goal>
   
-
-  <goal name="run" prereqs="test:compile"
-		description="Runs the given Groovy script by compiling it first to bytecode">
-
-	<j:if test="${empty(name)}">
-      <j:set var="name" value="HelloWorld"/>
-	</j:if>
-	
-	<echo>Running class $$name = ${name}</echo>
-    <java classname="${name}" fork="yes">
-      <classpath refid="test.classpath"/>
-      <arg value="${args}"/>
-    </java>
-  </goal>
-
-  <goal name="swing:demo" prereqs="test:compile"
-		description="Runs the GroovySwing demo">
-    <java classname="groovy.swing.Demo" fork="yes">
-      <classpath refid="test.classpath"/>
-    </java>
-  </goal>
-
-
 
   <goal name="asm:dump" prereqs="test:compile"
 		description="Dumps the ASM instructions to generate the given class using the name property">

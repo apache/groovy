@@ -48,6 +48,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
+import groovy.util.Node;
 
 import java.awt.Point;
 import java.util.ArrayList;
@@ -148,6 +149,41 @@ public class PropertyTest extends GroovyTestCase {
 
         List value = (List) InvokerHelper.getProperty(list, "name");
         assertArrayEquals(new Object[] { "James", "Bob" }, value.toArray());
+    }
+
+    public void testListOfListNavigationProperty() throws Exception {
+       List list = new ArrayList();
+       list.add(new DummyBean("James"));
+       list.add(new DummyBean("Bob"));
+
+       List listOfList = new ArrayList();
+       listOfList.add(list);
+       
+       List value = (List) InvokerHelper.getProperty(listOfList, "name");
+       assertArrayEquals(new Object[] { "James", "Bob" }, value.toArray());
+   }
+
+    public void testNodeNavigationProperty() throws Exception {
+        Node z = new Node(null, "z");
+        Node y = new Node(null, "y");
+
+        List children = new ArrayList();
+        children.add(y);
+        children.add(z);
+
+        Node x = new Node(null, "x", children);
+
+        children = new ArrayList();
+        children.add(x);
+        Node b = new Node(null, "b", children);
+
+        // @todo should try with just a node as the child
+
+        List value = (List) InvokerHelper.getProperty(b, "x");
+        assertArrayEquals(new Object[] { x }, value.toArray());
+
+        value = (List) InvokerHelper.getProperty(value, "z");
+        assertArrayEquals(new Object[] { z }, value.toArray());
     }
 
     public Object getCheese() {
