@@ -409,6 +409,8 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 		
 			if (child instanceof String) {
 				buff.append(child);
+			} else {
+				buff.append(((XmlList)child).text());
 			}
 		}	
 	
