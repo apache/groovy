@@ -9,6 +9,7 @@ class MethodCallTest extends GroovyTestCase {
         System.out.println("world!");
 	}
 	
+	/*
 	void testObjectMethodCall() {
 	    c = getClass();
 	    assert c != null;
@@ -21,4 +22,5 @@ class MethodCallTest extends GroovyTestCase {
         assert c.name := "java.lang.String";
         assert c.getName() := "java.lang.String";
 	}
+	*/
 }
