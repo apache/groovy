@@ -7,6 +7,13 @@
    <attainGoal name="groovy:make-install"/>
   </goal>
   
+  <goal name="groovy:release" description="Performs a release of the source, binary and jar distros">
+   <attainGoal name="site"/>
+   <attainGoal name="dist:deploy-bin"/>
+   <attainGoal name="dist:deploy-src"/>
+   <attainGoal name="jar:deploy"/>
+  </goal>
+  
   <postGoal name="dist:prepare-bin-filesystem">
   	<attainGoal name="groovy:make-install"/>
   	
