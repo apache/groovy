@@ -54,5 +54,30 @@ You can then add groovy/target/install/bin to your path and you can then run gro
 easily from the command line.
 </p>
 
+<h2>Creating Unix scripts with Groovy</h2>
+
+<p>
+You can write unix scripts with Groovy and execute them directly on the command line as 
+if they were normal unix shell scripts. Providing you have installed the Groovy binary
+distribution (see above) and 'groovy' is on your PATH then the following should work.
+Here's a sample script.</p>
+
+<source>
+#!/usr/bin/env groovy
+println("Hello world")
+for (a in this.args) {
+  println("Argument: " + a)
+}	
+</source>
+
+<p>
+Then to run the script from the command line, just make sure the script is executable
+</p>
+
+<source>
+chmod +x helloWorld
+./helloWorld
+</source>
+
 </body>
 </html>
