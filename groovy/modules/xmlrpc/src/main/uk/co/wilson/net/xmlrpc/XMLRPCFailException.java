@@ -1,5 +1,4 @@
-
-package groovy.net.xmlrpc;
+package uk.co.wilson.net.xmlrpc;
 
 /*
 

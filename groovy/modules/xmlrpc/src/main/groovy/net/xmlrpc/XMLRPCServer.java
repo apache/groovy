@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 
 import uk.co.wilson.net.http.MinMLHTTPServer;
+import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 
 /**
