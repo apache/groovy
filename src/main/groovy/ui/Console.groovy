@@ -8,18 +8,13 @@ import javax.swing.text.StyleContext
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-class Console {
+class Console extends ConsoleSupport {
 
     property frame
 	property swing
     property textArea
     property outputArea
-    property shell
-    property counter
     property scriptList
-    property promptStyle
-    property commandStyle
-    property outputStyle
     
 	static void main(args) {
         console = new Console()
@@ -46,7 +41,11 @@ class Console {
                 }
                 menu(text:'Actions') {
                     menuItem() {
-                        action(name:'Run', closure:{ runScript() }, accelerator_key:KeyStroke.getKeyStroke('ctrl enter'))
+                        action(name:'Run', closure:{ runScript() }, 
+                        	accelerator_key:KeyStroke.getKeyStroke('ctrl enter'),
+                        	mnemonic_key:KeyStroke.getKeyStroke('ctrl enter'), 
+                        	action_command_key:KeyStroke.getKeyStroke('ctrl enter')
+                        )
                     }
                 }
                 menu(text:'Help') {
@@ -58,7 +57,7 @@ class Console {
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
                     owner.outputArea = textPane(editable:false)
-                    owner.addStylesToDocument()
+                    owner.addStylesToDocument(owner.outputArea)
                 }
                 scrollPane {
                     owner.textArea = textArea()
@@ -74,60 +73,26 @@ class Console {
         dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
-    
-    addStylesToDocument() {
-        doc = outputArea.getStyledDocument();
         
-        def = StyleContext.getDefaultStyleContext().
-                          getStyle(StyleContext.DEFAULT_STYLE);
-
-        Style regular = doc.addStyle("regular", def);
-        StyleConstants.setFontFamily(def, "SansSerif");
-
-        promptStyle = doc.addStyle("prompt", regular);
-        StyleConstants.setForeground(promptStyle, Color.BLUE);
-        
-        commandStyle = doc.addStyle("command", regular);
-        StyleConstants.setForeground(commandStyle, Color.MAGENTA);
-
-        outputStyle = doc.addStyle("output", regular);
-        StyleConstants.setBold(outputStyle, true);
-    }
-    
     runScript() {
         text = textArea.getText()
         scriptList.add(text)
         
-        //try {
-            doc = outputArea.getStyledDocument();
-            
-            for (line in text.tokenize("\n")) {
-                doc.insertString(doc.getLength(), "\ngroovy> ", promptStyle)
-                doc.insertString(doc.getLength(), line, commandStyle)
-            }
+        doc = outputArea.getStyledDocument();
 
-            if (shell == null) {
-            	shell = new GroovyShell()
-            }
-            if (counter == null) {
-                counter = 1
-            }
-            else {
-            	counter = counter + 1
-            }
-        
-            name = "Script" + counter
-            answer = shell.evaluate(text, name)
-        /*    
-        } 
-        catch (Exception e) {
-            answer = e
+        promptStyle = getPromptStyle()
+        commandStyle = getCommandStyle()
+        outputStyle = getOutputStyle()
+
+        for (line in text.tokenize("\n")) {
+            doc.insertString(doc.getLength(), "\ngroovy> ", promptStyle)
+            doc.insertString(doc.getLength(), line, commandStyle)
         }
-        */
+        
+        answer = evaluate(text)
+
         output = "\n" + InvokerHelper.toString(answer)
         
-	    println("adding output")
-
         doc.insertString(doc.getLength(), output, outputStyle)
         
         println("Variables: " + shell.context.variables)
