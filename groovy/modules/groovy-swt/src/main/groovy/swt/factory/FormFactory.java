@@ -103,46 +103,46 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
     private Object getFormWidget(final Composite parentComposite, Map properties, int style,
             String text) throws GroovyException {
         if ("form".equals(type)) {
-            Form form = toolkit.createForm(parentComposite);
+            Form form = getToolkit().createForm(parentComposite);
             form.setText(text);
             return form;
         }
         if ("scrolledForm".equals(type)) {
-            ScrolledForm scrolledForm = toolkit.createScrolledForm(parentComposite);
+            ScrolledForm scrolledForm = getToolkit().createScrolledForm(parentComposite);
             scrolledForm.setText(text);
             return scrolledForm;
         }
         if ("formButton".equals(type)) {
-            return toolkit.createButton(parentComposite, text, style);
+            return getToolkit().createButton(parentComposite, text, style);
         }
         if ("formColors".equals(type)) {
-            return toolkit.getColors();
+            return getToolkit().getColors();
         }
         if ("formComposite".equals(type)) {
-            return toolkit.createComposite(parentComposite, style);
+            return getToolkit().createComposite(parentComposite, style);
         }
         if ("formCompositeSeparator".equals(type)) {
-            return toolkit.createCompositeSeparator(parentComposite);
+            return getToolkit().createCompositeSeparator(parentComposite);
         }
         if ("formExpandableComposite".equals(type)) {
-            return toolkit.createExpandableComposite(parentComposite, style);
+            return getToolkit().createExpandableComposite(parentComposite, style);
         }
         if ("formText".equals(type)) {
-            Text text2 = toolkit.createText(parentComposite, text, style);
-            toolkit.paintBordersFor(parentComposite);
+            Text text2 = getToolkit().createText(parentComposite, text, style);
+            getToolkit().paintBordersFor(parentComposite);
             return text2;
         }
         if ("formHyperlink".equals(type)) {
-            return toolkit.createHyperlink(parentComposite, text, style);
+            return getToolkit().createHyperlink(parentComposite, text, style);
         }
         if ("formImageHyperlink".equals(type)) {
-            return toolkit.createImageHyperlink(parentComposite, style);
+            return getToolkit().createImageHyperlink(parentComposite, style);
         }
         if ("formLabel".equals(type)) {
-            return toolkit.createLabel(parentComposite, text, style);
+            return getToolkit().createLabel(parentComposite, text, style);
         }
         if ("formPageBook".equals(type)) {
-            return toolkit.createPageBook(parentComposite, style);
+            return getToolkit().createPageBook(parentComposite, style);
         }
         if ("formPageBookPage".equals(type)) {
             if (parentComposite instanceof ScrolledPageBook) {
@@ -158,28 +158,28 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             }
         }
         if ("formSection".equals(type)) {
-            Section section = toolkit.createSection(parentComposite, style);
+            Section section = getToolkit().createSection(parentComposite, style);
             if (text != null) {
                 section.setText(text);
             }
-            section.setSeparatorControl(toolkit.createCompositeSeparator(section));
+            section.setSeparatorControl(getToolkit().createCompositeSeparator(section));
             String description = (String) properties.remove("description");
             if (description != null) {
                 section.setDescription(description);
             }
-            Composite client = toolkit.createComposite(section);
+            Composite client = getToolkit().createComposite(section);
             client.setLayout(new GridLayout());
             section.setClient(client);
             return section;
         }
         if ("formSeparator".equals(type)) {
-            return toolkit.createSeparator(parentComposite, style);
+            return getToolkit().createSeparator(parentComposite, style);
         }
         if ("formTable".equals(type)) {
-            return toolkit.createTable(parentComposite, style);
+            return getToolkit().createTable(parentComposite, style);
         }
         if ("formToolkit".equals(type)) {
-            return toolkit;
+            return getToolkit();
         }
         if ("formFormattedText".equals(type)) {
             boolean parseTags = false;
@@ -191,12 +191,12 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 expandURLs = ((Boolean) properties.remove("expandURLs")).booleanValue();
             }
 
-            FormText formText = toolkit.createFormText(parentComposite, true);
+            FormText formText = getToolkit().createFormText(parentComposite, true);
             HyperlinkSettings hyperlinkSettings = new HyperlinkSettings(Display.getCurrent());
-            hyperlinkSettings.setBackground(toolkit.getColors().getBackground());
-            hyperlinkSettings.setActiveBackground(toolkit.getColors().getBackground());
-            hyperlinkSettings.setForeground(toolkit.getColors().getForeground());
-            hyperlinkSettings.setActiveForeground(toolkit.getColors().getBackground());
+            hyperlinkSettings.setBackground(getToolkit().getColors().getBackground());
+            hyperlinkSettings.setActiveBackground(getToolkit().getColors().getBackground());
+            hyperlinkSettings.setForeground(getToolkit().getColors().getForeground());
+            hyperlinkSettings.setActiveForeground(getToolkit().getColors().getBackground());
             formText.setHyperlinkSettings(hyperlinkSettings);
 
             formText.setText(text, parseTags, expandURLs);
@@ -204,7 +204,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             return formText;
         }
         if ("formTree".equals(type)) {
-            return toolkit.createTree(parentComposite, style);
+            return getToolkit().createTree(parentComposite, style);
         }
         return null;
     }
