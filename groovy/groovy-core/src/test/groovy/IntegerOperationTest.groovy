@@ -10,8 +10,37 @@ class IntegerOperationTest extends GroovyTestCase {
         y = x + 1
 		assert y == 5
 		
-	z = y + x + 1 + 2
-	assert z == 12 
+		z = y + x + 1 + 2
+		assert z == 12 
+    }
+    
+    void testCharacterPlus() {
+    	Character c1 = 1
+    	Character c2 = 2
+    	
+        x = c2 + 2
+        assert x == 4
+    	
+        x = 2 + c2
+        assert x == 4
+    	
+        x = c2 + c2
+        assert x == 4
+          
+        y = x + c1
+		assert y == 5
+          
+        y = c1 + x
+		assert y == 5
+		
+		z = y + x + c1 + 2
+		assert z == 12 
+		
+		z = y + x + 1 + c2
+		assert z == 12 
+		
+		z = y + x + c1 + c2
+		assert z == 12 
     }
     
     void testMinus() {
@@ -19,7 +48,25 @@ class IntegerOperationTest extends GroovyTestCase {
         assert x == 4
         
         y = x - 1
-	assert y == 3        
+		assert y == 3        
+    }
+    
+    void testCharacterMinus() {
+    	Character c1 = 1
+    	Character c2 = 2
+    	Character c6 = 6
+    	
+        x = c6 - 2
+        assert x == 4
+    	
+        x = 6 - c2
+        assert x == 4
+    	
+        x = c6 - c2
+        assert x == 4
+        
+        y = x - c1
+		assert y == 3        
     }
     
     void testMultiply() {

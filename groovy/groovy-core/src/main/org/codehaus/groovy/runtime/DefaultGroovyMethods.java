@@ -1857,15 +1857,35 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Increment a Character by one
+     *
+     * @param self a Character
+     * @return an incremented Number
+     */
+    public static Number next(Character self) {
+    	return plus(self, ONE);
+    }
+
+    /**
      * Increment a Number by one
      *
      * @param self a Number
      * @return an incremented Number
      */
     public static Number next(Number self) {
-        return plus(self, ONE);
+    	return plus(self, ONE);
     }
-
+    
+    /**
+     * Decrement a Character by one
+     *
+     * @param self a Character
+     * @return a decremented Number
+     */
+    public static Number previous(Character self) {
+    	return minus(self, ONE);
+    }
+    
     /**
      * Decrement a Number by one
      *
@@ -1873,9 +1893,42 @@ public class DefaultGroovyMethods {
      * @return a decremented Number
      */
     public static Number previous(Number self) {
-        return minus(self, ONE);
+    	return minus(self, ONE);
     }
-
+    
+    /**
+     * Add a Character and a Number
+     * 
+     * @param left a Character
+     * @param right a Number
+     * @return the addition of the Character and the Number
+     */
+    public static Number plus(Character left, Number right) {
+    	return plus(new Integer(left.charValue()), right);
+    }
+    
+    /**
+     * Add a Number and a Character
+     * 
+     * @param left a Number
+     * @param right a Character
+     * @return the addition of the Character and the Number
+     */
+    public static Number plus(Number left, Character right) {
+    	return plus(left, new Integer(right.charValue()));
+    }
+    
+    /**
+     * Add two Characters
+     * 
+     * @param left a Character
+     * @param right a Character
+     * @return the addition of both Characters
+     */
+    public static Number plus(Character left, Character right) {
+    	return plus(new Integer(left.charValue()), right);
+    }
+    
     /**
      * Add two Numbers
      *
@@ -1895,7 +1948,40 @@ public class DefaultGroovyMethods {
             return new Integer(left.intValue() + right.intValue());
         }
     }
-
+    
+    /**
+     * Compare a Character and a Number
+     * 
+     * @param left a Character
+     * @param right a Number
+     * @return the result of the comparison
+     */
+    public static int compareTo(Character left, Number right) {
+    	return compareTo(new Integer(left.charValue()), right);
+    }
+    
+    /**
+     * Compare a Number and a Character
+     * 
+     * @param left a Number
+     * @param right a Character
+     * @return the result of the comparison
+     */
+    public static int compareTo(Number left, Character right) {
+    	return compareTo(left, new Integer(right.charValue()));
+    }
+    
+    /**
+     * Compare two Characters
+     * 
+     * @param left a Character
+     * @param right a Character
+     * @return the result of the comparison
+     */
+    public static int compareTo(Character left, Character right) {
+    	return compareTo(new Integer(left.charValue()), right);
+    }
+    
     /**
      * Compare two Numbers
      *
@@ -1934,6 +2020,40 @@ public class DefaultGroovyMethods {
         }
     }
 
+    
+    /**
+     * Subtract a Number from a Character
+     * 
+     * @param left a Character
+     * @param right a Number
+     * @return the addition of the Character and the Number
+     */
+    public static Number minus(Character left, Number right) {
+    	return minus(new Integer(left.charValue()), right);
+    }
+    
+    /**
+     * Subtract a Character from a Number
+     * 
+     * @param left a Number
+     * @param right a Character
+     * @return the addition of the Character and the Number
+     */
+    public static Number minus(Number left, Character right) {
+    	return minus(left, new Integer(right.charValue()));
+    }
+    
+    /**
+     * Subtraction two Characters
+     * 
+     * @param left a Character
+     * @param right a Character
+     * @return the addition of both Characters
+     */
+    public static Number minus(Character left, Character right) {
+    	return minus(new Integer(left.charValue()), right);
+    }
+
     /**
      * Substraction of two Numbers
      *
@@ -1954,23 +2074,56 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Multiply two Numbers
+     * Multiply a Character by a Number
      *
-     * @param left a Number
-     * @param right another Number
+     * @param left a Character
+     * @param right a Number
      * @return the multiplication of both
      */
-    public static Number multiply(Number left, Number right) {
-        if (isFloatingPoint(left) || isFloatingPoint(right)) {
-            return new Double(left.doubleValue() * right.doubleValue());
-        }
-        else if (isLong(left) || isLong(right)) {
-            return new Long(left.longValue() * right.longValue());
-        }
-        else {
-            return new Integer(left.intValue() * right.intValue());
-        }
+    public static Number multiply(Character left, Number right) {
+    	return multiply(new Integer(left.charValue()), right);
     }
+
+    /**
+     * Multiply a Number by a Character
+     *
+     * @param left a Number
+     * @param right a Character
+     * @return the multiplication of both
+     */
+    public static Number multiply(Number left, Character right) {
+    	return multiply(left, new Integer(right.charValue()));
+    }
+    
+    /**
+     * Multiply two Characters
+     *
+     * @param left a Character
+     * @param right another Character
+     * @return the multiplication of both
+     */
+    public static Number multiply(Character left, Character right) {
+    	return multiply(new Integer(left.charValue()), right);
+    }
+    
+	/**
+	 * Multiply two Numbers
+	 *
+	 * @param left a Number
+	 * @param right another Number
+	 * @return the multiplication of both
+	 */
+	public static Number multiply(Number left, Number right) {
+		if (isFloatingPoint(left) || isFloatingPoint(right)) {
+        return new Double(left.doubleValue() * right.doubleValue());
+    }
+    else if (isLong(left) || isLong(right)) {
+        return new Long(left.longValue() * right.longValue());
+    }
+    else {
+        return new Integer(left.intValue() * right.intValue());
+    }
+}
 
     /**
      * Power of a Number to a certain exponent
@@ -1992,6 +2145,39 @@ public class DefaultGroovyMethods {
         }
     }
 
+    /**
+     * Divide a Character by a Number
+     *
+     * @param left a Character
+     * @param right a Number
+     * @return the multiplication of both
+     */
+    public static Number divide(Character left, Number right) {
+    	return divide(new Integer(left.charValue()), right);
+    }
+
+    /**
+     * Divide a Number by a Character
+     *
+     * @param left a Number
+     * @param right a Character
+     * @return the multiplication of both
+     */
+    public static Number divide(Number left, Character right) {
+    	return divide(left, new Integer(right.charValue()));
+    }
+    
+    /**
+     * Divide two Characters
+     *
+     * @param left a Character
+     * @param right another Character
+     * @return the multiplication of both
+     */
+    public static Number divide(Character left, Character right) {
+    	return divide(new Integer(left.charValue()), right);
+    }
+    
     /**
      * Divide two Numbers
      *

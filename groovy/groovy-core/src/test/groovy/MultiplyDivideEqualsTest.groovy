@@ -11,6 +11,18 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         
         assert y == 12
     }
+
+    void testCharacterMultiplyEquals() {
+        Character x = 2
+        Character y = 3
+        x *= y
+        
+        assert x == 6
+        
+        y *= 4
+        
+        assert y == 12
+    }
     
     void testNumberMultiplyEquals() {
         x = 1.2
@@ -32,6 +44,18 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
     void testIntegerDivideEquals() {
         x = 18
         y = 6
+        x /= y
+        
+        assert x == 3.0
+        
+        y /= 3
+        
+        assert y == 2.0
+    }
+    
+    void testCharacterDivideEquals() {
+        Character x = 18
+        Character y = 6
         x /= y
         
         assert x == 3.0
