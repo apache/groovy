@@ -47,7 +47,7 @@ class Bytecode2Bug extends GroovyTestCase {
         assert i == 5
     }
     
-    getCollection() {
+    def getCollection() {
         [1, 2, 3, 4]
     }
 }
