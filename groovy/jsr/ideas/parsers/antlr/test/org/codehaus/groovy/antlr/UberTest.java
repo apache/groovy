@@ -43,14 +43,14 @@ public class UberTest implements Test {
         "ClosureInClosureTest.groovy",
         "Foo.groovy",
         //"ForLoopTest.groovy",                 TODO - fixme - AST gen bug
-        //"GStringTest.groovy",                 TODO assert statement
+         "GStringTest.groovy",
         "HeredocsTest.groovy",
         "IfElseCompactTest.groovy",
         "IfElseTest.groovy",
         "IfTest.groovy",
         "ImportTest.groovy",
         "InstanceofTest.groovy",
-        // "ListTest.groovy",                   TODO enable when assert can take ': message'
+         //"ListTest.groovy",                   TODO parser bugs
         "LogicTest.groovy",
         "MethodCallTest.groovy",
         "MultilineStringTest.groovy",
@@ -60,7 +60,7 @@ public class UberTest implements Test {
         "PrimitiveTypesTest.groovy",
         // "ReturnTest.groovy",                 TODO parser bug
         "StringOperationTest.groovy",
-        // "SubscriptTest.groovy",              TODO array initialisers
+        //"SubscriptTest.groovy",               TODO array initialisers
         "ThrowTest.groovy",
         //"UnaryMinusTest.groovy",              TODO needs classpath stuff
         //"WhileLoopTest.groovy",               TODO parser bug
