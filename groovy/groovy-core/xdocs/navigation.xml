@@ -67,9 +67,8 @@
       <item name="Groovy JDK"           href="/groovy-jdk.html"/>
     </menu>
 
-    <menu name="Presentation">
-      <item name="PDF"                 href="http://codehaus.org/~jstrachan/Groovy/Groovy.ppt"/>
-      <item name="HTML"                href="http://codehaus.org/~jstrachan/Groovy/html/groovy.html"/>
+    <menu name="Articles">
+      <item name="Index"                href="/articles.html"/>
     </menu>
     
     <menu name="Examples">
