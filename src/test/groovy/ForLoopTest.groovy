@@ -6,7 +6,7 @@ class ForLoopTest extends GroovyTestCase {
 
 	property x;
 	
-    void testForLoop() {
+    void testRange() {
         x = 0;
 
         for i in 0..10 {
@@ -14,5 +14,16 @@ class ForLoopTest extends GroovyTestCase {
         }
 
         assert x := 9;
-	}
+    }
+
+    void testList() {
+        x = 0;
+		
+        for i in [0, 1, 2, 3, 4] {
+            x = i;
+        }
+
+        assert x := 4;
+    }
+
 }
