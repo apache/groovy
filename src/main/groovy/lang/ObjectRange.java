@@ -48,49 +48,48 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
 /**
- * Represents a list of Integer objects from a specified int up to but not including
- * a given and to.
+ * Represents a list of objects from a value to a value using
+ * comparators
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class IntRange extends AbstractList implements Range {
+public class ObjectRange extends AbstractList implements Range {
 
-    private int from;
-    private int to;
+    private Comparable from;
+    private Comparable to;
+    private int size = -1;
 
-    public IntRange(int from, int to) {
+    public ObjectRange(Comparable from, Comparable to) {
         this.from = from;
         this.to = to;
     }
 
+    public int hashCode() {
+        /** @todo should code this the Josh Bloch way */
+        return from.hashCode() ^ to.hashCode();
+    }
+
     public boolean equals(Object that) {
-        if (that instanceof IntRange) {
-            return equals((IntRange) that);
+        if (that instanceof ObjectRange) {
+            return equals((ObjectRange) that);
         }
         return false;
     }
 
-    public boolean equals(IntRange that) {
-        return this.from == that.from && this.to == that.to;
+    public boolean equals(ObjectRange that) {
+        return InvokerHelper.compareEqual(this.from, that.from) && InvokerHelper.compareEqual(this.to, that.to);
     }
 
     public Comparable getFrom() {
-        return new Integer(from);
-    }
-
-    public Comparable getTo() {
-        return new Integer(to);
-    }
-    
-    public int getFromInt() {
         return from;
     }
 
-    public int getToInt() {
+    public Comparable getTo() {
         return to;
     }
 
@@ -98,19 +97,27 @@ public class IntRange extends AbstractList implements Range {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        int value = index + from;
-        if (value >= to) {
-            throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
+        Object value = from;
+        for (int i = 0; i < index; i++) {
+            value = increment(value);
         }
-        return new Integer(value);
+        if (index >= size()) {
+            throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
+        }
+        return value;
     }
 
     public int size() {
-        return to - from;
-    }
-
-    public int hashCode() {
-        return from ^ to;
+        if (size == -1) {
+            // lets lazily calculate the size
+            size = 0;
+            Object value = from;
+            while (to.compareTo(value) > 0) {
+                value = increment(value);
+                size++;
+            }
+        }
+        return size;
     }
 
     public List subList(int fromIndex, int toIndex) {
@@ -123,42 +130,54 @@ public class IntRange extends AbstractList implements Range {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
-        return new IntRange(fromIndex + this.from, toIndex + this.from);
+        return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex));
     }
 
     public String toString() {
         return "" + from + ":" + to;
     }
 
-    public boolean contains(Object value) {
-        if (value instanceof Integer) {
-            Integer integer = (Integer) value;
-            int i = integer.intValue();
-            return i >= from && i < to;
+    public boolean contains(Comparable value) {
+        int result = from.compareTo(value);
+        if (result == 0) {
+            return true;
         }
-        return false;
+        return result < 0 && to.compareTo(value) > 0;
     }
 
     public void step(int step, Closure closure) {
         if (step >= 0) {
-            int value = from;
-            while (value <= to) {
-                closure.call(new Integer(value));
-                value = value + step;
+            Comparable value = from;
+            while (value.compareTo(to) <= 0) {
+                closure.call(value);
+                for (int i = 0; i < step; i++) {
+                    value = (Comparable) increment(value);
+                }
             }
         }
         else {
-            int value = to;
-            while (value >= from) {
-                closure.call(new Integer(value));
-                value = value + step;
+            step = -step;
+            Comparable value = to;
+            while (value.compareTo(from) >= 0) {
+                closure.call(value);
+                for (int i = 0; i < step; i++) {
+                    value = (Comparable) decrement(value);
+                }
             }
         }
     }
-
+    
     public List step(int step) {
         IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);
         return adapter.asList();
     }
-}
+    
+    protected Object increment(Object value) {
+        return InvokerHelper.invokeMethod(value, "increment", null);
+    }
+
+    protected Object decrement(Object value) {
+        return InvokerHelper.invokeMethod(value, "decrement", null);
+    }
+   }

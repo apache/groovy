@@ -140,7 +140,7 @@ public class RangeTest extends TestCase {
     }
 
     protected Range createRange(int from, int to) {
-        return new Range(new Integer(from), new Integer(to));
+        return new ObjectRange(new Integer(from), new Integer(to));
     }
     
     protected void assertEquals(String msg, int expected, Object value) {
