@@ -314,6 +314,10 @@
       <id>ant</id>
       <version>1.5.2</version>
     </dependency>
+    <dependency>
+      <id>ant+optional</id>
+      <version>1.5.2</version>
+    </dependency>
 
     <!-- only used for testing helper classes -->
     <dependency>
