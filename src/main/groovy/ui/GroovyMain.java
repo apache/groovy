@@ -121,7 +121,8 @@ public class GroovyMain {
         }
         catch (ParseException pe) {
             System.out.println("error: " + pe.getMessage());
-            System.out.println("usage: groovy [-e 'script'] [groovyScript] [arguments]");
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("groovy", options);
         }
     }
 
