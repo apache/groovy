@@ -9,7 +9,7 @@ class NavigationTest extends GroovyTestCase {
         tree = createTree()
         
         names = tree.depthFirst().collect { it.name() }
-        expected = ['b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
+        expected = ['a', 'b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
         
         assert names == expected
     }
@@ -18,7 +18,7 @@ class NavigationTest extends GroovyTestCase {
         tree = createTree()
         
         names = tree.breadthFirst().collect { it.name() }
-        expected = ['b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
+        expected = ['a', 'b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
         
         assert names == expected
     }

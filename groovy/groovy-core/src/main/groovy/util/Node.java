@@ -209,17 +209,25 @@ public class Node {
 //    }
 
 
+
     /**
      * Provide a collection of all the nodes in the tree
      * using a depth first traversal
      */
     public List depthFirst() {
         List answer = new ArrayList();
+        answer.add(this);
+        answer.addAll(depthFirstRest());
+        return answer;
+    }
+    
+    private  List depthFirstRest() {
+        List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
                 Node childNode = (Node) child;
-                List children = childNode.depthFirst();
+                List children = childNode.depthFirstRest();
                 answer.add(childNode);
                 answer.addAll(children);
             }
@@ -233,6 +241,13 @@ public class Node {
      */
     public List breadthFirst() {
         List answer = new ArrayList();
+        answer.add(this);
+        answer.addAll(breadthFirstRest());
+        return answer;
+    }
+    
+    private  List breadthFirstRest() {
+        List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
@@ -243,7 +258,7 @@ public class Node {
         List copy = new ArrayList(answer);
         for (Iterator iter = copy.iterator(); iter.hasNext(); ) {
             Node childNode = (Node) iter.next();
-            List children = childNode.breadthFirst();
+            List children = childNode.breadthFirstRest();
             answer.addAll(children);
         }
         return answer;
