@@ -793,7 +793,7 @@ public class DefaultGroovyMethods {
             List tmpAnswer = new LinkedList(self);
             for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
                 Object element = iter.next();
-                boolean removeElement = false;
+                //boolean removeElement = false;
                 for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
                     if (element.equals(iterator.next())) {
                         iter.remove();

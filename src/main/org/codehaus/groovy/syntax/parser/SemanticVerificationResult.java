@@ -5,13 +5,13 @@ import java.util.ArrayList;
 
 public class SemanticVerificationResult
 {
-    private List warnings;
-    private List errors;
+    //private List warnings;
+    //private List errors;
 
     public SemanticVerificationResult()
     {
-        this.warnings = new ArrayList();
-        this.errors   = new ArrayList();
+        //this.warnings = new ArrayList();
+        //this.errors   = new ArrayList();
     }
 
     public void addWarning(int line,

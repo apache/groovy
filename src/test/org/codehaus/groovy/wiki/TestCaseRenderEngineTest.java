@@ -58,9 +58,6 @@ public class TestCaseRenderEngineTest extends TestCase {
     private BaseRenderContext context = new BaseRenderContext();
 
     public void testRender() {
-        String input = null;
-        String expected = null;
-
         assertRender(
             "blah blah {code:groovy}x = 1; assert x == 1{code} whatnot",
             "package wiki\nclass someFileTest extends GroovyTestCase {\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n/*\nblah blah */ \n\n  void testCase1() {\nx = 1; assert x == 1\n}\n\n /* whatnot\n*/\n\n}\n");

@@ -50,22 +50,17 @@ import java.io.Writer;
 import java.util.regex.Pattern;
 
 import org.radeox.api.engine.RenderEngine;
-import org.radeox.api.engine.context.InitialRenderContext;
 import org.radeox.api.engine.context.RenderContext;
-import org.radeox.engine.context.BaseInitialRenderContext;
 
 /**
  * @author James Strachan
  * @version $Revision$
  */
 public class TestCaseRenderEngine implements RenderEngine {
-    private InitialRenderContext initialContext;
-    
     Pattern groovyCodePattern = Pattern.compile("\\{code:groovy\\}");
     Pattern codePattern = Pattern.compile("\\{code\\}");
     
     public TestCaseRenderEngine() {
-        initialContext = new BaseInitialRenderContext();
     }
 
     public String getName() {

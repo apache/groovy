@@ -185,7 +185,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     private LinkedList innerClasses = new LinkedList();
     private boolean definingParameters;
     private Set syntheticStaticFields = new HashSet();
-    private int lastVariableIndex;
     private Label breakLabel;
     private Label continueLabel;
     private Set mutableVars = new HashSet();
@@ -193,7 +192,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     private ConstructorNode constructorNode;
     private MethodNode methodNode;
-    private PropertyNode propertyNode;
+    //private PropertyNode propertyNode;
 
     public ClassGenerator(
         GeneratorContext context,
@@ -261,7 +260,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.methodNode = null;
 
         String methodType = getMethodDescriptor("void", node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null);
+        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
 
         resetVariableStack(node.getParameters());
 
@@ -286,7 +285,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.methodNode = node;
 
         String methodType = getMethodDescriptor(node.getReturnType(), node.getParameters());
-        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null);
+        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
 
         resetVariableStack(node.getParameters());
 
@@ -329,7 +328,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             fieldNode.getModifiers(),
             fieldNode.getName(),
             getTypeDescription(fieldNode.getType()),
-            fieldValue);
+            fieldValue,
+            null);
     }
 
     /**
@@ -337,7 +337,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
      */
     public void visitProperty(PropertyNode statement) {
         onLineNumber(statement);
-        this.propertyNode = statement;
+        //this.propertyNode = statement;
         this.methodNode = null;
     }
 
@@ -1346,7 +1346,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 }
                 String type = variable.getType();
                 int index = variable.getIndex();
-                lastVariableIndex = index;
+                //lastVariableIndex = index;
                 boolean holder = variable.isHolder() && !passingClosureParams;
 
                 if (leftHandExpression) {
@@ -1434,11 +1434,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (Iterator iter = syntheticStaticFields.iterator(); iter.hasNext();) {
             String staticFieldName = (String) iter.next();
             // generate a field node
-            cw.visitField(ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null);
+            cw.visitField(ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null, null);
         }
 
         if (!syntheticStaticFields.isEmpty()) {
-            cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null);
+            cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null, null);
             Label l0 = new Label();
             cv.visitLabel(l0);
             cv.visitVarInsn(ALOAD, 0);
@@ -2096,7 +2096,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Set outerDecls = outerVisitor.getDeclaredVariables();
         Set outerRefs = outerVisitor.getReferencedVariables();
         Set innerDecls = innerVisitor.getDeclaredVariables();
-        Set innerRefs = innerVisitor.getReferencedVariables();
+        //Set innerRefs = innerVisitor.getReferencedVariables();
 
         mutableVars.clear();
 

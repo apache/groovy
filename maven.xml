@@ -140,6 +140,7 @@
     <copy todir="${basedir}/target/test-classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
+        <exclude name="CVS/*"/>
       </fileset>
     </copy>
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
@@ -156,6 +157,7 @@
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
         <exclude name="**/parser/*.groovy"/>
+        <exclude name="CVS/*"/>
       </fileset>
     </copy>
     <touch>
