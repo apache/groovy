@@ -3,6 +3,9 @@ package org.codehaus.groovy.syntax.parser;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.lexer.Lexer;
+import org.codehaus.groovy.syntax.lexer.StringCharStream;
+import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 
 import java.io.IOException;
 
@@ -1078,10 +1081,14 @@ public class Parser
             }
             case ( Token.INTEGER_NUMBER ):
             case ( Token.FLOAT_NUMBER ):
-            case ( Token.DOUBLE_QUOTE_STRING ):
             case ( Token.SINGLE_QUOTE_STRING ):
             {
                 expr = rootNode( lt() );
+                break PREFIX_SWITCH;
+            }
+            case ( Token.DOUBLE_QUOTE_STRING ):
+            {
+                expr = doubleQuotedString();
                 break PREFIX_SWITCH;
             }
             case ( Token.LEFT_SQUARE_BRACKET ):
@@ -1219,6 +1226,73 @@ public class Parser
         }
 
         return expr;
+    }
+
+    protected CSTNode doubleQuotedString()
+        throws IOException, SyntaxException
+    {
+        Token  token = consume( Token.DOUBLE_QUOTE_STRING );
+        String text  = token.getText();
+
+        CSTNode expr = new CSTNode( token );
+
+        int cur = 0;
+        int len = text.length();
+
+        while ( cur < len )
+        {
+            int exprStart = text.indexOf( "${",
+                                          cur );
+
+            if ( exprStart < 0 )
+            {
+                break;
+            }
+
+            if ( exprStart > 0 )
+            {
+                if ( text.charAt( exprStart - 1 ) == '$' )
+                {
+                    cur = exprStart + 1;
+                    continue;
+                }
+            }
+
+            if ( exprStart != cur )
+            {
+                expr.addChild( new CSTNode( Token.singleQuoteString( token.getStartLine(),
+                                                                     token.getStartColumn() + cur + 1,
+                                                                     text.substring( cur,
+                                                                                     exprStart ) ) ) );
+            }
+
+            int exprEnd = text.indexOf( "}",
+                                        exprStart );
+
+            String exprText = text.substring( exprStart + 2,
+                                              exprEnd );
+
+            StringCharStream exprStream = new StringCharStream( exprText );
+
+            Lexer  lexer  = new Lexer( exprStream );
+            Parser parser = new Parser( new LexerTokenStream( lexer ) );
+
+            CSTNode embeddedExpr = parser.expression();
+
+            expr.addChild( embeddedExpr );
+
+            cur = exprEnd + 1;
+        }
+
+        if ( cur < len )
+        {
+            expr.addChild( new CSTNode( Token.singleQuoteString( token.getStartLine(),
+                                                                 token.getStartColumn() + cur + 1,
+                                                                 text.substring( cur ) ) ) );
+        }
+
+        return expr;
+
     }
 
     protected CSTNode parentheticalExpression()
