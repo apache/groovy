@@ -43,21 +43,62 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package groovy.lang;
 
-package org.codehaus.groovy.classgen;
-
-import groovy.lang.GroovyObject;
-
-import org.codehaus.groovy.classgen.TestSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
+ * Represents a reference to a value
+ * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class RunClosureTest extends TestSupport {
+public class Reference extends GroovyObjectSupport {
 
-    public void testClosure() throws Exception {
-        GroovyObject object = compile("src/test/groovy/ClosureUsingOuterVariablesTest.groovy");
-        object.invokeMethod("testModifyingOuterVariable", null);
+    private Object value;
+
+    public Reference() {
+    }
+
+    public Reference(Object value) {
+        this.value = value;
+    }
+
+    public Object getProperty(String property) {
+        if (value != null) {
+            return InvokerHelper.getProperty(value, property);
+        }
+        return super.getProperty(property);
+    }
+
+    public void setProperty(String property, Object newValue) {
+        if (value != null) {
+            InvokerHelper.setProperty(value, property, newValue);
+        }
+        else {
+            super.setProperty(property, newValue);
+        }
+    }
+
+    public Object invokeMethod(String name, Object args) {
+        if (value != null) {
+            try {
+                return InvokerHelper.invokeMethod(value, name, args);
+            }
+            catch (Exception e) {
+                return super.invokeMethod(name, args);
+            }
+        }
+        else {
+            return super.invokeMethod(name, args);
+        }
+    }
+
+    public Object get() {
+        return value;
+    }
+
+    public void set(Object value) {
+        this.value = value;
     }
 }

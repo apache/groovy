@@ -56,6 +56,7 @@ public class Variable {
     private int index;
     private String type;
     private String name;
+    private boolean holder;
     
     public Variable(int index, String type, String name) {
         this.index = index;
@@ -77,9 +78,17 @@ public class Variable {
     public int getIndex() {
         return index;
     }
+
     /**
-     *
+     * @return is this local variable shared in other scopes (and so must use a ValueHolder)
      */
+    public boolean isHolder() {
+        return holder;
+    }
+
+    public void setHolder(boolean holder) {
+        this.holder = holder;
+    }
 
     public String toString() {
         // TODO Auto-generated method stub

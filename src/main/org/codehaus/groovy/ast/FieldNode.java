@@ -50,7 +50,6 @@ import java.lang.reflect.Field;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Constants;
 
-
 /**
  * Represents a field (member variable)
  * 
@@ -65,13 +64,14 @@ public class FieldNode extends MetadataNode implements Constants {
     private String owner;
     private Expression initialValueExpression;
     private boolean dynamicType;
-    
+    private boolean holder;
+
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
         String type = field.getType().getName();
         return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, type, theClass.getName(), null);
     }
-    
+
     public FieldNode(String name, int modifiers, String type, String owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;
@@ -83,7 +83,7 @@ public class FieldNode extends MetadataNode implements Constants {
             this.dynamicType = true;
         }
     }
-    
+
     public Expression getInitialValueExpression() {
         return initialValueExpression;
     }
@@ -104,15 +104,22 @@ public class FieldNode extends MetadataNode implements Constants {
         return owner;
     }
 
-    /**
-     * @return true if the field is static
-     */
-    public boolean isStatic() {
-        return (modifiers & Constants.ACC_STATIC) != 0;
+    public boolean isHolder() {
+        return holder;
+    }
+
+    public void setHolder(boolean holder) {
+        this.holder = holder;
     }
 
     public boolean isDynamicType() {
         return dynamicType;
     }
 
+    /**
+     * @return true if the field is static
+     */
+    public boolean isStatic() {
+        return (modifiers & Constants.ACC_STATIC) != 0;
+    }
 }
