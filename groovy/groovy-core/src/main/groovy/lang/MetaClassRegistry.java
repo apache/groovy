@@ -111,11 +111,11 @@ public class MetaClassRegistry {
     /**
      * A helper class to load meta class bytecode into the class loader
      */
-    protected Class loadClass(String name, byte[] bytecode) throws ClassNotFoundException {
+    public Class loadClass(String name, byte[] bytecode) throws ClassNotFoundException {
         return loader.loadClass(name, bytecode);
     }
 
-    protected Class loadClass(String name) throws ClassNotFoundException {
+    public Class loadClass(String name) throws ClassNotFoundException {
         return loader.loadClass(name);
     }
 }

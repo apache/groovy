@@ -36,9 +36,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaMethod;
-import groovy.lang.ObjectRange;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.Reflector;
 
 /**
@@ -53,6 +51,7 @@ public class DummyReflector extends Reflector {
     public DummyReflector() {
     }
 
+    /*
     public Object invoke(MetaMethod method, Object object, Object[] arguments) {
         switch (method.getMethodIndex()) {
             case 1 :
@@ -63,9 +62,33 @@ public class DummyReflector extends Reflector {
                 return InvokerHelper.toObject(object.equals(arguments[0]));
             case 4 :
                 return new ObjectRange((Comparable) arguments[0], (Comparable) arguments[1]);
+            case 5 :
+                return ((String) object).toCharArray();
+            case 7 :
+                return new Character("hello".charAt(2));
+            case 8 :
+                return null;
             default :
                 return noSuchMethod(method, object, arguments);
         }
+    }
+    */
+
+    public Object invoke(MetaMethod method, Object object, Object[] arguments) {
+        switch (method.getMethodIndex()) {
+            case 1 :
+                return ((String) object).toCharArray();
+            default :
+                return noSuchMethod(method, object, arguments);
+        }
+    }
+
+    public Object invokeConstructor(Object constructor, Object[] arguments) {
+        return null; // noSuchMethod(method, object, arguments);
+    }
+
+    char[] blah() {
+        return "foo".toCharArray();
     }
 
 }

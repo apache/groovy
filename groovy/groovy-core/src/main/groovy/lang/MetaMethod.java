@@ -35,7 +35,9 @@ package groovy.lang;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.logging.Logger;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.Reflector;
 
 /**
@@ -45,8 +47,10 @@ import org.codehaus.groovy.runtime.Reflector;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MetaMethod {
+public class MetaMethod implements Cloneable {
 
+    private static final Logger log = Logger.getLogger(MetaMethod.class.getName());
+    
     private String name;
     private Class declaringClass;
     private Class[] parameterTypes;
@@ -54,13 +58,9 @@ public class MetaMethod {
     private int modifiers;
     private Reflector reflector;
     private int methodIndex;
-    
-    public MetaMethod(
-        String name,
-        Class declaringClass,
-        Class[] parameterTypes,
-        Class returnType,
-        int modifiers) {
+    private Method method;
+
+    public MetaMethod(String name, Class declaringClass, Class[] parameterTypes, Class returnType, int modifiers) {
         this.name = name;
         this.declaringClass = declaringClass;
         this.parameterTypes = parameterTypes;
@@ -75,11 +75,20 @@ public class MetaMethod {
             method.getParameterTypes(),
             method.getReturnType(),
             method.getModifiers());
+        this.method = method;
     }
-    
-    public Object invoke(Object object, Object[] arguments) {
-        return reflector.invoke(this, object, arguments);
+
+    public Object invoke(Object object, Object[] arguments) throws Exception {
+        if (reflector != null) {
+            return reflector.invoke(this, object, arguments);
+        }
+        else {
+            //log.warning("No reflector available for method: " + method);
+            method.setAccessible(true);
+            return method.invoke(object, arguments);
+        }
     }
+
     public Class getDeclaringClass() {
         return declaringClass;
     }
@@ -108,10 +117,6 @@ public class MetaMethod {
         return returnType;
     }
 
-    public boolean isStatic() {
-        return (modifiers & Modifier.STATIC) != 0;
-    }
-    
     public Reflector getReflector() {
         return reflector;
     }
@@ -120,4 +125,56 @@ public class MetaMethod {
         this.reflector = reflector;
     }
 
+    public boolean isMethod(Method method) {
+        return name.equals(method.getName())
+            && modifiers == method.getModifiers()
+            && returnType.equals(method.getReturnType())
+            && equal(parameterTypes, method.getParameterTypes());
+    }
+
+    protected boolean equal(Class[] a, Class[] b) {
+        if (a.length == b.length) {
+            for (int i = 0, size = a.length; i < size; i++) {
+                if (!a[i].equals(b[i])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public String toString() {
+        return super.toString()
+            + "[name: "
+            + name
+            + " params: "
+            + InvokerHelper.toString(parameterTypes)
+            + " returns: "
+            + returnType
+            + " owner: "
+            + declaringClass
+            + "]";
+    }
+
+    public Object clone() {
+        try {
+            return super.clone();
+        }
+        catch (CloneNotSupportedException e) {
+            throw new GroovyRuntimeException("This should never happen", e);
+        }
+    }
+
+    public boolean isStatic() {
+        return (modifiers & Modifier.STATIC) != 0;
+    }
+
+    public boolean isPrivate() {
+        return (modifiers & Modifier.PRIVATE) != 0;
+    }
+
+    public boolean isProtected() {
+        return (modifiers & Modifier.PROTECTED) != 0;
+    }
 }

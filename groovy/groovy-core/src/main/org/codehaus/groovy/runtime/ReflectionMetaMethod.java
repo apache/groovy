@@ -31,63 +31,22 @@
  * DAMAGE.
  *  
  */
+package org.codehaus.groovy.runtime;
 
-package groovy.lang;
+import groovy.lang.MetaMethod;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import java.lang.reflect.Method;
 
-import groovy.util.GroovyTestCase;
+public class ReflectionMetaMethod extends MetaMethod {
+    private Method method;
 
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class MetaClassTest extends GroovyTestCase {
-
-    public void testMetaClass() {
-        Class foo = String[].class;
-        System.out.println(foo + " name: " + foo.getName());
-
-        MetaClass metaClass = InvokerHelper.getMetaClass(this);
-
-        assertTrue("got metaclass", metaClass != null);
-
-        metaClass.invokeMethod(this, "doSomething", new Object[0]);
+    public ReflectionMetaMethod(Method method) {
+        super(method);
+        this.method = method;
     }
 
-    public void testArray() {
-        String[] value = new String[] { "hello" };
-
-        MetaClass metaClass = InvokerHelper.getMetaClass(value);
-
-        assertTrue("got metaclass", metaClass != null);
-
-        metaClass.invokeMethod(value, "toString", new Object[0]);
-    }
-
-    public void testString() {
-        String value = "hello";
-
-        MetaClass metaClass = InvokerHelper.getMetaClass(value);
-
-        assertTrue("got metaclass", metaClass != null);
-
-        Object answer = metaClass.invokeMethod(value, "toString", new Object[0]);
-
-        assertEquals("hello", answer);
-    }
-
-    public void testObject() {
-        Object value = new Object();
-
-        MetaClass metaClass = InvokerHelper.getMetaClass(value);
-
-        assertTrue("got metaclass", metaClass != null);
-
-        metaClass.invokeMethod(value, "toString", new Object[0]);
-    }
-
-    public void doSomething() {
-        System.out.println("Called doSomething()");
+    public Object invoke(Object object, Object[] arguments) throws Exception {
+        method.setAccessible(true);
+        return method.invoke(object, arguments);
     }
 }

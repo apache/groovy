@@ -390,75 +390,82 @@ public class InvokerHelper {
         }
     }
 
-    public static Object toObject(boolean value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(boolean value) {
         return value ? Boolean.TRUE : Boolean.FALSE;
     }
 
-    public static Object toObject(byte value) {
-        /** @todo 
-        if (value >= 0 && value < 100) {
-            return integerCache[i];
-        }
-        */
+    public static Object box(byte value) {
+        /** @todo cache? */
         return new Byte(value);
     }
 
-    public static Object toObject(char value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(char value) {
+        /** @todo cache? */
         return new Character(value);
     }
     
-    public static Object toObject(short value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(short value) {
+                /** @todo cache? */
         return new Short(value);
     }
     
-    public static Object toObject(int value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(int value) {
+        /** @todo cache? */
         return new Integer(value);
     }
     
-    public static Object toObject(long value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(long value) {
+        /** @todo cache? */
         return new Long(value);
     }
     
-    public static Object toObject(float value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(float value) {
+        /** @todo cache? */
         return new Float(value);
     }
     
-    public static Object toObject(double value) {
-        /** @todo 
-         if (value >= 0 && value < 100) {
-         return integerCache[i];
-         }
-         */
+    public static Object box(double value) {
+        /** @todo cache? */
         return new Double(value);
     }
-}
+    
+    public static byte byteUnbox(Object value) {
+        Number n = (Number) asType(value, Byte.class);
+        return n.byteValue();
+    }
+    
+    public static char charUnbox(Object value) {
+        Character n = (Character) asType(value, Character.class);
+        return n.charValue();
+    }
+    
+    public static short shortUnbox(Object value) {
+        Number n = (Number) asType(value, Short.class);
+        return n.shortValue();
+    }
+    
+    public static int intUnbox(Object value) {
+        Number n = (Number) asType(value, Integer.class);
+        return n.intValue();
+    }
+    
+    public static boolean booleanUnbox(Object value) {
+        Boolean n = (Boolean) asType(value, Boolean.class);
+        return n.booleanValue();
+    }
+    
+    public static long longUnbox(Object value) {
+        Number n = (Number) asType(value, Long.class);
+        return n.longValue();
+    }
+    
+    public static float floatUnbox(Object value) {
+        Number n = (Number) asType(value, Float.class);
+        return n.floatValue();
+    }
+    
+    public static double doubleUnbox(Object value) {
+        Number n = (Number) asType(value, Double.class);
+        return n.doubleValue();
+    }
+   }

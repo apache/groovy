@@ -1368,7 +1368,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         if (leftHandExpression && !holder) {
             if (isInClosureConstructor()) {
-                doCast(type);
+                helper.doCast(type);
             }
             else {
                 // this may be superflous
@@ -1943,12 +1943,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return answer;
     }
 
-    protected void doCast(String type) {
-        if (!type.equals("java.lang.Object")) {
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? helper.getTypeDescription(type) : helper.getClassInternalName(type));
-        }
-    }
-
     protected void doConvertAndCast(String type) {
         if (!type.equals("java.lang.Object")) {
             /** @todo should probably support array coercions */
@@ -1957,7 +1951,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 asTypeMethod.call(cv);
             }
 
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? helper.getTypeDescription(type) : helper.getClassInternalName(type));
+            helper.doCast(type);
         }
     }
 
