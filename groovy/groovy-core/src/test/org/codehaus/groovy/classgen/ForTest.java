@@ -46,12 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -59,7 +54,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 /**
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -70,7 +64,7 @@ public class ForTest extends TestSupport {
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
-        Parameter[] parameters = { new Parameter("coll")};
+        Parameter[] parameters = {new Parameter("coll")};
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
@@ -85,12 +79,11 @@ public class ForTest extends TestSupport {
 
         System.out.println("################ Now about to invoke method");
 
-        Object[] array = { new Integer(1234), "abc", "def" };
+        Object[] array = {new Integer(1234), "abc", "def"};
 
         try {
-            InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[] {array});
-        }
-        catch (InvokerInvocationException e) {
+            InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[]{array});
+        } catch (InvokerInvocationException e) {
             System.out.println("Caught: " + e.getCause());
             e.getCause().printStackTrace();
             fail("Should not have thrown an exception");

@@ -33,10 +33,16 @@
  */
 package org.codehaus.groovy.bsf;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import groovy.lang.Binding;
+import org.apache.bsf.BSFDeclaredBean;
+import org.apache.bsf.BSFException;
+import org.apache.bsf.BSFManager;
+import org.apache.bsf.util.BSFFunctions;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.ByteArrayInputStream;
 import java.security.AccessController;
@@ -45,16 +51,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import org.apache.bsf.BSFDeclaredBean;
-import org.apache.bsf.BSFException;
-import org.apache.bsf.BSFManager;
-import org.apache.bsf.util.BSFFunctions;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.control.CompilerConfiguration;
-
 /**
  * A Caching implementation of the GroovyEngine
- * 
+ *
  * @author James Birchfield
  */
 public class CachingGroovyEngine extends GroovyEngine {
@@ -78,17 +77,14 @@ public class CachingGroovyEngine extends GroovyEngine {
             if (scriptClass == null) {
                 scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
                 evalScripts.put(script, scriptClass);
-            }
-            else {
+            } else {
                 System.out.println("eval() - Using cached script...");
             }
             //can't cache the script because the context may be different.
             //but don't bother loading parsing the class again
             Script s = InvokerHelper.createScript(scriptClass, context);
             return s.run();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }
@@ -104,14 +100,11 @@ public class CachingGroovyEngine extends GroovyEngine {
             if (scriptClass == null) {
                 scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
                 execScripts.put(script, scriptClass);
-            }
-            else {
+            } else {
                 System.out.println("exec() - Using cached version of class...");
             }
             InvokerHelper.invokeMethod(scriptClass, "main", EMPTY_ARGS);
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }
@@ -125,14 +118,14 @@ public class CachingGroovyEngine extends GroovyEngine {
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
         final ClassLoader finalParent = parent;
-        this.loader = 
-        	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-        		public Object run() {
-                    CompilerConfiguration configuration = new CompilerConfiguration();
-                    configuration.setClasspath(mgr.getClassPath());
-                    return new GroovyClassLoader(finalParent, configuration);
-        		}
-        	});
+        this.loader =
+                (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        CompilerConfiguration configuration = new CompilerConfiguration();
+                        configuration.setClasspath(mgr.getClassPath());
+                        return new GroovyClassLoader(finalParent, configuration);
+                    }
+                });
         execScripts = new HashMap();
         evalScripts = new HashMap();
         context = shell.getContext();

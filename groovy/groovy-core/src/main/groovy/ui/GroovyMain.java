@@ -233,7 +233,7 @@ public class GroovyMain {
             }
             return true;
         } catch (Exception e) {
-            System.out.println("Caught: " + e);
+            System.err.println("Caught: " + e);
             if (debug) {
                 e.printStackTrace();
             } else {
