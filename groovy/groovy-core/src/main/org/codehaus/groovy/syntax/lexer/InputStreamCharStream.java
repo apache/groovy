@@ -2,6 +2,7 @@ package org.codehaus.groovy.syntax.lexer;
 
 import java.io.InputStream;
 import java.io.IOException;
+import org.codehaus.groovy.syntax.ReadException;
 
 public class InputStreamCharStream
     extends AbstractCharStream
@@ -26,14 +27,28 @@ public class InputStreamCharStream
     }
 
     public char consume()
-        throws IOException
+        throws ReadException
     {
-        return (char) getInputStream().read();
+        try
+        {
+            return (char) getInputStream().read();
+        }
+        catch( IOException e )
+        {
+           throw new ReadException( e );
+        }
     }
 
     public void close()
-        throws IOException
+        throws ReadException
     {
-        getInputStream().close();
+        try
+        {
+            getInputStream().close();
+        }
+        catch( IOException e )
+        {
+            throw new ReadException( e );
+        }
     }
 }

@@ -5,7 +5,7 @@ public class UnexpectedCharacterException extends LexerException {
     private char[] expected;
 
     public UnexpectedCharacterException(int line, int column, char c, char[] expected) {
-        super("Unexpected character: " + c, line, column);
+        super("unexpected character: " + c, line, column);
         this.c = c;
         this.expected = expected;
     }
@@ -21,15 +21,7 @@ public class UnexpectedCharacterException extends LexerException {
     public String getMessage() {
         StringBuffer message = new StringBuffer();
 
-        message.append(getSourceLocator() + ":");
-
-        message.append(getLine());
-        message.append(":");
-        message.append(getStartColumn());
-        message.append(": ");
-
         message.append("expected ");
-
         if (this.expected.length == 1) {
             message.append("'" + this.expected[0] + "'");
         }
@@ -47,7 +39,7 @@ public class UnexpectedCharacterException extends LexerException {
             message.append("}");
         }
 
-        message.append(" but saw '" + getCharacter() + "'");
+        message.append( "; found '" ).append( c ).append( "'" );
 
         return message.toString();
     }

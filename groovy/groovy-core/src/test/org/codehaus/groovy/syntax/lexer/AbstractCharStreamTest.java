@@ -2,7 +2,7 @@ package org.codehaus.groovy.syntax.lexer;
 
 import groovy.util.GroovyTestCase;
 
-import java.io.IOException;
+import org.codehaus.groovy.syntax.ReadException;
 
 public class AbstractCharStreamTest
     extends GroovyTestCase
@@ -28,7 +28,7 @@ public class AbstractCharStreamTest
         }
 
         public char consume()
-            throws IOException
+            throws ReadException
         {
             if ( this.cur >= this.text.length() )
             {
@@ -43,7 +43,7 @@ public class AbstractCharStreamTest
         }
 
         public void close()
-            throws IOException
+            throws ReadException
         {
 
         }

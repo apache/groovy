@@ -8,6 +8,7 @@ import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
+import org.codehaus.groovy.tools.ExceptionCollector;
 
 public class ParserTest extends GroovyTestCase {
 
@@ -89,8 +90,13 @@ public class ParserTest extends GroovyTestCase {
         Parser parser = newParser("package .");
 
         try {
-            parser.packageDeclaration();
-            fail("should have thrown UnexpectedTokenException");
+            try {
+                parser.packageDeclaration();
+                fail("should have thrown UnexpectedTokenException");
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
@@ -106,8 +112,13 @@ public class ParserTest extends GroovyTestCase {
         Parser parser = newParser("package cheese.");
 
         try {
-            parser.packageDeclaration();
-            fail("should have thrown UnexpectedTokenException");
+            try {
+                parser.packageDeclaration();
+                fail("should have thrown UnexpectedTokenException");
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
@@ -254,8 +265,13 @@ public class ParserTest extends GroovyTestCase {
         Parser parser = newParser("import .");
 
         try {
-            parser.importStatement();
-            fail("should have thrown UnexpectedTokenException");
+            try {
+                parser.importStatement();
+                fail("should have thrown UnexpectedTokenException");
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
@@ -271,8 +287,13 @@ public class ParserTest extends GroovyTestCase {
         Parser parser = newParser("import cheese.");
 
         try {
-            parser.importStatement();
-            fail("should have thrown UnexpectedTokenException");
+            try {
+                parser.importStatement();
+                fail("should have thrown UnexpectedTokenException");
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
@@ -316,7 +337,12 @@ public class ParserTest extends GroovyTestCase {
         CSTNode modifiers = new CSTNode();
 
         try {
-            parser.classDeclaration(modifiers);
+            try {
+                parser.classDeclaration(modifiers);
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e) {
             // expected and correct
@@ -339,7 +365,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.interfaceDeclaration(modifiers);
 
-        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 3);
+        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 5);
 
         {
             assertSame(modifiers, root.getChild(0));
@@ -402,7 +428,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.typeDeclaration();
 
-        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 3);
+        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 5);
 
         {
             assertNullNode(root.getChild(0), 0);
@@ -418,7 +444,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.typeDeclaration();
 
-        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 3);
+        assertNode(root, "interface", Token.KEYWORD_INTERFACE, 5);
 
         {
             assertNullNode(root.getChild(0), 1);
@@ -443,8 +469,13 @@ public class ParserTest extends GroovyTestCase {
     
         try
         {
-            parser.typeDeclaration();
-            fail( "should have thrown UnexpectedTokenException" );
+            try {
+                parser.typeDeclaration();
+                fail( "should have thrown UnexpectedTokenException" );
+            }
+            catch( ExceptionCollector e ) {
+                e.throwFirstChild();
+            }
         }
         catch (UnexpectedTokenException e)
         {
@@ -504,7 +535,7 @@ public class ParserTest extends GroovyTestCase {
 
             assertNullNode(root.getChild(1), 0);
 
-            assertNode(root.getChild(2), "interface", Token.KEYWORD_INTERFACE, 3);
+            assertNode(root.getChild(2), "interface", Token.KEYWORD_INTERFACE, 5);
         }
     }
 
@@ -734,7 +765,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.bodyStatement();
 
-        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 5);
+        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 6);
 
         {
             assertNullNode(root.getChild(0), 0);
@@ -752,7 +783,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.bodyStatement();
 
-        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 5);
+        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 6);
 
         {
             assertNullNode(root.getChild(0), 0);
@@ -775,21 +806,21 @@ public class ParserTest extends GroovyTestCase {
     public void testParameterDeclarationWithoutDatatype() throws Exception {
         Parser parser = newParser("cheese");
 
-        CSTNode root = parser.parameterDeclarationWithoutDatatype();
+        CSTNode root = parser.parameterDeclaration();
 
         assertNode(root, "<synthetic>", Token.SYNTH_PARAMETER_DECLARATION, 2);
 
         {
-            assertNode(root.getChild(0), "cheese", Token.IDENTIFIER, 0);
+            assertNullNode(root.getChild(0), 0);
 
-            assertNullNode(root.getChild(1), 0);
+            assertNode(root.getChild(1), "cheese", Token.IDENTIFIER, 0);
         }
     }
 
     public void testParameterDeclarationWithDatatype_Simple() throws Exception {
         Parser parser = newParser("String cheese");
 
-        CSTNode root = parser.parameterDeclarationWithDatatype();
+        CSTNode root = parser.parameterDeclaration();
 
         assertNode(root, "<synthetic>", Token.SYNTH_PARAMETER_DECLARATION, 2);
 
@@ -803,7 +834,7 @@ public class ParserTest extends GroovyTestCase {
     public void testParameterDeclarationWithDatatype_Qualified() throws Exception {
         Parser parser = newParser("java.lang.String cheese");
 
-        CSTNode root = parser.parameterDeclarationWithDatatype();
+        CSTNode root = parser.parameterDeclaration();
 
         assertNode(root, "<synthetic>", Token.SYNTH_PARAMETER_DECLARATION, 2);
 
@@ -833,9 +864,9 @@ public class ParserTest extends GroovyTestCase {
         assertNode(root, "<synthetic>", Token.SYNTH_PARAMETER_DECLARATION, 2);
 
         {
-            assertNode(root.getChild(0), "cheese", Token.IDENTIFIER, 0);
+            assertNullNode(root.getChild(0), 0);
 
-            assertNullNode(root.getChild(1), 0);
+            assertNode(root.getChild(1), "cheese", Token.IDENTIFIER, 0);
         }
     }
 
@@ -874,7 +905,7 @@ public class ParserTest extends GroovyTestCase {
 
         CSTNode root = parser.bodyStatement();
 
-        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 5);
+        assertNode(root, "<synthetic>", Token.SYNTH_METHOD, 6);
 
         {
             assertNullNode(root.getChild(0), 0);

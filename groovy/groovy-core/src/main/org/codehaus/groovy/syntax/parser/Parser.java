@@ -1,74 +1,329 @@
+/*
+ $Id$
+
+ Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+
+ Redistribution and use of this software and associated documentation
+ ("Software"), with or without modification, are permitted provided
+ that the following conditions are met:
+
+ 1. Redistributions of source code must retain copyright
+    statements and notices.  Redistributions must also contain a
+    copy of this document.
+
+ 2. Redistributions in binary form must reproduce the
+    above copyright notice, this list of conditions and the
+    following disclaimer in the documentation and/or other
+    materials provided with the distribution.
+
+ 3. The name "groovy" must not be used to endorse or promote
+    products derived from this Software without prior written
+    permission of The Codehaus.  For written permission,
+    please contact info@codehaus.org.
+
+ 4. Products derived from this Software may not be called "groovy"
+    nor may "groovy" appear in their names without prior written
+    permission of The Codehaus. "groovy" is a registered
+    trademark of The Codehaus.
+
+ 5. Due credit should be given to The Codehaus -
+    http://groovy.codehaus.org/
+
+ THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
+ ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
+ NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+ FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+ THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+ STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ */
 package org.codehaus.groovy.syntax.parser;
 
-import java.io.IOException;
+import java.util.Iterator;
 
+import org.codehaus.groovy.syntax.ReadException;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;
+import org.codehaus.groovy.tools.ExceptionCollector;
+
+/**
+ *  Reads the source text and produces a hierarchy of Concrete Syntax Trees
+ *  (CSTs).  Exceptions are collected during processing, and parsing will
+ *  continue for while possible, in order to report as many problems as 
+ *  possible.   <code>compilationUnit()</code> is the primary entry point.
+ */
 
 public class Parser {
     private static final int[] identifierTokens = { Token.IDENTIFIER, Token.KEYWORD_CLASS, Token.KEYWORD_DEF };
 
-    private TokenStream tokenStream;
-    private boolean lastTokenStatementSeparator;
+    private TokenStream tokenStream = null;
+    private boolean lastTokenStatementSeparator = false;
+    private ExceptionCollector collector = null;
+
+    //---------------------------------------------------------------------------
+    // CONSTRUCTION AND DATA ACCESS
+
+    /**
+     *  Sets the <code>Parser</code> to process a <code>TokenStream</code>.
+     */
 
     public Parser(TokenStream tokenStream) {
         this.tokenStream = tokenStream;
+        this.collector = new ExceptionCollector(1);
     }
+
+    /**
+     *  Sets the <code>Parser</code> to process a <code>TokenStream</code>.
+     *  Exceptions will be collected in the specified collector.
+     */
+
+    public Parser(TokenStream tokenStream, ExceptionCollector collector) {
+        this.tokenStream = tokenStream;
+        this.collector = collector;
+    }
+
+    /**
+     *  Returns the <code>TokenStream</code> being parsed.
+     */
 
     public TokenStream getTokenStream() {
         return this.tokenStream;
     }
 
-    public void optionalSemicolon() throws IOException, SyntaxException {
+    //---------------------------------------------------------------------------
+    // PRODUCTION SUPPORT
+
+    /**
+     *  Eats an optional semicolon from the stream.
+     */
+
+    public void optionalSemicolon() throws ReadException, SyntaxException {
         while (lt_bare() == Token.SEMICOLON || lt_bare() == Token.NEWLINE) {
             consume_bare(lt_bare());
         }
     }
 
-    public void optionalNewlines() throws IOException, SyntaxException {
+    /**
+     *  Eats any optional newlines.
+     */
+
+    public void optionalNewlines() throws ReadException, SyntaxException {
         while (lt_bare() == Token.NEWLINE) {
             consume_bare(lt_bare());
         }
     }
 
-    public CSTNode compilationUnit() throws IOException, SyntaxException {
+    /**
+     *  Eats a required end-of-statement (semicolon or newline) from
+     *  the stream.  Throws an <code>UnexpectedTokenException</code> 
+     *  if anything else is found.
+     */
+
+    public void endOfStatement() throws ReadException, SyntaxException {
+        if (lt_bare() == Token.SEMICOLON || lt_bare() == Token.NEWLINE) {
+            consume_bare(lt_bare());
+        }
+        else {
+            if (lt_bare() != -1) {
+                throwExpected(new int[] { Token.SEMICOLON, Token.NEWLINE });
+            }
+        }
+    }
+
+    /**
+     *  Corrects for an error by eating the rest of the current
+     *  line or statement.
+     */
+
+    public void errorCorrect() throws ReadException, SyntaxException {
+        while (lt_bare() != -1 && lt_bare() != Token.SEMICOLON && lt_bare() != Token.NEWLINE) {
+            consume_bare(lt_bare());
+        }
+    }
+
+    //---------------------------------------------------------------------------
+    // TYPE SETS
+
+    /** 
+     *  Returns true if specified token type is in the supplied list.
+     */
+
+    public static boolean ofType(int type, int[] types) {
+        boolean ofType = false;
+
+        for (int i = 0; i < types.length; i++) {
+            if (type == types[i]) {
+                ofType = true;
+                break;
+            }
+        }
+
+        return ofType;
+    }
+
+    /**
+     *  Various generally useful type sets.
+     */
+
+    protected static final int[] TYPE_DEFINERS = new int[] { Token.KEYWORD_CLASS, Token.KEYWORD_INTERFACE };
+
+    //---------------------------------------------------------------------------
+    // TYPE TESTS
+
+    /**
+     *  Returns true if the token type is a primitive type.
+     */
+
+    public static boolean isPrimitiveTypeKeyword(int type, boolean evenVoid) {
+
+        boolean is = false;
+
+        switch (type) {
+            case Token.KEYWORD_INT :
+            case Token.KEYWORD_FLOAT :
+            case Token.KEYWORD_DOUBLE :
+            case Token.KEYWORD_CHAR :
+            case Token.KEYWORD_BYTE :
+            case Token.KEYWORD_SHORT :
+            case Token.KEYWORD_LONG :
+            case Token.KEYWORD_BOOLEAN :
+                is = true;
+                break;
+
+            case Token.KEYWORD_VOID :
+                if (evenVoid) {
+                    is = true;
+                }
+        }
+
+        return is;
+    }
+
+    /**
+     *  Returns true if the specified type is an identifier or a 
+     *  primitive type.
+     */
+
+    public static boolean isIdentifierOrPrimitiveTypeKeyword(int type) {
+        return (type == Token.IDENTIFIER || isPrimitiveTypeKeyword(type, false));
+    }
+
+    //---------------------------------------------------------------------------
+    // PRODUCTIONS
+
+    /**
+     *  The primary file-level parsing entry point.  The returned CST
+     *  represents the content in a single class file.  Collects most
+     *  exceptions and attempts to continue.
+     *  <p>
+     *  Grammar: <pre>
+     *     compilationUnit = [packageStatement]
+     *                       (usingStatement)*
+     *                       (topLevelStatement)*
+     *                       <eof>
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     compilationUnit = { <null> package imports (topLevelStatement)* }
+     *     
+     *     package           see packageDeclaration()
+     *     imports           see importStatement()
+     *     topLevelStatement see topLevelStatement()
+     *  </pre>
+     * 
+     */
+
+    public CSTNode compilationUnit() throws ReadException, SyntaxException, ExceptionCollector, ExceptionCollector {
+
         CSTNode compilationUnit = new CSTNode();
+
+        //
+        // First up, the package declaration
 
         CSTNode packageDeclaration = null;
 
         if (lt() == Token.KEYWORD_PACKAGE) {
-            packageDeclaration = packageDeclaration();
-            optionalSemicolon();
-        }
-        else {
-            packageDeclaration = new CSTNode(Token.keyword(-1, -1, "package"));
 
+            try {
+                packageDeclaration = packageDeclaration();
+                optionalSemicolon();
+            }
+
+            catch (SyntaxException e) {
+                collector.add(e);
+                errorCorrect();
+            }
+        }
+
+        if (packageDeclaration == null) {
+            packageDeclaration = new CSTNode(Token.keyword(-1, -1, "package"));
             packageDeclaration.addChild(new CSTNode());
         }
 
         compilationUnit.addChild(packageDeclaration);
 
-        CSTNode imports = new CSTNode();
+        //
+        // Next, handle import statements
 
+        CSTNode imports = new CSTNode();
         compilationUnit.addChild(imports);
 
         while (lt() == Token.KEYWORD_IMPORT) {
-            imports.addChild(importStatement());
-            optionalSemicolon();
+
+            try {
+                imports.addChild(importStatement());
+                optionalSemicolon();
+            }
+
+            catch (SyntaxException e) {
+                collector.add(e);
+                errorCorrect();
+            }
         }
 
+        //
+        // With that taken care of, process everything else.  
+
         while (lt() != -1) {
-            compilationUnit.addChild(typeDeclaration());
+
+            try {
+                compilationUnit.addChild(topLevelStatement());
+            }
+
+            catch (SyntaxException e) {
+                collector.add(e);
+                errorCorrect();
+            }
         }
 
         return compilationUnit;
     }
 
-    public CSTNode packageDeclaration() throws IOException, SyntaxException {
+    /**
+     *  Processes a package declaration.  Called by <code>compilationUnit()</code>.
+     *  <p>
+     *  Grammar: <pre>
+     *     packageDeclaration = "package" <identifier> ("." <identifier>)* <eos>
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     package = { "package" classes }
+     *     classes = { "." classes class } | class
+     *     class   = { <identifier> }
+     *  </pre>
+     */
+
+    public CSTNode packageDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode packageDeclaration = rootNode(Token.KEYWORD_PACKAGE);
 
         CSTNode cur = rootNode(Token.IDENTIFIER);
@@ -81,12 +336,28 @@ public class Parser {
             cur = dot;
         }
 
-        packageDeclaration.addChild(cur);
+        endOfStatement();
 
+        packageDeclaration.addChild(cur);
         return packageDeclaration;
     }
 
-    public CSTNode importStatement() throws IOException, SyntaxException {
+    /**
+     *  Processes an import statement.  Called by <code>compilationUnit()</code>.
+     *  <p>
+     *  Grammar: <pre>
+     *     importStatement = "import" <identifier> ("."<identifier>)* ["as" <identifier] <eos>
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     import  = { "import" classes as }
+     *     classes = { "." classes class } | class
+     *     class   = { <identifier> }
+     *     as      = { "as" class } | {}
+     *  </pre>
+     */
+
+    public CSTNode importStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode importStatement = rootNode(Token.KEYWORD_IMPORT);
 
         CSTNode cur = rootNode(Token.IDENTIFIER);
@@ -111,316 +382,721 @@ public class Parser {
             importStatement.addChild(new CSTNode());
         }
 
+        endOfStatement();
+
         return importStatement;
     }
 
-    public CSTNode typeDeclaration() throws IOException, SyntaxException {
-        CSTNode declaration = null;
+    /**
+     *  Processes a top level statement (classes, interfaces, unattached methods, and 
+     *  unattached code).  Called by <code>compilationUnit()</code>.
+     *  <p>
+     *  Grammar: <pre>
+     *     topLevelStatement
+     *       = ("def" modifierList methodReturnType methodIdentifier methodDeclaration)
+     *       | (modifierList typeDeclaration)
+     *       | statement
+     *
+     *     typeDeclaration 
+     *       = ("class"     classDeclaration)
+     *       | ("interface" interfaceDeclaration)
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     see methodDeclaration()
+     *     see classDeclaration()
+     *     see interfaceDeclaration()
+     *     see statement()
+     *  </pre>
+     */
 
-        CSTNode modifiers = new CSTNode();
+    public CSTNode topLevelStatement() throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode result = null;
+
+        //
+        // If it starts "def", it's a method declaration.  Methods
+        // declared this way cannot be abstract.  Note that "def" 
+        // is required because the return type is not, and it would
+        // be very hard to tell the difference between a function 
+        // def and a function invokation with clusure...
 
         if (lt() == Token.KEYWORD_DEF) {
             consume(lt());
 
-            while (isModifier(lt())) {
-                consume(modifiers, lt());
-            }
-            CSTNode type = methodReturnType();
-            CSTNode identifier = methodIdentifier();
+            CSTNode modifiers = modifierList(false, false);
+            CSTNode type = optionalDatatype(false, true);
+            CSTNode identifier = identifier(false);
 
-            return methodDeclaration(modifiers, type, identifier);
+            result = methodDeclaration(modifiers, type, identifier, false);
         }
 
+        //
+        // If it starts with a modifier, "class", or "interface", 
+        // it's a type declaration.
+
+        else if (isModifier(lt()) || lt() == Token.KEYWORD_CLASS || lt() == Token.KEYWORD_INTERFACE) {
+
+            CSTNode modifiers = modifierList(true, true);
+
+            switch (lt()) {
+                case Token.KEYWORD_CLASS :
+                    {
+                        result = classDeclaration(modifiers);
+                        break;
+                    }
+
+                case Token.KEYWORD_INTERFACE :
+                    {
+                        result = interfaceDeclaration(modifiers);
+                        break;
+                    }
+
+                default :
+                    {
+                        throwExpected(new int[] { Token.KEYWORD_CLASS, Token.KEYWORD_INTERFACE });
+                        break;
+                    }
+            }
+        }
+
+        //
+        // Otherwise, it's a statement.
+
+        else {
+            result = statement();
+        }
+
+        return result;
+    }
+
+    /**
+     *  A synomym for <code>topLevelStatement()</code>.
+     */
+
+    public CSTNode typeDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
+        return topLevelStatement();
+    }
+
+    /**
+     *  Processes the modifiers list that can appear on top- and class-level
+     *  method and class-level variable names (public, private, abstract, etc.).
+     *  <p>
+     *  Grammar: <pre>
+     *     modifierList = <modifier>*
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     modifiers = { <null> {<modifier>}* }
+     *  </pre>
+     */
+
+    public CSTNode modifierList(boolean allowStatic, boolean allowAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector {
+        CSTNode modifiers = new CSTNode();
+
         while (isModifier(lt())) {
+            if (lt() == Token.KEYWORD_ABSTRACT && !allowAbstract) {
+                collector.add(new ParserException("keyword 'abstract' not valid in this setting", la()));
+            }
+            else if (lt() == Token.KEYWORD_STATIC && !allowStatic) {
+                collector.add(new ParserException("keyword 'static' not valid in this setting", la()));
+            }
             consume(modifiers, lt());
         }
 
-        switch (lt()) {
-            case (Token.KEYWORD_CLASS) :
-                {
-                    declaration = classDeclaration(modifiers);
-                    break;
-                }
-            case (Token.KEYWORD_INTERFACE) :
-                {
-                    declaration = interfaceDeclaration(modifiers);
-                    break;
-                }
-            default :
-                {
-                    declaration = statement();
-                    /*                
-                                    throwExpected( new int[] {
-                                        Token.KEYWORD_CLASS,
-                                        Token.KEYWORD_INTERFACE
-                                    } );
-                    */
-                }
-        }
-
-        return declaration;
+        return modifiers;
     }
 
-    public CSTNode classDeclaration(CSTNode modifiers) throws IOException, SyntaxException {
+    /**
+     *  End markers for use by classDeclaration(), interfaceDeclaration(),
+     *  and methodDeclaration().
+     */
+
+    protected static final int[] EXTENDS_CLAUSE_TERMINATORS =
+        new int[] { Token.KEYWORD_IMPLEMENTS, Token.LEFT_CURLY_BRACE };
+
+    protected static final int[] IMPLEMENTS_CLAUSE_TERMINATORS = new int[] { Token.LEFT_CURLY_BRACE };
+
+    protected static final int[] THROWS_CLAUSE_TERMINATORS = new int[] { Token.LEFT_CURLY_BRACE };
+
+    /**
+     *  Processes a class declaration.  Caller has already processed the declaration
+     *  modifiers, and passes them in.
+     *  <p>
+     *  Grammar: <pre>
+     *     classDeclaration = <modifier>* "class" <identifier>
+     *                        ["extends" datatype]
+     *                        ["implements" datatype (, datatype)*]
+     *                        typeBody
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     class      = { "class" modifiers {<identifier>} extends implements body }
+     *     extends    = { "extends"    datatype  } | {}
+     *     implements = { "implements" datatype* } | {}
+     *
+     *     modifiers see modifierList()
+     *     datatype  see datatype()
+     *     body      see typeBody()
+     *  </pre>
+     */
+
+    public CSTNode classDeclaration(CSTNode modifiers) throws ReadException, SyntaxException, ExceptionCollector {
+
         CSTNode classDeclaration = rootNode(Token.KEYWORD_CLASS);
-
         classDeclaration.addChild(modifiers);
-
         consume(classDeclaration, Token.IDENTIFIER);
 
-        if (lt() == Token.KEYWORD_EXTENDS) {
-            CSTNode extendsNode = rootNode(Token.KEYWORD_EXTENDS);
+        //
+        // Process any extends clause.
 
+        try {
+            CSTNode extendsNode = typeList(Token.KEYWORD_EXTENDS, EXTENDS_CLAUSE_TERMINATORS, true, 1);
             classDeclaration.addChild(extendsNode);
-
-            CSTNode datatype = datatype();
-
-            extendsNode.addChild(datatype);
-
         }
-        else {
+        catch (SyntaxException e) {
+            collector.add(e);
             classDeclaration.addChild(new CSTNode());
         }
 
-        if (lt() == Token.KEYWORD_IMPLEMENTS) {
-            CSTNode implementsNode = rootNode(Token.KEYWORD_IMPLEMENTS);
+        //
+        // Process any implements clause.
 
+        try {
+            CSTNode implementsNode = typeList(Token.KEYWORD_IMPLEMENTS, IMPLEMENTS_CLAUSE_TERMINATORS, true, 0);
             classDeclaration.addChild(implementsNode);
-
-            CSTNode datatype = datatype();
-
-            implementsNode.addChild(datatype);
-
-            while (lt() == Token.COMMA) {
-                consume(Token.COMMA);
-                datatype = datatype();
-                implementsNode.addChild(datatype);
-            }
         }
-        else {
+        catch (SyntaxException e) {
+            collector.add(e);
             classDeclaration.addChild(new CSTNode());
         }
 
-        consume(Token.LEFT_CURLY_BRACE);
+        //
+        // Process the declaration body.  We currently ignore the abstract keyword.
 
-        CSTNode body = new CSTNode();
-
-        classDeclaration.addChild(body);
-
-        BODY_LOOP : while (true) {
-            switch (lt()) {
-                case (-1) :
-                    {
-                        break BODY_LOOP;
-                    }
-                case (Token.RIGHT_CURLY_BRACE) :
-                    {
-                        break BODY_LOOP;
-                    }
-                default :
-                    {
-                        body.addChild(bodyStatement());
-                    }
-            }
-        }
-
-        consume(Token.RIGHT_CURLY_BRACE);
+        classDeclaration.addChild(typeBody(true, true, false));
 
         return classDeclaration;
     }
 
-    public CSTNode interfaceDeclaration(CSTNode modifiers) throws IOException, SyntaxException {
+    /**
+     *  Processes a interface declaration.  Caller has already processed the 
+     *  declaration modifiers, and passes them in.
+     *  <p>
+     *  Grammar: <pre>
+     *     interfaceDeclaration = <modifier>* "interface" <identifier>
+     *                            ["extends" datatype (, datatype)*]
+     *                            typeBody
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     class      = { "interface" modifiers {<identifier>} {} extends body }
+     *     extends    = { "extends" datatype* } | {}
+     *
+     *     modifiers see modifierList()
+     *     datatype  see datatype()
+     *     body      see typeBody()
+     *  </pre>
+     */
+
+    public CSTNode interfaceDeclaration(CSTNode modifiers) throws ReadException, SyntaxException, ExceptionCollector {
+
         CSTNode interfaceDeclaration = rootNode(Token.KEYWORD_INTERFACE);
-
         interfaceDeclaration.addChild(modifiers);
-
         consume(interfaceDeclaration, Token.IDENTIFIER);
-
         interfaceDeclaration.addChild(new CSTNode());
 
-        if (lt() == Token.KEYWORD_EXTENDS) {
-            CSTNode extendsNode = rootNode(Token.KEYWORD_EXTENDS);
+        //
+        // Process any extends clause.
 
+        try {
+            CSTNode extendsNode = typeList(Token.KEYWORD_EXTENDS, IMPLEMENTS_CLAUSE_TERMINATORS, true, 0);
             interfaceDeclaration.addChild(extendsNode);
-
-            CSTNode datatype = datatype();
-
-            extendsNode.addChild(datatype);
-
-            while (lt() == Token.COMMA) {
-                consume(Token.COMMA);
-                datatype = datatype();
-                extendsNode.addChild(datatype);
-            }
+        }
+        catch (SyntaxException e) {
+            collector.add(e);
+            interfaceDeclaration.addChild(new CSTNode());
         }
 
-        consume(Token.LEFT_CURLY_BRACE);
-        consume(Token.RIGHT_CURLY_BRACE);
+        //
+        // Process the declaration body.  All methods must be abstract.
+        // Static methods are not allowed.
 
+        interfaceDeclaration.addChild(typeBody(false, true, true));
         return interfaceDeclaration;
     }
 
-    public CSTNode bodyStatement() throws IOException, SyntaxException {
-        CSTNode bodyStatement = null;
+    /**
+     *  Processes a type list, like the ones that occur after "extends" or 
+     *  implements.  If the list is optional, the returned CSTNode will
+     *  be empty.
+     *  <p>
+     *  Grammar: <pre>
+     *     typeList = datatype (, datatype)*
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     typeList = { <declarator> datatype* }
+     *
+     *     datatype see datatype()
+     *  </pre>
+     */
 
-        CSTNode modifiers = new CSTNode();
+    public CSTNode typeList(int declarator, int[] until, boolean optional, int limit)
+        throws ReadException, SyntaxException, ExceptionCollector {
 
-        while (isModifier(lt())) {
-            consume(modifiers, lt());
-        }
+        CSTNode typeList = null;
 
-        // lets consume a property keyword until we deprecate it
-        if (lt() == Token.KEYWORD_PROPERTY) {
-            consume(lt());
-        }
+        if (lt() == declarator) {
+            typeList = rootNode(declarator);
 
-        // lets consume any newlines
-        while (lt_bare() == Token.NEWLINE) {
-            consume_bare(lt_bare());
-        }
+            //
+            // Loop, reading one datatype at a time.  On error, attempt
+            // recovery until the end of the clause is found.
 
-        CSTNode type = methodReturnType();
-        CSTNode identifier = methodIdentifier();
+            while (limit == 0 || typeList.children() < limit) {
 
-        // now we must be either a property or method
-        // not that after the identifier, the left parenthesis *must* be on the same line
-        switch (lt_bare()) {
-            case Token.LEFT_PARENTHESIS :
-                bodyStatement = methodDeclaration(modifiers, type, identifier);
-                break;
+                //
+                // Try for a list entry, and correct if missing
 
-            case Token.EQUAL :
-            case Token.SEMICOLON :
-            case Token.NEWLINE :
-            case Token.RIGHT_CURLY_BRACE :
-            case -1 :
-                bodyStatement = propertyDeclaration(modifiers, type, identifier);
-                optionalSemicolon();
-                break;
+                try {
 
-            default :
-                throwExpected(
-                    new int[] {
-                        Token.LEFT_PARENTHESIS,
-                        Token.EQUAL,
-                        Token.SEMICOLON,
-                        Token.NEWLINE,
-                        Token.RIGHT_CURLY_BRACE });
-        }
-
-        return bodyStatement;
-    }
-
-    protected CSTNode methodIdentifier() throws IOException, SyntaxException {
-        return new CSTNode(consume_bare(Token.IDENTIFIER));
-    }
-
-    protected CSTNode methodReturnType() throws IOException, SyntaxException {
-        // lets consume the type if present
-        // either an identifier, void or foo.bar.whatnot
-        CSTNode type = new CSTNode();
-        if (lt_bare() == Token.IDENTIFIER) {
-            // could be method name or could be part of datatype
-            switch (lt_bare(2)) {
-                case Token.DOT :
-                    {
-                        // has datatype
-                        type = datatype();
-                        break;
+                    if (typeList.children() > 0) {
+                        consume(Token.COMMA);
                     }
-                case (Token.IDENTIFIER) :
-                    {
-                        type = new CSTNode(consume_bare(lt()));
-                        break;
+
+                    CSTNode datatype = datatype(false);
+                    typeList.addChild(datatype);
+                }
+                catch (SyntaxException e) {
+                    collector.add(e);
+
+                    //
+                    // If we are at the limit, consume until the end of the clause
+
+                    if (limit > 0 && typeList.children() >= limit) {
+                        while (lt() != -1 && !Parser.ofType(lt(), until)) {
+                            consume(lt());
+                        }
                     }
+
+                    //
+                    // Otherwise, consume until the end of the clause or a comma
+
+                    else {
+                        while (lt() != -1 && lt() != Token.COMMA && !Parser.ofType(lt(), until)) {
+                            consume(lt());
+                        }
+                    }
+                }
+
+                //
+                // Check if we have reached the end point.  It is
+                // done at the bottom of the loop to ensure that there
+                // is at least one datatype in the list
+
+                if (Parser.ofType(lt(), until)) {
+                    break;
+                }
             }
+        }
+
+        else {
+            if (optional) {
+                typeList = new CSTNode();
+            }
+            else {
+                throwExpected(new int[] { declarator });
+            }
+        }
+
+        return typeList;
+    }
+
+    /**
+     *  Processes the body of an interface or class.
+     *  <p>
+     *  Grammar: <pre>
+     *     typeBody = "{" typeBodyStatement* "}"
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     body = { <null> typeBodyStatement* }
+     *
+     *     typeBodyStatement see typeBodyStatement()
+     *  </pre>
+     */
+
+    public CSTNode typeBody(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode body = new CSTNode();
+
+        consume(Token.LEFT_CURLY_BRACE);
+
+        while (lt() != -1 && lt() != Token.RIGHT_CURLY_BRACE) {
+            try {
+                body.addChild(typeBodyStatement(allowStatic, allowAbstract, requireAbstract));
+            }
+            catch (SyntaxException e) {
+                collector.add(e);
+                errorCorrect();
+            }
+        }
+
+        consume(Token.RIGHT_CURLY_BRACE);
+
+        return body;
+    }
+
+    /**
+     *  Processes a single entry in the the body of an interface or class.
+     *  Valid objects are constructors, methods, properties, static initializers,
+     *  and inner classes or interfaces.
+     *  <p>
+     *  Grammar: <pre>
+     *     typeBodyStatement
+     *       = ("static" "{" statement* "}")
+     *       | (modifierList declaration)
+     *
+     *     declaration 
+     *       = ("class"     classDeclaration)
+     *       | ("interface" interfaceDeclaration)
+     *       | (["property"] optionalDatatype identifier value)  // "property" is deprecated
+     *
+     *     value
+     *       = methodDeclaration    // starts with "(" on same line 
+     *       | propertyDeclaration  // starts with one of "=", ";", "\n", "{"
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     see classDeclaration()
+     *     see interfaceDeclaration()
+     *     see methodDeclaration()
+     *     see propertyDeclaration()
+     *  </pre>
+     */
+
+    public CSTNode typeBodyStatement(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector {
+        CSTNode statement = null;
+
+        //
+        // As "static" can be both a modifier and a static initializer, we
+        // handle the static initializer first.
+
+        if (lt() == Token.KEYWORD_STATIC && lt(2) == Token.LEFT_CURLY_BRACE) {
+
+            if (!allowStatic) {
+                collector.add(new ParserException("static initializers not valid in this context", la()));
+            }
+
+            CSTNode modifiers = modifierList(true, false);
+            CSTNode identifier = new CSTNode(Token.identifier(-1, -1, ""));
+            statement = methodDeclaration(modifiers, new CSTNode(), identifier, false);
+        }
+
+        //
+        // Otherwise, it is a property, constructor, method, class, or interface.
+
+        else {
+
+            CSTNode modifiers = modifierList(allowStatic, allowAbstract);
+
+            //
+            // Check for inner types
+
+            if (lt() == Token.KEYWORD_CLASS) {
+                statement = classDeclaration(modifiers);
+            }
+
+            else if (lt() == Token.KEYWORD_INTERFACE) {
+                statement = interfaceDeclaration(modifiers);
+            }
+
+            //
+            // Otherwise, it is a property, constructor, or method.
+
+            else {
+
+                //
+                // Ignore any property keyword, if present (it's deprecated)
+
+                if (lt() == Token.KEYWORD_PROPERTY) {
+                    consume(lt());
+                }
+
+                //
+                // All processing here is whitespace sensitive, in order
+                // to be consistent with the way "def" functions work (due
+                // to the optionality of the semicolon).  One of the
+                // consequences is that the left parenthesis of a 
+                // method declaration /must/ appear on the same line.
+
+                while (lt_bare() == Token.NEWLINE) {
+                    consume_bare(lt_bare());
+                }
+
+                CSTNode type = optionalDatatype(true, true);
+                // We don't yet know about void, so we err on the side of caution
+                CSTNode identifier = identifier(true);
+
+                switch (lt_bare()) {
+                    case Token.LEFT_PARENTHESIS :
+                        {
+
+                            //
+                            // We require abstract if specified on call or the 
+                            // "abstract" modifier was supplied.
+
+                            boolean methodIsAbstract = requireAbstract;
+
+                            if (!methodIsAbstract) {
+                                Iterator iterator = modifiers.childIterator();
+                                while (iterator.hasNext()) {
+                                    CSTNode child = (CSTNode) iterator.next();
+                                    if (child.getToken().getType() == Token.KEYWORD_ABSTRACT) {
+                                        methodIsAbstract = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            statement = methodDeclaration(modifiers, type, identifier, methodIsAbstract);
+                            break;
+                        }
+
+                    case Token.EQUAL :
+                    case Token.SEMICOLON :
+                    case Token.NEWLINE :
+                    case Token.RIGHT_CURLY_BRACE :
+                    case -1 :
+                        statement = propertyDeclaration(modifiers, type, identifier);
+                        optionalSemicolon();
+                        break;
+
+                    default :
+                        throwExpected(
+                            new int[] {
+                                Token.LEFT_PARENTHESIS,
+                                Token.EQUAL,
+                                Token.SEMICOLON,
+                                Token.NEWLINE,
+                                Token.RIGHT_CURLY_BRACE });
+                }
+            }
+        }
+
+        return statement;
+    }
+
+    /**
+     *  A synonym for <code>typeBodyStatement( true, true, false )</code>.
+     */
+
+    public CSTNode bodyStatement() throws ReadException, SyntaxException, ExceptionCollector {
+        return typeBodyStatement(true, true, false);
+    }
+
+    /**
+     *  Processes a method/variable name.  Newlines can be made significant, 
+     *  if required for disambiguation.
+     *  <p>
+     *  Grammar: <pre>
+     *     identifier = <identifier>
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     identifier = { <identifier> }
+     *  </pre>
+     */
+
+    protected CSTNode identifier(boolean useBare) throws ReadException, SyntaxException, ExceptionCollector {
+        if (useBare) {
+            return new CSTNode(consume_bare(Token.IDENTIFIER));
         }
         else {
-            switch (lt_bare()) {
-                case (Token.KEYWORD_VOID) :
-                case (Token.KEYWORD_INT) :
-                case (Token.KEYWORD_FLOAT) :
-                case (Token.KEYWORD_DOUBLE) :
-                case (Token.KEYWORD_CHAR) :
-                case (Token.KEYWORD_BYTE) :
-                case (Token.KEYWORD_SHORT) :
-                case (Token.KEYWORD_LONG) :
-                case (Token.KEYWORD_BOOLEAN) :
-                    {
-                        type = new CSTNode(consume_bare(lt_bare()));
-                    }
+            return new CSTNode(consume(Token.IDENTIFIER));
+        }
+    }
+
+    /**
+     *  Processes an optional data type marker (for a parameter, method return type, 
+     *  etc.).  Newlines can be made significant, if required for disambiguation.
+     *  <p>
+     *  Grammar: <pre>
+     *     optionalDatatype = datatype? (?=<identifier>)
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     result = datatype | {}
+     *
+     *     see datatype()
+     *  </pre>
+     */
+
+    protected CSTNode optionalDatatype(boolean useBare, boolean allowVoid)
+        throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode type = new CSTNode();
+        int lt = (useBare ? lt_bare() : lt());
+
+        if (lt == Token.IDENTIFIER) {
+
+            //
+            // If it is an identifier, it could be an untyped variable/method
+            // name.  We test this by verifying that it a) isn't a simple
+            // identifier or b) that it is followed by another identifier.
+
+            if (Parser.ofType(lt_bare(2), OPTIONAL_DATATYPE_FOLLOWER)) {
+                type = datatype(allowVoid);
             }
         }
+
+        else if (Parser.isPrimitiveTypeKeyword(lt, true)) {
+            type = datatype(allowVoid);
+        }
+
         return type;
     }
 
-    public CSTNode propertyDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
-        throws IOException, SyntaxException {
-        CSTNode propertyDeclaration = new CSTNode(Token.keyword(-1, -1, "property"));
+    public static final int[] OPTIONAL_DATATYPE_FOLLOWER = { Token.IDENTIFIER, Token.LEFT_SQUARE_BRACKET, Token.DOT };
 
-        propertyDeclaration.addChild(modifiers);
-        propertyDeclaration.addChild(identifier);
-        propertyDeclaration.addChild(type);
+    /**
+     *  Processes a class/interface property, including the optional initialization
+     *  clause.  The modifiers, type, and identifier have already been identified
+     *  by the caller, and are passed in.
+     *  <p>
+     *  Grammar: <pre>
+     *     propertyDeclaration = (modifierList datatype? identifier ["=" expression])
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     property = { "property" modifierList methodIdentifier methodReturnType expression? }
+     *     
+     *     see modifierList()
+     *     see methodIdentifier()
+     *     see methodReturnType()
+     *     see expression()
+     *  </pre>
+     */
+
+    public CSTNode propertyDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
+        throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode property = new CSTNode(Token.keyword(-1, -1, "property"));
+
+        property.addChild(modifiers);
+        property.addChild(identifier);
+        property.addChild(type);
 
         if (lt() == Token.EQUAL) {
             consume(lt());
-            propertyDeclaration.addChild(expression());
+            property.addChild(expression());
         }
-        return propertyDeclaration;
+
+        return property;
     }
 
-    public CSTNode methodDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
-        throws IOException, SyntaxException {
-        CSTNode methodDeclaration = new CSTNode(Token.syntheticMethod());
+    /**
+     *  Processes a class/interface method.  The modifiers, type, and identifier have 
+     *  already been identified by the caller, and are passed in.  If <code>emptyOnly</code>
+     *  is set, no method body will be allowed.
+     *  <p>
+     *  Grammar: <pre>
+     *     methodDeclaration = modifierList datatype? identifier 
+     *                         "(" parameterDeclarationList ")" 
+     *                         [ "throws" typeList ]
+     *                         ( statementBlock | ";" )?
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     property = { "method" modifierList methodIdentifier methodReturnType 
+     *                   parameterDeclarationList statementBlock throwsClause }
+     *
+     *     throwsClause = { "throws" datatype* } | {}
+     *     
+     *     see modifierList()
+     *     see methodIdentifier()
+     *     see methodReturnType()
+     *     see parameterDeclarationList()
+     *     see statementBlock()
+     *  </pre>
+     */
 
-        methodDeclaration.addChild(modifiers);
-        methodDeclaration.addChild(identifier);
-        methodDeclaration.addChild(type);
+    public CSTNode methodDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier, boolean emptyOnly)
+        throws ReadException, SyntaxException, ExceptionCollector {
 
-        CSTNode paramsRoot = rootNode(Token.LEFT_PARENTHESIS);
+        CSTNode method = new CSTNode(Token.syntheticMethod());
+        method.addChild(modifiers);
+        method.addChild(identifier);
+        method.addChild(type);
 
-        methodDeclaration.addChild(paramsRoot);
+        //
+        // Process the parameter list
 
-        while (lt() != Token.RIGHT_PARENTHESIS) {
-            switch (lt(2)) {
-                case (Token.DOT) :
-                case (Token.IDENTIFIER) :
-                case (Token.LEFT_SQUARE_BRACKET) :
-                    {
-                        type = datatype();
-                        break;
-                    }
-                default :
-                    {
-                        type = new CSTNode();
-                    }
-            }
+        Token label = consume(Token.LEFT_PARENTHESIS);
+        CSTNode parameters = parameterDeclarationList();
+        parameters.setToken(label);
 
-            CSTNode param = new CSTNode();
-
-            paramsRoot.addChild(param);
-
-            consume(param, Token.IDENTIFIER);
-
-            param.addChild(type);
-
-            if (lt() == Token.COMMA) {
-                consume(Token.COMMA);
-            }
-        }
-
+        method.addChild(parameters);
         consume(Token.RIGHT_PARENTHESIS);
 
-        methodDeclaration.addChild(statementBlock());
+        //
+        // Process the optional "throws" clause
 
-        return methodDeclaration;
+        CSTNode throwsClause = new CSTNode();
+        try {
+            throwsClause = typeList(Token.KEYWORD_THROWS, THROWS_CLAUSE_TERMINATORS, true, 0);
+        }
+        catch (SyntaxException e) {
+            collector.add(e);
+        }
+
+        //
+        // And the body, but only if allowed.
+
+        if (emptyOnly) {
+            method.addChild(new CSTNode());
+            optionalSemicolon();
+
+            if (lt() == Token.LEFT_CURLY_BRACE) {
+                collector.add(new ParserException("method cannot have a body", la()));
+            }
+        }
+        else {
+            method.addChild(statementBlock());
+        }
+
+        //
+        // Finally, tack on the throws clause and return.
+
+        method.addChild(throwsClause);
+
+        return method;
     }
 
-    protected CSTNode parameterDeclarationList() throws IOException, SyntaxException {
-        CSTNode parameterDeclarationList = new CSTNode();
+    /**
+     *  Processes a parameter declaration list, which can occur on methods and closures.
+     *  It runs until anything that doesn't belong in a parameter list.
+     *  <p>
+     *  Grammar: <pre>
+     *     parameterDeclarationList = (parameterDeclaration ("," parameterDeclaration)*)?
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     parameters = { <null> parameter* }
+     *     
+     *     see parameterDeclaration()
+     *  </pre>
+     */
 
-        while (lt() == Token.IDENTIFIER || isIdentifierOrPrimtiveTypeKeyword(lt())) {
-            parameterDeclarationList.addChild(parameterDeclaration());
+    protected CSTNode parameterDeclarationList() throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode list = new CSTNode();
+        while (Parser.isIdentifierOrPrimitiveTypeKeyword(lt())) {
+            list.addChild(parameterDeclaration());
 
             if (lt() == Token.COMMA) {
                 consume(Token.COMMA);
@@ -430,108 +1106,127 @@ public class Parser {
             }
         }
 
-        return parameterDeclarationList;
+        return list;
     }
 
-    protected CSTNode parameterDeclaration() throws IOException, SyntaxException {
-        CSTNode parameterDeclaration = null;
+    /**
+     *  Processes a single parameter declaration, which can occur on methods and closures.
+     *  <p>
+     *  Grammar: <pre>
+     *     parameterDeclaration = datatype? <identifier>
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     parameter = { <null> datatype identifier }
+     *     
+     *     see datatype()
+     *     see identifier()
+     *  </pre>
+     */
+
+    protected CSTNode parameterDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode parameter = new CSTNode(Token.syntheticParameterDeclaration());
+        parameter.addChild(optionalDatatype(false, false));
+        parameter.addChild(identifier(false));
+
+        return parameter;
+    }
+
+    /**
+     *  Processes a datatype specification.  For reasons of disambiguation,
+     *  the array marker ([]) must never be on a separate line from the 
+     *  base datatype.
+     *  <p>
+     *  Grammar: <pre>
+     *     datatype = scalarDatatype ( "[" "]" )*
+     *     
+     *     scalarDatatype 
+     *       = (<identifier> ("." <identifier>)*)
+     *       | "void" | "int" | ...
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     datatype = { "[" datatype } | typename
+     *     typename = { "." typename name } | name
+     *     name     = { <identifier> } | { "void" } | { "int" } | ...
+     *  </pre>
+     */
+
+    protected CSTNode datatype(boolean allowVoid) throws ReadException, SyntaxException, ExceptionCollector {
+
+        CSTNode datatype = scalarDatatype(allowVoid);
 
         //
-        // TODO: deal with array declarations
-        // { int a[]
-        //
+        // Then handle any number of array dimensions
 
-        switch (lt(2)) {
-            case (Token.IDENTIFIER) :
-            case (Token.LEFT_SQUARE_BRACKET) :
-            case (Token.DOT) :
-                {
-                    parameterDeclaration = parameterDeclarationWithDatatype();
-                    break;
-                }
-            default :
-                {
-                    parameterDeclaration = parameterDeclarationWithoutDatatype();
-                    break;
-                }
+        while (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
+            CSTNode array = rootNode(Token.LEFT_SQUARE_BRACKET, datatype);
+            consume_bare(Token.RIGHT_SQUARE_BRACKET);
+
+            datatype = array;
         }
 
-        return parameterDeclaration;
-    }
-
-    protected CSTNode parameterDeclarationWithDatatype() throws IOException, SyntaxException {
-        CSTNode parameterDeclaration = new CSTNode(Token.syntheticParameterDeclaration());
-
-        CSTNode datatype = datatype();
-
-        parameterDeclaration.addChild(datatype);
-
-        consume(parameterDeclaration, Token.IDENTIFIER);
-
-        return parameterDeclaration;
-    }
-
-    protected CSTNode parameterDeclarationWithoutDatatype() throws IOException, SyntaxException {
-        CSTNode parameterDeclaration = new CSTNode(Token.syntheticParameterDeclaration());
-
-        consume(parameterDeclaration, Token.IDENTIFIER);
-
-        parameterDeclaration.addChild(new CSTNode());
-
-        return parameterDeclaration;
-    }
-
-    protected CSTNode datatype() throws IOException, SyntaxException {
-        CSTNode datatype = datatypeWithoutArray();
-
-        if (datatype != null) {
-            if (lt_bare() == Token.LEFT_SQUARE_BRACKET && lt_bare(2) == Token.RIGHT_SQUARE_BRACKET) {
-                CSTNode newRoot = new CSTNode(Token.leftSquareBracket(-1, -1));
-                newRoot.addChild(datatype);
-                datatype = newRoot;
-
-                //datatype = rootNode( Token.LEFT_SQUARE_BRACKET, datatype );
-
-                consume_bare(datatype, Token.LEFT_SQUARE_BRACKET);
-                consume_bare(Token.RIGHT_SQUARE_BRACKET);
-            }
-        }
         return datatype;
     }
 
-    protected CSTNode datatypeWithoutArray() throws IOException, SyntaxException {
+    /**
+     *  A synonym for <code>datatype( true )</code>.
+     */
+
+    protected CSTNode datatype() throws ReadException, SyntaxException, ExceptionCollector {
+        return datatype(true);
+    }
+
+    /**
+     *  Processes a scalar datatype specification.  
+     *  <p>
+     *  Grammar: <pre>
+     *     scalarDatatype 
+     *       = (<identifier> ("." <identifier>)*)
+     *       | "void" | "int" | ...
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     typename = { "." typename name } | name
+     *     name     = { <identifier> } | { "void" } | { "int" } | ...
+     *  </pre>
+     */
+
+    protected CSTNode scalarDatatype(boolean allowVoid) throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode datatype = null;
 
-        switch (lt()) {
-            case (Token.KEYWORD_VOID) :
-            case (Token.KEYWORD_INT) :
-            case (Token.KEYWORD_FLOAT) :
-            case (Token.KEYWORD_DOUBLE) :
-            case (Token.KEYWORD_CHAR) :
-            case (Token.KEYWORD_BYTE) :
-            case (Token.KEYWORD_SHORT) :
-            case (Token.KEYWORD_LONG) :
-            case (Token.KEYWORD_BOOLEAN) :
-                {
-                    datatype = rootNode(lt());
-                    break;
-                }
-            default :
-                {
-                    datatype = rootNode(Token.IDENTIFIER);
-
-                    while (lt() == Token.DOT) {
-                        CSTNode dot = rootNode(Token.DOT, datatype);
-                        consume(dot, Token.IDENTIFIER);
-
-                        datatype = dot;
-                    }
-                }
+        if (Parser.isPrimitiveTypeKeyword(lt(), allowVoid)) {
+            datatype = rootNode(lt());
         }
+        else {
+            datatype = rootNode(Token.IDENTIFIER);
+
+            while (lt() == Token.DOT) {
+                CSTNode dot = rootNode(Token.DOT, datatype);
+                consume(dot, Token.IDENTIFIER);
+                datatype = dot;
+            }
+        }
+
         return datatype;
     }
 
-    protected CSTNode statementOrStatementBlock() throws IOException, SyntaxException {
+    /**
+     *  Processes a statement block if available, or a statement otherwise.
+     *  <p>
+     *  Grammar: <pre>
+     *     see statementBlock()
+     *     see statement()
+     *  </pre>
+     *  <p>
+     *  CST: <pre>
+     *     see statementBlock()
+     *     see statement()
+     *  </pre>
+     */
+
+    protected CSTNode statementOrStatementBlock() throws ReadException, SyntaxException, ExceptionCollector {
         if (la().getType() == Token.LEFT_CURLY_BRACE) {
             return statementBlock();
         }
@@ -540,7 +1235,7 @@ public class Parser {
         }
     }
 
-    protected CSTNode statementBlock() throws IOException, SyntaxException {
+    protected CSTNode statementBlock() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statementBlock = rootNode(Token.LEFT_CURLY_BRACE);
 
         statementsUntilRightCurly(statementBlock);
@@ -550,7 +1245,7 @@ public class Parser {
         return statementBlock;
     }
 
-    protected void statementsUntilRightCurly(CSTNode root) throws IOException, SyntaxException {
+    protected void statementsUntilRightCurly(CSTNode root) throws ReadException, SyntaxException, ExceptionCollector {
         while (lt() != Token.RIGHT_CURLY_BRACE) {
             root.addChild(statement());
 
@@ -570,7 +1265,7 @@ public class Parser {
         }
     }
 
-    protected CSTNode statement() throws IOException, SyntaxException {
+    protected CSTNode statement() throws ReadException, SyntaxException, ExceptionCollector, ExceptionCollector {
         CSTNode statement = null;
 
         switch (lt()) {
@@ -638,15 +1333,22 @@ public class Parser {
                 }
             default :
                 {
-                    statement = expression();
-                    optionalSemicolon();
+                    try {
+                        statement = expression();
+                        optionalSemicolon();
+                    }
+
+                    catch (SyntaxException e) {
+                        collector.add(e);
+                        errorCorrect();
+                    }
                 }
         }
 
         return statement;
     }
 
-    protected CSTNode switchStatement() throws IOException, SyntaxException {
+    protected CSTNode switchStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_SWITCH);
         consume(Token.LEFT_PARENTHESIS);
 
@@ -701,7 +1403,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode breakStatement() throws IOException, SyntaxException {
+    protected CSTNode breakStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_BREAK);
 
         if (lt() == Token.IDENTIFIER) {
@@ -713,7 +1415,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode continueStatement() throws IOException, SyntaxException {
+    protected CSTNode continueStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_CONTINUE);
 
         if (lt() == Token.IDENTIFIER) {
@@ -725,7 +1427,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode throwStatement() throws IOException, SyntaxException {
+    protected CSTNode throwStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_THROW);
 
         statement.addChild(expression());
@@ -733,7 +1435,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode synchronizedStatement() throws IOException, SyntaxException {
+    protected CSTNode synchronizedStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_SYNCHRONIZED);
 
         statement.addChild(expression());
@@ -743,7 +1445,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode ifStatement() throws IOException, SyntaxException {
+    protected CSTNode ifStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_IF);
 
         consume(Token.LEFT_PARENTHESIS);
@@ -772,7 +1474,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode tryStatement() throws IOException, SyntaxException {
+    protected CSTNode tryStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_TRY);
 
         statement.addChild(statementBlock());
@@ -784,7 +1486,7 @@ public class Parser {
 
             consume(Token.LEFT_PARENTHESIS);
 
-            catchBlock.addChild(datatype());
+            catchBlock.addChild(datatype(false));
 
             consume(catchBlock, Token.IDENTIFIER);
 
@@ -808,7 +1510,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode returnStatement() throws IOException, SyntaxException {
+    protected CSTNode returnStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_RETURN);
 
         statement.addChild(expression());
@@ -816,7 +1518,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode whileStatement() throws IOException, SyntaxException {
+    protected CSTNode whileStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_WHILE);
 
         consume(Token.LEFT_PARENTHESIS);
@@ -830,7 +1532,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode doWhileStatement() throws IOException, SyntaxException {
+    protected CSTNode doWhileStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_DO);
 
         statement.addChild(statementOrStatementBlock());
@@ -845,7 +1547,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode forStatement() throws IOException, SyntaxException {
+    protected CSTNode forStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_FOR);
 
         consume(Token.LEFT_PARENTHESIS);
@@ -889,7 +1591,7 @@ public class Parser {
         return statement;
     }
 
-    protected CSTNode assertStatement() throws IOException, SyntaxException {
+    protected CSTNode assertStatement() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode statement = rootNode(Token.KEYWORD_ASSERT);
 
         statement.addChild(ternaryExpression());
@@ -909,13 +1611,13 @@ public class Parser {
     // ----------------------------------------------------------------------
     // ----------------------------------------------------------------------
 
-    protected CSTNode expression() throws IOException, SyntaxException {
+    protected CSTNode expression() throws ReadException, SyntaxException, ExceptionCollector {
         optionalNewlines();
 
         return assignmentExpression();
     }
 
-    protected CSTNode assignmentExpression() throws IOException, SyntaxException {
+    protected CSTNode assignmentExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = null;
 
         if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.IDENTIFIER && lt_bare(3) == Token.EQUAL) {
@@ -946,7 +1648,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode ternaryExpression() throws IOException, SyntaxException {
+    protected CSTNode ternaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = logicalOrExpression();
 
         if (lt_bare() == Token.QUESTION) {
@@ -965,7 +1667,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode logicalOrExpression() throws IOException, SyntaxException {
+    protected CSTNode logicalOrExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = logicalAndExpression();
 
         while (lt_bare() == Token.LOGICAL_OR) {
@@ -977,7 +1679,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode logicalAndExpression() throws IOException, SyntaxException {
+    protected CSTNode logicalAndExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = equalityExpression();
 
         while (lt_bare() == Token.LOGICAL_AND) {
@@ -989,7 +1691,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode equalityExpression() throws IOException, SyntaxException {
+    protected CSTNode equalityExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = relationalExpression();
 
         switch (lt_bare()) {
@@ -1007,7 +1709,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode relationalExpression() throws IOException, SyntaxException {
+    protected CSTNode relationalExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = rangeExpression();
 
         switch (lt_bare()) {
@@ -1029,7 +1731,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode rangeExpression() throws IOException, SyntaxException {
+    protected CSTNode rangeExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = additiveExpression();
 
         if (lt_bare() == Token.DOT_DOT) {
@@ -1045,7 +1747,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode additiveExpression() throws IOException, SyntaxException {
+    protected CSTNode additiveExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = multiplicativeExpression();
 
         LOOP : while (true) {
@@ -1070,7 +1772,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode multiplicativeExpression() throws IOException, SyntaxException {
+    protected CSTNode multiplicativeExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = unaryExpression();
 
         LOOP : while (true) {
@@ -1095,7 +1797,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode unaryExpression() throws IOException, SyntaxException {
+    protected CSTNode unaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = null;
 
         switch (lt_bare()) {
@@ -1126,7 +1828,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode postfixExpression() throws IOException, SyntaxException {
+    protected CSTNode postfixExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = primaryExpression();
 
         Token laToken = la();
@@ -1145,7 +1847,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode primaryExpression() throws IOException, SyntaxException {
+    protected CSTNode primaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = null;
         CSTNode identifier = null;
 
@@ -1255,7 +1957,7 @@ public class Parser {
         return new CSTNode(Token.keyword(-1, -1, "this"));
     }
 
-    protected CSTNode subscriptExpression(CSTNode expr) throws SyntaxException, IOException {
+    protected CSTNode subscriptExpression(CSTNode expr) throws ReadException, SyntaxException, ExceptionCollector {
         expr = rootNode_bare(lt_bare(), expr);
 
         optionalNewlines();
@@ -1287,7 +1989,8 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode methodCallOrPropertyExpression(CSTNode expr) throws SyntaxException, IOException {
+    protected CSTNode methodCallOrPropertyExpression(CSTNode expr)
+        throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode dotExpr = rootNode_bare(lt_bare());
         CSTNode identifier = rootNode_bare(lt_bare());
 
@@ -1318,7 +2021,7 @@ public class Parser {
     }
 
     protected CSTNode sugaryMethodCallExpression(CSTNode expr, CSTNode identifier, CSTNode dotExpr)
-        throws IOException, SyntaxException {
+        throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode methodExpr = null;
         CSTNode paramList = null;
 
@@ -1356,7 +2059,7 @@ public class Parser {
     }
 
     protected CSTNode tryParseMethodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
-        throws SyntaxException, IOException {
+        throws SyntaxException, ReadException {
         switch (lt_bare()) {
             case Token.IDENTIFIER :
             case Token.DOUBLE_QUOTE_STRING :
@@ -1377,7 +2080,7 @@ public class Parser {
     }
 
     protected CSTNode methodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
-        throws SyntaxException, IOException {
+        throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode methodExpr = new CSTNode(Token.leftParenthesis(-1, -1));
         methodExpr.addChild(expr);
         methodExpr.addChild(identifier);
@@ -1396,11 +2099,11 @@ public class Parser {
         return methodExpr;
     }
 
-    protected boolean lookAheadForMethodCall() throws IOException, SyntaxException {
+    protected boolean lookAheadForMethodCall() throws ReadException, SyntaxException, ExceptionCollector {
         return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE) && (isIdentifier(lt(2)));
     }
 
-    protected CSTNode regexPattern() throws IOException, SyntaxException {
+    protected CSTNode regexPattern() throws ReadException, SyntaxException, ExceptionCollector {
         Token token = consume(Token.PATTERN_REGEX);
         CSTNode expr = new CSTNode(token);
         CSTNode regexString = doubleQuotedString();
@@ -1408,7 +2111,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode doubleQuotedString() throws IOException, SyntaxException {
+    protected CSTNode doubleQuotedString() throws ReadException, SyntaxException, ExceptionCollector {
         Token token = consume(Token.DOUBLE_QUOTE_STRING);
         String text = token.getText();
 
@@ -1472,7 +2175,7 @@ public class Parser {
 
     }
 
-    protected CSTNode parentheticalExpression() throws IOException, SyntaxException {
+    protected CSTNode parentheticalExpression() throws ReadException, SyntaxException, ExceptionCollector {
         consume(Token.LEFT_PARENTHESIS);
 
         if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.RIGHT_PARENTHESIS) {
@@ -1502,7 +2205,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode parameterList(int endOfListDemarc) throws IOException, SyntaxException {
+    protected CSTNode parameterList(int endOfListDemarc) throws ReadException, SyntaxException, ExceptionCollector {
         if (isIdentifier(lt_bare()) && lt_bare(2) == Token.COLON) {
             return namedParameterList(endOfListDemarc);
         }
@@ -1536,13 +2239,14 @@ public class Parser {
     /**
      * Tests that the next token is an identifier
      */
-    protected void expectIdentifier() throws SyntaxException, IOException {
+    protected void expectIdentifier() throws SyntaxException, ReadException {
         if (!isIdentifier(lt_bare())) {
             throwExpected(identifierTokens);
         }
     }
 
-    protected CSTNode namedParameterList(int endOfListDemarc) throws IOException, SyntaxException {
+    protected CSTNode namedParameterList(int endOfListDemarc)
+        throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode parameterList = new CSTNode(Token.syntheticList());
 
         while (lt() != endOfListDemarc) {
@@ -1567,10 +2271,10 @@ public class Parser {
         return parameterList;
     }
 
-    protected CSTNode newExpression() throws IOException, SyntaxException {
+    protected CSTNode newExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = rootNode(Token.KEYWORD_NEW);
 
-        expr.addChild(datatypeWithoutArray());
+        expr.addChild(scalarDatatype(false));
 
         /*
         consume( Token.LEFT_PARENTHESIS );
@@ -1614,7 +2318,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode closureExpression() throws IOException, SyntaxException {
+    protected CSTNode closureExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = rootNode(Token.LEFT_CURLY_BRACE);
 
         boolean pipeRequired = false;
@@ -1631,8 +2335,8 @@ public class Parser {
 
         boolean canBeParamList = false;
 
-        if (isIdentifierOrPrimtiveTypeKeyword(lt())) {
-            if (isIdentifierOrPrimtiveTypeKeyword(lt(2))) {
+        if (Parser.isIdentifierOrPrimitiveTypeKeyword(lt())) {
+            if (Parser.isIdentifierOrPrimitiveTypeKeyword(lt(2))) {
                 canBeParamList = lt(3) == Token.PIPE || lt(3) == Token.COMMA;
             }
             else {
@@ -1664,19 +2368,7 @@ public class Parser {
         return expr;
     }
 
-    protected boolean isIdentifierOrPrimtiveTypeKeyword(int value) {
-        return value == Token.IDENTIFIER
-            || value == Token.KEYWORD_BOOLEAN
-            || value == Token.KEYWORD_BYTE
-            || value == Token.KEYWORD_CHAR
-            || value == Token.KEYWORD_DOUBLE
-            || value == Token.KEYWORD_FLOAT
-            || value == Token.KEYWORD_INT
-            || value == Token.KEYWORD_LONG
-            || value == Token.KEYWORD_SHORT;
-    }
-
-    protected CSTNode listOrMapExpression() throws IOException, SyntaxException {
+    protected CSTNode listOrMapExpression() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = null;
 
         consume(Token.LEFT_SQUARE_BRACKET);
@@ -1706,7 +2398,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode mapExpression(CSTNode key) throws IOException, SyntaxException {
+    protected CSTNode mapExpression(CSTNode key) throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = new CSTNode(Token.syntheticMap());
 
         CSTNode entry = rootNode(Token.COLON, key);
@@ -1732,7 +2424,7 @@ public class Parser {
         return expr;
     }
 
-    protected CSTNode listExpression(CSTNode entry) throws IOException, SyntaxException {
+    protected CSTNode listExpression(CSTNode entry) throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode expr = new CSTNode(Token.syntheticList());
 
         expr.addChild(entry);
@@ -1750,7 +2442,7 @@ public class Parser {
 
     /*
     protected CSTNode listExpression()
-        throws IOException, SyntaxException
+        throws ReadException, SyntaxException, ExceptionCollector
     {
         CSTNode expr = rootNode( Token.LEFT_SQUARE_BRACKET );
     
@@ -1774,7 +2466,7 @@ public class Parser {
     }
     */
 
-    protected CSTNode argumentList() throws IOException, SyntaxException {
+    protected CSTNode argumentList() throws ReadException, SyntaxException, ExceptionCollector {
         CSTNode argumentList = new CSTNode();
 
         while (lt() != Token.RIGHT_PARENTHESIS) {
@@ -1791,8 +2483,12 @@ public class Parser {
         return argumentList;
     }
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    //---------------------------------------------------------------------------
+    // SUPPORT ROUTINES
+
+    /**
+     *  Returns true if the specified token type is a valid class modifier.
+     */
 
     protected static boolean isModifier(int type) {
         switch (type) {
@@ -1802,6 +2498,7 @@ public class Parser {
             case (Token.KEYWORD_STATIC) :
             case (Token.KEYWORD_FINAL) :
             case (Token.KEYWORD_SYNCHRONIZED) :
+            case (Token.KEYWORD_ABSTRACT) :
                 {
                     return true;
                 }
@@ -1812,36 +2509,32 @@ public class Parser {
         }
     }
 
-    protected void throwExpected(int[] expectedTypes) throws IOException, SyntaxException {
+    /**
+     *  Throws an <code>UnexpectedTokenException</code>.
+     */
+
+    protected void throwExpected(int[] expectedTypes) throws ReadException, SyntaxException {
         throw new UnexpectedTokenException(la(), expectedTypes);
     }
 
-    protected void consumeUntil(int type) throws IOException, SyntaxException {
-        while (lt() != -1) {
-            consume(lt());
+    //---------------------------------------------------------------------------
+    // VANILLA TOKEN LOOKAHEAD -- NEWLINES IGNORED
 
-            if (lt() == type) {
-                consume(lt());
-                break;
-            }
-        }
-    }
+    /**
+     *  Returns (without consuming) the next non-newline token in the 
+     *  underlying token stream.  
+     */
 
-    protected Token la() throws IOException, SyntaxException {
+    protected Token la() throws ReadException, SyntaxException {
         return la(1);
     }
 
-    protected int lt() throws IOException, SyntaxException {
-        Token token = la();
+    /**
+     *  Returns (without consuming any tokens) the next <code>k</code>th
+     *  non-newline token from the underlying token stream.
+     */
 
-        if (token == null) {
-            return -1;
-        }
-
-        return token.getType();
-    }
-
-    protected Token la(int k) throws IOException, SyntaxException {
+    protected Token la(int k) throws ReadException, SyntaxException {
         Token token = null;
         for (int pivot = 1, count = 0; count < k; pivot++) {
             token = getTokenStream().la(pivot);
@@ -1852,7 +2545,19 @@ public class Parser {
         return token;
     }
 
-    protected int lt(int k) throws IOException, SyntaxException {
+    /**
+     *  Returns the type of the <code>la()</code> token, or -1.
+     */
+
+    protected int lt() throws ReadException, SyntaxException {
+        return lt(1);
+    }
+
+    /**
+     *  Returns the type of the <code>la(k)</code> token, or -1.
+     */
+
+    protected int lt(int k) throws ReadException, SyntaxException {
         Token token = la(k);
 
         if (token == null) {
@@ -1862,10 +2567,42 @@ public class Parser {
         return token.getType();
     }
 
-    protected Token consume(int type) throws IOException, SyntaxException {
+    //---------------------------------------------------------------------------
+    // VANILLA TOKEN CONSUMPTION -- NEWLINES IGNORED
+
+    /**
+     *  Consumes tokens until one of the specified type is consumed.
+     */
+
+    protected void consumeUntil(int type) throws ReadException, SyntaxException {
+        boolean done = false;
+
+        while (lt() != -1 && !done) {
+
+            if (lt() == type) {
+                done = true;
+            }
+
+            consume(lt());
+        }
+    }
+
+    /**
+     *  Consumes (and returns) the next token if it is of the specified type, or 
+     *  throws an <code>UnexpectedTokenException</code>.  If the specified type 
+     *  is Token.NEWLINE, eats all available newlines, and consumes (and returns)
+     *  the next (non-newline) token.
+     */
+
+    protected Token consume(int type) throws ReadException, SyntaxException {
         if (lt() != type) {
             throw new UnexpectedTokenException(la(), type);
         }
+
+        //
+        // lt() has told us there is a valid token somewhere, but it ignores
+        // newlines, and we have to consume them from the underlying stream
+        // before getting to the token lt() found.
 
         while (true) {
             Token token = getTokenStream().la();
@@ -1878,12 +2615,89 @@ public class Parser {
         return getTokenStream().consume(type);
     }
 
-    protected void consume(CSTNode root, int type) throws IOException, SyntaxException {
+    /**
+     *  Adds a <code>CSTNode</code> of the result of <code>consume(type)</code> 
+     *  as a child of <code>root</code>.  Throws <code>UnexpectedTokenException</code>
+     *  if the next token is not of the correct type.
+     */
+
+    protected void consume(CSTNode root, int type) throws ReadException, SyntaxException {
         root.addChild(new CSTNode(consume(type)));
     }
 
-    // bare versions of the token methods which don't ignore newlines
-    protected void consumeUntil_bare(int type) throws IOException, SyntaxException {
+    /**
+     *  Returns a new <code>CSTNode</code> that holds the result of 
+     *  <code>consume(type)</code>.   Throws <code>UnexpectedTokenException</code>
+     *  if the next token is not of the correct type.
+     */
+
+    protected CSTNode rootNode(int type) throws ReadException, SyntaxException {
+        return new CSTNode(consume(type));
+    }
+
+    /**
+     *  Identical to <code>rootNode(type)</code>, but adds <code>child</child> as
+     *  a child of the newly created node.
+     */
+
+    protected CSTNode rootNode(int type, CSTNode child) throws ReadException, SyntaxException {
+        CSTNode root = new CSTNode(consume(type));
+        root.addChild(child);
+        return root;
+    }
+
+    //---------------------------------------------------------------------------
+    // RAW TOKEN LOOKAHEAD -- NEWLINES INCLUDED
+
+    /**
+     *  Returns (without consuming) the next token in the underlying token 
+     *  stream (newlines included).  
+     */
+
+    protected Token la_bare() throws ReadException, SyntaxException {
+        return la_bare(1);
+    }
+
+    /**
+     *  Returns (without consuming any tokens) the next <code>k</code>th
+     *  token from the underlying token stream (newlines included).
+     */
+
+    protected Token la_bare(int k) throws ReadException, SyntaxException {
+        return getTokenStream().la(k);
+    }
+
+    /**
+     *  Returns the type of the <code>la_bare()</code> token, or -1.
+     */
+
+    protected int lt_bare() throws ReadException, SyntaxException {
+        return lt_bare(1);
+    }
+
+    /**
+     *  Returns the type of the <code>la_bare(k)</code> token, or -1.
+     */
+
+    protected int lt_bare(int k) throws ReadException, SyntaxException {
+        Token token = la_bare(k);
+
+        if (token == null) {
+            return -1;
+        }
+
+        return token.getType();
+    }
+
+    //---------------------------------------------------------------------------
+    // RAW TOKEN CONSUMPTION -- NEWLINES INCLUDED
+
+    /**
+     *  Consumes tokens until one of the specified type is consumed.  Newlines
+     *  are treated as normal tokens.
+     */
+
+    protected void consumeUntil_bare(int type) throws ReadException, SyntaxException {
         while (lt_bare() != -1) {
             consume_bare(lt_bare());
 
@@ -1894,35 +2708,14 @@ public class Parser {
         }
     }
 
-    protected Token la_bare() throws IOException, SyntaxException {
-        return la_bare(1);
-    }
+    /**
+     *  Consumes (and returns) the next token if it is of the specified type, or 
+     *  throws <code>UnexpectedTokenException</code>.  Updates 
+     *  <code>lastTokenStatementSeparator</code> if the consumed token is a 
+     *  semicolon or a newline.
+     */
 
-    protected int lt_bare() throws IOException, SyntaxException {
-        Token token = la_bare();
-
-        if (token == null) {
-            return -1;
-        }
-
-        return token.getType();
-    }
-
-    protected Token la_bare(int k) throws IOException, SyntaxException {
-        return getTokenStream().la(k);
-    }
-
-    protected int lt_bare(int k) throws IOException, SyntaxException {
-        Token token = la_bare(k);
-
-        if (token == null) {
-            return -1;
-        }
-
-        return token.getType();
-    }
-
-    protected Token consume_bare(int type) throws IOException, SyntaxException {
+    protected Token consume_bare(int type) throws ReadException, SyntaxException {
         if (lt_bare() != type) {
             throw new UnexpectedTokenException(la_bare(), type);
         }
@@ -1932,25 +2725,30 @@ public class Parser {
         return getTokenStream().consume(type);
     }
 
-    protected void consume_bare(CSTNode root, int type) throws IOException, SyntaxException {
+    /**
+     *  Analogous to <code>consume(root, type)</code>, exception consumes with
+     *  <code>consume_bare</code>.
+     */
+
+    protected void consume_bare(CSTNode root, int type) throws ReadException, SyntaxException {
         root.addChild(new CSTNode(consume_bare(type)));
     }
 
-    protected CSTNode rootNode(int type) throws IOException, SyntaxException {
-        return new CSTNode(consume(type));
-    }
+    /**
+     *  Analagous to <code>rootNode(type)</code>, except consumes with 
+     *  <code>consume_bare</code>.
+     */
 
-    protected CSTNode rootNode_bare(int type) throws IOException, SyntaxException {
+    protected CSTNode rootNode_bare(int type) throws ReadException, SyntaxException {
         return new CSTNode(consume_bare(type));
     }
 
-    protected CSTNode rootNode(int type, CSTNode child) throws IOException, SyntaxException {
-        CSTNode root = new CSTNode(consume(type));
-        root.addChild(child);
-        return root;
-    }
+    /**
+     *  Analagous to <code>rootNode(type, child)</code>, except consumes with
+     *  <code>consume_bare()</code>.
+     */
 
-    protected CSTNode rootNode_bare(int type, CSTNode child) throws IOException, SyntaxException {
+    protected CSTNode rootNode_bare(int type, CSTNode child) throws ReadException, SyntaxException {
         CSTNode root = new CSTNode(consume_bare(type));
         root.addChild(child);
         return root;

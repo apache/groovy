@@ -24,20 +24,25 @@ public class UnexpectedTokenException extends ParserException {
         return this.expectedTypes;
     }
 
+    public String getUnexpectedTokenText( ) {
+        String text = null;
+        if( this.unexpectedToken != null )
+        {
+            text = this.unexpectedToken.getText();
+        }
+
+        if( text == null )
+        {
+            text = "";
+        }
+
+        return text;
+    }
+
     public String getMessage() {
         StringBuffer message = new StringBuffer();
 
-        String startLine = "<end-of-file>";
-        String description = "<end-of-file>";
-
-        message.append(getSourceLocator() + ":");
-
-        if (getUnexpectedToken() != null) {
-            startLine = "" + getUnexpectedToken().getStartLine();
-            description = getUnexpectedToken().getDescription() + " '" + getUnexpectedToken().getText() + "'";
-        }
-
-        message.append(startLine + ": ");
+        message.append( "expected " );
 
         if (this.expectedTypes.length == 1) {
             message.append(Token.getTokenDescription(this.expectedTypes[0]));
@@ -49,7 +54,12 @@ public class UnexpectedTokenException extends ParserException {
                 message.append(Token.getTokenDescription(this.expectedTypes[i]));
 
                 if ((i + 1) < expectedTypes.length) {
-                    message.append(", ");
+                    if( expectedTypes.length > 2 ) {
+                        message.append(", ");
+                    }
+                    else {
+                        message.append(" ");
+                    }
                 }
 
                 if ((i + 2) == expectedTypes.length) {
@@ -60,7 +70,7 @@ public class UnexpectedTokenException extends ParserException {
             message.append(" }");
         }
 
-        message.append(" expected but found " + description);
+        message.append( "; found '").append( getUnexpectedTokenText() ).append( "'" );
 
         return message.toString();
     }

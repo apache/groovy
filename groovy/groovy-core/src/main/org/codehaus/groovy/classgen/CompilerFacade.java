@@ -43,6 +43,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.ReadException;
 import org.codehaus.groovy.syntax.lexer.CharStream;
 import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
@@ -51,6 +52,7 @@ import org.codehaus.groovy.syntax.parser.ASTBuilder;
 import org.codehaus.groovy.syntax.parser.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
+import org.codehaus.groovy.tools.ExceptionCollector;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -141,19 +143,32 @@ public abstract class CompilerFacade {
     }
 
     protected void parseClass(CharStream charStream, String file) throws SyntaxException, IOException {
-        Lexer lexer = new Lexer(charStream);
-        Parser parser = new Parser(new LexerTokenStream(lexer));
-        CSTNode compilationUnit = parser.compilationUnit();
 
-        ASTBuilder astBuilder = new ASTBuilder(classLoader);
-        ModuleNode module = astBuilder.build(compilationUnit);
-        unit.addModule(module);
-        module.setDescription(file);
+        //
+        // NEW ERROR HANDLING NOT YET IN PLACE!!!
 
-        GeneratorContext context = new GeneratorContext(unit);
-        for (Iterator iter = module.getClasses().iterator(); iter.hasNext();) {
-            generateClass(context, (ClassNode) iter.next(), file);
+        try {
+            Lexer lexer = new Lexer(charStream);
+            Parser parser = new Parser(new LexerTokenStream(lexer));
+            CSTNode compilationUnit = parser.compilationUnit();
+
+            ASTBuilder astBuilder = new ASTBuilder(classLoader);
+            ModuleNode module = astBuilder.build(compilationUnit);
+            unit.addModule(module);
+            module.setDescription(file);
+
+            GeneratorContext context = new GeneratorContext(unit);
+            for (Iterator iter = module.getClasses().iterator(); iter.hasNext();) {
+                generateClass(context, (ClassNode) iter.next(), file);
+            }
         }
+        catch( ReadException e ) {
+            throw e.getIOCause();   // Fake it
+        }
+        catch( ExceptionCollector e ) {
+            throw (SyntaxException)e.get(0);  // Fake it
+        }
+
     }
 
     protected abstract void onClass(ClassWriter classWriter, ClassNode classNode);

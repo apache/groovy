@@ -50,8 +50,11 @@ import org.codehaus.groovy.syntax.Token;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
 
-/** Node in the concrete syntax tree.
+
+/** 
+ *  Node in the concrete syntax tree.
  *
  *  @see Parser
  *  @see Token
@@ -64,13 +67,23 @@ public class CSTNode
 {
     public static final CSTNode[] EMPTY_ARRAY = new CSTNode[0];
 
-    private Token token;
-    private List children;
+    private Token token;     // an optional identifier for this node
+    private List children;   // a list of child nodes
+
+
+   /**
+    *  Initializes the node with token set to <code>null</code>.
+    */
 
     public CSTNode()
     {
         this.children = new ArrayList();
     }
+
+
+   /**
+    *  Initializes the node with the specified token.
+    */
 
     public CSTNode(Token token)
     {
@@ -78,30 +91,93 @@ public class CSTNode
         this.token = token;
     }
 
+
+   /**
+    *  Returns the token set on construction, or null.
+    */
+    
     public Token getToken()
     {
         return this.token;
     }
+
+
+   /**
+    *  Changes the token set on construction.  Not generally
+    *  a good idea.  :-)
+    */
+
+    public void setToken( Token value )
+    {
+        token = value;
+    }
+
+
+   /**
+    *  Appends a child node to the child list.
+    */
 
     public void addChild(CSTNode node)
     {
         this.children.add( node );
     }
 
+
+   /**
+    *  Returns the child at the specified index.
+    */
+
     public CSTNode getChild(int index)
     {
         return (CSTNode) this.children.get( index );
     }
 
+
+   /**
+    *  Returns an array of all children.
+    */
+
     public CSTNode[] getChildren()
     {
         return (CSTNode[]) this.children.toArray( CSTNode.EMPTY_ARRAY );
     }
+
+
+   /**
+    *  Returns the number of children.
+    */
+
+    public int children()
+    {
+        return this.children.size();
+    }
+
+
+   /**
+    *  Returns an <code>Iterator</code> on the child list.
+    */
+
+    public Iterator childIterator()
+    {
+        return this.children.iterator();
+    }
     
+   
+   /**
+    *  Returns a pretty-printed representation of the node, 
+    *  including all descendents.
+    */
+
     public String toString()
     {
         return dump();
     }
+
+
+   /**
+    *  Generates the pretty-printed representation of the node
+    *  returned by <code>toString</code>.
+    */
 
     public String dump()
     {
@@ -109,6 +185,12 @@ public class CSTNode
 
         return dump( indent );
     }
+
+
+   /**
+    *  Does the actual work of generating the pretty-printing for
+    *  this node.
+    */
 
     protected String dump(String indent)
     {
