@@ -1512,7 +1512,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             expression.getExpression(i).visit(this);
             cv.visitInsn(AASTORE);
         }
-        createTupleMethod.call(cv);
+        //createTupleMethod.call(cv);
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
