@@ -1509,6 +1509,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String getTypeDescription(String name) {
         // lets avoid class loading
         // return getType(name).getDescriptor();
+        if (name == null) {
+            return "Ljava/lang/Object;";
+        }
         if (name.equals("void")) {
             return "V";
         }

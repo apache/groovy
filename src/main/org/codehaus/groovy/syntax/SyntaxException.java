@@ -45,7 +45,6 @@
  */
 package org.codehaus.groovy.syntax;
 
-import org.codehaus.groovy.GroovyException;
 
 /** Base exception indicating a syntax error.
  *
@@ -54,10 +53,19 @@ import org.codehaus.groovy.GroovyException;
  *  @version $Id$
  */
 public class SyntaxException
-    extends GroovyException
+    extends RuntimeException
 {
     private String sourceLocator;
 
+    public SyntaxException() 
+    {
+    }
+    
+    public SyntaxException(String message) 
+    {
+        super(message);
+    }
+    
     public void setSourceLocator(String sourceLocator)
     {
         this.sourceLocator = sourceLocator;
