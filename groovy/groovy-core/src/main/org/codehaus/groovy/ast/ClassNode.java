@@ -37,6 +37,7 @@ package org.codehaus.groovy.ast;
 import groovy.lang.GroovyObject;
 import groovy.lang.Script;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -143,7 +144,7 @@ public class ClassNode extends MetadataNode implements Constants {
         return properties;
     }
 
-    public List getConstructors() {
+    public List getDeclaredConstructors() {
         return constructors;
     }
 
@@ -479,27 +480,47 @@ public class ClassNode extends MetadataNode implements Constants {
         for (int i = 0; i < methods.length; i++ ) {
             answer.addMethod(createMethodNode(methods[i]));
         }
+        Constructor[] constructors = theClass.getDeclaredConstructors();
+        for (int i = 0; i < constructors.length; i++ ) {
+            answer.addConstructor(createConstructorNode(constructors[i]));
+        }
         return answer;
     }
 
 
     /**
-     * Factory method to create a new MethodNode for the given Method
+     * Factory method to create a new ConstructorNode via reflection
+     */
+    private ConstructorNode createConstructorNode(Constructor constructor) {
+        Parameter[] parameters = createParameters(constructor.getParameterTypes());
+        return new ConstructorNode(constructor.getModifiers(), parameters, EmptyStatement.INSTANCE);
+    }
+
+    /**
+     * Factory method to create a new MethodNode via reflection
      */
     protected MethodNode createMethodNode(Method method) {
+        Parameter[] parameters = createParameters(method.getParameterTypes());
+        return new MethodNode(method.getName(), method.getModifiers(), method.getReturnType().getName(), parameters, EmptyStatement.INSTANCE);
+    }
+
+    /**
+     * @param types
+     * @return
+     */
+    protected Parameter[] createParameters(Class[] types) {
         Parameter[] parameters = Parameter.EMPTY_ARRAY;
-        Class[] types = method.getParameterTypes();
         int size = types.length;
         if (size > 0) {
             parameters = new Parameter[size];
             for (int i = 0; i < size; i++) {
-                parameters[i] = createParameter(method, types[i], i);
+                parameters[i] = createParameter(types[i], i);
             }
         }
-        return new MethodNode(method.getName(), method.getModifiers(), method.getReturnType().getName(), parameters, EmptyStatement.INSTANCE);
+        return parameters;
     }
 
-    protected Parameter createParameter(Method method, Class parameterType, int idx) {
+    protected Parameter createParameter(Class parameterType, int idx) {
         return new Parameter(parameterType.getName(), "param" + idx);
     }
 
@@ -686,7 +707,7 @@ public class ClassNode extends MetadataNode implements Constants {
             visitor.visitField((FieldNode) iter.next());
         }
 
-        for (Iterator iter = getConstructors().iterator(); iter.hasNext();) {
+        for (Iterator iter = getDeclaredConstructors().iterator(); iter.hasNext();) {
             visitor.visitConstructor((ConstructorNode) iter.next());
         }
 

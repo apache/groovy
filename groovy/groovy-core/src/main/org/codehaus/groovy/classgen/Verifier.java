@@ -213,7 +213,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
         }
 
-        if (node.getConstructors().isEmpty()) {
+        if (node.getDeclaredConstructors().isEmpty()) {
             ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
             constructor.setSynthetic(true);
             node.addConstructor(constructor);
@@ -393,7 +393,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     protected void addFieldInitialization(ClassNode node) {
-        for (Iterator iter = node.getConstructors().iterator(); iter.hasNext();) {
+        for (Iterator iter = node.getDeclaredConstructors().iterator(); iter.hasNext();) {
             addFieldInitialization(node, (ConstructorNode) iter.next());
         }
     }

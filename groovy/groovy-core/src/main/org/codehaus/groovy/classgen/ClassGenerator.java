@@ -1090,7 +1090,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         passingClosureParams = true;
-        List constructors = innerClass.getConstructors();
+        List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
         Parameter[] localVariableParams = node.getParameters();
 
@@ -1397,7 +1397,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         int argCount = argExpr.getExpressions().size();
         ClassNode superClassNode = classNode.getSuperClassNode();
         if (superClassNode != null) {
-            List constructors = superClassNode.getConstructors();
+            List constructors = superClassNode.getDeclaredConstructors();
             for (Iterator iter = constructors.iterator(); iter.hasNext(); ) {
                 ConstructorNode constructor = (ConstructorNode) iter.next();
                 if (constructor.getParameters().length == argCount) {
