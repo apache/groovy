@@ -204,4 +204,10 @@ public class DataSet extends Sql {
         }
         return visitor;
     }
+    /*
+     * create a subset of the original dataset
+     */
+    public DataSet createView(Closure criteria) {
+    	return new DataSet(this, criteria);
+    }
 }
