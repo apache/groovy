@@ -16,11 +16,9 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
     
     void testTimes() {
-        /** @todo parser bug 
         count = 0
         5.times { i | count = count + i }
         assert count == 10
-        */
         
         count = 0
         temp = 5

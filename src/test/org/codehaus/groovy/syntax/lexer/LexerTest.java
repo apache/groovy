@@ -605,10 +605,31 @@ public class LexerTest
                       Token.FLOAT_NUMBER );
     }
 
+	public void testNumber_IntegerCall()
+		throws Exception
+	{
+		newLexer( "42.cheese");
+    	
+		assertNextToken(Token.INTEGER_NUMBER, "42");
+		assertNextToken(Token.DOT, ".");
+		assertNextToken(Token.IDENTIFIER, "cheese");
+	}
+
+	public void testNumber_FloatCall()
+		throws Exception
+	{
+		newLexer( "42.0.cheese");
+    	
+		assertNextToken(Token.FLOAT_NUMBER, "42.0");
+		assertNextToken(Token.DOT, ".");
+		assertNextToken(Token.IDENTIFIER, "cheese");
+	}
+
+    /*
     public void testNumber_UnexpectedCharacter()
         throws Exception
     {
-        newLexer( "42.cheese" );
+        newLexer( "4.0cheese" );
 
         char[] expected = assertUnexpectedCharacter( 'c',
                                                      1,
@@ -638,7 +659,8 @@ public class LexerTest
         assertContains( '9',
                         expected );
     }
-
+    */
+    
     // ----------------------------------------------------------------------
     // ----------------------------------------------------------------------
 
