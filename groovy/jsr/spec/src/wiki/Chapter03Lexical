@@ -76,7 +76,7 @@ h2. 3.7 Comments
 Comment syntaxes are the same as in Java.
 Note that the newline terminating an "end of line" comment can be significant.
 
-In addition, if the first non-space character of a Groovy program is the ASCII sharp sign ('#'), the whole line is treated as a comment.  In other words, the program is treated exactly as if two slash characters ('//') were inserted before the sharp sign.
+In addition, if the first two characters of a Groovy program are the ASCII sharp sign and exclamation point ('#', '!'), the whole line is treated as a comment.  In other words, the program is treated exactly as if two slash characters ('//') were inserted before the sharp sign.
 This unusual rule makes it easier to write Groovy scripts on some systems.
 
 {anchor:3.8}
