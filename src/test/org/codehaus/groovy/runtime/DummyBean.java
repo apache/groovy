@@ -84,4 +84,8 @@ public class DummyBean {
     public void set(String property, Object newValue) {
         dynamicProperties.put(property, newValue);
     }
+    
+    public static String dummyStaticMethod(String text) {
+        return text.toUpperCase();
+    }
 }

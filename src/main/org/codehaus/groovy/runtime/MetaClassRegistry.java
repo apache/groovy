@@ -92,7 +92,7 @@ public class MetaClassRegistry {
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     Class owner = paramTypes[0];
-                    getMetaClass(owner).addStaticMethod(method);
+                    getMetaClass(owner).addNewStaticInstanceMethod(method);
                 }
             }
         }

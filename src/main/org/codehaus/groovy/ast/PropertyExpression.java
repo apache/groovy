@@ -77,4 +77,8 @@ public class PropertyExpression extends Expression {
         return objectExpression.getText() + "." + property;
     }
 
+    public String toString() {
+        return super.toString() + "[object: " + objectExpression + " property: " + property + "]";
+    }
+
 }

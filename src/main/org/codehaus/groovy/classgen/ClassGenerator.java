@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.CatchStatement;
+import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
@@ -103,7 +104,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     private static final String[] EMPTY_PARAMETER_TYPES = {
     };
 
-    private ClassVisitor classVisitor;
+    private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
     private String sourceFile;
@@ -155,8 +156,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private boolean definingParameters;
 
+    private List syntheticStaticFields = new ArrayList();
+
     public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
-        this.classVisitor = classVisitor;
+        this.cw = classVisitor;
         this.classLoader = classLoader;
         this.sourceFile = sourceFile;
     }
@@ -168,10 +171,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
+        syntheticStaticFields.clear();
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
-        classVisitor.visit(
+        cw.visit(
             classNode.getModifiers(),
             internalClassName,
             internalBaseClassName,
@@ -197,7 +201,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             visitMethod((MethodNode) iter.next());
         }
 
-        classVisitor.visitEnd();
+        createSyntheticStaticFields();
+
+        cw.visitEnd();
     }
 
     public void visitConstructor(ConstructorNode node) {
@@ -205,7 +211,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         //String methodType = Type.getMethodDescriptor(VOID_TYPE, )
 
         String methodType = getMethodDescriptor("void", node.getParameters());
-        cv = classVisitor.visitMethod(node.getModifiers(), "<init>", methodType, null);
+        cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null);
 
         resetVariableStack(node.getParameters());
 
@@ -221,7 +227,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         //System.out.println("Visiting method: " + node.getName() + " with return type: " + node.getReturnType());
 
         String methodType = getMethodDescriptor(node.getReturnType(), node.getParameters());
-        cv = classVisitor.visitMethod(node.getModifiers(), node.getName(), methodType, null);
+        cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null);
 
         resetVariableStack(node.getParameters());
 
@@ -232,14 +238,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (!outputReturn) {
             cv.visitInsn(RETURN);
         }
-        
+
         // lets do all the exception blocks
-        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
             Runnable runnable = (Runnable) iter.next();
             runnable.run();
         }
         exceptionBlocks.clear();
-        
+
         cv.visitMaxs(0, 0);
     }
 
@@ -257,7 +263,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 fieldValue = value;
             }
         }
-        classVisitor.visitField(
+        cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
             getTypeDescription(fieldNode.getType()),
@@ -435,14 +441,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         onLineNumber(statement);
 
         CatchStatement catchStatement = statement.getCatchStatement(0);
-        String exceptionVar = (catchStatement != null) 
-            ? catchStatement.getVariable()
-            : createExceptionVariableName();
-            
+        String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createExceptionVariableName();
+
         int exceptionIndex = defineVariable(exceptionVar, catchStatement.getExceptionType(), false).getIndex();
         int index2 = exceptionIndex + 1;
         int index3 = index2 + 1;
-        
+
         final Label l0 = new Label();
         cv.visitLabel(l0);
 
@@ -462,7 +466,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(ASTORE, exceptionIndex);
 
         if (catchStatement != null) {
-            statement.visit(this);
+            catchStatement.visit(this);
         }
 
         cv.visitJumpInsn(JSR, l2);
@@ -487,20 +491,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(RET, index3);
         cv.visitLabel(l4);
 
-
         // rest of code goes here...
 
-        
-        final String exceptionType = (catchStatement != null)
-            ?  getTypeDescription(catchStatement.getExceptionType())
-            : null;
+        final String exceptionType =
+            (catchStatement != null) ? getTypeDescription(catchStatement.getExceptionType()) : null;
 
-        exceptionBlocks.add( new Runnable() {
+        exceptionBlocks.add(new Runnable() {
             public void run() {
-        cv.visitTryCatchBlock(l0, l1, l5, exceptionType);
-        cv.visitTryCatchBlock(l0, l3, l7, null);
-        cv.visitTryCatchBlock(l5, l6, l7, null);
-        cv.visitTryCatchBlock(l7, l8, l7, null);
+                cv.visitTryCatchBlock(l0, l1, l5, exceptionType);
+                cv.visitTryCatchBlock(l0, l3, l7, null);
+                cv.visitTryCatchBlock(l5, l6, l7, null);
+                cv.visitTryCatchBlock(l7, l8, l7, null);
             }
         });
     }
@@ -705,7 +706,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         getPropertyMethod.call(cv);
 
-        cv.visitInsn(POP);
+        //cv.visitInsn(POP);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -737,6 +738,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         else {
             String name = expression.getVariable();
+
+            /** todo parser REMOVE THIS DIRTY HACK AS SOON AS COMPILER HANDLES ClassExpression */
+            if (name.equals("System")) {
+                new ClassExpression("java.lang.System").visit(this);
+                return;
+            }
+
             Variable variable = defineVariable(name, "java.lang.Object");
             String type = variable.getType();
             int index = variable.getIndex();
@@ -778,6 +786,56 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 }
             }
         }
+    }
+
+    protected void createSyntheticStaticFields() {
+        for (Iterator iter = syntheticStaticFields.iterator(); iter.hasNext();) {
+            String staticFieldName = (String) iter.next();
+            // generate a field node
+            cw.visitField(ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null);
+        }
+
+        cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null);
+        Label l0 = new Label();
+        cv.visitLabel(l0);
+        cv.visitVarInsn(ALOAD, 0);
+        cv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+        Label l1 = new Label();
+        cv.visitLabel(l1);
+        cv.visitInsn(ARETURN);
+        Label l2 = new Label();
+        cv.visitLabel(l2);
+        cv.visitVarInsn(ASTORE, 1);
+        cv.visitTypeInsn(NEW, "java/lang/NoClassDefFoundError");
+        cv.visitInsn(DUP);
+        cv.visitVarInsn(ALOAD, 1);
+        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "getMessage", "()Ljava/lang/String;");
+        cv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V");
+        cv.visitInsn(ATHROW);
+        cv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
+        cv.visitMaxs(3, 2);
+
+        cw.visitEnd();
+    }
+
+    public void visitClassExpression(ClassExpression expression) {
+        String type = expression.getText();
+        final String staticFieldName = "class$" + type.replace('.', '$');
+
+        syntheticStaticFields.add(staticFieldName);
+
+        cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFNONNULL, l0);
+        cv.visitLdcInsn(type);
+        cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
+        cv.visitInsn(DUP);
+        cv.visitFieldInsn(PUTSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+        cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+        cv.visitLabel(l1);
     }
 
     public void visitRangeExpression(RangeExpression expression) {
@@ -1034,9 +1092,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     private String createExceptionVariableName() {
-        return  "__exception" + idx;
+        return "__exception" + idx;
     }
-
 
     /**
      * @return if the type of the expression can be determined at compile time then 

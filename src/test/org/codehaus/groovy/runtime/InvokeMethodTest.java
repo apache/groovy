@@ -147,6 +147,11 @@ public class InvokeMethodTest extends GroovyTestCase {
         Object value = invoke("hello", "size", null);
         assertEquals("size of string", new Integer(5), value);
     }
+
+    public void testStaticMethod() throws Throwable {
+        Object value = invoke(DummyBean.class, "dummyStaticMethod", "abc");
+        assertEquals("size of string", "ABC", value);
+    }
     
     public void testInvokeUnknownMethod() throws Throwable {
         try {

@@ -204,14 +204,19 @@ public class DumpClass {
     
     public void tryCatch() {
         try {
-            testGroovyAssertion();
+            InvokerHelper.invokeMethod(this, "testGroovyAssertion", null);
         }
         catch (AssertionError e) {
-            System.out.println(e);
+            InvokerHelper.invokeMethod(this, "onException", e);
         }
         finally {
-            result = null;   
+            InvokerHelper.invokeMethod(this, "finallyBlock", null);
         }
-        System.out.println("Hello!");
+        InvokerHelper.invokeMethod(this, "afterTryCatch", null);
+    }
+    
+    public void doPrintln() {
+        Object value = InvokerHelper.getProperty(System.class, "out");
+        InvokerHelper.invokeMethod(value, "println", "Hello");
     }
 }

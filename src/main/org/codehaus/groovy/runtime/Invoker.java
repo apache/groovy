@@ -75,11 +75,19 @@ public class Invoker {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        Class theClass = object.getClass();
         List argumentList = asList(arguments);
+        if (object instanceof Class) {
+            Class theClass = (Class) object;
 
-        MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-        return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+            return metaClass.invokeStaticMethod(methodName, arguments, argumentList);
+        }
+        else {
+            Class theClass = object.getClass();
+
+            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+            return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+        }
     }
 
     public List asList(Object value) {
@@ -159,7 +167,7 @@ public class Invoker {
      */
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
-        
+
         if (left instanceof Comparable) {
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);
@@ -238,6 +246,10 @@ public class Invoker {
         if (object == null) {
             throw new InvokerException("Cannot get property on null object");
         }
+        else if (object instanceof Class) {
+            Class theClass = (Class) object;
+            return metaRegistry.getMetaClass(theClass).getStaticProperty(property);
+        }
         else if (object instanceof Map) {
             Map map = (Map) object;
             return map.get(property);
@@ -254,4 +266,5 @@ public class Invoker {
         }
         throw new InvokerException("Could not convert object: " + value + " into an int");
     }
+
 }
