@@ -13,6 +13,14 @@ public class TokenException extends SyntaxException {
             getColumn(token));
     }
 
+    public int getEndColumn() {
+        int length = 1;
+        if (token != null) { 
+            length = token.getText().length();
+        }
+        return getStartColumn() + length;
+    }
+    
     // Implementation methods
     // ----------------------------------------------------------------------
     private static int getColumn(Token token) {
