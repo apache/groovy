@@ -32,13 +32,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.AssertStatement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.IfStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
@@ -315,6 +309,9 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     block.addStatement(statement(code));
                     break;
 
+                case LABELED_STAT:
+                    block.addStatement(labelledStatement(code));
+
                 case LITERAL_assert:
                     block.addStatement(assertStatement(node));
                     break;
@@ -372,50 +369,31 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return block;
     }
 
+
+    // Statements
+    //-------------------------------------------------------------------------
+
+    protected Statement assertStatement(AST assertNode) {
+        AST node = assertNode.getFirstChild();
+        BooleanExpression booleanExpression = booleanExpression(node);
+        Expression messageExpression = null;
+
+        node = node.getNextSibling();
+        if (node != null) {
+            messageExpression = expression(node);
+        }
+        else {
+            messageExpression = ConstantExpression.NULL;
+        }
+        return new AssertStatement(booleanExpression, messageExpression);
+    }
+
     protected Statement breakStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
+        return new BreakStatement(label(node));
     }
 
     protected Statement continueStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement synchronizedStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement withStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement throwStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement tryStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement switchStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
-    }
-
-    protected Statement whileStatement(AST whileNode) {
-        AST node = whileNode.getFirstChild();
-        assertNodeType(EXPR, node);
-        BooleanExpression booleanExpression = booleanExpression(node);
-
-        node = node.getNextSibling();
-        assertNodeType(SLIST, node);
-        Statement block = statement(node);
-        return new WhileStatement(booleanExpression, block);
+        return new ContinueStatement(label(node));
     }
 
     protected Statement forStatement(AST node) {
@@ -432,12 +410,17 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         assertNodeType(SLIST, node);
         Statement ifBlock = statement(node);
 
-        Statement elseBlock = null;
+        Statement elseBlock = EmptyStatement.INSTANCE;
         node = node.getNextSibling();
         if (isType(SLIST, node)) {
             elseBlock = statement(node);
         }
         return new IfStatement(booleanExpression, ifBlock, elseBlock);
+    }
+
+    protected Statement labelledStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
     }
 
     protected Statement methodCall(AST code) {
@@ -468,25 +451,6 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return new ExpressionStatement(new BinaryExpression(leftExpression, token, rightExpression));
     }
 
-    protected Token makeToken(int typeCode, AST node) {
-        return Token.newSymbol(typeCode, node.getLine(), node.getColumn());
-    }
-
-    protected Statement assertStatement(AST assertNode) {
-        AST node = assertNode.getFirstChild();
-        BooleanExpression booleanExpression = booleanExpression(node);
-        Expression messageExpression = null;
-
-        node = node.getNextSibling();
-        if (node != null) {
-            messageExpression = expression(node);
-        }
-        else {
-            messageExpression = ConstantExpression.NULL;
-        }
-        return new AssertStatement(booleanExpression, messageExpression);
-    }
-
     protected Statement returnStatement(AST node) {
         Expression expression = null;
         AST exprNode = node.getFirstChild();
@@ -501,6 +465,48 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         }
         return new ReturnStatement(expression);
     }
+
+    protected Statement switchStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement synchronizedStatement(AST syncNode) {
+        AST node = syncNode.getFirstChild();
+        Expression expression = expression(node);
+        Statement code = statement(node.getNextSibling());
+        return new SynchronizedStatement(expression, code);
+    }
+
+    protected Statement throwStatement(AST node) {
+        return new ThrowStatement(expression(node.getFirstChild()));
+    }
+
+    protected Statement tryStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+    protected Statement whileStatement(AST whileNode) {
+        AST node = whileNode.getFirstChild();
+        assertNodeType(EXPR, node);
+        BooleanExpression booleanExpression = booleanExpression(node);
+
+        node = node.getNextSibling();
+        assertNodeType(SLIST, node);
+        Statement block = statement(node);
+        return new WhileStatement(booleanExpression, block);
+    }
+
+    protected Statement withStatement(AST node) {
+        notImplementedYet(node);
+        return null; /** TODO */
+    }
+
+
+
+    // Expressions
+    //-------------------------------------------------------------------------
 
     protected Expression expression(AST node) {
         int type = node.getType();
@@ -726,6 +732,23 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return new GStringExpression(buffer.toString(), strings, values);
     }
 
+    protected String label(AST labelNode) {
+        AST node = labelNode.getFirstChild();
+        if (node == null) {
+            return null;
+        }
+        assertNodeType(IDENT, node);
+        return node.getText();
+    }
+
+
+
+    // Helper methods
+    //-------------------------------------------------------------------------
+
+    protected Token makeToken(int typeCode, AST node) {
+        return Token.newSymbol(typeCode, node.getLine(), node.getColumn());
+    }
 
     protected String getFirstChildText(AST node) {
         AST child = node.getFirstChild();

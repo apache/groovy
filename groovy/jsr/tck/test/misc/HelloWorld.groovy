@@ -48,9 +48,15 @@ class HelloWorld extends GroovyTestCase {
         while (x > 0) {
             println "loop value with x=$x"
             x = x - 1
+
+            if (x == 3) {
+                break //FOO
+            }
         }
+
+        //FOO: println "Done"
     }
-    
+
     String foo(a, b) {
         return a + b
     }
