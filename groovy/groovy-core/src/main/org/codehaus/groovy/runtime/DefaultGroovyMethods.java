@@ -1262,9 +1262,20 @@ public class DefaultGroovyMethods {
         return self.put(key, value);
     }
 
+    /**
+     * This converts a possibly negative index to a real index into the array.
+     *
+     * @param i
+     * @param size
+     * @return
+     */
     protected static int normaliseIndex(int i, int size) {
-        while (i < 0) {
+        int temp = i;
+        if (i < 0) {
             i += size;
+        }
+        if (i < 0) {
+            throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
         }
         return i;
     }
