@@ -305,8 +305,20 @@ public class Lexer
                         case ( '=' ):
                         {
                             consume();
-                            token = Token.compareIdentical( getStartLine(),
+                            c = la();
+
+                            if ( c == '=' )
+                            {
+                                consume();
+                                token = Token.compareIdentical( getStartLine(),
+                                                                getStartColumn() );
+                            }
+                            else
+                            {
+                                token = Token.compareEqual( getStartLine(),
                                                             getStartColumn() );
+                                                                         
+                            }
                             break MULTICHAR_SWITCH;
                         }
                         default:
@@ -467,26 +479,8 @@ public class Lexer
                     mark();
                     consume();
 
-                    c = la();
-
-                  MULTICHAR_SWITCH:
-                    switch( c )
-                    {
-                        case ( '=' ):
-                        {
-                            consume();
-                            token = Token.compareEqual( getStartLine(),
-                                                        getStartColumn() );
-                            break MULTICHAR_SWITCH;
-                        }
-                        default:
-                        {
-                            token = Token.colon( getStartLine(),
-                                                 getStartColumn() );
-                            break MULTICHAR_SWITCH;
-                        }
-                    }
-
+                    token = Token.colon( getStartLine(),
+                                         getStartColumn() );
                     break ROOT_SWITCH;
                 }
                 case ( ',' ):

@@ -12,7 +12,7 @@ class LocalFieldTest extends GroovyTestCase {
 	void testAssert() {
         this.x = "abc"
 	    
-	    assert this.x := "abc"
+	    assert this.x == "abc"
 	    /** @todo
 	    assert this.x != "def"
 	    */

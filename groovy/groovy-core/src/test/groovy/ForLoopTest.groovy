@@ -9,7 +9,7 @@ class ForLoopTest extends GroovyTestCase {
             x = x + i
         }
 
-        assert x := 45
+        assert x == 45
     }
 
     void testList() {
@@ -19,7 +19,7 @@ class ForLoopTest extends GroovyTestCase {
             x = x + i
         }
 
-        assert x := 10
+        assert x == 10
     }
 
 }

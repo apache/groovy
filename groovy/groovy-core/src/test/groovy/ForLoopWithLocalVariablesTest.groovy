@@ -10,6 +10,6 @@ class ForLoopWithLocalVariablesTest extends GroovyTestCase {
             x = i
         }
 
-        assert x := 9
+        assert x == 9
 	}
 }
