@@ -1,22 +1,7 @@
 Core Groovy Tasks
 =================
 
-* bob - interpreter parser JIRA issue
-
-* add  [identity name, foo] to a class to auto-generate the equals & hashcode 
-	according to Josh Bloch
-
-	class Customer {
-	   [identity name, foo]
-	
-	   int foo
-	   Address* addresses
-	   PhoneNumber+  numbers
-	   String! name
-	   Employee? employee
-	   Date{d| assert d > 1000} dob
-	}
-	
+* add metadata to the AST
 	
 * test while, do while
 
@@ -24,22 +9,6 @@ Core Groovy Tasks
 	
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
-
-* allow easy creation of sorting & Comparables via closures.
-
-	comparable = new Sorter().orderBy{
-		firstName(ascend:false)
-		lastName(ignoreCase:true)
-	}
-	
-	or using pure closures
-	
-	comparable = new Sorter(false) { i | i.lastName }
-	
-* validator for things like 
-  - undeclared variables
-  - duplicate methods
-  
 
 * closures need to be able to access fields of outer class
 
@@ -49,52 +18,10 @@ Core Groovy Tasks
 
 * immutable bean
 
-* make TestMixin which would allow...
-	use to use a GroovyTestSuite to avoid the 'void' issue
-	allow other naming conventions - endsWith("Test" || "Bug")
-	allow a Groovy test to derive from *any* object!
-	
-	class FooTest extends Cheese mixin TestMixin {
-		
-		normalOperationTest() {
-		}
-		
-		nullPointerBug() {
-			...
-		}
-	}	
-
-* add the following symbols...
-	class = current class
-	super = parent class
-
 * MetaClass.deriveMetaClass()
 	MetaClass.addMixin(mixin)
 
-* how could aspects & mixins merged together...
-
 * why does using the GroovyClassLoader cause the illegal access violation?
-
-* test closure with no argument, once bob's done the parser. both
-    foo = { someMethod() }
-    foo2 = {| someMethod() }
-    foo.call()
-
-* refactor the MetaClass to use an Object[] rather than Object for arguments?
-
-* have some kinda way to do this
-
-	MethodProxy proxy = metaClass.getMethod("name", List arguments)
-	if (proxy != null) {
-		proxy.call(instance, arguments);
-	}
-	else {
-		// invoke on delegate
-		InvokeHelper.invokeMethod(delegate, name, arguments)
-	}	
-
-	so rather than just doing 'hasMethod' or 'understandsMethod' we can return
-	a Closure or MethodProxy or something or null if a method is not understood
 
 
 * constructors with map / tuple expressions, named parameter calling
@@ -105,20 +32,12 @@ Core Groovy Tasks
 
 * test [] on lists & maps?
 
-* test use of method calls: foo() this.foo() class.foo() for local, inherited & global methods
-
-* += and -= operators
-
-* ++ and --
-
 * should we implement + and - for collections and maps?
 
 	l = [1, 2] + [3, 4];
 	assert l := [1, 2, 3, 4];
 	
 * should we implement get(String) on collection to implement nested property fetching?
-
-* while / do - while statements
 
 * test use of overloaded setter methods & use of property notation
   so that the use of properties within a class should use setteres / getters.
@@ -127,18 +46,6 @@ Core Groovy Tasks
 	a.b = c.d
 	
 * support static newInstance() method for constructors
-
-* support metadata (like JDK 1.5) as well as tree based metadata...
-
-Ê Ê window = @layout {
-Ê Ê Ê Ê frame text="My Window" size=[300,300] {
-Ê Ê Ê Ê Ê Ê label text="Save changes?" bounds=[10,10,290,30]
-Ê Ê Ê Ê Ê Ê panel bounds=[10,40,290,290] {
-Ê Ê Ê Ê Ê Ê Ê Ê button text="OK" action={ save() ; window.close() }
-Ê Ê Ê Ê Ê Ê Ê Ê button text="Cancel" action={ Êwindow.close() }
-Ê Ê Ê Ê Ê Ê }
-Ê Ê Ê Ê }
-Ê Ê };
 
 * maybe split up ClassGenerator - do code gen & class gen separately
 
