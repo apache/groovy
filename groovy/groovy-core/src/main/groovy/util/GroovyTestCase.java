@@ -233,4 +233,15 @@ public class GroovyTestCase extends TestCase {
         }
         assertTrue("Closure " + code + " should have failed", failed);
     }
+
+
+
+    /**
+     *  Returns a copy of a string in which all EOLs are \n.
+     */
+
+    protected String fixEOLs( String value )
+    {
+        return value.replaceAll( "(\\r\\n?)|\n", "\n" );
+    }
 }

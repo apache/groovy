@@ -44,7 +44,7 @@ hello
 EOS
         string = template.toString()
         
-        assert string == "Bob hey,\nhello"
+        assert fixEOLs(string) == "Bob hey,\nhello"
     }
 
     void testWithJustVariable() {
@@ -67,7 +67,7 @@ EOS
 EOSEOSEO
 EOSEOSEOS
 
-		assert name == "Bob\nEOS\nEOSEOSEO"
+		assert fixEOLs(name) == "Bob\nEOS\nEOSEOSEO"
 		
 		perl = <<<__END__
 Sam
