@@ -1172,7 +1172,7 @@ public class DefaultGroovyMethods {
      * @param self a Map
      * @return an immutable Map
      */
-    public static Map immutable(Map self) {
+    public static Map asImmutable(Map self) {
         return Collections.unmodifiableMap(self);
     }
 
@@ -1182,7 +1182,7 @@ public class DefaultGroovyMethods {
      * @param self a SortedMap
      * @return an immutable SortedMap
      */
-    public static SortedMap immutable(SortedMap self) {
+    public static SortedMap asImmutable(SortedMap self) {
         return Collections.unmodifiableSortedMap(self);
     }
 
@@ -1192,7 +1192,7 @@ public class DefaultGroovyMethods {
      * @param self a List
      * @return an immutable List
      */
-    public static List immutable(List self) {
+    public static List asImmutable(List self) {
         return Collections.unmodifiableList(self);
     }
 
@@ -1202,7 +1202,7 @@ public class DefaultGroovyMethods {
      * @param self a Set
      * @return an immutable Set
      */
-    public static Set immutable(Set self) {
+    public static Set asImmutable(Set self) {
         return Collections.unmodifiableSet(self);
     }
 
@@ -1212,8 +1212,68 @@ public class DefaultGroovyMethods {
      * @param self a SortedSet
      * @return an immutable SortedSet
      */
-    public static SortedSet immutable(SortedSet self) {
+    public static SortedSet asImmutable(SortedSet self) {
         return Collections.unmodifiableSortedSet(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized Map
+     *
+     * @param self a Map
+     * @return a synchronized Map
+     */
+    public static Map asSynchronized(Map self) {
+        return Collections.synchronizedMap(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized SortedMap
+     *
+     * @param self a SortedMap
+     * @return a synchronized SortedMap
+     */
+    public static SortedMap asSynchronized(SortedMap self) {
+        return Collections.synchronizedSortedMap(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized Collection
+     *
+     * @param self a Collection
+     * @return a synchronized Collection
+     */
+    public static Collection asSynchronized(Collection self) {
+        return Collections.synchronizedCollection(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized List
+     *
+     * @param self a List
+     * @return a synchronized List
+     */
+    public static List asSynchronized(List self) {
+        return Collections.synchronizedList(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized Set
+     *
+     * @param self a Set
+     * @return a synchronized Set
+     */
+    public static Set asSynchronized(Set self) {
+        return Collections.synchronizedSet(self);
+    }
+
+    /**
+     * A convenience method for creating a synchronized SortedSet
+     * 
+     * @param self a SortedSet
+     * @return a synchronized SortedSet
+     */
+    public static SortedSet asSynchronized(SortedSet self) {
+        return Collections.synchronizedSortedSet(self);
     }
 
     /**
