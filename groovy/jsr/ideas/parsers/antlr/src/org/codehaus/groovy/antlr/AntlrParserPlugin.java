@@ -1291,7 +1291,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
             node = objectNode.getNextSibling();
         }
-        String name = identifier(node);
+
+        String name = null;
+        if (isType(LITERAL_super, node)) {
+            name = "super";
+            if (objectExpression == VariableExpression.THIS_EXPRESSION) {
+                objectExpression = VariableExpression.SUPER_EXPRESSION;
+            }
+        }
+        else {
+            name = identifier(node);
+        }
 
         if (elist == null) {
             elist = node.getNextSibling();

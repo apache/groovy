@@ -1077,11 +1077,18 @@ variableDefinitions[AST mods, AST t]
         (       tc:throwsClause!  )?
 
                 // the method body is an open block
+                // but, it may have an optional constructor call (for constructors only)
+                // this constructor clause is only used for constructors using 'def'
+                // which look like method declarations
         (
-            mb:openBlock!
+            {isConstructorIdent(id)}?
+            {#id.setType(CTOR_IDENT);}
+                        cb:constructorBody!
+        |       mb:openBlock!
         |   /*or nothing at all*/
         )
-        {               if (#qid != null)  #id = #qid;
+        {   if (#cb != null)   #mb = #cb;
+                        if (#qid != null)  #id = #qid;
                         #variableDefinitions =
                                 #(#[METHOD_DEF,"METHOD_DEF"],
                                   mods, #(#[TYPE,"TYPE"],t), id, param, tc, mb);
