@@ -24,12 +24,25 @@ Each list expression creates an implemenation of the {api:java.util.List}.
 
 Ranges allow you to create a list of sequential values. These can be used as Lists since
 {link:GString|http://groovy.codehaus.org/apidocs/groovy/lang/Range.html} extends {api:java.util.List}.
+Ranges defined with the ~~..~~ notation are inclusive (that is the list contains the from and to value).
+Ranges defined with the ~~...~~~ notation are exclusive, they include the first value but not the second.
 
 {code:groovy}
+// an inclusive range
 range = 5..8
 assert range.size() == 4
 assert range.get(2) == 7
 assert range instanceof java.util.List
+assert range.contains(5)
+assert range.contains(8)
+
+// lets use an exclusive range
+range = 5...8
+assert range.size() == 3
+assert range.get(2) == 7
+assert range instanceof java.util.List
+assert range.contains(5)
+assert ! range.contains(8)
 {code}
 
 Note that ranges are implemented efficiently, creating a lightweight Java object containing a from and to value.

@@ -48,7 +48,8 @@ package groovy.lang;
 import java.util.List;
 
 /**
- * Represents the interface of a Range implementation
+ * Represents the interface of a Range implementation which includes the
+ * from and to values
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
