@@ -95,4 +95,8 @@ public class DumpClass3 extends DumpClass2 {
         // TODO Auto-generated method stub
         return null;
     }
+    
+    public Object testSuper() {
+        return super.getFoo();
+    }
 }
