@@ -70,6 +70,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.commons.cli.Option;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * A Command line to execute groovy.
@@ -120,6 +121,10 @@ public class GroovyMain {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("groovy", options);
             }
+            else if (cmd.hasOption('v')) {
+                String version = InvokerHelper.getVersion();
+                System.out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
+            }
             else {
                 process(cmd);
             }
@@ -157,6 +162,8 @@ public class GroovyMain {
         Options options = new Options();
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("usage information").withLongOpt("help").create('h'));
+
+        options.addOption(OptionBuilder.hasArg(false).withDescription("display the Groovy and JVM versions").withLongOpt("version").create('v'));
 
         options.addOption(OptionBuilder.withArgName("charset").hasArg().withDescription("specify the encoding of the files").withLongOpt("encoding").create('c'));
 
