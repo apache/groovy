@@ -43,45 +43,24 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
+
+package org.codehaus.groovy.classgen;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 
 /**
- * Represents a constructor declaration
+ * This is a scratch class used to experiment with ASM to see what kind of 
+ * stuff is output for normal Java code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ConstructorNode extends ASTNode {
+public class DumpClass2 {
 
-    private int modifiers;
-    private Parameter[] parameters;   
-    private Statement code;
-    
-    public ConstructorNode(int modifiers, Statement code) {
-        this(modifiers, Parameter.EMPTY_ARRAY, code);
-    }
-    
-    public ConstructorNode(int modifiers, Parameter[] parameters, Statement code) {
-        this.modifiers = modifiers;
-        this.parameters = parameters;
-        this.code = code;
-    }
-    
-    public Statement getCode() {
-        return code;
-    }
+    private String bar = (String) InvokerHelper.invokeStaticMethod("InvokerHelper", "getMetaClass", null);
 
-    public void setCode(Statement code) {
-        this.code = code;
+    public String getBar() {
+        return bar;
     }
-
-    public int getModifiers() {
-        return modifiers;
-    }
-
-    public Parameter[] getParameters() {
-        return parameters;
-    }
-
 }

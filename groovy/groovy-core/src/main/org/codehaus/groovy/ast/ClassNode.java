@@ -185,6 +185,23 @@ public class ClassNode extends ASTNode implements Constants {
         return node;
     }
 
+
+    public void addInterface(String name) {
+        // lets check if it already implements an interface
+        boolean skip = false;
+        for (int i = 0; i < interfaces.length; i++) {
+            if (name.equals(interfaces[i])) {
+                skip = true;
+            }
+        }
+        if (!skip) {
+            String[] newInterfaces = new String[interfaces.length + 1];
+            System.arraycopy(interfaces, 0, newInterfaces, 0, interfaces.length);
+            newInterfaces[interfaces.length] = name;
+            interfaces = newInterfaces;
+        }
+    }
+
     public FieldNode getField(String name) {
         return (FieldNode) fieldIndex.get(name);
     }

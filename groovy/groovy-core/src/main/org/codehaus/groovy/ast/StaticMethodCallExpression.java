@@ -45,43 +45,45 @@
  */
 package org.codehaus.groovy.ast;
 
-
 /**
- * Represents a constructor declaration
+ * A static method call on a class
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ConstructorNode extends ASTNode {
+public class StaticMethodCallExpression extends Expression {
 
-    private int modifiers;
-    private Parameter[] parameters;   
-    private Statement code;
+    private String type;
+    private String method;
+    private Expression arguments;
     
-    public ConstructorNode(int modifiers, Statement code) {
-        this(modifiers, Parameter.EMPTY_ARRAY, code);
-    }
-    
-    public ConstructorNode(int modifiers, Parameter[] parameters, Statement code) {
-        this.modifiers = modifiers;
-        this.parameters = parameters;
-        this.code = code;
+    public StaticMethodCallExpression(String type, String method, Expression arguments) {
+        this.type = type;
+        this.method = method;
+        this.arguments = arguments;
     }
     
-    public Statement getCode() {
-        return code;
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitStaticMethodCallExpression(this);
+    }
+    
+    public Expression getArguments() {
+        return arguments;
     }
 
-    public void setCode(Statement code) {
-        this.code = code;
+    public String getType() {
+        return type;
     }
 
-    public int getModifiers() {
-        return modifiers;
+    public String getMethod() {
+        return method;
     }
 
-    public Parameter[] getParameters() {
-        return parameters;
+    public String getText() {
+        return type + "." + method + arguments.getText();
     }
 
+    public String toString() {
+        return super.toString() + "[type: " + type + " method: " + method + " arguments: " + arguments + "]";
+    }
 }

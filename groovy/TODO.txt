@@ -1,8 +1,6 @@
 Core Groovy Tasks
 =================
 
-* GroovyObject interface & implementation
-
 * write a Node pretty printer
 
 * test closure with no argument, once bob's done the parser. both

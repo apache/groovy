@@ -67,6 +67,7 @@ public interface GroovyCodeVisitor {
     // expressions
     //-------------------------------------------------------------------------
     public void visitMethodCallExpression(MethodCallExpression call);
+    public void visitStaticMethodCallExpression(StaticMethodCallExpression expression);
     public void visitConstructorCallExpression(ConstructorCallExpression expression);
     public void visitBinaryExpression(BinaryExpression expression);
     public void visitBooleanExpression(BooleanExpression expression);
