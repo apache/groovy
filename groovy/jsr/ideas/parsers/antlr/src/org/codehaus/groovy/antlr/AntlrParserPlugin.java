@@ -20,14 +20,14 @@ package org.codehaus.groovy.antlr;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.collections.AST;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.Type;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -44,6 +44,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 
 /**
  * @version $Revision$
@@ -186,8 +187,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             node = node.getNextSibling();
         }
 
-        assertNodeType(IDENT, node);
-        name = node.getText();
+        name = identifier(node);
         node = node.getNextSibling();
 
         assertNodeType(PARAMETERS, node);
@@ -218,8 +218,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             node = node.getNextSibling();
         }
 
-        assertNodeType(IDENT, node);
-        String name = node.getText();
+        String name = identifier(node);
 
         node = node.getNextSibling();
 
@@ -277,8 +276,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         node = node.getNextSibling();
 
-        assertNodeType(IDENT, node);
-        String name = node.getText();
+        String name = identifier(node);
 
         Expression defaultValue = null;
         node = node.getNextSibling();
@@ -417,15 +415,11 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             AST typeNode = variableNode.getFirstChild();
             assertNodeType(TYPE, typeNode);
 
-            AST typeIdentifierNode = typeNode.getFirstChild();
-            assertNodeType(IDENT, typeIdentifierNode);
-
             // TODO intern types?
-            type = new Type(typeIdentifierNode.getText());
+            type = new Type(identifier(typeNode.getFirstChild()));
             variableNode = typeNode.getNextSibling();
         }
-        assertNodeType(IDENT, variableNode);
-        String variable = variableNode.getText();
+        String variable = identifier(variableNode);
 
         Expression collectionExpression = expression(collectionNode);
         Statement block = statement(inNode.getNextSibling());
@@ -468,8 +462,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             node = node.getNextSibling();
         }
 
-        assertNodeType(IDENT, node);
-        String name = node.getText();
+        String name = identifier(node);
         node = node.getNextSibling();
 
         Expression leftExpression = new VariableExpression(name, type);
@@ -511,12 +504,53 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
     }
 
     protected Statement throwStatement(AST node) {
-        return new ThrowStatement(expression(node.getFirstChild()));
+        AST expressionNode = node.getFirstChild();
+        return new ThrowStatement(expression(expressionNode));
     }
 
-    protected Statement tryStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
+    protected Statement tryStatement(AST tryStatementNode) {
+        AST tryNode = tryStatementNode.getFirstChild();
+        Statement tryStatement = statement(tryNode);
+        Statement finallyStatement = EmptyStatement.INSTANCE;
+        AST node = tryNode.getNextSibling();
+
+        // lets do the catch nodes
+        List catches = new ArrayList();
+        for (; node != null && isType(LITERAL_catch, node); node = node.getNextSibling()) {
+            catches.add(catchStatement(node));
+        }
+
+        if (isType(LITERAL_finally, node)) {
+            finallyStatement = statement(node);
+            node = node.getNextSibling();
+        }
+
+        TryCatchStatement tryCatchStatement = new TryCatchStatement(tryStatement, finallyStatement);
+        for (Iterator iter = catches.iterator(); iter.hasNext();) {
+            CatchStatement statement = (CatchStatement) iter.next();
+            tryCatchStatement.addCatch(statement);
+        }
+        return tryCatchStatement;
+    }
+
+    protected CatchStatement catchStatement(AST catchNode) {
+        AST node = catchNode.getFirstChild();
+        Parameter parameter = parameter(node);
+        String exceptionType = parameter.getType();
+        String variable = parameter.getName();
+        /*
+        String exceptionType = null;
+        if (isType(TYPE, node)) {
+            exceptionType = getFirstChildText(node);
+            node = node.getNextSibling();
+        }
+        String variable = identifier(node);
+        */
+        node = node.getNextSibling();
+        Statement code = statement(node);
+        CatchStatement answer = new CatchStatement(exceptionType, variable, code);
+        configureAST(answer, catchNode);
+        return answer;
     }
 
     protected Statement whileStatement(AST whileNode) {
@@ -731,13 +765,9 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             objectExpression = expression(objectNode);
 
             node = objectNode.getNextSibling();
-            assertNodeType(IDENT, node);
-            name = node.getText();
         }
-        else {
-            assertNodeType(IDENT, node);
-            name = node.getText();
-        }
+        name = identifier(node);
+
         if (elist == null) {
             elist = node.getNextSibling();
         }
@@ -828,8 +858,12 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         if (node == null) {
             return null;
         }
+        return identifier(node);
+    }
+
+    protected String identifier(AST node) {
         assertNodeType(IDENT, node);
-        return node.getText();
+        return  node.getText();
     }
 
 

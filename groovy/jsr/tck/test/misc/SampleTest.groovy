@@ -1,4 +1,4 @@
-class HelloWorld extends GroovyTestCase {
+class SampleTest extends GroovyTestCase {
 
     String foo = "John"
     String bar = "Jez"
@@ -88,5 +88,48 @@ class HelloWorld extends GroovyTestCase {
         for (Integer i in list) {
             println "for item: $i"
         }
+    }
+
+/*
+    void testTryCatchWithException() {
+        try {
+            methodThatThrowsException()
+            fail "Should have thrown an exception by now!"
+        }
+        catch (Exception e) {
+            println "Worked! Caught expected exception $e"
+
+        }
+    }
+
+    void methodThatThrowsException() {
+        // TODO parser doesn't return the thrown expression
+        throw new Exception("Test exception")
+    }
+*/
+
+    void testTryCatch() {
+        try {
+            methodThatDoesNotThrowException()
+        }
+        catch (Exception e) {
+            fail "Should not throw exception $e"
+        }
+    }
+
+    void testTryCatchFinally() {
+        try {
+            methodThatDoesNotThrowException()
+        }
+        catch (Exception e) {
+            fail "Should not throw exception $e"
+        }
+        finally {
+            println "Called from finally block"
+        }
+    }
+
+    void methodThatDoesNotThrowException() {
+        println "Normal method invocation..."
     }
 }
