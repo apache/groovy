@@ -7,7 +7,7 @@ import org.codehaus.groovy.tools.xml.*;
 
 class DOMTest extends GroovyTestCase {
 
-  benchmark = false;
+  def benchmark = false;
 
   void testDOMParser() {
     xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");

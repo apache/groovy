@@ -945,6 +945,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LOR:
                 return binaryExpression(Types.LOGICAL_OR, node);
 
+            case BAND:
+                return binaryExpression(Types.BITWISE_AND, node);
+
+            case BOR:
+                return binaryExpression(Types.PIPE, node);
+
 
             case PLUS:
                 return binaryExpression(Types.PLUS, node);

@@ -159,7 +159,10 @@ public class Types
     public static final int COLON                       = 310;   // :
     public static final int SEMICOLON                   = 320;   // ;
     public static final int QUESTION                    = 330;   // ?
+
+    // TODO refactor PIPE to be BITWISE_OR
     public static final int PIPE                        = 340;   // |
+    public static final int BITWISE_AND                 = 341;   // &
     public static final int DOUBLE_PIPE                 = LOGICAL_OR;
 
 

@@ -55,6 +55,9 @@ public class AllTests extends TestSuiteSupport {
         "MockTest.groovy",                      // TODO: closure params
         "RegularExpressionsTest.groovy",        // TODO: closure params
         "SqlTest.groovy",                       // TODO: closure params
+        "AntTest.groovy",                       // TODO: closure params
+        "BuilderSupportTest.groovy",            // TODO: closure params (and the use of the << operator)
+        "VerboseDOMTest.groovy",                // TODO: closure params (explicit {|| to denote closure start)
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "SuperMethod2Bug.groovy",               // TODO: constructor bug
@@ -101,6 +104,7 @@ public class AllTests extends TestSuiteSupport {
         "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
         "ClassTest.groovy",                     // TODO: foo.class bug in parser
         "SerializeTest.groovy",                 // TODO: foo.class bug in parser
+        "dom/DOMTest.groovy",                   // TODO: markup(class:foo) bug in parser
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -112,12 +116,11 @@ public class AllTests extends TestSuiteSupport {
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
 
         "CompareToTest.groovy",                 // TODO: can't parse <=>
-
-        "StaticClosurePropertyBug.groovy",      // TODO: static/def
-        "UseStaticInClosureBug.groovy",         // TODO: static/def
+        "StreamingMarkupTest.groovy",           // TODO: can't parse <<
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
+        "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
         "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
 
         "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
