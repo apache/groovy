@@ -117,7 +117,7 @@ class SqlCompleteTest extends GroovyTestCase {
     }
     
     protected newSql(String uri) {
-	    dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
+	    dataSource = new AxionDataSource(uri)
 	    return new Sql(dataSource)
     }
 }

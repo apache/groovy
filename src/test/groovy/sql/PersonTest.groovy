@@ -1,5 +1,7 @@
 package groovy.sql
 
+import org.axiondb.jdbc.AxionDataSource
+
 class PersonTest extends GroovyTestCase {
 
     property type
@@ -46,8 +48,14 @@ class PersonTest extends GroovyTestCase {
 	
         assert type != null : "failed to load Person class"
     
-        dataSource = null
+        dataSource = createDataSource()
+        sql = new Sql(dataSource)
         
-	    return new DataSet(dataSource, type)
+        return sql.dataSet(type)
     }
+    
+    protected DataSource createDataSource() {
+        return new AxionDataSource("jdbc:axiondb:foo" + getName())
+    }
+    
 }
