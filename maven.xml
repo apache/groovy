@@ -1,4 +1,4 @@
-<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" >
+<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" xmlns:maven="jelly:maven">
 
   <goal name="default" prereqs="clean, groovy:make-install"/>
 
@@ -12,6 +12,16 @@
     -->
   </goal>
 
+  <goal name="modules" description="Builds related modules">
+    <maven:reactor
+       basedir="${basedir}/../modules"
+       includes="xmlrpc/project.xml"
+       banner="Executing build:"
+       ignoreFailures="false"
+       postProcessing="true"
+       goals="jar"
+       />
+  </goal>
   <preGoal name="site:deploy">
     <attainGoal name="javadoc"/>
   </preGoal>
@@ -19,6 +29,15 @@
   <postGoal name="dist:prepare-src-filesystem">
     <!-- lets zap the build.xml -->
     <delete file="${maven.dist.src.assembly.dir}/build.xml"/>
+
+    <!-- lets copy xmlrpc into the release -->
+    <attainGoal name="modules"/>
+    <copy todir="${maven.dist.src.assembly.dir}/lib">
+      <fileset dir="../modules/xmlrpc/target">
+        <include include="*.jar"/>
+      </fileset>
+    </copy>
+    
   </postGoal>
   
   <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
