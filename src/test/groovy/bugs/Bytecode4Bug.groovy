@@ -16,6 +16,12 @@ class Bytecode4Bug extends GroovyTestCase {
         assert count == 10
     }
     
+    void testUsingIncrementingProperty() {
+        count = 0
+        getCollection().each { count++ }       
+        assert count == 4
+    }
+    
     getCollection() {
         [1, 2, 3, 4]
     }
