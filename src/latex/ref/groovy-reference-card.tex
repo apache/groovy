@@ -90,11 +90,11 @@
 \vskip 1.8in
 %todo: black line
 
-GV10-2070-1
+GROOVY-1.0-BETA-7
 
 \vskip 0.25 in
 
-{\em First Edition\/} (July 2004)
+{\em Second Edition\/} (September 2004)
 
 This card is intended primarily for use by Groovy language programmers. It 
 contains basic language information summarized from the online
@@ -269,7 +269,7 @@ groovy.codehaus.org
 \methodDetail{   url. }{ withReader}{() \{closure\}               }{ apply {\em closure\/} to {\em in\/}, then close {\em in\/}}
 %\methodDetail{    in. }{ withStream}{() \{closure\}               }{ apply {\em closure\/} to {\em in\/}, then close {\em in\/}}
 \methodDetail{ }{ }{ }{ }
-\methodDetail{    out }{ \textless\textless}{ obj                 }{ append {\em obj\/} to output}
+\methodDetail{    out }{ \textless\textless}{ obj                 }{ append {\em obj\/} to stream, process or socket}
 \methodSummary{  file. }{ append}{(text, [charset])                }{ append {\em text\/} at end of {\em file\/} with {\em charset\/} encoding}
 %\methodSummary{  file. }{ asWritable}{([charset]) *                }{ wrap {\em file\/} as Writable }
 \methodSummary{ bytes. }{ encodeBase64}{()                         }{ wraps {\em file\/} in Writable with contents encoded as Base64}
@@ -394,10 +394,10 @@ class HighlandCow extends Cow {
 \end{verbatim}
 \subsection{Command Line Tools}                                      
 \toolDetailHeader{
-\toolDetail{ \textgreater }{ groovy        }{ cheese.groovy [args]    }{ interpret and execute specified groovy script }
-\toolDetail{ \textgreater }{ groovyc       }{ [options] cheese.groovy }{ compiles specified groovy script }
-\toolDetail{ \textgreater }{ groovysh      }{                         }{ begins an interactive groovy session }
-\toolDetail{ \textgreater }{ groovyConsole }{                         }{ begins a GUI based groovy session }
+\toolDetail{ \textgreater }{ groovy        }{ [options] cheese.groovy [args] }{ interpret and execute specified groovy script }
+\toolDetail{ \textgreater }{ groovyc       }{ [options] cheese.groovy        }{ compiles specified groovy script }
+\toolDetail{ \textgreater }{ groovysh      }{                                }{ begins an interactive groovy session }
+\toolDetail{ \textgreater }{ groovyConsole }{                                }{ begins a GUI based groovy session }
 %\toolDetail{ \textgreater }{ grok   }{                  }{ groovy javadoc }
 }
 
