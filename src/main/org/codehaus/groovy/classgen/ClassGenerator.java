@@ -1357,8 +1357,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
                 if (leftHandExpression) {
                     if (holder) {
-                        int tempIndex =
-                            defineVariable(createVariableName("reference"), variableType, false).getIndex();
+                        int tempIndex = defineVariable(createVariableName("reference"), variableType, false).getIndex();
                         cv.visitVarInsn(ASTORE, tempIndex);
 
                         cv.visitVarInsn(ALOAD, index);
@@ -1970,14 +1969,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected Expression assignmentExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
-            switch (binExpr.getOperation().getType()) {
-                case Token.EQUAL :
-                case Token.PLUS_EQUAL :
-                case Token.MINUS_EQUAL :
-                case Token.MULTIPLY_EQUAL :
-                case Token.DIVIDE_EQUAL :
-                case Token.MOD_EQUAL :
-                    return binExpr.getLeftExpression();
+            if (binExpr.getOperation().isAssignmentToken()) {
+                return binExpr.getLeftExpression();
             }
         }
         /*
@@ -1985,11 +1978,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             PostfixExpression expr = (PostfixExpression) expression;
             return expr.getExpression();
         }
-        */
         else if (expression instanceof PrefixExpression) {
             PrefixExpression expr = (PrefixExpression) expression;
             return expr.getExpression();
         }
+        */
         return null;
     }
 
