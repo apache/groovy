@@ -191,7 +191,7 @@ But mkp.declareAlias(jim:'harry') will work
 		}
 		
 		bind(closure) {
-			boundClosure = this.builder.bind closure
+			boundClosure = this.builder.bind closure;
 			
 			{out |
 			    out = new StreamingMarkupWriter(out)
