@@ -17,6 +17,8 @@ import org.codehaus.groovy.control.ProcessingUnit;
 
 public class ExceptionMessage extends Message
 {
+    protected static final boolean verbose = true;
+
     private Exception cause = null;   // The exception source of the message, if any
     
 
@@ -56,7 +58,11 @@ public class ExceptionMessage extends Message
             output.println( description + cause );
         }
         output.println("");
-    }    
+
+        if (verbose) {
+            cause.printStackTrace(output);
+        }
+    }
     
     
 }

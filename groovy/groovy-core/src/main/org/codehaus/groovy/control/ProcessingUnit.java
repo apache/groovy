@@ -462,7 +462,7 @@ public abstract class ProcessingUnit
     */
 
     protected void fail() throws CompilationFailedException
-    {
+    {      
         throw new CompilationFailedException( phase, this );
     }
 

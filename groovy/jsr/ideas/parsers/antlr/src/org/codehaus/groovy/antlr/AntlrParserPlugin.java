@@ -25,14 +25,17 @@ import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
@@ -98,7 +101,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         int type = node.getType();
         switch (type) {
             case CLASS_DEF:
-                convertClassDef(node);
+                classDef(node);
                 break;
 
             default:
@@ -106,7 +109,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         }
     }
 
-    protected void convertClassDef(AST classDef) {
+    protected void classDef(AST classDef) {
         String name = null;
 
         // TODO read the modifiers
@@ -126,11 +129,11 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     break;
 
                 case EXTENDS_CLAUSE:
-                    superClass = extractFirstChildText(node);
+                    superClass = getFirstChildText(node);
                     break;
 
                 case IMPLEMENTS_CLAUSE:
-                    interfaces = extractInterfaces(node);
+                    interfaces = interfaces(node);
                     break;
 
                 case OBJBLOCK:
@@ -144,24 +147,24 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         classNode = new ClassNode(name, modifiers, superClass, interfaces, mixins);
 
-        processObjectBlock(objectBlock);
+        objectBlock(objectBlock);
         module.addClass(classNode);
     }
 
-    protected void processObjectBlock(AST objectBlock) {
+    protected void objectBlock(AST objectBlock) {
         for (AST node = objectBlock.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
             switch (type) {
                 case OBJBLOCK:
-                    processObjectBlock(node);
+                    objectBlock(node);
                     break;
 
                 case METHOD_DEF:
-                    processMethodDef(node);
+                    methodDef(node);
                     break;
 
                 case VARIABLE_DEF:
-                    processFieldDef(node);
+                    fieldDef(node);
                     break;
 
                 default:
@@ -170,53 +173,51 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         }
     }
 
-    protected void processMethodDef(AST methodDef) {
+    protected void methodDef(AST methodDef) {
         String name = null;
 
-        // TODO read the modifiers
+        AST node = methodDef.getFirstChild();
         int modifiers = Constants.ACC_PUBLIC;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, modifiers);
+            node = node.getNextSibling();
+        }
 
         String returnType = null;
-        Parameter[] parameters = {};
-        Statement code = null;
 
-        for (AST node = methodDef.getFirstChild(); node != null; node = node.getNextSibling()) {
-            int type = node.getType();
-            switch (type) {
-                case IDENT:
-                    name = node.getText();
-                    break;
-
-                case TYPE:
-                    returnType = extractFirstChildText(node);
-                    break;
-
-                case PARAMETERS:
-                    parameters = extractParameters(node);
-                    break;
-
-                case SLIST:
-                    code = extractCode(node);
-                    break;
-
-                default:
-                    onUnknownAST(node);
-            }
+        if (isType(TYPE, node)) {
+            returnType = getFirstChildText(node);
+            node = node.getNextSibling();
         }
+
+        assertNodeType(IDENT, node);
+        name = node.getText();
+        node = node.getNextSibling();
+
+        assertNodeType(PARAMETERS, node);
+        Parameter[] parameters = parameters(node);
+        node = node.getNextSibling();
+
+        assertNodeType(SLIST, node);
+        Statement code = statement(node);
 
         classNode.addMethod(name, modifiers, returnType, parameters, code);
     }
 
-    protected void processFieldDef(AST fieldDef) {
+    protected void fieldDef(AST fieldDef) {
         String type = null;
         Expression initialValue = null;
 
-        // TODO read the modifiers
-        int modifiers = Constants.ACC_PRIVATE;
-
         AST node = fieldDef.getFirstChild();
-        if (isType(node, TYPE)) {
-            type = extractFirstChildText(node);
+
+        int modifiers = Constants.ACC_PRIVATE;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, modifiers);
+            node = node.getNextSibling();
+        }
+
+        if (isType(TYPE, node)) {
+            type = getFirstChildText(node);
             node = node.getNextSibling();
         }
 
@@ -227,13 +228,13 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         if (node != null) {
             assertNodeType(ASSIGN, node);
-            initialValue = extractExpression(node);
+            initialValue = expression(node);
         }
 
         classNode.addField(name, modifiers, type, initialValue);
     }
 
-    protected String[] extractInterfaces(AST node) {
+    protected String[] interfaces(AST node) {
         List interfaceList = new ArrayList();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
             interfaceList.add(implementNode.getText());
@@ -247,12 +248,54 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return interfaces;
     }
 
-    protected Parameter[] extractParameters(AST node) {
-        return new Parameter[0]; /** TODO */
+    protected Parameter[] parameters(AST parametersNode) {
+        AST node = parametersNode.getFirstChild();
+        if (node == null) {
+            return Parameter.EMPTY_ARRAY;
+        }
+        else {
+            List parameters = new ArrayList();
+            do {
+                parameters.add(parameter(node));
+                node = node.getNextSibling();
+            }
+            while (node != null);
+            Parameter[] answer = new Parameter[parameters.size()];
+            parameters.toArray(answer);
+            return answer;
+        }
     }
 
+    protected Parameter parameter(AST node) {
+        node = node.getFirstChild();
 
-    protected Statement extractCode(AST code) {
+        int modifiers = 0;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, modifiers);
+            node = node.getNextSibling();
+        }
+        assertNodeType(TYPE, node);
+        String type = getFirstChildText(node);
+
+        node = node.getNextSibling();
+
+        assertNodeType(IDENT, node);
+        String name = node.getText();
+
+        Expression defaultValue = null;
+        node = node.getNextSibling();
+        if (node != null) {
+            defaultValue = expression(node);
+        }
+        return new Parameter(type, name, defaultValue);
+    }
+
+    protected int modifiers(AST node, int defaultModifiers) {
+        // TODO!
+        return defaultModifiers;
+    }
+
+    protected Statement statement(AST code) {
         BlockStatement block = new BlockStatement();
 
         for (AST node = code.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -266,50 +309,37 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     block.addStatement(variableDef(node));
                     break;
 
+                case LITERAL_assert:
+                    block.addStatement(assertStatement(node));
+                    break;
+
+                case SLIST:
+                    block.addStatement(statement(code));
+                    break;
+
+                case LITERAL_return:
+                    block.addStatement(returnStatement(node));
+                    break;
+
                 default:
-                    onUnknownAST(node);
+                    block.addStatement(new ExpressionStatement(expression(node)));
             }
         }
+
+        // TODO check for dumb expression rule
         return block;
     }
 
     protected Statement methodCall(AST code) {
-        AST node = code.getFirstChild();
-
-        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
-        if (isType(node, EXPR)) {
-            objectExpression = extractExpression(node);
-            node = node.getNextSibling();
-        }
-
-        assertNodeType(IDENT, node);
-        String name = node.getText();
-
-        List expressionList = new ArrayList();
-
-        for (node = node.getNextSibling(); node != null; node = node.getNextSibling()) {
-            int type = node.getType();
-            switch (type) {
-                case EXPR:
-                    expressionList.add(extractExpression(node));
-                    break;
-
-                default:
-                    onUnknownAST(node);
-            }
-
-        }
-
-        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
+        MethodCallExpression expression = methodCallExpression(code);
         return new ExpressionStatement(expression);
     }
 
     protected Statement variableDef(AST variableDef) {
         AST node = variableDef.getFirstChild();
-        dumpTree(variableDef);
         String type = null;
-                if (isType(node, TYPE)) {
-            type = extractFirstChildText(node);
+        if (isType(TYPE, node)) {
+            type = getFirstChildText(node);
             node = node.getNextSibling();
         }
 
@@ -320,57 +350,230 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         Expression leftExpression = new VariableExpression(name, type);
 
         assertNodeType(ASSIGN, node);
-        Token token = Token.newSymbol(Types.ASSIGN, node.getLine(), node.getColumn());
+        Token token = makeToken(Types.ASSIGN, node);
 
-        Expression rightExpression = extractExpression(node.getFirstChild());
+        Expression rightExpression = expression(node.getFirstChild());
 
         // TODO should we have a variable declaration statement?
         return new ExpressionStatement(new BinaryExpression(leftExpression, token, rightExpression));
     }
 
-    protected Expression extractExpression(AST expression) {
-        for (AST node = expression.getFirstChild(); node != null; node = node.getNextSibling()) {
-            int type = node.getType();
-            switch (type) {
-                case EXPR:
-                    return extractExpression(node);
+    private Token makeToken(int typeCode, AST node) {
+        return Token.newSymbol(typeCode, node.getLine(), node.getColumn());
+    }
 
-                case IDENT:
-                    return new VariableExpression(node.getText());
+    protected Statement assertStatement(AST assertNode) {
+        AST node = assertNode.getFirstChild();
+        BooleanExpression booleanExpression = booleanExpression(node);
+        Expression messageExpression = null;
 
-                    // literals
-                case STRING_LITERAL:
-                    return new ConstantExpression(node.getText());
+        node = node.getNextSibling();
+        if (node != null) {
+            messageExpression = expression(node);
+        }
+        else {
+            messageExpression = ConstantExpression.NULL;
+        }
+        return new AssertStatement(booleanExpression, messageExpression);
+    }
 
-                case STRING_CONSTRUCTOR:
-                    return extractGString(node);
+    protected Statement returnStatement(AST node) {
+        Expression expression = null;
+        AST exprNode = node.getFirstChild();
+        if (exprNode == null) {
+            exprNode = node.getNextSibling();
+        }
+        if (exprNode != null) {
+            expression = expression(exprNode);
+        }
+        else {
+            expression = ConstantExpression.NULL;
+        }
+        return new ReturnStatement(expression);
+    }
 
-                case NUM_BIG_DECIMAL:
-                    return new ConstantExpression(new BigDecimal(node.getText()));
+    protected Expression expression(AST node) {
+        int type = node.getType();
+        switch (type) {
+            case EXPR:
+                return expression(node.getFirstChild());
 
-                case NUM_BIG_INT:
-                    return new ConstantExpression(new BigInteger(node.getText()));
+            case METHOD_CALL:
+                return methodCallExpression(node);
 
-                case NUM_DOUBLE:
-                    return new ConstantExpression(Double.valueOf(node.getText()));
+            case IDENT:
+                return new VariableExpression(node.getText());
 
-                case NUM_FLOAT:
-                    return new ConstantExpression(Float.valueOf(node.getText()));
 
-                case NUM_INT:
-                    return new ConstantExpression(Integer.valueOf(node.getText()));
+                // literals
 
-                case NUM_LONG:
-                    return new ConstantExpression(Long.valueOf(node.getText()));
+            case STRING_LITERAL:
+                return new ConstantExpression(node.getText());
 
-                default:
-                    onUnknownAST(node);
-            }
+            case STRING_CONSTRUCTOR:
+                return gstring(node);
+
+            case NUM_BIG_DECIMAL:
+                return new ConstantExpression(new BigDecimal(node.getText()));
+
+            case NUM_BIG_INT:
+                return new ConstantExpression(new BigInteger(node.getText()));
+
+            case NUM_DOUBLE:
+                return new ConstantExpression(Double.valueOf(node.getText()));
+
+            case NUM_FLOAT:
+                return new ConstantExpression(Float.valueOf(node.getText()));
+
+            case NUM_INT:
+                return new ConstantExpression(Integer.valueOf(node.getText()));
+
+            case NUM_LONG:
+                return new ConstantExpression(Long.valueOf(node.getText()));
+
+            case LITERAL_this:
+                return VariableExpression.THIS_EXPRESSION;
+
+
+                // Binary expressions
+
+            case ASSIGN:
+                return binaryExpression(Types.ASSIGN, node);
+
+            case EQUAL:
+                return binaryExpression(Types.COMPARE_EQUAL, node);
+
+            case NOT_EQUAL:
+                return binaryExpression(Types.COMPARE_NOT_EQUAL, node);
+
+            case LE:
+                return binaryExpression(Types.COMPARE_LESS_THAN_EQUAL, node);
+
+            case LT:
+                return binaryExpression(Types.COMPARE_LESS_THAN, node);
+
+            case GT:
+                return binaryExpression(Types.COMPARE_GREATER_THAN, node);
+
+            case GE:
+                return binaryExpression(Types.COMPARE_GREATER_THAN_EQUAL, node);
+
+                /**
+                 * TODO treble equal?
+                 return binaryExpression(Types.COMPARE_IDENTICAL, node);
+                 */
+
+            case PLUS:
+                return binaryExpression(Types.PLUS, node);
+
+            case PLUS_ASSIGN:
+                return binaryExpression(Types.PLUS_EQUAL, node);
+
+
+            case MINUS:
+                return binaryExpression(Types.MINUS, node);
+
+            case MINUS_ASSIGN:
+                return binaryExpression(Types.MINUS_EQUAL, node);
+
+
+            case STAR:
+                return binaryExpression(Types.MULTIPLY, node);
+
+            case STAR_ASSIGN:
+                return binaryExpression(Types.MULTIPLY_EQUAL, node);
+
+
+            case DIV:
+                return binaryExpression(Types.DIVIDE, node);
+
+            case DIV_ASSIGN:
+                return binaryExpression(Types.DIVIDE_EQUAL, node);
+
+
+            case MOD:
+                return binaryExpression(Types.MOD, node);
+
+            case MOD_ASSIGN:
+                return binaryExpression(Types.MOD_EQUAL, node);
+
+            default:
+                onUnknownAST(node);
         }
         return null;
     }
 
-    private Expression extractGString(AST expression) {
+    protected Expression binaryExpression(int type, AST node) {
+        Token token = makeToken(type, node);
+
+        AST leftNode = node.getFirstChild();
+        Expression leftExpression = expression(leftNode);
+        AST rightNode = leftNode.getFirstChild();
+        if (rightNode == null) {
+            rightNode = leftNode.getNextSibling();
+        }
+        if (rightNode == null) {
+            throw new NullPointerException("No rightNode associated with binary expression");
+        }
+        Expression rightExpression = expression(rightNode);
+        return new BinaryExpression(leftExpression, token, rightExpression);
+    }
+
+    protected BooleanExpression booleanExpression(AST node) {
+        return new BooleanExpression(expression(node));
+    }
+
+    protected MethodCallExpression methodCallExpression(AST code) {
+        AST node = code.getFirstChild();
+
+        String name = null;
+        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
+
+        AST elist = null;
+
+
+        if (isType(DOT, node)) {
+            AST objectNode = node.getFirstChild();
+            elist = node.getNextSibling();
+
+            objectExpression = expression(objectNode);
+
+            node = objectNode.getNextSibling();
+            assertNodeType(IDENT, node);
+            name = node.getText();
+        }
+        else {
+            assertNodeType(IDENT, node);
+            name = node.getText();
+            elist = node.getNextSibling();
+        }
+
+        List expressionList = new ArrayList();
+
+        for (node = elist; node != null; node = node.getNextSibling()) {
+            int type = node.getType();
+            switch (type) {
+                case ELIST:
+                    for (AST child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+                        expressionList.add(expression(child));
+                    }
+                    break;
+
+                case EXPR:
+                    expressionList.add(expression(node));
+                    break;
+
+                default:
+                    onUnknownAST(node);
+            }
+
+        }
+
+        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
+        return expression;
+    }
+
+    private Expression gstring(AST expression) {
         List strings = new ArrayList();
         List values = new ArrayList();
 
@@ -388,7 +591,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     buffer.append(text);
                     break;
 
-                // TODO is this correct?
+                    // TODO is this correct?
                 case IDENT:
                     text = node.getText();
                     values.add(new VariableExpression(text));
@@ -396,13 +599,14 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     buffer.append(text);
                     break;
 
-                case SLIST:     {
-                    Expression valueExpression = extractExpression(node);
-                    values.add(valueExpression);
-                    buffer.append("${");
-                    buffer.append(valueExpression.getText());
-                    buffer.append("}");
-                }
+                case SLIST:
+                    {
+                        Expression valueExpression = expression(node.getFirstChild());
+                        values.add(valueExpression);
+                        buffer.append("${");
+                        buffer.append(valueExpression.getText());
+                        buffer.append("}");
+                    }
                     break;
 
                 default:
@@ -413,13 +617,13 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
     }
 
 
-    protected String extractFirstChildText(AST node) {
+    protected String getFirstChildText(AST node) {
         AST child = node.getFirstChild();
         return child != null ? child.getText() : null;
     }
 
 
-    protected boolean isType(AST node, int typeCode) {
+    protected boolean isType(int typeCode, AST node) {
         return node != null && node.getType() == typeCode;
     }
 
@@ -428,16 +632,15 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             throw new RuntimeException("No child node available in AST when expecting type: " + type);
         }
         if (node.getType() != type) {
-            throw new RuntimeException("Unexpected node type: " + node.getType() + " found at node: " + node);
+            throw new RuntimeException("Unexpected node type: " + node.getType() + " found at node: " + node + " at line: " + ast.getLine() + " column: " + ast.getColumn());
         }
     }
 
     protected void onUnknownAST(AST ast) {
-        throw new RuntimeException("Unknown type: " + ast.getType() + " at node: " + ast);
+        throw new RuntimeException("Unknown type: " + ast.getType() + " at node: " + ast + " at line: " + ast.getLine() + " column: " + ast.getColumn());
     }
 
     protected void dumpTree(AST ast) {
-        dump(ast);
         for (AST node = ast.getFirstChild(); node != null; node = node.getNextSibling()) {
             dump(node);
         }
