@@ -419,7 +419,16 @@ public class Parser {
     protected CSTNode parameterDeclarationList() throws IOException, SyntaxException {
         CSTNode parameterDeclarationList = new CSTNode();
 
-        while (lt() == Token.IDENTIFIER) {
+        while (lt() == Token.IDENTIFIER ||
+	           lt() == Token.KEYWORD_BOOLEAN ||
+	    	   lt() == Token.KEYWORD_BYTE ||
+	    	   lt() == Token.KEYWORD_CHAR ||
+	    	   lt() == Token.KEYWORD_DOUBLE ||
+	    	   lt() == Token.KEYWORD_FLOAT ||
+	    	   lt() == Token.KEYWORD_INT ||
+	    	   lt() == Token.KEYWORD_LONG ||
+	    	   lt() == Token.KEYWORD_SHORT)
+        {
             parameterDeclarationList.addChild(parameterDeclaration());
 
             if (lt() == Token.COMMA) {
@@ -435,9 +444,15 @@ public class Parser {
 
     protected CSTNode parameterDeclaration() throws IOException, SyntaxException {
         CSTNode parameterDeclaration = null;
+        
+        //
+        // TODO: deal with array declarations
+        // { int a[]
+        //
 
         switch (lt(2)) {
-            case (Token.IDENTIFIER) :
+        	case (Token.IDENTIFIER) :
+        	case (Token.LEFT_SQUARE_BRACKET) :
             case (Token.DOT) :
                 {
                     parameterDeclaration = parameterDeclarationWithDatatype();
@@ -1601,8 +1616,21 @@ public class Parser {
         // { a, b |
         // { A a |
         // { A a, B b |
-
-        if (lt(2) == Token.PIPE || lt(2) == Token.COMMA || lt(3) == Token.PIPE || lt(3) == Token.COMMA) {
+        // { int[] a, char b |
+        
+        if (lt(1) == Token.KEYWORD_BOOLEAN ||
+    		lt(1) == Token.KEYWORD_BYTE ||
+    		lt(1) == Token.KEYWORD_CHAR ||
+    		lt(1) == Token.KEYWORD_DOUBLE ||
+    		lt(1) == Token.KEYWORD_FLOAT ||
+    		lt(1) == Token.KEYWORD_INT ||
+    		lt(1) == Token.KEYWORD_LONG ||
+    		lt(1) == Token.KEYWORD_SHORT ||
+        	lt(2) == Token.PIPE ||
+        	lt(2) == Token.COMMA ||
+        	lt(3) == Token.PIPE ||
+        	lt(3) == Token.COMMA)
+        {
             expr.addChild(parameterDeclarationList());
             pipeRequired = true;
         }
