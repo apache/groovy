@@ -40,6 +40,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.util.GroovyTestCase;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -287,6 +288,13 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertTrue("Returned List: " + value, value instanceof List);
         List retList = (List) value;
         assertEquals("List size", 2, retList.size());
+    }
+
+    public void testSetLenientOnDateFormat() throws Throwable {
+        SimpleDateFormat a = new SimpleDateFormat( "MM/dd/yyyy" );
+        
+        Object value = invoke(a, "setLenient", new Object[] { Boolean.FALSE });
+        assertEquals("void method", null, value);
     }
 
     public void testInvokeUnknownMethod() throws Throwable {
