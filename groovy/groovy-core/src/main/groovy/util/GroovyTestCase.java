@@ -45,6 +45,7 @@
  */
 package groovy.util;
 
+import groovy.lang.Closure;
 import junit.framework.TestCase;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -142,5 +143,23 @@ public class GroovyTestCase extends TestCase {
     protected void assertConsoleOutput(Object value, String expected) {
         Object console = InvokerHelper.invokeMethod(value, "toConsoleOutput", null);
         assertEquals("toConsoleOutput() on value: " + value, expected, console);
+    }
+    
+    
+    /**
+     * Asserts that the given code closure fails when it is evaluated
+     * 
+     * @param code
+     */
+    protected void shouldFail(Closure code) {
+        boolean failed = false;
+        try {
+            code.call();
+        }
+        catch (Exception e) {
+            failed = true;
+            System.out.println("Worked: caught expected exception: " + e);
+        }
+        assertTrue("Closure " + code + " should have failed", failed);
     }
 }

@@ -1069,17 +1069,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.leftHandExpression = false;
 
         Expression arguments = call.getArguments();
+        /*
         if (arguments instanceof TupleExpression) {
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
             if (size == 0) {
                 arguments = ConstantExpression.EMPTY_ARRAY;
             }
-        }
-        /*
-        else {
-            // lets put the argument into a tuple
-            arguments = new TupleExpression(new Expression[] { arguments });
         }
         */
 
@@ -1123,8 +1119,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     cv.visitLdcInsn(method);
 
                     cv.visitVarInsn(ALOAD, paramIdx);
-
-                    //idx--;
                 }
                 else {
                     call.getObjectExpression().visit(this);

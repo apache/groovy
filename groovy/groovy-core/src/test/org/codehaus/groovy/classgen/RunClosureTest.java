@@ -75,37 +75,42 @@ public class RunClosureTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/BytecodeBug.groovy");
         object.invokeMethod("testTedsBytecodeBug", null);
     }
-    
+
     public void testBytecode2Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
         object.invokeMethod("testTedsBytecodeBug", null);
     }
-    
+
     public void testBytecode3Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode3Bug.groovy");
         //object.invokeMethod("testInject", null);
         object.invokeMethod("testIncrementPropertyInclosure", null);
     }
-    
+
     public void testBytecode4Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode4Bug.groovy");
         object.invokeMethod("testInject", null);
         object.invokeMethod("testUsingProperty", null);
     }
-    
+
     public void testRodsBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/RodsBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
+
     public void testBytecode5Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode5Bug.groovy");
         object.invokeMethod("testUsingLocalVar", null);
     }
-    
+
     public void testBytecode6Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode6Bug.groovy");
         object.invokeMethod("testPreFixReturn", null);
     }
-    
+
+    public void testPropertyTest() throws Exception {
+        GroovyObject object = compile("src/test/groovy/PropertyTest.groovy");
+        object.invokeMethod("testNormalPropertyGettersAndSetters", null);
+    }
+
 }

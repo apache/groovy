@@ -8,8 +8,16 @@ class PropertyTest extends GroovyTestCase {
 
     void testNormalPropertyGettersAndSetters() {
         
+        println("About to create Foo")
+        
         foo = new Foo()
 
+        println("created ${foo}")
+        
+        value = foo.getMetaClass()
+        
+        println("metaClass ${value}")
+        
         println(foo.inspect())
         
         println("name ${foo.name}, blah ${foo.blah}")
@@ -53,25 +61,19 @@ class PropertyTest extends GroovyTestCase {
     void testNoSetterAvailableOnPrivateProperty() {
         foo = new Foo()
         
-        // should methods fail on non-existent method calls
-        /* @todo
-         shouldFail { foo.blah = 4 }
-         shouldFail { foo.setBlah(4) }
-         */
+        // methods should fail on non-existent method calls
+        shouldFail { foo.blah = 4 }
+        shouldFail { foo.setBlah(4) }
     }
     
     void testCannotSeePrivateProperties() {
 	    foo = new Foo()
 	    
-	    /* @todo
-	     // should property access return null for invisible stuff?
+	    // property access fails on non-existent property
 		shouldFail { x = foo.invisible }														
 	    
-	    // should methods fail on non-existent method calls
-	    shouldFail( {
-	    	foo.getQ()
-	    })
-	    */
+	    // methods should fail on non-existent method calls
+	    shouldFail { foo.getQ() }
 	}
 
 }

@@ -22,5 +22,6 @@
 	<classpathentry kind="var" path="MAVEN_REPO/servletapi/jars/servletapi-2.3.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-0.9.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
+	<classpathentry kind="lib" path="target/test-classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
