@@ -3,7 +3,7 @@
  */
 class Groovy252_Bug extends GroovyTestCase {
     
-    count = 0
+    def count = 0
     
     void testBug() {
         value = f()
@@ -17,20 +17,20 @@ class Groovy252_Bug extends GroovyTestCase {
     }
     
     
-    f() {
+    def f() {
          if (count++ == 5)
             return null
          else
             return null
     } 
     
-    g() {
+    def g() {
          count++
-	     return null
+         return null
     } 
     
-    h() {
+    def h() {
          ++count
-	     return null
+         return null
     } 
 }

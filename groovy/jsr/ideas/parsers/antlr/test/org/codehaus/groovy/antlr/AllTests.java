@@ -49,7 +49,9 @@ public class AllTests extends TestSuiteSupport {
         "bugs/ForAndSqlBug.groovy",             // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
-
+        "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
+        "Groovy278_Bug.groovy",                 // TODO: constructor bug
+        "Groovy308_Bug.groovy",                 // TODO: parser bug
 
         // Not sure of bug yet
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
