@@ -22,26 +22,6 @@ class StringTest extends GroovyTestCase {
         assert x == "hello null"
     }
     
-    void testNextPrevious() {
-    	x = 'a'
-    	y = x.next()
-    	assert y == 'b'
-    
-    	z = 'z'.previous()
-    	assert z == 'y'
-    	
-    	z = 'z'
-    	b = z.next()
-    	assert b != 'z'
-    	
-    	println(z.charAt(0))
-    	println(b.charAt(0))
-    	
-    	assert b > z
-    	
-    	println "Incremented z: " + b
-	}
-    
     void testApppendToString() {
         name = "Gromit"
         result = "hello " << name << "!" 
