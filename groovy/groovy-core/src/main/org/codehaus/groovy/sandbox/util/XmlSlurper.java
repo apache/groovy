@@ -2,6 +2,7 @@ package org.codehaus.groovy.sandbox.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.Writable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -230,7 +232,7 @@ public class XmlSlurper extends DefaultHandler {
 	}
 }
 
-class XmlList extends GroovyObjectSupport implements Buildable {
+class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	final String name;
 	final Map attributes;
 	final Object[] children;
@@ -379,6 +381,24 @@ class XmlList extends GroovyObjectSupport implements Buildable {
     			return getMetaClass().invokeMethod(this, name, args);
     		}
     }
+    
+	/* (non-Javadoc)
+	 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+	 */
+	public Writer writeTo(Writer out) throws IOException {
+
+		for (int i = 0; i != this.children.length; i++) {
+		final Object child = this.children[i];
+		
+			if (child instanceof String) {
+				out.write((String)child);
+			} else {
+				((XmlList)child).writeTo(out);
+			}
+		}
+		
+		return out;
+	}
     
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.sandbox.markup.Buildable#build(groovy.lang.GroovyObject)
