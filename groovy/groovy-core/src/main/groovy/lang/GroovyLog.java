@@ -43,50 +43,41 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-package org.codehaus.groovy.runtime;
-
-import groovy.lang.Closure;
-import groovy.lang.GroovyTestCase;
-
-import java.util.ArrayList;
-import java.util.List;
-
+package groovy.lang;
 
 /**
- * Tests method invocation
+ * Represents an arbitrary logging service. By default this outputs to
+ * System.out though derivations of this class could log to Jakarta Commons Logging
+ * or log4j or JDK 1.5 logging etc
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class InvokeGroovyMethodTest extends GroovyTestCase {
+public class GroovyLog implements GroovyObject {
 
-    protected Invoker invoker = new Invoker();
-    private StringBuffer buffer;
+    String prefix;
+
+    /** 
+     * Factory method to create new instances 
+     */
+    public static GroovyLog newInstance(Class aClass) {
+        return new GroovyLog(aClass);
+    }
     
-    // Method invocation tests
-    //-------------------------------------------------------------------------
-    
-    public void testInvokeMethodNoParams() throws Throwable {
-        buffer = new StringBuffer();
-        
-        List list = new ArrayList();    
-        list.add("abc");
-        list.add("def");
-        
-        invoker.invokeMethod(list, "each", new Closure() {
-            public Object call(Object arguments) {
-                buffer.append(arguments.toString());
-                return null;
-            }
-        });
-        
-        assertEquals("buffer", "abcdef", buffer.toString());
+    public GroovyLog() {
+        this("");
     }
 
+    public GroovyLog(Class owner) {
+        this(owner.getName());
+    }
 
-    
-    // Implementation methods
-    //-------------------------------------------------------------------------
-    
+    public GroovyLog(String prefix) {
+        this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
+    }
+
+    public Object invokeMethod(String name, Object args) {
+        System.out.println(prefix + name + "] " + args);
+        return null;
+    }
 }

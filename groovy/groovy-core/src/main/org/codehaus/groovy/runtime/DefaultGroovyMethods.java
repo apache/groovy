@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+import groovy.lang.Range;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -67,8 +70,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 
-import org.codehaus.groovy.lang.Closure;
-import org.codehaus.groovy.lang.Range;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK

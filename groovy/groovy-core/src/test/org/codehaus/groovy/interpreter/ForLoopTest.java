@@ -46,11 +46,10 @@
 
 package org.codehaus.groovy.interpreter;
 
+import groovy.lang.GroovyTestCase;
+
 import java.util.ArrayList;
 
-import org.codehaus.groovy.GroovyTestCase;
-import org.codehaus.groovy.interpreter.Interpreter;
-import org.codehaus.groovy.interpreter.RuntimeContext;
 import org.codehaus.groovy.ast.*;
 
 /**

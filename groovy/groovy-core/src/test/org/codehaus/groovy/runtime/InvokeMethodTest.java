@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyTestCase;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -53,7 +55,6 @@ import java.util.List;
 
 import junit.framework.AssertionFailedError;
 
-import org.codehaus.groovy.GroovyTestCase;
 
 /**
  * Tests method invocation

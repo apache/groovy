@@ -17,6 +17,7 @@
       <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
       <item name="Syntax"              href="http://wiki.codehaus.org/groovy/CoreSyntax"/>
       <item name="Wish List"           href="http://wiki.codehaus.org/groovy/WishList"/>
+      <item name="GroovyMarkup"        href="http://wiki.codehaus.org/groovy/TreeBasedSyntax"/>
       <item name="Examples"			   href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/"/>
       <!--
       <item name="License"             href="/license.html"/>

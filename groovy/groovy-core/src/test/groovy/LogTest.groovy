@@ -1,7 +1,6 @@
 package groovy;
 
 import org.codehaus.groovy.GroovyTestCase;
-import org.codehaus.groovy.lang.GroovyLog;
 
 /** 
  * Tests the use of GroovyLog

@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 

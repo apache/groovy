@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyObject;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +54,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.lang.GroovyObject;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically

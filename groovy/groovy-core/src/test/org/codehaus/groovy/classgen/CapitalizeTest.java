@@ -46,7 +46,8 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.GroovyTestCase;
+import groovy.lang.GroovyTestCase;
+
 import org.codehaus.groovy.ast.ClassNode;
 
 /**

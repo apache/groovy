@@ -44,14 +44,13 @@
 
  */
 
-package org.codehaus.groovy.lang;
+package groovy.lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.GroovyTestCase;
 
 /**
  * Tests the use of the structured Attribute type

@@ -1,9 +1,13 @@
 Core Groovy Tasks
 =================
 
-* validator for things like - undeclared variables
-
 * sort out the packages & default imports
+
+* allow test cases to not require void return type
+
+* integer.times() method?
+
+* validator for things like - undeclared variables
 
 * test use of constructors
 

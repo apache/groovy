@@ -46,11 +46,12 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.Closure;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.lang.Closure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**

@@ -46,11 +46,12 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyTestCase;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.GroovyTestCase;
-import org.codehaus.groovy.lang.Closure;
 
 /**
  * Test the property access of the Invoker class

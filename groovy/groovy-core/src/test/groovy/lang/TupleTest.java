@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package groovy.lang;
 
 import java.util.List;
 
@@ -53,43 +53,28 @@ import junit.framework.TestCase;
  * @author James Strachan
  * @version $Revision$
  */
-public class RangeTest extends TestCase {
+public class TupleTest extends TestCase {
+
+    Object[] data = { "a", "b", "c" };
+    Tuple t = new Tuple(data);
 
     public void testSize() {
-        Range r = new Range(0, 10);
-        assertEquals("Size of " + r, 10, r.size());
-        r = new Range(0, 1);
-        assertEquals("Size of " + r, 1, r.size());
-        r = new Range(0, 0);
-        assertEquals("Size of " + r, 0, r.size());
+        assertEquals("Size of " + t, 3, t.size());
+
+        assertEquals("get(0)", "a", t.get(0));
+        assertEquals("get(1)", "b", t.get(1));
     }
 
-    public void testProperties() {
-        Range r = new Range(0, 10);
-        assertEquals("from", 0, r.getFrom());
-        assertEquals("to", 10, r.getTo());
-    }
-
-    public void testGet() {
-        Range r = new Range(10, 20);
-        for (int i = 0; i < 10; i++) {
-            Integer value = (Integer) r.get(i);
-            assertEquals("Item at index: " + i, i + 10, value.intValue());
-        }
-    }
-
-    public void testGetOutOfRange() {
-        Range r = new Range(10, 20);
-
+    public void testGetOutOfTuple() {
         try {
-            r.get(-1);
+            t.get(-1);
             fail("Should have thrown IndexOut");
         }
         catch (IndexOutOfBoundsException e) {
             // worked
         }
         try {
-            r.get(10);
+            t.get(10);
             fail("Should have thrown IndexOut");
         }
         catch (IndexOutOfBoundsException e) {
@@ -99,35 +84,22 @@ public class RangeTest extends TestCase {
     }
 
     public void testContains() {
-        Range r = new Range(10, 20);
-
-        assertTrue("contains 11", r.contains(new Integer(11)));
-        assertTrue("contains 10", r.contains(new Integer(10)));
-        assertTrue("contains 19", r.contains(new Integer(19)));
-        assertFalse("contains 9", r.contains(new Integer(9)));
-        assertFalse("contains 20", r.contains(new Integer(20)));
-        assertFalse("contains 100", r.contains(new Integer(100)));
-        assertFalse("contains -1", r.contains(new Integer(-1)));
+        assertTrue("contains a", t.contains("a"));
+        assertTrue("contains b", t.contains("b"));
     }
 
     public void testSubList() {
-        Range r = new Range(10, 20);
+        List s = t.subList(1, 2);
 
-        List s = r.subList(2, 4);
+        assertTrue("is a Tuple", s instanceof Tuple);
 
-        assertTrue("is a Range", r instanceof Range);
-
-        Range sr = (Range) s;
-
-        assertEquals("from", 12, sr.getFrom());
-        assertEquals("to", 14, sr.getTo());
-        assertEquals("size", 2, sr.size());
+        assertEquals("size", 1, s.size());
     }
 
     public void testHashCodeAndEquals() {
-        Range a = new Range(1, 11);
-        Range b = new Range(1, 11);
-        Range c = new Range(2, 11);
+        Tuple a = new Tuple(new Object[] { "a", "b", "c" });
+        Tuple b = new Tuple(new Object[] { "a", "b", "c" });
+        Tuple c = new Tuple(new Object[] { "d", "b", "c" });
 
         assertEquals("hashcode", a.hashCode(), b.hashCode());
         assertTrue("hashcode", a.hashCode() != c.hashCode());

@@ -1004,7 +1004,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String name = outerClassName + "$" + (innerClasses.size() + 1);
         Parameter[] parameters = expression.getParameters();
 
-        InnerClassNode answer = new InnerClassNode(classNode, name, ACC_PUBLIC, "org/codehaus/groovy/lang/Closure");
+        InnerClassNode answer = new InnerClassNode(classNode, name, ACC_PUBLIC, "groovy/lang/Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java/lang/Object", parameters, expression.getCode());
         FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
 

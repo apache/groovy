@@ -45,10 +45,11 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.lang.Closure;
 
 /**
  * A helper class used by the runtime to allow Groovy classes to be extended at runtime

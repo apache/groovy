@@ -46,7 +46,8 @@
 
 package org.codehaus.groovy.interpreter;
 
-import org.codehaus.groovy.GroovyTestCase;
+import groovy.lang.GroovyTestCase;
+
 import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.DoWhileLoop;
