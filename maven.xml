@@ -28,14 +28,6 @@
     <!-- lets zap the build.xml -->
     <delete file="${maven.dist.src.assembly.dir}/build.xml"/>
 
-    <!-- lets copy xmlrpc into the release -->
-    <attainGoal name="modules"/>
-    <copy todir="${maven.dist.src.assembly.dir}/lib">
-      <fileset dir="../modules/xmlrpc/target">
-        <include include="*.jar"/>
-      </fileset>
-    </copy>
-    
   </postGoal>
   
   <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
@@ -360,7 +352,7 @@
         <j:when test="${lib.name.startsWith('asm-util')}">
         </j:when>
         <j:when test="${lib.name.startsWith('asm')}">
-          <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
+          <copy file="${lib.groovypath}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
         </j:when>
       </j:choose>
     </j:forEach>
@@ -392,6 +384,18 @@
         <include name="*"/>
       </fileset>
     </chmod>
+
+    <!-- lets copy xmlrpc into the release -->
+    <attainGoal name="modules"/>
+    <!--
+    <echo>Copying the xmlrpc jar into the install directory ${groovy.install.staging.dest}/lib</echo>
+    -->
+
+    <copy toDir="${groovy.install.staging.dest}/lib">
+      <fileset dir="../modules/xmlrpc/target">
+        <include name="groovy*.jar"/>
+      </fileset>
+    </copy>
   </goal>
 
 </project>
