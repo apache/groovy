@@ -8,6 +8,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.GroovyException;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Composite;
@@ -149,6 +150,9 @@ public class SwtUtils  {
         }
         else if (parent instanceof Widget) {
             return (Widget) parent;
+        }
+        else if (parent instanceof TableViewer) {
+            return ((TableViewer) parent).getTable();
         }
         else {
             return parent;
