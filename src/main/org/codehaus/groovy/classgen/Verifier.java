@@ -257,7 +257,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             if (statement instanceof BlockStatement) {
                 BlockStatement block = (BlockStatement) statement;
                 node.setCode(new BlockStatement(filterStatements(block.getStatements())));
-           }
+            }
             else {
                 node.setCode(filterStatement(statement));
             }
@@ -399,12 +399,14 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
-        return new ReturnStatement(new FieldExpression(field));
+        Expression expression = new FieldExpression(field);
+        return new ReturnStatement(expression);
     }
 
     protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
+        Expression expression = new FieldExpression(field);
         return new ExpressionStatement(
-            new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
+            new BinaryExpression(expression, Token.equal(0, 0), new VariableExpression("value")));
     }
 
     /**
@@ -412,7 +414,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
      */
     protected List filterStatements(List list) {
         List answer = new ArrayList(list.size());
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
             answer.add(filterStatement((Statement) iter.next()));
         }
         return answer;

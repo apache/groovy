@@ -1057,33 +1057,37 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
-            
+
             if (variableStack.get(name) == null && classNode.getField(name) == null) {
                 defineVariable(name, "java.lang.Object");
             }
         }
 
+        /*
         if (classNode instanceof InnerClassNode) {
             // lets load the outer this
             int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
             cv.visitVarInsn(ALOAD, 0);
             cv.visitFieldInsn(GETFIELD, internalClassName, "owner", helper.getTypeDescription(ownerTypeName));
             cv.visitVarInsn(ASTORE, paramIdx);
-
+        
             cv.visitTypeInsn(NEW, innerClassinternalName);
             cv.visitInsn(DUP);
             cv.visitVarInsn(ALOAD, paramIdx);
         }
         else {
-            cv.visitTypeInsn(NEW, innerClassinternalName);
-            cv.visitInsn(DUP);
-            if (isStaticMethod()) {
-                visitClassExpression(new ClassExpression(ownerTypeName));
-            }
-            else {
-                cv.visitVarInsn(ALOAD, 0);
-            }
+        */
+        cv.visitTypeInsn(NEW, innerClassinternalName);
+        cv.visitInsn(DUP);
+        if (isStaticMethod() || classNode.isStaticClass()) {
+            visitClassExpression(new ClassExpression(ownerTypeName));
         }
+        else {
+            cv.visitVarInsn(ALOAD, 0);
+        }
+        /*
+        }
+        */
 
         if (innerClass.getSuperClass().equals("groovy.lang.Closure")) {
             if (isStaticMethod()) {
@@ -1104,7 +1108,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
-            
+
             if (variableStack.get(name) == null) {
                 visitFieldExpression(new FieldExpression(classNode.getField(name)));
             }
@@ -1460,6 +1464,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected void visitOuterFieldExpression(FieldExpression expression) {
         ClassNode outerClassNode = classNode.getOuterClass();
+        if (outerClassNode instanceof InnerClassNode) {
+            visitPropertyExpression(
+                new PropertyExpression(new FieldExpression(classNode.getField("owner")), expression.getFieldName()));
+            return;
+        }
 
         int valueIdx = idx + 1;
 
@@ -1491,6 +1500,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 doConvertAndCast(field.getType());
             }
         }
+
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), helper.getTypeDescription(field.getType()));
         /*
          * if (leftHandExpression) { cv.visitVarInsn(ALOAD, valueIdx); }
@@ -1891,9 +1901,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = classNode;
+        boolean parentIsInnerClass = owner instanceof InnerClassNode;
+        /*
         if (owner instanceof InnerClassNode) {
             owner = owner.getOuterClass();
         }
+        */
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
@@ -1963,12 +1976,35 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 type = Reference.class.getName();
             }
 
-            FieldNode paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
-
+            FieldNode paramField = null;
             if (holder) {
+                paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
                 paramField.setHolder(true);
+                String realType = param.getType();
+                String methodName = Verifier.capitalize(paramName);
+
+                // lets add a getter & setter
+                Expression fieldExp = new FieldExpression(paramField);
+                answer
+                    .addMethod(
+                        "get" + methodName, ACC_PUBLIC, realType, Parameter.EMPTY_ARRAY, new ReturnStatement(fieldExp));
+
+                /*
+                answer.addMethod(
+                    "set" + methodName,
+                    ACC_PUBLIC,
+                    "void",
+                    new Parameter[] { new Parameter(realType, "__value") },
+                    new ExpressionStatement(
+                        new BinaryExpression(expression, Token.equal(0, 0), new VariableExpression("__value"))));
+                        */
             }
             else {
+                PropertyNode propertyNode = answer.addProperty(paramName, ACC_PUBLIC, type, initialValue, null, null);
+                paramField = propertyNode.getField();
+            }
+
+            if (!holder) {
                 block.addStatement(
                     new ExpressionStatement(
                         new BinaryExpression(
@@ -2253,7 +2289,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected void evaluatePrefixMethod(String method, Expression expression) {
         expression.visit(this);
         cv.visitLdcInsn(method);
-        new ArgumentListExpression().visit(this);
+        ArgumentListExpression.EMPTY_ARGUMENTS.visit(this);
         invokeMethodMethod.call(cv);
 
         leftHandExpression = true;
@@ -2275,7 +2311,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         cv.visitVarInsn(ALOAD, tempIdx);
 
         cv.visitLdcInsn(method);
-        new ArgumentListExpression().visit(this);
+        ArgumentListExpression.EMPTY_ARGUMENTS.visit(this);
         invokeMethodMethod.call(cv);
 
         leftHandExpression = true;
@@ -2448,7 +2484,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
             expression.getCode().visit(innerVisitor);
             addFieldsToVisitor(outerVisitor);
-            
+
             // now any variables declared in the outer context that are referred to
             // in the inner context need to be copied
             Set outerDecls = outerVisitor.getDeclaredVariables();
@@ -2468,7 +2504,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
             for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
                 String var = (String) iter.next();
-                if (innerDecls.contains(var) && (classNode.getField(var) == null || isInnerClass()) && !varSet.contains(var)) {
+                if (innerDecls.contains(var)
+                    && (classNode.getField(var) == null || isInnerClass())
+                    && !varSet.contains(var)) {
                     String type = getVariableType(var);
                     vars.add(new Parameter(type, var));
                 }
@@ -2488,7 +2526,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         node.getCode().visit(outerVisitor);
 
         addFieldsToVisitor(outerVisitor);
-        
+
         VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
         Set outerDecls = outerVisitor.getDeclaredVariables();
         Set outerRefs = outerVisitor.getReferencedVariables();
@@ -2515,10 +2553,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void addFieldsToVisitor(VariableScopeCodeVisitor visitor) {
-        for (Iterator iter = classNode.getFields().iterator(); iter.hasNext(); ) {
+        for (Iterator iter = classNode.getFields().iterator(); iter.hasNext();) {
             FieldNode field = (FieldNode) iter.next();
             String name = field.getName();
-            
+
             visitor.getDeclaredVariables().add(name);
             visitor.getReferencedVariables().add(name);
         }
@@ -2559,11 +2597,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         definingParameters = false;
     }
-    
+
     protected Variable defineVariable(String name, String type, boolean define) {
         return defineVariable(name, new Type(type), define);
     }
-        
+
     private Variable defineVariable(String name, Type type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
@@ -2619,7 +2657,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         return new Type(name);
     }
-    
+
     protected String checkValidType(String type, ASTNode node, String message) {
         if (helper.isPrimitiveType(type)) {
             return type;
