@@ -633,7 +633,7 @@
 		</fileset>
 	</copy>
 	<mkdir dir="${groovy.install.staging.dest}/embeddable"/>
-	<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${groovy.install.staging.dest}/lib/jarjar-0.2.jar"/>
+	<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${groovy.install.staging.dest}/lib/jarjar-0.5.jar"/>
 	<jarjar jarfile="${groovy.install.staging.dest}/embeddable/groovy-all-${pom.currentVersion}.jar" 
                                                         manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
 		<fileset dir="${groovy.embeddable.working.dir}"/>
