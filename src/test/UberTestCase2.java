@@ -15,13 +15,12 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.ClosuresInScriptBug.class);
         suite.addTestSuite(groovy.bugs.ClosureWithStaticVariablesBug.class);
         suite.addTestSuite(groovy.bugs.ConstructorParameterBug.class);
-        suite.addTestSuite(groovy.bugs.DoubleSizeParametersBug.class);
         suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy558_616_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy593_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy666_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
         suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
         suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
         suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
@@ -62,11 +61,9 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.util.MBeanTest.class);
         suite.addTestSuite(groovy.util.NodeTest.class);
         suite.addTestSuite(groovy.util.XmlParserTest.class);
-        suite.addTestSuite(groovy.util.BuilderSupportTest.class);
         suite.addTestSuite(groovy.xml.dom.DOMTest.class);
         suite.addTestSuite(groovy.xml.DOMTest.class);
         suite.addTestSuite(groovy.xml.MarkupTest.class);
-        suite.addTestSuite(groovy.xml.MarkupWithWriterTest.class);
         suite.addTestSuite(groovy.xml.NamespaceDOMTest.class);
         suite.addTestSuite(groovy.xml.SAXTest.class);
         suite.addTestSuite(groovy.xml.SmallNamespaceDOMTest.class);
