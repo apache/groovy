@@ -23,12 +23,8 @@ class RelationalBuilderTest extends GroovyTestCase {
     
     void testFinders() {
         assert null != database
-                  
-        // ideally -> column = database.wilma.pebbles (how can we make this happen??)
-        column = database.findTable("wilma").findColumn("pebbles")
-                  
-        assert "pebbles" == column.name
-        assert 10 == column.size          
-        assert 2 == column.scale          
+        assert "pebbles" == database.wilma.pebbles.name
+        assert 10 == database.wilma.pebbles.size
+        assert 2 == database.wilma.pebbles.scale
     }
 }

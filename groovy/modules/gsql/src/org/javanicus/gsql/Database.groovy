@@ -1,6 +1,6 @@
 package org.javanicus.gsql
 
-public class Database {
+public class Database extends GroovyObjectSupport {
     property name
     property version
     private tables
@@ -27,7 +27,14 @@ public class Database {
     public List getTables() {
         return tables
     }
-
+    
+    public Object getProperty(String propertyName) {
+        try {
+            return super.getProperty(propertyName)
+        } catch (Exception e) {
+            return findTable(propertyName)
+        }
+    }
     public Table findTable(String aName) {
         tables.find() {it.name.equalsIgnoreCase(aName)}
     }

@@ -1,6 +1,6 @@
 package org.javanicus.gsql
 
-public class Table implements Cloneable {
+public class Table extends GroovyObjectSupport implements Cloneable {
     property catalog
     property name
     property groovyName
@@ -89,8 +89,14 @@ public class Table implements Cloneable {
     public boolean hasPrimaryKey() {
         aPrimaryKeyColumn = getColumns().find() {it.isPrimaryKey()}
         return aPrimaryKeyColumn != null
+    }   
+    public Object getProperty(String propertyName) {
+        try {
+            return super.getProperty(propertyName);
+        } catch (Exception e) {
+            return findColumn(propertyName);
+        }
     }
-
     public Column findColumn(aName) {
         // @todo
         // warning 'name' inside closure refers to 'this.name', not method parameter called 'name' (in groovy 1.0b6) !!!
