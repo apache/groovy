@@ -167,11 +167,6 @@ public class DumpClass {
             InvokerHelper.assertFailed("expression", "message");
         }
     }
-    
-    public void doPlus() {
-        x = InvokerHelper.invokeMethod(new Integer(2), "plus", new Integer(2));
-    }
-    
     public void assertFailed() {
         StringBuffer buffer = new StringBuffer("Exception: ");
         buffer.append("x = ");
@@ -197,4 +192,10 @@ public class DumpClass {
         }
     }
 
+    
+    public void doPlus() {
+        Object z = "abcd";
+        x = InvokerHelper.invokeMethod(z, "length", null);
+    }
+    
 }

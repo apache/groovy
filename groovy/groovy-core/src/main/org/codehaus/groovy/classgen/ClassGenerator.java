@@ -267,14 +267,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitForLoop(ForLoop loop) {
         onLineNumber(loop);
 
-        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object").getIndex();
-
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
 
         int iteratorIdx = defineVariable(createIteratorName(), "java.util.Iterator", false).getIndex();
         cv.visitVarInsn(ASTORE, iteratorIdx);
+
+        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", false).getIndex();
 
         Label label1 = new Label();
         cv.visitJumpInsn(GOTO, label1);
@@ -456,7 +456,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitExpressionStatement(ExpressionStatement statement) {
         onLineNumber(statement);
 
-        statement.getExpression().visit(this);
+        Expression expression = statement.getExpression();
+        expression.visit(this);
+
+        if (expression instanceof MethodCallExpression) {
+            cv.visitInsn(POP);
+        }
     }
 
     // Expressions
@@ -564,15 +569,42 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitMethodCallExpression(MethodCallExpression call) {
         this.leftHandExpression = false;
 
-        call.getObjectExpression().visit(this);
+        Expression arguments = call.getArguments();
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            int size = tupleExpression.getExpressions().size();
+            if (size == 0) {
+                arguments = ConstantExpression.NULL;
+            }
+            else if (size == 1) {
+                arguments = (Expression) tupleExpression.getExpressions().get(0);
+            }
+        }
 
-        cv.visitLdcInsn(call.getMethod());
+        if (arguments instanceof TupleExpression) {
+            int parametersItx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
 
-        call.getArguments().visit(this);
+            arguments.visit(this);
+
+            cv.visitVarInsn(ASTORE, parametersItx);
+
+            call.getObjectExpression().visit(this);
+
+            cv.visitLdcInsn(call.getMethod());
+
+            cv.visitVarInsn(ALOAD, parametersItx);
+
+            idx--;
+        }
+        else {
+            call.getObjectExpression().visit(this);
+            cv.visitLdcInsn(call.getMethod());
+            arguments.visit(this);
+        }
 
         invokeMethodMethod.call(cv);
 
-        cv.visitInsn(POP);
+        //cv.visitInsn(POP);
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
@@ -742,10 +774,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-//        if (isNonStaticField(leftExpression)) {
-//            cv.visitVarInsn(ALOAD, 0);
-//        }
-//
+        //        if (isNonStaticField(leftExpression)) {
+        //            cv.visitVarInsn(ALOAD, 0);
+        //        }
+        //
         leftHandExpression = false;
         leftExpression.visit(this);
 
@@ -889,6 +921,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected String createIteratorName() {
         return "__iterator" + idx;
+    }
+
+    protected String createArgumentsName() {
+        return "__argumentList" + idx;
     }
 
     /**
