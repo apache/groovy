@@ -102,7 +102,7 @@ public class MetaClassRegistry {
         Method[] methods = methodsClass.getMethods();
         for (int i = 0; i < methods.length; i++) {
             Method method = methods[i];
-            if (MethodHelper.isPublicStatic(method)) {
+            if (MethodHelper.isStatic(method)) {
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     Class owner = paramTypes[0];

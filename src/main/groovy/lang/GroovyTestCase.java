@@ -45,6 +45,11 @@
  */
 package groovy.lang;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 import junit.framework.TestCase;
 
 /**
@@ -119,5 +124,23 @@ public class GroovyTestCase extends TestCase {
         message.append(" }");
 
         fail(message.toString());
+    }
+    
+    /**
+     * Asserts that the console output of the given object matches the
+     * given text string
+     * 
+     * @param value the object to be output to the console
+     * @param expected the expected String representation
+     */
+    protected void assertConsoleOutput(Object value, String expected) {
+        StringWriter buffer = new StringWriter();
+        PrintWriter out = new PrintWriter(buffer);
+        InvokerHelper.invokeMethod(value, "print", out);
+        assertEquals("print() to a console output of: " + value, expected, buffer.toString());
+        
+        
+        Object console = InvokerHelper.invokeMethod(value, "toConsoleOutput", null);
+        assertEquals("toConsoleOutput() on value: " + value, expected, console);
     }
 }

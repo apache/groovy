@@ -68,7 +68,7 @@ public class NodePrinter {
         if (out == null) {
             /** @todo temporary hack */
             out = new PrintWriter(System.out);
-            // throw new IllegalArgumentException("Must specify a PrintWriter");
+            //throw new IllegalArgumentException("Must specify a PrintWriter");
         }
         this.out = out;
     }
@@ -83,7 +83,7 @@ public class NodePrinter {
         }
         Object value = node.value();
         if (value instanceof List) {
-            if (! hasAttributes) {
+            if (!hasAttributes) {
                 print("()");
             }
             printList((List) value);

@@ -181,6 +181,18 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("Class.getName()", c.getName(), value);
     }
 
+    public void testProtectedMethod() throws Throwable {
+        String param = "hello";
+        Object value = invoke(this, "aProtectedMethod", param);
+        assertEquals("protected method call", aProtectedMethod(param), value);
+    }
+
+    public void testPrivateMethod() throws Throwable {
+        String param = "hello";
+        Object value = invoke(this, "aPrivateMethod", param);
+        assertEquals("private method call", aPrivateMethod(param), value);
+    }
+
     public void testInvokeUnknownMethod() throws Throwable {
         try {
             Object value = invoke(this, "unknownMethod", "abc");
@@ -252,6 +264,15 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     // Implementation methods
     //-------------------------------------------------------------------------
+    
+    protected Object aProtectedMethod(String param) {
+        return param + " there!";
+    }
+
+    private Object aPrivateMethod(String param) {
+        return param + " James!";
+    }
+
 
     /**
      * Asserts that invoking the method chooser finds the right overloaded method implementation
