@@ -41,6 +41,15 @@
       <include name="**/*.jar" />
       <include name="**/*.zip" />
     </fileset>
+      <!-- TODO limit exposure to JSR parser during compliation (needed by TestGeneratorHelper classes)-->
+      <fileset dir="${test.lib.dir}">
+        <include name="**/*.jar"/>
+      </fileset>
+      <!-- TODO limit exposure to groovy classic (needed by TestGeneratorHelper classes)-->
+      <fileset dir="${groovy.classic.lib.dir}">
+        <include name="**/*.jar" />
+      </fileset>
+
   </path>
   
   <!-- intentionally doesn't include the compile classpath -->
@@ -53,6 +62,9 @@
     <fileset dir="${groovy.classic.lib.dir}">
       <include name="**/*.jar" />
     </fileset>
+    <!-- TODO limit exposure to TCK helper classes -->
+    <pathelement location="${build.classes.dir}"/>
+
   </path>
 
   <path id="my.classpath">
