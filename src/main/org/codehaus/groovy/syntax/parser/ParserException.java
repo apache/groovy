@@ -8,4 +8,8 @@ public class ParserException extends TokenException {
         super(message, token);
     }
 
+    public ParserException(String message, Throwable cause, int lineNumber, int columnNumber) {
+        super(message, cause, lineNumber, columnNumber);
+    }
+
 }

@@ -69,6 +69,12 @@ public class SyntaxException extends GroovyException {
         this.column = column;
     }
 
+    public SyntaxException(String message, Throwable cause, int line, int column) {
+        super(message, cause);
+        this.line = line;
+        this.column = column;
+    }
+
     // Properties
     // ----------------------------------------------------------------------
     public void setSourceLocator(String sourceLocator) {
