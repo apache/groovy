@@ -14,16 +14,33 @@ class SqlTest extends GroovyTestCase {
         sql.eachRow("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
     }
     
-    void testQueryUsingColumnIndices() {
+    void testQueryUsingColumnIndex() {
     	sql = createSql()
     	
     	answer = null
     	
-    	sql.eachRow("select count(*) from PERSON") { answer = it[1] }
+    	sql.eachRow("select count(*) from PERSON") { answer = it[0] }
     	
     	println "Found the count of ${answer}"
     	
     	assert answer == 3
+    }
+    
+    void testQueryUsingNegativeColumnIndex() {
+    	sql = createSql()
+
+		first = null
+		last = null
+		    	
+    	sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
+    		first = row[-2]
+    		last = row[-1]
+    	}
+    	
+    	println "Found name ${first} ${last}"
+    	
+    	assert first == "James"
+    	assert last == "Strachan"
     }
     
     void testSqlQueryWithWhereClause() {

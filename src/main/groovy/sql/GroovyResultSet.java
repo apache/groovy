@@ -112,23 +112,25 @@ public class GroovyResultSet extends GroovyObjectSupport {
 
     /**
      * Supports integer based subscript operators for accessing at numbered columns
-     * starting at 1
+     * starting at zero. Negative indices are supported, they will count from the last column backwards.
      * 
      * @param index is the number of the column to look at starting at 1
      * @return
      */
     public Object getAt(int index) throws SQLException {
+        index = normalizeIndex(index);
         return resultSet.getObject(index);
     }
 
     /**
      * Supports integer based subscript operators for updating the values of numbered columns
-     * starting at 1
+     * starting at zero. Negative indices are supported, they will count from the last column backwards.
      * 
      * @param index is the number of the column to look at starting at 1
      * @return
      */
     public void putAt(int index, Object newValue) throws SQLException {
+        index = normalizeIndex(index);
         resultSet.updateObject(index, newValue);
     }
 
@@ -144,4 +146,23 @@ public class GroovyResultSet extends GroovyObjectSupport {
         }
         resultSet.insertRow();
     }
-}
+    
+    /**
+     * Takes a zero based index and convert it into an SQL based 1 based index. 
+     * A negative index will count backwards from the last column.
+     * 
+     * @param index
+     * @return a JDBC index
+     * @throws SQLException if some exception occurs finding out the column count
+     */
+    protected int normalizeIndex(int index) throws SQLException {
+        if (index < 0) {
+            int columnCount = resultSet.getMetaData().getColumnCount();
+            do {
+                index += columnCount;
+            }
+            while (index < 0);
+        }
+        return index + 1;
+    }   
+   }
