@@ -54,6 +54,7 @@ import java.util.Map;
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
+import org.codehaus.groovy.ast.CatchStatement;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
@@ -149,6 +150,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // current stack index
     private int idx;
 
+    // exception blocks list
+    private List exceptionBlocks = new ArrayList();
+
     private boolean definingParameters;
 
     public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
@@ -228,6 +232,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (!outputReturn) {
             cv.visitInsn(RETURN);
         }
+        
+        // lets do all the exception blocks
+        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext(); ) {
+            Runnable runnable = (Runnable) iter.next();
+            runnable.run();
+        }
+        exceptionBlocks.clear();
+        
         cv.visitMaxs(0, 0);
     }
 
@@ -422,8 +434,75 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitTryCatchFinally(TryCatchFinally statement) {
         onLineNumber(statement);
 
-        // TODO Auto-generated method stub
+        CatchStatement catchStatement = statement.getCatchStatement(0);
+        String exceptionVar = (catchStatement != null) 
+            ? catchStatement.getVariable()
+            : createExceptionVariableName();
+            
+        int exceptionIndex = defineVariable(exceptionVar, catchStatement.getExceptionType(), false).getIndex();
+        int index2 = exceptionIndex + 1;
+        int index3 = index2 + 1;
+        
+        final Label l0 = new Label();
+        cv.visitLabel(l0);
 
+        statement.getTryStatement().visit(this);
+
+        final Label l1 = new Label();
+        cv.visitLabel(l1);
+        Label l2 = new Label();
+        cv.visitJumpInsn(JSR, l2);
+        final Label l3 = new Label();
+        cv.visitLabel(l3);
+        Label l4 = new Label();
+        cv.visitJumpInsn(GOTO, l4);
+        final Label l5 = new Label();
+        cv.visitLabel(l5);
+
+        cv.visitVarInsn(ASTORE, exceptionIndex);
+
+        if (catchStatement != null) {
+            statement.visit(this);
+        }
+
+        cv.visitJumpInsn(JSR, l2);
+        final Label l6 = new Label();
+        cv.visitLabel(l6);
+        cv.visitJumpInsn(GOTO, l4);
+
+        final Label l7 = new Label();
+        cv.visitLabel(l7);
+        cv.visitVarInsn(ASTORE, index2);
+        cv.visitJumpInsn(JSR, l2);
+
+        final Label l8 = new Label();
+        cv.visitLabel(l8);
+        cv.visitVarInsn(ALOAD, index2);
+        cv.visitInsn(ATHROW);
+        cv.visitLabel(l2);
+        cv.visitVarInsn(ASTORE, index3);
+
+        statement.getFinallyStatement().visit(this);
+
+        cv.visitVarInsn(RET, index3);
+        cv.visitLabel(l4);
+
+
+        // rest of code goes here...
+
+        
+        final String exceptionType = (catchStatement != null)
+            ?  getTypeDescription(catchStatement.getExceptionType())
+            : null;
+
+        exceptionBlocks.add( new Runnable() {
+            public void run() {
+        cv.visitTryCatchBlock(l0, l1, l5, exceptionType);
+        cv.visitTryCatchBlock(l0, l3, l7, null);
+        cv.visitTryCatchBlock(l5, l6, l7, null);
+        cv.visitTryCatchBlock(l7, l8, l7, null);
+            }
+        });
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
@@ -570,9 +649,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
-        
-        if (! comparisonExpression(expression.getExpression())) {
-            asBool.call(cv);        
+
+        if (!comparisonExpression(expression.getExpression())) {
+            asBool.call(cv);
         }
     }
 
@@ -853,13 +932,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
             switch (binExpr.getOperation().getType()) {
-                case Token.COMPARE_EQUAL:
-                case Token.COMPARE_GREATER_THAN:
-                case Token.COMPARE_GREATER_THAN_EQUAL:
-                case Token.COMPARE_LESS_THAN:
-                case Token.COMPARE_LESS_THAN_EQUAL:
-                case Token.COMPARE_IDENTICAL:
-                case Token.COMPARE_NOT_EQUAL:
+                case Token.COMPARE_EQUAL :
+                case Token.COMPARE_GREATER_THAN :
+                case Token.COMPARE_GREATER_THAN_EQUAL :
+                case Token.COMPARE_LESS_THAN :
+                case Token.COMPARE_LESS_THAN_EQUAL :
+                case Token.COMPARE_IDENTICAL :
+                case Token.COMPARE_NOT_EQUAL :
                     return true;
             }
         }
@@ -953,6 +1032,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String createArgumentsName() {
         return "__argumentList" + idx;
     }
+
+    private String createExceptionVariableName() {
+        return  "__exception" + idx;
+    }
+
 
     /**
      * @return if the type of the expression can be determined at compile time then 

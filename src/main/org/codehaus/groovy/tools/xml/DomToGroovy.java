@@ -46,6 +46,8 @@
 package org.codehaus.groovy.tools.xml;
 
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.w3c.dom.*;
 
@@ -65,24 +67,31 @@ public class DomToGroovy {
     }
 
     public void print(Document document) {
-        printChildren(document);
+        printChildren(document, new HashMap());
     }
 
-    public void print(Node node) {
+    // Implementation methods
+    //-------------------------------------------------------------------------
+    protected void print(Node node, Map namespaces, boolean endWithComma) {
         switch (node.getNodeType()) {
             case Node.ELEMENT_NODE :
-                printElement((Element) node);
+                printElement((Element) node, namespaces, endWithComma);
                 break;
             case Node.PROCESSING_INSTRUCTION_NODE :
-                printPI((ProcessingInstruction) node);
+                printPI((ProcessingInstruction) node, endWithComma);
                 break;
             case Node.TEXT_NODE :
-                printText((Text) node);
+                printText((Text) node, endWithComma);
+                break;
+            case Node.COMMENT_NODE :
+                printComment((Comment) node, endWithComma);
                 break;
         }
     }
 
-    public void printElement(Element element) {
+    protected void printElement(Element element, Map namespaces, boolean endWithComma) {
+        namespaces = defineNamespaces(element, namespaces);
+
         element.normalize();
         printIndent();
 
@@ -98,54 +107,114 @@ public class DomToGroovy {
         NodeList list = element.getChildNodes();
         int length = list.getLength();
         if (length == 0) {
-            println("();");
+            printEnd("", endWithComma);
         }
         else {
             Node node = list.item(0);
             if (length == 1 && node instanceof Text) {
                 Text textNode = (Text) node;
-                String text = textNode.getData().trim();
+                String text = getTextNodeData(textNode);
                 if (hasAttributes) {
-                    print(".append('");
+                    print(" [\"");
+                    print(text);
+                    printEnd("\"]", endWithComma);
                 }
                 else {
-                    print("('");
+                    print("(\"");
+                    print(text);
+                    printEnd("\")", endWithComma);
                 }
-                print(text);
-                println("');");
+            }
+            else if (mixedContent(list)) {
+                println(" [");
+                ++indent;
+                boolean first = true;
+                int idx = 0;
+                for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
+                    boolean useComma = node.getNextSibling() != null;
+
+                    print(node, namespaces, useComma);
+                }
+                --indent;
+                printIndent();
+                printEnd("]", endWithComma);
             }
             else {
                 println(" {");
                 ++indent;
-                printChildren(element);
+                printChildren(element, namespaces);
                 --indent;
                 printIndent();
-                println("}");
+                printEnd("}", endWithComma);
             }
         }
     }
 
-    public void printPI(ProcessingInstruction instruction) {
+    protected void printPI(ProcessingInstruction instruction, boolean endWithComma) {
         printIndent();
         print("xml.pi('");
         print(instruction.getTarget());
         print("', '");
         print(instruction.getData());
-        println("');");
+        printEnd("');", endWithComma);
     }
 
-    public void printText(Text node) {
-        String text = node.getData().trim();
-        if (text.length() > 0) {
+    protected void printComment(Comment comment, boolean endWithComma) {
+        String text = comment.getData().trim();
+        if (text.length() >0) {
             printIndent();
-            print("xml.append('");
+            print("/* ");
             print(text);
-            println("');");
+            printEnd(" */", endWithComma);
         }
     }
 
-    // Implementation methods
-    //-------------------------------------------------------------------------
+    protected void printText(Text node, boolean endWithComma) {
+        String text = getTextNodeData(node);
+        if (text.length() > 0) {
+            printIndent();
+            //            print("xml.append('");
+            //            print(text);
+            //            println("');");
+            print("\"");
+            print(text);
+            printEnd("\"", endWithComma);
+        }
+    }
+
+    protected Map defineNamespaces(Element element, Map namespaces) {
+        Map answer = null;
+        String prefix = element.getPrefix();
+        if (prefix != null && prefix.length() > 0 && !namespaces.containsKey(prefix)) {
+            answer = new HashMap(namespaces);
+            defineNamespace(answer, prefix, element.getNamespaceURI());
+        }
+        NamedNodeMap attributes = element.getAttributes();
+        int length = attributes.getLength();
+        for (int i = 0; i < length; i++) {
+            Attr attribute = (Attr) attributes.item(i);
+            prefix = attribute.getPrefix();
+            if (prefix != null && prefix.length() > 0 && !namespaces.containsKey(prefix)) {
+                if (answer == null) {
+                    answer = new HashMap(namespaces);
+                }
+                defineNamespace(answer, prefix, attribute.getNamespaceURI());
+            }
+        }
+        return (answer != null) ? answer : namespaces;
+    }
+
+    protected void defineNamespace(Map namespaces, String prefix, String uri) {
+        namespaces.put(prefix, uri);
+        if (!prefix.equals("xmlns") && !prefix.equals("xml")) {
+            printIndent();
+            print(prefix);
+            print(" = xmlns.namespace('");
+            print(uri);
+            println("')");
+        }
+    }
+
     protected boolean printAttributes(Element element) {
         boolean hasAttribute = false;
 
@@ -159,13 +228,13 @@ public class DomToGroovy {
                 if (prefix != null && prefix.length() > 0) {
                     if (buffer.length() > 0) {
                         buffer.append(", ");
-                        buffer.append(prefix);
-                        buffer.append(".");
-                        buffer.append(getLocalName(attribute));
-                        buffer.append(":'");
-                        buffer.append(attribute.getValue());
-                        buffer.append("'");
                     }
+                    buffer.append(prefix);
+                    buffer.append(".");
+                    buffer.append(getLocalName(attribute));
+                    buffer.append(":'");
+                    buffer.append(attribute.getValue());
+                    buffer.append("'");
                 }
             }
 
@@ -200,9 +269,32 @@ public class DomToGroovy {
         return hasAttribute;
     }
 
-    protected void printChildren(Node parent) {
+    protected String getTextNodeData(Text node) {
+        String text = node.getData().trim();
+        return text;
+    }
+
+    protected boolean mixedContent(NodeList list) {
+        boolean hasText = false;
+        boolean hasElement = false;
+        for (int i = 0, size = list.getLength(); i < size; i++) {
+            Node node = list.item(i);
+            if (node instanceof Element) {
+                hasElement = true;
+            }
+            else if (node instanceof Text) {
+                String text = getTextNodeData((Text) node);
+                if (text.length() > 0) {
+                    hasText = true;
+                }
+            }
+        }
+        return hasText && hasElement;
+    }
+
+    protected void printChildren(Node parent, Map namespaces) {
         for (Node node = parent.getFirstChild(); node != null; node = node.getNextSibling()) {
-            print(node);
+            print(node, namespaces, false);
         }
     }
 
@@ -212,6 +304,16 @@ public class DomToGroovy {
             answer = node.getNodeName();
         }
         return answer.trim();
+    }
+
+    protected void printEnd(String text, boolean endWithComma) {
+        if (endWithComma) {
+            print(text);
+            println(",");
+        }
+        else {
+            println(text);
+        }
     }
 
     protected void println(String text) {

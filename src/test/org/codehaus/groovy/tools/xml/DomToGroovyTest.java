@@ -48,9 +48,7 @@ package org.codehaus.groovy.tools.xml;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -74,6 +72,8 @@ public class DomToGroovyTest extends TestCase {
 
     public void testConversion() throws Exception {
         convert("test1.xml", "test1.groovy");
+        convert("po.xsd", "poSchema.groovy");
+        convert("swing.xml", "swing.groovy");
     }
 
     protected void convert(String name, String output) throws Exception {
@@ -98,6 +98,7 @@ public class DomToGroovyTest extends TestCase {
 
     protected void setUp() throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
         builder = factory.newDocumentBuilder();
 
         dir.mkdirs();
