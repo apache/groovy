@@ -267,13 +267,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitForLoop(ForLoop loop) {
         onLineNumber(loop);
 
-        int iteratorIdx = this.defineVariable(createIteratorName(), "java.util.Iterator").getIndex();
-        int iIdx = this.defineVariable(loop.getVariable(), "java.lang.Object").getIndex();
+        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object").getIndex();
 
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
 
+        int iteratorIdx = defineVariable(createIteratorName(), "java.util.Iterator", false).getIndex();
         cv.visitVarInsn(ASTORE, iteratorIdx);
 
         Label label1 = new Label();
@@ -557,27 +557,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
     }
 
-    public void visitFieldExpression(FieldExpression expression) {
-        FieldNode field = expression.getField();
-        boolean isStatic = field.isStatic();
-
-        if (!isStatic && !leftHandExpression) {
-            cv.visitVarInsn(ALOAD, 0);
-        }
-        int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
-        String ownerName =
-            (field.getOwner().equals(classNode.getName()))
-                ? internalClassName
-                : Type.getInternalName(loadClass(field.getOwner()));
-
-        cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
-
-        // lets push this back on the stack 
-        //        if (! isStatic && leftHandExpression) {
-        //            cv.visitVarInsn(ALOAD, 0);
-        //        }
-    }
-
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
     }
@@ -606,6 +585,27 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         getPropertyMethod.call(cv);
 
         cv.visitInsn(POP);
+    }
+
+    public void visitFieldExpression(FieldExpression expression) {
+        FieldNode field = expression.getField();
+        boolean isStatic = field.isStatic();
+
+        if (!isStatic && !leftHandExpression) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
+        int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
+        String ownerName =
+            (field.getOwner().equals(classNode.getName()))
+                ? internalClassName
+                : Type.getInternalName(loadClass(field.getOwner()));
+
+        cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
+
+        // lets push this back on the stack 
+        //        if (! isStatic && leftHandExpression) {
+        //            cv.visitVarInsn(ALOAD, 0);
+        //        }
     }
 
     public void visitVariableExpression(VariableExpression expression) {
@@ -741,8 +741,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+//        if (isNonStaticField(leftExpression)) {
+//            cv.visitVarInsn(ALOAD, 0);
+//        }
+//
         leftHandExpression = false;
-        expression.getLeftExpression().visit(this);
+        leftExpression.visit(this);
 
         cv.visitLdcInsn(method);
 
@@ -753,8 +758,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        if (isNonStaticField(leftExpression)) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
+
         leftHandExpression = false;
-        expression.getLeftExpression().visit(this);
+        leftExpression.visit(this);
 
         leftHandExpression = false;
         expression.getRightExpression().visit(this);
@@ -765,16 +775,36 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected void evaluateEqual(BinaryExpression expression) {
         // lets evaluate the RHS then hopefully the LHS will be a field
-
-        // this may be redundant - we should maybe do this after each method call?
-        cv.visitVarInsn(ALOAD, 0);
+        Expression leftExpression = expression.getLeftExpression();
+        if (isNonStaticField(leftExpression)) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
 
         leftHandExpression = false;
         expression.getRightExpression().visit(this);
 
         leftHandExpression = true;
-        expression.getLeftExpression().visit(this);
+        leftExpression.visit(this);
         leftHandExpression = false;
+    }
+
+    /**
+     * @return true if the given expression represents a non-static field
+     */
+    protected boolean isNonStaticField(Expression expression) {
+        FieldNode field = null;
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            field = classNode.getField(varExp.getVariable());
+        }
+        else if (expression instanceof FieldExpression) {
+            FieldExpression fieldExp = (FieldExpression) expression;
+            field = classNode.getField(fieldExp.getFieldName());
+        }
+        if (field != null) {
+            return !field.isStatic();
+        }
+        return false;
     }
 
     protected void onLineNumber(Statement statement) {
@@ -837,13 +867,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * Defines the given variable in scope and assigns it to the stack
      */
     protected Variable defineVariable(String name, String type) {
+        return defineVariable(name, type, true);
+    }
+
+    protected Variable defineVariable(String name, String type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
             idx = Math.max(idx, variableStack.size());
             answer = new Variable(idx, type, name);
             variableStack.put(name, answer);
-            
-            if (! definingParameters && !leftHandExpression) {
+
+            if (define && !definingParameters && !leftHandExpression) {
                 // using new variable inside a comparison expression
                 // so lets initialize it too
                 cv.visitInsn(ACONST_NULL);
@@ -856,7 +890,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String createIteratorName() {
         return "__iterator" + idx;
     }
-
 
     /**
      * @return if the type of the expression can be determined at compile time then 

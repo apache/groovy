@@ -5,10 +5,10 @@ import org.codehaus.groovy.GroovyTestCase;
 /**
  * Tests iterating with local variables
  */
-class ForLoopTest extends GroovyTestCase {
+class ForLoopWithLocalVariablesTest extends GroovyTestCase {
 
     void testForLoop() {
-        x = 0;
+        x = null;
 
         for i in 0..10 {
             x = i;

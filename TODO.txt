@@ -5,6 +5,11 @@ Core Groovy Tasks
 	
 * test local variables
 
+* should we implement + and - for collections and maps?
+
+	l = [1, 2] + [3, 4];
+	assert l := [1, 2, 3, 4];
+	
 * test try / catch
 
 * while / do - while statements
