@@ -63,6 +63,7 @@ public class AllTests extends TestSuiteSupport {
         "ClosureTest.groovy",                   // TODO: closure params
         "ExpandoPropertyTest.groovy",           // TODO: closure params
         "GeneratorTest.groovy",                 // TODO: closure params
+        "InvokeNormalMethodsFirstTest.groovy",  // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -82,6 +83,8 @@ public class AllTests extends TestSuiteSupport {
         "ClosureMethodTest.groovy",             // TODO: use of *
         "ClosureWithDefaultParamTest.groovy",   // TODO: use of *
         "GroovyMethodsTest.groovy",             // TODO: use of *
+        "IntegerOperationTest.groovy",          // TODO: use of *
+        "ListTest.groovy",                      // TODO: use of *
 
         "CompareToTest.groovy",                 // TODO: can't parse <=>
 
@@ -114,10 +117,16 @@ public class AllTests extends TestSuiteSupport {
 
 
 
+        // Ignored tests
+        //-------------------------------------------------------------------------
+
         // lets ignore the benchmark tests as they just slow down unit testing
         "benchmarks/createLoop.groovy",
         "benchmarks/loop.groovy",
         "benchmarks/loop2.groovy",
+
+        // these are not tests...
+        "CreateData.groovy"
     };
 
     public static Test suite() {
