@@ -1114,7 +1114,7 @@ public class Parser {
                 }
             case (Token.KEYWORD_THIS) :
                 {
-                    expr = new CSTNode(Token.keyword(-1, -1, "this"));
+                    expr = thisExpression();
                     identifier = rootNode(lt_bare());
                     break PREFIX_SWITCH;
                 }
@@ -1161,7 +1161,7 @@ public class Parser {
                 }
             }
             else {
-                CSTNode methodCall = tryParseMethodCallWithoutParenthesis(expr, identifier);
+                CSTNode methodCall = tryParseMethodCallWithoutParenthesis(thisExpression(), identifier);
                 if (methodCall != null) {
                     expr = methodCall;
                 }
@@ -1178,6 +1178,10 @@ public class Parser {
         }
 
         return expr;
+    }
+
+    protected CSTNode thisExpression() {
+        return new CSTNode(Token.keyword(-1, -1, "this"));
     }
 
     protected CSTNode subscriptExpression(CSTNode expr) throws SyntaxException, IOException {
