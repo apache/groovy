@@ -3,6 +3,8 @@
 ##                                                                          ##
 ##  Groovy JVM Bootstrap for UN*X                                           ##
 ##                                                                          ##
+##  use -cp or -classpath just as in java to use a custom classpath         ##
+##                                                                          ##
 ##############################################################################
 
 ##
@@ -40,6 +42,11 @@ case "`uname`" in
         ;;
 esac
 
+if [ $1 = "-cp" ] || [ $1 = "-classpath" ]; then
+  CP=$2
+  shift 2
+fi
+
 # For Cygwin, ensure paths are in UNIX format before anything is touched
 if $cygwin ; then
     [ -n "$GROOVY_HOME" ] &&
@@ -48,6 +55,8 @@ if $cygwin ; then
         JAVACMD=`cygpath --unix "$JAVACMD"`
     [ -n "$JAVA_HOME" ] &&
         JAVA_HOME=`cygpath --unix "$JAVA_HOME"`
+    [ -n "$CP" ] &&
+        CP=`cygpath --path --unix "$CP"`
 fi
 
 # Locate GROOVY_HOME if not it is not set
@@ -60,6 +69,13 @@ if [ -z "$CLASSWORLDS_CONF" ]; then
     CLASSWORLDS_CONF="$GROOVY_HOME/conf/groovy-classworlds.conf"
 fi
 CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar"
+
+# Create the final classpath
+if [ -n "$CP" ]; then
+  CP=$CP:$CLASSWORLDS_CLASSPATH
+else
+  CP=$CLASSWORLDS_CLASSPATH
+fi
 
 # Determine the Java command to use to start the JVM
 if [ -z "$JAVACMD" ]; then
@@ -121,7 +137,7 @@ if $cygwin; then
     GROOVY_HOME=`cygpath --path --windows "$GROOVY_HOME"`
     JAVA_HOME=`cygpath --path --windows "$JAVA_HOME"`
     CLASSWORLDS_CONF=`cygpath --path --windows "$CLASSWORLDS_CONF"`
-    CLASSWORLDS_CLASSPATH=`cygpath --path --windows "$CLASSWORLDS_CLASSPATH"`
+    CP=`cygpath --path --windows "$CP"`
     TOOLS_JAR=`cygpath --path --windows "$TOOLS_JAR"`
 
 fi
@@ -131,7 +147,7 @@ if $useprofiler; then
     runProfiler
 else
     exec $JAVACMD $JAVA_OPTS \
-        -classpath "$CLASSWORLDS_CLASSPATH" \
+        -classpath "$CP" \
         -Dprogram.name="$PROGNAME" \
         -Dclassworlds.conf="$CLASSWORLDS_CONF" \
         -Dgroovy.home="$GROOVY_HOME" \
