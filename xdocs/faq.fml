@@ -51,6 +51,17 @@
        </p>
       </answer>
     </faq>   
+    
+    <faq id="operators">
+      <question>
+        How does operator overloading work?
+      </question>
+      <answer>
+        <p>
+		  Please see this description of <a href="operators.html">operator overloading</a>
+       </p>
+      </answer>
+    </faq>   
   </part>
 
 
