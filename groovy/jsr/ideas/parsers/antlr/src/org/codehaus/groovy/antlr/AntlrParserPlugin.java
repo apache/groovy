@@ -24,7 +24,13 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
@@ -47,10 +53,8 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
-
-        System.out.println("Creating lexer from reader...: " + reader);
-
         ast = null;
+
         GroovyLexer lexer = new GroovyLexer(reader);
         GroovyRecognizer parser = GroovyRecognizer.make(lexer);
         parser.setFilename(sourceUnit.getName());
@@ -208,18 +212,81 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
     }
 
     protected Parameter[] extractParameters(AST node) {
-        dumpTree(node);
         return new Parameter[0]; /** TODO */
     }
 
 
-    protected Statement extractCode(AST node) {
-        return new BlockStatement(); /** TODO */
+    protected Statement extractCode(AST code) {
+        BlockStatement block = new BlockStatement();
+
+        for (AST node = code.getFirstChild(); node != null; node = node.getNextSibling()) {
+            int type = node.getType();
+            switch (type) {
+                case METHOD_CALL:
+                    block.addStatement(methodCall(node));
+                    break;
+
+                default:
+                    onUnknownAST(node);
+            }
+        }
+        return block;
+    }
+
+    protected Statement methodCall(AST code) {
+        AST node = code.getFirstChild();
+
+        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
+        if (node.getType() == EXPR) {
+            objectExpression = extractExpression(node);
+            node = node.getNextSibling();
+        }
+
+        assertNodeType(IDENT, node);
+        String name = node.getText();
+
+        List expressionList = new ArrayList();
+
+        for (node = node.getNextSibling(); node != null; node = node.getNextSibling()) {
+            int type = node.getType();
+            switch (type) {
+                case EXPR:
+                    expressionList.add(extractExpression(node));
+                    break;
+
+                default:
+                    onUnknownAST(node);
+            }
+
+        }
+
+        MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
+        return new ExpressionStatement(expression);
+    }
+
+    protected Expression extractExpression(AST expression) {
+        for (AST node = expression.getFirstChild(); node != null; node = node.getNextSibling()) {
+            int type = node.getType();
+            switch (type) {
+                case STRING_LITERAL:
+                    return new ConstantExpression(node.getText());
+
+                default:
+                    onUnknownAST(node);
+            }
+        }
+        return null;
     }
 
 
     protected String extractFirstChildText(AST node) {
         return node.getFirstChild().getText();
+    }
+
+    protected void assertNodeType(int type, AST node) {
+        if (node.getType() != type) {
+            throw new RuntimeException("Unexpected node type: " + node.getType() + " found at node: " + node);
+        }
     }
 
     protected void onUnknownAST(AST ast) {
