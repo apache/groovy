@@ -720,6 +720,8 @@ public class Parser
             statement.addChild( rootNode( lt() ) );
         }
         
+        optionalSemicolon();
+        
         return statement;
     }
     
@@ -733,6 +735,8 @@ public class Parser
             statement.addChild( rootNode( lt() ) );
         }
         
+        optionalSemicolon();
+
         return statement;
     }
     

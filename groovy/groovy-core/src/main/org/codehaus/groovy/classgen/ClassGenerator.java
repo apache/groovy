@@ -175,15 +175,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // inner classes created while generating bytecode
     private LinkedList innerClasses = new LinkedList();
     private boolean definingParameters;
-
     private Set syntheticStaticFields = new HashSet();
-
     private int lastVariableIndex;
-
     private MethodNode methodNode;
     private Label breakLabel;
     private Label continueLabel;
-    private int switchVariableIndex;
 
     public ClassGenerator(
         GeneratorContext context,
@@ -603,18 +599,24 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         statement.getExpression().visit(this);
 
-        switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
+        int switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
         cv.visitVarInsn(ASTORE, switchVariableIndex);
-        
+
         Label lastBreakLabel = breakLabel;
 
         breakLabel = new Label();
 
         List caseStatements = statement.getCaseStatements();
-        
-        for (Iterator iter = caseStatements.iterator(); iter.hasNext();) {
+        int caseCount = caseStatements.size();
+        Label[] labels = new Label[caseCount + 1];
+        for (int i = 0; i < caseCount; i++) {
+            labels[i] = new Label();
+        }
+
+        int i = 0;
+        for (Iterator iter = caseStatements.iterator(); iter.hasNext(); i++) {
             CaseStatement caseStatement = (CaseStatement) iter.next();
-            visitCaseStatement(caseStatement);
+            visitCaseStatement(caseStatement, switchVariableIndex, labels[i], labels[i + 1]);
         }
 
         statement.getDefaultStatement().visit(this);
@@ -626,6 +628,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitCaseStatement(CaseStatement statement) {
+    }
+
+    public void visitCaseStatement(
+        CaseStatement statement,
+        int switchVariableIndex,
+        Label thisLabel,
+        Label nextLabel) {
+        
         onLineNumber(statement);
 
         cv.visitVarInsn(ALOAD, switchVariableIndex);
@@ -636,7 +646,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
 
+        cv.visitLabel(thisLabel);
+
         statement.getCode().visit(this);
+
+        // now if we don't finish with a break we need to jump past 
+        // the next comparison
+        if (nextLabel != null) {
+            cv.visitJumpInsn(GOTO, nextLabel);
+        }
 
         cv.visitLabel(l0);
     }

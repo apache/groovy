@@ -1,18 +1,36 @@
 class SwitchTest extends GroovyTestCase {
 
     void testSwitch() {
-        x = "foo"
-        
+        callSwitch("foo", "foo")
+        callSwitch("bar", "barfoo")
+        callSwitch("xyz", "xyzDefault")
+        callSwitch("zzz", "Default")
+    }
+    
+    callSwitch(x, expected) {
+		println("Calling switch with ${x}")
+		
+		result = ""
+		
         switch (x) {
             case "bar":
-                println("bar")
+	            result = result + "bar"
+                
             case "foo":
-                println("foo")
-                //break;
+    	        result = result + "foo"
+                break
+                
             case "xyz":
-	            println("xyz")
+        	    result = result + "xyz"
+                
             default:
-    	        println("Default")
+                result = result + "Default"
+                
+                // unnecessary just testing compiler
+                break;
         }
+        println("Found result ${result}")
+        
+        assert result == expected : "when calling switch with ${x}"
     }
 }
