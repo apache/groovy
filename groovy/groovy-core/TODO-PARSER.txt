@@ -1,0 +1,78 @@
+PARSER CHANGES REQUIRED
+=======================
+
+* use ClassExpression rather than VariableExpression for class names
+	e.g. for "System" in code System.out.println
+	
+* implement closures (handle ClosureExpression)
+	try syntax of closure to be...
+		"{" parameterList "|" statements "}"
+
+	if there are parser issues, then try use 
+		"{" "|" parameterList "|" statements "}"
+		
+* support method invocation where last parameter can be specified as a closure
+
+	collection.each {i| print(i); }
+
+	table(valign:"Centre") {
+		tr {
+			td("hello") {
+		}
+	}
+	
+* support named parameter arguments. e.g. foo(a:1234, b:542);
+	which uses NamedParameterExpression
+
+* support for new object expressions
+
+	foo = new Foo(1, 2, 3);
+
+* support subscript operator
+
+	foo[expression]
+	foo[0];
+	foo["hello"] = 123;
+	
+* maps "{" entry ["," entry]* "}"
+	entry =  keyExpression ":" valueExpression
+
+* allow new object expressions to take a Map or List expression as a last expression
+
+	foo = new MySpecialMap(123, 10) [a:1, b:2];
+	blah = new LinkedList [1, 2, 3, 4];
+	
+* make ; optional
+
+* add yield keyword...
+
+	"yield" expression.
+	
+	e.g.
+	
+	// simple way to implement an iterator
+	foo() {
+		yield 1;
+		yield 2;
+		yield 3;
+	}
+	
+	// or 
+	foo() {
+		for i in bar {
+			if i.whatnot == 7 {
+				yield i;
+			}
+		}
+	}
+	
+* methods on literals - e.g. "abc".length() or 1234.doubleValue();
+
+* support for [] as a type. e.g. main(String[] args)
+
+* grep for "@todo parser" in the src/test for **/*.groovy to find all the
+  current bugs in the parser
+  
+* check all the other operations are there + - / * % & | subscript operator foo[bar] foo[i] etc - along with the += *= abbreviations etc
+
+* regexp notation /regexp/ -> RegexExpression
