@@ -637,7 +637,12 @@ public class ASTBuilder
             }
             case ( Token.DOUBLE_QUOTE_STRING ):
             {
-                return compositeStringExpression( expressionRoot );
+                GStringExpression gstring = compositeStringExpression( expressionRoot );
+                if (gstring.isConstantString()) 
+                {
+                    return gstring.asConstantString();
+                }
+                return gstring;
             }
             case ( Token.IDENTIFIER ):
             {
@@ -689,7 +694,17 @@ public class ASTBuilder
             if ( matches( children[ 0 ],
                           Token.SINGLE_QUOTE_STRING ) )
             {
-                expr.addString( constantExpression( children[ i ] ) );
+                ConstantExpression expression = constantExpression( children[ i ] );
+                String text = "";
+                if (expression != null)
+                {    
+                    Object value = expression.getValue();
+                    if (value != null) 
+                    {    
+                        text = value.toString();
+                    }
+                }
+                expr.addString( text );
             }
             else
             {
