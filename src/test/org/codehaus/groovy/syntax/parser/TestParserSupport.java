@@ -33,23 +33,35 @@
  */
 package org.codehaus.groovy.syntax.parser;
 
+import groovy.util.GroovyTestCase;
+
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.syntax.TokenStream;
+import org.codehaus.groovy.syntax.lexer.CharStream;
+import org.codehaus.groovy.syntax.lexer.Lexer;
+import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
+import org.codehaus.groovy.syntax.lexer.StringCharStream;
 
 /**
- * Test case for the AST builder
+ * An abstract base class useful for AST parser related test cases
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ASTBuilderTest extends TestParserSupport {
+public abstract class TestParserSupport extends GroovyTestCase {
     
-    public void testStatementParsing() throws Exception {
-        ModuleNode module = parse("import cheddar.cheese.Toast as Bread\n x = [1, 2, 3]; System.out.println(x)", "foo/Cheese.groovy");
+    public ModuleNode parse(String text, String description) throws Exception {
+        CharStream chars = new StringCharStream(text, description);
+        Lexer lexer = new Lexer(chars);
+        TokenStream tokens = new LexerTokenStream(lexer);
 
-        BlockStatement block = module.getStatementBlock();
-        assertTrue("Contains some statements", !block.getStatements().isEmpty());
-        
-        System.out.println("Statements: " + block.getStatements());
+        Parser parser = new Parser(tokens);
+
+        CSTNode root = parser.compilationUnit();
+
+        ASTBuilder builder = new ASTBuilder(getClass().getClassLoader());
+        ModuleNode answer = builder.build(root);
+        answer.setDescription(chars.getDescription());
+        return answer;
     }
 }
