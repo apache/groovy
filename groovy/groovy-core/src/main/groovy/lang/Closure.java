@@ -53,7 +53,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Closure extends GroovyObjectSupport {
+public abstract class Closure extends GroovyObjectSupport implements Cloneable {
 
     private Object delegate;
 
