@@ -554,6 +554,15 @@ public class Invoker {
         if (type.equals(String.class)) {
             return (object != null) ? object.toString() : "null";
         }
+        if (type.equals(Character.class)) {
+            String text = object.toString();
+            if (text.length() == 1) {
+                return new Character(text.charAt(0));
+            }
+            else {
+                throw new ClassCastException("Cannot cast: " + text + " to a Character");
+            }
+        }
         if (object instanceof Number) {
             Number n = (Number) object;
             if (type.isPrimitive()) {
