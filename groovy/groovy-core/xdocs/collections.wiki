@@ -72,7 +72,7 @@ for (i in 1..10) {
 
 1.1 Maps
 
-Maps can be created using the following syntax. Notice that [:] is the empty map expresion.
+Maps can be created using the following syntax. Notice that \[:] is the empty map expression.
 
 {code:groovy}
 map = ["name":"Gromit", "likes":"cheese", "id":1234]
