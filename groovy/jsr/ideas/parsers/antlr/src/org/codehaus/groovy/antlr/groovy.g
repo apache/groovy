@@ -1750,6 +1750,7 @@ assignmentTail[AST head]
                 |   BAND_ASSIGN^
                 |   BXOR_ASSIGN^
                 |   BOR_ASSIGN^
+                |   STAR_STAR_ASSIGN^
                 //|   USEROP_13^  //DECIDE: This is how user-define ops would show up.
                 )
                 nls!
@@ -1771,7 +1772,7 @@ commandArguments[AST head]
                         case PLUS: case MINUS: case INC: case DEC:
                         case STAR: case DIV: case MOD:
                         case SR: case BSR: case SL:
-                        case BAND: case BXOR: case BOR:
+                        case BAND: case BXOR: case BOR: case STAR_STAR:
                         require(false,
                                         "garbage infix or prefix operator after command name f +x",
                                         "parenthesize either the whole expression (f+x) or the command arguments f(+x)");
@@ -1808,6 +1809,7 @@ assignmentOp
         |   BAND_ASSIGN^
         |   BXOR_ASSIGN^
         |   BOR_ASSIGN^
+        |   STAR_STAR_ASSIGN^
         )
         ;
 
@@ -1818,19 +1820,21 @@ assignmentOp
 //		   (OPERATOR nextHigherPrecedenceExpression)*
 // which is a standard recursive definition for a parsing an expression.
 // The operators in java have the following precedences:
-//	lowest  (13)  = *= /= %= += -= <<= >>= >>>= &= ^= |=
-//			(12)  ?:
-//			(11)  ||
-//			(10)  &&
-//			( 9)  |
-//			( 8)  ^
-//			( 7)  &
-//			( 6)  == != <=>
-//			( 5)  < <= > >=
-//			( 4)  << >>
-//			( 3)  +(binary) -(binary)
-//			( 2)  * / %
-//			( 1)  ++ -- +(unary) -(unary)  ~  !  (type)
+//	lowest  (15)  = **= *= /= %= += -= <<= >>= >>>= &= ^= |=
+//			(14)  ?:
+//			(13)  ||
+//			(12)  &&
+//			(11)  |
+//			(10)  ^
+//			( 9)  &
+//			( 8)  == != <=>
+//			( 7)  < <= > >=
+//			( 6)  << >>
+//			( 5)  +(binary) -(binary)
+//			( 4)  * / %
+//			( 3)  ++ -- +(unary) -(unary)
+//			( 2)  **(power)
+//			( 1)  ~  !  (type)
 //				  []   () (method call)  . (dot -- identifier qualification)
 //				  new   ()  (explicit parenthesis)
 //
@@ -2086,7 +2090,7 @@ arrayOrTypeArgs[AST indexee]
                 )+
         ;
 
-// assignment expression (level 13)
+// assignment expression (level 15)
 assignmentExpression
         :       conditionalExpression
                 (       
@@ -2102,60 +2106,61 @@ assignmentExpression
                         |   BAND_ASSIGN^
                         |   BXOR_ASSIGN^
                         |   BOR_ASSIGN^
+                        |   STAR_STAR_ASSIGN^
                         )
                         nls!
                         assignmentExpression
                 )?
         ;
 
-// conditional test (level 12)
+// conditional test (level 14)
 conditionalExpression
         :       logicalOrExpression
                 ( QUESTION^ nls! assignmentExpression COLON! nls! conditionalExpression )?
         ;
 
 
-// logical or (||)  (level 11)
+// logical or (||)  (level 13)
 logicalOrExpression
         :       logicalAndExpression (LOR^ nls! logicalAndExpression)*
         ;
 
 
-// logical and (&&)  (level 10)
+// logical and (&&)  (level 12)
 logicalAndExpression
         :       inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
         ;
 
-// bitwise or non-short-circuiting or (|)  (level 9)
+// bitwise or non-short-circuiting or (|)  (level 11)
 inclusiveOrExpression
         :       exclusiveOrExpression (BOR^ nls! exclusiveOrExpression)*
         ;
 
 
-// exclusive or (^)  (level 8)
+// exclusive or (^)  (level 10)
 exclusiveOrExpression
         :       andExpression (BXOR^ nls! andExpression)*
         ;
 
 
-// bitwise or non-short-circuiting and (&)  (level 7)
+// bitwise or non-short-circuiting and (&)  (level 9)
 andExpression
         :       regexExpression (BAND^ nls! regexExpression)*
         ;
 
-// regex find and match (=~ and ==~) (level 6.5)
+// regex find and match (=~ and ==~) (level 8.5)
 // jez: moved =~ closer to precedence of == etc, as...
 // 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
 regexExpression
         :       equalityExpression ((REGEX_FIND^ | REGEX_MATCH^) nls! equalityExpression)*
         ;
 
-// equality/inequality (==/!=) (level 6)
+// equality/inequality (==/!=) (level 8)
 equalityExpression
         :       relationalExpression ((NOT_EQUAL^ | EQUAL^ | COMPARE_TO^) nls! relationalExpression)*
         ;
 
-// boolean relational expressions (level 5)
+// boolean relational expressions (level 7)
 relationalExpression
         :       shiftExpression
                 (       (       (       LT^
@@ -2174,7 +2179,7 @@ relationalExpression
 
 
 
-// bit shift expressions (level 4)
+// bit shift expressions (level 6)
 shiftExpression
         :       additiveExpression
                 (   ((SL^ | SR^ | BSR^) nls!
@@ -2186,13 +2191,13 @@ shiftExpression
         ;
 
 
-// binary addition/subtraction (level 3)
+// binary addition/subtraction (level 5)
 additiveExpression
         :       multiplicativeExpression ((PLUS^ | MINUS^) nls! multiplicativeExpression)*
         ;
 
 
-// multiplication/division/modulo (level 2)
+// multiplication/division/modulo (level 4)
 multiplicativeExpression
         : ( INC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
         | ( DEC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
@@ -2201,11 +2206,12 @@ multiplicativeExpression
         | (      powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
         ;
 
-// power operator (**) (level 1)
+// math power operator (**) (level 3)
 powerExpression
         :       unaryExpressionNotPlusMinus (STAR_STAR^ nls! unaryExpression)*
         ;
 
+// ++(prefix)/--(prefix)/+(unary)/-(unary)/$(GString expression) (level 2)
 unaryExpression
         :       INC^ nls! unaryExpression
         |       DEC^ nls! unaryExpression
@@ -2221,6 +2227,7 @@ unaryExpression
 // regardless of package and imports.
 // Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
 
+// ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus
 	:	BNOT^ nls! unaryExpression
 	|	LNOT^ nls! unaryExpression

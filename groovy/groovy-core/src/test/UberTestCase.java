@@ -157,6 +157,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(OverridePropertyGetterTest.class);
         suite.addTestSuite(PlusEqualsTest.class);
         suite.addTestSuite(PostfixTest.class);
+        suite.addTestSuite(PowerOperationTest.class);
         suite.addTestSuite(PrefixTest.class);
         suite.addTestSuite(PrimitiveArraysTest.class);
         suite.addTestSuite(PrimitiveTypeFieldTest.class);
