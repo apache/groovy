@@ -61,19 +61,23 @@ import groovy.util.BuilderSupport;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.LayoutManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -130,6 +134,7 @@ public class SwingBuilder extends BuilderSupport {
     private Logger log = Logger.getLogger(getClass().getName());
     private Map factories = new HashMap();
     private Object constraints;
+    private Map passThroughNodes = new HashMap();
 
     public SwingBuilder() {
         registerWidgets();
@@ -138,7 +143,12 @@ public class SwingBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
         if (child instanceof Action) {
             Action action = (Action) child;
-            InvokerHelper.setProperty(parent, "action", action);
+            try {
+                InvokerHelper.setProperty(parent, "action", action);
+            } catch (RuntimeException re) {
+                // must not have an action property...
+                // so we ignore it and go on
+            }
             Object keyStroke = action.getValue("KeyStroke");
             //System.out.println("keystroke: " + keyStroke + " for: " + action);
             if (parent instanceof JComponent) {
@@ -168,6 +178,10 @@ public class SwingBuilder extends BuilderSupport {
             JTable table = (JTable) parent;
             TableColumn column = (TableColumn) child;
             table.addColumn(column);
+        }
+        else if (parent instanceof JTabbedPane && child instanceof Component) {
+            JTabbedPane tabbedPane = (JTabbedPane) parent;
+            tabbedPane.add((Component)child);
         }
         else {
             Component component = null;
@@ -249,53 +263,97 @@ public class SwingBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name, Object value) {
-        Object widget = createNode(name);
-        if (widget != null && value instanceof String) {
-            InvokerHelper.invokeMethod(widget, "setText", value);
+        if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+            return value;
         }
-        return widget;
+        else {
+            Object widget = createNode(name);
+            if (widget != null && value instanceof String) {
+                InvokerHelper.invokeMethod(widget, "setText", value);
+            }
+            return widget;
+        }
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
-        Object widget = createNode(name, attributes);
-        if (widget != null) {
-            InvokerHelper.invokeMethod(widget, "setText", value.toString());
+        if (passThroughNodes.containsKey(name) && (value != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(value.getClass())) {
+            handleWidgetAttributes(value, attributes);
+            return value;
         }
-        return widget;
+        else { 
+            Object widget = createNode(name, attributes);
+            if (widget != null) {
+                InvokerHelper.invokeMethod(widget, "setText", value.toString());
+            }
+            return widget;
+        }
     }
     
     protected Object createNode(Object name, Map attributes) {
         constraints = attributes.remove("constraints");
         Object widget = null;
-        Factory factory = (Factory) factories.get(name);
-        if (factory != null) {
-            try {
-                widget = factory.newInstance(attributes);
-                if (widget == null) {
-                    log.log(Level.WARNING, "Factory for name: " + name + " returned null");
-                }
-                else {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.fine("For name: " + name + " created widget: " + widget);
+        if (passThroughNodes.containsKey(name)) {
+            widget = attributes.get(name);
+            if ((widget != null) && ((Class)passThroughNodes.get(name)).isAssignableFrom(widget.getClass())) {
+                attributes.remove(name);
+            }
+            else {
+                widget = null;
+            }
+        }
+        if (widget == null) {
+            Factory factory = (Factory) factories.get(name);
+            if (factory != null) {
+                try {
+                    widget = factory.newInstance(attributes);
+                    if (widget == null) {
+                        log.log(Level.WARNING, "Factory for name: " + name + " returned null");
+                    }
+                    else {
+                        if (log.isLoggable(Level.FINE)) {
+                            log.fine("For name: " + name + " created widget: " + widget);
+                        }
                     }
                 }
+                catch (Exception e) {
+                    throw new RuntimeException("Failed to create component for" + name + " reason: " + e, e);
+                }
             }
-            catch (Exception e) {
-                throw new RuntimeException("Failed to create component for" + name + " reason: " + e, e);
+            else {
+                log.log(Level.WARNING, "Could not find match for name: " + name);
             }
         }
-        else {
-            log.log(Level.WARNING, "Could not find match for name: " + name);
-        }
+        handleWidgetAttributes(widget, attributes);
+        return widget;
+    }
+
+    protected void handleWidgetAttributes(Object widget, Map attributes) {
         if (widget != null) {
             if (widget instanceof Action) {
                 /** @todo we could move this custom logic into the MetaClass for Action */
                 Action action = (Action) widget;
+
                 Closure closure = (Closure) attributes.remove("closure");
                 if (closure != null && action instanceof DefaultAction) {
                     DefaultAction defaultAction = (DefaultAction) action;
                     defaultAction.setClosure(closure);
                 }
+
+                Object accel = attributes.remove("accelerator");
+                KeyStroke stroke = null;
+                if (accel instanceof KeyStroke) {
+                    stroke = (KeyStroke) accel;
+                } else if (accel != null) {
+                    stroke = KeyStroke.getKeyStroke(accel.toString());
+                }
+                action.putValue(Action.ACCELERATOR_KEY, stroke);
+
+                Object mnemonic = attributes.remove("mnemonic");
+                if ((mnemonic != null) && !(mnemonic instanceof Number)) {
+                    mnemonic = new Integer(mnemonic.toString().charAt(0));
+                }
+                action.putValue(Action.MNEMONIC_KEY, mnemonic);
+
                 for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
                     Map.Entry entry = (Map.Entry) iter.next();
                     String actionName = (String) entry.getKey();
@@ -309,6 +367,24 @@ public class SwingBuilder extends BuilderSupport {
 
             }
             else {
+                // some special cases...
+                if (attributes.containsKey("buttonGroup")) {
+                    Object o = attributes.get("buttonGroup");
+                    if ((o instanceof ButtonGroup) && (widget instanceof AbstractButton)) {
+                        ((AbstractButton)widget).getModel().setGroup((ButtonGroup)o);
+                        attributes.remove("buttonGroup");
+                    }
+                }
+
+                // this next statement nd if/else is a workaround until GROOVY-305 is fixed
+                Object mnemonic = attributes.remove("mnemonic");
+                if ((mnemonic != null) && (mnemonic instanceof Number)) {
+                    InvokerHelper.setProperty(widget, "mnemonic", new Character((char)((Number)mnemonic).intValue()));
+                } 
+                else if (mnemonic != null) {
+                    InvokerHelper.setProperty(widget, "mnemonic", new Character(mnemonic.toString().charAt(0)));
+                } 
+
                 // set the properties
                 for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
                     Map.Entry entry = (Map.Entry) iter.next();
@@ -318,7 +394,6 @@ public class SwingBuilder extends BuilderSupport {
                 }
             }
         }
-        return widget;
     }
 
     protected String capitalize(String text) {
@@ -334,6 +409,7 @@ public class SwingBuilder extends BuilderSupport {
 
     protected void registerWidgets() {
         registerBeanFactory("action", DefaultAction.class);
+        passThroughNodes.put("action", javax.swing.Action.class);
         registerFactory("boxLayout", new Factory() {
             public Object newInstance(Map properties)
                 throws InstantiationException, InstantiationException, IllegalAccessException {
@@ -387,6 +463,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("optionPane", JOptionPane.class);
         registerBeanFactory("scrollPane", JScrollPane.class);
         registerBeanFactory("separator", JSeparator.class);
+        registerBeanFactory("tabbedPane", JTabbedPane.class);
 
         registerFactory("splitPane", new Factory() {
             public Object newInstance(Map properties) {
@@ -405,9 +482,66 @@ public class SwingBuilder extends BuilderSupport {
                 return Box.createHorizontalBox();
             }
         });
+        registerFactory("hglue", new Factory() {
+            public Object newInstance(Map properties) {
+                return Box.createHorizontalGlue();
+            }
+        });
+        registerFactory("hstrut", new Factory() {
+            public Object newInstance(Map properties) {
+                try {
+                Object num = properties.remove("width");
+                if (num instanceof Number) {
+                    return Box.createHorizontalStrut(((Number)num).intValue());
+                } else {
+                    return Box.createHorizontalStrut(6);
+                }
+                } catch (RuntimeException re) {
+                    re.printStackTrace(System.out);
+                    throw re;
+                }
+            }
+        });
         registerFactory("vbox", new Factory() {
             public Object newInstance(Map properties) {
                 return Box.createVerticalBox();
+            }
+        });
+        registerFactory("vglue", new Factory() {
+            public Object newInstance(Map properties) {
+                return Box.createVerticalGlue();
+            }
+        });
+        registerFactory("vstrut", new Factory() {
+            public Object newInstance(Map properties) {
+                Object num = properties.remove("height");
+                if (num instanceof Number) {
+                    return Box.createVerticalStrut(((Number)num).intValue());
+                } else {
+                    return Box.createVerticalStrut(6);
+                }
+            }
+        });
+        registerFactory("glue", new Factory() {
+            public Object newInstance(Map properties) {
+                return Box.createGlue();
+            }
+        });
+        registerFactory("rigidArea", new Factory() {
+            public Object newInstance(Map properties) {
+                Dimension dim;
+                Object o = properties.remove("size");
+                if (o instanceof Dimension) {
+                    dim = (Dimension) o;
+                } else {
+                    int w, h;
+                    o = properties.remove("width");
+                    w = ((o instanceof Number)) ? ((Number)o).intValue() : 6;
+                    o = properties.remove("height");
+                    h = ((o instanceof Number)) ? ((Number)o).intValue() : 6;
+                    dim = new Dimension(w, h);
+                }
+                return Box.createRigidArea(dim);
             }
         });
 
@@ -435,6 +569,7 @@ public class SwingBuilder extends BuilderSupport {
                 return new DefaultTableModel(model);
             }
         });
+        passThroughNodes.put("tableModel", javax.swing.table.TableModel.class);
 
         registerFactory("propertyColumn", new Factory() {
             public Object newInstance(Map properties) {
@@ -511,6 +646,9 @@ public class SwingBuilder extends BuilderSupport {
                 }
             }
         });
+
+        //ulimlate pass through type
+        passThroughNodes.put("widget", java.awt.Component.class);
     }
 
     protected Object createBoxLayout(Map properties) {
