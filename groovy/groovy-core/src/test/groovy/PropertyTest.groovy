@@ -87,5 +87,25 @@ class PropertyTest extends GroovyTestCase {
         foo = new Foo(name:'Gromit', location:'Moon')
 
 		println foo
-	}    	
+	}
+
+    void testArrayLengthProperty() {
+		// create two arrays, since all use the same MetaArrayLengthProperty object -
+		// make sure it can work for all types and sizes
+		i = new Integer[5]
+		s = new String[10]
+		
+		// put something in it to make sure we're returning the *allocated* length, and
+		// not the *used* length
+		s[0] = "hello"
+		
+		assert i.length == 5
+		assert s.length == 10
+		
+		// this property does not mean there is a getLength() method
+		shouldFail { i.getLength() }
+		
+		// verify we can't set this property, it's read-only
+		shouldFail { i.length = 6 }
+	}
 }
