@@ -207,23 +207,23 @@ public class DefaultGroovyMethods {
     public static boolean isCase(Object caseValue, Object switchValue) {
         return caseValue.equals(switchValue);
     }
-    
+
     public static boolean isCase(String caseValue, Object switchValue) {
         return caseValue.equals(switchValue.toString());
     }
-    
+
     public static boolean isCase(Class caseValue, Object switchValue) {
         return caseValue.isInstance(switchValue);
     }
-    
+
     public static boolean isCase(Collection caseValue, Object switchValue) {
         return caseValue.contains(switchValue);
     }
-    
+
     public static boolean isCase(Pattern caseValue, Object switchValue) {
         return caseValue.matcher(switchValue.toString()).matches();
     }
-    
+
     // Collection based methods
     //-------------------------------------------------------------------------
 
@@ -425,7 +425,6 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
-
     /**
      * Iterates through the given collection, passing in the initial
      * value to the closure along with the current iterated item
@@ -445,7 +444,7 @@ public class DefaultGroovyMethods {
         }
         return value;
     }
-    
+
     /**
      * Concatenates all of the items of the collection together with the
      * given string as a separator
@@ -691,11 +690,11 @@ public class DefaultGroovyMethods {
     }
 
     public static List multiply(List self, Number factor) {
-        int size = factor.intValue(); 
+        int size = factor.intValue();
         List answer = new ArrayList(self.size() * size);
         for (int i = 0; i < size; i++) {
-           answer.addAll(self);
-         }
+            answer.addAll(self);
+        }
         return answer;
     }
 
@@ -704,72 +703,68 @@ public class DefaultGroovyMethods {
         if (left.size() == 0)
             return new ArrayList();
 
-        boolean nlgnSort=sameType(new Collection[] {left, right});
+        boolean nlgnSort = sameType(new Collection[] { left, right });
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
-        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) 
-                                       : left;
+        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) : left;
 
         for (Iterator iter = right.iterator(); iter.hasNext();) {
             final Object o = iter.next();
-              if (pickFrom.contains(o))
+            if (pickFrom.contains(o))
                 result.add(o);
         }
         return result;
     }
 
     public static List minus(List self, Collection removeMe) {
-    
-        if (self.size() == 0 )
+
+        if (self.size() == 0)
             return new ArrayList();
 
-        boolean nlgnSort = sameType(new Collection[] {self, removeMe});
-    
+        boolean nlgnSort = sameType(new Collection[] { self, removeMe });
+
         //we can't use the same tactic as for intersection
         //since AbstractCollection only does a remove on the first
         //element it encounter.
-    
+
         if (nlgnSort) {
             //n*log(n) version
-           Set answer = new TreeSet(self);
-           answer.removeAll(removeMe);
-           return new ArrayList(answer);
+            Set answer = new TreeSet(self);
+            answer.removeAll(removeMe);
+            return new ArrayList(answer);
         }
-        else
-        {    
-           //n*n version
-           List tmpAnswer = new LinkedList(self);
-           for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
-               Object element = iter.next();
-               boolean removeElement = false;
-               for (Iterator iterator = removeMe.iterator(); 
-                   iterator.hasNext();) {
-                   if (element.equals(iterator.next())) {    
-                       iter.remove();
-                   }
-               }
-           }
-           //remove duplicates
-           //can't use treeset since the base classes are different
-           List answer = new LinkedList();
-           Object[] array= (Object[]) 
-               tmpAnswer.toArray(new Object[tmpAnswer.size()]);
-           
-           for (int i = 0; i < array.length; i++) {
-               if (array[i] != null) {
-                  for (int j = i + 1; j < array.length; j++) {
-                      if (array[i].equals(array[j])) {
-                          array[j] = null;
-                      }
-                  }
-                  answer.add(array[i]);
-               }
-           }
-        return new ArrayList(answer);
+        else {
+            //n*n version
+            List tmpAnswer = new LinkedList(self);
+            for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
+                Object element = iter.next();
+                boolean removeElement = false;
+                for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
+                    if (element.equals(iterator.next())) {
+                        iter.remove();
+                    }
+                }
+            }
+            //remove duplicates
+            //can't use treeset since the base classes are different
+            List answer = new LinkedList();
+            Object[] array = (Object[]) tmpAnswer.toArray(new Object[tmpAnswer.size()]);
+
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] != null) {
+                    for (int j = i + 1; j < array.length; j++) {
+                        if (array[i].equals(array[j])) {
+                            array[j] = null;
+                        }
+                    }
+                    answer.add(array[i]);
+                }
+            }
+            return new ArrayList(answer);
         }
-    }    
-            
+    }
+
     public static List flatten(List self) {
         return new ArrayList(flatten(self, new LinkedList()));
     }
@@ -778,21 +773,20 @@ public class DefaultGroovyMethods {
         Iterator iter = elements.iterator();
         while (iter.hasNext()) {
             Object element = iter.next();
-            if (element instanceof Collection) { 
-               flatten((Collection) element, addTo);
+            if (element instanceof Collection) {
+                flatten((Collection) element, addTo);
             }
             else if (element instanceof Map) {
-                flatten(((Map) element).values(),addTo);
+                flatten(((Map) element).values(), addTo);
             }
             else {
                 addTo.add(element);
-            } 
+            }
         }
         return addTo;
     }
 
-    private static boolean sameType(Collection[] cols)
-    {
+    private static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
         for (int i = 0; i < cols.length; i++) {
             all.addAll(cols[i]);
@@ -801,7 +795,7 @@ public class DefaultGroovyMethods {
             return true;
 
         Object first = all.get(0);
-    
+
         //trying to determine the base class of the collections
         //special case for Numbers
         Class baseClass;
@@ -811,28 +805,27 @@ public class DefaultGroovyMethods {
         else {
             baseClass = first.getClass();
         }
-    
+
         for (int i = 0; i < cols.length; i++) {
             for (Iterator iter = cols[i].iterator(); iter.hasNext();) {
                 if (!baseClass.isInstance(iter.next())) {
                     return false;
                 }
-            }        
+            }
         }
         return true;
     }
+
     // String methods
     //-------------------------------------------------------------------------
     public static Object tokenize(String self, String token) {
         return InvokerHelper.asList(new StringTokenizer(self, token));
     }
-    
+
     public static Object tokenize(String self) {
         return InvokerHelper.asList(new StringTokenizer(self));
     }
-    
-    // Number based methods
-    //-------------------------------------------------------------------------
+
     public static String plus(String left, Object value) {
         return left + value;
         //return left + toString(value);
@@ -843,6 +836,21 @@ public class DefaultGroovyMethods {
         return left.replaceFirst(text, "");
     }
 
+    public static String multiply(String self, Number factor) {
+        int size = factor.intValue();
+        if (size < 1) {
+            throw new IllegalArgumentException(
+                "multiply() should be called with a number of 1 or greater not: " + size);
+        }
+        StringBuffer answer = new StringBuffer(self);
+        for (int i = 1; i < size; i++) {
+            answer.append(self);
+        }
+        return answer.toString();
+    }
+
+    // Number based methods
+    //-------------------------------------------------------------------------
     protected static String toString(Object value) {
         return (value == null) ? "null" : value.toString();
     }
@@ -893,21 +901,18 @@ public class DefaultGroovyMethods {
     }
 
     public static Number power(Number self, Number exponent) {
-        double answer = Math.pow(self.doubleValue(), 
-                exponent.doubleValue());
-        if (isFloatingPoint(self) || isFloatingPoint(exponent) 
-                || answer < 1 ) {
-            return new Double(answer); 
+        double answer = Math.pow(self.doubleValue(), exponent.doubleValue());
+        if (isFloatingPoint(self) || isFloatingPoint(exponent) || answer < 1) {
+            return new Double(answer);
         }
-        else if (isLong(self) || isLong(exponent) 
-                    || answer > Integer.MAX_VALUE ) {
+        else if (isLong(self) || isLong(exponent) || answer > Integer.MAX_VALUE) {
             return new Long((long) answer);
         }
         else {
             return new Integer((int) answer);
         }
     }
-    
+
     public static Number divide(Number left, Number right) {
         // lets use double for division?
         return new Double(left.doubleValue() / right.doubleValue());
