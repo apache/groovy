@@ -74,6 +74,10 @@ public class GroovyClassLoader extends ClassLoader {
     public GroovyClassLoader() {
     }
 
+    public GroovyClassLoader(ClassLoader loader) {
+        super(loader);
+    }
+
     /**
      * Loads the given class node returning the implementation Class
      * 
