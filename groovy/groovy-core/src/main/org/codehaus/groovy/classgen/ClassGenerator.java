@@ -983,11 +983,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 break;
 
             case Token.DIVIDE :
-                evaluateBinaryExpression("divide", expression);
+            	//SPG don't use divide since BigInteger implements directly
+            	//and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
+                evaluateBinaryExpression("div", expression);
                 break;
 
             case Token.DIVIDE_EQUAL :
-                evaluateBinaryExpressionWithAsignment("divide", expression);
+				//SPG don't use divide since BigInteger implements directly
+				//and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
+                evaluateBinaryExpressionWithAsignment("div", expression);
                 break;
 
             case Token.LEFT_SHIFT :
