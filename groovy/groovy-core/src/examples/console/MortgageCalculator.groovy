@@ -9,9 +9,9 @@ println "Mortgage Calculator"
 println "~~~~~~~~~~~~~~~~~~~"
 println "Please input 3 of the 4 values in your mortgage calculation"
 println "This program will then calculate the value you leave blank"
-println
+println ""
 
-variables = [
+def variables = [
     "Amount of mortgage" : 0.0, 
     "Annual interest rate (%)" : 0.0, 
     "Loan duration (months)" : 0.0, 
@@ -20,7 +20,7 @@ variables = [
 
 for (entry in variables.entrySet()) {
     print("${entry.key}:")
-    userInput = System.in.readLine()
+    def userInput = System.in.readLine()
     if ("" == userInput) {
         valueToCalculate = entry.key
     } else {
@@ -28,18 +28,18 @@ for (entry in variables.entrySet()) {
     }
 }
 
-println "${valueToCalculate} = ${calculateValueOf(valueToCalculate)}"
+println "$valueToCalculate = ${calculateValueOf(valueToCalculate)}"
 
 
 
 
 
 def calculateValueOf(valueToCalculate) {
-    result = 0
-    principal = variables["Amount of mortgage"]
-    interest = variables["Annual interest rate (%)"] / 1200
-    months = variables["Loan duration (months)"]
-    payment = variables["Monthly payments"]
+    def result = 0
+    def principal = variables["Amount of mortgage"]
+    def interest = variables["Annual interest rate (%)"] / 1200
+    def months = variables["Loan duration (months)"]
+    def payment = variables["Monthly payments"]
 
     switch (valueToCalculate) {
     case "Amount of mortgage":
@@ -59,12 +59,12 @@ def calculateValueOf(valueToCalculate) {
         break          
     case "Annual interest rate (%)":
         result = payment / principal
-        diff = 100; accuracy = 0.00001; maxIterations = 1000
-        index = 0
+        def diff = 100; def accuracy = 0.00001; def maxIterations = 1000
+        def index = 0
         while ((diff > accuracy) && (index < maxIterations)) {
-            temp = result
-            numerator = (principal * temp / payment) + Math.pow((1 + temp), -months) - 1
-            denominator= (principal / payment) - months * Math.pow((1 + temp), (-months - 1))
+            def temp = result
+            def numerator = (principal * temp / payment) + Math.pow((1 + temp), -months) - 1
+            def denominator= (principal / payment) - months * Math.pow((1 + temp), (-months - 1))
             result = temp - (numerator / denominator)
             diff = result - temp
             diff = Math.abs(diff)
