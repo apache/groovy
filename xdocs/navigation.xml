@@ -1,6 +1,6 @@
-<project name="angel" repository="angel" href="http://angel.codehaus.org">
+<project name="groovy" repository="groovy" href="http://groovy.codehaus.org">
 
-  <title>Groovy : a powerful dynamically typed language for the JVM</title>
+  <title>Groovy : a powerful dynamic for the Java Platform</title>
 
   <body>
     <links>
@@ -41,22 +41,9 @@
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>
       <item name="BSF Integration"     href="/bsf.html"/>
-      <item name="IntelliJ Plugin"     href="/intellij.html"/>
-      <item name="Eclipse Plugin"      href="/eclipse.html"/>
     </menu>
 
-    <menu name="Features">
-      <item name="GroovyMarkup"       href="/markup.html"/>
-      <item name="GPath"         	  href="http://wiki.codehaus.org/groovy/PathExpressionLanguage"/>
-      <item name="Groovlets"          href="/servlets.html"/>
-      <item name="Groovy Sql"         href="/sql.html"/>
-      <item name="Groovy Beans"       href="/beans.html"/>
-      <item name="Ant Scripting"      href="/ant.html"/>
-      <item name="Regex"              href="/regex.html"/>
-      <item name="Templates"          href="/templates.html"/>
-    </menu>
-
-    <menu name="User Guide">
+    <menu name="Language Guide">
       <item name="Contents"       		href="/guide.html"/>
       <item name="Statements"       	href="/statements.html"/>
       <item name="Strings"       		href="/strings.html"/>
@@ -72,6 +59,23 @@
       <item name="Groovy JDK"           href="/groovy-jdk.html"/>
     </menu>
 
+    <menu name="Groovy Features">
+      <item name="GroovyMarkup"       href="/markup.html"/>
+      <item name="GPath"         	  href="http://wiki.codehaus.org/groovy/PathExpressionLanguage"/>
+      <item name="Groovlets"          href="/servlets.html"/>
+      <item name="Groovy Sql"         href="/sql.html"/>
+      <item name="Groovy Beans"       href="/beans.html"/>
+      <item name="Ant Scripting"      href="/ant.html"/>
+      <item name="Regex"              href="/regex.html"/>
+      <item name="Templates"          href="/templates.html"/>
+    </menu>
+
+    <menu name="IDE Support">
+      <item name="Eclipse Plugin"      href="/eclipse.html"/>
+      <item name="IntelliJ Plugin"     href="/intellij.html"/>
+      <item name="JEdit Plugin"        href="/jedit.html"/>
+    </menu>
+    
     <menu name="Articles">
       <item name="Index"                href="/articles.html"/>
     </menu>

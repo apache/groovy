@@ -1,0 +1,4 @@
+1 Groovy JEdit plugin
+
+To use Groovy from inside JEdit download this {link:plugin|http://plugins.jedit.org/plugins/?SuperScript}.
+
