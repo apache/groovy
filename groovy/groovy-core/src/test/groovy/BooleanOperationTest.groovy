@@ -31,7 +31,7 @@ class BooleanOperationTest extends GroovyTestCase {
         x = false
         r = false
         
-        if x {
+        if ( x ) {
             // ignore
         }
         else {
@@ -43,7 +43,7 @@ class BooleanOperationTest extends GroovyTestCase {
         x = true
         r = false
         
-        if x {
+        if ( x ) {
             r = true
         }
         else {
@@ -52,7 +52,7 @@ class BooleanOperationTest extends GroovyTestCase {
         assert r
         
         /** @todo parser 
-        if !x {
+        if ( !x ) {
             r = false
         }
         else {

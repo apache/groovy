@@ -637,20 +637,11 @@ public class Parser
     {
         CSTNode statement = rootNode( Token.KEYWORD_IF );
 
-        boolean parenRequired = false;
-
-        if ( lt() == Token.LEFT_PARENTHESIS )
-        {
-            consume( Token.LEFT_PARENTHESIS );
-            parenRequired = true;
-        }
+        consume( Token.LEFT_PARENTHESIS );
 
         statement.addChild( expression() );
 
-        if ( parenRequired )
-        {
-            consume( Token.RIGHT_PARENTHESIS );
-        }
+        consume( Token.RIGHT_PARENTHESIS );
 
         statement.addChild( statementBlock() );
 
