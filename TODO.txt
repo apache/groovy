@@ -188,8 +188,6 @@ sql.table("users") {
 	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
 	methods
 	
-* bug - x = methodName fails, but x = this.methodName works
-
 * groovy thread...
 	foo = new GroovyThread(args) { closure }
 	
@@ -204,10 +202,6 @@ sql.table("users") {
 
 * support for property converters, based on type
 
-* maybe add python's * and ** for any number of args or maps in method decl
-
-* use *args in method invocation to expand a list as argument values	
-	
 * go through all not-working @todo tests in src/test
 	
 * to support dynamic mixins we should use dynamic proxies to allow
