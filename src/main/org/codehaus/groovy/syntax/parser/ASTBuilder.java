@@ -135,6 +135,8 @@ public class ASTBuilder
         		  ||
         		  name.equals( "byte" )
         		  ||
+        		  name.equals( "double" )
+        		  ||
                   name.equals( "float" ) )
         {
             return name;

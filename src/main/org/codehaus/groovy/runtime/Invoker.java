@@ -259,6 +259,9 @@ public class Invoker {
     public int compareTo(Object left, Object right) {
         //System.out.println("Comparing: " + left + " to: " + right);
 
+    	if (left instanceof Float) left = new Double(((Float)left).doubleValue());
+    	if (right instanceof Float) right = new Double(((Float)left).doubleValue());
+    	
         if (left instanceof Comparable) {
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);
@@ -275,7 +278,23 @@ public class Invoker {
             return true;
         }
         if (left != null) {
-            return left.equals(right);
+        	if (left.equals(right)) {
+        		return true;
+        	}
+        	if (left instanceof Number && right instanceof Number) {
+        		Number leftNumber = (Number) left;
+        		Number rightNumber = (Number) right;
+        		if (leftNumber.byteValue() != rightNumber.byteValue() ||
+        			leftNumber.intValue() != rightNumber.intValue() ||
+        			leftNumber.shortValue() != rightNumber.shortValue() ||
+        			leftNumber.longValue() != rightNumber.longValue() ||
+        			leftNumber.floatValue() != rightNumber.floatValue() ||
+        			leftNumber.doubleValue() != rightNumber.doubleValue()) {
+        			return false;
+        		} else {
+        			return true;
+        		}
+        	}
         }
         return false;
     }

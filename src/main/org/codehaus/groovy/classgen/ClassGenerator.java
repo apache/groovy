@@ -754,12 +754,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         	MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
         	cv.visitInsn(DRETURN);
         } else if (returnType.equals("float")) {
-        	MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
-        	cv.visitInsn(D2F);
+        	MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
         	cv.visitInsn(FRETURN);
         } else if (returnType.equals("long")) {
-        	MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
-        	cv.visitInsn(I2L);
+        	MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
         	cv.visitInsn(LRETURN);
         } else if (returnType.equals("boolean")) {
         	MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
