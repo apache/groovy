@@ -9,9 +9,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.GroovyException;
 import org.eclipse.jface.window.ApplicationWindow;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
@@ -137,6 +139,12 @@ public class SwtUtils  {
         }
         else if (parent instanceof Section) {
             return ((Section) parent).getClient();
+        }
+        else if (parent instanceof CTabItem) {
+            return ((CTabItem) parent).getParent();
+        }
+        else if (parent instanceof TabItem) {
+            return ((TabItem) parent).getParent();
         }
         else if (parent instanceof Composite) {
             return (Composite) parent;

@@ -4,7 +4,6 @@
  */
 package groovy.swt.factory;
 
-import groovy.jface.impl.ApplicationWindowImpl;
 import groovy.swt.SwtUtils;
 import groovy.swt.convertor.ColorConverter;
 import groovy.swt.convertor.PointConverter;
@@ -15,12 +14,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyException;
-import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.Widget;
 
 /**
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
@@ -49,17 +50,19 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
      */
     public Object newInstance(Map properties, Object parent)
     throws GroovyException {
-        if (parent instanceof ApplicationWindow) {
-            parent = ((ApplicationWindowImpl) parent).getContents();
-        }
         String styleProperty = (String) properties.remove("style");
         if (styleProperty != null) {
             style = SwtUtils.parseStyle(SWT.class, styleProperty);
         }
-        Object bean = createWidget(parent);
+        
+        Widget parentWidget = SwtUtils.getParentWidget(parent);        
+        Object bean = createWidget(parentWidget);
         if (bean != null) {
             setBeanProperties(bean, properties);
         }
+        
+        setControl(bean, parent);
+        
         return bean;
     }
 
@@ -158,6 +161,16 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         super.setBeanProperties(bean, properties);
     }
 
+    protected void setControl(Object bean, Object parent) {
+        if (parent instanceof CTabItem) {
+            CTabItem tabItem = (CTabItem) parent;
+            tabItem.setControl((Control) bean);
+        } else if (parent instanceof TabItem) {
+            TabItem tabItem = (TabItem) parent;
+            tabItem.setControl((Control) bean);
+        }
+    }
+    
     protected void setSize(Control control, Object size) {
         Point point = null;
         if (size != null) {
