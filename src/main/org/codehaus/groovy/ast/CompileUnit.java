@@ -61,6 +61,7 @@ public class CompileUnit {
 
     public void addModule(ModuleNode node) {
         modules.add(node);
+        node.setUnit(this);
         node.addClasses(classes);
     }
 
@@ -70,7 +71,7 @@ public class CompileUnit {
      * current compilation unit (ignoring the .class files 
      * on the classpath)
 	 */
-    public ClassNode containsClass(String name) {
+    public ClassNode getClass(String name) {
         return (ClassNode) classes.get(name);
     }
 

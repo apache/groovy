@@ -26,13 +26,10 @@ class ClassExpressionTest extends GroovyTestCase {
         assert x != null
         assert x.name.endsWith('GroovyTestCase')
         
-        /** @todo parser 
         x = ClassExpressionTest
         
         assert x != null
 
         System.out.println("x: " + x)
-        
-        */
     }
 }

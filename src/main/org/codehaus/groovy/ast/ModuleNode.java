@@ -67,6 +67,7 @@ public class ModuleNode extends ASTNode {
     private BlockStatement statements = new BlockStatement();
     private List classes = new ArrayList();
     private Map imports = new HashMap();
+    private CompileUnit unit;
     private String packageName;
     private String description;
     
@@ -99,6 +100,7 @@ public class ModuleNode extends ASTNode {
     
     public void addClass(ClassNode node) {
         classes.add(node);
+        node.setModule(this);
     }
     
     public void visit(GroovyCodeVisitor visitor) {
@@ -136,6 +138,14 @@ public class ModuleNode extends ASTNode {
             }
             classMap.put(name, node);
         }
+    }
+
+    public CompileUnit getUnit() {
+        return unit;
+    }
+
+    void setUnit(CompileUnit unit) {
+        this.unit = unit;
     }
 
 }
