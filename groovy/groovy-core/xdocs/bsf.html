@@ -1,0 +1,42 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><title>Working with BSF</title></head>
+<body>
+
+<h1>Working with BSF</h1>
+
+<p>
+Groovy integrates cleanly with <a href="http://jakarta.apache.org/bsf/">BSF</a> 
+(the Bean Scripting Framework) which allows you to embed any scripting engine 
+into your Java code while keeping your Java code decoupled from any particular 
+scripting engine specifics. 
+</p>
+
+<p>
+The BSF engine for Groovy is implementated by the
+<a href="apidocs/org/codehaus/groovy/bsf/GroovyEngine.html">GroovyEngine</a> class.
+From bsf 2.3.0-rc2 onwards the integration should be included in the release of BSF
+although until then you'll need to manually register this class with your BSF installation.
+You can manually register Groovy into BSF via the following...
+</p>
+
+<source>
+BSFManager.registerScriptingEngine(
+	"groovy", 
+	"org.codehaus.groovy.bsf.GroovyEngine", 
+	new String[] { "groovy", "gy" }
+);
+</source>
+
+<p>
+You can then treat Groovy like any of the other scripting languages via the BSF API...
+</p>
+
+<source>
+String text = "println('Hello World')\n  return [1, 2, 3]"
+BSFManager manager = new BSFManager();
+Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, text);
+</source>
+
+</body>
+</html>

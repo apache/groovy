@@ -47,6 +47,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import groovy.lang.Script;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -125,37 +126,38 @@ public class Verifier implements GroovyClassVisitor, Constants {
                                 new VariableExpression("method"),
                                 new VariableExpression("arguments")}))));
 
-            node.addMethod(
-                "getProperty",
-                ACC_PUBLIC,
-                Object.class.getName(),
-                new Parameter[] {
-                    new Parameter(String.class.getName(), "property")},
-                new ReturnStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(metaClassField),
-                        "getProperty",
-                        new ArgumentListExpression(
-                            new Expression[] {
-                                new VariableExpression("this"),
-                                new VariableExpression("property")}))));
-                                
-            node.addMethod(
-                "setProperty",
-                ACC_PUBLIC,
-                "void",
-                new Parameter[] {
-                    new Parameter(String.class.getName(), "property"),
-                    new Parameter(Object.class.getName(), "value")},
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(metaClassField),
-                        "setProperty",
-                        new ArgumentListExpression(
-                            new Expression[] {
-                                new VariableExpression("this"),
-                                new VariableExpression("property"),
-                                new VariableExpression("value")}))));
+            if (!node.getSuperClass().equals(Script.class.getName())) {
+                node.addMethod(
+                    "getProperty",
+                    ACC_PUBLIC,
+                    Object.class.getName(),
+                    new Parameter[] { new Parameter(String.class.getName(), "property")},
+                    new ReturnStatement(
+                        new MethodCallExpression(
+                            new FieldExpression(metaClassField),
+                            "getProperty",
+                            new ArgumentListExpression(
+                                new Expression[] {
+                                    new VariableExpression("this"),
+                                    new VariableExpression("property")}))));
+
+                node.addMethod(
+                    "setProperty",
+                    ACC_PUBLIC,
+                    "void",
+                    new Parameter[] {
+                        new Parameter(String.class.getName(), "property"),
+                        new Parameter(Object.class.getName(), "value")},
+                    new ExpressionStatement(
+                        new MethodCallExpression(
+                            new FieldExpression(metaClassField),
+                            "setProperty",
+                            new ArgumentListExpression(
+                                new Expression[] {
+                                    new VariableExpression("this"),
+                                    new VariableExpression("property"),
+                                    new VariableExpression("value")}))));
+            }
         }
 
         if (node.getConstructors().isEmpty()) {
@@ -254,7 +256,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
             else if (statement instanceof BlockStatement) {
                 BlockStatement block = (BlockStatement) statement;
-                
+
                 // lets copy the list so we create a new block
                 List list = new ArrayList(block.getStatements());
                 if (!list.isEmpty()) {
@@ -274,7 +276,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 node.setCode(new BlockStatement(list));
             }
         }
-        
+
     }
 
     public void visitField(FieldNode node) {

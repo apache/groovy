@@ -45,10 +45,14 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.IntRange;
+import groovy.lang.MetaClass;
 import groovy.lang.Range;
+import groovy.lang.Script;
+import groovy.lang.ScriptContext;
 import groovy.lang.Tuple;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -63,6 +67,9 @@ import java.util.Map;
  * @version $Revision$
  */
 public class InvokerHelper {
+    public static final Object[] EMPTY_ARGS = {
+    };
+    
     private static final Invoker singleton = new Invoker();
 
     public static MetaClass getMetaClass(Object object) {
@@ -83,6 +90,10 @@ public class InvokerHelper {
 
     public static Object invokeConstructor(String type, Object arguments) {
         return getInstance().invokeConstructor(type, arguments);
+    }
+
+    public static Object invokeConstructorOf(Class type, Object arguments) {
+        return getInstance().invokeConstructorOf(type, arguments);
     }
 
     public static Iterator asIterator(Object collection) {
@@ -189,5 +200,20 @@ public class InvokerHelper {
             throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
+    
+    public static Object runScript(Class scriptClass, String[] args) {
+        ScriptContext context = new ScriptContext(args);
+        Script script = createScript(scriptClass, context);
+        return invokeMethod(script, "run", EMPTY_ARGS);
+    }
 
+    public static Script createScript(Class scriptClass, ScriptContext context) {
+        try {
+            Constructor constructor = scriptClass.getConstructor(new Class[] { ScriptContext.class });
+            return (Script) constructor.newInstance(new Object[] { context });
+        }
+        catch (Exception e) {
+            throw new InvokerException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e, e);
+        }
+    }
 }
