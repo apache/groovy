@@ -1,5 +1,8 @@
 package groovy.sql
 
+/** @todo bug - should not need this line */
+import groovy.sql.SqlCompleteTest
+
 class SqlCompleteTest extends TestHelper {
 
     void testSqlQuery() {
