@@ -374,18 +374,14 @@ declaration!
       : 
       						// method/variable using def
             (m:modifiers)?
+            
             (
         						DEF! nls! v:variableDefinitions[#m, null]	
         						{#declaration = #v;}
       						
 	        				|
-      				
-        						(constructorStart)=>
-     	 	  						v3:constructorDefinition[#m]
-      	 	       {#declaration = #v3;}
-  				    					|  						
-				    					
-		  	    						// method/variable using a type
+
+  	    						 // method/variable using a type
  	      						t2:typeSpec[false] v2:variableDefinitions[#m,#t2]
   		          {#declaration = #v2;}
   		        )
@@ -442,16 +438,13 @@ declarationStart!
     |   (   upperCaseIdent!
         |   builtInType!
         ) (LBRACK balancedTokens! RBRACK)* IDENT
-        
-    // constructor
-    | IDENT! LBRACK!
-    ;
+					;        
 
 /** Used to look ahead for a constructor 
  */
 constructorStart!:
-				IDENT! nls! LPAREN!
-				;
+				(modifier!)* IDENT! nls! LPAREN! balancedTokens! RPAREN!
+			;
 				
 
 /** Used only as a lookahead predicate for nested type declarations. */
@@ -986,6 +979,13 @@ implementsClause
 // Now the various things that can be defined inside a class
 classField!
 	:	// method, constructor, or variable declaration
+	
+ (constructorStart)=>
+     	 	(mc:modifiers)? ctor:constructorDefinition[#mc]
+      	 {#classField = #ctor;}
+
+	    |
+	
 		(declarationStart)=>
         d:declaration
         {#classField = #d;}

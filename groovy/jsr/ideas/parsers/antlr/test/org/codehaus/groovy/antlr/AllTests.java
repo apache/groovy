@@ -32,10 +32,6 @@ public class AllTests extends TestSuiteSupport {
 
     static String[] excludedTests = {
 
-        // TODO the following are all parser bugs
-
-        "Groovy278_Bug.groovy",                 // TODO: constructor bug
-
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
         "PropertyTest.groovy",                  // TODO: arrays

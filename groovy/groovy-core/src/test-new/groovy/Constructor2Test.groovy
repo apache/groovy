@@ -1,7 +1,6 @@
 class Constructor2Test extends GroovyTestCase {
 
-    // TODO modifier required to parser this!
-    public Constructor2Test() {
+    Constructor2Test() {
         println "Hey"
     }
 
