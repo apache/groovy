@@ -114,6 +114,10 @@ public class LexerTest
     {
         newLexer( " \r \n \r\n \n\r    \t   \t");
 
+        assertNextToken( Token.NEWLINE, "<newline>" );
+        assertNextToken( Token.NEWLINE, "<newline>" );
+        assertNextToken( Token.NEWLINE, "<newline>" );
+        
         assertEnd();
     }
 

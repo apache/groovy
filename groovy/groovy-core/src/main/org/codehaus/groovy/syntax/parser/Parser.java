@@ -1776,7 +1776,16 @@ public class Parser
     protected Token la(int k)
         throws IOException, SyntaxException
     {
-        return getTokenStream().la( k );
+        Token token = null;
+        for (int pivot = 1, count = 0; count < k; pivot++) 
+        {
+            token = getTokenStream().la(pivot);
+            if (token == null || token.getType() != Token.NEWLINE)
+            {
+                count++;
+            }
+        }
+        return token;
     }
 
     protected int lt(int k)
@@ -1800,6 +1809,14 @@ public class Parser
             throw new UnexpectedTokenException( la(),
                                                 type );
         }
+        
+        while (true) {
+            Token token = getTokenStream().la();
+            if (token == null || token.getType() != Token.NEWLINE) {
+                break;
+            }
+            getTokenStream().consume(Token.NEWLINE);
+        }
 
         return getTokenStream().consume( type );
     }
@@ -1810,6 +1827,83 @@ public class Parser
     {
         root.addChild( new CSTNode( consume( type ) ) );
     }
+
+    
+    
+    // bare versions of the token methods which don't ignore newlines
+    protected void consumeUntil_bare(int type)
+    throws IOException, SyntaxException
+    {
+        while ( lt_bare() != -1 )
+           {
+            consume_bare( lt_bare() );
+
+            if ( lt_bare() == type )
+               {
+                consume( lt_bare() );
+                break;
+            }
+        }
+    }
+
+    protected Token la_bare()
+    throws IOException, SyntaxException
+    {
+        return la_bare( 1 );
+    }
+
+    protected int lt_bare()
+    throws IOException, SyntaxException
+    {
+        Token token = la_bare();
+
+        if ( token == null )
+           {
+            return -1;
+        }
+
+        return token.getType();
+    }
+
+    protected Token la_bare(int k)
+    throws IOException, SyntaxException
+    {
+        return getTokenStream().la( k );
+    }
+
+    protected int lt_bare(int k)
+    throws IOException, SyntaxException
+    {
+        Token token = la_bare( k );
+
+        if ( token == null )
+           {
+            return -1;
+        }
+
+        return token.getType();
+    }
+
+    protected Token consume_bare(int type)
+    throws IOException, SyntaxException
+    {
+        if ( lt_bare() != type )
+           {
+            throw new UnexpectedTokenException( la_bare(),
+                    type );
+        }
+
+        return getTokenStream().consume( type );
+    }
+
+    protected void consume_bare(CSTNode root,
+                           int type)
+    throws IOException, SyntaxException
+    {
+        root.addChild( new CSTNode( consume_bare( type ) ) );
+    }
+    
+    
 
     protected CSTNode rootNode(int type)
         throws IOException, SyntaxException
