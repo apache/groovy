@@ -199,4 +199,12 @@ class ClosureMethodTest extends GroovyTestCase {
         }
         assert answer == ['hello', 'there', 'how', 'are', 'you']
     }
+    
+    void testUpto() {
+        answer = []
+        
+        1.upto(5) { answer.add(it) }
+        
+        assert answer == [1, 2, 3, 4, 5]
+    }
 }
