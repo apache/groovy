@@ -126,7 +126,7 @@ public class RunBugsTest extends TestSupport {
     */
         
     public void testNestedClosure2Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/NestedClosure2Bug.groovy");
+        GroovyObject object = compile("src/test/groovy/bugs/Groovy239_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
 }
