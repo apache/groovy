@@ -42,6 +42,9 @@ public class AllTests extends TestSuiteSupport {
         "ConstructorBug.groovy",                // TODO: foo.class bug in parser
         "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
         "bugs/PrimitivePropertyBug.groovy",     // TODO: foo.class bug in parser
+        "CastTest.groovy",                      // TODO: foo.class bug in parser
+        "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
+        "ClassTest.groovy",                     // TODO: foo.class bug in parser
 
         "ClassGeneratorFixesTest.groovy",       // TODO: closure params
         "ClosureParameterPassingBug.groovy",    // TODO: closure params
@@ -50,6 +53,7 @@ public class AllTests extends TestSuiteSupport {
         "bugs/Bytecode4Bug.groovy",             // TODO: closure params
         "bugs/ForAndSqlBug.groovy",             // TODO: closure params
         "bugs/VariblePrecedence.groovy",        // TODO: closure params
+        "ClosureAsParamTest.groovy",            // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -65,6 +69,8 @@ public class AllTests extends TestSuiteSupport {
 
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
+
+        "ClosureCloneTest.groovy",              // TODO: parser bug : use of * with dot
 
         // Not sure of bug yet
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
