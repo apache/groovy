@@ -67,7 +67,7 @@ class Html2Wiki {
                 out.print "{link:${node.text()}|${node.attribute('href')}} "
                 break
             case "b":
-                out.print "~~~${node.text()}~~~ "
+                out.print "__${node.text()}__ "
                 break
             case "i":
                 out.print "~~${node.text()}~~ "
@@ -79,7 +79,7 @@ ${node.text()}
 "
                break
             case "li":
-                out.print "- "
+                out.print "* "
                 applyTemplatesForChildren(node)
                 out.println()
                 break
