@@ -63,10 +63,10 @@ class DOMTest extends GroovyTestCase {
   	// Builder:   1.05
   	// Streaming: 0.77
   	x = Integer.parseInt(args[0]);
-  	test = new DOMTest();
+  	domtest = new DOMTest();
   	standard = 0;
-  	test.benchmark = true;
-  	[test.testDOMParser, test.testDOMBuilder, test.testStreamingDOMBuilder].each {
+  	domtest.benchmark = true;
+  	[domtest.testDOMParser, domtest.testDOMBuilder, domtest.testStreamingDOMBuilder].each {
   		// Run the method once to fill any caches and to load classes
   		it();
 	  	start = System.currentTimeMillis();
