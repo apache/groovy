@@ -116,7 +116,7 @@ public class DefaultGroovyMethods {
     public static Object getAt(Object self, String property) {
         return InvokerHelper.getProperty(self, property);
     }
-    
+
     /**
      * Allows the subscript operator to be used to set dynamically named property values.
      * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation 
@@ -129,7 +129,7 @@ public class DefaultGroovyMethods {
     public static void putAt(Object self, String property, Object newValue) {
         InvokerHelper.setProperty(self, property, newValue);
     }
-    
+
     /**
      * Generates a detailed dump string of an object showing its class,
      * hashCode and fields
@@ -3090,32 +3090,49 @@ public class DefaultGroovyMethods {
      * @param self a Process
      * @param numberOfMillis the number of milliseconds to wait before stopping the process
      */
-    public static void waitForOrKill(final Process self, Number numberOfMillis) {
-        Thread thread = new Thread(new Runnable()
-        {
-            public void run() {
+    public static void waitForOrKill(Process self, long numberOfMillis) {
+        ProcessRunner runnable = new ProcessRunner(self);
+        Thread thread = new Thread(runnable);
+        thread.start();
+        runnable.waitForOrKill(numberOfMillis);
+    }
+
+    /**
+     * A Runnable which waits for a process to complete together with a notification scheme
+     * allowing another thread to wait a maximum number of seconds for the process to complete
+     * before killing it.
+     */
+    protected static class ProcessRunner implements Runnable {
+        Process process;
+        private boolean finished;
+
+        public ProcessRunner(Process process) {
+            this.process = process;
+        }
+
+        public void run() {
+            try {
+                process.waitFor();
+            }
+            catch (InterruptedException e) {
+            }
+            synchronized (this) {
+                notifyAll();
+                finished = true;
+            }
+        }
+
+        public synchronized void waitForOrKill(long millis) {
+            if (!finished) {
                 try {
-                    self.waitFor();
+                    wait(millis);
                 }
                 catch (InterruptedException e) {
                 }
+                if (!finished) {
+                    process.destroy();
+                }
             }
-        });
-        thread.start();
-        try {
-            long increment = numberOfMillis.longValue() / 10;
-            long ellapsed = 0;
-            while (thread.isAlive() && ellapsed < numberOfMillis.longValue()) {
-                Thread.sleep(increment);
-                ellapsed += increment;
-            }
-        }
-        catch (InterruptedException e) {
-        }
-        if (thread.isAlive())
-        {
-            self.destroy();
-            thread.interrupt();
         }
     }
 }

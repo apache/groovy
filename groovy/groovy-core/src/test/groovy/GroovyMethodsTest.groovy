@@ -118,6 +118,33 @@ class GroovyMethodsTest extends GroovyTestCase {
     	assert count > 1
     }
     
+    void DISABLED_testExecuteCommandLineProcessAndUseWaitForOrKill() {
+    	/** @todo why does this not work
+    	javaHome = System.getProperty('java.home', '')
+    	cmd = "${javaHome}/bin/java -version"
+    	*/
+    	
+    	cmd = "ls -l"
+    	if (System.getProperty('os.name', '').contains('Win')) {
+    		cmd = "dir"
+    	}
+    	
+    	println "executing command: ${cmd}"
+    	
+    	process = cmd.execute()
+    	
+    	process.waitForOrKill(1000)
+    	value = process.exitValue()
+    	println "Exit value of command line is ${value}"
+    	
+    	
+    	process = cmd.execute()
+    	
+    	process.waitForOrKill(1)
+    	value = process.exitValue()
+    	println "Exit value of command line is ${value}"
+    }
+    
     void testDisplaySystemProperties() {
     	println "System properties are..."
     	properties = System.properties
