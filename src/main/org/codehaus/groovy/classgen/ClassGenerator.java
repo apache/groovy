@@ -135,6 +135,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     // current class details
     private ClassNode classNode;
+    private ClassNode outermostClass;
     private String internalClassName;
     private String internalBaseClassName;
 
@@ -215,6 +216,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     private VariableScope variableScope;
 
+
     public ClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
@@ -240,14 +242,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         try {
             syntheticStaticFields.clear();
             this.classNode = classNode;
-            this.internalClassName = helper.getClassInternalName(classNode.getName());
-            this.internalBaseClassName = helper.getClassInternalName(classNode.getSuperClass());
+            this.outermostClass = null;
+            this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getName());
+            this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(
                 classNode.getModifiers(),
                 internalClassName,
                 internalBaseClassName,
-                helper.getClassInternalNames(classNode.getInterfaces()),
+                BytecodeHelper.getClassInternalNames(classNode.getInterfaces()),
                 sourceFile);
 
             classNode.visitContents(this);
@@ -257,7 +260,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
                 String innerClassName = innerClass.getName();
-                String innerClassInternalName = helper.getClassInternalName(innerClassName);
+                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
                 cw.visitInnerClass(
                     innerClassInternalName,
                     internalClassName,
@@ -711,7 +714,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             // null) ?
             // getTypeDescription(exceptionType) : null;
             final String exceptionTypeInternalName =
-                (catchStatement != null) ? helper.getClassInternalName(exceptionType) : null;
+                (catchStatement != null) ? BytecodeHelper.getClassInternalName(exceptionType) : null;
 
             exceptionBlocks.add(new Runnable() {
                 public void run() {
@@ -983,14 +986,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 break;
 
             case Token.DIVIDE :
-            	//SPG don't use divide since BigInteger implements directly
-            	//and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
+                //SPG don't use divide since BigInteger implements directly
+                //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
                 evaluateBinaryExpression("div", expression);
                 break;
 
             case Token.DIVIDE_EQUAL :
-				//SPG don't use divide since BigInteger implements directly
-				//and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
+                //SPG don't use divide since BigInteger implements directly
+                //and we want to dispatch through DefaultGroovyMethods to get a BigDecimal result
                 evaluateBinaryExpressionWithAsignment("div", expression);
                 break;
 
@@ -1054,7 +1057,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitClosureExpression(ClosureExpression expression) {
         ClassNode innerClass = createClosureClass(expression);
         addInnerClass(innerClass);
-        String innerClassinternalName = helper.getClassInternalName(innerClass.getName());
+        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass.getName());
 
         ClassNode owner = innerClass.getOuterClass();
         String ownerTypeName = owner.getName();
@@ -1115,7 +1118,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
         }
 
-        //String prototype = "(L" + helper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
+        //String prototype = "(L" + BytecodeHelper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
 
         // now lets load the various parameters we're passing
         for (int i = 2; i < localVariableParams.length; i++) {
@@ -1128,13 +1131,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             else {
                 visitVariableExpression(new VariableExpression(name));
             }
-            //prototype = prototype + "L" + helper.getClassInternalName(param.getType()) + ";";
+            //prototype = prototype + "L" + BytecodeHelper.getClassInternalName(param.getType()) + ";";
         }
         passingClosureParams = false;
 
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
-        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor("void", localVariableParams ));
+        cv.visitMethodInsn(
+            INVOKESPECIAL,
+            innerClassinternalName,
+            "<init>",
+            BytecodeHelper.getMethodDescriptor("void", localVariableParams));
     }
 
     /**
@@ -1165,7 +1172,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         else if (value instanceof Number) {
             /** @todo it would be more efficient to generate class constants */
             Number n = (Number) value;
-            String className = helper.getClassInternalName(value.getClass().getName());
+            String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
             cv.visitTypeInsn(NEW, className);
             cv.visitInsn(DUP);
             String methodType = "(I)V";
@@ -1540,7 +1547,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
-        String ownerName = helper.getClassInternalName(outerClassNode.getName());
+        String ownerName = BytecodeHelper.getClassInternalName(outerClassNode.getName());
 
         if (leftHandExpression) {
             cv.visitVarInsn(ALOAD, valueIdx);
@@ -1803,7 +1810,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         if (helper.isPrimitiveType(type)) {
             String objectType = helper.getObjectTypeForPrimitive(type);
-            cv.visitFieldInsn(GETSTATIC, helper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
+            cv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
         }
         else {
             final String staticFieldName =
@@ -1882,7 +1889,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
-        String typeName = helper.getClassInternalName(expression.getType());
+        String typeName = BytecodeHelper.getClassInternalName(expression.getType());
         Expression sizeExpression = expression.getSizeExpression();
         if (sizeExpression != null) {
             // lets convert to an int
@@ -1945,7 +1952,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         ClassNode innerClass = createGStringClass(expression);
         addInnerClass(innerClass);
-        String innerClassinternalName = helper.getClassInternalName(innerClass.getName());
+        String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass.getName());
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
@@ -1962,11 +1969,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
-        ClassNode owner = classNode;
+        ClassNode owner = getOutermostClass();
         boolean parentIsInnerClass = owner instanceof InnerClassNode;
-        while (owner instanceof InnerClassNode) {
-            owner = owner.getOuterClass();
-        }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
@@ -1993,7 +1997,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         method.setLineNumber(expression.getLineNumber());
         method.setColumnNumber(expression.getColumnNumber());
-        
+
         VariableScope scope = expression.getVariableScope();
         if (scope == null) {
             throw new RuntimeException(
@@ -2098,6 +2102,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         answer.addConstructor(ACC_PUBLIC, params, block);
         return answer;
+    }
+
+    protected ClassNode getOutermostClass() {
+        if (outermostClass == null) {
+            outermostClass = classNode;
+            while (outermostClass instanceof InnerClassNode) {
+                outermostClass = outermostClass.getOuterClass();
+            }
+        }
+        return outermostClass;
     }
 
     protected ClassNode createGStringClass(GStringExpression expression) {
@@ -2427,7 +2441,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             throw new RuntimeException(
                 "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
         }
-        String classInternalName = helper.getClassInternalName(className);
+        String classInternalName = BytecodeHelper.getClassInternalName(className);
         cv.visitTypeInsn(INSTANCEOF, classInternalName);
     }
 
@@ -2604,7 +2618,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
             String var = (String) iter.next();
             // lets not pass in fields from the most-outer class, but pass in values from an outer closure
-            if (outerDecls.contains(var) && (classNode.getField(var) == null || isInnerClass())) {
+            if (outerDecls.contains(var) && (isNotFieldOfOutermostClass(var))) {
                 String type = getVariableType(var);
                 vars.add(new Parameter(type, var));
                 varSet.add(var);
@@ -2613,9 +2627,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
             String var = (String) iter.next();
             // lets not pass in fields from the most-outer class, but pass in values from an outer closure
-            if (innerDecls.contains(var)
-                && (classNode.getField(var) == null || isInnerClass())
-                && !varSet.contains(var)) {
+            if (innerDecls.contains(var) && (isNotFieldOfOutermostClass(var)) && !varSet.contains(var)) {
                 String type = getVariableType(var);
                 vars.add(new Parameter(type, var));
             }
@@ -2623,6 +2635,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Parameter[] answer = new Parameter[vars.size()];
         vars.toArray(answer);
         return answer;
+    }
+
+    protected boolean isNotFieldOfOutermostClass(String var) {
+        //return classNode.getField(var) == null || isInnerClass();
+        return getOutermostClass().getField(var) == null;
     }
 
     protected void findMutableVariables() {
