@@ -406,7 +406,6 @@
 	<unzip dest="${groovy.embeddable.working.dir}">
 		<fileset dir="${groovy.install.staging.dest}/lib">
 			<include name="asm*.jar"/>
-            <include name="commons-cli*.jar"/>
 			<exclude name="asm-attr*.jar"/>
 			<exclude name="asm-util*.jar"/>
 			<include name="groovy*.jar"/>
