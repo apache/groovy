@@ -156,11 +156,11 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 			}
 			
 			
-			serverProxy.validator1.manyTypesTest('a', true, 'c', 1, 2, 3) { result |
+			serverProxy.validator1.manyTypesTest('a', 1.25, 'c', true, 2, 3) { result |
 				assertEquals("serverProxy.validator1.manyTypesTest", result[0], 'a')
-				assertEquals("serverProxy.validator1.manyTypesTest", result[1], true)
+				assertEquals("serverProxy.validator1.manyTypesTest", result[1], 1.25)
 				assertEquals("serverProxy.validator1.manyTypesTest", result[2], 'c')
-//				assertEquals("serverProxy.validator1.manyTypesTest", result[3], 1)
+				assertEquals("serverProxy.validator1.manyTypesTest", result[3], true)
 //				assertEquals("serverProxy.validator1.manyTypesTest", result[4], 2)
 //				assertEquals("serverProxy.validator1.manyTypesTest", result[5], 3)
 			}

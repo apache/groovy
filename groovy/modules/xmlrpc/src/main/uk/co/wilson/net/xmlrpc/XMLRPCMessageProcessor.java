@@ -115,6 +115,7 @@ public class XMLRPCMessageProcessor extends MinML {
 					}
 				});
 		elements.put(Float.class, elements.get(Double.class));
+		elements.put(java.math.BigDecimal.class, elements.get(Double.class));
 		
 		elements.put(String.class,
 				new Emitter() {
@@ -387,7 +388,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			}
 			this.gotValue = true;
 		} else if ("double".equals(name)) {
-			this.params = new Double(this.buffer.toString());
+			this.params = new java.math.BigDecimal(this.buffer.toString());
 			this.gotValue = true;
 		} else if ("name".equals(name)) {
 			this.name = this.buffer.toString();
