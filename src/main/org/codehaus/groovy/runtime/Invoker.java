@@ -244,4 +244,12 @@ public class Invoker {
             return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
         }
     }
+
+    public int asInt(Object value) {
+        if (value instanceof Number) {
+            Number n = (Number) value;
+            return n.intValue();
+        }
+        throw new InvokerException("Could not convert object: " + value + " into an int");
+    }
 }
