@@ -76,6 +76,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.WhileLoop;
@@ -374,6 +375,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         assertFailedMethod.call(cv);
         cv.visitLabel(l1);
+    }
+
+    public void visitTryCatchFinally(TryCatchFinally finally1) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitReturnStatement(ReturnStatement statement) {

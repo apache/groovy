@@ -45,37 +45,37 @@
  */
 package org.codehaus.groovy.ast;
 
+
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * Represents a catch (Exception var) { } statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyCodeVisitor {
+public class CatchStatement extends Statement {
 
-    // statements
-    //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
-    public void visitExpressionStatement(ExpressionStatement statement);
-    public void visitReturnStatement(ReturnStatement statement);
-    public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
+    private String exceptionType;
+    private String variable;
+    private Statement code;
+    
+    public CatchStatement(String exceptionType, String variable, Statement code) {
+        this.exceptionType = exceptionType;
+        this.variable = variable;
+        this.code = code;
+    }
+    
+//    public void visit(GroovyCodeVisitor visitor) {
+//        visitor.visitCatchStatement(this);
+//    }
+    public Statement getCode() {
+        return code;
+    }
 
-    // expressions
-    //-------------------------------------------------------------------------
-    public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitConstantExpression(ConstantExpression expression);
-    public void visitBinaryExpression(BinaryExpression expression);
-    public void visitBooleanExpression(BooleanExpression expression);
-    public void visitTupleExpression(TupleExpression expression);
-    public void visitMapExpression(MapExpression expression);
-    public void visitMapEntryExpression(MapEntryExpression expression);
-    public void visitListExpression(ListExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitRangeExpression(RangeExpression expression);
+    public String getExceptionType() {
+        return exceptionType;
+    }
+
+    public String getVariable() {
+        return variable;
+    }
 }
