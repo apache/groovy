@@ -18,7 +18,8 @@ class WhileLoopTest extends GroovyTestCase {
     }
 
     void testDoWhileWhile() {
-        def x = 0, y = 5
+        def x = 0
+        def y = 5
 
         do {
             x = x + 1
