@@ -142,7 +142,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 		// Form parameters. If there are multiple its passed as a list.
 		for (Enumeration paramEnum = request.getParameterNames(); paramEnum.hasMoreElements();) {
 			String key = (String) paramEnum.nextElement();
-			if (binding.getVariable(key) == null) {
+            if (!binding.getVariables().containsKey(key)) {
 				String[] values = request.getParameterValues(key);
 				if (values.length == 1) {
 					binding.setVariable(key, values[0]);
