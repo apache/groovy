@@ -15,7 +15,7 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
         assert value == 8
         
         // lets test a range
-        range = array[1..3]
+        range = array[1..2]
         
         assert range == [2, 8]
     }

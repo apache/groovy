@@ -5,7 +5,7 @@ class ForLoopTest extends GroovyTestCase {
     void testRange() {
         x = 0
 
-        for ( i in 0..10 ) {
+        for ( i in 0..9 ) {
             x = x + i
         }
 

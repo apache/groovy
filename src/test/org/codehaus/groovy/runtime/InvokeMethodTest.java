@@ -283,11 +283,11 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public void testListGetWithRange() throws Throwable {
         List list = Arrays.asList(new Object[] { "a", "b", "c" });
-        Object range = new IntRange(1, 3);
+        Object range = new IntRange(0, 2);
         Object value = invoke(list, "get", range);
         assertTrue("Returned List: " + value, value instanceof List);
         List retList = (List) value;
-        assertEquals("List size", 2, retList.size());
+        assertEquals("List size", 3, retList.size());
     }
 
     public void testSetLenientOnDateFormat() throws Throwable {
