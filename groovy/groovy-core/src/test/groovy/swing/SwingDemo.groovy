@@ -14,7 +14,12 @@ class SwingDemo {
 	}
 	
     void run() {
-        frame = swing.frame(title:'This is a Frame', location:[100,100], size:[800,400]) {
+        frame = swing.frame(
+            title:'This is a Frame',
+            location:[100,100],
+            size:[800,400],
+            defaultCloseOperation:javax.swing.WindowConstants.EXIT_ON_CLOSE) {
+
             menuBar {
 		        menu(text:'File') {
                     menuItem() {
