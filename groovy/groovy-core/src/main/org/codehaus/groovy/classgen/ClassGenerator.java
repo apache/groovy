@@ -846,15 +846,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement);
 
-        statement.getExpression().visit(this);
-
-        Expression assignExpr = createReturnLHSExpression(statement.getExpression());
-        if (assignExpr != null) {
-            leftHandExpression = false;
-            assignExpr.visit(this);
-        }
-
-        Class c = getExpressionType(statement.getExpression());
+        Expression expression = statement.getExpression();
+        evaluateExpression(expression);
 
         //return is based on class type
         //TODO: make work with arrays
@@ -882,6 +875,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             cv.visitInsn(IRETURN);
         }
         else {
+            doConvertAndCast(returnType, expression);
+            cv.visitInsn(ARETURN);
+            
+            /*
             if (c == Boolean.class) {
                 Label l0 = new Label();
                 cv.visitJumpInsn(IFEQ, l0);
@@ -893,13 +890,39 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
             else {
                 if (isValidTypeForCast(returnType) && !returnType.equals(c.getName())) {
-                    doConvertAndCast(returnType);
+                    doConvertAndCast(returnType, expression);
                 }
                 cv.visitInsn(ARETURN);
             }
+            */
         }
 
         outputReturn = true;
+    }
+
+    /**
+     * Casts to the given type unless it can be determined that the cast is unnecessary
+     */
+    protected void doConvertAndCast(String type, Expression expression) {
+        String expType = getExpressionType(expression);
+
+        if (isValidTypeForCast(type) && (expType == null || !type.equals(expType))) {
+            doConvertAndCast(type);
+        }
+    }
+
+    /**
+     * @param expression
+     */
+    protected void evaluateExpression(Expression expression) {
+        visitAndAutobox(expression);
+        //expression.visit(this);
+
+        Expression assignExpr = createReturnLHSExpression(expression);
+        if (assignExpr != null) {
+            leftHandExpression = false;
+            assignExpr.visit(this);
+        }
     }
 
     public void visitExpressionStatement(ExpressionStatement statement) {
@@ -1209,7 +1232,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         visitAndAutobox(expression.getExpression());
 
-        doConvertAndCast(type);
+        doConvertAndCast(type, expression.getExpression());
     }
 
     public void visitNotExpression(NotExpression expression) {
@@ -1246,7 +1269,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
          * tupleExpression.getExpressions().size(); if (size == 0) { arguments =
          * ConstantExpression.EMPTY_ARRAY; } }
          */
-
         boolean superMethodCall = MethodCallExpression.isSuperMethodCall(call);
         String method = call.getMethod();
         if (superMethodCall && method.equals("<init>")) {
@@ -1272,44 +1294,118 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 invokeClosureMethod.call(cv);
             }
             else {
-                if (emptyArguments(arguments) && !call.isSafe()) {
-                    call.getObjectExpression().visit(this);
-                    cv.visitLdcInsn(method);
-                    invokeNoArgumentsMethod.call(cv);
+                if (superMethodCall) {
+                    if (method.equals("super") || method.equals("<init>")) {
+                        ConstructorNode constructorNode = findSuperConstructor(call);
+                        
+                        cv.visitVarInsn(ALOAD, 0);
+                        
+                        loadArguments(constructorNode.getParameters(), arguments);
+                        
+                        String descriptor = BytecodeHelper.getMethodDescriptor("void", constructorNode.getParameters());
+                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", descriptor);
+                    }
+                    else {
+                        MethodNode methodNode = findSuperMethod(call);
+                        
+                        cv.visitVarInsn(ALOAD, 0);
+                        
+                        loadArguments(methodNode.getParameters(), arguments);
+                        
+                        String descriptor = BytecodeHelper.getMethodDescriptor(methodNode.getReturnType(), methodNode.getParameters());
+                        cv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(methodNode.getDeclaringClass().getName()), method, descriptor);
+                    } 
                 }
                 else {
-                    if (argumentsUseStack(arguments)) {
-                        int paramIdx =
-                            defineVariable(createVariableName("temp"), "java.lang.Object", false).getIndex();
-
-                        arguments.visit(this);
-
-                        cv.visitVarInsn(ASTORE, paramIdx);
-
-                        call.getObjectExpression().visit(this);
-
-                        cv.visitLdcInsn(method);
-
-                        cv.visitVarInsn(ALOAD, paramIdx);
-                    }
-                    else {
+                    if (emptyArguments(arguments) && !call.isSafe()) {
                         call.getObjectExpression().visit(this);
                         cv.visitLdcInsn(method);
-                        arguments.visit(this);
-                    }
-
-                    if (superMethodCall) {
-                        invokeSuperMethodMethod.call(cv);
-                    }
-                    else if (call.isSafe()) {
-                        invokeMethodSafeMethod.call(cv);
+                        invokeNoArgumentsMethod.call(cv);
                     }
                     else {
-                        invokeMethodMethod.call(cv);
+                        if (argumentsUseStack(arguments)) {
+                            int paramIdx =
+                                defineVariable(createVariableName("temp"), "java.lang.Object", false).getIndex();
+                            
+                            arguments.visit(this);
+                            
+                            cv.visitVarInsn(ASTORE, paramIdx);
+                            
+                            call.getObjectExpression().visit(this);
+                            
+                            cv.visitLdcInsn(method);
+                            
+                            cv.visitVarInsn(ALOAD, paramIdx);
+                        }
+                        else {
+                            call.getObjectExpression().visit(this);
+                            cv.visitLdcInsn(method);
+                            arguments.visit(this);
+                        }
+                        
+                        if (call.isSafe()) {
+                            invokeMethodSafeMethod.call(cv);
+                        }
+                        else {
+                            invokeMethodMethod.call(cv);
+                        }
                     }
                 }
             }
         }
+    }
+    
+    /**
+     * Loads and coerces the argument values for the given method call
+     */
+    protected void loadArguments(Parameter[] parameters, Expression expression) {
+        TupleExpression argListExp = (TupleExpression) expression;
+        List arguments = argListExp.getExpressions();
+        for (int i = 0, size = arguments.size(); i < size; i++) {
+            Expression argExp = argListExp.getExpression(i);
+            Parameter param = parameters[i];
+            visitAndAutobox(argExp);
+            doConvertAndCast(param.getType(), argExp);
+        }
+    }
+
+    /**
+     * Attempts to find the method of the given name in a super class
+     */
+    protected MethodNode findSuperMethod(MethodCallExpression call) {
+        String methodName = call.getMethod();
+        TupleExpression argExpr = (TupleExpression) call.getArguments();
+        int argCount = argExpr.getExpressions().size();
+        ClassNode superClassNode = classNode.getSuperClassNode();
+        if (superClassNode != null) {
+            List methods = superClassNode.getMethods(methodName);
+            for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
+                MethodNode method = (MethodNode) iter.next();
+                if (method.getParameters().length == argCount) {
+                    return method;
+                }
+            }
+        }
+        throw new GroovyRuntimeException("No such method: " + methodName + " for class: " + classNode.getName(), call);
+    }
+
+    /**
+     * Attempts to find the constructor in a super class
+     */
+    protected ConstructorNode findSuperConstructor(MethodCallExpression call) {
+        TupleExpression argExpr = (TupleExpression) call.getArguments();
+        int argCount = argExpr.getExpressions().size();
+        ClassNode superClassNode = classNode.getSuperClassNode();
+        if (superClassNode != null) {
+            List constructors = superClassNode.getConstructors();
+            for (Iterator iter = constructors.iterator(); iter.hasNext(); ) {
+                ConstructorNode constructor = (ConstructorNode) iter.next();
+                if (constructor.getParameters().length == argCount) {
+                    return constructor;
+                }
+            }
+        }
+        throw new GroovyRuntimeException("No such constructor for class: " + classNode.getName(), call);
     }
 
     protected boolean emptyArguments(Expression arguments) {
@@ -1750,17 +1846,23 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected boolean firstStatementIsSuperMethodCall(Statement code) {
-        if (code instanceof BlockStatement) {
+        ExpressionStatement expStmt = null;
+        if (code instanceof ExpressionStatement) {
+            expStmt = (ExpressionStatement) code;
+        }
+        else if (code instanceof BlockStatement) {
             BlockStatement block = (BlockStatement) code;
             if (!block.getStatements().isEmpty()) {
                 Object expr = block.getStatements().get(0);
                 if (expr instanceof ExpressionStatement) {
-                    ExpressionStatement expStmt = (ExpressionStatement) expr;
-                    expr = expStmt.getExpression();
-                    if (expr instanceof MethodCallExpression) {
-                        return MethodCallExpression.isSuperMethodCall((MethodCallExpression) expr);
-                    }
+                    expStmt = (ExpressionStatement) expr;
                 }
+            }
+        }
+        if (expStmt != null) {
+            Expression expr = expStmt.getExpression();
+            if (expr instanceof MethodCallExpression) {
+                return MethodCallExpression.isSuperMethodCall((MethodCallExpression) expr);
             }
         }
         return false;
@@ -2252,7 +2354,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         evaluateBinaryExpression(method, expression);
 
         leftHandExpression = true;
-        leftExpression.visit(this);
+        evaluateExpression(leftExpression);
         leftHandExpression = false;
     }
 
@@ -2265,9 +2367,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         */
 
         leftHandExpression = false;
-        leftExpression.visit(this);
+        
+        evaluateExpression(leftExpression);
         leftHandExpression = false;
-        expression.getRightExpression().visit(this);
+        evaluateExpression(expression.getRightExpression());
         // now lets invoke the method
         compareMethod.call(cv);
     }
@@ -2362,7 +2465,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected boolean isValidTypeForCast(String type) {
-        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference");
+        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference") && !helper.isPrimitiveType(type);
     }
 
     protected void visitAndAutobox(Expression expression) {
@@ -2853,14 +2956,23 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     /**
      * @return if the type of the expression can be determined at compile time
-     *         then this method returns the type - otherwise java.lang.Object
-     *         is returned.
+     *         then this method returns the type - otherwise null
      */
-    protected Class getExpressionType(Expression expression) {
+    protected String getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
-            return Boolean.class;
-        } /** @todo we need a way to determine this from an expression */
-        return Object.class;
+            return "boolean";
+        } 
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExpr = (VariableExpression) expression;
+            Variable variable = (Variable) variableStack.get(varExpr.getVariable());
+            if (variable != null && !variable.isHolder()) {
+                Type type = variable.getType();
+                if (! type.isDynamic()) {
+                    return type.getName();
+                }
+            }
+        }
+        return null;
     }
 
     /**

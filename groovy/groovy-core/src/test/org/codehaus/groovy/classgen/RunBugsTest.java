@@ -94,10 +94,6 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/MethodDispatchBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    public void testSuperMethod2Bug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/SuperMethod2Bug.groovy");
-        object.invokeMethod("testBug", null);
-    }
     public void testClosureInClosureTest() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureInClosureTest.groovy");
         object.invokeMethod("testInvisibleVariable", null);
@@ -123,10 +119,26 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/ClosureParameterPassingBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    */
-        
     public void testNestedClosureBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/NestedClosure2Bug.groovy");
         object.invokeMethod("testFieldBug", null);
     }
+    public void testSuperMethod2Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/SuperMethod2Bug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    public void testToStringBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ToStringBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    
+    */
+        
+    public void testByteIndexBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ByteIndexBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    
+    
+    
    }

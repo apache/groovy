@@ -3,15 +3,16 @@
  * 
  * @version $Revision$
  */
-class TestDerived extends TestBase {
 
-    /** @todo fix bug
-    TestDerived(String aFoo) {
-        super(aFoo)
-    }
-    */
-    
-    doSomething() {
-    	"TestDerived" + super.doSomething()
-    }
-}
+ class TestDerived extends TestBase {
+
+     TestDerived(String aFoo) {
+         super(aFoo)
+     }
+     /** @todo fix bug
+     */
+     
+     doSomething() {
+     	"TestDerived" + super.doSomething()
+     }
+ }

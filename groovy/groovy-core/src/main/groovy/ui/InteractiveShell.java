@@ -50,18 +50,17 @@ import groovy.lang.GroovyShell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.*;
-import org.codehaus.groovy.syntax.lexer.*;
-import org.codehaus.groovy.syntax.parser.Parser;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.syntax.parser.CSTNode;
-import org.codehaus.groovy.tools.ExceptionCollector;
+import org.codehaus.groovy.syntax.parser.Parser;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.codehaus.groovy.tools.ExceptionCollector;
 
 
 /**

@@ -34,6 +34,7 @@
 package org.codehaus.groovy.syntax.parser;
 
 import java.util.Iterator;
+import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -505,8 +506,8 @@ public class ASTBuilderTest extends TestParserSupport {
 
         assertNotNull(node);
 
-        MethodNode method = node.getMethod(name);
-        assertNotNull(method);
-        return method;
+        List methods = node.getDeclaredMethods(name);
+        assertTrue(methods.size() > 0);
+        return (MethodNode) methods.get(0);
     }
 }

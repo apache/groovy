@@ -190,11 +190,14 @@ public class DataSet extends Sql {
                     throw new GroovyRuntimeException(
                         "Could not find the ClassNode for MetaClass: " + where.getMetaClass());
                 }
-                MethodNode method = classNode.getMethod("doCall");
-                if (method != null) {
-                    Statement statement = method.getCode();
-                    if (statement != null) {
-                        statement.visit(visitor);
+                List methods = classNode.getDeclaredMethods("doCall");
+                if (!methods.isEmpty()) {
+                    MethodNode method = (MethodNode) methods.get(0);
+                    if (method != null) {
+                        Statement statement = method.getCode();
+                        if (statement != null) {
+                            statement.visit(visitor);
+                        }
                     }
                 }
             }
