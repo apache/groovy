@@ -107,6 +107,8 @@
   <postGoal name="test:compile">
     <attainGoal name="setclasspath"/>
     <attainGoal name="groovy:compile-tests"/>
+    ${context.setVariable('java.awt.headless', true)}
+    <echo> value of java.awt.headless is ${context.getVariable('java.awt.headless')}</echo>
   </postGoal>
     
   <goal name="setclasspath">
@@ -211,7 +213,9 @@
         <sysproperty key="basedir" value="${basedir}"/>
         
         <!-- use headless for AWT stuff -->
-        <sysproperty key="java.awt.headless" value="true"/>
+        <u:replace var="headless" oldChar="_" newChar=".">java_awt_headless</u:replace>
+        <echo>Setting property ${headless} to true</echo>
+        <sysproperty key="${headless}" value="true"/>
         
         <u:tokenize var="listOfProperties" delim=" ">${maven.junit.sysproperties}</u:tokenize>
         <j:forEach var="someProperty" items="${listOfProperties}">
