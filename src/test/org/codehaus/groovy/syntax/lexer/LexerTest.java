@@ -232,20 +232,11 @@ public class LexerTest
                       Token.LOGICAL_OR );
     }
 
-    public void testPipe_UnexpectedCharacter()
+    public void testPipe()
         throws Exception
     {
-        newLexer( "|a" );
-
-        char[] expected = assertUnexpectedCharacter( 'a',
-                                                     1,
-                                                     2 );
-
-        assertLength( 1,
-                      expected );
-
-        assertContains( '|',
-                        expected );
+        assertSimple( "|",
+                      Token.PIPE );
     }
 
     public void testLogicalAnd()
