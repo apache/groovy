@@ -34,9 +34,23 @@ public class Parser
     {
         CSTNode compilationUnit = new CSTNode();
 
-        compilationUnit.addChild( packageDeclaration() );
-        optionalSemicolon();
-        //consume( Token.SEMICOLON );
+        CSTNode packageDeclaration = null;
+
+        if ( lt() == Token.KEYWORD_PACKAGE )
+        {
+            packageDeclaration = packageDeclaration();
+            optionalSemicolon();
+        }
+        else
+        {
+            packageDeclaration = new CSTNode( Token.keyword( -1,
+                                                             -1,
+                                                             "package" ) );
+
+            packageDeclaration.addChild( new CSTNode() );
+        }
+
+        compilationUnit.addChild( packageDeclaration );
 
         CSTNode imports = new CSTNode();
 
