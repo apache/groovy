@@ -54,6 +54,7 @@ import groovy.lang.Tuple;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,6 +76,8 @@ import java.util.regex.Pattern;
 public class Invoker {
 
     protected static final Object[] EMPTY_ARGUMENTS = {
+    };
+    protected static final Class[] EMPTY_TYPES = {
     };
 
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
@@ -233,6 +236,9 @@ public class Invoker {
     }
 
     public Iterator asIterator(Object value) {
+        if (value == null) {
+            Collections.EMPTY_LIST.iterator();
+        }
         if (value instanceof Iterator) {
             return (Iterator) value;
         }
@@ -283,6 +289,18 @@ public class Invoker {
                     throw new UnsupportedOperationException();
                 }
             };
+        }
+        else {
+            try {
+                // lets try see if there's an iterator() method
+                Method method = value.getClass().getMethod("iterator", EMPTY_TYPES);
+                if (method != null) {
+                    return (Iterator) method.invoke(value, EMPTY_ARGUMENTS);
+                }
+            }
+            catch (Exception e) {
+                // ignore
+            }
         }
         return asCollection(value).iterator();
     }
@@ -565,11 +583,14 @@ public class Invoker {
     }
 
     public Object asType(Object object, Class type) {
+        if (object == null) {
+            return null;
+        }
         if (type.isInstance(object)) {
             return object;
         }
         if (type.equals(String.class)) {
-            return (object != null) ? object.toString() : "null";
+            return object.toString();
         }
         if (type.equals(Character.class)) {
             String text = object.toString();

@@ -74,6 +74,9 @@ public class InvokerHelper {
     public static final Object[] EMPTY_ARGS = {
     };
 
+    private static final Object[] EMPTY_MAIN_ARGS = new Object[] { new String[0] };
+
+    
     private static final Invoker singleton = new Invoker();
 
     public static MetaClass getMetaClass(Object object) {
@@ -300,7 +303,7 @@ public class InvokerHelper {
                 // though the bindings will be ignored
                 script = new Script() {
                     public Object run() {
-                        object.invokeMethod("main", new Object[] { new String[0] });
+                        object.invokeMethod("main", EMPTY_MAIN_ARGS);
                         return null;
                     } };
                 setProperties(object, context.getVariables());
@@ -314,7 +317,7 @@ public class InvokerHelper {
                 e);
         }
     }
-
+    
     /**
      * Sets the properties on the given object
      * 

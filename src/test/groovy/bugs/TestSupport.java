@@ -46,6 +46,9 @@
 
 package groovy.bugs;
 
+import java.util.Arrays;
+import java.util.Iterator;
+
 import groovy.util.GroovyTestCase;
 
 /**
@@ -70,5 +73,11 @@ public class TestSupport extends GroovyTestCase {
     
     public static int[] getIntArray() {
         return new int[] { 1, 2, 3, 4, 5 };
+    }
+    
+    public Iterator iterator() {
+        System.out.println("Calling custom iterator() method for " + this);
+        
+        return Arrays.asList(getMockArguments()).iterator();
     }
 }
