@@ -59,4 +59,8 @@ public class TestSupport extends GroovyTestCase {
     public String[] getMockArguments() {
         return new String[] { "a", "b", "c" };
     }
+    
+    public static String mockStaticMethod() {
+        return "cheese";
+    }
 }

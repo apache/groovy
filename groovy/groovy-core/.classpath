@@ -23,6 +23,8 @@
   </classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.4.1.jar">
   </classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.1.jar">
+  </classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar">
   </classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-2.0-beta-1.jar">

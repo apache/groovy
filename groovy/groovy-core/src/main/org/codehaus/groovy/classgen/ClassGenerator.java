@@ -333,8 +333,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * Creates a getter, setter and field
-     */
+	 * Creates a getter, setter and field
+	 */
     public void visitProperty(PropertyNode statement) {
         onLineNumber(statement);
         //this.propertyNode = statement;
@@ -389,11 +389,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         onLineNumber(loop);
 
         /*
-        // quick hack
-        if (!methodNode.isStatic()) {
-            cv.visitVarInsn(ALOAD, 0);
-        }
-        */
+		 * // quick hack if (!methodNode.isStatic()) { cv.visitVarInsn(ALOAD,
+		 * 0); }
+		 */
 
         Label l0 = new Label();
         Label previousContinueLable = continueLabel;
@@ -456,7 +454,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitAssertStatement(AssertStatement statement) {
         onLineNumber(statement);
 
-        //System.out.println("Assert: " + statement.getLineNumber() + " for: " + statement.getText());
+        //System.out.println("Assert: " + statement.getLineNumber() + " for: "
+		// + statement.getText());
 
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
@@ -605,7 +604,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         // rest of code goes here...
 
-        //final String exceptionTypeInternalName = (catchStatement != null) ? getTypeDescription(exceptionType) : null;
+        //final String exceptionTypeInternalName = (catchStatement != null) ?
+		// getTypeDescription(exceptionType) : null;
         final String exceptionTypeInternalName = (catchStatement != null) ? getClassInternalName(exceptionType) : null;
 
         exceptionBlocks.add(new Runnable() {
@@ -674,7 +674,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         statement.getCode().visit(this);
 
-        // now if we don't finish with a break we need to jump past 
+        // now if we don't finish with a break we need to jump past
         // the next comparison
         if (nextLabel != null) {
             cv.visitJumpInsn(GOTO, nextLabel);
@@ -773,7 +773,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             returnType.equals("char")
                 || returnType.equals("byte")
                 || returnType.equals("int")
-                || returnType.equals("short")) { //byte,short,boolean,int are all IRETURN
+                || returnType.equals("short")) { //byte,short,boolean,int are
+												 // all IRETURN
             MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
             cv.visitInsn(IRETURN);
         }
@@ -979,7 +980,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         if (innerClass.getSuperClass().equals("groovy.lang.Closure")) {
             if (isStaticMethod()) {
-                /** @todo could maybe stash this expression in a JVM variable from previous statement above */
+                /**
+				 * @todo could maybe stash this expression in a JVM variable
+				 * from previous statement above
+				 */
                 visitClassExpression(new ClassExpression(ownerTypeName));
             }
             else {
@@ -1047,8 +1051,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
 
-        // This is not the best way to do this.  Javac does it by reversing the underlying expressions but that proved
-        // fairly complicated for not much gain.  Instead we'll just use a utility function for now.
+        // This is not the best way to do this. Javac does it by reversing the
+		// underlying expressions but that proved
+        // fairly complicated for not much gain. Instead we'll just use a
+		// utility function for now.
         if (comparisonExpression(expression.getExpression())) {
             notBoolean.call(cv);
         }
@@ -1070,14 +1076,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         Expression arguments = call.getArguments();
         /*
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
-            int size = tupleExpression.getExpressions().size();
-            if (size == 0) {
-                arguments = ConstantExpression.EMPTY_ARRAY;
-            }
-        }
-        */
+		 * if (arguments instanceof TupleExpression) { TupleExpression
+		 * tupleExpression = (TupleExpression) arguments; int size =
+		 * tupleExpression.getExpressions().size(); if (size == 0) { arguments =
+		 * ConstantExpression.EMPTY_ARRAY; } }
+		 */
 
         if (MethodCallExpression.isSuperMethodCall(call)) {
             /** @todo handle method types! */
@@ -1092,14 +1095,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             // are we a local variable
             if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(call.getMethod())) {
                 /*
-                if (arguments instanceof TupleExpression) {
-                    TupleExpression tupleExpression = (TupleExpression) arguments;
-                    int size = tupleExpression.getExpressions().size();
-                    if (size == 1) {
-                        arguments = (Expression) tupleExpression.getExpressions().get(0);
-                    }
-                }
-                */
+				 * if (arguments instanceof TupleExpression) { TupleExpression
+				 * tupleExpression = (TupleExpression) arguments; int size =
+				 * tupleExpression.getExpressions().size(); if (size == 1) {
+				 * arguments = (Expression)
+				 * tupleExpression.getExpressions().get(0); } }
+				 */
 
                 // lets invoke the closure method
                 visitVariableExpression(new VariableExpression(method));
@@ -1184,12 +1185,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         invokeConstructorOfMethod.call(cv);
 
         /*
-        cv.visitLdcInsn(type);
-        
-        arguments.visit(this);
-        
-        invokeConstructorMethod.call(cv);
-        */
+		 * cv.visitLdcInsn(type);
+		 * 
+		 * arguments.visit(this);
+		 * 
+		 * invokeConstructorMethod.call(cv);
+		 */
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
@@ -1273,7 +1274,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             cv.visitVarInsn(ASTORE, valueIdx);
         }
 
-        // lets load an extra one just in case as we may be getting & putting a field
+        // lets load an extra one just in case as we may be getting & putting a
+		// field
         // @todo this is not ideal; need a better way of doing this
         //cv.visitVarInsn(ALOAD, 0);
         cv.visitVarInsn(ALOAD, 0);
@@ -1294,10 +1296,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
         /*
-        if (leftHandExpression) {
-            cv.visitVarInsn(ALOAD, valueIdx);
-        }
-        */
+		 * if (leftHandExpression) { cv.visitVarInsn(ALOAD, valueIdx); }
+		 */
     }
 
     public void visitVariableExpression(VariableExpression expression) {
@@ -1311,10 +1311,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             visitClassExpression(new ClassExpression(classNode.getSuperClass()));
             return;
         }
-        String className = classNode.getClassNameForExpression(variableName);
-        if (className != null) {
-            visitClassExpression(new ClassExpression(className));
-            return;
+        if (!variableName.equals("this")) {
+            String className = resolveClassName(variableName);
+            if (className != null) {
+                visitClassExpression(new ClassExpression(className));
+                return;
+            }
         }
         FieldNode field = classNode.getField(variableName);
         if (field != null && variableStack.get(variableName) == null) {
@@ -1338,7 +1340,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 if (variable == null) {
                     variable = defineVariable(name, variableType, false);
                     visitPropertyExpression(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name));
-                    // We need to store this in a local variable now since it has been looked at in this scope and possibly
+                    // We need to store this in a local variable now since it
+					// has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
                     cv.visitInsn(DUP);
                     cv.visitVarInsn(ASTORE, variable.getIndex());
@@ -1438,7 +1441,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         if (!syntheticStaticFields.isEmpty()) {
-            cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null, null);
+            cv =
+                cw.visitMethod(
+                    ACC_STATIC + ACC_SYNTHETIC,
+                    "class$",
+                    "(Ljava/lang/String;)Ljava/lang/Class;",
+                    null,
+                    null);
             Label l0 = new Label();
             cv.visitLabel(l0);
             cv.visitVarInsn(ALOAD, 0);
@@ -1819,9 +1828,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
-                // lets replace this assignment to a subscript operator with a method call
+                // lets replace this assignment to a subscript operator with a
+				// method call
                 // e.g. x[5] = 10
-                // -> (x, [], 5), =, 10 
+                // -> (x, [], 5), =, 10
                 // -> methodCall(x, "set", [5, 10])
                 visitMethodCallExpression(
                     new MethodCallExpression(
@@ -1874,10 +1884,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, tempIdx);
         /*
-        if (! isStaticMethod() && ! isHolderVariable(expression)) {
-            cv.visitVarInsn(ALOAD, 0);
-        }
-        */
+		 * if (! isStaticMethod() && ! isHolderVariable(expression)) {
+		 * cv.visitVarInsn(ALOAD, 0); }
+		 */
         cv.visitVarInsn(ALOAD, tempIdx);
 
         cv.visitLdcInsn(method);
@@ -1925,17 +1934,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return true if the given argument expression requires the stack, in
-     *         which case the arguments are evaluated first, stored in the
-     *         variable stack and then reloaded to make a method call
-     */
+	 * @return true if the given argument expression requires the stack, in
+	 *         which case the arguments are evaluated first, stored in the
+	 *         variable stack and then reloaded to make a method call
+	 */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     }
 
     /**
-     * @return true if the given expression represents a non-static field
-     */
+	 * @return true if the given expression represents a non-static field
+	 */
     protected boolean isNonStaticField(Expression expression) {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
@@ -1968,15 +1977,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
         }
         /*
-        else if (expression instanceof PostfixExpression) {
-            PostfixExpression expr = (PostfixExpression) expression;
-            return expr.getExpression();
-        }
-        else if (expression instanceof PrefixExpression) {
-            PrefixExpression expr = (PrefixExpression) expression;
-            return expr.getExpression();
-        }
-        */
+		 * else if (expression instanceof PostfixExpression) {
+		 * PostfixExpression expr = (PostfixExpression) expression; return
+		 * expr.getExpression(); } else if (expression instanceof
+		 * PrefixExpression) { PrefixExpression expr = (PrefixExpression)
+		 * expression; return expr.getExpression(); }
+		 */
         return null;
     }
 
@@ -2036,9 +2042,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return a list of parameters for each local variable which needs to be passed into
-     * a closure
-     */
+	 * @return a list of parameters for each local variable which needs to be
+	 *         passed into a closure
+	 */
     protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
         VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
         VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
@@ -2080,7 +2086,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         //        if (!vars.isEmpty()) {
-        //            System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);
+        //            System.out.println(classNode.getName() + " - closure is copying
+		// variables from outer context: " + vars);
         //        }
 
         Parameter[] answer = new Parameter[vars.size()];
@@ -2117,8 +2124,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-      * @return the last ID used by the stack
-      */
+	 * @return the last ID used by the stack
+	 */
     protected int getLastStackId() {
         return variableStack.size();
     }
@@ -2143,8 +2150,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
+	 * Defines the given variable in scope and assigns it to the stack
+	 */
     protected Variable defineVariable(String name, String type) {
         return defineVariable(name, type, true);
     }
@@ -2184,6 +2191,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected String checkValidType(String type, ASTNode node, String message) {
         String original = type;
+        type = resolveClassName(type);
+        if (type != null) {
+            return type;
+        }
+        throw new MissingClassException(original, node, message);
+    }
+
+    protected String resolveClassName(String type) {
         if (type != null) {
             if (classNode.getNameWithoutPackage().equals(type)) {
                 return classNode.getName();
@@ -2227,7 +2242,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 type = packageName + "." + type;
             }
         }
-        throw new MissingClassException(original, node, message);
+        return null;
     }
 
     protected String createVariableName(String type) {
@@ -2235,10 +2250,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return if the type of the expression can be determined at compile time
-     *         then this method returns the type - otherwise java.lang.Object
-     *         is returned.
-     */
+	 * @return if the type of the expression can be determined at compile time
+	 *         then this method returns the type - otherwise java.lang.Object
+	 *         is returned.
+	 */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
             return Boolean.class;
@@ -2247,9 +2262,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return true if the value is an Integer, a Float, a Long, a Double or a
-     *         String .
-     */
+	 * @return true if the value is an Integer, a Float, a Long, a Double or a
+	 *         String .
+	 */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
@@ -2272,8 +2287,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return an array of ASM internal names of the type
-     */
+	 * @return an array of ASM internal names of the type
+	 */
     private String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
@@ -2284,8 +2299,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return the ASM internal name of the type
-     */
+	 * @return the ASM internal name of the type
+	 */
     protected String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
@@ -2298,8 +2313,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return the ASM method type descriptor
-     */
+	 * @return the ASM method type descriptor
+	 */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
@@ -2312,9 +2327,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return the ASM type description
-     */
-    protected String getTypeDescription(String name) { // lets avoid class loading
+	 * @return the ASM type description
+	 */
+    protected String getTypeDescription(String name) { // lets avoid class
+													   // loading
         // return getType(name).getDescriptor();
         if (name == null) {
             return "Ljava/lang/Object;";
@@ -2355,8 +2371,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     /**
-     * @return loads the given type name
-     */
+	 * @return loads the given type name
+	 */
     protected Class loadClass(String name) {
         try {
             return getClassLoader().loadClass(name);
