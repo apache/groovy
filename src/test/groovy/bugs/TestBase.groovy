@@ -6,7 +6,7 @@
 
  class TestBase {
 
-     String foo
+     @Property String foo
      
      TestBase() {
      }
