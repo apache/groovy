@@ -862,10 +862,10 @@ public class Parser
     {
         CSTNode expr = logicalAndExpression();
 
-        if ( lt() == Token.LOGICAL_OR )
+        while ( lt() == Token.LOGICAL_OR )
         {
-            rootNode( Token.LOGICAL_OR,
-                      expr );
+            expr = rootNode( Token.LOGICAL_OR,
+                             expr );
             expr.addChild( logicalAndExpression() );
         }
 
@@ -877,10 +877,10 @@ public class Parser
     {
         CSTNode expr = equalityExpression();
 
-        if ( lt() == Token.LOGICAL_AND )
+        while ( lt() == Token.LOGICAL_AND )
         {
-            rootNode( Token.LOGICAL_AND,
-                      expr );
+            expr = rootNode( Token.LOGICAL_AND,
+                             expr );
             expr.addChild( equalityExpression() );
         }
 

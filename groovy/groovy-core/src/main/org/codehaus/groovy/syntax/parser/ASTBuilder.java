@@ -617,6 +617,8 @@ public class ASTBuilder
             case ( Token.MOD ):
             case ( Token.EQUAL ):
             case ( Token.KEYWORD_INSTANCEOF ):
+            case ( Token.LOGICAL_AND ):
+            case ( Token.LOGICAL_OR ):
             {
                 return binaryExpression( expressionRoot );
             }
