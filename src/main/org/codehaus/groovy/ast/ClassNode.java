@@ -34,6 +34,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.Script;
 
 import java.util.ArrayList;
@@ -72,6 +73,8 @@ public class ClassNode extends MetadataNode implements Constants {
     private boolean staticClass = false;
     private boolean scriptBody = false;
     private boolean script;
+
+    private ClassNode superClassNode;
 
     /**
      * @param name
@@ -329,6 +332,153 @@ public class ClassNode extends MetadataNode implements Constants {
         return null;
     }
 
+    /**
+     * @return true if this node is derived from the given class node
+     */
+    public boolean isDerivedFrom(String name) {
+        ClassNode node = getSuperClassNode();
+        while (node != null) {
+            if (name.equals(node.getName())) {
+                return true;
+            }
+            node = node.getSuperClassNode();
+        }
+        return false;
+    }
+
+    /**
+     * @return true if this class is derived from a groovy object
+     * i.e. it implements GroovyObject
+     */
+    public boolean isDerivedFromGroovyObject() {
+        return implementsInteface(GroovyObject.class.getName());
+    }
+
+    /**
+     * @param name the fully qualified name of the interface
+     * @return true if this class or any base class implements the given interface
+     */
+    public boolean implementsInteface(String name) {
+        ClassNode node = this;
+        do {
+            if (declaresInterface(name)) {
+                return true;
+            }
+            node = node.getSuperClassNode();
+        }
+        while (node != null);
+        return false;
+    }
+
+    /**
+     * @param name the fully qualified name of the interface
+     * @return true if this class declares that it implements the given interface
+     */
+    public boolean declaresInterface(String name) {
+        int size = interfaces.length;
+        for (int i = 0; i < size; i++ ) {
+            if (name.equals(interfaces[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @return the ClassNode of the super class of this type
+     */
+    public ClassNode getSuperClassNode() {
+        if (superClassNode == null && !superClass.equals("java.lang.Object")) {
+            // lets try find the class in the compile unit
+            superClassNode = findClassNode(superClass);
+        }
+        return superClassNode;
+    }
+
+    /**
+     * Attempts to lookup the fully qualified class name in the compile unit or classpath
+     * 
+     * @param type fully qulified type name
+     * @return the ClassNode for this type or null if it could not be found
+     */
+    public ClassNode findClassNode(String type) {
+        ClassNode answer = null;
+        CompileUnit compileUnit = getCompileUnit();
+        if (compileUnit != null) {
+            answer = compileUnit.getClass(type);
+            if (answer == null) {
+                Class theClass;
+                try {
+                    theClass = compileUnit.loadClass(type);
+                    answer = createClassNode(theClass);
+                }
+                catch (ClassNotFoundException e) {
+                    // lets ignore class not found exceptions
+                    log.warning("Cannot find class: " + type + " due to: " + e);
+                }
+            }
+        }
+        return answer;
+    }
+
+    protected ClassNode createClassNode(Class theClass) {
+        Class[] interfaces = theClass.getInterfaces();
+        int size = interfaces.length;
+        String[] interfaceNames = new String[size];
+        for (int i = 0; i < size; i++) {
+            interfaceNames[i] = interfaces[i].getName();
+        }
+        ClassNode answer =
+            new ClassNode(
+                theClass.getName(),
+                theClass.getModifiers(),
+                theClass.getSuperclass().getName(),
+                interfaceNames,
+                MixinNode.EMPTY_ARRAY);
+        return answer;
+    }
+
+    /**
+     * Tries to create a Class node for the given type name
+     * 
+     * @param type
+     * @return
+     */
+    /*
+    public ClassNode resolveClass(String type) {
+        if (type != null) {
+            if (getNameWithoutPackage().equals(type)) {
+                return this;
+            }
+            for (int i = 0; i < 2; i++) {
+                CompileUnit compileUnit = getCompileUnit();
+                if (compileUnit != null) {
+                    ClassNode classNode = compileUnit.getClass(type);
+                    if (classNode != null) {
+                        return classNode;
+                    }
+    
+                    try {
+                        Class theClass = compileUnit.loadClass(type);
+                        return createClassNode(theClass);
+                    }
+                    catch (Throwable e) {
+                        // fall through
+                    }
+                }
+    
+                // lets try class in same package
+                String packageName = getPackageName();
+                if (packageName == null || packageName.length() <= 0) {
+                    break;
+                }
+                type = packageName + "." + type;
+            }
+        }
+        return null;
+    }
+    */
+
     public String resolveClassName(String type) {
         if (type != null) {
             if (getNameWithoutPackage().equals(type)) {
@@ -503,7 +653,7 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public boolean isScript() {
-        return script | superClass.equals(Script.class.getName());
+        return script | isDerivedFrom(Script.class.getName());
     }
 
     public void setScript(boolean script) {
