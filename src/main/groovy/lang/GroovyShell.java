@@ -109,10 +109,10 @@ public class GroovyShell {
      * @param scriptFile the file of the script to run
      * @param args the command line arguments to pass in
      */
-    public Object run(File scriptFile, List list) throws ClassNotFoundException, SyntaxException, IOException {
+    public void run(File scriptFile, List list) throws ClassNotFoundException, SyntaxException, IOException {
         String[] args = new String[list.size()];
         list.toArray(args);
-        return run(scriptFile.toString(), args);
+        run(scriptFile.toString(), args);
     }
 
     /**
@@ -121,9 +121,9 @@ public class GroovyShell {
      * @param scriptFile the file name of the script to run
      * @param args the command line arguments to pass in
      */
-    public Object run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    public void run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
         Class scriptClass = loader.parseClass(scriptFile);
-        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
     }
 
     /**
@@ -133,8 +133,8 @@ public class GroovyShell {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args the command line arguments to pass in
      */
-    public Object run(String scriptText, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
-        return run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
+    public void run(String scriptText, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+        run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
     }
 
     /**

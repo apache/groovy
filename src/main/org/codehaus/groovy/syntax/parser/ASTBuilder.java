@@ -952,7 +952,7 @@ public class ASTBuilder
         CSTNode[] modifierNodes = modifiersRoot.getChildren();
 
         int modifiers = 0;
-
+        
         for ( int i = 0 ; i < modifierNodes.length ; ++i )
         {
           SWITCH:
@@ -986,9 +986,10 @@ public class ASTBuilder
             }
         }
 
-        if ( modifiers == 0 )
+        // if not protected or private lets default to public
+        if ( (modifiers & (Constants.ACC_PROTECTED | Constants.ACC_PRIVATE)) == 0 )
         {
-            modifiers = Constants.ACC_PUBLIC;
+            modifiers |= Constants.ACC_PUBLIC;
         }
 
         return modifiers;

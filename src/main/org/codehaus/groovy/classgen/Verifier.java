@@ -276,7 +276,15 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 node.setCode(new BlockStatement(list));
             }
         }
-
+        if (node.getName().equals("main") && node.isStatic()) {
+            Parameter[] params = node.getParameters();
+            if (params.length == 1) {
+                Parameter param = params[0];
+                if (param.getType() == null || param.getType().equals("java.lang.Object")) {
+                    param.setType("java.lang.String[]");
+                }
+            }
+        }
     }
 
     public void visitField(FieldNode node) {
