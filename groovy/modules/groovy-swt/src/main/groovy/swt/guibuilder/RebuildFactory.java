@@ -44,11 +44,13 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
 
         // rebuild & pack widgets
         SwtUtils.disposeChildren(parentComposite);
+        
         Object obj = closure.call(parentComposite);
         if (obj instanceof Composite) {
             ((Composite) obj).layout();
         }
         parentComposite.layout();
-        return parent;
+        
+        return obj;
     }
 }

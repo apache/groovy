@@ -138,7 +138,7 @@ public class SwtBuilder extends BuilderSupport {
             try {
                 widget = factory.newInstance(attributes, current);
             } catch (Exception e) {
-                log.log(Level.WARNING, e.getMessage());
+                log.log(Level.WARNING, e.toString());
             }
         } else {
              log.log(Level.WARNING, "Could not find match for name: " + name);
@@ -313,11 +313,20 @@ public class SwtBuilder extends BuilderSupport {
     }
 
     /*
-     * overrride to make public
+     * override to make public
      * 
      * @see groovy.util.BuilderSupport#setCurrent(java.lang.Object)
      */
     public void setCurrent(Object current) {
         super.setCurrent(current);
+    }
+    
+    /* 
+     * override to make public
+     * 
+     * @see groovy.util.BuilderSupport#getCurrent()
+     */
+    public Object getCurrent() {
+        return super.getCurrent();
     }
 }

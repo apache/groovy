@@ -25,12 +25,6 @@ public class DynamicUIBuilder extends JFaceBuilder {
         return super.createNode(name);
     }
 
-    /*
-     * @see groovy.util.BuilderSupport#getCurrent()
-     */
-    protected Object getCurrent() {
-        return super.getCurrent();
-    }
     /* 
      * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map)
      */

@@ -54,4 +54,5 @@ public class ApplicationGuiBuilder extends JFaceBuilder {
         return scriptEngine;
     }
 
+    
 }
