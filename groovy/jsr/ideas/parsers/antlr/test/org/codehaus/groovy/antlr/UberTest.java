@@ -43,6 +43,8 @@ public class UberTest implements Test {
         "ClosureInClosureTest.groovy",
         "Foo.groovy",
         //"ForLoopTest.groovy",                 TODO - fixme - AST gen bug
+        //"GStringTest.groovy",                 TODO assert statement
+        "HeredocsTest.groovy",
         "IfElseCompactTest.groovy",
         "IfElseTest.groovy",
         "IfTest.groovy",
