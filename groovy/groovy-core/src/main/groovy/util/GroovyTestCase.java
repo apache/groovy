@@ -69,23 +69,28 @@ public class GroovyTestCase extends TestCase {
 
     protected Logger log = Logger.getLogger(getClass().getName());
     private static int counter;
+    private boolean useAgileDoxNaming = false;
 
     public GroovyTestCase() {
     }
-
 
     /**
      * Overload the getName() method to make the test cases look more like AgileDox
      * (thanks to Joe Walnes for this tip!)
      */
     public String getName() {
-        return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();
+        if (useAgileDoxNaming) {
+            return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();
+        }
+        else {
+            return super.getName();
+        }
     }
-    
+
     public String getMethodName() {
         return super.getName();
     }
-    
+
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
             "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
@@ -191,11 +196,11 @@ public class GroovyTestCase extends TestCase {
         // lets write the file to the target directory so its available 
         // to the MetaClass.getClassNode()
         String testClassName = getTestClassName();
-        
+
         File file = new File("target/test-classes/" + testClassName);
-        
+
         log.info("Creating file " + file);
-        
+
         DefaultGroovyMethods.withPrintWriter(file, new Closure(null) {
             protected void doCall(PrintWriter writer) {
                 writer.println(script);
