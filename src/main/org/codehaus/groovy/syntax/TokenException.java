@@ -8,7 +8,7 @@ public class TokenException extends SyntaxException {
         super(
             (token == null)
                 ? message + ". No token"
-                : message + " at line: " + token.getStartLine() + " column: " + token.getStartColumn(),
+                : message, // + " at line: " + token.getStartLine() + " column: " + token.getStartColumn(),
             getLine(token),
             getColumn(token));
     }

@@ -1,22 +1,36 @@
 package org.codehaus.groovy.syntax;
 
-import java.io.IOException;
+
+/**
+ *  Provides the common code for <code>{@link TokenStream}</code> implementations.
+ */
 
 public abstract class AbstractTokenStream
     implements TokenStream
 {
-    private Token[] buf;
-    private int first;
-    private int avail;
-    private int checkpoint;
-    private String sourceLocator;
-    private int checkpoint_first;
-    private int checkpoint_avail;
+    private Token[] buf;             // A circular buffer of tokens
+    private int first;               // la(1) points to this offset into buf
+    private int avail;               // the number of ahead tokens in buf
+
+    private int checkpoint_first;    // last checkpoint() copy of first
+    private int checkpoint_avail;    // last checkpoint() copy of avail
+ 
+    private String sourceLocator;    // A descriptor of the source of the stream
+
+   
+   /**
+    *  Default constructor.
+    */
 
     public AbstractTokenStream()
     {
         this( "<unknown>" );
     }
+
+
+   /**
+    *  Initializes the stream with information about the source.
+    */
 
     public AbstractTokenStream(String sourceLocator)
     {
@@ -26,27 +40,53 @@ public abstract class AbstractTokenStream
         this.sourceLocator = sourceLocator;
     }
 
+
+   /**
+    *  Returns a description of the source (typically a file name).
+    */
+
     public String getSourceLocator()
     {
         return this.sourceLocator;
     }
 
+
+   /**
+    *  Implemented by concrete subtypes, provides access to the next
+    *  token in the underlying stream.
+    */
+
     protected abstract Token nextToken()
-        throws IOException, SyntaxException;
+        throws ReadException, SyntaxException;
+
+
+   /**
+    *  Returns the next token in the stream without consuming it.
+    */
 
     public Token la()
-        throws IOException, SyntaxException
+        throws ReadException, SyntaxException
     {
         return la( 1 );
     }
 
+
+   /**
+    *  Returns the <code>k</code>th token in the stream without consuming
+    *  it (or any other unconsumed tokens).
+    */
+
     public Token la(int k)
-        throws IOException, SyntaxException
+        throws ReadException, SyntaxException
     {
         if ( k > buf.length )
         {
-            throw new LookAheadExhaustionException( k );
+            throw new LookAheadExhaustionError( k );   // Parser tried to look too far ahead for our buffer size
         }
+
+
+        //
+        // If necessary, read more tokens from the underlying stream.
 
         if ( k > this.avail )
         {
@@ -64,20 +104,29 @@ public abstract class AbstractTokenStream
             }
         }
 
+
+        //
+        // Return the requested token.
+
         int pos = ( ( k + this.first - 1 ) % this.buf.length );
 
         return this.buf[ pos ];
     }
 
+
+   /**
+    *  Removes and returns the first token in the stream, provided it
+    *  matches the specified type.
+    */
+
     public Token consume(int type)
-        throws IOException, SyntaxException
+        throws ReadException, SyntaxException
     {
         Token token = la();
 
         if ( token.getType() != type )
         {
-            throw new TokenMismatchException( token,
-                                              type );
+            throw new TokenMismatchException( token, type );
         }
 
         ++this.first;
@@ -88,10 +137,20 @@ public abstract class AbstractTokenStream
         return token;
     }
 
+
+   /**
+    *  Saves the look-ahead state for <code>restore()</code>ing later.
+    */
+
     public void checkpoint() {
         checkpoint_first = first;
         checkpoint_avail = avail;
     }
+
+
+   /**
+    *  Restores the look-ahead state saved by <code>checkpoint()</code>.
+    */
 
     public void restore() {
         first = checkpoint_first;

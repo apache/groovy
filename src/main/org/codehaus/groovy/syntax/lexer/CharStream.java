@@ -46,7 +46,7 @@ package org.codehaus.groovy.syntax.lexer;
 
  */
 
-import java.io.IOException;
+import org.codehaus.groovy.syntax.ReadException;
 
 /** Conduit of characters  to a lexer.
  *
@@ -57,14 +57,13 @@ import java.io.IOException;
  *
  *  @version $Id$
  */
-public interface CharStream
-{
+public interface CharStream {
     // ----------------------------------------------------------------------
     //     Constants
     // ----------------------------------------------------------------------
 
     /** End-of-stream value. */
-    final char EOS = (char) -1;
+    final char EOS = (char) - 1;
 
     // ----------------------------------------------------------------------
     //     Interface
@@ -77,12 +76,10 @@ public interface CharStream
      *  @return The consumed character or -1 if no more characters
      *          available.
      *
-     *  @throws IOException If an error occurs attempting to consume
+     *  @throws ReadException If an error occurs attempting to consume
      *          a character.
      */
-    char consume()
-        throws IOException;
+    char consume() throws ReadException;
 
-    void close()
-        throws IOException;
+    void close() throws ReadException;
 }

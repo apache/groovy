@@ -1,44 +1,35 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import java.io.IOException;
+import org.codehaus.groovy.syntax.ReadException;
 
-public class StringCharStream
-    extends AbstractCharStream
-{
+public class StringCharStream extends AbstractCharStream {
     private int cur;
     private String text;
-    
-    public StringCharStream(String text)
-    {
+
+    public StringCharStream(String text) {
         this.text = text;
-        this.cur  = 0;
+        this.cur = 0;
     }
-    
-    public StringCharStream(String text, String description)
-    {
+
+    public StringCharStream(String text, String description) {
         super(description);
         this.text = text;
-        this.cur  = 0;
+        this.cur = 0;
     }
-    
-    public char consume()
-        throws IOException
-    {
-        if ( this.cur >= this.text.length() )
-        {
+
+    public char consume() throws ReadException {
+        if (this.cur >= this.text.length()) {
             return CharStream.EOS;
         }
-        
-        char c = this.text.charAt( this.cur );
-        
+
+        char c = this.text.charAt(this.cur);
+
         ++this.cur;
-        
+
         return c;
     }
 
-    public void close()
-        throws IOException
-    {
+    public void close() throws ReadException {
         // do nothing
     }
 }

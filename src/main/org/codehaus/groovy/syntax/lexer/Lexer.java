@@ -1,16 +1,18 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import java.io.IOException;
-
-import org.codehaus.groovy.syntax.LookAheadExhaustionException;
+import org.codehaus.groovy.syntax.LookAheadExhaustionError;
+import org.codehaus.groovy.syntax.ReadException;
 import org.codehaus.groovy.syntax.Token;
 
 /**
+ *  Identifies and returns tokens from a source text.  <code>nextToken()</code>
+ *  is the primary entry point.
  * 
- * @author Bob Mcwhirter
- * @author James Strachan
- * @author John Wilson
+ *  @author Bob Mcwhirter
+ *  @author James Strachan
+ *  @author John Wilson
  */
+
 public class Lexer {
     private final char[] buf = new char[5];
     private final int[] charWidth = new int[buf.length];
@@ -28,17 +30,32 @@ public class Lexer {
 
     private CharStream charStream;
 
+  
+   /** 
+    *  Initializes the <code>Lexer</code> from an opened <code>CharStream</code>.
+    */
+
     public Lexer(CharStream charStream) {
         this.charStream = charStream;
         this.line = 1;
         this.column = 1;
     }
 
+
+   /**
+    *  Returns the underlying <code>CharStream</code>.
+    */
+
     public CharStream getCharStream() {
         return this.charStream;
     }
 
-    public Token nextToken() throws IOException, LexerException {
+
+   /**
+    *  Finds and returns (and consumes) the next token from the underlying stream.
+    */
+
+    public Token nextToken() throws ReadException, LexerException {
         Token token = null;
 
         OUTER_LOOP : while (token == null) {
@@ -901,32 +918,64 @@ public class Lexer {
         return token;
     }
 
+  
+   /**
+    *  Handles end-of-line processing.
+    */
+
     protected void eol() {
         ++this.line;
         this.column = 1;
     }
+
+
+   /**
+    *  Saves information about the current position, for tracking token extents.
+    */
 
     protected void mark() {
         this.startLine = this.line;
         this.startColumn = this.column;
     }
 
+
+   /**
+    *  Returns the starting line of the current token.
+    */
+
     protected int getStartLine() {
         return this.startLine;
     }
+
+
+   /**
+    *  Returns the starting column of the current token.
+    */
 
     protected int getStartColumn() {
         return this.startColumn;
     }
 
-    protected char la() throws UnexpectedCharacterException, IOException {
+
+   /**
+    *  Returns the next character, without consuming it.
+    */
+
+    protected char la() throws UnexpectedCharacterException, ReadException {
         return la(1);
     }
 
-    protected char la(int k) throws UnexpectedCharacterException, IOException {
+
+   /**
+    *  Returns the next <code>k</code>th character, without consuming any.
+    */
+
+    protected char la(int k) throws UnexpectedCharacterException, ReadException {
         if (k > this.charsInBuffer) {
-            if (k > this.buf.length)
-                throw new LookAheadExhaustionException(k);
+
+            if (k > this.buf.length) {
+                throw new LookAheadExhaustionError( k );  // character lookahead for lexer is too small
+            }
 
             for (int i = 0; i != this.charsInBuffer; i++, this.cur++) {
                 this.buf[i] = this.buf[this.cur];
@@ -939,7 +988,12 @@ public class Lexer {
         return this.buf[this.cur + k - 1];
     }
 
-    protected char consume() throws UnexpectedCharacterException, IOException {
+
+   /**
+    *  Eats a character from the input stream.
+    */
+
+    protected char consume() throws UnexpectedCharacterException, ReadException {
         if (this.charsInBuffer == 0)
             fillBuffer();
 
@@ -950,7 +1004,7 @@ public class Lexer {
         return this.buf[this.cur++];
     }
 
-    private void fillBuffer() throws IOException, UnexpectedCharacterException {
+    private void fillBuffer() throws ReadException, UnexpectedCharacterException {
         this.cur = 0;
 
         do {

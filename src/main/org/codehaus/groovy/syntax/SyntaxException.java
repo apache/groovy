@@ -64,7 +64,7 @@ public class SyntaxException extends GroovyException {
     private String sourceLocator;
 
     public SyntaxException(String message, int line, int column) {
-        super(message);
+        super(message, false);
         this.line = line;
         this.column = column;
     }

@@ -3,6 +3,7 @@ package org.codehaus.groovy.syntax.lexer;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
+import org.codehaus.groovy.syntax.ReadException;
 
 public class FileCharStream
     implements CharStream
@@ -21,11 +22,18 @@ public class FileCharStream
     }
 
     protected CharStream getCharStream()
-        throws IOException
+        throws ReadException
     {
-        if ( this.charStream == null )
+        try
         {
-            this.charStream = new InputStreamCharStream( new FileInputStream( getFile() ) );
+            if ( this.charStream == null )
+            {
+                this.charStream = new InputStreamCharStream( new FileInputStream( getFile() ) );
+            }
+        }
+        catch( IOException e )
+        {
+            throw new ReadException( e );
         }
 
         return this.charStream;
@@ -37,13 +45,13 @@ public class FileCharStream
     }
 
     public char consume()
-        throws IOException
+        throws ReadException
     {
         return getCharStream().consume();
     }
 
     public void close()
-        throws IOException
+        throws ReadException
     {
         getCharStream().close();
     }

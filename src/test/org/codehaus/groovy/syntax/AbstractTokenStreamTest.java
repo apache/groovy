@@ -3,7 +3,6 @@ package org.codehaus.groovy.syntax;
 
 import groovy.util.GroovyTestCase;
 
-import java.io.IOException;
 
 public class AbstractTokenStreamTest
     extends GroovyTestCase
@@ -22,7 +21,7 @@ public class AbstractTokenStreamTest
         }
 
         public Token nextToken()
-            throws IOException, SyntaxException
+            throws ReadException, SyntaxException
         {
             if ( this.cur >= this.tokens.length )
             {
@@ -218,9 +217,9 @@ public class AbstractTokenStreamTest
         try
         {
             in.la( 6 );
-            fail( "should have thrown LookAheadExhaustionException" );
+            fail( "should have thrown LookAheadExhaustionError" );
         }
-        catch (LookAheadExhaustionException e)
+        catch (LookAheadExhaustionError e)
         {
             // expected and correct
             assertEquals( 6,

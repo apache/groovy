@@ -61,6 +61,7 @@ public class LexerException extends SyntaxException {
      *  @param column Column upon which the error occurred.
      */
     public LexerException(String message, int line, int column) {
-        super(message + " at " + line + ":" + column, line, column);
+//        super(message + " at " + line + ":" + column, line, column);
+        super(message, line, column);
     }
 }

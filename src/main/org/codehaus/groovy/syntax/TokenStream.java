@@ -46,7 +46,11 @@ package org.codehaus.groovy.syntax;
 
  */
 
-import java.io.IOException;
+
+/**
+ *  Provides a stream of lexer tokens for use by (primarily) the parsing
+ *  systems.
+ */
 
 public interface TokenStream
 {
@@ -54,7 +58,8 @@ public interface TokenStream
     //     Interface
     // ----------------------------------------------------------------------
 
-    /** Look-ahead to the next token.
+    /** 
+     *  Looks-ahead to the next token.
      *
      *  <p>
      *  This method is equivalent to <code>la(1)</code>.
@@ -65,47 +70,61 @@ public interface TokenStream
      *  @return The next token or null if no more tokens
      *          available.
      *
-     *  @throws IOException If an error occurs attempting to lookahead
+     *  @throws ReadException If an error occurs attempting to lookahead
      *          a token.
      */
-    Token la()
-        throws IOException, SyntaxException;
 
-    /** Look-ahead to the <code>k</code><i>th</i> token.
+    Token la() throws ReadException, SyntaxException;
+
+
+    /** 
+     *  Looks-ahead to the <code>k</code><i>th</i> token.
      *
      *  @param k Number of token to look ahead.
      *
      *  @return the <code>k</code><i>th</i> token or null if no
      *          more tokens available.
      *
-     *  @throws IOException If an error occurs attempting to lookahead
+     *  @throws ReadException If an error occurs attempting to lookahead
      *          a token.
      */
-    Token la(int k)
-        throws IOException, SyntaxException;
 
-    /** Consume the next token.
+    Token la(int k) throws ReadException, SyntaxException;
+
+
+    /** 
+     *  Consumes the next token.
      *
      *  @param type The token type.
      *
      *  @return The consumed token or null if no more tokens
      *          available.
      *
-     *  @throws IOException If an error occurs attempting to consume
+     *  @throws ReadException If an error occurs attempting to consume
      *          a token.
      */
-    Token consume(int type)
-        throws IOException, SyntaxException;
+
+    Token consume(int type) throws ReadException, SyntaxException;
+
+
+    /**
+     *  Returns a description of the source location (typically a file path).
+     */
 
     String getSourceLocator();
+
 
     /**
      * Checkpoints a point in the stream that we can go back to
      */
+
     void checkpoint();
+
 
     /**
      * Restores to the previous checkpoint
      */
+
     void restore();
+
 }
