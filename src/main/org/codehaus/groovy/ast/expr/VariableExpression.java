@@ -55,6 +55,8 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class VariableExpression extends Expression {
 
+    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
+    
     private String variable;
     
     public VariableExpression(String variable) {

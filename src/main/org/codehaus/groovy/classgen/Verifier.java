@@ -110,7 +110,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 new StaticMethodCallExpression(
                     InvokerHelper.class.getName(),
                     "getMetaClass",
-                    new VariableExpression("this")),
+                    VariableExpression.THIS_EXPRESSION),
                 null,
                 null);
         FieldNode metaClassField = metaClassProperty.getField();
@@ -133,7 +133,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                         "invokeMethod",
                         new ArgumentListExpression(
                             new Expression[] {
-                                new VariableExpression("this"),
+                                VariableExpression.THIS_EXPRESSION,
                                 new VariableExpression("method"),
                                 new VariableExpression("arguments")}))));
 
@@ -149,7 +149,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                             "getProperty",
                             new ArgumentListExpression(
                                 new Expression[] {
-                                    new VariableExpression("this"),
+                                    VariableExpression.THIS_EXPRESSION,
                                     new VariableExpression("property")}))));
 
                 node.addMethod(
@@ -165,7 +165,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                             "setProperty",
                             new ArgumentListExpression(
                                 new Expression[] {
-                                    new VariableExpression("this"),
+                                    VariableExpression.THIS_EXPRESSION,
                                     new VariableExpression("property"),
                                     new VariableExpression("value")}))));
             }
@@ -185,7 +185,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
     public void visitMethod(MethodNode node) {
         this.methodNode = node;
-        
+
         if (!node.isVoidMethod()) {
             Statement statement = node.getCode();
             if (statement instanceof ExpressionStatement) {
@@ -233,7 +233,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     // Implementation methods
-    
+
     protected void addClosureCode(InnerClassNode node) {
         // add a new invoke
     }
@@ -308,6 +308,5 @@ public class Verifier implements GroovyClassVisitor, Constants {
         }
         return false;
     }
-
 
 }

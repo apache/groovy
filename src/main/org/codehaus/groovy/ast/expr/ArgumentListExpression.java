@@ -47,6 +47,8 @@ package org.codehaus.groovy.ast.expr;
 
 import java.util.List;
 
+import org.codehaus.groovy.ast.Parameter;
+
 /**
  * Represents one or more arguments being passed into a method
  * 
@@ -66,5 +68,12 @@ public class ArgumentListExpression extends TupleExpression {
 
     public ArgumentListExpression(Expression[] expressions) {
         super(expressions);
+    }
+
+    public ArgumentListExpression(Parameter[] parameters) {
+        for (int i = 0; i < parameters.length; i++) {
+            Parameter parameter = parameters[i];
+            addExpression(new VariableExpression(parameter.getName()));
+        }
     }
 }
