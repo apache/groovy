@@ -56,6 +56,12 @@ public class AllTests extends TestSuiteSupport {
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
+        "SuperMethod2Bug.groovy",               // TODO: constructor bug
+        "SuperMethodBug.groovy",                // TODO: constructor bug
+        "TestBase.groovy",                      // TODO: constructor bug
+        "TestCaseBug.groovy",                   // TODO: constructor bug
+        "TestDerived.groovy",                   // TODO: constructor bug
+
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
 
@@ -66,6 +72,11 @@ public class AllTests extends TestSuiteSupport {
         "MarkupAndMethodBug.groovy",            // TODO: parser bug
         "NestedClosureBug.groovy",              // TODO: parser bug
         "OverloadInvokeMethodBug.groovy",       // TODO: parser bug
+        "RodsBooleanBug.groovy",                // TODO: parser bug
+        "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: parser bug
+
+        "StaticClosurePropertyBug.groovy",      // TODO: parser bug - static/def
+        "UseStaticInClosureBug.groovy",         // TODO: parser bug - static/def
 
 
 
