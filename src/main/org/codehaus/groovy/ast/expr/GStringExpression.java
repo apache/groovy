@@ -59,10 +59,12 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class GStringExpression extends Expression {
 
+    private String verbatimText;
     private List strings = new ArrayList();
     private List values = new ArrayList();
     
-    public GStringExpression() {
+    public GStringExpression(String verbatimText) {
+        this.verbatimText = verbatimText;
     }
     
     public void visit(GroovyCodeVisitor visitor) {

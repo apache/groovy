@@ -75,7 +75,7 @@ public class GStringTest extends TestSupport {
         //Statement printStatement = createPrintlnStatement(new VariableExpression("str"));
 
         // simulate "Hello ${user}!"
-        GStringExpression compositeStringExpr = new GStringExpression();
+        GStringExpression compositeStringExpr = new GStringExpression( "hello ${user}!" );
         compositeStringExpr.addString(new ConstantExpression("Hello "));
         compositeStringExpr.addValue(new VariableExpression("user"));
         compositeStringExpr.addString(new ConstantExpression("!"));

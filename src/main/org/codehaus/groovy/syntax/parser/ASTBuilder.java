@@ -627,7 +627,6 @@ public class ASTBuilder
                 return rangeExpression( expressionRoot );
             }
             case ( Token.SINGLE_QUOTE_STRING ):
-            case ( Token.DOUBLE_QUOTE_STRING ):
             case ( Token.INTEGER_NUMBER ):
             case ( Token.FLOAT_NUMBER ):
             case ( Token.KEYWORD_NULL ):
@@ -635,6 +634,10 @@ public class ASTBuilder
             case ( Token.KEYWORD_FALSE ):
             {
                 return constantExpression( expressionRoot );
+            }
+            case ( Token.DOUBLE_QUOTE_STRING ):
+            {
+                return compositeStringExpression( expressionRoot );
             }
             case ( Token.IDENTIFIER ):
             {
@@ -672,6 +675,29 @@ public class ASTBuilder
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected GStringExpression compositeStringExpression(CSTNode expressionRoot)
+        throws ParserException
+    {
+        GStringExpression expr = new GStringExpression( expressionRoot.getToken().getText() );
+
+        CSTNode children[] = expressionRoot.getChildren();
+
+        for ( int i = 0 ; i < children.length ; ++i )
+        {
+            if ( matches( children[ 0 ],
+                          Token.SINGLE_QUOTE_STRING ) )
+            {
+                expr.addString( constantExpression( children[ i ] ) );
+            }
+            else
+            {
+                expr.addValue( expression( children[ i ] ) );
+            }
+        }
+
+        return expr;
     }
 
     protected ConstructorCallExpression newExpression(CSTNode expressionRoot) throws ParserException
