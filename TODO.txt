@@ -73,6 +73,20 @@ Core Groovy Tasks
 	}
 	using adder method as well as setter methods
 
+* MBeanBuilder?
+	builder.mlet {
+		mbean(class:SomeClass) {
+			someAttribute(value)
+		}
+		mbean(class:SomeClass, someAttribute:value) {
+			operation(1, 2)
+		}
+	}
+
+* GroovyMBean - allow iteration through properties somehow
+
+* allow constructors to have optional trailing closure...
+	new JFrame() { text = 'hello'; size = [1, 2] }
 			
 * closures - handle passing in of variables from outer scope?	
 	use a Holder object for all local variables and pass holder
