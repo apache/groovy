@@ -13,7 +13,7 @@
 if "%OS%"=="Windows_NT" setlocal
 
 @rem The version of classworlds to boot with
-set CLASSWORLDS_VERSION=SNAPSHOT
+set CLASSWORLDS_VERSION=1.0-rc2
 
 :begin
 @rem Determine what directory it is in.
@@ -85,7 +85,7 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 set CLASSWORLDS_CLASSPATH=%GROOVY_HOME%\lib\classworlds-%CLASSWORLDS_VERSION%.jar
-set CLASSWORLDS_MAIN_CLASS=com.werken.classworlds.Launcher
+set CLASSWORLDS_MAIN_CLASS=org.codehaus.classworlds.Launcher
 set CLASSWORLDS_CONF=%GROOVY_HOME%\conf\classworlds.conf
 
 set JAVA_EXE=%JAVA_HOME%\bin\java.exe

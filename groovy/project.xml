@@ -102,7 +102,7 @@
 
     <dependency>
       <id>classworlds</id>
-      <version>SNAPSHOT</version>
+      <version>1.0-rc2</version>
     </dependency>
 
     <dependency>
