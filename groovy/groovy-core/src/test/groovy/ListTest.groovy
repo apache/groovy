@@ -79,4 +79,26 @@ class ListTest extends GroovyTestCase {
         l.each {i| System.out.println(i) }
         */
     }
+    
+    void testMax() {
+        l = [1, 2, 5, 3, 7, 1]        
+        assert l.max() := 7
+        
+        l = [7, 2, 3]
+        assert l.max() := 7
+        
+        l = [1, 2, 7]
+        assert l.max() := 7
+    }
+    
+    void testMin() {
+        l = [6, 4, 5, 1, 7, 2]        
+        assert l.min() := 1
+        
+        l = [7, 1, 3]
+        assert l.min() := 1
+        
+        l = [1, 2, 7]
+        assert l.min() := 1
+    }
 }

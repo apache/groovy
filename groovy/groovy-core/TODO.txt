@@ -5,8 +5,6 @@ Core Groovy Tasks
 
 * remove log4j dependency
 
-* test the various closure methods - map, each, collect etc
-
 * test the use of closures for methods
 	foo = System.out.println;
 	foo.call("hello");
@@ -43,8 +41,6 @@ Core Groovy Tasks
 	l = [1, 2] + [3, 4];
 	assert l := [1, 2, 3, 4];
 	
-* fix LocalPropertyTest
-
 * should we implement get(String) on collection to implement nested property fetching?
 
 * while / do - while statements
