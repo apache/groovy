@@ -57,14 +57,13 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends ClassLoader {
 
     private ClassWriter classWriter;
-    private ClassGenerator visitor;
 
     public GroovyClassLoader() {
         this.classWriter = new ClassWriter(true);
-        this.visitor = new ClassGenerator(classWriter, this, null);
     }
 
     public Class defineClass(ClassNode classNode) {
+        ClassGenerator visitor = new ClassGenerator(new GeneratorContext(), classWriter, this, null);
         visitor.visitClass(classNode);
 
         byte[] code = classWriter.toByteArray();

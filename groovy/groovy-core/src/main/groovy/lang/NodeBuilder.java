@@ -69,6 +69,9 @@ public class NodeBuilder implements GroovyObject {
         Node node = null;
         Closure closure = null;
         List list = InvokerHelper.asList(args);
+        
+        //System.out.println("Called invokeMethod with arguments: " + list);
+        
         if (! list.isEmpty()) {
             Object object = list.get(0);
             if (object instanceof Map) {

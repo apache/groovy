@@ -162,11 +162,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // inner classes created while generating bytecode
     private LinkedList innerClasses = new LinkedList();
+    private GeneratorContext context;
     private boolean definingParameters;
 
     private Set syntheticStaticFields = new HashSet();
 
-    public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
+
+    public ClassGenerator(GeneratorContext context, ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
+        this.context = context;
         this.cw = classVisitor;
         this.classLoader = classLoader;
         this.sourceFile = sourceFile;
@@ -183,8 +186,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
-        syntheticStaticFields.clear();
-
+        syntheticStaticFields.clear();        
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
@@ -648,15 +650,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitInsn(DUP);
         cv.visitVarInsn(ALOAD, 0);
 
+        ClassNode owner = innerClass.getOuterClass();
         if (classNode instanceof InnerClassNode) {
-            ClassNode owner = classNode.getOuterClass();
-            
             // lets load the outer this
             cv.visitFieldInsn(GETFIELD, getClassInternalName(owner.getName()), "__outerInstance", getTypeDescription(owner.getName()));
         }        
 
         // we may need to pass in some other constructors
-        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + internalClassName + ";)V");
+        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + getClassInternalName(owner.getName()) + ";)V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -1010,7 +1011,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             owner = owner.getOuterClass();
         }
         String outerClassName = owner.getName();
-        String name = outerClassName + "$" + (innerClasses.size() + 1);
+        String name = outerClassName + "$" + context.getNextInnerClassIdx();
         Parameter[] parameters = expression.getParameters();
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy/lang/Closure");

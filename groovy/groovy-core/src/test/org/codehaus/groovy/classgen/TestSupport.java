@@ -82,8 +82,8 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected GroovyClassLoader loader = new GroovyClassLoader();
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
-    protected ClassGenerator checker = new ClassGenerator(new CheckClassAdapter(invisibleDumpVisitor), loader, null);
-    protected ClassGenerator dumper = new ClassGenerator(dumpVisitor, loader, null);
+    protected ClassGenerator checker = new ClassGenerator(new GeneratorContext(), new CheckClassAdapter(invisibleDumpVisitor), loader, null);
+    protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(), dumpVisitor, loader, null);
 
     protected Class loadClass(ClassNode classNode) {
         // lets test out the class verifier
