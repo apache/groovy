@@ -45,8 +45,7 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -61,31 +60,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     private static final Object noParameters[] = new Object[] { null };
 
     private Object delegate;
-    private Method doCallMethod;
+    private MetaMethod doCallMethod;
 
     public Closure(Object delegate) {
         this.delegate = delegate;
-
-        Class c = getClass();
-        do {
-            Method[] methods = getClass().getDeclaredMethods();
-
-            for (int i = 0; i != methods.length; i++) {
-                if ("doCall".equals(methods[i].getName())) {
-                    doCallMethod = methods[i];
-                    doCallMethod.setAccessible(true);
-                    break;
-                }
-            }
-
-            c = c.getSuperclass();
-
-        }
-        while (doCallMethod == null && c != Object.class);
-        
-        if (doCallMethod == null) {
-            throw new MissingMethodException("doCall", getClass(), noParameters);
-        }
     }
 
     public Object invokeMethod(String method, Object arguments) {
@@ -171,30 +149,50 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call(Object arguments) {
+        MetaMethod method = getDoCallMethod();
         try {
             if (arguments instanceof Object[]) {
                 Object[] parameters = (Object[]) arguments;
                 if (parameters == null || parameters.length == 0) {
-                    return this.doCallMethod.invoke(this, noParameters);
+                    return method.invoke(this, noParameters);
                 }
                 else {
-                    return this.doCallMethod.invoke(this, parameters);
+                    return method.invoke(this, parameters);
                 }
             }
             else {
-
-                return this.doCallMethod.invoke(this, new Object[] { arguments });
+                return method.invoke(this, new Object[] { arguments });
             }
         }
         catch (IllegalArgumentException e) {
-            throw new IncorrectClosureArgumentsException(this, arguments, doCallMethod.getParameterTypes());
+            throw new IncorrectClosureArgumentsException(this, arguments, method.getParameterTypes());
         }
-        catch (IllegalAccessException e) {
-            return throwRuntimeException(e.getCause());
+        catch (Exception e) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                cause = e;
+            }
+            return throwRuntimeException(cause);
         }
-        catch (InvocationTargetException e) {
-            return throwRuntimeException(e.getCause());
+    }
+
+    protected MetaMethod getDoCallMethod() {
+        if (doCallMethod == null) {
+            MetaClass metaClass = getMetaClass();
+            if (metaClass == null) {
+                /** @todo warning - why do we need this */
+                metaClass = InvokerHelper.getMetaClass(this);
+            }
+            List list = metaClass.getMethods("doCall");
+            if (!list.isEmpty()) {
+                doCallMethod = (MetaMethod) list.get(0);
+            }
+
+            if (doCallMethod == null) {
+                throw new MissingMethodException("doCall", getClass(), noParameters);
+            }
         }
+        return doCallMethod;
     }
 
     protected Object throwRuntimeException(Throwable throwable) {
@@ -222,14 +220,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
     }
-    
+
     /**
      * @return the parameter types of this closure
      */
     public Class[] getParameterTypes() {
-        return doCallMethod.getParameterTypes();
+        return getDoCallMethod().getParameterTypes();
     }
-    
+
     /**
      * Allows the closure to be cloned
      */

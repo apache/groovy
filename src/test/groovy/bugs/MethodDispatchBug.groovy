@@ -20,8 +20,10 @@ class MethodDispatchBug extends GroovyTestCase {
     }
 
     void testBug() {
-    /*
-        MethodDispatchBug o = this;
+    /* @todo
+    	strange - this works fine inside eclipse but fails inside Maven
+    	
+        o = this;
 
         System.out.println("Calling Test.doit( Boolean, Boolean ) -- expect Boolean, Boolean");
         o.doit(true, true);

@@ -264,8 +264,6 @@ public class MetaClass {
      * Picks which method to invoke for the given object, method name and arguments
      */
     protected MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
-        checkInitialised();
-
         MetaMethod method = null;
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
@@ -301,8 +299,6 @@ public class MetaClass {
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-        checkInitialised();
-
         //        System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
         //        Class type = arguments == null ? null : arguments.getClass();
         //        System.out.println("Argument  type: " + type);
@@ -403,8 +399,6 @@ public class MetaClass {
      * @return the given property's value on the object
      */
     public Object getProperty(final Object object, final String property) {
-        checkInitialised();
-
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
         if (descriptor != null) {
             Method method = descriptor.getReadMethod();
@@ -479,8 +473,6 @@ public class MetaClass {
      * Sets the property value on an object
      */
     public void setProperty(Object object, String property, Object newValue) {
-        checkInitialised();
-
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
 
         if (descriptor != null) {
@@ -714,7 +706,6 @@ public class MetaClass {
      */
     protected void addNewStaticMethodsFrom(Class theClass) {
         MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
-        interfaceMetaClass.checkInitialised();
         Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
         while (iter.hasNext()) {
             MetaMethod method = (MetaMethod) iter.next();
@@ -780,8 +771,6 @@ public class MetaClass {
      * @return the getter method for the given object
      */
     protected MetaMethod findGetter(Object object, String name) {
-        checkInitialised();
-
         List methods = getMethods(name);
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
@@ -796,8 +785,6 @@ public class MetaClass {
      * @return the Method of the given name with no parameters or null
      */
     protected MetaMethod findStaticGetter(Class type, String name) {
-        checkInitialised();
-
         List methods = getStaticMethods(name);
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
@@ -1039,11 +1026,15 @@ public class MetaClass {
     }
 
     protected boolean isValidMethod(Object method, Object[] arguments, boolean includeCoerce) {
+        Class[] paramTypes = getParameterTypes(method);
+        return isValidMethod(paramTypes, arguments, includeCoerce);
+    }
+
+    protected static boolean isValidMethod(Class[] paramTypes, Object[] arguments, boolean includeCoerce) {
         if (arguments == null) {
             return true;
         }
         int size = arguments.length;
-        Class[] paramTypes = getParameterTypes(method);
         boolean validMethod = false;
         if (paramTypes.length == size) {
             // lets check the parameter types match
@@ -1184,7 +1175,7 @@ public class MetaClass {
         return null;
     }
 
-    protected boolean isCompatibleInstance(Class type, Object value, boolean includeCoerce) {
+    protected static boolean isCompatibleInstance(Class type, Object value, boolean includeCoerce) {
         boolean answer = value == null || type.isInstance(value);
         if (!answer) {
             if (type.isPrimitive()) {
@@ -1296,7 +1287,7 @@ public class MetaClass {
                 Class[] paramTypes = method.getParameterTypes();
                 if (paramTypes.length > 0) {
                     Class owner = paramTypes[0];
-                    registry.getMetaClass(owner).addNewStaticInstanceMethod(method);
+                    registry.lookup(owner).addNewStaticInstanceMethod(method);
                 }
             }
         }

@@ -46,8 +46,11 @@
 package groovy.lang;
 
 import java.beans.IntrospectionException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -64,7 +67,7 @@ public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new HashMap());
     private boolean useAccessible;
     private GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
-    
+
     public MetaClassRegistry() {
         this(true);
     }
@@ -77,7 +80,8 @@ public class MetaClassRegistry {
         this.useAccessible = useAccessible;
 
         // lets register the default methods
-        getMetaClass(DefaultGroovyMethods.class).registerStaticMethods();
+        lookup(DefaultGroovyMethods.class).registerStaticMethods();
+        checkInitialised();
     }
 
     public MetaClass getMetaClass(Class theClass) {
@@ -85,15 +89,18 @@ public class MetaClassRegistry {
         if (answer == null) {
             try {
                 answer = new MetaClass(this, theClass);
+                answer.checkInitialised();
             }
             catch (IntrospectionException e) {
-                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
+                throw new GroovyRuntimeException(
+                    "Could not introspect class: " + theClass.getName() + ". Reason: " + e,
+                    e);
             }
             metaClasses.put(theClass, answer);
         }
         return answer;
     }
-    
+
     /**
      * Registers a new MetaClass in the registry to customize the type
      * 
@@ -117,5 +124,38 @@ public class MetaClassRegistry {
 
     public Class loadClass(String name) throws ClassNotFoundException {
         return loader.loadClass(name);
+    }
+
+    /**
+     * Ensures that all the registered MetaClass instances are initalized
+     *
+     */
+    void checkInitialised() {
+        // lets copy all the classes in the repository right now 
+        // to avoid concurrent modification exception
+        List list = new ArrayList(metaClasses.values());
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            MetaClass metaClass = (MetaClass) iter.next();
+            metaClass.checkInitialised();
+        }
+    }
+
+    /**
+     * Used by MetaClass when registering new methods which avoids initializing the MetaClass instances on lookup
+     */
+    MetaClass lookup(Class theClass) {
+        MetaClass answer = (MetaClass) metaClasses.get(theClass);
+        if (answer == null) {
+            try {
+                answer = new MetaClass(this, theClass);
+            }
+            catch (IntrospectionException e) {
+                throw new GroovyRuntimeException(
+                    "Could not introspect class: " + theClass.getName() + ". Reason: " + e,
+                    e);
+            }
+            metaClasses.put(theClass, answer);
+        }
+        return answer;
     }
 }

@@ -51,7 +51,7 @@ import org.codehaus.groovy.runtime.Reflector;
 public class MetaMethod implements Cloneable {
 
     private static final Logger log = Logger.getLogger(MetaMethod.class.getName());
-    
+
     private String name;
     private Class declaringClass;
     private Class interfaceClass;
@@ -86,6 +86,16 @@ public class MetaMethod implements Cloneable {
 
     public Object invoke(Object object, Object[] arguments) throws Exception {
         if (reflector != null) {
+            // lets check that the argument types are valid
+            if (!MetaClass.isValidMethod(getParameterTypes(), arguments, false)) {
+                throw new IllegalArgumentException(
+                    "Parameters to method: "
+                        + getName()
+                        + " do not match types: "
+                        + InvokerHelper.toString(getParameterTypes())
+                        + " for arguments: "
+                        + InvokerHelper.toString(arguments));
+            }
             return reflector.invoke(this, object, arguments);
         }
         else {
@@ -191,16 +201,16 @@ public class MetaMethod implements Cloneable {
      */
     public boolean isSame(MetaMethod method) {
         return name.equals(method.getName())
-        && compatibleModifiers(modifiers, method.getModifiers())
-        && returnType.equals(method.getReturnType())
-        && equal(parameterTypes, method.getParameterTypes());
+            && compatibleModifiers(modifiers, method.getModifiers())
+            && returnType.equals(method.getReturnType())
+            && equal(parameterTypes, method.getParameterTypes());
     }
 
     protected boolean compatibleModifiers(int modifiersA, int modifiersB) {
         int mask = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC | Modifier.STATIC;
         return (modifiersA & mask) == (modifiersB & mask);
     }
-    
+
     public Class getInterfaceClass() {
         return interfaceClass;
     }

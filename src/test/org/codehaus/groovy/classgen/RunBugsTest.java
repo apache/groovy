@@ -93,4 +93,9 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/PrimitiveTypeFieldTest.groovy");
         object.invokeMethod("testPrimitiveField", null);
     }
-}
+    
+    public void testMethodDispatchBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/MethodDispatchBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+   }
