@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -102,6 +104,8 @@ import org.objectweb.asm.Type;
  */
 public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Constants {
 
+    protected static final Log log = LogFactory.getLog(ClassGenerator.class);
+    
     private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
@@ -1200,7 +1204,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
             pushConstant(i);
-            expression.getExpression(i).visit(this);
+            Expression elementExpression = expression.getExpression(i);
+            if (elementExpression == null) {
+                log.warn("Null expression in: " + expression);
+                ConstantExpression.NULL.visit(this);
+            }
+            else {
+                elementExpression.visit(this);
+            }
             cv.visitInsn(AASTORE);
         }
     }

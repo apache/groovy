@@ -1,6 +1,15 @@
 Things to Test
 ==============
 
+* duplicate class definition: ClosureMethodTest$4
+	<bob>	java.lang.LinkageError: duplicate class definition: ClosureMethodTest$4
+	<bob>	        at java.lang.ClassLoader.defineClass0(Native Method)
+	<bob>	        at java.lang.ClassLoader.defineClass(ClassLoader.java:502)
+	<bob>	        at java.lang.ClassLoader.defineClass(ClassLoader.java:431)
+	<bob>	        at groovy.lang.GroovyClassLoader.onClassNode(GroovyClassLoader.java:108)
+	<bob>	        at org.codehaus.groovy.classgen.TestSupport$1.onClassNode(TestSupport.java:96)
+
+
 * test methods which return a specific type
 
 * why do the try/catch tests fail when run inside an IDE?
