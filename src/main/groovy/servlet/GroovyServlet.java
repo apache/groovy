@@ -76,6 +76,10 @@ public class GroovyServlet extends HttpServlet {
 	private static Map servletCache = Collections.synchronizedMap(new HashMap());
 	private static ClassLoader parent;
 
+	public ServletContext getServletContext() {
+		return sc;
+	}
+	
 	private static class ServletCacheEntry {
 		private Class servletScriptClass;
 		private long lastModified;
@@ -150,15 +154,19 @@ public class GroovyServlet extends HttpServlet {
 			if (entry != null) {
 				for (Iterator i = entry.dependencies.keySet().iterator(); i.hasNext(); ) {
 					URLConnection urlc = null;
+					URL url = (URL) i.next();
 					try {
-						URL url = (URL) i.next();
-						urlc = url.openConnection(); 
-						if (urlc.getLastModified() > ((Long)entry.dependencies.get(url)).longValue()) {
+						urlc = url.openConnection();
+						urlc.setDoInput(false);
+						urlc.setDoOutput(false);
+						long dependentLastModified = urlc.getLastModified();
+						if (dependentLastModified > ((Long)entry.dependencies.get(url)).longValue()) {
 							dependencyOutOfDate = true;
 							break;
-						}	
-					} finally {
-						urlc.getInputStream().close();
+						}
+					} catch (IOException ioe) {
+						dependencyOutOfDate = true;
+						break;
 					}
 				}
 			}

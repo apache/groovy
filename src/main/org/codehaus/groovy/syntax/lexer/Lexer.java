@@ -384,7 +384,7 @@ public class Lexer
                         	consume();
                         	token = Token.findRegex( getStartLine(),
                         			getStartColumn() );
-                        	break;
+                        	break MULTICHAR_SWITCH;
                         }
                         default:
                         {

@@ -124,7 +124,17 @@ public class ASTBuilder
         else if ( name.equals( "void" )
                   ||
                   name.equals( "int" )
-                  ||
+        		  ||
+        		  name.equals( "boolean" )
+        		  ||
+        		  name.equals( "long" )
+        		  ||
+        		  name.equals( "short" )
+        		  ||
+        		  name.equals( "char" )
+        		  ||
+        		  name.equals( "byte" )
+        		  ||
                   name.equals( "float" ) )
         {
             return name;
@@ -365,7 +375,7 @@ public class ASTBuilder
             if ( matches( bodyRoots[i],
                           Token.SYNTH_METHOD ) )
             {
-                classNode.addMethod( methodDeclaration( bodyRoots[i] ) );
+                methodDeclaration( classNode, bodyRoots[i] );
             }
         }
 
@@ -396,7 +406,7 @@ public class ASTBuilder
         return propertyNode;
     }
 
-    protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException
+    protected void methodDeclaration(ClassNode classNode, CSTNode methodRoot) throws ParserException
     {
         int modifiers = modifiers( methodRoot.getChild( 0 ) );
 
@@ -406,14 +416,18 @@ public class ASTBuilder
 
         Parameter[] parameters = parameters( methodRoot.getChild( 3 ).getChildren() );
 
-        MethodNode methodNode = new MethodNode( identifier,
-                                                modifiers,
-                                                returnType,
-                                                parameters,
-                                                statementBlock( methodRoot.getChild( 4 ) ) );
-
-        methodNode.setCSTNode(methodRoot);
-        return methodNode;
+        if (identifier.equals(classNode.getNameWithoutPackage())) {
+        	ConstructorNode constructorNode = new ConstructorNode( modifiers, parameters, statementBlock( methodRoot.getChild(4)));
+        	classNode.addConstructor(constructorNode);
+        } else {
+        	MethodNode methodNode = new MethodNode( identifier,
+                                                    modifiers,
+                                                    returnType,
+                                                    parameters,
+                                                    statementBlock( methodRoot.getChild( 4 ) ) );
+        	methodNode.setCSTNode(methodRoot);
+        	classNode.addMethod(methodNode);
+        }
     }
 
     protected Parameter[] parameters(CSTNode[] paramRoots)
