@@ -180,17 +180,15 @@ public class Node {
         }
     }
 
-    /*
-        public Object get(int idx) {
-            return children().get(idx);
-        }
-    */
+//    public Object get(int idx) {
+//        return children().get(idx);
+//    }
 
     public String toString() {
         return name + "[attributes=" + attributes + "; value=" + value + "]";
     }
 
-    public void print(PrintWriter out) { 
+    public void print(PrintWriter out) {
         new NodePrinter(out).print(this);
     }
 }

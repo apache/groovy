@@ -43,9 +43,7 @@ class ListIteratingTest extends GroovyTestCase {
     }
 */    
 
-	/** @todo    
-    protected */
-	assertSequence(s) {
+    protected assertSequence(s) {
         result = 0;
         for i in s {
             result = result + i;

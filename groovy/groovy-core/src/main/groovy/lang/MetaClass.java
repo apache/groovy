@@ -90,36 +90,7 @@ public class MetaClass {
         this.registry = registry;
         this.theClass = theClass;
 
-        Method[] methodArray = theClass.getMethods();
-        for (int i = 0; i < methodArray.length; i++) {
-            Method method = methodArray[i];
-
-            String name = method.getName();
-            if (MethodHelper.isPublic(method)) {
-                if (isGenericGetMethod(method)) {
-                    genericGetMethod = method;
-                }
-                else if (isGenericSetMethod(method)) {
-                    genericSetMethod = method;
-                }
-                if (MethodHelper.isPublicStatic(method)) {
-                    List list = (List) staticMethodIndex.get(name);
-                    if (list == null) {
-                        list = new ArrayList();
-                        staticMethodIndex.put(name, list);
-                    }
-                    list.add(method);
-                }
-                else {
-                    List list = (List) methodIndex.get(name);
-                    if (list == null) {
-                        list = new ArrayList();
-                        methodIndex.put(name, list);
-                    }
-                    list.add(method);
-                }
-            }
-        }
+        addMethods(theClass);
 
         // introspect
         BeanInfo info = Introspector.getBeanInfo(theClass);
@@ -142,6 +113,7 @@ public class MetaClass {
                 break;
             }
             addNewStaticMethodsFrom(c);
+            addMethods(c);
         }
     }
 
@@ -331,6 +303,77 @@ public class MetaClass {
     //-------------------------------------------------------------------------
 
     /**
+     * Adds all the methods declared in the given class to the metaclass
+     * ignoring any matching methods already defined by a derived class
+     * 
+     * @param theClass
+     */
+    protected void addMethods(Class theClass) {
+        Method[] methodArray = theClass.getDeclaredMethods();
+        for (int i = 0; i < methodArray.length; i++) {
+            Method method = methodArray[i];
+
+            String name = method.getName();
+            if (isGenericGetMethod(method) && genericGetMethod == null) {
+                genericGetMethod = method;
+            }
+            else if (isGenericSetMethod(method) && genericSetMethod == null) {
+                genericSetMethod = method;
+            }
+            if (MethodHelper.isStatic(method)) {
+                List list = (List) staticMethodIndex.get(name);
+                if (list == null) {
+                    list = new ArrayList();
+                    staticMethodIndex.put(name, list);
+                    list.add(method);
+                }
+                else {
+                    if (!containsMatchingMethod(list, method)) {
+                        list.add(method);
+                    }
+                }
+            }
+            else {
+                List list = (List) methodIndex.get(name);
+                if (list == null) {
+                    list = new ArrayList();
+                    methodIndex.put(name, list);
+                    list.add(method);
+                }
+                else {
+                    if (!containsMatchingMethod(list, method)) {
+                        list.add(method);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @return true if a method of the same matching prototype was found in the list
+     */
+    protected boolean containsMatchingMethod(List list, Method method) {
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            Method aMethod = (Method) iter.next();
+            Class[] params1 = aMethod.getParameterTypes();
+            Class[] params2 = method.getParameterTypes();
+            if (params1.length == params2.length) {
+                boolean matches = true;
+                for (int i = 0; i < params1.length; i++) {
+                    if (params1[i] != params2[i]) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Adds all of the newly defined methods from the given class to this
      * metaclass
      * 
@@ -371,7 +414,7 @@ public class MetaClass {
         }
         throw new InvokerException("No such property: " + property);
     }
-    
+
     public String toString() {
         return super.toString() + "[" + theClass + "]";
     }
@@ -419,9 +462,9 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-//        System.out.println("Evaluating method: " + method);
-//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
-//        System.out.println(this.theClass);
+        //        System.out.println("Evaluating method: " + method);
+        //        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+        //        System.out.println(this.theClass);
 
         try {
             if (registry.useAccessible()) {

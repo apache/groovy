@@ -56,8 +56,8 @@ import java.lang.reflect.Modifier;
  */
 public class MethodHelper {
  
-    public static boolean isPublicStatic(Method method) {
-        int flags = Modifier.PUBLIC | Modifier.STATIC;
+    public static boolean isStatic(Method method) {
+        int flags = Modifier.STATIC;
         return (method.getModifiers() & (flags)) == flags;
     }
 

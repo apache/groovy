@@ -56,6 +56,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -87,14 +88,28 @@ public class DefaultGroovyMethods {
      */
     public static void print(Object self) {
         /** @todo should re-enable this */
-        // InvokerHelper.invokeMethod(self, "print", new PrintWriter(System.out));
+        //InvokerHelper.invokeMethod(self, "print", new PrintWriter(System.out));
         System.out.print(InvokerHelper.toString(self));
+    }
+
+    /**
+     * @return the String that would be printend on the console if the print() 
+     * method were called
+     */
+    public static String toConsoleOutput(Object self) {
+        StringWriter buffer = new StringWriter();
+        PrintWriter out = new PrintWriter(buffer);
+        InvokerHelper.invokeMethod(self, "print", out);
+        return buffer.toString();
     }
 
     /**
      * Print to a console in interactive format
      */
     public static void print(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
         out.print(InvokerHelper.toString(self));
     }
 

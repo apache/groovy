@@ -246,6 +246,9 @@ public class Invoker {
         }
         else if (arguments instanceof Map) {
             Map map = (Map) arguments;
+            if (map.isEmpty()) {
+                return "[:]";
+            }
             StringBuffer buffer = new StringBuffer("[");
             boolean first = true;
             for (Iterator iter = map.entrySet().iterator(); iter.hasNext(); ) {

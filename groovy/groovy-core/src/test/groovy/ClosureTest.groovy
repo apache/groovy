@@ -58,16 +58,13 @@ class ClosureTest extends GroovyTestCase {
         block.call(this)
 	}
 	
-	/** @todo
-	  protected 
-	  */
-	callBlock(Integer num, Closure block) {
+	protected callBlock(Integer num, Closure block) {
 	    for i in 0..num {
 			block.call(this)
 	    }
 	}
 
-    callBlock2(num, block) {
+    protected callBlock2(num, block) {
         for i in 0..num {
             block.call(this)
         }
