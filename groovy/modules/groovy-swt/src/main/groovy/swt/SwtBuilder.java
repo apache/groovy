@@ -226,9 +226,9 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("treeItem", TreeItem.class);
 
         // custom widgets
-        registerBeanFactory("cbanner", CBanner.class);
-        registerBeanFactory("ccombo", CCombo.class);
-        registerBeanFactory("clabel", CLabel.class);
+        registerBeanFactory("cBanner", CBanner.class);
+        registerBeanFactory("cCombo", CCombo.class);
+        registerBeanFactory("cLabel", CLabel.class);
         registerBeanFactory("cTabFolder", CTabFolder.class);
         registerBeanFactory("cTabItem", CTabItem.class);
         registerBeanFactory("sashForm", SashForm.class);

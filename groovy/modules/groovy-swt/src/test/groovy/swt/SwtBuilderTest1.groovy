@@ -47,9 +47,9 @@ class SwtBuilderTest1 {
 			tree(){
 				treeItem()
 			}
-			cbanner()
-        	ccombo()
-			clabel()
+			cBanner()
+        	cCombo()
+			cLabel()
 			cTabFolder() {
 				cTabItem()
 			}

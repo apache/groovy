@@ -9,6 +9,8 @@ import groovy.lang.MissingPropertyException;
 import groovy.swt.SwtUtils;
 import groovy.swt.factory.AbstractSwtFactory;
 import groovy.swt.factory.SwtFactory;
+import groovy.util.ResourceException;
+import groovy.util.ScriptException;
 
 import java.util.Map;
 import java.util.logging.Level;
@@ -42,13 +44,13 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-            throws GroovyException {
-        
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
+
         // get src
         String src = (String) properties.remove("src");
-        if (src == null) { throw new MissingPropertyException("src",
-                RunScriptFactory.class); }
+        if (src == null) {
+            throw new MissingPropertyException("src", RunScriptFactory.class);
+        }
 
         // get binding
         Binding binding = (Binding) properties.remove("binding");
@@ -65,20 +67,26 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
                 parentComposite = (Composite) parent;
             }
         } else {
-            parentComposite = (Composite) SwtUtils.getParentWidget(guiBuilder.getCurrent(), properties);
+            parentComposite = (Composite) SwtUtils.getParentWidget(guiBuilder.getCurrent(),
+                    properties);
         }
         guiBuilder.setCurrent(parentComposite);
 
         // dispose children
         Boolean rebuild = (Boolean) properties.remove("rebuild");
-        if (parentComposite != null && rebuild != null
-                && rebuild.booleanValue()) {
+        if (parentComposite != null && rebuild != null && rebuild.booleanValue()) {
             SwtUtils.disposeChildren(parentComposite);
         }
 
         // run script
-        Object result = runScript(src, parentComposite, binding);
-        if (result == null ) {
+        Object result;
+        try {
+            result = runScript(src, parentComposite, binding);
+        } catch (Exception e) {
+            throw new GroovyException(e.getMessage());
+        }
+        
+        if (result == null) {
             throw new NullPointerException("Script returns null: " + src);
         }
         return result;
@@ -89,26 +97,24 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
      * @param script
      * @param parent
      * @return
+     * @throws ScriptException
+     * @throws ResourceException
      */
     private Object runScript(String script, Composite parent, Binding binding)
-            throws GroovyException {
+            throws GroovyException, ResourceException, ScriptException {
 
         // script binding
         binding.setVariable("guiBuilder", guiBuilder);
         if (parent != null) {
             binding.setVariable("parent", parent);
         }
-        Object obj = null;
-        try {
-            obj = guiBuilder.getScriptEngine().run(script, binding);
-        } catch (Exception e) {
-            log.log(Level.WARNING, e.getMessage());
-        }
+
+        Object obj = guiBuilder.getScriptEngine().run(script, binding);
 
         // layout widget
         if (parent != null) {
             parent.layout();
-        } else if (obj != null && (obj instanceof Composite)){
+        } else if (obj != null && (obj instanceof Composite)) {
             ((Composite) obj).layout();
         }
 
