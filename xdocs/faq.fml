@@ -24,10 +24,10 @@
 
     <faq id="dependencies">
       <question>
-        What are the JAR dependencies for Groovy?
+        What are the dependencies for Groovy?
       </question>
       <answer>
-		<p>As well as the Groovy jar we also depend at runtime on</p>
+		<p>As well as JDK 1.4 and the Groovy jar we also depend at runtime on</p>
 		
 		<ul>
 		<li>asm</li>
