@@ -1299,7 +1299,7 @@ blockBody
                 nls! expressionNotBOR nls!
 
         |       // include the (possibly-empty) list of statements
-                (statement)? (sep! (statement)?)*
+                nls! (statement)? (sep! (statement)?)*
         ;
 
 // Special restriction:  Logical OR expressions cannot occur at statement level, not even as {a...|b...}.
@@ -1743,7 +1743,7 @@ assignmentOp
 //			( 9)  |
 //			( 8)  ^
 //			( 7)  &
-//			( 6)  == !=
+//			( 6)  == != <=>
 //			( 5)  < <= > >=
 //			( 4)  << >>
 //			( 3)  +(binary) -(binary)
@@ -2041,7 +2041,12 @@ logicalOrExpression
 
 // logical and (&&)  (level 10)
 logicalAndExpression
-        :       inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
+        :       regexExpression (LAND^ nls! regexExpression)*
+        ;
+
+// regex find and match (=~ and ==~) (level 9.5)
+regexExpression
+        :       inclusiveOrExpression ((REGEX_FIND^ | REGEX_MATCH^) nls! inclusiveOrExpression)*
         ;
 
 
@@ -2716,6 +2721,8 @@ RANGE_INCLUSIVE	:   ".."    ;
 TRIPLE_DOT		:   "..."   ;
 STAR_DOT        :   "*."    ;
 QUESTION_DOT    :   "?."    ;
+REGEX_FIND      :   "=~"    ;
+REGEX_MATCH     :   "==~"   ;
 
 
 // Whitespace -- ignored

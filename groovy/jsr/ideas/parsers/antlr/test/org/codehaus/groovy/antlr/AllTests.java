@@ -64,7 +64,6 @@ public class AllTests extends TestSuiteSupport {
         "PrintTest.groovy",                     // TODO: can't parse foo.bar <<
         "Groovy308_Bug.groovy",                 // TODO: can't parse foo.bar <<
 
-        "RegularExpressionsTest.groovy",        // TODO: regex issue
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
@@ -96,6 +95,7 @@ public class AllTests extends TestSuiteSupport {
 
         // TODO: AST bugs I think...
         "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
+        "RegularExpressionsTest.groovy",        // TODO: regex issue
         "ReturnTest.groovy",
         "PrimitiveTypeFieldTest.groovy",
         "PrintlnWithNewBug.groovy",

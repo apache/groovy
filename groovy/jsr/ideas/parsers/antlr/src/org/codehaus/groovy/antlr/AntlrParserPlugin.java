@@ -884,7 +884,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LNOT:
                 return new NotExpression(expression(node.getFirstChild()));
 
-            case BNOT:
             case UNARY_MINUS:
                 return new NegationExpression(expression(node.getFirstChild()));
 
@@ -999,6 +998,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return binaryExpression(Types.RIGHT_SHIFT, node);
 
 
+                // Regex
+            case REGEX_FIND:
+                return binaryExpression(Types.FIND_REGEX, node);
+
+            case REGEX_MATCH:
+                return binaryExpression(Types.MATCH_REGEX, node);
+
+            case BNOT:
+                return binaryNotExpression(node);
+
+
+                // Ranges
             case RANGE_INCLUSIVE:
                 return rangeExpression(node, true);
 
@@ -1032,6 +1043,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else {
             return new ClassExpression(newText);
         }
+    }
+
+    protected Expression binaryNotExpression(AST node) {
+        Expression expression = expression(node.getFirstChild());
+        if (expression instanceof ConstantExpression) {
+            ConstantExpression constantExpr = (ConstantExpression) expression;
+            if (expression.getType().equals("java.lang.String")) {
+                // TODO we should maybe use operator overloading to implement
+                // binary not on a String expression
+                // so we could do
+                // ~methodThatReturnsAString() to create a regex
+                return new RegexExpression(expression(node.getFirstChild()));
+            }
+        }
+        return new NegationExpression(expression);
     }
 
     protected Expression rangeExpression(AST rangeNode, boolean inclusive) {

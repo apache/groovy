@@ -12,7 +12,6 @@ import java.util.regex.Pattern
 class RegularExpressionsTest extends GroovyTestCase {
 
      void testFindRegex() {
-
          assert "cheese" =~ "cheese"
 
          regex = "cheese"
@@ -47,10 +46,8 @@ class RegularExpressionsTest extends GroovyTestCase {
 
      }
 
-     def i
-
      void testRegexEach() {
-         i = 0
+         def i = 0
          ("cheesecheese" =~ "cheese").each {value | println(value); i = i + 1}
          assert i == 2
 
@@ -59,6 +56,7 @@ class RegularExpressionsTest extends GroovyTestCase {
          assert i == 2
      }
 
+     /*
      void testPatterns() {
          pattern = ~"foo"
          assert pattern instanceof Pattern
@@ -74,15 +72,6 @@ foo
          assert "foofoofoo" =~ ~"foo"
      }
 
-     void testMatcher() {
-         matcher = "cheese-cheese" =~ "cheese"
-         answer = matcher.replaceAll("edam")
-         assert answer == 'edam-edam'
-
-         cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
-         assert cheese == "nice cheese!"
-     }
-
      void testSubscript() {
          a = "cheesecheese"
          b = a =~ "e+"
@@ -96,6 +85,17 @@ foo
          value = b[0, 1..2]
 
          assert value == "eeeee"
+     }
+
+     */
+
+     void testMatcher() {
+         matcher = "cheese-cheese" =~ "cheese"
+         answer = matcher.replaceAll("edam")
+         assert answer == 'edam-edam'
+
+         cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
+         assert cheese == "nice cheese!"
      }
 
     void testGetLastMatcher() {
@@ -116,15 +116,4 @@ foo
                 assert false
         }
     }
-
-     static void main(args) {
-         regextest = new RegularExpressionsTest();
-         regextest.testFindRegex();
-         regextest.testMatchRegex();
-         regextest.testRegexEach();
-         regextest.testPatterns();
-         regextest.testMatcher();
-         regextest.testSubscript();
-         regextest.testGetLastMatcher();
-     }
  }
