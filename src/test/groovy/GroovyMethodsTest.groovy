@@ -4,6 +4,7 @@ import java.io.InputStreamReader
  * Tests the various new Groovy methods
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Guillaume Laforge
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovyTestCase {
@@ -191,5 +192,13 @@ class GroovyMethodsTest extends GroovyTestCase {
     	for (k in keys) { 
     		println "${k} = ${properties[k]}"
     	}
+    }
+
+    void testMaximize() {
+        assert [-5, -3, -1, 0, 2, 4].maximize{ it * it } == -5
+    }
+
+    void testMinimize() {
+        assert [-5, -3, -1, 0, 2, 4].minimize{ it * it } == 0
     }
 }
