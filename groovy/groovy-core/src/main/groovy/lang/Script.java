@@ -78,16 +78,12 @@ public abstract class Script extends GroovyObjectSupport {
 
     public Object getProperty(String property) {
         //System.out.println("Script.getProperty for: " + property + " with binding: " + binding.getVariables());
-        Object answer = binding.getVariable(property);
-        if (answer == null) {
-            try {
-                return super.getProperty(property);
-            }
-            catch (MissingPropertyException e) {
-                // ignore errors inside scripts
-            }
-        }
-        return answer;
+    		try {
+    			return binding.getVariable(property);
+    		}
+        catch (MissingPropertyException e) {
+              return super.getProperty(property);
+         }
     }
 
     public void setProperty(String property, Object newValue) {
@@ -112,14 +108,18 @@ public abstract class Script extends GroovyObjectSupport {
      * If there is no 'out' property then print to standard out.
      */
     public void println() {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "println", ArgumentListExpression.EMPTY_ARRAY);
-        }
-        else {
+    		Object object;
+    		
+    		try {
+    			object = getProperty("out");
+    		}
+         catch (MissingPropertyException e) {
             System.out.println();
+            return;
         }
-    }
+         
+         InvokerHelper.invokeMethod(object, "println", ArgumentListExpression.EMPTY_ARRAY);
+   }
 
     /**
      * Prints the value to the current 'out' variable which should be a PrintWriter
@@ -127,13 +127,17 @@ public abstract class Script extends GroovyObjectSupport {
      * If there is no 'out' property then print to standard out.
      */
     public void print(Object value) {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "print", new Object[] { value });
-        }
-        else {
-            System.out.print(value);
-        }
+		Object object;
+		
+		try {
+			object = getProperty("out");
+		}
+	     catch (MissingPropertyException e) {
+	        System.out.print(value);
+	        return;
+	    }
+	     
+	     InvokerHelper.invokeMethod(object, "print", new Object[] { value });
     }
 
     /**
@@ -142,13 +146,17 @@ public abstract class Script extends GroovyObjectSupport {
      * If there is no 'out' property then print to standard out.
      */
     public void println(Object value) {
-        Object object = getProperty("out");
-        if (object != null) {
-            InvokerHelper.invokeMethod(object, "println", new Object[] { value });
-        }
-        else {
-            System.out.println(value);
-        }
+		Object object;
+		
+		try {
+			object = getProperty("out");
+		}
+	     catch (MissingPropertyException e) {
+	        System.out.println(value);
+	        return;
+	    }
+	     
+	     InvokerHelper.invokeMethod(object, "println", new Object[] { value });
     }
     
     /**
