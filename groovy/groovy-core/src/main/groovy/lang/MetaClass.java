@@ -56,6 +56,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -88,7 +89,8 @@ public class MetaClass {
     protected static final Object[] EMPTY_ARRAY = {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
-
+    protected static Class[] EMPTY_TYPE_ARRAY = {};
+    
     private MetaClassRegistry registry;
     private Class theClass;
     private ClassNode classNode;
@@ -417,11 +419,11 @@ public class MetaClass {
         /** @todo or are we an extensible class? */
 
         // lets try invoke the set method
-        String method = "set" + property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
+        String method = "set" + capitalize(property);
         invokeMethod(object, method, new Object[] { newValue });
     }
-
-    public ClassNode getClassNode() {
+    
+     public ClassNode getClassNode() {
         if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
             // lets try load it from the classpath
             String className = theClass.getName();
@@ -610,16 +612,45 @@ public class MetaClass {
      * @return the value of the static property of the given class
      */
     protected Object getStaticProperty(Class aClass, String property) {
+        //System.out.println("Invoking property: " + property + " on class: " + aClass);
+        
+        Exception lastException = null;
         try {
             Field field = aClass.getField(property);
             if (field != null) {
-                return field.get(null);
+                if ((field.getModifiers() & Modifier.STATIC) != 0) {
+                    return field.get(null);
+                }
             }
         }
         catch (Exception e) {
-            throw new GroovyRuntimeException("Could not evaluate property: " + property, e);
+            lastException = e;
         }
-        throw new GroovyRuntimeException("No such property: " + property);
+        
+        // lets try invoke a static getter method
+        try {
+            Method method = findStaticGetter(aClass, "get" + capitalize(property));
+            if (method != null) {
+                return doMethodInvoke(aClass, method, EMPTY_ARRAY);
+            }
+        }
+        catch (GroovyRuntimeException e) {
+            throw new MissingPropertyException(property, aClass, e);
+        }
+        
+        throw new MissingPropertyException(property, aClass, lastException);
+    }
+
+    /**
+     * @return the Method of the given name with no parameters or null
+     */
+    protected Method findStaticGetter(Class type, String name) {
+        try {
+            return type.getMethod(name, EMPTY_TYPE_ARRAY);
+        }
+        catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -1026,4 +1057,7 @@ public class MetaClass {
         }
     }
 
+    protected String capitalize(String property) {
+        return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
+    }
 }
