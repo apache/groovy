@@ -223,10 +223,74 @@ public class GroovyShell extends GroovyObjectSupport {
     			throw (RuntimeException) pae.getException();
     		}
     	}
-        InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+
+        if (isUnitTestCase(scriptClass)) {
+            runTest(scriptClass);
+        } else {
+            InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        }
 
         // Set the context classloader back to what it was.
     	AccessController.doPrivileged(new DoSetContext(currentClassLoader));
+    }
+
+    /**
+     * Run the specified class extending GroovyTestCase as a unit test.
+     * This is done through reflection, to avoid adding a dependency to the JUnit framework.
+     * Otherwise, developers embedding Groovy and using GroovyShell to load/parse/compile
+     * groovy scripts and classes would have to add another dependency on their classpath.
+     *
+     * @param scriptClass the class to be run as a unit test
+     */
+    private void runTest(Class scriptClass) {
+        try {
+            InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[] {scriptClass});
+        }
+        catch (Exception e) {
+            throw new GroovyRuntimeException("Failed to run the unit test");
+        }
+    }
+
+    /**
+     * Utility method to check through reflection if the parsed class extends GroovyTestCase.
+     *
+     * @param scriptClass the class we want to know if it extends GroovyTestCase
+     * @return true if the class extends groovy.util.GroovyTestCase
+     */
+    private boolean isUnitTestCase(Class scriptClass) {
+        // check if the parsed class is a GroovyTestCase,
+        // so that it is possible to run it as a JUnit test
+        boolean isUnitTestCase = false;
+        try {
+            ClassLoader ctxtClassLoader = getClassLoader();
+            try {
+                Class testCaseClass = ctxtClassLoader.loadClass("groovy.util.GroovyTestCase");
+                // if scriptClass extends testCaseClass
+                if (testCaseClass.isAssignableFrom(scriptClass)) {
+                    isUnitTestCase = true;
+                }
+            }
+            catch (ClassNotFoundException e) {
+                // fall through
+            }
+        }
+        catch (Exception e) {
+            // fall through
+        }
+        return isUnitTestCase;
+    }
+
+    /**
+     * Retrieves the appropriate class loader.
+     *
+     * @return the class loader
+     */
+    private ClassLoader getClassLoader() {
+        ClassLoader ctxtCL = Thread.currentThread().getContextClassLoader();
+        if (ctxtCL == null) {
+            ctxtCL = GroovyShell.class.getClassLoader();
+        }
+        return ctxtCL;
     }
 
     /**
