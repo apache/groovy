@@ -71,7 +71,8 @@ public class UnexpectedTokenException extends ParserException {
         }
 
         message.append( "; found '").append( getUnexpectedTokenText() ).append( "'" );
-
+        message.append(" at " + unexpectedToken.getStartLine() + ":" + unexpectedToken.getStartColumn());
+        
         return message.toString();
     }
 }
