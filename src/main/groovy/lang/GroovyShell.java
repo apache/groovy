@@ -76,37 +76,6 @@ public class GroovyShell extends GroovyObjectSupport {
     private Binding context;
     private int counter;
 
-    public static void main(String args[]) {
-        MetaClass.setUseReflection(true);
-        int length = args.length;
-        if (length <= 0) {
-            System.out.println("Usage: Groovy groovyScript [arguments]");
-            return;
-        }
-        String scriptName = args[0];
-        int p = scriptName.lastIndexOf(".");
-        if ( p++ >= 0) {
-            if (scriptName.substring(p).equals("java")) {
-                System.err.println( "error: cannot compile file with .java extension: " + scriptName );
-
-            } else {
-                String[] newArgs = new String[length - 1];
-                if (length > 1) {
-                    System.arraycopy(args, 1, newArgs, 0, length - 1);
-                }
-
-                try {
-                    GroovyShell groovy = new GroovyShell();
-                    groovy.run(new File(scriptName), newArgs);
-                }
-                catch (Exception e) {
-                    System.out.println("Caught: " + e);
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
     public GroovyShell() {
         this(null, new Binding());
     }
@@ -185,6 +154,19 @@ public class GroovyShell extends GroovyObjectSupport {
     public void run(File scriptFile, List list) throws CompilationFailedException, IOException {
         String[] args = new String[list.size()];
         run(scriptFile, (String[])list.toArray(args));
+    }
+
+    /**
+     * A helper method which runs the given cl script with the given command line arguments
+     * 
+     * @param scriptText is the text content of the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     * @param list the command line arguments to pass in
+     */
+    public void run(String scriptText, String fileName, List list) throws CompilationFailedException, IOException {
+        String[] args = new String[list.size()];
+        list.toArray(args);
+        run(scriptText, fileName, args);
     }
 
     /**
