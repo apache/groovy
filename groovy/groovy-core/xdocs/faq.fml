@@ -117,6 +117,46 @@
   </part>
 
 
+  <part id="developer">
+    <title>Groovy Developers FAQ</title>
+    
+    <faq id="quick-build">
+      <question>
+        All the unit test cases take a while to run. Can I do a quicker build?
+      </question>
+      <answer>
+        <p>
+        You can do a full clean binary build without running the unit tests via..
+       </p>
+		<source>
+		maven rebuild
+		</source>
+      </answer>
+    </faq>   
+
+    
+    <faq id="some-tests">
+      <question>
+        All the unit test cases take a while to run. Can I run just some of the tests?
+      </question>
+      <answer>
+        <p>
+		Or to run a specific test case you can do
+        </p>
+		<source>
+		maven test:single -Dtestcase=CharsetToolkitTest
+		</source>
+
+        <p>
+		or to run tests matching a certain pattern...
+        </p>
+		<source>
+		maven test:match -Dtestmatch=Foo*Test.* 
+		</source>
+      </answer>
+    </faq>   
+  </part>
+
 	<!-- More faqs or parts here -->
 
 
