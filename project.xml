@@ -303,7 +303,16 @@
       <roles>
         <role>Developer</role>
       </roles>
-    </developer>
+   </developer>
+    <developer>
+        <name>Pilho Kim</name>
+        <id>phk</id>
+        <email>phkim@cluecom.co.kr</email>
+        <organization></organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+   </developer>
    
   </developers>
 
@@ -370,10 +379,6 @@
     </contributor>
     <contributor>
       <name>Mark Chu-Carroll</name>
-      <email></email>
-    </contributor>
-    <contributor>
-      <name>Pilho Kim</name>
       <email></email>
     </contributor>
     <contributor>
