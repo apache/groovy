@@ -1236,6 +1236,7 @@ public class Parser
 
         CSTNode expr = new CSTNode( token );
 
+        int textStart = 0;
         int cur = 0;
         int len = text.length();
 
@@ -1258,11 +1259,11 @@ public class Parser
                 }
             }
 
-            if ( exprStart != cur )
+            if ( exprStart != textStart )
             {
                 expr.addChild( new CSTNode( Token.singleQuoteString( token.getStartLine(),
                                                                      token.getStartColumn() + cur + 1,
-                                                                     text.substring( cur,
+                                                                     text.substring( textStart,
                                                                                      exprStart ) ) ) );
             }
 
@@ -1282,13 +1283,14 @@ public class Parser
             expr.addChild( embeddedExpr );
 
             cur = exprEnd + 1;
+            textStart = cur;
         }
 
-        if ( cur < len )
+        if ( textStart < len )
         {
             expr.addChild( new CSTNode( Token.singleQuoteString( token.getStartLine(),
-                                                                 token.getStartColumn() + cur + 1,
-                                                                 text.substring( cur ) ) ) );
+                                                                 token.getStartColumn() + textStart + 1,
+                                                                 text.substring( textStart ) ) ) );
         }
 
         return expr;
