@@ -18,7 +18,6 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.DoubleSizeParametersBug.class);
         suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
-        suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
 
         // TODO
         //suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);
@@ -30,7 +29,11 @@ public class UberTestCase2 extends TestCase {
 
         // TODO
         //suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
-        //todo suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
+        suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
+
+        // TODO
+        //suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
         suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
         suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
         suite.addTestSuite(groovy.bugs.PrimitivePropertyBug.class);
