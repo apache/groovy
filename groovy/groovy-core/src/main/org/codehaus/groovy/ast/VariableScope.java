@@ -54,7 +54,7 @@ import java.util.Set;
 /**
  * Represents a variable scope. This is primarily used to determine variable sharing
  * across method and closure boundaries.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -80,7 +80,7 @@ public class VariableScope  {
     public Set getReferencedVariables() {
         return referencedVariables;
     }
- 
+
     /**
      * @return all the child scopes
      */
@@ -91,7 +91,7 @@ public class VariableScope  {
     /**
      * Creates a composite variable scope combining all the variable references
      * and declarations from all the child scopes not including this scope
-     * 
+     *
      * @return
      */
     public VariableScope createCompositeChildScope() {
@@ -105,7 +105,7 @@ public class VariableScope  {
 
     /**
      * Creates a scope including this scope and all nested scopes combined together
-     * 
+     *
      * @return
      */
     public VariableScope createRecursiveChildScope() {
@@ -117,13 +117,13 @@ public class VariableScope  {
 
     /**
      * Creates a scope including this scope and all parent scopes combined together
-     * 
+     *
      * @return
      */
     public VariableScope createRecursiveParentScope() {
         VariableScope answer = new VariableScope();
         VariableScope node = this;
-        do { 
+        do {
             answer.append(node);
             node = node.parent;
         }
@@ -134,23 +134,23 @@ public class VariableScope  {
     /**
      * Appends all of the references and declarations from the given scope
      * to this one
-     * 
+     *
      * @param scope
      */
     protected void append(VariableScope scope) {
         referencedVariables.addAll(scope.referencedVariables);
         declaredVariables.addAll(scope.declaredVariables);
     }
-    
+
     /**
      * Appends all of the references and declarations from the given scope
      * and all its children to this one
-     * 
+     *
      * @param scope
      */
     protected void appendRecursive(VariableScope scope) {
         append(scope);
-        
+
         // now lets traverse the children
         for (Iterator iter = scope.children.iterator(); iter.hasNext(); ) {
             appendRecursive((VariableScope) iter.next());

@@ -47,6 +47,7 @@ package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
+
 /**
  * Represents a local variable name, the simplest form of expression. e.g. "foo".
  * 
@@ -101,4 +102,6 @@ public class VariableExpression extends Expression {
     public String toString() {
         return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
     }
+    
+    
 }

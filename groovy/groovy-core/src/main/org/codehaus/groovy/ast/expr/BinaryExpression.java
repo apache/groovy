@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
@@ -107,5 +108,37 @@ public class BinaryExpression extends Expression {
         }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
+    
+    
+   /**
+    *  Creates an assignment expression in which the specified expression
+    *  is written into the specified variable name.   
+    */
+    
+    public static BinaryExpression newAssignmentExpression( String variable, Expression rhs ) {
+    	VariableExpression lhs = new VariableExpression( variable );
+    	Token         operator = Token.newPlaceholder( Types.ASSIGN );
+    
+    	return new BinaryExpression( lhs, operator, rhs );
+    }
+
+
+    /**
+     *  Creates variable initialization expression in which the specified expression
+     *  is written into the specified variable name.   
+     */
+     
+     public static BinaryExpression newInitializationExpression( String variable, Type type, Expression rhs ) {
+     	VariableExpression lhs = new VariableExpression( variable );
+     
+     	if( type != null ) {
+     	    lhs.setType( type.getName() );
+     	}
+     
+     	Token operator = Token.newPlaceholder( Types.ASSIGN );
+     
+        return new BinaryExpression( lhs, operator, rhs );
+     }
+
 
 }

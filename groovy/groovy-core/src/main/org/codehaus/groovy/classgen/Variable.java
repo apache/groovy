@@ -47,6 +47,7 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.Type;
 
+
 /**
  * Represents compile time variable metadata while compiling a method.
  * 
