@@ -1369,13 +1369,13 @@ public class MetaClass {
         if (className.startsWith("java.")) {
             packagePrefix = "gjdk.";
         }
-        String name = packagePrefix + className + "$GroovyReflector";
+        String name = packagePrefix + className + "_GroovyReflector";
         if (theClass.isArray()) {
             String componentName = theClass.getComponentType().getName();
             if (componentName.startsWith("java.")) {
                 packagePrefix = "gjdk.";
             }
-            name = packagePrefix + componentName + "$GroovyReflectorArray";
+            name = packagePrefix + componentName + "_GroovyReflectorArray";
         }
         // lets see if its already loaded
         try {
