@@ -153,8 +153,7 @@ public class GroovyCategorySupport {
     
     private static void newScope() {
         List stack = (List) local.get();
-    		Map properties = new WeakHashMap();
-    		properties.entrySet().addAll(getProperties().entrySet());
+    		Map properties = new WeakHashMap(getProperties());
     		stack.add(properties);
     }
     
