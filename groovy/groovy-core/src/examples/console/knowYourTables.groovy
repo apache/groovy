@@ -1,3 +1,8 @@
+/** 
+ * Simple mathematics quiz
+ * @author: Jeremy Rayner
+ * based on algorithms from INPUT/Marshall Cavendish/1984
+ */
 while (true) {
     try {
         n = (int)(Math.random() * 12) + 1

@@ -1,3 +1,8 @@
+/** 
+ * Simple game
+ * @author: Jeremy Rayner
+ * based on algorithms from INPUT/Marshall Cavendish/1984
+ */
 while (true) {
     try {
         x = (int)(Math.random() * 6)
