@@ -68,7 +68,6 @@ public class AllTests extends TestSuiteSupport {
 
 
         // TODO: AST bugs I think...
-        "ClosureComparatorTest.groovy",         // TODO: constructor bug
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "PrimitiveTypeFieldTest.groovy",
 

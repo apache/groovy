@@ -682,7 +682,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement methodCall(AST code) {
-        MethodCallExpression expression = methodCallExpression(code);
+        Expression expression = methodCallExpression(code);
         return new ExpressionStatement(expression);
     }
 
@@ -1274,7 +1274,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
 
-    protected MethodCallExpression methodCallExpression(AST methodCallNode) {
+    protected Expression methodCallExpression(AST methodCallNode) {
         AST node = methodCallNode.getFirstChild();
         if (isType(METHOD_CALL, node)) {
             // sometimes method calls get wrapped in method calls for some wierd reason
@@ -1299,6 +1299,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 objectExpression = VariableExpression.SUPER_EXPRESSION;
             }
         }
+        else if (isType(LITERAL_new, node)) {
+            // TODO for some reason the parser wraps this in a method call if
+            // there is an appended closure
+            return constructorCallExpression(node);
+        }
         else {
             name = identifier(node);
         }
@@ -1314,7 +1319,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected ConstructorCallExpression constructorCallExpression(AST node) {
-        if (isType(CTOR_CALL, node)) {
+        if (isType(CTOR_CALL, node) || isType(LITERAL_new, node)) {
             node = node.getFirstChild();
         }
         AST constructorCallNode = node;
