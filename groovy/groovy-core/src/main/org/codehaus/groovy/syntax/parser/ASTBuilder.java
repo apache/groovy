@@ -50,6 +50,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 
+import groovy.lang.BitwiseNegateEvaluatingException;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -73,6 +74,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NegationExpression;
+import org.codehaus.groovy.ast.expr.BitwiseNegExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -1084,9 +1086,20 @@ public class ASTBuilder extends ASTHelper
             }
 
 
-            case Types.REGEX_PATTERN:
+            case Types.REGEX_PATTERN:     //   same to Types.BITWISE_NEGATION
             {
-                expression = new RegexExpression( expression(reduction.get(1)) );
+		CSTNode    body       = reduction.get(1);
+		Token  token  = body.getRoot();
+		String text   = body.getRootText();
+
+                if ( body.isA(Types.SYNTH_GSTRING) )
+		{
+                    expression = new RegexExpression( expression(reduction.get(1)) );
+                }
+                else
+                {
+                    expression = new BitwiseNegExpression( expression(body) );
+                }
                 break;
             }
 
@@ -1238,6 +1251,10 @@ public class ASTBuilder extends ASTHelper
 
             case Types.NOT:
                 expression = new NotExpression( expression(body) );
+                break;
+
+            case Types.BITWISE_NEGATION:
+                expression = new BitwiseNegExpression( expression(body) );
                 break;
 
             default:

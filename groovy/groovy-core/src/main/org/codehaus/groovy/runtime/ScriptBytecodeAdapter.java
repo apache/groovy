@@ -318,6 +318,14 @@ public class ScriptBytecodeAdapter {
         }
     }
     
+    public static Object bitNegate(Object value) throws Throwable {
+        try {
+            return InvokerHelper.bitNegate(value);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+    
     /**
      * @param a    array of primitives
      * @param type component type of the array

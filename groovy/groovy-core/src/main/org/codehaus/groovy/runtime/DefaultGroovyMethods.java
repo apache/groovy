@@ -3023,6 +3023,17 @@ PropertyValue pv = (PropertyValue) itr.next();
         return NumberMath.and(left, right);
     }
 
+     /**
+     * Bitwise XOR together two Numbers
+     *
+     * @param left  a Number
+     * @param right another Number to bitwse AND
+     * @return the bitwise XOR of both Numbers
+     */
+    public static Number xor(Number left, Number right) {
+        return NumberMath.xor(left, right);
+    }
+
     /**
      * Performs a division modulus operation
      *
