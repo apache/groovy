@@ -74,7 +74,6 @@ public class UberTestCase2 extends TestCase {
 
         // no idea - tugs crazy streaming stuff
 
-        //todo suite.addTestSuite(groovy.xml.dom.DOMTest.class);
         suite.addTestSuite(groovy.xml.DOMTest.class);
         suite.addTestSuite(groovy.xml.MarkupTest.class);
         suite.addTestSuite(groovy.xml.MarkupWithWriterTest.class);
