@@ -3038,70 +3038,73 @@ options {
 // TODO:  Borneo-style ops.
 
 // OPERATORS
-QUESTION                :   '?'             ;
-LPAREN                  :   '('             {++parenLevel;};
-RPAREN                  :   ')'             {--parenLevel;};
-LBRACK                  :   '['             {++parenLevel;};
-RBRACK                  :   ']'             {--parenLevel;};
-LCURLY                  :   '{'             {pushParenLevel();};
-RCURLY                  :   '}'             {popParenLevel(); if(stringCtorState!=0) restartStringCtor(true);};
-COLON                   :   ':'             ;
-COMMA                   :   ','             ;
-DOT                     :   '.'             ;
-ASSIGN                  :   '='             ;
-COMPARE_TO              :   "<=>"           ;
-EQUAL                   :   "=="            ;
-LNOT                    :   '!'             ;
-BNOT                    :   '~'             ;
-NOT_EQUAL               :   "!="            ;
+QUESTION          options {paraphrase="'?'";}           :   '?'             ;
+LPAREN            options {paraphrase="'('";}           :   '('             {++parenLevel;};
+RPAREN            options {paraphrase="')'";}           :   ')'             {--parenLevel;};
+LBRACK            options {paraphrase="'['";}           :   '['             {++parenLevel;};
+RBRACK            options {paraphrase="']'";}           :   ']'             {--parenLevel;};
+LCURLY            options {paraphrase="'{'";}           :   '{'             {pushParenLevel();};
+RCURLY            options {paraphrase="'}'";}           :   '}'             {popParenLevel(); if(stringCtorState!=0) restartStringCtor(true);};
+COLON             options {paraphrase="':'";}           :   ':'             ;
+COMMA             options {paraphrase="','";}           :   ','             ;
+DOT               options {paraphrase="'.'";}           :   '.'             ;
+ASSIGN            options {paraphrase="'='";}           :   '='             ;
+COMPARE_TO        options {paraphrase="'<=>'";}         :   "<=>"           ;
+EQUAL             options {paraphrase="'=='";}          :   "=="            ;
+LNOT              options {paraphrase="'!'";}           :   '!'             ;
+BNOT              options {paraphrase="'~'";}           :   '~'             ;
+NOT_EQUAL         options {paraphrase="'!='";}          :   "!="            ;
 protected  //switched from combined rule
-DIV                     :   '/'             ;
+DIV               options {paraphrase="'/'";}           :   '/'             ;
 protected  //switched from combined rule
-DIV_ASSIGN              :   "/="            ;
-PLUS                    :   '+'             ;
-PLUS_ASSIGN             :   "+="            ;
-INC                     :   "++"            ;
-MINUS                   :   '-'             ;
-MINUS_ASSIGN            :   "-="            ;
-DEC                     :   "--"            ;
-STAR                    :   '*'             ;
-STAR_ASSIGN             :   "*="            ;
-MOD                     :   '%'             ;
-MOD_ASSIGN              :   "%="            ;
-SR                      :   ">>"            ;
-SR_ASSIGN               :   ">>="           ;
-BSR                     :   ">>>"           ;
-BSR_ASSIGN              :   ">>>="          ;
-GE                      :   ">="            ;
-GT                      :   ">"             ;
-SL                      :   "<<"            ;
-SL_ASSIGN               :   "<<="           ;
-LE                      :   "<="            ;
-LT                      :   '<'             ;
-BXOR                    :   '^'             ;
-BXOR_ASSIGN             :   "^="            ;
-BOR                     :   '|'             ;
-BOR_ASSIGN              :   "|="            ;
-LOR                     :   "||"            ;
-BAND                    :   '&'             ;
-BAND_ASSIGN             :   "&="            ;
-LAND                    :   "&&"            ;
-SEMI                    :   ';'             ;
-DOLLAR                  :   '$'             ;
-RANGE_INCLUSIVE         :   ".."            ;
-RANGE_EXCLUSIVE         :   "..<"           ;
-TRIPLE_DOT              :   "..."           ;
-SPREAD_DOT              :   "*."            ;
-OPTIONAL_DOT            :   "?."            ;
-MEMBER_POINTER          :   ".&"            ;
-REGEX_FIND              :   "=~"            ;
-REGEX_MATCH             :   "==~"           ;
-STAR_STAR               :   "**"            ;
-STAR_STAR_ASSIGN        :   "**="           ;
-CLOSURE_OP              :   "->"            ;
+DIV_ASSIGN        options {paraphrase="'/='";}          :   "/="            ;
+PLUS              options {paraphrase="'+'";}           :   '+'             ;
+PLUS_ASSIGN       options {paraphrase="'+='";}          :   "+="            ;
+INC               options {paraphrase="'++'";}          :   "++"            ;
+MINUS             options {paraphrase="'-'";}           :   '-'             ;
+MINUS_ASSIGN      options {paraphrase="'-='";}          :   "-="            ;
+DEC               options {paraphrase="'--'";}          :   "--"            ;
+STAR              options {paraphrase="'*'";}           :   '*'             ;
+STAR_ASSIGN       options {paraphrase="'*='";}          :   "*="            ;
+MOD               options {paraphrase="'%'";}           :   '%'             ;
+MOD_ASSIGN        options {paraphrase="'%='";}          :   "%="            ;
+SR                options {paraphrase="'>>'";}          :   ">>"            ;
+SR_ASSIGN         options {paraphrase="'>>='";}         :   ">>="           ;
+BSR               options {paraphrase="'>>>'";}         :   ">>>"           ;
+BSR_ASSIGN        options {paraphrase="'>>>='";}        :   ">>>="          ;
+GE                options {paraphrase="'>='";}          :   ">="            ;
+GT                options {paraphrase="'>'";}           :   ">"             ;
+SL                options {paraphrase="'<<'";}          :   "<<"            ;
+SL_ASSIGN         options {paraphrase="'<<='";}         :   "<<="           ;
+LE                options {paraphrase="'<='";}          :   "<="            ;
+LT                options {paraphrase="'<'";}           :   '<'             ;
+BXOR              options {paraphrase="'^'";}           :   '^'             ;
+BXOR_ASSIGN       options {paraphrase="'^='";}          :   "^="            ;
+BOR               options {paraphrase="'|'";}           :   '|'             ;
+BOR_ASSIGN        options {paraphrase="'|='";}          :   "|="            ;
+LOR               options {paraphrase="'||'";}          :   "||"            ;
+BAND              options {paraphrase="'&'";}           :   '&'             ;
+BAND_ASSIGN       options {paraphrase="'&='";}          :   "&="            ;
+LAND              options {paraphrase="'&&'";}          :   "&&"            ;
+SEMI              options {paraphrase="';'";}           :   ';'             ;
+DOLLAR            options {paraphrase="'$'";}           :   '$'             ;
+RANGE_INCLUSIVE   options {paraphrase="'..'";}          :   ".."            ;
+RANGE_EXCLUSIVE   options {paraphrase="'..<'";}         :   "..<"           ;
+TRIPLE_DOT        options {paraphrase="'...'";}         :   "..."           ;
+SPREAD_DOT        options {paraphrase="'*.'";}          :   "*."            ;
+OPTIONAL_DOT      options {paraphrase="'?.'";}          :   "?."            ;
+MEMBER_POINTER    options {paraphrase="'.&'";}          :   ".&"            ;
+REGEX_FIND        options {paraphrase="'=~'";}          :   "=~"            ;
+REGEX_MATCH       options {paraphrase="'==~'";}         :   "==~"           ;
+STAR_STAR         options {paraphrase="'**'";}          :   "**"            ;
+STAR_STAR_ASSIGN  options {paraphrase="'**='";}         :   "**="           ;
+CLOSURE_OP        options {paraphrase="'->'";}          :   "->"            ;
 
 // Whitespace -- ignored
 WS
+options {
+    paraphrase="whitespace";
+}
     :
         (
             options { greedy=true; }:
@@ -3113,7 +3116,11 @@ WS
     ;
 
 protected
-ONE_NL! :   // handle newlines, which are significant in Groovy
+ONE_NL!
+options {
+    paraphrase="a newline";
+}
+ :   // handle newlines, which are significant in Groovy
         (   options {generateAmbigWarnings=false;}
         :   "\r\n"  // Evil DOS
         |   '\r'    // Macintosh
@@ -3129,6 +3136,9 @@ ONE_NL! :   // handle newlines, which are significant in Groovy
 // This reduces the amount of parser lookahead required to parse around newlines.
 // It is an invariant that the parser never sees NLS tokens back-to-back.
 NLS
+options {
+    paraphrase="some newlines, whitespace or comments";
+}
     :   ONE_NL
         (   {!whitespaceIncluded}?
             (ONE_NL | WS | SL_COMMENT | ML_COMMENT)+
@@ -3149,6 +3159,9 @@ NLS
 
 // Single-line comments
 SL_COMMENT
+options {
+    paraphrase="a single line comment";
+}
     :   "//"
         (
             options {  greedy = true;  }:
@@ -3163,6 +3176,9 @@ SL_COMMENT
 
 // Script-header comments
 SH_COMMENT
+options {
+    paraphrase="a script header";
+}
     :   {getLine() == 1 && getColumn() == 1}?  "#!"
         (
             options {  greedy = true;  }:
@@ -3176,6 +3192,9 @@ SH_COMMENT
 
 // multiple-line comments
 ML_COMMENT
+options {
+    paraphrase="a comment";
+}
     :   "/*"
         (   /*  '\r' '\n' can be matched in one alternative or by matching
                 '\r' in one iteration and '\n' in another. I am trying to
@@ -3201,6 +3220,9 @@ ML_COMMENT
 
 // string literals
 STRING_LITERAL
+options {
+    paraphrase="a string literal";
+}
         {int tt=0;}
     :   ("'''") =>  //...shut off ambiguity warning
         "'''"!
@@ -3226,6 +3248,9 @@ STRING_LITERAL
 protected
 STRING_CTOR_END[boolean fromStart, boolean tripleQuote]
 returns [int tt=STRING_CTOR_END]
+options {
+    paraphrase="a string literal end";
+}
         { boolean dollarOK = false; }
     :
         (
@@ -3258,11 +3283,17 @@ returns [int tt=STRING_CTOR_END]
 
 protected
 STRING_CH
-    :  { if (LA(1) == EOF_CHAR) throw new MismatchedCharException(LA(1), EOF_CHAR, true, this);} 
+options {
+    paraphrase="a string character";
+}
+     :  { if (LA(1) == EOF_CHAR) throw new MismatchedCharException(LA(1), EOF_CHAR, true, this);} 
        ~('"'|'\''|'\\'|'$'|'\n'|'\r')
     ;
 
 REGEXP_LITERAL
+options {
+    paraphrase="a regular expression literal";
+}
         {int tt=0;}
     :   {allowRegexpLiteral()}?
         '/'!
@@ -3291,6 +3322,9 @@ REGEXP_LITERAL
 protected
 REGEXP_CTOR_END[boolean fromStart]
 returns [int tt=STRING_CTOR_END]
+options {
+    paraphrase="a regular expression literal end";
+}
     :
         (
             options {  greedy = true;  }:
@@ -3317,6 +3351,9 @@ returns [int tt=STRING_CTOR_END]
 
 protected
 REGEXP_SYMBOL
+options {
+    paraphrase="a regular expression character";
+}
     :
         (
             ~('*'|'/'|'$'|'\\'|'\n'|'\r')
@@ -3336,6 +3373,9 @@ REGEXP_SYMBOL
 // the FOLLOW ambig warnings.
 protected
 ESC
+options {
+    paraphrase="an escape sequence";
+}
     :   '\\'!
         (   'n'     {$setText("\n");}
         |   'r'     {$setText("\r");}
@@ -3378,6 +3418,9 @@ ESC
 
 protected 
 STRING_NL[boolean allowNewline]
+options {
+    paraphrase="a newline inside a string";
+}
     :  {if (!allowNewline) throw new MismatchedCharException('\n', '\n', true, this); } 
        ONE_NL { $setText('\n'); }
     ;
@@ -3386,6 +3429,9 @@ STRING_NL[boolean allowNewline]
 // hexadecimal digit (again, note it's protected!)
 protected
 HEX_DIGIT
+options {
+    paraphrase="a hexadecimal digit";
+}
     :   ('0'..'9'|'A'..'F'|'a'..'f')
     ;
 
@@ -3394,6 +3440,9 @@ HEX_DIGIT
 // ones that ANTLR uses internally (0 to 2)
 protected
 VOCAB
+options {
+    paraphrase="a character";
+}
     :   '\3'..'\377'
     ;
 
@@ -3402,6 +3451,9 @@ VOCAB
 // that after we match the rule, we look in the literals table to see
 // if it's a literal or really an identifer
 IDENT
+options {
+    paraphrase="an identifier";
+}
     //options {testLiterals=true;}  // Actually, this is done manually in the actions below.
     :   LETTER(LETTER|DIGIT)*
         {
@@ -3443,18 +3495,27 @@ IDENT
 
 protected
 LETTER
+options {
+    paraphrase="a letter";
+}
     :   'a'..'z'|'A'..'Z'|'_'
     // TODO:  Recognize all the Java identifier starts here (except '$').
     ;
 
 protected
 DIGIT
+options {
+    paraphrase="a digit";
+}
     :   '0'..'9'
     // TODO:  Recognize all the Java identifier parts here (except '$').
     ;
 
 // a numeric literal
 NUM_INT
+options {
+    paraphrase="a numeric literal";
+}
     {boolean isDecimal=false; Token t=null;}
     :
 /*OBS*
@@ -3527,23 +3588,35 @@ NUM_INT
 // JDK 1.5 token for annotations and their declarations
 // also a groovy operator for actual field access e.g. 'telson.@age' 
 AT
+options {
+    paraphrase="'@'";
+}
     :   '@'
     ;
 
 // a couple protected methods to assist in matching floating point numbers
 protected
 EXPONENT
+options {
+    paraphrase="an exponent";
+}
     :   ('e'|'E') ('+'|'-')? ('0'..'9')+
     ;
 
 
 protected
 FLOAT_SUFFIX
+options {
+    paraphrase="a float or double suffix";
+}
     :   'f'|'F'|'d'|'D'
     ;
 
 protected
 BIG_SUFFIX
+options {
+    paraphrase="a big decimal suffix";
+}
     :   'g'|'G'
     ;
 
