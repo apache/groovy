@@ -73,6 +73,12 @@ PARSER CHANGES REQUIRED
 
 * support for [] as a type. e.g. main(String[] args)
 
+* support the use of an expression on parameter lists
+	foo(a = 12) {}
+	
+	...
+	foo();
+
 * grep for "@todo parser" in the src/test for **/*.groovy to find all the
   current bugs in the parser
   

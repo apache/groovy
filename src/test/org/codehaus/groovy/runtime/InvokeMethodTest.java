@@ -181,6 +181,13 @@ public class InvokeMethodTest extends GroovyTestCase {
         }
     }
 
+    public void testClassMethod() throws Throwable {
+        Class c = String.class;
+        Object value = invoke(c, "getName", null);
+        assertEquals("Class.getName()", c.getName(), value);
+    }
+   
+
     public void testInvokeMethodWithWrongNumberOfParameters() throws Throwable {
         try {
             Object[] args = { "a", "b" };
