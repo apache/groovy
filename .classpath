@@ -1,60 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <classpath>
-  <classpathentry excluding="" kind="src" path="src/main">
-  </classpathentry>
-  <classpathentry output="target/test-classes" kind="src" path="src/test">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar">
-  </classpathentry>
-  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.4.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/xerces/jars/xerces-2.4.0.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/classworlds/jars/classworlds-1.0.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.4.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-2.0-beta-1.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/mockobjects/jars/mockobjects-core-0.09.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/openejb/jars/openejb-loader-0.9.2.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/axion/jars/axion-1.0-M3-dev.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0-dev2.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/regexp/jars/regexp-1.2.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/servletapi/jars/servletapi-2.3.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-0.9.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.7.7.jar">
-  </classpathentry>
-  <classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.3.jar">
-  </classpathentry>
-  <classpathentry kind="output" path="bin">
-  </classpathentry>
+	<classpathentry kind="src" path="src/main"/>
+	<classpathentry output="target/test-classes" kind="src" path="src/test"/>
+	<classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.4.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/xerces/jars/xerces-2.4.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/classworlds/jars/classworlds-1.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.4.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/mx4j/jars/mx4j-2.0-beta-1.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/mockobjects/jars/mockobjects-core-0.09.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/openejb/jars/openejb-loader-0.9.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/axion/jars/axion-1.0-M3-dev.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0-dev2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/regexp/jars/regexp-1.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/servletapi/jars/servletapi-2.3.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-0.9.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.7.7.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.3.jar"/>
+	<classpathentry kind="output" path="bin"/>
 </classpath>
