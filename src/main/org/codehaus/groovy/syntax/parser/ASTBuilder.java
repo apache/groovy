@@ -75,7 +75,14 @@ public class ASTBuilder
 
     protected String packageDeclaration(CSTNode packageRoot)
     {
-        return qualifiedName( packageRoot.getChild( 0 ) );
+        CSTNode nameRoot = packageRoot.getChild( 0 );
+
+        if ( nameRoot.getToken() == null )
+        {
+            return null;
+        }
+             
+        return qualifiedName( nameRoot );
     }
 
     protected void importStatements(CSTNode importsRoot)
@@ -317,7 +324,20 @@ public class ASTBuilder
             interfaceNames = resolvedQualifiedNames( classRoot.getChild( 3 ).getChildren() );
         }
 
-        ClassNode classNode = new ClassNode( packageName + "." + className,
+        String fqClassName = null;
+
+        if ( packageName == null
+             ||
+             packageName.trim().equals( "" ) )
+        {
+            fqClassName = className;
+        }
+        else
+        {
+            fqClassName = packageName.trim() + "." + className;
+        }
+
+        ClassNode classNode = new ClassNode( fqClassName,
                                              modifiers,
                                              superClassName,
                                              interfaceNames );
