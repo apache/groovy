@@ -46,77 +46,67 @@
 
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.GroovyException;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.codehaus.groovy.GroovyException;
-
-
-
 
 /**
- *  Thrown when compilation fails from source errors.  
+ * Thrown when compilation fails from source errors.
  *
- *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
- *
- *  @version $Id$
+ * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ * @version $Id$
  */
 
-public class CompilationFailedException extends GroovyException
-{
-    
-  //---------------------------------------------------------------------------
-  // CONSTRUCTION AND SUCH
+public class CompilationFailedException extends GroovyException {
 
-    protected int            phase;   // The phase in which the failures occurred
+    protected int phase;   // The phase in which the failures occurred
     protected ProcessingUnit unit;    // The *Unit object this exception wraps
 
-    
-   /**
-    *  Initializes the exception with the phase and ProcessingUnit.
-    */
-    
-    public CompilationFailedException( int phase, ProcessingUnit unit ) 
-    {
-        super( Phases.getDescription(phase) + " failed" );
-        this.phase = phase;
-        this.unit  = unit;
-    }
-    
-    
-   /**
-    *  Formats the error data as a String.
-    */
-    
-    public String toString()
-    {
-        StringWriter  data = new StringWriter();
-        PrintWriter writer = new PrintWriter(data);
-        Janitor    janitor = new Janitor();
 
-        try
-        {
-            unit.write( writer, janitor );
+    public CompilationFailedException(int phase, ProcessingUnit unit, Throwable cause) {
+        super(Phases.getDescription(phase) + " failed", cause);
+        this.phase = phase;
+        this.unit = unit;
+    }
+
+
+    public CompilationFailedException(int phase, ProcessingUnit unit) {
+        super(Phases.getDescription(phase) + " failed");
+        this.phase = phase;
+        this.unit = unit;
+    }
+
+
+    /**
+     * Formats the error data as a String.
+     */
+
+    public String toString() {
+        StringWriter data = new StringWriter();
+        PrintWriter writer = new PrintWriter(data);
+        Janitor janitor = new Janitor();
+
+        try {
+            unit.write(writer, janitor);
         }
-        finally
-        {
+        finally {
             janitor.cleanup();
         }
-        
+
         return data.toString();
     }
- 
-    
-    
-   /**
-    *  Returns the ProcessingUnit in which the error occurred.
-    */
-    
-    public ProcessingUnit getUnit()
-    {
+
+
+    /**
+     * Returns the ProcessingUnit in which the error occurred.
+     */
+
+    public ProcessingUnit getUnit() {
         return this.unit;
     }
-    
+
 }
 
 

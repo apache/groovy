@@ -462,13 +462,32 @@ public abstract class ProcessingUnit
     */
 
     protected void fail() throws CompilationFailedException
-    {      
-        throw new CompilationFailedException( phase, this );
+    {
+       // lets find the first error exception
+       Throwable firstException = null;
+       for (Iterator iter = errors.iterator(); iter.hasNext();) {
+           Message message = (Message) iter.next();
+           if (message instanceof ExceptionMessage) {
+               ExceptionMessage exceptionMessage = (ExceptionMessage) message;
+               firstException = exceptionMessage.getCause();
+               if (firstException != null) {
+                   break;
+               }
+           }
+       }
+
+       if (firstException != null) {
+           throw new CompilationFailedException( phase, this, firstException );
+       }
+       else {
+           throw new CompilationFailedException( phase, this );
+       }
     }
 
 
 
-  //---------------------------------------------------------------------------
+
+    //---------------------------------------------------------------------------
   // OUTPUT
 
 

@@ -46,7 +46,7 @@
 package org.codehaus.groovy;
 
 public class GroovyException extends Exception implements GroovyExceptionInterface {
-    private boolean fatal = true;  
+    private boolean fatal = true;
 
     public GroovyException() {
     }
@@ -55,25 +55,25 @@ public class GroovyException extends Exception implements GroovyExceptionInterfa
         super(message);
     }
 
-    public GroovyException( boolean fatal )
-    {
-       super();
-       this.fatal = fatal;
+    public GroovyException(String message, Throwable cause) {
+        super(message, cause);
     }
 
-    public GroovyException( String message, boolean fatal )
-    { 
-       super( message );
-       this.fatal = fatal;
+    public GroovyException(boolean fatal) {
+        super();
+        this.fatal = fatal;
     }
 
-    public boolean isFatal()
-    {
-       return fatal;
+    public GroovyException(String message, boolean fatal) {
+        super(message);
+        this.fatal = fatal;
     }
 
-    public void setFatal( boolean fatal )
-    {
-       this.fatal = fatal;
+    public boolean isFatal() {
+        return fatal;
+    }
+
+    public void setFatal(boolean fatal) {
+        this.fatal = fatal;
     }
 }
