@@ -55,7 +55,7 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
             binding = new Binding();
         }
 
-//      get parent composite
+        // get parent composite
         Composite parentComposite = null;
         Object obj = properties.remove("parent");
         if (obj != null) {
@@ -63,10 +63,10 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
             if (parentComposite == null && parent instanceof Composite) {
                 parentComposite = (Composite) parent;
             }
-            guiBuilder.setCurrent(parentComposite);
         } else {
             parentComposite = (Composite) SwtUtils.getParentWidget(guiBuilder.getCurrent());
         }
+        guiBuilder.setCurrent(parentComposite);
 
         // dispose children
         Boolean rebuild = (Boolean) properties.remove("rebuild");

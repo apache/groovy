@@ -43,7 +43,7 @@ public class ApplicationGuiBuilder extends JFaceBuilder {
      */
     protected void registerWidgets() {
         super.registerWidgets();
-        registerFactory("rebuild", new RebuildFactory());
+        registerFactory("rebuild", new RebuildFactory(this));
         registerFactory("runScript", new RunScriptFactory(this));
     }
     

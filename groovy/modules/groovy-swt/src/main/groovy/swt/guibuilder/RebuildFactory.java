@@ -22,6 +22,15 @@ import org.eclipse.swt.widgets.Composite;
  */
 public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
 
+    private ApplicationGuiBuilder guiBuilder;
+
+    /**
+     * @param builder
+     */
+    public RebuildFactory(ApplicationGuiBuilder guiBuilder) {
+        this.guiBuilder = guiBuilder;
+    }
+
     /*
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
@@ -39,6 +48,7 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
         if (parentComposite == null) {
             throw new MissingPropertyException("parent", RebuildFactory.class);
         }
+        guiBuilder.setCurrent(parentComposite);
 
         // get closure
         Closure closure = (Closure) properties.remove("closure");
