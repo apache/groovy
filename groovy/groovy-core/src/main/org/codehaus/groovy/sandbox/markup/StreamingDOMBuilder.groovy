@@ -173,7 +173,7 @@ import org.w3c.dom.Node
 				if (it instanceof Node) {
 					document = it.getOwnerDocument()
 					
-					boundClosure.trigger = ['document' : documant, 'element' : it]
+					boundClosure.trigger = ['document' : document, 'element' : it]
 					
 					return document
 					
