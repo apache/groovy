@@ -1,4 +1,4 @@
-// $ANTLR 2.7.2: "groovy.g" -> "GroovyRecognizer.java"$
+// $ANTLR 2.8.0 (20050214): "groovy.g" -> "GroovyRecognizer.java"$
 
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
@@ -454,7 +454,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		if ( synPredMatched5 ) {
 			packageDefinition();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_1.member(LA(1))) && (_tokenSet_2.member(LA(2))) && (_tokenSet_3.member(LA(3)))) {
 			{
@@ -526,7 +528,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case NUM_BIG_DECIMAL:
 			{
 				statement(EOF);
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case EOF:
@@ -621,7 +625,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case NUM_BIG_DECIMAL:
 				{
 					statement(sepToken);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case EOF:
@@ -644,7 +650,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		} while (true);
 		}
 		match(Token.EOF_TYPE);
-		compilationUnit_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			compilationUnit_AST = (AST)currentAST.root;
+		}
 		returnAST = compilationUnit_AST;
 	}
 	
@@ -676,15 +684,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST annotationsOpt_AST = null;
 		
 		{
-		_loop78:
+		_loop77:
 		do {
 			if ((LA(1)==AT)) {
 				annotation();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				nls();
 			}
 			else {
-				break _loop78;
+				break _loop77;
 			}
 			
 		} while (true);
@@ -697,7 +707,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				annotationsOpt_AST.getFirstChild() : annotationsOpt_AST;
 			currentAST.advanceChildToEnd();
 		}
-		annotationsOpt_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			annotationsOpt_AST = (AST)currentAST.root;
+		}
 		returnAST = annotationsOpt_AST;
 	}
 	
@@ -710,17 +722,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST p_AST = null;
 		
 		annotationsOpt();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		p = LT(1);
-		p_AST = astFactory.create(p);
-		astFactory.makeASTRoot(currentAST, p_AST);
+		if (inputState.guessing==0) {
+			p_AST = astFactory.create(p);
+			astFactory.makeASTRoot(currentAST, p_AST);
+		}
 		match(LITERAL_package);
 		if ( inputState.guessing==0 ) {
 			p_AST.setType(PACKAGE_DEF);
 		}
 		identifier();
-		astFactory.addASTChild(currentAST, returnAST);
-		packageDefinition_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			packageDefinition_AST = (AST)currentAST.root;
+		}
 		returnAST = packageDefinition_AST;
 	}
 	
@@ -745,21 +765,27 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_if:
 		{
 			AST tmp4_AST = null;
-			tmp4_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp4_AST);
+			if (inputState.guessing==0) {
+				tmp4_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp4_AST);
+			}
 			match(LITERAL_if);
 			match(LPAREN);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			nlsWarn();
 			compatibleBodyStatement();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			boolean synPredMatched262 = false;
+			boolean synPredMatched261 = false;
 			if (((_tokenSet_6.member(LA(1))) && (_tokenSet_7.member(LA(2))) && (_tokenSet_8.member(LA(3))))) {
-				int _m262 = mark();
-				synPredMatched262 = true;
+				int _m261 = mark();
+				synPredMatched261 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -785,12 +811,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched262 = false;
+					synPredMatched261 = false;
 				}
-				rewind(_m262);
+				rewind(_m261);
 				inputState.guessing--;
 			}
-			if ( synPredMatched262 ) {
+			if ( synPredMatched261 ) {
 				{
 				switch ( LA(1)) {
 				case SEMI:
@@ -812,7 +838,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				match(LITERAL_else);
 				nlsWarn();
 				compatibleBodyStatement();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else if ((_tokenSet_9.member(LA(1))) && (_tokenSet_10.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 			}
@@ -821,105 +849,149 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			
 			}
-			statement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_for:
 		{
 			forStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_while:
 		{
 			AST tmp8_AST = null;
-			tmp8_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp8_AST);
+			if (inputState.guessing==0) {
+				tmp8_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp8_AST);
+			}
 			match(LITERAL_while);
 			match(LPAREN);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			nlsWarn();
 			compatibleBodyStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_with:
 		{
 			AST tmp11_AST = null;
-			tmp11_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp11_AST);
+			if (inputState.guessing==0) {
+				tmp11_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp11_AST);
+			}
 			match(LITERAL_with);
 			match(LPAREN);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			nlsWarn();
 			compoundStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case STAR:
 		{
 			sp = LT(1);
-			sp_AST = astFactory.create(sp);
-			astFactory.makeASTRoot(currentAST, sp_AST);
+			if (inputState.guessing==0) {
+				sp_AST = astFactory.create(sp);
+				astFactory.makeASTRoot(currentAST, sp_AST);
+			}
 			match(STAR);
 			nls();
 			if ( inputState.guessing==0 ) {
 				sp_AST.setType(SPREAD_ARG);
 			}
 			expressionStatement(EOF);
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_import:
 		{
 			importStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_switch:
 		{
 			AST tmp14_AST = null;
-			tmp14_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp14_AST);
+			if (inputState.guessing==0) {
+				tmp14_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp14_AST);
+			}
 			match(LITERAL_switch);
 			match(LPAREN);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			nlsWarn();
 			match(LCURLY);
 			nls();
 			{
-			_loop265:
+			_loop264:
 			do {
 				if ((LA(1)==LITERAL_default||LA(1)==LITERAL_case)) {
 					casesGroup();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop265;
+					break _loop264;
 				}
 				
 			} while (true);
 			}
 			match(RCURLY);
-			statement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_try:
 		{
 			tryBlock();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_return:
@@ -929,15 +1001,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_assert:
 		{
 			branchStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			statement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				statement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
-			boolean synPredMatched253 = false;
+			boolean synPredMatched252 = false;
 			if (((_tokenSet_11.member(LA(1))) && (_tokenSet_12.member(LA(2))) && (_tokenSet_13.member(LA(3))))) {
-				int _m253 = mark();
-				synPredMatched253 = true;
+				int _m252 = mark();
+				synPredMatched252 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -945,21 +1021,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched253 = false;
+					synPredMatched252 = false;
 				}
-				rewind(_m253);
+				rewind(_m252);
 				inputState.guessing--;
 			}
-			if ( synPredMatched253 ) {
+			if ( synPredMatched252 ) {
 				declaration();
-				astFactory.addASTChild(currentAST, returnAST);
-				statement_AST = (AST)currentAST.root;
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
+				if ( inputState.guessing==0 ) {
+					statement_AST = (AST)currentAST.root;
+				}
 			}
 			else {
-				boolean synPredMatched255 = false;
+				boolean synPredMatched254 = false;
 				if (((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_14.member(LA(3))))) {
-					int _m255 = mark();
-					synPredMatched255 = true;
+					int _m254 = mark();
+					synPredMatched254 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -968,28 +1048,32 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched255 = false;
+						synPredMatched254 = false;
 					}
-					rewind(_m255);
+					rewind(_m254);
 					inputState.guessing--;
 				}
-				if ( synPredMatched255 ) {
+				if ( synPredMatched254 ) {
 					AST tmp19_AST = null;
-					tmp19_AST = astFactory.create(LT(1));
-					astFactory.addASTChild(currentAST, tmp19_AST);
+					if (inputState.guessing==0) {
+						tmp19_AST = astFactory.create(LT(1));
+						astFactory.addASTChild(currentAST, tmp19_AST);
+					}
 					match(IDENT);
 					c = LT(1);
-					c_AST = astFactory.create(c);
-					astFactory.makeASTRoot(currentAST, c_AST);
+					if (inputState.guessing==0) {
+						c_AST = astFactory.create(c);
+						astFactory.makeASTRoot(currentAST, c_AST);
+					}
 					match(COLON);
 					if ( inputState.guessing==0 ) {
 						c_AST.setType(LABELED_STAT);
 					}
 					{
-					boolean synPredMatched258 = false;
+					boolean synPredMatched257 = false;
 					if (((LA(1)==LCURLY) && (_tokenSet_15.member(LA(2))) && (_tokenSet_16.member(LA(3))))) {
-						int _m258 = mark();
-						synPredMatched258 = true;
+						int _m257 = mark();
+						synPredMatched257 = true;
 						inputState.guessing++;
 						try {
 							{
@@ -997,51 +1081,75 @@ public GroovyRecognizer(ParserSharedInputState state) {
 							}
 						}
 						catch (RecognitionException pe) {
-							synPredMatched258 = false;
+							synPredMatched257 = false;
 						}
-						rewind(_m258);
+						rewind(_m257);
 						inputState.guessing--;
 					}
-					if ( synPredMatched258 ) {
+					if ( synPredMatched257 ) {
 						openOrClosedBlock();
-						astFactory.addASTChild(currentAST, returnAST);
+						if (inputState.guessing==0) {
+							astFactory.addASTChild(currentAST, returnAST);
+						}
 					}
 					else if ((_tokenSet_14.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 						statement(COLON);
-						astFactory.addASTChild(currentAST, returnAST);
+						if (inputState.guessing==0) {
+							astFactory.addASTChild(currentAST, returnAST);
+						}
 					}
 					else {
 						throw new NoViableAltException(LT(1), getFilename());
 					}
 					
 					}
-					statement_AST = (AST)currentAST.root;
+					if ( inputState.guessing==0 ) {
+						statement_AST = (AST)currentAST.root;
+					}
 				}
 				else if ((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 					expressionStatement(prevToken);
-					astFactory.addASTChild(currentAST, returnAST);
-					statement_AST = (AST)currentAST.root;
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
+					if ( inputState.guessing==0 ) {
+						statement_AST = (AST)currentAST.root;
+					}
 				}
 				else if ((_tokenSet_20.member(LA(1))) && (_tokenSet_21.member(LA(2))) && (_tokenSet_22.member(LA(3)))) {
 					modifiersOpt();
-					m_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						m_AST = (AST)returnAST;
+					}
 					typeDefinitionInternal(m_AST);
-					astFactory.addASTChild(currentAST, returnAST);
-					statement_AST = (AST)currentAST.root;
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
+					if ( inputState.guessing==0 ) {
+						statement_AST = (AST)currentAST.root;
+					}
 				}
 				else if ((LA(1)==LITERAL_synchronized) && (LA(2)==LPAREN)) {
 					AST tmp20_AST = null;
-					tmp20_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp20_AST);
+					if (inputState.guessing==0) {
+						tmp20_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp20_AST);
+					}
 					match(LITERAL_synchronized);
 					match(LPAREN);
 					expression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					match(RPAREN);
 					nlsWarn();
 					compoundStatement();
-					astFactory.addASTChild(currentAST, returnAST);
-					statement_AST = (AST)currentAST.root;
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
+					if ( inputState.guessing==0 ) {
+						statement_AST = (AST)currentAST.root;
+					}
 				}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -1064,13 +1172,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			match(SEMI);
 			{
-			_loop482:
+			_loop481:
 			do {
 				if ((LA(1)==NLS) && (_tokenSet_23.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 					match(NLS);
 				}
 				else {
-					break _loop482;
+					break _loop481;
 				}
 				
 			} while (true);
@@ -1087,18 +1195,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				sepToken = NLS;
 			}
 			{
-			_loop486:
+			_loop485:
 			do {
 				if ((LA(1)==SEMI) && (_tokenSet_23.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 					match(SEMI);
 					{
-					_loop485:
+					_loop484:
 					do {
 						if ((LA(1)==NLS) && (_tokenSet_23.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 							match(NLS);
 						}
 						else {
-							break _loop485;
+							break _loop484;
 						}
 						
 					} while (true);
@@ -1108,7 +1216,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop486;
+					break _loop485;
 				}
 				
 			} while (true);
@@ -1132,8 +1240,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		nls();
 		blockBody(EOF);
-		astFactory.addASTChild(currentAST, returnAST);
-		snippetUnit_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			snippetUnit_AST = (AST)currentAST.root;
+		}
 		returnAST = snippetUnit_AST;
 	}
 	
@@ -1215,7 +1327,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			statement(prevToken);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case EOF:
@@ -1232,7 +1346,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop245:
+		_loop244:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -1305,7 +1419,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case NUM_BIG_DECIMAL:
 				{
 					statement(sepToken);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case EOF:
@@ -1323,12 +1439,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop245;
+				break _loop244;
 			}
 			
 		} while (true);
 		}
-		blockBody_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			blockBody_AST = (AST)currentAST.root;
+		}
 		returnAST = blockBody_AST;
 	}
 	
@@ -1339,30 +1457,38 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST identifier_AST = null;
 		
 		AST tmp28_AST = null;
-		tmp28_AST = astFactory.create(LT(1));
-		astFactory.addASTChild(currentAST, tmp28_AST);
+		if (inputState.guessing==0) {
+			tmp28_AST = astFactory.create(LT(1));
+			astFactory.addASTChild(currentAST, tmp28_AST);
+		}
 		match(IDENT);
 		{
-		_loop61:
+		_loop60:
 		do {
 			if ((LA(1)==DOT)) {
 				AST tmp29_AST = null;
-				tmp29_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp29_AST);
+				if (inputState.guessing==0) {
+					tmp29_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp29_AST);
+				}
 				match(DOT);
 				nls();
 				AST tmp30_AST = null;
-				tmp30_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp30_AST);
+				if (inputState.guessing==0) {
+					tmp30_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp30_AST);
+				}
 				match(IDENT);
 			}
 			else {
-				break _loop61;
+				break _loop60;
 			}
 			
 		} while (true);
 		}
-		identifier_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			identifier_AST = (AST)currentAST.root;
+		}
 		returnAST = identifier_AST;
 	}
 	
@@ -1376,8 +1502,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean isStatic = false;
 		
 		i = LT(1);
-		i_AST = astFactory.create(i);
-		astFactory.makeASTRoot(currentAST, i_AST);
+		if (inputState.guessing==0) {
+			i_AST = astFactory.create(i);
+			astFactory.makeASTRoot(currentAST, i_AST);
+		}
 		match(LITERAL_import);
 		if ( inputState.guessing==0 ) {
 			i_AST.setType(IMPORT);
@@ -1403,8 +1531,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		identifierStar();
-		astFactory.addASTChild(currentAST, returnAST);
-		importStatement_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			importStatement_AST = (AST)currentAST.root;
+		}
 		returnAST = importStatement_AST;
 	}
 	
@@ -1415,25 +1547,31 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST identifierStar_AST = null;
 		
 		AST tmp32_AST = null;
-		tmp32_AST = astFactory.create(LT(1));
-		astFactory.addASTChild(currentAST, tmp32_AST);
+		if (inputState.guessing==0) {
+			tmp32_AST = astFactory.create(LT(1));
+			astFactory.addASTChild(currentAST, tmp32_AST);
+		}
 		match(IDENT);
 		{
-		_loop64:
+		_loop63:
 		do {
 			if ((LA(1)==DOT) && (LA(2)==IDENT||LA(2)==NLS) && (_tokenSet_24.member(LA(3)))) {
 				AST tmp33_AST = null;
-				tmp33_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp33_AST);
+				if (inputState.guessing==0) {
+					tmp33_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp33_AST);
+				}
 				match(DOT);
 				nls();
 				AST tmp34_AST = null;
-				tmp34_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp34_AST);
+				if (inputState.guessing==0) {
+					tmp34_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp34_AST);
+				}
 				match(IDENT);
 			}
 			else {
-				break _loop64;
+				break _loop63;
 			}
 			
 		} while (true);
@@ -1443,26 +1581,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case DOT:
 		{
 			AST tmp35_AST = null;
-			tmp35_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp35_AST);
+			if (inputState.guessing==0) {
+				tmp35_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp35_AST);
+			}
 			match(DOT);
 			nls();
 			AST tmp36_AST = null;
-			tmp36_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp36_AST);
+			if (inputState.guessing==0) {
+				tmp36_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp36_AST);
+			}
 			match(STAR);
 			break;
 		}
 		case LITERAL_as:
 		{
 			AST tmp37_AST = null;
-			tmp37_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp37_AST);
+			if (inputState.guessing==0) {
+				tmp37_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp37_AST);
+			}
 			match(LITERAL_as);
 			nls();
 			AST tmp38_AST = null;
-			tmp38_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp38_AST);
+			if (inputState.guessing==0) {
+				tmp38_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp38_AST);
+			}
 			match(IDENT);
 			break;
 		}
@@ -1482,7 +1628,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		identifierStar_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			identifierStar_AST = (AST)currentAST.root;
+		}
 		returnAST = identifierStar_AST;
 	}
 	
@@ -1502,8 +1650,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_class:
 		{
 			classDefinition(mods);
-			cd_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				cd_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				typeDefinitionInternal_AST = (AST)currentAST.root;
 				typeDefinitionInternal_AST = cd_AST;
@@ -1512,14 +1662,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					typeDefinitionInternal_AST.getFirstChild() : typeDefinitionInternal_AST;
 				currentAST.advanceChildToEnd();
 			}
-			typeDefinitionInternal_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeDefinitionInternal_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_interface:
 		{
 			interfaceDefinition(mods);
-			id_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				id_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				typeDefinitionInternal_AST = (AST)currentAST.root;
 				typeDefinitionInternal_AST = id_AST;
@@ -1528,14 +1682,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					typeDefinitionInternal_AST.getFirstChild() : typeDefinitionInternal_AST;
 				currentAST.advanceChildToEnd();
 			}
-			typeDefinitionInternal_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeDefinitionInternal_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_enum:
 		{
 			enumDefinition(mods);
-			ed_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				ed_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				typeDefinitionInternal_AST = (AST)currentAST.root;
 				typeDefinitionInternal_AST = ed_AST;
@@ -1544,14 +1702,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					typeDefinitionInternal_AST.getFirstChild() : typeDefinitionInternal_AST;
 				currentAST.advanceChildToEnd();
 			}
-			typeDefinitionInternal_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeDefinitionInternal_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case AT:
 		{
 			annotationDefinition(mods);
-			ad_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				ad_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				typeDefinitionInternal_AST = (AST)currentAST.root;
 				typeDefinitionInternal_AST = ad_AST;
@@ -1560,7 +1722,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					typeDefinitionInternal_AST.getFirstChild() : typeDefinitionInternal_AST;
 				currentAST.advanceChildToEnd();
 			}
-			typeDefinitionInternal_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeDefinitionInternal_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -1586,7 +1750,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		match(LITERAL_class);
 		AST tmp40_AST = null;
-		tmp40_AST = astFactory.create(LT(1));
+		if (inputState.guessing==0) {
+			tmp40_AST = astFactory.create(LT(1));
+		}
 		match(IDENT);
 		nls();
 		if ( inputState.guessing==0 ) {
@@ -1597,7 +1763,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LT:
 		{
 			typeParameters();
-			tp_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				tp_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case LITERAL_extends:
@@ -1613,11 +1781,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		superClassClause();
-		sc_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			sc_AST = (AST)returnAST;
+		}
 		implementsClause();
-		ic_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			ic_AST = (AST)returnAST;
+		}
 		classBlock();
-		cb_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			cb_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			classDefinition_AST = (AST)currentAST.root;
 			classDefinition_AST = (AST)astFactory.make( (new ASTArray(7)).add(astFactory.create(CLASS_DEF,"CLASS_DEF")).add(modifiers).add(tmp40_AST).add(tp_AST).add(sc_AST).add(ic_AST).add(cb_AST));
@@ -1645,7 +1819,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		match(LITERAL_interface);
 		AST tmp42_AST = null;
-		tmp42_AST = astFactory.create(LT(1));
+		if (inputState.guessing==0) {
+			tmp42_AST = astFactory.create(LT(1));
+		}
 		match(IDENT);
 		nls();
 		{
@@ -1653,7 +1829,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LT:
 		{
 			typeParameters();
-			tp_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				tp_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case LITERAL_extends:
@@ -1668,9 +1846,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		interfaceExtends();
-		ie_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			ie_AST = (AST)returnAST;
+		}
 		interfaceBlock();
-		ib_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			ib_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			interfaceDefinition_AST = (AST)currentAST.root;
 			interfaceDefinition_AST = (AST)astFactory.make( (new ASTArray(6)).add(astFactory.create(INTERFACE_DEF,"INTERFACE_DEF")).add(modifiers).add(tmp42_AST).add(tp_AST).add(ie_AST).add(ib_AST));
@@ -1694,12 +1876,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		match(LITERAL_enum);
 		AST tmp44_AST = null;
-		tmp44_AST = astFactory.create(LT(1));
+		if (inputState.guessing==0) {
+			tmp44_AST = astFactory.create(LT(1));
+		}
 		match(IDENT);
 		implementsClause();
-		ic_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			ic_AST = (AST)returnAST;
+		}
 		enumBlock();
-		eb_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			eb_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			enumDefinition_AST = (AST)currentAST.root;
 			enumDefinition_AST = (AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(ENUM_DEF,"ENUM_DEF")).add(modifiers).add(tmp44_AST).add(ic_AST).add(eb_AST));
@@ -1721,14 +1909,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST ab_AST = null;
 		
 		AST tmp45_AST = null;
-		tmp45_AST = astFactory.create(LT(1));
+		if (inputState.guessing==0) {
+			tmp45_AST = astFactory.create(LT(1));
+		}
 		match(AT);
 		match(LITERAL_interface);
 		AST tmp47_AST = null;
-		tmp47_AST = astFactory.create(LT(1));
+		if (inputState.guessing==0) {
+			tmp47_AST = astFactory.create(LT(1));
+		}
 		match(IDENT);
 		annotationBlock();
-		ab_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			ab_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			annotationDefinition_AST = (AST)currentAST.root;
 			annotationDefinition_AST = (AST)astFactory.make( (new ASTArray(4)).add(astFactory.create(ANNOTATION_DEF,"ANNOTATION_DEF")).add(modifiers).add(tmp47_AST).add(ab_AST));
@@ -1777,11 +1971,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_volatile:
 		{
 			modifiers();
-			m_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				m_AST = (AST)returnAST;
+			}
 			{
 			if ((_tokenSet_25.member(LA(1))) && (_tokenSet_26.member(LA(2)))) {
 				typeSpec(false);
-				t_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					t_AST = (AST)returnAST;
+				}
 			}
 			else if ((LA(1)==IDENT||LA(1)==STRING_LITERAL) && (_tokenSet_27.member(LA(2)))) {
 			}
@@ -1791,7 +1989,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			
 			}
 			variableDefinitions(m_AST, t_AST);
-			v_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				v_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				declaration_AST = (AST)currentAST.root;
 				declaration_AST = v_AST;
@@ -1815,9 +2015,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			typeSpec(false);
-			t2_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				t2_AST = (AST)returnAST;
+			}
 			variableDefinitions(null,t2_AST);
-			v2_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				v2_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				declaration_AST = (AST)currentAST.root;
 				declaration_AST = v2_AST;
@@ -1844,7 +2048,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST modifiers_AST = null;
 		
 		modifiersInternal();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			modifiers_AST = (AST)currentAST.root;
 			modifiers_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(MODIFIERS,"MODIFIERS")).add(modifiers_AST));
@@ -1853,7 +2059,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				modifiers_AST.getFirstChild() : modifiers_AST;
 			currentAST.advanceChildToEnd();
 		}
-		modifiers_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			modifiers_AST = (AST)currentAST.root;
+		}
 		returnAST = modifiers_AST;
 	}
 	
@@ -1869,8 +2077,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case IDENT:
 		{
 			classTypeSpec(addImagNode);
-			astFactory.addASTChild(currentAST, returnAST);
-			typeSpec_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				typeSpec_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_void:
@@ -1885,8 +2097,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			builtInTypeSpec(addImagNode);
-			astFactory.addASTChild(currentAST, returnAST);
-			typeSpec_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				typeSpec_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -1923,24 +2139,30 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		if ((LA(1)==IDENT) && (_tokenSet_28.member(LA(2)))) {
 			variableDeclarator(getASTFactory().dupTree(mods),
                            getASTFactory().dupTree(t));
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop187:
+			_loop186:
 			do {
 				if ((LA(1)==COMMA)) {
 					match(COMMA);
 					nls();
 					variableDeclarator(getASTFactory().dupTree(mods),
                                getASTFactory().dupTree(t));
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop187;
+					break _loop186;
 				}
 				
 			} while (true);
 			}
-			variableDefinitions_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				variableDefinitions_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((LA(1)==IDENT||LA(1)==STRING_LITERAL) && (LA(2)==LPAREN)) {
 			{
@@ -1948,16 +2170,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case IDENT:
 			{
 				id = LT(1);
-				id_AST = astFactory.create(id);
-				astFactory.addASTChild(currentAST, id_AST);
+				if (inputState.guessing==0) {
+					id_AST = astFactory.create(id);
+					astFactory.addASTChild(currentAST, id_AST);
+				}
 				match(IDENT);
 				break;
 			}
 			case STRING_LITERAL:
 			{
 				qid = LT(1);
-				qid_AST = astFactory.create(qid);
-				astFactory.addASTChild(currentAST, qid_AST);
+				if (inputState.guessing==0) {
+					qid_AST = astFactory.create(qid);
+					astFactory.addASTChild(currentAST, qid_AST);
+				}
 				match(STRING_LITERAL);
 				if ( inputState.guessing==0 ) {
 					qid_AST.setType(IDENT);
@@ -1972,14 +2198,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			match(LPAREN);
 			parameterDeclarationList();
-			param_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				param_AST = (AST)returnAST;
+			}
 			match(RPAREN);
 			{
 			switch ( LA(1)) {
 			case LITERAL_throws:
 			{
 				throwsClause();
-				tc_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					tc_AST = (AST)returnAST;
+				}
 				break;
 			}
 			case EOF:
@@ -2005,7 +2235,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case LCURLY:
 			{
 				openBlock();
-				mb_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					mb_AST = (AST)returnAST;
+				}
 				break;
 			}
 			case EOF:
@@ -2035,7 +2267,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					variableDefinitions_AST.getFirstChild() : variableDefinitions_AST;
 				currentAST.advanceChildToEnd();
 			}
-			variableDefinitions_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				variableDefinitions_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -2077,11 +2311,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_volatile:
 		{
 			modifiers();
-			m_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				m_AST = (AST)returnAST;
+			}
 			{
 			if ((_tokenSet_25.member(LA(1))) && (_tokenSet_29.member(LA(2)))) {
 				typeSpec(false);
-				t_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					t_AST = (AST)returnAST;
+				}
 			}
 			else if ((LA(1)==IDENT) && (_tokenSet_30.member(LA(2)))) {
 			}
@@ -2091,7 +2329,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			
 			}
 			singleVariable(m_AST, t_AST);
-			v_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				v_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				singleDeclarationNoInit_AST = (AST)currentAST.root;
 				singleDeclarationNoInit_AST = v_AST;
@@ -2115,9 +2355,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			typeSpec(false);
-			t2_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				t2_AST = (AST)returnAST;
+			}
 			singleVariable(null,t2_AST);
-			v2_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				v2_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				singleDeclarationNoInit_AST = (AST)currentAST.root;
 				singleDeclarationNoInit_AST = v2_AST;
@@ -2147,7 +2391,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST id_AST = null;
 		
 		variableName();
-		id_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			id_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			singleVariable_AST = (AST)currentAST.root;
 			singleVariable_AST = (AST)astFactory.make( (new ASTArray(4)).add(astFactory.create(VARIABLE_DEF,"VARIABLE_DEF")).add(mods).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(t))).add(id_AST));
@@ -2167,7 +2413,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST sd_AST = null;
 		
 		singleDeclarationNoInit();
-		sd_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			sd_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			singleDeclaration_AST = (AST)currentAST.root;
 			singleDeclaration_AST = sd_AST;
@@ -2181,7 +2429,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case ASSIGN:
 		{
 			varInitializer();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RBRACK:
@@ -2197,7 +2447,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		singleDeclaration_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			singleDeclaration_AST = (AST)currentAST.root;
+		}
 		returnAST = singleDeclaration_AST;
 	}
 	
@@ -2209,13 +2461,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST varInitializer_AST = null;
 		
 		AST tmp51_AST = null;
-		tmp51_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp51_AST);
+		if (inputState.guessing==0) {
+			tmp51_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp51_AST);
+		}
 		match(ASSIGN);
 		nls();
 		initializer();
-		astFactory.addASTChild(currentAST, returnAST);
-		varInitializer_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			varInitializer_AST = (AST)currentAST.root;
+		}
 		returnAST = varInitializer_AST;
 	}
 	
@@ -2270,10 +2528,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case AT:
 		{
 			AST tmp53_AST = null;
-			tmp53_AST = astFactory.create(LT(1));
+			if (inputState.guessing==0) {
+				tmp53_AST = astFactory.create(LT(1));
+			}
 			match(AT);
 			AST tmp54_AST = null;
-			tmp54_AST = astFactory.create(LT(1));
+			if (inputState.guessing==0) {
+				tmp54_AST = astFactory.create(LT(1));
+			}
 			match(IDENT);
 			break;
 		}
@@ -2321,11 +2583,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			do {
 				if ((LA(1)==LBRACK)) {
 					AST tmp55_AST = null;
-					tmp55_AST = astFactory.create(LT(1));
+					if (inputState.guessing==0) {
+						tmp55_AST = astFactory.create(LT(1));
+					}
 					match(LBRACK);
 					balancedTokens();
 					AST tmp56_AST = null;
-					tmp56_AST = astFactory.create(LT(1));
+					if (inputState.guessing==0) {
+						tmp56_AST = astFactory.create(LT(1));
+					}
 					match(RBRACK);
 				}
 				else {
@@ -2335,7 +2601,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			} while (true);
 			}
 			AST tmp57_AST = null;
-			tmp57_AST = astFactory.create(LT(1));
+			if (inputState.guessing==0) {
+				tmp57_AST = astFactory.create(LT(1));
+			}
 			match(IDENT);
 			break;
 		}
@@ -2357,109 +2625,157 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_private:
 		{
 			AST tmp58_AST = null;
-			tmp58_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp58_AST);
+			if (inputState.guessing==0) {
+				tmp58_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp58_AST);
+			}
 			match(LITERAL_private);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_public:
 		{
 			AST tmp59_AST = null;
-			tmp59_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp59_AST);
+			if (inputState.guessing==0) {
+				tmp59_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp59_AST);
+			}
 			match(LITERAL_public);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_protected:
 		{
 			AST tmp60_AST = null;
-			tmp60_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp60_AST);
+			if (inputState.guessing==0) {
+				tmp60_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp60_AST);
+			}
 			match(LITERAL_protected);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_static:
 		{
 			AST tmp61_AST = null;
-			tmp61_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp61_AST);
+			if (inputState.guessing==0) {
+				tmp61_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp61_AST);
+			}
 			match(LITERAL_static);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_transient:
 		{
 			AST tmp62_AST = null;
-			tmp62_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp62_AST);
+			if (inputState.guessing==0) {
+				tmp62_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp62_AST);
+			}
 			match(LITERAL_transient);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case FINAL:
 		{
 			AST tmp63_AST = null;
-			tmp63_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp63_AST);
+			if (inputState.guessing==0) {
+				tmp63_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp63_AST);
+			}
 			match(FINAL);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case ABSTRACT:
 		{
 			AST tmp64_AST = null;
-			tmp64_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp64_AST);
+			if (inputState.guessing==0) {
+				tmp64_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp64_AST);
+			}
 			match(ABSTRACT);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_native:
 		{
 			AST tmp65_AST = null;
-			tmp65_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp65_AST);
+			if (inputState.guessing==0) {
+				tmp65_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp65_AST);
+			}
 			match(LITERAL_native);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_threadsafe:
 		{
 			AST tmp66_AST = null;
-			tmp66_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp66_AST);
+			if (inputState.guessing==0) {
+				tmp66_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp66_AST);
+			}
 			match(LITERAL_threadsafe);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_synchronized:
 		{
 			AST tmp67_AST = null;
-			tmp67_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp67_AST);
+			if (inputState.guessing==0) {
+				tmp67_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp67_AST);
+			}
 			match(LITERAL_synchronized);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_volatile:
 		{
 			AST tmp68_AST = null;
-			tmp68_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp68_AST);
+			if (inputState.guessing==0) {
+				tmp68_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp68_AST);
+			}
 			match(LITERAL_volatile);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case STRICTFP:
 		{
 			AST tmp69_AST = null;
-			tmp69_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp69_AST);
+			if (inputState.guessing==0) {
+				tmp69_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp69_AST);
+			}
 			match(STRICTFP);
-			modifier_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				modifier_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -2482,10 +2798,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		if (!(isUpperCase(LT(1))))
 		  throw new SemanticException("isUpperCase(LT(1))");
 		AST tmp70_AST = null;
-		tmp70_AST = astFactory.create(LT(1));
-		astFactory.addASTChild(currentAST, tmp70_AST);
+		if (inputState.guessing==0) {
+			tmp70_AST = astFactory.create(LT(1));
+			astFactory.addASTChild(currentAST, tmp70_AST);
+		}
 		match(IDENT);
-		upperCaseIdent_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			upperCaseIdent_AST = (AST)currentAST.root;
+		}
 		returnAST = upperCaseIdent_AST;
 	}
 	
@@ -2499,91 +2819,131 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_void:
 		{
 			AST tmp71_AST = null;
-			tmp71_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp71_AST);
+			if (inputState.guessing==0) {
+				tmp71_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp71_AST);
+			}
 			match(LITERAL_void);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_boolean:
 		{
 			AST tmp72_AST = null;
-			tmp72_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp72_AST);
+			if (inputState.guessing==0) {
+				tmp72_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp72_AST);
+			}
 			match(LITERAL_boolean);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_byte:
 		{
 			AST tmp73_AST = null;
-			tmp73_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp73_AST);
+			if (inputState.guessing==0) {
+				tmp73_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp73_AST);
+			}
 			match(LITERAL_byte);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_char:
 		{
 			AST tmp74_AST = null;
-			tmp74_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp74_AST);
+			if (inputState.guessing==0) {
+				tmp74_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp74_AST);
+			}
 			match(LITERAL_char);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_short:
 		{
 			AST tmp75_AST = null;
-			tmp75_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp75_AST);
+			if (inputState.guessing==0) {
+				tmp75_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp75_AST);
+			}
 			match(LITERAL_short);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_int:
 		{
 			AST tmp76_AST = null;
-			tmp76_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp76_AST);
+			if (inputState.guessing==0) {
+				tmp76_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp76_AST);
+			}
 			match(LITERAL_int);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_float:
 		{
 			AST tmp77_AST = null;
-			tmp77_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp77_AST);
+			if (inputState.guessing==0) {
+				tmp77_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp77_AST);
+			}
 			match(LITERAL_float);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_long:
 		{
 			AST tmp78_AST = null;
-			tmp78_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp78_AST);
+			if (inputState.guessing==0) {
+				tmp78_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp78_AST);
+			}
 			match(LITERAL_long);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_double:
 		{
 			AST tmp79_AST = null;
-			tmp79_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp79_AST);
+			if (inputState.guessing==0) {
+				tmp79_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp79_AST);
+			}
 			match(LITERAL_double);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_any:
 		{
 			AST tmp80_AST = null;
-			tmp80_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp80_AST);
+			if (inputState.guessing==0) {
+				tmp80_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp80_AST);
+			}
 			match(LITERAL_any);
-			builtInType_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				builtInType_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -2601,7 +2961,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST balancedTokens_AST = null;
 		
 		{
-		_loop479:
+		_loop478:
 		do {
 			if ((_tokenSet_31.member(LA(1)))) {
 				balancedBrackets();
@@ -2612,7 +2972,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop479;
+				break _loop478;
 			}
 			
 		} while (true);
@@ -2651,7 +3011,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 		if ((_tokenSet_33.member(LA(1))) && (_tokenSet_34.member(LA(2))) && (_tokenSet_35.member(LA(3)))) {
 			modifiersInternal();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_36.member(LA(1))) && (_tokenSet_37.member(LA(2))) && (_tokenSet_38.member(LA(3)))) {
 		}
@@ -2668,7 +3030,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				modifiersOpt_AST.getFirstChild() : modifiersOpt_AST;
 			currentAST.advanceChildToEnd();
 		}
-		modifiersOpt_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			modifiersOpt_AST = (AST)currentAST.root;
+		}
 		returnAST = modifiersOpt_AST;
 	}
 	
@@ -2700,7 +3064,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case AT:
 		{
 			AST tmp86_AST = null;
-			tmp86_AST = astFactory.create(LT(1));
+			if (inputState.guessing==0) {
+				tmp86_AST = astFactory.create(LT(1));
+			}
 			match(AT);
 			match(LITERAL_interface);
 			break;
@@ -2726,15 +3092,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lb_AST = null;
 		
 		classOrInterfaceType(false);
-		t_AST = (AST)returnAST;
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			t_AST = (AST)returnAST;
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		_loop32:
 		do {
 			if ((LA(1)==LBRACK) && (LA(2)==RBRACK) && (_tokenSet_39.member(LA(3)))) {
 				lb = LT(1);
-				lb_AST = astFactory.create(lb);
-				astFactory.makeASTRoot(currentAST, lb_AST);
+				if (inputState.guessing==0) {
+					lb_AST = astFactory.create(lb);
+					astFactory.makeASTRoot(currentAST, lb_AST);
+				}
 				match(LBRACK);
 				if ( inputState.guessing==0 ) {
 					lb_AST.setType(ARRAY_DECLARATOR);
@@ -2759,7 +3129,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				classTypeSpec_AST.getFirstChild() : classTypeSpec_AST;
 			currentAST.advanceChildToEnd();
 		}
-		classTypeSpec_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			classTypeSpec_AST = (AST)currentAST.root;
+		}
 		returnAST = classTypeSpec_AST;
 	}
 	
@@ -2771,67 +3143,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST builtInTypeSpec_AST = null;
 		AST t_AST = null;
-		AST ata_AST = null;
+		Token  lb = null;
+		AST lb_AST = null;
 		
 		builtInType();
-		t_AST = (AST)returnAST;
-		astFactory.addASTChild(currentAST, returnAST);
-		{
-		switch ( LA(1)) {
-		case LBRACK:
-		{
-			arrayOrTypeArgs(t_AST);
-			ata_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			t_AST = (AST)returnAST;
 			astFactory.addASTChild(currentAST, returnAST);
-			break;
 		}
-		case EOF:
-		case IDENT:
-		case RBRACK:
-		case QUESTION:
-		case COMMA:
-		case RPAREN:
-		case ASSIGN:
-		case BAND:
-		case RCURLY:
-		case SEMI:
-		case NLS:
-		case LITERAL_default:
-		case STRING_LITERAL:
-		case TRIPLE_DOT:
-		case CLOSURE_OP:
-		case LOR:
-		case BOR:
-		case COLON:
-		case LITERAL_else:
-		case LITERAL_case:
-		case PLUS_ASSIGN:
-		case MINUS_ASSIGN:
-		case STAR_ASSIGN:
-		case DIV_ASSIGN:
-		case MOD_ASSIGN:
-		case SR_ASSIGN:
-		case BSR_ASSIGN:
-		case SL_ASSIGN:
-		case BAND_ASSIGN:
-		case BXOR_ASSIGN:
-		case BOR_ASSIGN:
-		case STAR_STAR_ASSIGN:
-		case LAND:
-		case BXOR:
-		case REGEX_FIND:
-		case REGEX_MATCH:
-		case NOT_EQUAL:
-		case EQUAL:
-		case COMPARE_TO:
 		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
+		_loop55:
+		do {
+			if ((LA(1)==LBRACK)) {
+				lb = LT(1);
+				if (inputState.guessing==0) {
+					lb_AST = astFactory.create(lb);
+					astFactory.makeASTRoot(currentAST, lb_AST);
+				}
+				match(LBRACK);
+				if ( inputState.guessing==0 ) {
+					lb_AST.setType(ARRAY_DECLARATOR);
+				}
+				match(RBRACK);
+			}
+			else {
+				break _loop55;
+			}
+			
+		} while (true);
 		}
 		if ( inputState.guessing==0 ) {
 			builtInTypeSpec_AST = (AST)currentAST.root;
@@ -2845,7 +3184,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				builtInTypeSpec_AST.getFirstChild() : builtInTypeSpec_AST;
 			currentAST.advanceChildToEnd();
 		}
-		builtInTypeSpec_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			builtInTypeSpec_AST = (AST)currentAST.root;
+		}
 		returnAST = builtInTypeSpec_AST;
 	}
 	
@@ -2857,16 +3198,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST classOrInterfaceType_AST = null;
 		
-		AST tmp89_AST = null;
-		tmp89_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp89_AST);
+		AST tmp90_AST = null;
+		if (inputState.guessing==0) {
+			tmp90_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp90_AST);
+		}
 		match(IDENT);
 		{
 		switch ( LA(1)) {
 		case LT:
 		{
 			typeArguments();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case EOF:
@@ -2942,20 +3287,26 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		_loop37:
 		do {
 			if ((LA(1)==DOT) && (LA(2)==IDENT) && (_tokenSet_40.member(LA(3)))) {
-				AST tmp90_AST = null;
-				tmp90_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp90_AST);
-				match(DOT);
 				AST tmp91_AST = null;
-				tmp91_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp91_AST);
+				if (inputState.guessing==0) {
+					tmp91_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp91_AST);
+				}
+				match(DOT);
+				AST tmp92_AST = null;
+				if (inputState.guessing==0) {
+					tmp92_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp92_AST);
+				}
 				match(IDENT);
 				{
 				switch ( LA(1)) {
 				case LT:
 				{
 					typeArguments();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case EOF:
@@ -3046,7 +3397,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				classOrInterfaceType_AST.getFirstChild() : classOrInterfaceType_AST;
 			currentAST.advanceChildToEnd();
 		}
-		classOrInterfaceType_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			classOrInterfaceType_AST = (AST)currentAST.root;
+		}
 		returnAST = classOrInterfaceType_AST;
 	}
 	
@@ -3066,7 +3419,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		nls();
 		typeArgument();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		_loop47:
 		do {
@@ -3074,7 +3429,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				match(COMMA);
 				nls();
 				typeArgument();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
 				break _loop47;
@@ -3086,7 +3443,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 		if (((LA(1) >= GT && LA(1) <= BSR)) && (_tokenSet_39.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 			typeArgumentsOrParametersEnd();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_39.member(LA(1))) && (_tokenSet_5.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 		}
@@ -3105,7 +3464,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeArguments_AST.getFirstChild() : typeArguments_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeArguments_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeArguments_AST = (AST)currentAST.root;
+		}
 		returnAST = typeArguments_AST;
 	}
 	
@@ -3119,8 +3480,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case IDENT:
 		{
 			classTypeSpec(true);
-			astFactory.addASTChild(currentAST, returnAST);
-			typeArgumentSpec_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				typeArgumentSpec_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_void:
@@ -3135,8 +3500,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			builtInTypeArraySpec(true);
-			astFactory.addASTChild(currentAST, returnAST);
-			typeArgumentSpec_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				typeArgumentSpec_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -3158,11 +3527,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST ata_AST = null;
 		
 		builtInType();
-		t_AST = (AST)returnAST;
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			t_AST = (AST)returnAST;
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		arrayOrTypeArgs(t_AST);
-		ata_AST = (AST)returnAST;
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			ata_AST = (AST)returnAST;
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			builtInTypeArraySpec_AST = (AST)currentAST.root;
 			
@@ -3176,7 +3549,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				builtInTypeArraySpec_AST.getFirstChild() : builtInTypeArraySpec_AST;
 			currentAST.advanceChildToEnd();
 		}
-		builtInTypeArraySpec_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			builtInTypeArraySpec_AST = (AST)currentAST.root;
+		}
 		returnAST = builtInTypeArraySpec_AST;
 	}
 	
@@ -3201,13 +3576,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			typeArgumentSpec();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case QUESTION:
 		{
 			wildcardType();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -3224,7 +3603,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeArgument_AST.getFirstChild() : typeArgument_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeArgument_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeArgument_AST = (AST)currentAST.root;
+		}
 		returnAST = typeArgument_AST;
 	}
 	
@@ -3237,8 +3618,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST q_AST = null;
 		
 		q = LT(1);
-		q_AST = astFactory.create(q);
-		astFactory.makeASTRoot(currentAST, q_AST);
+		if (inputState.guessing==0) {
+			q_AST = astFactory.create(q);
+			astFactory.makeASTRoot(currentAST, q_AST);
+		}
 		match(QUESTION);
 		if ( inputState.guessing==0 ) {
 			q_AST.setType(WILDCARD_TYPE);
@@ -3277,7 +3660,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		if ( synPredMatched44 ) {
 			typeArgumentBounds();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_39.member(LA(1))) && (_tokenSet_5.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 		}
@@ -3286,7 +3671,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		
 		}
-		wildcardType_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			wildcardType_AST = (AST)currentAST.root;
+		}
 		returnAST = wildcardType_AST;
 	}
 	
@@ -3320,7 +3707,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		nls();
 		classOrInterfaceType(false);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		nls();
 		if ( inputState.guessing==0 ) {
 			typeArgumentBounds_AST = (AST)currentAST.root;
@@ -3339,7 +3728,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeArgumentBounds_AST.getFirstChild() : typeArgumentBounds_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeArgumentBounds_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeArgumentBounds_AST = (AST)currentAST.root;
+		}
 		returnAST = typeArgumentBounds_AST;
 	}
 	
@@ -3357,7 +3748,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				ltCounter-=1;
 			}
 			nls();
-			typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case SR:
@@ -3367,7 +3760,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				ltCounter-=2;
 			}
 			nls();
-			typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case BSR:
@@ -3377,7 +3772,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				ltCounter-=3;
 			}
 			nls();
-			typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				typeArgumentsOrParametersEnd_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -3417,29 +3814,35 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			currentAST.advanceChildToEnd();
 		}
 		{
-		int _cnt359=0;
-		_loop359:
+		int _cnt358=0;
+		_loop358:
 		do {
 			if ((LA(1)==LBRACK) && (_tokenSet_42.member(LA(2))) && (_tokenSet_43.member(LA(3)))) {
 				lb = LT(1);
-				lb_AST = astFactory.create(lb);
-				astFactory.makeASTRoot(currentAST, lb_AST);
+				if (inputState.guessing==0) {
+					lb_AST = astFactory.create(lb);
+					astFactory.makeASTRoot(currentAST, lb_AST);
+				}
 				match(LBRACK);
 				if ( inputState.guessing==0 ) {
 					lb_AST.setType(INDEX_OP);
 				}
 				zz=argList();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				match(RBRACK);
 			}
 			else {
-				if ( _cnt359>=1 ) { break _loop359; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt358>=1 ) { break _loop358; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt359++;
+			_cnt358++;
 		} while (true);
 		}
-		arrayOrTypeArgs_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			arrayOrTypeArgs_AST = (AST)currentAST.root;
+		}
 		returnAST = arrayOrTypeArgs_AST;
 	}
 	
@@ -3453,8 +3856,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case IDENT:
 		{
 			classOrInterfaceType(false);
-			astFactory.addASTChild(currentAST, returnAST);
-			type_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				type_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_void:
@@ -3469,8 +3876,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			builtInType();
-			astFactory.addASTChild(currentAST, returnAST);
-			type_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				type_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -3489,8 +3900,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		int seenDef = 0;
 		
 		{
-		int _cnt68=0;
-		_loop68:
+		int _cnt67=0;
+		_loop67:
 		do {
 			if (((LA(1)==LITERAL_def))&&(seenDef++ == 0)) {
 				match(LITERAL_def);
@@ -3498,22 +3909,28 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			else if ((_tokenSet_44.member(LA(1)))) {
 				modifier();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				nls();
 			}
 			else if (((LA(1)==AT) && (LA(2)==IDENT) && (_tokenSet_45.member(LA(3))))&&(LA(1)==AT && !LT(2).getText().equals("interface"))) {
 				annotation();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				nls();
 			}
 			else {
-				if ( _cnt68>=1 ) { break _loop68; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt67>=1 ) { break _loop67; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt68++;
+			_cnt67++;
 		} while (true);
 		}
-		modifiersInternal_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			modifiersInternal_AST = (AST)currentAST.root;
+		}
 		returnAST = modifiersInternal_AST;
 	}
 	
@@ -3527,7 +3944,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		match(AT);
 		identifier();
-		i_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			i_AST = (AST)returnAST;
+		}
 		{
 		switch ( LA(1)) {
 		case LPAREN:
@@ -3563,7 +3982,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case NUM_BIG_DECIMAL:
 			{
 				annotationArguments();
-				args_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					args_AST = (AST)returnAST;
+				}
 				break;
 			}
 			case RPAREN:
@@ -3646,13 +4067,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		if ((_tokenSet_46.member(LA(1))) && (_tokenSet_47.member(LA(2)))) {
 			annotationMemberValueInitializer();
-			astFactory.addASTChild(currentAST, returnAST);
-			annotationArguments_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				annotationArguments_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((LA(1)==IDENT) && (LA(2)==ASSIGN)) {
 			anntotationMemberValuePairs();
-			astFactory.addASTChild(currentAST, returnAST);
-			annotationArguments_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				annotationArguments_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -3695,15 +4124,23 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			conditionalExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			annotationMemberValueInitializer_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				annotationMemberValueInitializer_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case AT:
 		{
 			annotation();
-			astFactory.addASTChild(currentAST, returnAST);
-			annotationMemberValueInitializer_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				annotationMemberValueInitializer_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -3721,23 +4158,29 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST anntotationMemberValuePairs_AST = null;
 		
 		annotationMemberValuePair();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop82:
+		_loop81:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				annotationMemberValuePair();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop82;
+				break _loop81;
 			}
 			
 		} while (true);
 		}
-		anntotationMemberValuePairs_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			anntotationMemberValuePairs_AST = (AST)currentAST.root;
+		}
 		returnAST = anntotationMemberValuePairs_AST;
 	}
 	
@@ -3751,12 +4194,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST v_AST = null;
 		
 		i = LT(1);
-		i_AST = astFactory.create(i);
+		if (inputState.guessing==0) {
+			i_AST = astFactory.create(i);
+		}
 		match(IDENT);
 		match(ASSIGN);
 		nls();
 		annotationMemberValueInitializer();
-		v_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			v_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			annotationMemberValuePair_AST = (AST)currentAST.root;
 			annotationMemberValuePair_AST = (AST)astFactory.make( (new ASTArray(3)).add(astFactory.create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR")).add(i_AST).add(v_AST));
@@ -3775,22 +4222,30 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST conditionalExpression_AST = null;
 		
 		logicalOrExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		switch ( LA(1)) {
 		case QUESTION:
 		{
-			AST tmp106_AST = null;
-			tmp106_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp106_AST);
+			AST tmp107_AST = null;
+			if (inputState.guessing==0) {
+				tmp107_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp107_AST);
+			}
 			match(QUESTION);
 			nls();
 			assignmentExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(COLON);
 			nls();
 			conditionalExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case EOF:
@@ -3827,7 +4282,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		conditionalExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			conditionalExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = conditionalExpression_AST;
 	}
 	
@@ -3865,16 +4322,24 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			conditionalExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			annotationMemberArrayValueInitializer_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				annotationMemberArrayValueInitializer_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case AT:
 		{
 			annotation();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			nls();
-			annotationMemberArrayValueInitializer_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				annotationMemberArrayValueInitializer_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -3899,7 +4364,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			match(LITERAL_extends);
 			nls();
 			classOrInterfaceType(false);
-			c_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				c_AST = (AST)returnAST;
+			}
 			nls();
 			break;
 		}
@@ -3941,18 +4408,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		nls();
 		typeParameter();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop96:
+		_loop95:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				typeParameter();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop96;
+				break _loop95;
 			}
 			
 		} while (true);
@@ -3965,7 +4436,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case BSR:
 		{
 			typeArgumentsOrParametersEnd();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case IDENT:
@@ -4001,7 +4474,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeParameters_AST.getFirstChild() : typeParameters_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeParameters_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeParameters_AST = (AST)currentAST.root;
+		}
 		returnAST = typeParameters_AST;
 	}
 	
@@ -4018,22 +4493,28 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_implements:
 		{
 			i = LT(1);
-			i_AST = astFactory.create(i);
+			if (inputState.guessing==0) {
+				i_AST = astFactory.create(i);
+			}
 			match(LITERAL_implements);
 			nls();
 			classOrInterfaceType(false);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop162:
+			_loop161:
 			do {
 				if ((LA(1)==COMMA)) {
 					match(COMMA);
 					nls();
 					classOrInterfaceType(false);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop162;
+					break _loop161;
 				}
 				
 			} while (true);
@@ -4059,7 +4540,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				implementsClause_AST.getFirstChild() : implementsClause_AST;
 			currentAST.advanceChildToEnd();
 		}
-		implementsClause_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			implementsClause_AST = (AST)currentAST.root;
+		}
 		returnAST = implementsClause_AST;
 	}
 	
@@ -4103,7 +4586,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			classField();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RCURLY:
@@ -4119,7 +4604,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop108:
+		_loop107:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -4156,7 +4641,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LCURLY:
 				{
 					classField();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -4173,7 +4660,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop108;
+				break _loop107;
 			}
 			
 		} while (true);
@@ -4187,7 +4674,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				classBlock_AST.getFirstChild() : classBlock_AST;
 			currentAST.advanceChildToEnd();
 		}
-		classBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			classBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = classBlock_AST;
 	}
 	
@@ -4204,22 +4693,28 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_extends:
 		{
 			e = LT(1);
-			e_AST = astFactory.create(e);
+			if (inputState.guessing==0) {
+				e_AST = astFactory.create(e);
+			}
 			match(LITERAL_extends);
 			nls();
 			classOrInterfaceType(false);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop158:
+			_loop157:
 			do {
 				if ((LA(1)==COMMA)) {
 					match(COMMA);
 					nls();
 					classOrInterfaceType(false);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop158;
+					break _loop157;
 				}
 				
 			} while (true);
@@ -4245,7 +4740,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				interfaceExtends_AST.getFirstChild() : interfaceExtends_AST;
 			currentAST.advanceChildToEnd();
 		}
-		interfaceExtends_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			interfaceExtends_AST = (AST)currentAST.root;
+		}
 		returnAST = interfaceExtends_AST;
 	}
 	
@@ -4288,7 +4785,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_volatile:
 		{
 			interfaceField();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RCURLY:
@@ -4304,7 +4803,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop113:
+		_loop112:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -4340,7 +4839,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LITERAL_volatile:
 				{
 					interfaceField();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -4357,7 +4858,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop113;
+				break _loop112;
 			}
 			
 		} while (true);
@@ -4371,7 +4872,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				interfaceBlock_AST.getFirstChild() : interfaceBlock_AST;
 			currentAST.advanceChildToEnd();
 		}
-		interfaceBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			interfaceBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = interfaceBlock_AST;
 	}
 	
@@ -4383,10 +4886,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		match(LCURLY);
 		{
-		boolean synPredMatched122 = false;
+		boolean synPredMatched121 = false;
 		if (((LA(1)==AT||LA(1)==IDENT) && (_tokenSet_48.member(LA(2))) && (_tokenSet_49.member(LA(3))))) {
-			int _m122 = mark();
-			synPredMatched122 = true;
+			int _m121 = mark();
+			synPredMatched121 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -4394,14 +4897,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched122 = false;
+				synPredMatched121 = false;
 			}
-			rewind(_m122);
+			rewind(_m121);
 			inputState.guessing--;
 		}
-		if ( synPredMatched122 ) {
+		if ( synPredMatched121 ) {
 			enumConstants();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_50.member(LA(1))) && (_tokenSet_51.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 			{
@@ -4437,7 +4942,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case LCURLY:
 			{
 				classField();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case RCURLY:
@@ -4459,7 +4966,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		{
-		_loop126:
+		_loop125:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -4496,7 +5003,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LCURLY:
 				{
 					classField();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -4513,7 +5022,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop126;
+				break _loop125;
 			}
 			
 		} while (true);
@@ -4527,7 +5036,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				enumBlock_AST.getFirstChild() : enumBlock_AST;
 			currentAST.advanceChildToEnd();
 		}
-		enumBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			enumBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = enumBlock_AST;
 	}
 	
@@ -4570,7 +5081,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_volatile:
 		{
 			annotationField();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RCURLY:
@@ -4586,7 +5099,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop118:
+		_loop117:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -4622,7 +5135,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LITERAL_volatile:
 				{
 					annotationField();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -4639,7 +5154,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop118;
+				break _loop117;
 			}
 			
 		} while (true);
@@ -4653,7 +5168,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				annotationBlock_AST.getFirstChild() : annotationBlock_AST;
 			currentAST.advanceChildToEnd();
 		}
-		annotationBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			annotationBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = annotationBlock_AST;
 	}
 	
@@ -4667,14 +5184,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		{
 		id = LT(1);
-		id_AST = astFactory.create(id);
-		astFactory.addASTChild(currentAST, id_AST);
+		if (inputState.guessing==0) {
+			id_AST = astFactory.create(id);
+			astFactory.addASTChild(currentAST, id_AST);
+		}
 		match(IDENT);
 		}
 		{
 		if ((LA(1)==LITERAL_extends) && (LA(2)==IDENT||LA(2)==NLS) && (_tokenSet_52.member(LA(3)))) {
 			typeParameterBounds();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_53.member(LA(1))) && (_tokenSet_54.member(LA(2))) && (_tokenSet_55.member(LA(3)))) {
 		}
@@ -4691,7 +5212,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeParameter_AST.getFirstChild() : typeParameter_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeParameter_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeParameter_AST = (AST)currentAST.root;
+		}
 		returnAST = typeParameter_AST;
 	}
 	
@@ -4704,18 +5227,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		match(LITERAL_extends);
 		nls();
 		classOrInterfaceType(false);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop103:
+		_loop102:
 		do {
 			if ((LA(1)==BAND)) {
 				match(BAND);
 				nls();
 				classOrInterfaceType(false);
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop103;
+				break _loop102;
 			}
 			
 		} while (true);
@@ -4728,7 +5255,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				typeParameterBounds_AST.getFirstChild() : typeParameterBounds_AST;
 			currentAST.advanceChildToEnd();
 		}
-		typeParameterBounds_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			typeParameterBounds_AST = (AST)currentAST.root;
+		}
 		returnAST = typeParameterBounds_AST;
 	}
 	
@@ -4745,10 +5274,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST s3_AST = null;
 		AST s4_AST = null;
 		
-		boolean synPredMatched165 = false;
+		boolean synPredMatched164 = false;
 		if (((_tokenSet_56.member(LA(1))) && (_tokenSet_57.member(LA(2))) && (_tokenSet_58.member(LA(3))))) {
-			int _m165 = mark();
-			synPredMatched165 = true;
+			int _m164 = mark();
+			synPredMatched164 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -4756,16 +5285,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched165 = false;
+				synPredMatched164 = false;
 			}
-			rewind(_m165);
+			rewind(_m164);
 			inputState.guessing--;
 		}
-		if ( synPredMatched165 ) {
+		if ( synPredMatched164 ) {
 			modifiersOpt();
-			mc_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				mc_AST = (AST)returnAST;
+			}
 			constructorDefinition(mc_AST);
-			ctor_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				ctor_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				classField_AST = (AST)currentAST.root;
 				classField_AST = ctor_AST;
@@ -4776,10 +5309,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 		}
 		else {
-			boolean synPredMatched167 = false;
+			boolean synPredMatched166 = false;
 			if (((_tokenSet_11.member(LA(1))) && (_tokenSet_12.member(LA(2))) && (_tokenSet_59.member(LA(3))))) {
-				int _m167 = mark();
-				synPredMatched167 = true;
+				int _m166 = mark();
+				synPredMatched166 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -4787,14 +5320,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched167 = false;
+					synPredMatched166 = false;
 				}
-				rewind(_m167);
+				rewind(_m166);
 				inputState.guessing--;
 			}
-			if ( synPredMatched167 ) {
+			if ( synPredMatched166 ) {
 				declaration();
-				d_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					d_AST = (AST)returnAST;
+				}
 				if ( inputState.guessing==0 ) {
 					classField_AST = (AST)currentAST.root;
 					classField_AST = d_AST;
@@ -4805,10 +5340,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				boolean synPredMatched169 = false;
+				boolean synPredMatched168 = false;
 				if (((_tokenSet_20.member(LA(1))) && (_tokenSet_21.member(LA(2))) && (_tokenSet_22.member(LA(3))))) {
-					int _m169 = mark();
-					synPredMatched169 = true;
+					int _m168 = mark();
+					synPredMatched168 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -4816,17 +5351,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched169 = false;
+						synPredMatched168 = false;
 					}
-					rewind(_m169);
+					rewind(_m168);
 					inputState.guessing--;
 				}
-				if ( synPredMatched169 ) {
+				if ( synPredMatched168 ) {
 					modifiersOpt();
-					mods_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						mods_AST = (AST)returnAST;
+					}
 					{
 					typeDefinitionInternal(mods_AST);
-					td_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						td_AST = (AST)returnAST;
+					}
 					if ( inputState.guessing==0 ) {
 						classField_AST = (AST)currentAST.root;
 						classField_AST = td_AST;
@@ -4840,7 +5379,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				else if ((LA(1)==LITERAL_static) && (LA(2)==LCURLY)) {
 					match(LITERAL_static);
 					compoundStatement();
-					s3_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						s3_AST = (AST)returnAST;
+					}
 					if ( inputState.guessing==0 ) {
 						classField_AST = (AST)currentAST.root;
 						classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(STATIC_INIT,"STATIC_INIT")).add(s3_AST));
@@ -4852,7 +5393,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				else if ((LA(1)==LCURLY)) {
 					compoundStatement();
-					s4_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						s4_AST = (AST)returnAST;
+					}
 					if ( inputState.guessing==0 ) {
 						classField_AST = (AST)currentAST.root;
 						classField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(INSTANCE_INIT,"INSTANCE_INIT")).add(s4_AST));
@@ -4878,10 +5421,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST mods_AST = null;
 		AST td_AST = null;
 		
-		boolean synPredMatched173 = false;
+		boolean synPredMatched172 = false;
 		if (((_tokenSet_11.member(LA(1))) && (_tokenSet_12.member(LA(2))) && (_tokenSet_59.member(LA(3))))) {
-			int _m173 = mark();
-			synPredMatched173 = true;
+			int _m172 = mark();
+			synPredMatched172 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -4889,14 +5432,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched173 = false;
+				synPredMatched172 = false;
 			}
-			rewind(_m173);
+			rewind(_m172);
 			inputState.guessing--;
 		}
-		if ( synPredMatched173 ) {
+		if ( synPredMatched172 ) {
 			declaration();
-			d_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				d_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				interfaceField_AST = (AST)currentAST.root;
 				interfaceField_AST = d_AST;
@@ -4907,10 +5452,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 		}
 		else {
-			boolean synPredMatched175 = false;
+			boolean synPredMatched174 = false;
 			if (((_tokenSet_20.member(LA(1))) && (_tokenSet_21.member(LA(2))) && (_tokenSet_22.member(LA(3))))) {
-				int _m175 = mark();
-				synPredMatched175 = true;
+				int _m174 = mark();
+				synPredMatched174 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -4918,17 +5463,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched175 = false;
+					synPredMatched174 = false;
 				}
-				rewind(_m175);
+				rewind(_m174);
 				inputState.guessing--;
 			}
-			if ( synPredMatched175 ) {
+			if ( synPredMatched174 ) {
 				modifiersOpt();
-				mods_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					mods_AST = (AST)returnAST;
+				}
 				{
 				typeDefinitionInternal(mods_AST);
-				td_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					td_AST = (AST)returnAST;
+				}
 				if ( inputState.guessing==0 ) {
 					interfaceField_AST = (AST)currentAST.root;
 					interfaceField_AST = td_AST;
@@ -4960,7 +5509,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST v_AST = null;
 		
 		modifiersOpt();
-		mods_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			mods_AST = (AST)returnAST;
+		}
 		{
 		switch ( LA(1)) {
 		case AT:
@@ -4969,7 +5520,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_enum:
 		{
 			typeDefinitionInternal(mods_AST);
-			td_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				td_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				annotationField_AST = (AST)currentAST.root;
 				annotationField_AST = td_AST;
@@ -4993,12 +5546,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			typeSpec(false);
-			t_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				t_AST = (AST)returnAST;
+			}
 			{
-			boolean synPredMatched137 = false;
+			boolean synPredMatched136 = false;
 			if (((LA(1)==IDENT) && (LA(2)==LPAREN) && (LA(3)==RPAREN))) {
-				int _m137 = mark();
-				synPredMatched137 = true;
+				int _m136 = mark();
+				synPredMatched136 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -5007,14 +5562,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched137 = false;
+					synPredMatched136 = false;
 				}
-				rewind(_m137);
+				rewind(_m136);
 				inputState.guessing--;
 			}
-			if ( synPredMatched137 ) {
+			if ( synPredMatched136 ) {
 				i = LT(1);
-				i_AST = astFactory.create(i);
+				if (inputState.guessing==0) {
+					i_AST = astFactory.create(i);
+				}
 				match(IDENT);
 				match(LPAREN);
 				match(RPAREN);
@@ -5025,7 +5582,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					match(LITERAL_default);
 					nls();
 					annotationMemberValueInitializer();
-					amvi_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						amvi_AST = (AST)returnAST;
+					}
 					break;
 				}
 				case RCURLY:
@@ -5052,7 +5611,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			else if ((LA(1)==IDENT||LA(1)==STRING_LITERAL) && (_tokenSet_60.member(LA(2))) && (_tokenSet_61.member(LA(3)))) {
 				variableDefinitions(mods_AST,t_AST);
-				v_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					v_AST = (AST)returnAST;
+				}
 				if ( inputState.guessing==0 ) {
 					annotationField_AST = (AST)currentAST.root;
 					annotationField_AST = v_AST;
@@ -5086,38 +5647,48 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST enumConstantsStart_AST = null;
 		
 		enumConstant();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		switch ( LA(1)) {
 		case COMMA:
 		{
-			AST tmp127_AST = null;
-			tmp127_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp127_AST);
+			AST tmp128_AST = null;
+			if (inputState.guessing==0) {
+				tmp128_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp128_AST);
+			}
 			match(COMMA);
 			break;
 		}
 		case SEMI:
 		{
-			AST tmp128_AST = null;
-			tmp128_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp128_AST);
+			AST tmp129_AST = null;
+			if (inputState.guessing==0) {
+				tmp129_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp129_AST);
+			}
 			match(SEMI);
 			break;
 		}
 		case NLS:
 		{
-			AST tmp129_AST = null;
-			tmp129_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp129_AST);
+			AST tmp130_AST = null;
+			if (inputState.guessing==0) {
+				tmp130_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp130_AST);
+			}
 			match(NLS);
 			break;
 		}
 		case RCURLY:
 		{
-			AST tmp130_AST = null;
-			tmp130_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp130_AST);
+			AST tmp131_AST = null;
+			if (inputState.guessing==0) {
+				tmp131_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp131_AST);
+			}
 			match(RCURLY);
 			break;
 		}
@@ -5127,7 +5698,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		enumConstantsStart_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			enumConstantsStart_AST = (AST)currentAST.root;
+		}
 		returnAST = enumConstantsStart_AST;
 	}
 	
@@ -5139,18 +5712,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST enumConstants_AST = null;
 		
 		enumConstant();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop131:
+		_loop130:
 		do {
 			if ((LA(1)==COMMA) && (_tokenSet_62.member(LA(2))) && (_tokenSet_63.member(LA(3)))) {
 				match(COMMA);
 				nls();
 				enumConstant();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop131;
+				break _loop130;
 			}
 			
 		} while (true);
@@ -5175,7 +5752,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		enumConstants_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			enumConstants_AST = (AST)currentAST.root;
+		}
 		returnAST = enumConstants_AST;
 	}
 	
@@ -5192,9 +5771,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean zz; /*ignored*/
 		
 		annotationsOpt();
-		an_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			an_AST = (AST)returnAST;
+		}
 		i = LT(1);
-		i_AST = astFactory.create(i);
+		if (inputState.guessing==0) {
+			i_AST = astFactory.create(i);
+		}
 		match(IDENT);
 		{
 		switch ( LA(1)) {
@@ -5202,7 +5785,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			match(LPAREN);
 			zz=argList();
-			a_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				a_AST = (AST)returnAST;
+			}
 			match(RPAREN);
 			break;
 		}
@@ -5225,7 +5810,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			enumConstantBlock();
-			b_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				b_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case COMMA:
@@ -5331,20 +5918,24 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			hasLabels=argument();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop454:
+			_loop453:
 			do {
 				if ((LA(1)==COMMA) && (_tokenSet_64.member(LA(2))) && (_tokenSet_65.member(LA(3)))) {
 					match(COMMA);
 					hl2=argument();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					if ( inputState.guessing==0 ) {
 						hasLabels |= hl2;
 					}
 				}
 				else {
-					break _loop454;
+					break _loop453;
 				}
 				
 			} while (true);
@@ -5397,7 +5988,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		argList_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			argList_AST = (AST)currentAST.root;
+		}
 		returnAST = argList_AST;
 		return hasLabels;
 	}
@@ -5443,7 +6036,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			enumConstantField();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RCURLY:
@@ -5459,7 +6054,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop146:
+		_loop145:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -5497,7 +6092,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LCURLY:
 				{
 					enumConstantField();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -5514,7 +6111,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop146;
+				break _loop145;
 			}
 			
 		} while (true);
@@ -5528,7 +6125,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				enumConstantBlock_AST.getFirstChild() : enumConstantBlock_AST;
 			currentAST.advanceChildToEnd();
 		}
-		enumConstantBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			enumConstantBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = enumConstantBlock_AST;
 	}
 	
@@ -5579,7 +6178,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_volatile:
 		{
 			modifiersOpt();
-			mods_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				mods_AST = (AST)returnAST;
+			}
 			{
 			switch ( LA(1)) {
 			case AT:
@@ -5588,7 +6189,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case LITERAL_enum:
 			{
 				typeDefinitionInternal(mods_AST);
-				td_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					td_AST = (AST)returnAST;
+				}
 				if ( inputState.guessing==0 ) {
 					enumConstantField_AST = (AST)currentAST.root;
 					enumConstantField_AST = td_AST;
@@ -5617,7 +6220,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case LT:
 				{
 					typeParameters();
-					tp_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						tp_AST = (AST)returnAST;
+					}
 					break;
 				}
 				case IDENT:
@@ -5641,12 +6246,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				}
 				typeSpec(false);
-				t_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					t_AST = (AST)returnAST;
+				}
 				{
-				boolean synPredMatched152 = false;
+				boolean synPredMatched151 = false;
 				if (((LA(1)==IDENT) && (LA(2)==LPAREN) && (_tokenSet_66.member(LA(3))))) {
-					int _m152 = mark();
-					synPredMatched152 = true;
+					int _m151 = mark();
+					synPredMatched151 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -5655,25 +6262,31 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched152 = false;
+						synPredMatched151 = false;
 					}
-					rewind(_m152);
+					rewind(_m151);
 					inputState.guessing--;
 				}
-				if ( synPredMatched152 ) {
-					AST tmp139_AST = null;
-					tmp139_AST = astFactory.create(LT(1));
+				if ( synPredMatched151 ) {
+					AST tmp140_AST = null;
+					if (inputState.guessing==0) {
+						tmp140_AST = astFactory.create(LT(1));
+					}
 					match(IDENT);
 					match(LPAREN);
 					parameterDeclarationList();
-					param_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						param_AST = (AST)returnAST;
+					}
 					match(RPAREN);
 					{
 					switch ( LA(1)) {
 					case LITERAL_throws:
 					{
 						throwsClause();
-						tc_AST = (AST)returnAST;
+						if (inputState.guessing==0) {
+							tc_AST = (AST)returnAST;
+						}
 						break;
 					}
 					case LCURLY:
@@ -5694,7 +6307,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					case LCURLY:
 					{
 						compoundStatement();
-						s2_AST = (AST)returnAST;
+						if (inputState.guessing==0) {
+							s2_AST = (AST)returnAST;
+						}
 						break;
 					}
 					case RCURLY:
@@ -5711,7 +6326,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					if ( inputState.guessing==0 ) {
 						enumConstantField_AST = (AST)currentAST.root;
-						enumConstantField_AST = (AST)astFactory.make( (new ASTArray(8)).add(astFactory.create(METHOD_DEF,"METHOD_DEF")).add(mods_AST).add(tp_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(t_AST))).add(tmp139_AST).add(param_AST).add(tc_AST).add(s2_AST));
+						enumConstantField_AST = (AST)astFactory.make( (new ASTArray(8)).add(astFactory.create(METHOD_DEF,"METHOD_DEF")).add(mods_AST).add(tp_AST).add((AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(TYPE,"TYPE")).add(t_AST))).add(tmp140_AST).add(param_AST).add(tc_AST).add(s2_AST));
 						currentAST.root = enumConstantField_AST;
 						currentAST.child = enumConstantField_AST!=null &&enumConstantField_AST.getFirstChild()!=null ?
 							enumConstantField_AST.getFirstChild() : enumConstantField_AST;
@@ -5720,7 +6335,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				else if ((LA(1)==IDENT||LA(1)==STRING_LITERAL) && (_tokenSet_60.member(LA(2))) && (_tokenSet_67.member(LA(3)))) {
 					variableDefinitions(mods_AST,t_AST);
-					v_AST = (AST)returnAST;
+					if (inputState.guessing==0) {
+						v_AST = (AST)returnAST;
+					}
 					if ( inputState.guessing==0 ) {
 						enumConstantField_AST = (AST)currentAST.root;
 						enumConstantField_AST = v_AST;
@@ -5748,7 +6365,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			compoundStatement();
-			s4_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				s4_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				enumConstantField_AST = (AST)currentAST.root;
 				enumConstantField_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(INSTANCE_INIT,"INSTANCE_INIT")).add(s4_AST));
@@ -5799,18 +6418,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case TRIPLE_DOT:
 		{
 			parameterDeclaration();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop205:
+			_loop204:
 			do {
 				if ((LA(1)==COMMA)) {
 					match(COMMA);
 					nls();
 					parameterDeclaration();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop205;
+					break _loop204;
 				}
 				
 			} while (true);
@@ -5837,7 +6460,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				parameterDeclarationList_AST.getFirstChild() : parameterDeclarationList_AST;
 			currentAST.advanceChildToEnd();
 		}
-		parameterDeclarationList_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			parameterDeclarationList_AST = (AST)currentAST.root;
+		}
 		returnAST = parameterDeclarationList_AST;
 	}
 	
@@ -5847,30 +6472,38 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST throwsClause_AST = null;
 		
-		AST tmp143_AST = null;
-		tmp143_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp143_AST);
+		AST tmp144_AST = null;
+		if (inputState.guessing==0) {
+			tmp144_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp144_AST);
+		}
 		match(LITERAL_throws);
 		nls();
 		identifier();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop201:
+		_loop200:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				identifier();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop201;
+				break _loop200;
 			}
 			
 		} while (true);
 		}
 		nls();
-		throwsClause_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			throwsClause_AST = (AST)currentAST.root;
+		}
 		returnAST = throwsClause_AST;
 	}
 	
@@ -5881,8 +6514,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST compoundStatement_AST = null;
 		
 		openBlock();
-		astFactory.addASTChild(currentAST, returnAST);
-		compoundStatement_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			compoundStatement_AST = (AST)currentAST.root;
+		}
 		returnAST = compoundStatement_AST;
 	}
 	
@@ -5903,19 +6540,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST cb_AST = null;
 		
 		id = LT(1);
-		id_AST = astFactory.create(id);
-		astFactory.addASTChild(currentAST, id_AST);
+		if (inputState.guessing==0) {
+			id_AST = astFactory.create(id);
+			astFactory.addASTChild(currentAST, id_AST);
+		}
 		match(IDENT);
 		match(LPAREN);
 		parameterDeclarationList();
-		param_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			param_AST = (AST)returnAST;
+		}
 		match(RPAREN);
 		{
 		switch ( LA(1)) {
 		case LITERAL_throws:
 		{
 			throwsClause();
-			tc_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				tc_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case LCURLY:
@@ -5934,7 +6577,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			isConstructorIdent(id);
 		}
 		constructorBody();
-		cb_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			cb_AST = (AST)returnAST;
+		}
 		if ( inputState.guessing==0 ) {
 			constructorDefinition_AST = (AST)currentAST.root;
 			constructorDefinition_AST =  (AST)astFactory.make( (new ASTArray(5)).add(astFactory.create(CTOR_IDENT,"CTOR_IDENT")).add(mods).add(param_AST).add(tc_AST).add(cb_AST));
@@ -5944,7 +6589,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				constructorDefinition_AST.getFirstChild() : constructorDefinition_AST;
 			currentAST.advanceChildToEnd();
 		}
-		constructorDefinition_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			constructorDefinition_AST = (AST)currentAST.root;
+		}
 		returnAST = constructorDefinition_AST;
 	}
 	
@@ -5957,18 +6604,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lc_AST = null;
 		
 		lc = LT(1);
-		lc_AST = astFactory.create(lc);
-		astFactory.makeASTRoot(currentAST, lc_AST);
+		if (inputState.guessing==0) {
+			lc_AST = astFactory.create(lc);
+			astFactory.makeASTRoot(currentAST, lc_AST);
+		}
 		match(LCURLY);
 		nls();
 		if ( inputState.guessing==0 ) {
 			lc_AST.setType(SLIST);
 		}
 		{
-		boolean synPredMatched180 = false;
+		boolean synPredMatched179 = false;
 		if (((_tokenSet_68.member(LA(1))) && (_tokenSet_69.member(LA(2))) && (_tokenSet_70.member(LA(3))))) {
-			int _m180 = mark();
-			synPredMatched180 = true;
+			int _m179 = mark();
+			synPredMatched179 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -5976,14 +6625,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched180 = false;
+				synPredMatched179 = false;
 			}
-			rewind(_m180);
+			rewind(_m179);
 			inputState.guessing--;
 		}
-		if ( synPredMatched180 ) {
+		if ( synPredMatched179 ) {
 			explicitConstructorInvocation();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
 			switch ( LA(1)) {
 			case SEMI:
@@ -5991,7 +6642,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			{
 				sep();
 				blockBody(sepToken);
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case RCURLY:
@@ -6007,7 +6660,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		else if ((_tokenSet_71.member(LA(1))) && (_tokenSet_72.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 			blockBody(EOF);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -6015,7 +6670,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		match(RCURLY);
-		constructorBody_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			constructorBody_AST = (AST)currentAST.root;
+		}
 		returnAST = constructorBody_AST;
 	}
 	
@@ -6036,7 +6693,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LT:
 		{
 			typeArguments();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case LITERAL_super:
@@ -6056,11 +6715,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			match(LITERAL_this);
 			lp1 = LT(1);
-			lp1_AST = astFactory.create(lp1);
-			astFactory.makeASTRoot(currentAST, lp1_AST);
+			if (inputState.guessing==0) {
+				lp1_AST = astFactory.create(lp1);
+				astFactory.makeASTRoot(currentAST, lp1_AST);
+			}
 			match(LPAREN);
 			zz=argList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			if ( inputState.guessing==0 ) {
 				lp1_AST.setType(CTOR_CALL);
@@ -6071,11 +6734,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			match(LITERAL_super);
 			lp2 = LT(1);
-			lp2_AST = astFactory.create(lp2);
-			astFactory.makeASTRoot(currentAST, lp2_AST);
+			if (inputState.guessing==0) {
+				lp2_AST = astFactory.create(lp2);
+				astFactory.makeASTRoot(currentAST, lp2_AST);
+			}
 			match(LPAREN);
 			zz=argList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			if ( inputState.guessing==0 ) {
 				lp2_AST.setType(SUPER_CTOR_CALL);
@@ -6088,7 +6755,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		explicitConstructorInvocation_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			explicitConstructorInvocation_AST = (AST)currentAST.root;
+		}
 		returnAST = explicitConstructorInvocation_AST;
 	}
 	
@@ -6107,13 +6776,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST v_AST = null;
 		
 		variableName();
-		id_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			id_AST = (AST)returnAST;
+		}
 		{
 		switch ( LA(1)) {
 		case ASSIGN:
 		{
 			varInitializer();
-			v_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				v_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case EOF:
@@ -6154,10 +6827,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST nlsWarn_AST = null;
 		
 		{
-		boolean synPredMatched492 = false;
+		boolean synPredMatched491 = false;
 		if (((_tokenSet_73.member(LA(1))) && (_tokenSet_19.member(LA(2))) && (_tokenSet_5.member(LA(3))))) {
-			int _m492 = mark();
-			synPredMatched492 = true;
+			int _m491 = mark();
+			synPredMatched491 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -6165,12 +6838,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched492 = false;
+				synPredMatched491 = false;
 			}
-			rewind(_m492);
+			rewind(_m491);
 			inputState.guessing--;
 		}
-		if ( synPredMatched492 ) {
+		if ( synPredMatched491 ) {
 			if ( inputState.guessing==0 ) {
 				addWarning(
 				"A newline at this point does not follow the Groovy Coding Conventions.",
@@ -6199,17 +6872,23 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lc_AST = null;
 		
 		lc = LT(1);
-		lc_AST = astFactory.create(lc);
-		astFactory.makeASTRoot(currentAST, lc_AST);
+		if (inputState.guessing==0) {
+			lc_AST = astFactory.create(lc);
+			astFactory.makeASTRoot(currentAST, lc_AST);
+		}
 		match(LCURLY);
 		nls();
 		if ( inputState.guessing==0 ) {
 			lc_AST.setType(SLIST);
 		}
 		blockBody(EOF);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(RCURLY);
-		openBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			openBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = openBlock_AST;
 	}
 	
@@ -6219,11 +6898,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST variableName_AST = null;
 		
-		AST tmp153_AST = null;
-		tmp153_AST = astFactory.create(LT(1));
-		astFactory.addASTChild(currentAST, tmp153_AST);
+		AST tmp154_AST = null;
+		if (inputState.guessing==0) {
+			tmp154_AST = astFactory.create(LT(1));
+			astFactory.addASTChild(currentAST, tmp154_AST);
+		}
 		match(IDENT);
-		variableName_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			variableName_AST = (AST)currentAST.root;
+		}
 		returnAST = variableName_AST;
 	}
 	
@@ -6234,8 +6917,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST initializer_AST = null;
 		
 		expression();
-		astFactory.addASTChild(currentAST, returnAST);
-		initializer_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			initializer_AST = (AST)currentAST.root;
+		}
 		returnAST = initializer_AST;
 	}
 	
@@ -6246,7 +6933,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST expression_AST = null;
 		
 		assignmentExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			expression_AST = (AST)currentAST.root;
 			expression_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(EXPR,"EXPR")).add(expression_AST));
@@ -6255,7 +6944,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				expression_AST.getFirstChild() : expression_AST;
 			currentAST.advanceChildToEnd();
 		}
-		expression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			expression_AST = (AST)currentAST.root;
+		}
 		returnAST = expression_AST;
 	}
 	
@@ -6273,11 +6964,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean spreadParam = false;
 		
 		parameterModifiersOpt();
-		pm_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			pm_AST = (AST)returnAST;
+		}
 		{
 		if ((_tokenSet_25.member(LA(1))) && (_tokenSet_74.member(LA(2))) && (_tokenSet_75.member(LA(3)))) {
 			typeSpec(false);
-			t_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				t_AST = (AST)returnAST;
+			}
 		}
 		else if ((LA(1)==IDENT||LA(1)==TRIPLE_DOT) && (_tokenSet_76.member(LA(2))) && (_tokenSet_77.member(LA(3)))) {
 		}
@@ -6307,14 +7002,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		id = LT(1);
-		id_AST = astFactory.create(id);
+		if (inputState.guessing==0) {
+			id_AST = astFactory.create(id);
+		}
 		match(IDENT);
 		{
 		switch ( LA(1)) {
 		case ASSIGN:
 		{
 			varInitializer();
-			exp_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				exp_AST = (AST)returnAST;
+			}
 			break;
 		}
 		case COMMA:
@@ -6355,14 +7054,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		int seenDef = 0;
 		
 		{
-		_loop217:
+		_loop216:
 		do {
 			switch ( LA(1)) {
 			case FINAL:
 			{
-				AST tmp155_AST = null;
-				tmp155_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp155_AST);
+				AST tmp156_AST = null;
+				if (inputState.guessing==0) {
+					tmp156_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp156_AST);
+				}
 				match(FINAL);
 				nls();
 				break;
@@ -6370,7 +7071,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case AT:
 			{
 				annotation();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				nls();
 				break;
 			}
@@ -6380,7 +7083,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					nls();
 				}
 			else {
-				break _loop217;
+				break _loop216;
 			}
 			}
 		} while (true);
@@ -6393,7 +7096,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				parameterModifiersOpt_AST.getFirstChild() : parameterModifiersOpt_AST;
 			currentAST.advanceChildToEnd();
 		}
-		parameterModifiersOpt_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			parameterModifiersOpt_AST = (AST)currentAST.root;
+		}
 		returnAST = parameterModifiersOpt_AST;
 	}
 	
@@ -6413,7 +7118,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 		if ((_tokenSet_25.member(LA(1))) && (_tokenSet_29.member(LA(2)))) {
 			typeSpec(false);
-			t_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				t_AST = (AST)returnAST;
+			}
 		}
 		else if ((LA(1)==IDENT) && (_tokenSet_78.member(LA(2)))) {
 		}
@@ -6423,7 +7130,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		id = LT(1);
-		id_AST = astFactory.create(id);
+		if (inputState.guessing==0) {
+			id_AST = astFactory.create(id);
+		}
 		match(IDENT);
 		if ( inputState.guessing==0 ) {
 			simpleParameterDeclaration_AST = (AST)currentAST.root;
@@ -6444,18 +7153,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST simpleParameterDeclarationList_AST = null;
 		
 		simpleParameterDeclaration();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop214:
+		_loop213:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				simpleParameterDeclaration();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop214;
+				break _loop213;
 			}
 			
 		} while (true);
@@ -6468,7 +7181,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				simpleParameterDeclarationList_AST.getFirstChild() : simpleParameterDeclarationList_AST;
 			currentAST.advanceChildToEnd();
 		}
-		simpleParameterDeclarationList_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			simpleParameterDeclarationList_AST = (AST)currentAST.root;
+		}
 		returnAST = simpleParameterDeclarationList_AST;
 	}
 	
@@ -6487,10 +7202,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST closureParametersOpt_AST = null;
 		
-		boolean synPredMatched220 = false;
+		boolean synPredMatched219 = false;
 		if (((_tokenSet_79.member(LA(1))) && (_tokenSet_80.member(LA(2))) && (_tokenSet_16.member(LA(3))))) {
-			int _m220 = mark();
-			synPredMatched220 = true;
+			int _m219 = mark();
+			synPredMatched219 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -6500,24 +7215,28 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched220 = false;
+				synPredMatched219 = false;
 			}
-			rewind(_m220);
+			rewind(_m219);
 			inputState.guessing--;
 		}
-		if ( synPredMatched220 ) {
+		if ( synPredMatched219 ) {
 			parameterDeclarationList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			nls();
 			match(CLOSURE_OP);
 			nls();
-			closureParametersOpt_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				closureParametersOpt_AST = (AST)currentAST.root;
+			}
 		}
 		else {
-			boolean synPredMatched222 = false;
+			boolean synPredMatched221 = false;
 			if ((((_tokenSet_81.member(LA(1))) && (_tokenSet_82.member(LA(2))) && (_tokenSet_16.member(LA(3))))&&(compatibilityMode))) {
-				int _m222 = mark();
-				synPredMatched222 = true;
+				int _m221 = mark();
+				synPredMatched221 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -6525,23 +7244,33 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched222 = false;
+					synPredMatched221 = false;
 				}
-				rewind(_m222);
+				rewind(_m221);
 				inputState.guessing--;
 			}
-			if ( synPredMatched222 ) {
+			if ( synPredMatched221 ) {
 				oldClosureParameters();
-				astFactory.addASTChild(currentAST, returnAST);
-				closureParametersOpt_AST = (AST)currentAST.root;
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
+				if ( inputState.guessing==0 ) {
+					closureParametersOpt_AST = (AST)currentAST.root;
+				}
 			}
 			else if (((_tokenSet_71.member(LA(1))) && (_tokenSet_16.member(LA(2))) && (_tokenSet_5.member(LA(3))))&&(addImplicit)) {
 				implicitParameters();
-				astFactory.addASTChild(currentAST, returnAST);
-				closureParametersOpt_AST = (AST)currentAST.root;
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
+				if ( inputState.guessing==0 ) {
+					closureParametersOpt_AST = (AST)currentAST.root;
+				}
 			}
 			else if ((_tokenSet_71.member(LA(1))) && (_tokenSet_16.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
-				closureParametersOpt_AST = (AST)currentAST.root;
+				if ( inputState.guessing==0 ) {
+					closureParametersOpt_AST = (AST)currentAST.root;
+				}
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -6560,30 +7289,40 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case BOR:
 		{
-			AST tmp159_AST = null;
-			tmp159_AST = astFactory.create(LT(1));
+			AST tmp160_AST = null;
+			if (inputState.guessing==0) {
+				tmp160_AST = astFactory.create(LT(1));
+			}
 			match(BOR);
 			break;
 		}
 		case LOR:
 		{
-			AST tmp160_AST = null;
-			tmp160_AST = astFactory.create(LT(1));
+			AST tmp161_AST = null;
+			if (inputState.guessing==0) {
+				tmp161_AST = astFactory.create(LT(1));
+			}
 			match(LOR);
 			break;
 		}
 		case LPAREN:
 		{
-			AST tmp161_AST = null;
-			tmp161_AST = astFactory.create(LT(1));
+			AST tmp162_AST = null;
+			if (inputState.guessing==0) {
+				tmp162_AST = astFactory.create(LT(1));
+			}
 			match(LPAREN);
 			balancedTokens();
-			AST tmp162_AST = null;
-			tmp162_AST = astFactory.create(LT(1));
+			AST tmp163_AST = null;
+			if (inputState.guessing==0) {
+				tmp163_AST = astFactory.create(LT(1));
+			}
 			match(RPAREN);
 			nls();
-			AST tmp163_AST = null;
-			tmp163_AST = astFactory.create(LT(1));
+			AST tmp164_AST = null;
+			if (inputState.guessing==0) {
+				tmp164_AST = astFactory.create(LT(1));
+			}
 			match(BOR);
 			break;
 		}
@@ -6600,8 +7339,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			simpleParameterDeclarationList();
-			AST tmp164_AST = null;
-			tmp164_AST = astFactory.create(LT(1));
+			AST tmp165_AST = null;
+			if (inputState.guessing==0) {
+				tmp165_AST = astFactory.create(LT(1));
+			}
 			match(BOR);
 			break;
 		}
@@ -6632,13 +7373,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					oldClosureParameters_AST.getFirstChild() : oldClosureParameters_AST;
 				currentAST.advanceChildToEnd();
 			}
-			oldClosureParameters_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				oldClosureParameters_AST = (AST)currentAST.root;
+			}
 		}
 		else {
-			boolean synPredMatched228 = false;
+			boolean synPredMatched227 = false;
 			if (((LA(1)==BOR) && (LA(2)==NLS||LA(2)==BOR) && (_tokenSet_83.member(LA(3))))) {
-				int _m228 = mark();
-				synPredMatched228 = true;
+				int _m227 = mark();
+				synPredMatched227 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -6648,12 +7391,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched228 = false;
+					synPredMatched227 = false;
 				}
-				rewind(_m228);
+				rewind(_m227);
 				inputState.guessing--;
 			}
-			if ( synPredMatched228 ) {
+			if ( synPredMatched227 ) {
 				match(BOR);
 				nls();
 				match(BOR);
@@ -6666,13 +7409,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						oldClosureParameters_AST.getFirstChild() : oldClosureParameters_AST;
 					currentAST.advanceChildToEnd();
 				}
-				oldClosureParameters_AST = (AST)currentAST.root;
+				if ( inputState.guessing==0 ) {
+					oldClosureParameters_AST = (AST)currentAST.root;
+				}
 			}
 			else {
-				boolean synPredMatched231 = false;
+				boolean synPredMatched230 = false;
 				if (((LA(1)==LPAREN||LA(1)==BOR) && (_tokenSet_84.member(LA(2))) && (_tokenSet_85.member(LA(3))))) {
-					int _m231 = mark();
-					synPredMatched231 = true;
+					int _m230 = mark();
+					synPredMatched230 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -6702,12 +7447,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched231 = false;
+						synPredMatched230 = false;
 					}
-					rewind(_m231);
+					rewind(_m230);
 					inputState.guessing--;
 				}
-				if ( synPredMatched231 ) {
+				if ( synPredMatched230 ) {
 					{
 					switch ( LA(1)) {
 					case BOR:
@@ -6728,18 +7473,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					match(LPAREN);
 					parameterDeclarationList();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					match(RPAREN);
 					nls();
 					match(BOR);
 					nls();
-					oldClosureParameters_AST = (AST)currentAST.root;
+					if ( inputState.guessing==0 ) {
+						oldClosureParameters_AST = (AST)currentAST.root;
+					}
 				}
 				else {
-					boolean synPredMatched235 = false;
+					boolean synPredMatched234 = false;
 					if (((_tokenSet_86.member(LA(1))) && (_tokenSet_87.member(LA(2))) && (_tokenSet_88.member(LA(3))))) {
-						int _m235 = mark();
-						synPredMatched235 = true;
+						int _m234 = mark();
+						synPredMatched234 = true;
 						inputState.guessing++;
 						try {
 							{
@@ -6777,12 +7526,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 							}
 						}
 						catch (RecognitionException pe) {
-							synPredMatched235 = false;
+							synPredMatched234 = false;
 						}
-						rewind(_m235);
+						rewind(_m234);
 						inputState.guessing--;
 					}
-					if ( synPredMatched235 ) {
+					if ( synPredMatched234 ) {
 						{
 						switch ( LA(1)) {
 						case BOR:
@@ -6812,11 +7561,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 						}
 						simpleParameterDeclarationList();
-						astFactory.addASTChild(currentAST, returnAST);
+						if (inputState.guessing==0) {
+							astFactory.addASTChild(currentAST, returnAST);
+						}
 						nls();
 						match(BOR);
 						nls();
-						oldClosureParameters_AST = (AST)currentAST.root;
+						if ( inputState.guessing==0 ) {
+							oldClosureParameters_AST = (AST)currentAST.root;
+						}
 					}
 					else {
 						throw new NoViableAltException(LT(1), getFilename());
@@ -6843,7 +7596,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				implicitParameters_AST.getFirstChild() : implicitParameters_AST;
 			currentAST.advanceChildToEnd();
 		}
-		implicitParameters_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			implicitParameters_AST = (AST)currentAST.root;
+		}
 		returnAST = implicitParameters_AST;
 	}
 	
@@ -6854,10 +7609,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST closureParametersStart_AST = null;
 		
-		boolean synPredMatched225 = false;
+		boolean synPredMatched224 = false;
 		if ((((_tokenSet_81.member(LA(1))) && (_tokenSet_89.member(LA(2))) && (_tokenSet_90.member(LA(3))))&&(compatibilityMode))) {
-			int _m225 = mark();
-			synPredMatched225 = true;
+			int _m224 = mark();
+			synPredMatched224 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -6865,19 +7620,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched225 = false;
+				synPredMatched224 = false;
 			}
-			rewind(_m225);
+			rewind(_m224);
 			inputState.guessing--;
 		}
-		if ( synPredMatched225 ) {
+		if ( synPredMatched224 ) {
 			oldClosureParametersStart();
 		}
 		else if ((_tokenSet_79.member(LA(1))) && (_tokenSet_91.member(LA(2))) && (_tokenSet_92.member(LA(3)))) {
 			parameterDeclarationList();
 			nls();
-			AST tmp174_AST = null;
-			tmp174_AST = astFactory.create(LT(1));
+			AST tmp175_AST = null;
+			if (inputState.guessing==0) {
+				tmp175_AST = astFactory.create(LT(1));
+			}
 			match(CLOSURE_OP);
 		}
 		else {
@@ -6920,19 +7677,27 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lc_AST = null;
 		
 		lc = LT(1);
-		lc_AST = astFactory.create(lc);
-		astFactory.makeASTRoot(currentAST, lc_AST);
+		if (inputState.guessing==0) {
+			lc_AST = astFactory.create(lc);
+			astFactory.makeASTRoot(currentAST, lc_AST);
+		}
 		match(LCURLY);
 		nls();
 		if ( inputState.guessing==0 ) {
 			lc_AST.setType(CLOSED_BLOCK);
 		}
 		closureParametersOpt(true);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		blockBody(EOF);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(RCURLY);
-		closedBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			closedBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = closedBlock_AST;
 	}
 	
@@ -6946,8 +7711,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST expressionBlock_AST = null;
 		
 		closedBlock();
-		astFactory.addASTChild(currentAST, returnAST);
-		expressionBlock_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			expressionBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = expressionBlock_AST;
 	}
 	
@@ -6961,8 +7730,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST appendedBlock_AST = null;
 		
 		expressionBlock();
-		astFactory.addASTChild(currentAST, returnAST);
-		appendedBlock_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			appendedBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = appendedBlock_AST;
 	}
 	
@@ -6981,22 +7754,30 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST cp_AST = null;
 		
 		lc = LT(1);
-		lc_AST = astFactory.create(lc);
-		astFactory.makeASTRoot(currentAST, lc_AST);
+		if (inputState.guessing==0) {
+			lc_AST = astFactory.create(lc);
+			astFactory.makeASTRoot(currentAST, lc_AST);
+		}
 		match(LCURLY);
 		nls();
 		closureParametersOpt(false);
-		cp_AST = (AST)returnAST;
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			cp_AST = (AST)returnAST;
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			if (cp_AST == null)    lc_AST.setType(SLIST);
 			else                lc_AST.setType(CLOSED_BLOCK);
 			
 		}
 		blockBody(EOF);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(RCURLY);
-		openOrClosedBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			openOrClosedBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = openOrClosedBlock_AST;
 	}
 	
@@ -7018,10 +7799,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean zz; /*ignore*/
 		
 		{
-		boolean synPredMatched288 = false;
+		boolean synPredMatched287 = false;
 		if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))) {
-			int _m288 = mark();
-			synPredMatched288 = true;
+			int _m287 = mark();
+			synPredMatched287 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7029,14 +7810,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched288 = false;
+				synPredMatched287 = false;
 			}
-			rewind(_m288);
+			rewind(_m287);
 			inputState.guessing--;
 		}
-		if ( synPredMatched288 ) {
+		if ( synPredMatched287 ) {
 			checkSuspiciousExpressionStatement(prevToken);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 		}
@@ -7046,10 +7829,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		{
-		boolean synPredMatched292 = false;
+		boolean synPredMatched291 = false;
 		if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))) {
-			int _m292 = mark();
-			synPredMatched292 = true;
+			int _m291 = mark();
+			synPredMatched291 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7085,27 +7868,35 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched292 = false;
+				synPredMatched291 = false;
 			}
-			rewind(_m292);
+			rewind(_m291);
 			inputState.guessing--;
 		}
-		if ( synPredMatched292 ) {
+		if ( synPredMatched291 ) {
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_93.member(LA(1))) && (_tokenSet_94.member(LA(2))) && (_tokenSet_19.member(LA(3)))) {
 			zz=pathExpression();
-			head_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				head_AST = (AST)returnAST;
+			}
 			commandArguments(head_AST);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
 		}
 		
 		}
-		expressionStatement_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			expressionStatement_AST = (AST)currentAST.root;
+		}
 		returnAST = expressionStatement_AST;
 	}
 	
@@ -7118,10 +7909,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST compatibleBodyStatement_AST = null;
 		
-		boolean synPredMatched277 = false;
+		boolean synPredMatched276 = false;
 		if (((LA(1)==LCURLY) && (_tokenSet_71.member(LA(2))) && (_tokenSet_8.member(LA(3))))) {
-			int _m277 = mark();
-			synPredMatched277 = true;
+			int _m276 = mark();
+			synPredMatched276 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7129,20 +7920,28 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched277 = false;
+				synPredMatched276 = false;
 			}
-			rewind(_m277);
+			rewind(_m276);
 			inputState.guessing--;
 		}
-		if ( synPredMatched277 ) {
+		if ( synPredMatched276 ) {
 			compoundStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			compatibleBodyStatement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				compatibleBodyStatement_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((_tokenSet_14.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 			statement(EOF);
-			astFactory.addASTChild(currentAST, returnAST);
-			compatibleBodyStatement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				compatibleBodyStatement_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -7160,15 +7959,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST f_AST = null;
 		
 		f = LT(1);
-		f_AST = astFactory.create(f);
-		astFactory.makeASTRoot(currentAST, f_AST);
+		if (inputState.guessing==0) {
+			f_AST = astFactory.create(f);
+			astFactory.makeASTRoot(currentAST, f_AST);
+		}
 		match(LITERAL_for);
 		match(LPAREN);
 		{
-		boolean synPredMatched269 = false;
+		boolean synPredMatched268 = false;
 		if (((_tokenSet_95.member(LA(1))) && (_tokenSet_96.member(LA(2))) && (_tokenSet_97.member(LA(3))))) {
-			int _m269 = mark();
-			synPredMatched269 = true;
+			int _m268 = mark();
+			synPredMatched268 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7177,18 +7978,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched269 = false;
+				synPredMatched268 = false;
 			}
-			rewind(_m269);
+			rewind(_m268);
 			inputState.guessing--;
 		}
-		if ( synPredMatched269 ) {
+		if ( synPredMatched268 ) {
 			traditionalForClause();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_11.member(LA(1))) && (_tokenSet_98.member(LA(2))) && (_tokenSet_99.member(LA(3)))) {
 			forInClause();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -7198,8 +8003,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		match(RPAREN);
 		nlsWarn();
 		compatibleBodyStatement();
-		astFactory.addASTChild(currentAST, returnAST);
-		forStatement_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			forStatement_AST = (AST)currentAST.root;
+		}
 		returnAST = forStatement_AST;
 	}
 	
@@ -7210,22 +8019,26 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST casesGroup_AST = null;
 		
 		{
-		int _cnt303=0;
-		_loop303:
+		int _cnt302=0;
+		_loop302:
 		do {
 			if ((LA(1)==LITERAL_default||LA(1)==LITERAL_case)) {
 				aCase();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				if ( _cnt303>=1 ) { break _loop303; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt302>=1 ) { break _loop302; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt303++;
+			_cnt302++;
 		} while (true);
 		}
 		caseSList();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			casesGroup_AST = (AST)currentAST.root;
 			casesGroup_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(CASE_GROUP,"CASE_GROUP")).add(casesGroup_AST));
@@ -7234,7 +8047,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				casesGroup_AST.getFirstChild() : casesGroup_AST;
 			currentAST.advanceChildToEnd();
 		}
-		casesGroup_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			casesGroup_AST = (AST)currentAST.root;
+		}
 		returnAST = casesGroup_AST;
 	}
 	
@@ -7244,23 +8059,29 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST tryBlock_AST = null;
 		
-		AST tmp179_AST = null;
-		tmp179_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp179_AST);
+		AST tmp180_AST = null;
+		if (inputState.guessing==0) {
+			tmp180_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp180_AST);
+		}
 		match(LITERAL_try);
 		nlsWarn();
 		compoundStatement();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop318:
+		_loop317:
 		do {
 			if ((LA(1)==NLS||LA(1)==LITERAL_catch) && (LA(2)==LPAREN||LA(2)==LITERAL_catch) && (_tokenSet_100.member(LA(3)))) {
 				nls();
 				handler();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop318;
+				break _loop317;
 			}
 			
 		} while (true);
@@ -7269,7 +8090,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		if ((LA(1)==NLS||LA(1)==LITERAL_finally) && (_tokenSet_101.member(LA(2))) && (_tokenSet_71.member(LA(3)))) {
 			nls();
 			finallyClause();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((_tokenSet_9.member(LA(1))) && (_tokenSet_10.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 		}
@@ -7278,7 +8101,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		
 		}
-		tryBlock_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			tryBlock_AST = (AST)currentAST.root;
+		}
 		returnAST = tryBlock_AST;
 	}
 	
@@ -7295,9 +8120,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case LITERAL_return:
 		{
-			AST tmp180_AST = null;
-			tmp180_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp180_AST);
+			AST tmp181_AST = null;
+			if (inputState.guessing==0) {
+				tmp181_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp181_AST);
+			}
 			match(LITERAL_return);
 			{
 			switch ( LA(1)) {
@@ -7328,7 +8155,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case NUM_BIG_DECIMAL:
 			{
 				expression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case EOF:
@@ -7350,7 +8179,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			}
-			branchStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				branchStatement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_break:
@@ -7360,17 +8191,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case LITERAL_break:
 			{
-				AST tmp181_AST = null;
-				tmp181_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp181_AST);
+				AST tmp182_AST = null;
+				if (inputState.guessing==0) {
+					tmp182_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp182_AST);
+				}
 				match(LITERAL_break);
 				break;
 			}
 			case LITERAL_continue:
 			{
-				AST tmp182_AST = null;
-				tmp182_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp182_AST);
+				AST tmp183_AST = null;
+				if (inputState.guessing==0) {
+					tmp183_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp183_AST);
+				}
 				match(LITERAL_continue);
 				break;
 			}
@@ -7383,7 +8218,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			{
 			if ((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_102.member(LA(3)))) {
 				statementLabelPrefix();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else if ((_tokenSet_102.member(LA(1))) && (_tokenSet_17.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 			}
@@ -7421,7 +8258,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case NUM_BIG_DECIMAL:
 			{
 				expression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case EOF:
@@ -7443,33 +8282,47 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			}
-			branchStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				branchStatement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_throw:
 		{
-			AST tmp183_AST = null;
-			tmp183_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp183_AST);
+			AST tmp184_AST = null;
+			if (inputState.guessing==0) {
+				tmp184_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp184_AST);
+			}
 			match(LITERAL_throw);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
-			branchStatement_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				branchStatement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_assert:
 		{
-			AST tmp184_AST = null;
-			tmp184_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp184_AST);
+			AST tmp185_AST = null;
+			if (inputState.guessing==0) {
+				tmp185_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp185_AST);
+			}
 			match(LITERAL_assert);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
 			if ((LA(1)==COMMA) && (_tokenSet_18.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 				match(COMMA);
 				expression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else if ((_tokenSet_103.member(LA(1))) && (_tokenSet_17.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 			}
@@ -7478,7 +8331,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			
 			}
-			branchStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				branchStatement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -7542,7 +8397,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			controlExpressionList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case SEMI:
@@ -7563,7 +8420,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				forInit_AST.getFirstChild() : forInit_AST;
 			currentAST.advanceChildToEnd();
 		}
-		forInit_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			forInit_AST = (AST)currentAST.root;
+		}
 		returnAST = forInit_AST;
 	}
 	
@@ -7574,14 +8433,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST traditionalForClause_AST = null;
 		
 		forInit();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(SEMI);
 		forCond();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(SEMI);
 		forIter();
-		astFactory.addASTChild(currentAST, returnAST);
-		traditionalForClause_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			traditionalForClause_AST = (AST)currentAST.root;
+		}
 		returnAST = traditionalForClause_AST;
 	}
 	
@@ -7594,10 +8461,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST i_AST = null;
 		
 		{
-		boolean synPredMatched274 = false;
+		boolean synPredMatched273 = false;
 		if (((_tokenSet_11.member(LA(1))) && (_tokenSet_104.member(LA(2))))) {
-			int _m274 = mark();
-			synPredMatched274 = true;
+			int _m273 = mark();
+			synPredMatched273 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7605,19 +8472,23 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched274 = false;
+				synPredMatched273 = false;
 			}
-			rewind(_m274);
+			rewind(_m273);
 			inputState.guessing--;
 		}
-		if ( synPredMatched274 ) {
+		if ( synPredMatched273 ) {
 			singleDeclarationNoInit();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 		}
 		else if ((LA(1)==IDENT) && (LA(2)==LITERAL_in)) {
-			AST tmp188_AST = null;
-			tmp188_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp188_AST);
+			AST tmp189_AST = null;
+			if (inputState.guessing==0) {
+				tmp189_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp189_AST);
+			}
 			match(IDENT);
 		}
 		else {
@@ -7626,15 +8497,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		i = LT(1);
-		i_AST = astFactory.create(i);
-		astFactory.makeASTRoot(currentAST, i_AST);
+		if (inputState.guessing==0) {
+			i_AST = astFactory.create(i);
+			astFactory.makeASTRoot(currentAST, i_AST);
+		}
 		match(LITERAL_in);
 		if ( inputState.guessing==0 ) {
 			i_AST.setType(FOR_IN_ITERABLE);
 		}
 		shiftExpression();
-		astFactory.addASTChild(currentAST, returnAST);
-		forInClause_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			forInClause_AST = (AST)currentAST.root;
+		}
 		returnAST = forInClause_AST;
 	}
 	
@@ -7673,7 +8550,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case SEMI:
@@ -7694,7 +8573,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				forCond_AST.getFirstChild() : forCond_AST;
 			currentAST.advanceChildToEnd();
 		}
-		forCond_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			forCond_AST = (AST)currentAST.root;
+		}
 		returnAST = forCond_AST;
 	}
 	
@@ -7751,7 +8632,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			controlExpressionList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case RPAREN:
@@ -7772,7 +8655,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				forIter_AST.getFirstChild() : forIter_AST;
 			currentAST.advanceChildToEnd();
 		}
-		forIter_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			forIter_AST = (AST)currentAST.root;
+		}
 		returnAST = forIter_AST;
 	}
 	
@@ -7783,9 +8668,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST shiftExpression_AST = null;
 		
 		additiveExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop396:
+		_loop395:
 		do {
 			if ((_tokenSet_105.member(LA(1)))) {
 				{
@@ -7798,25 +8685,31 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					switch ( LA(1)) {
 					case SL:
 					{
-						AST tmp189_AST = null;
-						tmp189_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp189_AST);
+						AST tmp190_AST = null;
+						if (inputState.guessing==0) {
+							tmp190_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp190_AST);
+						}
 						match(SL);
 						break;
 					}
 					case SR:
 					{
-						AST tmp190_AST = null;
-						tmp190_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp190_AST);
+						AST tmp191_AST = null;
+						if (inputState.guessing==0) {
+							tmp191_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp191_AST);
+						}
 						match(SR);
 						break;
 					}
 					case BSR:
 					{
-						AST tmp191_AST = null;
-						tmp191_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp191_AST);
+						AST tmp192_AST = null;
+						if (inputState.guessing==0) {
+							tmp192_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp192_AST);
+						}
 						match(BSR);
 						break;
 					}
@@ -7830,20 +8723,24 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				case RANGE_INCLUSIVE:
 				{
-					AST tmp192_AST = null;
-					tmp192_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp192_AST);
+					AST tmp193_AST = null;
+					if (inputState.guessing==0) {
+						tmp193_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp193_AST);
+					}
 					match(RANGE_INCLUSIVE);
 					break;
 				}
 				case TRIPLE_DOT:
 				{
-					AST tmp193_AST = null;
-					tmp193_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp193_AST);
+					AST tmp194_AST = null;
+					if (inputState.guessing==0) {
+						tmp194_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp194_AST);
+					}
 					match(TRIPLE_DOT);
 					if ( inputState.guessing==0 ) {
-						tmp193_AST.setType(RANGE_EXCLUSIVE);
+						tmp194_AST.setType(RANGE_EXCLUSIVE);
 					}
 					break;
 				}
@@ -7855,15 +8752,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				nls();
 				additiveExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop396;
+				break _loop395;
 			}
 			
 		} while (true);
 		}
-		shiftExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			shiftExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = shiftExpression_AST;
 	}
 	
@@ -7875,18 +8776,24 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		Token  c = null;
 		AST c_AST = null;
 		
-		AST tmp194_AST = null;
-		tmp194_AST = astFactory.create(LT(1));
-		astFactory.addASTChild(currentAST, tmp194_AST);
+		AST tmp195_AST = null;
+		if (inputState.guessing==0) {
+			tmp195_AST = astFactory.create(LT(1));
+			astFactory.addASTChild(currentAST, tmp195_AST);
+		}
 		match(IDENT);
 		c = LT(1);
-		c_AST = astFactory.create(c);
-		astFactory.makeASTRoot(currentAST, c_AST);
+		if (inputState.guessing==0) {
+			c_AST = astFactory.create(c);
+			astFactory.makeASTRoot(currentAST, c_AST);
+		}
 		match(COLON);
 		if ( inputState.guessing==0 ) {
 			c_AST.setType(LABELED_STAT);
 		}
-		statementLabelPrefix_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			statementLabelPrefix_AST = (AST)currentAST.root;
+		}
 		returnAST = statementLabelPrefix_AST;
 	}
 	
@@ -7906,17 +8813,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case PLUS:
 			{
-				AST tmp195_AST = null;
-				tmp195_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp195_AST);
+				AST tmp196_AST = null;
+				if (inputState.guessing==0) {
+					tmp196_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp196_AST);
+				}
 				match(PLUS);
 				break;
 			}
 			case MINUS:
 			{
-				AST tmp196_AST = null;
-				tmp196_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp196_AST);
+				AST tmp197_AST = null;
+				if (inputState.guessing==0) {
+					tmp197_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp197_AST);
+				}
 				match(MINUS);
 				break;
 			}
@@ -7936,25 +8847,31 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case LBRACK:
 			{
-				AST tmp197_AST = null;
-				tmp197_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp197_AST);
+				AST tmp198_AST = null;
+				if (inputState.guessing==0) {
+					tmp198_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp198_AST);
+				}
 				match(LBRACK);
 				break;
 			}
 			case LPAREN:
 			{
-				AST tmp198_AST = null;
-				tmp198_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp198_AST);
+				AST tmp199_AST = null;
+				if (inputState.guessing==0) {
+					tmp199_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp199_AST);
+				}
 				match(LPAREN);
 				break;
 			}
 			case LCURLY:
 			{
-				AST tmp199_AST = null;
-				tmp199_AST = astFactory.create(LT(1));
-				astFactory.addASTChild(currentAST, tmp199_AST);
+				AST tmp200_AST = null;
+				if (inputState.guessing==0) {
+					tmp200_AST = astFactory.create(LT(1));
+					astFactory.addASTChild(currentAST, tmp200_AST);
+				}
 				match(LCURLY);
 				break;
 			}
@@ -7972,7 +8889,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		suspiciousExpressionStatementStart_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			suspiciousExpressionStatementStart_AST = (AST)currentAST.root;
+		}
 		returnAST = suspiciousExpressionStatementStart_AST;
 	}
 	
@@ -8000,10 +8919,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST checkSuspiciousExpressionStatement_AST = null;
 		
-		boolean synPredMatched295 = false;
+		boolean synPredMatched294 = false;
 		if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))) {
-			int _m295 = mark();
-			synPredMatched295 = true;
+			int _m294 = mark();
+			synPredMatched294 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -8021,12 +8940,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched295 = false;
+				synPredMatched294 = false;
 			}
-			rewind(_m295);
+			rewind(_m294);
 			inputState.guessing--;
 		}
-		if ( synPredMatched295 ) {
+		if ( synPredMatched294 ) {
 			{
 			if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))&&(prevToken == NLS)) {
 				if ( inputState.guessing==0 ) {
@@ -8043,7 +8962,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			
 			}
-			checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			}
 		}
 		else if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))&&(prevToken == NLS)) {
 			if ( inputState.guessing==0 ) {
@@ -8051,21 +8972,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				"Closure expression looks like it may be an isolated open block, "+
 				"or it may continue a previous statement."
 				,
-				"Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}, "+
+				"Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}, "+
 				"and also either remove previous newline, or add an explicit semicolon ';'."
 				);
 				
 			}
-			checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			}
 		}
 		else if (((_tokenSet_18.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_19.member(LA(3))))&&(prevToken != NLS)) {
 			if ( inputState.guessing==0 ) {
 				require(false,
 				"Closure expression looks like it may be an isolated open block.",
-				"Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}.");
+				"Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}.");
 				
 			}
-			checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -8091,10 +9016,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST pe_AST = null;
 		
 		primaryExpression();
-		pe_AST = (AST)returnAST;
+		if (inputState.guessing==0) {
+			pe_AST = (AST)returnAST;
+		}
 		endBrackets=pathExpressionTail(pe_AST);
-		astFactory.addASTChild(currentAST, returnAST);
-		pathExpression_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			pathExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = pathExpression_AST;
 		return endBrackets;
 	}
@@ -8129,18 +9060,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			currentAST.advanceChildToEnd();
 		}
 		expression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop326:
+		_loop325:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				expression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop326;
+				break _loop325;
 			}
 			
 		} while (true);
@@ -8158,7 +9093,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				commandArguments_AST.getFirstChild() : commandArguments_AST;
 			currentAST.advanceChildToEnd();
 		}
-		commandArguments_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			commandArguments_AST = (AST)currentAST.root;
+		}
 		returnAST = commandArguments_AST;
 	}
 	
@@ -8172,19 +9109,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case LITERAL_case:
 		{
-			AST tmp201_AST = null;
-			tmp201_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp201_AST);
+			AST tmp202_AST = null;
+			if (inputState.guessing==0) {
+				tmp202_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp202_AST);
+			}
 			match(LITERAL_case);
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case LITERAL_default:
 		{
-			AST tmp202_AST = null;
-			tmp202_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp202_AST);
+			AST tmp203_AST = null;
+			if (inputState.guessing==0) {
+				tmp203_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp203_AST);
+			}
 			match(LITERAL_default);
 			break;
 		}
@@ -8196,7 +9139,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		match(COLON);
 		nls();
-		aCase_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			aCase_AST = (AST)currentAST.root;
+		}
 		returnAST = aCase_AST;
 	}
 	
@@ -8207,9 +9152,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST caseSList_AST = null;
 		
 		statement(COLON);
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop309:
+		_loop308:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -8282,7 +9229,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case NUM_BIG_DECIMAL:
 				{
 					statement(sepToken);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RCURLY:
@@ -8301,7 +9250,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop309;
+				break _loop308;
 			}
 			
 		} while (true);
@@ -8314,7 +9263,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				caseSList_AST.getFirstChild() : caseSList_AST;
 			currentAST.advanceChildToEnd();
 		}
-		caseSList_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			caseSList_AST = (AST)currentAST.root;
+		}
 		returnAST = caseSList_AST;
 	}
 	
@@ -8325,18 +9276,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST controlExpressionList_AST = null;
 		
 		controlExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop332:
+		_loop331:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
 				nls();
 				controlExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop332;
+				break _loop331;
 			}
 			
 		} while (true);
@@ -8349,7 +9304,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				controlExpressionList_AST.getFirstChild() : controlExpressionList_AST;
 			currentAST.advanceChildToEnd();
 		}
-		controlExpressionList_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			controlExpressionList_AST = (AST)currentAST.root;
+		}
 		returnAST = controlExpressionList_AST;
 	}
 	
@@ -8359,18 +9316,26 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST handler_AST = null;
 		
-		AST tmp205_AST = null;
-		tmp205_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp205_AST);
+		AST tmp206_AST = null;
+		if (inputState.guessing==0) {
+			tmp206_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp206_AST);
+		}
 		match(LITERAL_catch);
 		match(LPAREN);
 		parameterDeclaration();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(RPAREN);
 		nlsWarn();
 		compoundStatement();
-		astFactory.addASTChild(currentAST, returnAST);
-		handler_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			handler_AST = (AST)currentAST.root;
+		}
 		returnAST = handler_AST;
 	}
 	
@@ -8380,14 +9345,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST finallyClause_AST = null;
 		
-		AST tmp208_AST = null;
-		tmp208_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp208_AST);
+		AST tmp209_AST = null;
+		if (inputState.guessing==0) {
+			tmp209_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp209_AST);
+		}
 		match(LITERAL_finally);
 		nlsWarn();
 		compoundStatement();
-		astFactory.addASTChild(currentAST, returnAST);
-		finallyClause_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			finallyClause_AST = (AST)currentAST.root;
+		}
 		returnAST = finallyClause_AST;
 	}
 	
@@ -8430,105 +9401,131 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case ASSIGN:
 			{
-				AST tmp209_AST = null;
-				tmp209_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp209_AST);
+				AST tmp210_AST = null;
+				if (inputState.guessing==0) {
+					tmp210_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp210_AST);
+				}
 				match(ASSIGN);
 				break;
 			}
 			case PLUS_ASSIGN:
 			{
-				AST tmp210_AST = null;
-				tmp210_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp210_AST);
+				AST tmp211_AST = null;
+				if (inputState.guessing==0) {
+					tmp211_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp211_AST);
+				}
 				match(PLUS_ASSIGN);
 				break;
 			}
 			case MINUS_ASSIGN:
 			{
-				AST tmp211_AST = null;
-				tmp211_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp211_AST);
+				AST tmp212_AST = null;
+				if (inputState.guessing==0) {
+					tmp212_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp212_AST);
+				}
 				match(MINUS_ASSIGN);
 				break;
 			}
 			case STAR_ASSIGN:
 			{
-				AST tmp212_AST = null;
-				tmp212_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp212_AST);
+				AST tmp213_AST = null;
+				if (inputState.guessing==0) {
+					tmp213_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp213_AST);
+				}
 				match(STAR_ASSIGN);
 				break;
 			}
 			case DIV_ASSIGN:
 			{
-				AST tmp213_AST = null;
-				tmp213_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp213_AST);
+				AST tmp214_AST = null;
+				if (inputState.guessing==0) {
+					tmp214_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp214_AST);
+				}
 				match(DIV_ASSIGN);
 				break;
 			}
 			case MOD_ASSIGN:
 			{
-				AST tmp214_AST = null;
-				tmp214_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp214_AST);
+				AST tmp215_AST = null;
+				if (inputState.guessing==0) {
+					tmp215_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp215_AST);
+				}
 				match(MOD_ASSIGN);
 				break;
 			}
 			case SR_ASSIGN:
 			{
-				AST tmp215_AST = null;
-				tmp215_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp215_AST);
+				AST tmp216_AST = null;
+				if (inputState.guessing==0) {
+					tmp216_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp216_AST);
+				}
 				match(SR_ASSIGN);
 				break;
 			}
 			case BSR_ASSIGN:
 			{
-				AST tmp216_AST = null;
-				tmp216_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp216_AST);
+				AST tmp217_AST = null;
+				if (inputState.guessing==0) {
+					tmp217_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp217_AST);
+				}
 				match(BSR_ASSIGN);
 				break;
 			}
 			case SL_ASSIGN:
 			{
-				AST tmp217_AST = null;
-				tmp217_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp217_AST);
+				AST tmp218_AST = null;
+				if (inputState.guessing==0) {
+					tmp218_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp218_AST);
+				}
 				match(SL_ASSIGN);
 				break;
 			}
 			case BAND_ASSIGN:
 			{
-				AST tmp218_AST = null;
-				tmp218_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp218_AST);
+				AST tmp219_AST = null;
+				if (inputState.guessing==0) {
+					tmp219_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp219_AST);
+				}
 				match(BAND_ASSIGN);
 				break;
 			}
 			case BXOR_ASSIGN:
 			{
-				AST tmp219_AST = null;
-				tmp219_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp219_AST);
+				AST tmp220_AST = null;
+				if (inputState.guessing==0) {
+					tmp220_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp220_AST);
+				}
 				match(BXOR_ASSIGN);
 				break;
 			}
 			case BOR_ASSIGN:
 			{
-				AST tmp220_AST = null;
-				tmp220_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp220_AST);
+				AST tmp221_AST = null;
+				if (inputState.guessing==0) {
+					tmp221_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp221_AST);
+				}
 				match(BOR_ASSIGN);
 				break;
 			}
 			case STAR_STAR_ASSIGN:
 			{
-				AST tmp221_AST = null;
-				tmp221_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp221_AST);
+				AST tmp222_AST = null;
+				if (inputState.guessing==0) {
+					tmp222_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp222_AST);
+				}
 				match(STAR_STAR_ASSIGN);
 				break;
 			}
@@ -8540,8 +9537,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			nls();
 			assignmentExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			assignmentTail_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				assignmentTail_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case INC:
@@ -8555,13 +9556,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				currentAST.advanceChildToEnd();
 			}
 			in = LT(1);
-			in_AST = astFactory.create(in);
-			astFactory.makeASTRoot(currentAST, in_AST);
+			if (inputState.guessing==0) {
+				in_AST = astFactory.create(in);
+				astFactory.makeASTRoot(currentAST, in_AST);
+			}
 			match(INC);
 			if ( inputState.guessing==0 ) {
 				in_AST.setType(POST_INC);
 			}
-			assignmentTail_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				assignmentTail_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case DEC:
@@ -8575,13 +9580,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				currentAST.advanceChildToEnd();
 			}
 			de = LT(1);
-			de_AST = astFactory.create(de);
-			astFactory.makeASTRoot(currentAST, de_AST);
+			if (inputState.guessing==0) {
+				de_AST = astFactory.create(de);
+				astFactory.makeASTRoot(currentAST, de_AST);
+			}
 			match(DEC);
 			if ( inputState.guessing==0 ) {
 				de_AST.setType(POST_DEC);
 			}
-			assignmentTail_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				assignmentTail_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -8599,7 +9608,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST assignmentExpression_AST = null;
 		
 		conditionalExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		switch ( LA(1)) {
 		case ASSIGN:
@@ -8620,105 +9631,131 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case ASSIGN:
 			{
-				AST tmp222_AST = null;
-				tmp222_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp222_AST);
+				AST tmp223_AST = null;
+				if (inputState.guessing==0) {
+					tmp223_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp223_AST);
+				}
 				match(ASSIGN);
 				break;
 			}
 			case PLUS_ASSIGN:
 			{
-				AST tmp223_AST = null;
-				tmp223_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp223_AST);
+				AST tmp224_AST = null;
+				if (inputState.guessing==0) {
+					tmp224_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp224_AST);
+				}
 				match(PLUS_ASSIGN);
 				break;
 			}
 			case MINUS_ASSIGN:
 			{
-				AST tmp224_AST = null;
-				tmp224_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp224_AST);
+				AST tmp225_AST = null;
+				if (inputState.guessing==0) {
+					tmp225_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp225_AST);
+				}
 				match(MINUS_ASSIGN);
 				break;
 			}
 			case STAR_ASSIGN:
 			{
-				AST tmp225_AST = null;
-				tmp225_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp225_AST);
+				AST tmp226_AST = null;
+				if (inputState.guessing==0) {
+					tmp226_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp226_AST);
+				}
 				match(STAR_ASSIGN);
 				break;
 			}
 			case DIV_ASSIGN:
 			{
-				AST tmp226_AST = null;
-				tmp226_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp226_AST);
+				AST tmp227_AST = null;
+				if (inputState.guessing==0) {
+					tmp227_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp227_AST);
+				}
 				match(DIV_ASSIGN);
 				break;
 			}
 			case MOD_ASSIGN:
 			{
-				AST tmp227_AST = null;
-				tmp227_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp227_AST);
+				AST tmp228_AST = null;
+				if (inputState.guessing==0) {
+					tmp228_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp228_AST);
+				}
 				match(MOD_ASSIGN);
 				break;
 			}
 			case SR_ASSIGN:
 			{
-				AST tmp228_AST = null;
-				tmp228_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp228_AST);
+				AST tmp229_AST = null;
+				if (inputState.guessing==0) {
+					tmp229_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp229_AST);
+				}
 				match(SR_ASSIGN);
 				break;
 			}
 			case BSR_ASSIGN:
 			{
-				AST tmp229_AST = null;
-				tmp229_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp229_AST);
+				AST tmp230_AST = null;
+				if (inputState.guessing==0) {
+					tmp230_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp230_AST);
+				}
 				match(BSR_ASSIGN);
 				break;
 			}
 			case SL_ASSIGN:
 			{
-				AST tmp230_AST = null;
-				tmp230_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp230_AST);
+				AST tmp231_AST = null;
+				if (inputState.guessing==0) {
+					tmp231_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp231_AST);
+				}
 				match(SL_ASSIGN);
 				break;
 			}
 			case BAND_ASSIGN:
 			{
-				AST tmp231_AST = null;
-				tmp231_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp231_AST);
+				AST tmp232_AST = null;
+				if (inputState.guessing==0) {
+					tmp232_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp232_AST);
+				}
 				match(BAND_ASSIGN);
 				break;
 			}
 			case BXOR_ASSIGN:
 			{
-				AST tmp232_AST = null;
-				tmp232_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp232_AST);
+				AST tmp233_AST = null;
+				if (inputState.guessing==0) {
+					tmp233_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp233_AST);
+				}
 				match(BXOR_ASSIGN);
 				break;
 			}
 			case BOR_ASSIGN:
 			{
-				AST tmp233_AST = null;
-				tmp233_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp233_AST);
+				AST tmp234_AST = null;
+				if (inputState.guessing==0) {
+					tmp234_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp234_AST);
+				}
 				match(BOR_ASSIGN);
 				break;
 			}
 			case STAR_STAR_ASSIGN:
 			{
-				AST tmp234_AST = null;
-				tmp234_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp234_AST);
+				AST tmp235_AST = null;
+				if (inputState.guessing==0) {
+					tmp235_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp235_AST);
+				}
 				match(STAR_STAR_ASSIGN);
 				break;
 			}
@@ -8730,7 +9767,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			nls();
 			assignmentExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case EOF:
@@ -8754,7 +9793,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		assignmentExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			assignmentExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = assignmentExpression_AST;
 	}
 	
@@ -8768,105 +9809,131 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case ASSIGN:
 		{
-			AST tmp235_AST = null;
-			tmp235_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp235_AST);
+			AST tmp236_AST = null;
+			if (inputState.guessing==0) {
+				tmp236_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp236_AST);
+			}
 			match(ASSIGN);
 			break;
 		}
 		case PLUS_ASSIGN:
 		{
-			AST tmp236_AST = null;
-			tmp236_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp236_AST);
+			AST tmp237_AST = null;
+			if (inputState.guessing==0) {
+				tmp237_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp237_AST);
+			}
 			match(PLUS_ASSIGN);
 			break;
 		}
 		case MINUS_ASSIGN:
 		{
-			AST tmp237_AST = null;
-			tmp237_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp237_AST);
+			AST tmp238_AST = null;
+			if (inputState.guessing==0) {
+				tmp238_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp238_AST);
+			}
 			match(MINUS_ASSIGN);
 			break;
 		}
 		case STAR_ASSIGN:
 		{
-			AST tmp238_AST = null;
-			tmp238_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp238_AST);
+			AST tmp239_AST = null;
+			if (inputState.guessing==0) {
+				tmp239_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp239_AST);
+			}
 			match(STAR_ASSIGN);
 			break;
 		}
 		case DIV_ASSIGN:
 		{
-			AST tmp239_AST = null;
-			tmp239_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp239_AST);
+			AST tmp240_AST = null;
+			if (inputState.guessing==0) {
+				tmp240_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp240_AST);
+			}
 			match(DIV_ASSIGN);
 			break;
 		}
 		case MOD_ASSIGN:
 		{
-			AST tmp240_AST = null;
-			tmp240_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp240_AST);
+			AST tmp241_AST = null;
+			if (inputState.guessing==0) {
+				tmp241_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp241_AST);
+			}
 			match(MOD_ASSIGN);
 			break;
 		}
 		case SR_ASSIGN:
 		{
-			AST tmp241_AST = null;
-			tmp241_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp241_AST);
+			AST tmp242_AST = null;
+			if (inputState.guessing==0) {
+				tmp242_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp242_AST);
+			}
 			match(SR_ASSIGN);
 			break;
 		}
 		case BSR_ASSIGN:
 		{
-			AST tmp242_AST = null;
-			tmp242_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp242_AST);
+			AST tmp243_AST = null;
+			if (inputState.guessing==0) {
+				tmp243_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp243_AST);
+			}
 			match(BSR_ASSIGN);
 			break;
 		}
 		case SL_ASSIGN:
 		{
-			AST tmp243_AST = null;
-			tmp243_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp243_AST);
+			AST tmp244_AST = null;
+			if (inputState.guessing==0) {
+				tmp244_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp244_AST);
+			}
 			match(SL_ASSIGN);
 			break;
 		}
 		case BAND_ASSIGN:
 		{
-			AST tmp244_AST = null;
-			tmp244_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp244_AST);
+			AST tmp245_AST = null;
+			if (inputState.guessing==0) {
+				tmp245_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp245_AST);
+			}
 			match(BAND_ASSIGN);
 			break;
 		}
 		case BXOR_ASSIGN:
 		{
-			AST tmp245_AST = null;
-			tmp245_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp245_AST);
+			AST tmp246_AST = null;
+			if (inputState.guessing==0) {
+				tmp246_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp246_AST);
+			}
 			match(BXOR_ASSIGN);
 			break;
 		}
 		case BOR_ASSIGN:
 		{
-			AST tmp246_AST = null;
-			tmp246_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp246_AST);
+			AST tmp247_AST = null;
+			if (inputState.guessing==0) {
+				tmp247_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp247_AST);
+			}
 			match(BOR_ASSIGN);
 			break;
 		}
 		case STAR_STAR_ASSIGN:
 		{
-			AST tmp247_AST = null;
-			tmp247_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp247_AST);
+			AST tmp248_AST = null;
+			if (inputState.guessing==0) {
+				tmp248_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp248_AST);
+			}
 			match(STAR_STAR_ASSIGN);
 			break;
 		}
@@ -8876,7 +9943,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		assignmentOp_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			assignmentOp_AST = (AST)currentAST.root;
+		}
 		returnAST = assignmentOp_AST;
 	}
 	
@@ -8891,10 +9960,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST head_AST = null;
 		boolean zz; /*ignore*/
 		
-		boolean synPredMatched335 = false;
+		boolean synPredMatched334 = false;
 		if (((_tokenSet_11.member(LA(1))) && (_tokenSet_104.member(LA(2))) && (_tokenSet_107.member(LA(3))))) {
-			int _m335 = mark();
-			synPredMatched335 = true;
+			int _m334 = mark();
+			synPredMatched334 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -8902,19 +9971,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched335 = false;
+				synPredMatched334 = false;
 			}
-			rewind(_m335);
+			rewind(_m334);
 			inputState.guessing--;
 		}
-		if ( synPredMatched335 ) {
+		if ( synPredMatched334 ) {
 			singleDeclaration();
-			astFactory.addASTChild(currentAST, returnAST);
-			controlExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				controlExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((_tokenSet_93.member(LA(1))) && (_tokenSet_108.member(LA(2))) && (_tokenSet_97.member(LA(3)))) {
 			zz=pathExpression();
-			head_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				head_AST = (AST)returnAST;
+			}
 			{
 			switch ( LA(1)) {
 			case ASSIGN:
@@ -8934,7 +10009,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case DEC:
 			{
 				assignmentTail(head_AST);
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case COMMA:
@@ -8957,24 +10034,30 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			}
-			controlExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				controlExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((LA(1)==INC||LA(1)==DEC)) {
 			{
 			switch ( LA(1)) {
 			case INC:
 			{
-				AST tmp248_AST = null;
-				tmp248_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp248_AST);
+				AST tmp249_AST = null;
+				if (inputState.guessing==0) {
+					tmp249_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp249_AST);
+				}
 				match(INC);
 				break;
 			}
 			case DEC:
 			{
-				AST tmp249_AST = null;
-				tmp249_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp249_AST);
+				AST tmp250_AST = null;
+				if (inputState.guessing==0) {
+					tmp250_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp250_AST);
+				}
 				match(DEC);
 				break;
 			}
@@ -8985,8 +10068,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			zz=pathExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			controlExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				controlExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -9004,11 +10091,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case IDENT:
 		{
-			AST tmp250_AST = null;
-			tmp250_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp250_AST);
+			AST tmp251_AST = null;
+			if (inputState.guessing==0) {
+				tmp251_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp251_AST);
+			}
 			match(IDENT);
-			primaryExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case STRING_LITERAL:
@@ -9023,54 +10114,82 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			constant();
-			astFactory.addASTChild(currentAST, returnAST);
-			primaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_new:
 		{
 			newExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			primaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_this:
 		{
-			AST tmp251_AST = null;
-			tmp251_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp251_AST);
+			AST tmp252_AST = null;
+			if (inputState.guessing==0) {
+				tmp252_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp252_AST);
+			}
 			match(LITERAL_this);
-			primaryExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_super:
 		{
-			AST tmp252_AST = null;
-			tmp252_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp252_AST);
+			AST tmp253_AST = null;
+			if (inputState.guessing==0) {
+				tmp253_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp253_AST);
+			}
 			match(LITERAL_super);
-			primaryExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LPAREN:
 		{
 			parenthesizedExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			primaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case STRING_CTOR_START:
 		{
 			stringConstructorExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			primaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case DOLLAR:
 		{
 			scopeEscapeExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			primaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				primaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -9092,17 +10211,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST pe_AST = null;
 		
 		{
-		_loop341:
+		_loop340:
 		do {
 			if ((_tokenSet_109.member(LA(1))) && (_tokenSet_110.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 				endBrackets=pathElement(result);
-				pe_AST = (AST)returnAST;
+				if (inputState.guessing==0) {
+					pe_AST = (AST)returnAST;
+				}
 				if ( inputState.guessing==0 ) {
 					result = pe_AST;
 				}
 			}
 			else {
-				break _loop341;
+				break _loop340;
 			}
 			
 		} while (true);
@@ -9115,7 +10236,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				pathExpressionTail_AST.getFirstChild() : pathExpressionTail_AST;
 			currentAST.advanceChildToEnd();
 		}
-		pathExpressionTail_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			pathExpressionTail_AST = (AST)currentAST.root;
+		}
 		returnAST = pathExpressionTail_AST;
 		return endBrackets;
 	}
@@ -9154,8 +10277,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case STAR_DOT:
 			{
 				sp = LT(1);
-				sp_AST = astFactory.create(sp);
-				astFactory.makeASTRoot(currentAST, sp_AST);
+				if (inputState.guessing==0) {
+					sp_AST = astFactory.create(sp);
+					astFactory.makeASTRoot(currentAST, sp_AST);
+				}
 				match(STAR_DOT);
 				if ( inputState.guessing==0 ) {
 					sp_AST.setType(SPREAD_ARG);
@@ -9165,8 +10290,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			case QUESTION_DOT:
 			{
 				op = LT(1);
-				op_AST = astFactory.create(op);
-				astFactory.makeASTRoot(currentAST, op_AST);
+				if (inputState.guessing==0) {
+					op_AST = astFactory.create(op);
+					astFactory.makeASTRoot(currentAST, op_AST);
+				}
 				match(QUESTION_DOT);
 				if ( inputState.guessing==0 ) {
 					op_AST.setType(OPTIONAL_ARG);
@@ -9175,9 +10302,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			case DOT:
 			{
-				AST tmp253_AST = null;
-				tmp253_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp253_AST);
+				AST tmp254_AST = null;
+				if (inputState.guessing==0) {
+					tmp254_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp254_AST);
+				}
 				match(DOT);
 				break;
 			}
@@ -9189,19 +10318,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			nls();
 			namePart();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				endBrackets = false;
 			}
-			pathElement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				pathElement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LPAREN:
 		case LCURLY:
 		{
 			methodCallArgs(prefix);
-			mca_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				mca_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				pathElement_AST = (AST)currentAST.root;
 				pathElement_AST = mca_AST; endBrackets = true;
@@ -9210,14 +10345,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					pathElement_AST.getFirstChild() : pathElement_AST;
 				currentAST.advanceChildToEnd();
 			}
-			pathElement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				pathElement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LBRACK:
 		{
 			arrayOrTypeArgs(prefix);
-			ata_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				ata_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				pathElement_AST = (AST)currentAST.root;
 				pathElement_AST = ata_AST; endBrackets = false;
@@ -9226,7 +10365,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					pathElement_AST.getFirstChild() : pathElement_AST;
 				currentAST.advanceChildToEnd();
 			}
-			pathElement_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				pathElement_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -9251,19 +10392,31 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			expressionBlock();
-			pe_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				pe_AST = (AST)returnAST;
+			}
 			zz=pathExpressionTail(pe_AST);
-			astFactory.addASTChild(currentAST, returnAST);
-			pathExpressionFromBrackets_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				pathExpressionFromBrackets_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LBRACK:
 		{
 			listOrMapConstructorExpression();
-			pe2_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				pe2_AST = (AST)returnAST;
+			}
 			zz=pathExpressionTail(pe2_AST);
-			astFactory.addASTChild(currentAST, returnAST);
-			pathExpressionFromBrackets_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				pathExpressionFromBrackets_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -9302,8 +10455,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean hasLabels = false, hal;
 		
 		lcon = LT(1);
-		lcon_AST = astFactory.create(lcon);
-		astFactory.makeASTRoot(currentAST, lcon_AST);
+		if (inputState.guessing==0) {
+			lcon_AST = astFactory.create(lcon);
+			astFactory.makeASTRoot(currentAST, lcon_AST);
+		}
 		match(LBRACK);
 		{
 		switch ( LA(1)) {
@@ -9394,7 +10549,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		hal=argList();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		if ( inputState.guessing==0 ) {
 			hasLabels |= hal;
 		}
@@ -9402,7 +10559,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		if ( inputState.guessing==0 ) {
 			lcon_AST.setType(hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR);
 		}
-		listOrMapConstructorExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			listOrMapConstructorExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = listOrMapConstructorExpression_AST;
 	}
 	
@@ -9426,8 +10585,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LAND:
 		{
 			amp = LT(1);
-			amp_AST = astFactory.create(amp);
-			astFactory.makeASTRoot(currentAST, amp_AST);
+			if (inputState.guessing==0) {
+				amp_AST = astFactory.create(amp);
+				astFactory.makeASTRoot(currentAST, amp_AST);
+			}
 			match(LAND);
 			if ( inputState.guessing==0 ) {
 				amp_AST.setType(REFLECT_MEMBER);
@@ -9437,8 +10598,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case AT:
 		{
 			ats = LT(1);
-			ats_AST = astFactory.create(ats);
-			astFactory.makeASTRoot(currentAST, ats_AST);
+			if (inputState.guessing==0) {
+				ats_AST = astFactory.create(ats);
+				astFactory.makeASTRoot(currentAST, ats_AST);
+			}
 			match(AT);
 			if ( inputState.guessing==0 ) {
 				ats_AST.setType(SELECT_SLOT);
@@ -9486,17 +10649,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case IDENT:
 		{
-			AST tmp256_AST = null;
-			tmp256_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp256_AST);
+			AST tmp257_AST = null;
+			if (inputState.guessing==0) {
+				tmp257_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp257_AST);
+			}
 			match(IDENT);
 			break;
 		}
 		case STRING_LITERAL:
 		{
 			sl = LT(1);
-			sl_AST = astFactory.create(sl);
-			astFactory.addASTChild(currentAST, sl_AST);
+			if (inputState.guessing==0) {
+				sl_AST = astFactory.create(sl);
+				astFactory.addASTChild(currentAST, sl_AST);
+			}
 			match(STRING_LITERAL);
 			if ( inputState.guessing==0 ) {
 				sl_AST.setType(IDENT);
@@ -9507,7 +10674,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case STRING_CTOR_START:
 		{
 			dynamicMemberName();
-			dn_AST = (AST)returnAST;
+			if (inputState.guessing==0) {
+				dn_AST = (AST)returnAST;
+			}
 			if ( inputState.guessing==0 ) {
 				namePart_AST = (AST)currentAST.root;
 				namePart_AST = (AST)astFactory.make( (new ASTArray(2)).add(astFactory.create(DYNAMIC_MEMBER,"DYNAMIC_MEMBER")).add(dn_AST));
@@ -9521,7 +10690,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LCURLY:
 		{
 			openBlock();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case UNUSED_DO:
@@ -9549,7 +10720,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_catch:
 		{
 			keywordPropertyNames();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -9558,7 +10731,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		namePart_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			namePart_AST = (AST)currentAST.root;
+		}
 		returnAST = namePart_AST;
 	}
 	
@@ -9610,19 +10785,25 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				currentAST.advanceChildToEnd();
 			}
 			lp = LT(1);
-			lp_AST = astFactory.create(lp);
-			astFactory.makeASTRoot(currentAST, lp_AST);
+			if (inputState.guessing==0) {
+				lp_AST = astFactory.create(lp);
+				astFactory.makeASTRoot(currentAST, lp_AST);
+			}
 			match(LPAREN);
 			if ( inputState.guessing==0 ) {
 				lp_AST.setType(METHOD_CALL);
 			}
 			zz=argList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			{
 			if ((LA(1)==LCURLY) && (_tokenSet_15.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 				appendedBlock();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else if ((_tokenSet_111.member(LA(1))) && (_tokenSet_5.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 			}
@@ -9631,7 +10812,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			
 			}
-			methodCallArgs_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				methodCallArgs_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LCURLY:
@@ -9645,8 +10828,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				currentAST.advanceChildToEnd();
 			}
 			appendedBlock();
-			cb_AST = (AST)returnAST;
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				cb_AST = (AST)returnAST;
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			if ( inputState.guessing==0 ) {
 				methodCallArgs_AST = (AST)currentAST.root;
 				AST lbrace = getASTFactory().dup(cb_AST);
@@ -9658,7 +10843,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					methodCallArgs_AST.getFirstChild() : methodCallArgs_AST;
 				currentAST.advanceChildToEnd();
 			}
-			methodCallArgs_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				methodCallArgs_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -9680,29 +10867,37 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case LPAREN:
 		{
-			AST tmp258_AST = null;
-			tmp258_AST = astFactory.create(LT(1));
+			AST tmp259_AST = null;
+			if (inputState.guessing==0) {
+				tmp259_AST = astFactory.create(LT(1));
+			}
 			match(LPAREN);
 			break;
 		}
 		case LCURLY:
 		{
-			AST tmp259_AST = null;
-			tmp259_AST = astFactory.create(LT(1));
+			AST tmp260_AST = null;
+			if (inputState.guessing==0) {
+				tmp260_AST = astFactory.create(LT(1));
+			}
 			match(LCURLY);
 			break;
 		}
 		case LBRACK:
 		{
-			AST tmp260_AST = null;
-			tmp260_AST = astFactory.create(LT(1));
+			AST tmp261_AST = null;
+			if (inputState.guessing==0) {
+				tmp261_AST = astFactory.create(LT(1));
+			}
 			match(LBRACK);
 			break;
 		}
 		case DOT:
 		{
-			AST tmp261_AST = null;
-			tmp261_AST = astFactory.create(LT(1));
+			AST tmp262_AST = null;
+			if (inputState.guessing==0) {
+				tmp262_AST = astFactory.create(LT(1));
+			}
 			match(DOT);
 			break;
 		}
@@ -9713,15 +10908,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case STAR:
 			{
-				AST tmp262_AST = null;
-				tmp262_AST = astFactory.create(LT(1));
+				AST tmp263_AST = null;
+				if (inputState.guessing==0) {
+					tmp263_AST = astFactory.create(LT(1));
+				}
 				match(STAR);
 				break;
 			}
 			case QUESTION:
 			{
-				AST tmp263_AST = null;
-				tmp263_AST = astFactory.create(LT(1));
+				AST tmp264_AST = null;
+				if (inputState.guessing==0) {
+					tmp264_AST = astFactory.create(LT(1));
+				}
 				match(QUESTION);
 				break;
 			}
@@ -9731,8 +10930,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			}
-			AST tmp264_AST = null;
-			tmp264_AST = astFactory.create(LT(1));
+			AST tmp265_AST = null;
+			if (inputState.guessing==0) {
+				tmp265_AST = astFactory.create(LT(1));
+			}
 			match(DOT);
 			break;
 		}
@@ -9759,13 +10960,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LPAREN:
 		{
 			parenthesizedExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case STRING_CTOR_START:
 		{
 			stringConstructorExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -9782,7 +10987,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				dynamicMemberName_AST.getFirstChild() : dynamicMemberName_AST;
 			currentAST.advanceChildToEnd();
 		}
-		dynamicMemberName_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			dynamicMemberName_AST = (AST)currentAST.root;
+		}
 		returnAST = dynamicMemberName_AST;
 	}
 	
@@ -9799,105 +11006,131 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case LITERAL_class:
 		{
-			AST tmp265_AST = null;
-			tmp265_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp265_AST);
+			AST tmp266_AST = null;
+			if (inputState.guessing==0) {
+				tmp266_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp266_AST);
+			}
 			match(LITERAL_class);
 			break;
 		}
 		case LITERAL_in:
 		{
-			AST tmp266_AST = null;
-			tmp266_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp266_AST);
+			AST tmp267_AST = null;
+			if (inputState.guessing==0) {
+				tmp267_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp267_AST);
+			}
 			match(LITERAL_in);
 			break;
 		}
 		case LITERAL_as:
 		{
-			AST tmp267_AST = null;
-			tmp267_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp267_AST);
+			AST tmp268_AST = null;
+			if (inputState.guessing==0) {
+				tmp268_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp268_AST);
+			}
 			match(LITERAL_as);
 			break;
 		}
 		case LITERAL_def:
 		{
-			AST tmp268_AST = null;
-			tmp268_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp268_AST);
+			AST tmp269_AST = null;
+			if (inputState.guessing==0) {
+				tmp269_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp269_AST);
+			}
 			match(LITERAL_def);
 			break;
 		}
 		case LITERAL_if:
 		{
-			AST tmp269_AST = null;
-			tmp269_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp269_AST);
+			AST tmp270_AST = null;
+			if (inputState.guessing==0) {
+				tmp270_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp270_AST);
+			}
 			match(LITERAL_if);
 			break;
 		}
 		case LITERAL_else:
 		{
-			AST tmp270_AST = null;
-			tmp270_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp270_AST);
+			AST tmp271_AST = null;
+			if (inputState.guessing==0) {
+				tmp271_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp271_AST);
+			}
 			match(LITERAL_else);
 			break;
 		}
 		case LITERAL_for:
 		{
-			AST tmp271_AST = null;
-			tmp271_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp271_AST);
+			AST tmp272_AST = null;
+			if (inputState.guessing==0) {
+				tmp272_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp272_AST);
+			}
 			match(LITERAL_for);
 			break;
 		}
 		case LITERAL_while:
 		{
-			AST tmp272_AST = null;
-			tmp272_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp272_AST);
+			AST tmp273_AST = null;
+			if (inputState.guessing==0) {
+				tmp273_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp273_AST);
+			}
 			match(LITERAL_while);
 			break;
 		}
 		case UNUSED_DO:
 		{
-			AST tmp273_AST = null;
-			tmp273_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp273_AST);
+			AST tmp274_AST = null;
+			if (inputState.guessing==0) {
+				tmp274_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp274_AST);
+			}
 			match(UNUSED_DO);
 			break;
 		}
 		case LITERAL_switch:
 		{
-			AST tmp274_AST = null;
-			tmp274_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp274_AST);
+			AST tmp275_AST = null;
+			if (inputState.guessing==0) {
+				tmp275_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp275_AST);
+			}
 			match(LITERAL_switch);
 			break;
 		}
 		case LITERAL_try:
 		{
-			AST tmp275_AST = null;
-			tmp275_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp275_AST);
+			AST tmp276_AST = null;
+			if (inputState.guessing==0) {
+				tmp276_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp276_AST);
+			}
 			match(LITERAL_try);
 			break;
 		}
 		case LITERAL_catch:
 		{
-			AST tmp276_AST = null;
-			tmp276_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp276_AST);
+			AST tmp277_AST = null;
+			if (inputState.guessing==0) {
+				tmp277_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp277_AST);
+			}
 			match(LITERAL_catch);
 			break;
 		}
 		case LITERAL_finally:
 		{
-			AST tmp277_AST = null;
-			tmp277_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp277_AST);
+			AST tmp278_AST = null;
+			if (inputState.guessing==0) {
+				tmp278_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp278_AST);
+			}
 			match(LITERAL_finally);
 			break;
 		}
@@ -9913,7 +11146,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case LITERAL_any:
 		{
 			builtInType();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -9926,7 +11161,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			keywordPropertyNames_AST = (AST)currentAST.root;
 			keywordPropertyNames_AST.setType(IDENT);
 		}
-		keywordPropertyNames_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			keywordPropertyNames_AST = (AST)currentAST.root;
+		}
 		returnAST = keywordPropertyNames_AST;
 	}
 	
@@ -9939,16 +11176,22 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lp_AST = null;
 		
 		lp = LT(1);
-		lp_AST = astFactory.create(lp);
-		astFactory.makeASTRoot(currentAST, lp_AST);
+		if (inputState.guessing==0) {
+			lp_AST = astFactory.create(lp);
+			astFactory.makeASTRoot(currentAST, lp_AST);
+		}
 		match(LPAREN);
 		strictContextExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		match(RPAREN);
 		if ( inputState.guessing==0 ) {
 			lp_AST.setType(EXPR);
 		}
-		parenthesizedExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			parenthesizedExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = parenthesizedExpression_AST;
 	}
 	
@@ -9965,37 +11208,47 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST ce_AST = null;
 		
 		cs = LT(1);
-		cs_AST = astFactory.create(cs);
-		astFactory.addASTChild(currentAST, cs_AST);
+		if (inputState.guessing==0) {
+			cs_AST = astFactory.create(cs);
+			astFactory.addASTChild(currentAST, cs_AST);
+		}
 		match(STRING_CTOR_START);
 		if ( inputState.guessing==0 ) {
 			cs_AST.setType(STRING_LITERAL);
 		}
 		stringConstructorValuePart();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop444:
+		_loop443:
 		do {
 			if ((LA(1)==STRING_CTOR_MIDDLE)) {
 				cm = LT(1);
-				cm_AST = astFactory.create(cm);
-				astFactory.addASTChild(currentAST, cm_AST);
+				if (inputState.guessing==0) {
+					cm_AST = astFactory.create(cm);
+					astFactory.addASTChild(currentAST, cm_AST);
+				}
 				match(STRING_CTOR_MIDDLE);
 				if ( inputState.guessing==0 ) {
 					cm_AST.setType(STRING_LITERAL);
 				}
 				stringConstructorValuePart();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop444;
+				break _loop443;
 			}
 			
 		} while (true);
 		}
 		ce = LT(1);
-		ce_AST = astFactory.create(ce);
-		astFactory.addASTChild(currentAST, ce_AST);
+		if (inputState.guessing==0) {
+			ce_AST = astFactory.create(ce);
+			astFactory.addASTChild(currentAST, ce_AST);
+		}
 		match(STRING_CTOR_END);
 		if ( inputState.guessing==0 ) {
 			stringConstructorExpression_AST = (AST)currentAST.root;
@@ -10008,7 +11261,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				stringConstructorExpression_AST.getFirstChild() : stringConstructorExpression_AST;
 			currentAST.advanceChildToEnd();
 		}
-		stringConstructorExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			stringConstructorExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = stringConstructorExpression_AST;
 	}
 	
@@ -10019,26 +11274,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST logicalOrExpression_AST = null;
 		
 		logicalAndExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop367:
+		_loop366:
 		do {
 			if ((LA(1)==LOR)) {
-				AST tmp279_AST = null;
-				tmp279_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp279_AST);
+				AST tmp280_AST = null;
+				if (inputState.guessing==0) {
+					tmp280_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp280_AST);
+				}
 				match(LOR);
 				nls();
 				logicalAndExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop367;
+				break _loop366;
 			}
 			
 		} while (true);
 		}
-		logicalOrExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			logicalOrExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = logicalOrExpression_AST;
 	}
 	
@@ -10049,26 +11312,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST logicalAndExpression_AST = null;
 		
 		inclusiveOrExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop370:
+		_loop369:
 		do {
 			if ((LA(1)==LAND)) {
-				AST tmp280_AST = null;
-				tmp280_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp280_AST);
+				AST tmp281_AST = null;
+				if (inputState.guessing==0) {
+					tmp281_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp281_AST);
+				}
 				match(LAND);
 				nls();
 				inclusiveOrExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop370;
+				break _loop369;
 			}
 			
 		} while (true);
 		}
-		logicalAndExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			logicalAndExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = logicalAndExpression_AST;
 	}
 	
@@ -10079,26 +11350,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST inclusiveOrExpression_AST = null;
 		
 		exclusiveOrExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop373:
+		_loop372:
 		do {
 			if ((LA(1)==BOR)) {
-				AST tmp281_AST = null;
-				tmp281_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp281_AST);
+				AST tmp282_AST = null;
+				if (inputState.guessing==0) {
+					tmp282_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp282_AST);
+				}
 				match(BOR);
 				nls();
 				exclusiveOrExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop373;
+				break _loop372;
 			}
 			
 		} while (true);
 		}
-		inclusiveOrExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			inclusiveOrExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = inclusiveOrExpression_AST;
 	}
 	
@@ -10109,26 +11388,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST exclusiveOrExpression_AST = null;
 		
 		andExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop376:
+		_loop375:
 		do {
 			if ((LA(1)==BXOR)) {
-				AST tmp282_AST = null;
-				tmp282_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp282_AST);
+				AST tmp283_AST = null;
+				if (inputState.guessing==0) {
+					tmp283_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp283_AST);
+				}
 				match(BXOR);
 				nls();
 				andExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop376;
+				break _loop375;
 			}
 			
 		} while (true);
 		}
-		exclusiveOrExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			exclusiveOrExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = exclusiveOrExpression_AST;
 	}
 	
@@ -10139,26 +11426,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST andExpression_AST = null;
 		
 		regexExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop379:
+		_loop378:
 		do {
 			if ((LA(1)==BAND)) {
-				AST tmp283_AST = null;
-				tmp283_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp283_AST);
+				AST tmp284_AST = null;
+				if (inputState.guessing==0) {
+					tmp284_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp284_AST);
+				}
 				match(BAND);
 				nls();
 				regexExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop379;
+				break _loop378;
 			}
 			
 		} while (true);
 		}
-		andExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			andExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = andExpression_AST;
 	}
 	
@@ -10169,26 +11464,32 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST regexExpression_AST = null;
 		
 		equalityExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop383:
+		_loop382:
 		do {
 			if ((LA(1)==REGEX_FIND||LA(1)==REGEX_MATCH)) {
 				{
 				switch ( LA(1)) {
 				case REGEX_FIND:
 				{
-					AST tmp284_AST = null;
-					tmp284_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp284_AST);
+					AST tmp285_AST = null;
+					if (inputState.guessing==0) {
+						tmp285_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp285_AST);
+					}
 					match(REGEX_FIND);
 					break;
 				}
 				case REGEX_MATCH:
 				{
-					AST tmp285_AST = null;
-					tmp285_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp285_AST);
+					AST tmp286_AST = null;
+					if (inputState.guessing==0) {
+						tmp286_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp286_AST);
+					}
 					match(REGEX_MATCH);
 					break;
 				}
@@ -10200,15 +11501,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				nls();
 				equalityExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop383;
+				break _loop382;
 			}
 			
 		} while (true);
 		}
-		regexExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			regexExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = regexExpression_AST;
 	}
 	
@@ -10219,34 +11524,42 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST equalityExpression_AST = null;
 		
 		relationalExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop387:
+		_loop386:
 		do {
 			if (((LA(1) >= NOT_EQUAL && LA(1) <= COMPARE_TO))) {
 				{
 				switch ( LA(1)) {
 				case NOT_EQUAL:
 				{
-					AST tmp286_AST = null;
-					tmp286_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp286_AST);
+					AST tmp287_AST = null;
+					if (inputState.guessing==0) {
+						tmp287_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp287_AST);
+					}
 					match(NOT_EQUAL);
 					break;
 				}
 				case EQUAL:
 				{
-					AST tmp287_AST = null;
-					tmp287_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp287_AST);
+					AST tmp288_AST = null;
+					if (inputState.guessing==0) {
+						tmp288_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp288_AST);
+					}
 					match(EQUAL);
 					break;
 				}
 				case COMPARE_TO:
 				{
-					AST tmp288_AST = null;
-					tmp288_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp288_AST);
+					AST tmp289_AST = null;
+					if (inputState.guessing==0) {
+						tmp289_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp289_AST);
+					}
 					match(COMPARE_TO);
 					break;
 				}
@@ -10258,15 +11571,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				nls();
 				relationalExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop387;
+				break _loop386;
 			}
 			
 		} while (true);
 		}
-		equalityExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			equalityExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = equalityExpression_AST;
 	}
 	
@@ -10277,7 +11594,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST relationalExpression_AST = null;
 		
 		shiftExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		switch ( LA(1)) {
 		case EOF:
@@ -10334,41 +11653,51 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				switch ( LA(1)) {
 				case LT:
 				{
-					AST tmp289_AST = null;
-					tmp289_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp289_AST);
+					AST tmp290_AST = null;
+					if (inputState.guessing==0) {
+						tmp290_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp290_AST);
+					}
 					match(LT);
 					break;
 				}
 				case GT:
 				{
-					AST tmp290_AST = null;
-					tmp290_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp290_AST);
+					AST tmp291_AST = null;
+					if (inputState.guessing==0) {
+						tmp291_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp291_AST);
+					}
 					match(GT);
 					break;
 				}
 				case LE:
 				{
-					AST tmp291_AST = null;
-					tmp291_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp291_AST);
+					AST tmp292_AST = null;
+					if (inputState.guessing==0) {
+						tmp292_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp292_AST);
+					}
 					match(LE);
 					break;
 				}
 				case GE:
 				{
-					AST tmp292_AST = null;
-					tmp292_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp292_AST);
+					AST tmp293_AST = null;
+					if (inputState.guessing==0) {
+						tmp293_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp293_AST);
+					}
 					match(GE);
 					break;
 				}
 				case LITERAL_in:
 				{
-					AST tmp293_AST = null;
-					tmp293_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp293_AST);
+					AST tmp294_AST = null;
+					if (inputState.guessing==0) {
+						tmp294_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp294_AST);
+					}
 					match(LITERAL_in);
 					break;
 				}
@@ -10380,7 +11709,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				nls();
 				shiftExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				break;
 			}
 			case EOF:
@@ -10432,24 +11763,32 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		case LITERAL_instanceof:
 		{
-			AST tmp294_AST = null;
-			tmp294_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp294_AST);
+			AST tmp295_AST = null;
+			if (inputState.guessing==0) {
+				tmp295_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp295_AST);
+			}
 			match(LITERAL_instanceof);
 			nls();
 			typeSpec(true);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case LITERAL_as:
 		{
-			AST tmp295_AST = null;
-			tmp295_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp295_AST);
+			AST tmp296_AST = null;
+			if (inputState.guessing==0) {
+				tmp296_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp296_AST);
+			}
 			match(LITERAL_as);
 			nls();
 			typeSpec(true);
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -10458,7 +11797,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		relationalExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			relationalExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = relationalExpression_AST;
 	}
 	
@@ -10469,26 +11810,32 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST additiveExpression_AST = null;
 		
 		multiplicativeExpression();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop400:
+		_loop399:
 		do {
 			if ((LA(1)==PLUS||LA(1)==MINUS)) {
 				{
 				switch ( LA(1)) {
 				case PLUS:
 				{
-					AST tmp296_AST = null;
-					tmp296_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp296_AST);
+					AST tmp297_AST = null;
+					if (inputState.guessing==0) {
+						tmp297_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp297_AST);
+					}
 					match(PLUS);
 					break;
 				}
 				case MINUS:
 				{
-					AST tmp297_AST = null;
-					tmp297_AST = astFactory.create(LT(1));
-					astFactory.makeASTRoot(currentAST, tmp297_AST);
+					AST tmp298_AST = null;
+					if (inputState.guessing==0) {
+						tmp298_AST = astFactory.create(LT(1));
+						astFactory.makeASTRoot(currentAST, tmp298_AST);
+					}
 					match(MINUS);
 					break;
 				}
@@ -10500,15 +11847,19 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				nls();
 				multiplicativeExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop400;
+				break _loop399;
 			}
 			
 		} while (true);
 		}
-		additiveExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			additiveExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = additiveExpression_AST;
 	}
 	
@@ -10522,40 +11873,50 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case INC:
 		{
 			{
-			AST tmp298_AST = null;
-			tmp298_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp298_AST);
+			AST tmp299_AST = null;
+			if (inputState.guessing==0) {
+				tmp299_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp299_AST);
+			}
 			match(INC);
 			nls();
 			powerExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop405:
+			_loop404:
 			do {
 				if ((_tokenSet_112.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
 					{
-						AST tmp299_AST = null;
-						tmp299_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp299_AST);
+						AST tmp300_AST = null;
+						if (inputState.guessing==0) {
+							tmp300_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp300_AST);
+						}
 						match(STAR);
 						break;
 					}
 					case DIV:
 					{
-						AST tmp300_AST = null;
-						tmp300_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp300_AST);
+						AST tmp301_AST = null;
+						if (inputState.guessing==0) {
+							tmp301_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp301_AST);
+						}
 						match(DIV);
 						break;
 					}
 					case MOD:
 					{
-						AST tmp301_AST = null;
-						tmp301_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp301_AST);
+						AST tmp302_AST = null;
+						if (inputState.guessing==0) {
+							tmp302_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp302_AST);
+						}
 						match(MOD);
 						break;
 					}
@@ -10567,55 +11928,69 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					nls();
 					powerExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop405;
+					break _loop404;
 				}
 				
 			} while (true);
 			}
 			}
-			multiplicativeExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				multiplicativeExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case DEC:
 		{
 			{
-			AST tmp302_AST = null;
-			tmp302_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp302_AST);
+			AST tmp303_AST = null;
+			if (inputState.guessing==0) {
+				tmp303_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp303_AST);
+			}
 			match(DEC);
 			nls();
 			powerExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop409:
+			_loop408:
 			do {
 				if ((_tokenSet_112.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
 					{
-						AST tmp303_AST = null;
-						tmp303_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp303_AST);
+						AST tmp304_AST = null;
+						if (inputState.guessing==0) {
+							tmp304_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp304_AST);
+						}
 						match(STAR);
 						break;
 					}
 					case DIV:
 					{
-						AST tmp304_AST = null;
-						tmp304_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp304_AST);
+						AST tmp305_AST = null;
+						if (inputState.guessing==0) {
+							tmp305_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp305_AST);
+						}
 						match(DIV);
 						break;
 					}
 					case MOD:
 					{
-						AST tmp305_AST = null;
-						tmp305_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp305_AST);
+						AST tmp306_AST = null;
+						if (inputState.guessing==0) {
+							tmp306_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp306_AST);
+						}
 						match(MOD);
 						break;
 					}
@@ -10627,58 +12002,72 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					nls();
 					powerExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop409;
+					break _loop408;
 				}
 				
 			} while (true);
 			}
 			}
-			multiplicativeExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				multiplicativeExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case MINUS:
 		{
 			{
-			AST tmp306_AST = null;
-			tmp306_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp306_AST);
+			AST tmp307_AST = null;
+			if (inputState.guessing==0) {
+				tmp307_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp307_AST);
+			}
 			match(MINUS);
 			if ( inputState.guessing==0 ) {
-				tmp306_AST.setType(UNARY_MINUS);
+				tmp307_AST.setType(UNARY_MINUS);
 			}
 			nls();
 			powerExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop413:
+			_loop412:
 			do {
 				if ((_tokenSet_112.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
 					{
-						AST tmp307_AST = null;
-						tmp307_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp307_AST);
+						AST tmp308_AST = null;
+						if (inputState.guessing==0) {
+							tmp308_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp308_AST);
+						}
 						match(STAR);
 						break;
 					}
 					case DIV:
 					{
-						AST tmp308_AST = null;
-						tmp308_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp308_AST);
+						AST tmp309_AST = null;
+						if (inputState.guessing==0) {
+							tmp309_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp309_AST);
+						}
 						match(DIV);
 						break;
 					}
 					case MOD:
 					{
-						AST tmp309_AST = null;
-						tmp309_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp309_AST);
+						AST tmp310_AST = null;
+						if (inputState.guessing==0) {
+							tmp310_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp310_AST);
+						}
 						match(MOD);
 						break;
 					}
@@ -10690,58 +12079,72 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					nls();
 					powerExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop413;
+					break _loop412;
 				}
 				
 			} while (true);
 			}
 			}
-			multiplicativeExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				multiplicativeExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case PLUS:
 		{
 			{
-			AST tmp310_AST = null;
-			tmp310_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp310_AST);
+			AST tmp311_AST = null;
+			if (inputState.guessing==0) {
+				tmp311_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp311_AST);
+			}
 			match(PLUS);
 			if ( inputState.guessing==0 ) {
-				tmp310_AST.setType(UNARY_PLUS);
+				tmp311_AST.setType(UNARY_PLUS);
 			}
 			nls();
 			powerExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop417:
+			_loop416:
 			do {
 				if ((_tokenSet_112.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
 					{
-						AST tmp311_AST = null;
-						tmp311_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp311_AST);
+						AST tmp312_AST = null;
+						if (inputState.guessing==0) {
+							tmp312_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp312_AST);
+						}
 						match(STAR);
 						break;
 					}
 					case DIV:
 					{
-						AST tmp312_AST = null;
-						tmp312_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp312_AST);
+						AST tmp313_AST = null;
+						if (inputState.guessing==0) {
+							tmp313_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp313_AST);
+						}
 						match(DIV);
 						break;
 					}
 					case MOD:
 					{
-						AST tmp313_AST = null;
-						tmp313_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp313_AST);
+						AST tmp314_AST = null;
+						if (inputState.guessing==0) {
+							tmp314_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp314_AST);
+						}
 						match(MOD);
 						break;
 					}
@@ -10753,16 +12156,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					nls();
 					powerExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop417;
+					break _loop416;
 				}
 				
 			} while (true);
 			}
 			}
-			multiplicativeExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				multiplicativeExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case IDENT:
@@ -10789,34 +12196,42 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			{
 			powerExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			{
-			_loop421:
+			_loop420:
 			do {
 				if ((_tokenSet_112.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
 					{
-						AST tmp314_AST = null;
-						tmp314_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp314_AST);
+						AST tmp315_AST = null;
+						if (inputState.guessing==0) {
+							tmp315_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp315_AST);
+						}
 						match(STAR);
 						break;
 					}
 					case DIV:
 					{
-						AST tmp315_AST = null;
-						tmp315_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp315_AST);
+						AST tmp316_AST = null;
+						if (inputState.guessing==0) {
+							tmp316_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp316_AST);
+						}
 						match(DIV);
 						break;
 					}
 					case MOD:
 					{
-						AST tmp316_AST = null;
-						tmp316_AST = astFactory.create(LT(1));
-						astFactory.makeASTRoot(currentAST, tmp316_AST);
+						AST tmp317_AST = null;
+						if (inputState.guessing==0) {
+							tmp317_AST = astFactory.create(LT(1));
+							astFactory.makeASTRoot(currentAST, tmp317_AST);
+						}
 						match(MOD);
 						break;
 					}
@@ -10828,16 +12243,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 					nls();
 					powerExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
-					break _loop421;
+					break _loop420;
 				}
 				
 			} while (true);
 			}
 			}
-			multiplicativeExpression_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				multiplicativeExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -10855,26 +12274,34 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST powerExpression_AST = null;
 		
 		unaryExpressionNotPlusMinus();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
-		_loop424:
+		_loop423:
 		do {
 			if ((LA(1)==STAR_STAR)) {
-				AST tmp317_AST = null;
-				tmp317_AST = astFactory.create(LT(1));
-				astFactory.makeASTRoot(currentAST, tmp317_AST);
+				AST tmp318_AST = null;
+				if (inputState.guessing==0) {
+					tmp318_AST = astFactory.create(LT(1));
+					astFactory.makeASTRoot(currentAST, tmp318_AST);
+				}
 				match(STAR_STAR);
 				nls();
 				unaryExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				break _loop424;
+				break _loop423;
 			}
 			
 		} while (true);
 		}
-		powerExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			powerExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = powerExpression_AST;
 	}
 	
@@ -10891,26 +12318,38 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case BNOT:
 		{
-			AST tmp318_AST = null;
-			tmp318_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp318_AST);
+			AST tmp319_AST = null;
+			if (inputState.guessing==0) {
+				tmp319_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp319_AST);
+			}
 			match(BNOT);
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LNOT:
 		{
-			AST tmp319_AST = null;
-			tmp319_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp319_AST);
+			AST tmp320_AST = null;
+			if (inputState.guessing==0) {
+				tmp320_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp320_AST);
+			}
 			match(LNOT);
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case IDENT:
@@ -10934,10 +12373,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			{
-			boolean synPredMatched429 = false;
+			boolean synPredMatched428 = false;
 			if (((LA(1)==LPAREN) && ((LA(2) >= LITERAL_void && LA(2) <= LITERAL_any)) && (LA(3)==LBRACK||LA(3)==RPAREN))) {
-				int _m429 = mark();
-				synPredMatched429 = true;
+				int _m428 = mark();
+				synPredMatched428 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -10948,30 +12387,36 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched429 = false;
+					synPredMatched428 = false;
 				}
-				rewind(_m429);
+				rewind(_m428);
 				inputState.guessing--;
 			}
-			if ( synPredMatched429 ) {
+			if ( synPredMatched428 ) {
 				lpb = LT(1);
-				lpb_AST = astFactory.create(lpb);
-				astFactory.makeASTRoot(currentAST, lpb_AST);
+				if (inputState.guessing==0) {
+					lpb_AST = astFactory.create(lpb);
+					astFactory.makeASTRoot(currentAST, lpb_AST);
+				}
 				match(LPAREN);
 				if ( inputState.guessing==0 ) {
 					lpb_AST.setType(TYPECAST);
 				}
 				builtInTypeSpec(true);
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				match(RPAREN);
 				unaryExpression();
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 			}
 			else {
-				boolean synPredMatched431 = false;
+				boolean synPredMatched430 = false;
 				if (((LA(1)==LPAREN) && (LA(2)==IDENT) && (_tokenSet_113.member(LA(3))))) {
-					int _m431 = mark();
-					synPredMatched431 = true;
+					int _m430 = mark();
+					synPredMatched430 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -10982,35 +12427,45 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched431 = false;
+						synPredMatched430 = false;
 					}
-					rewind(_m431);
+					rewind(_m430);
 					inputState.guessing--;
 				}
-				if ( synPredMatched431 ) {
+				if ( synPredMatched430 ) {
 					lp = LT(1);
-					lp_AST = astFactory.create(lp);
-					astFactory.makeASTRoot(currentAST, lp_AST);
+					if (inputState.guessing==0) {
+						lp_AST = astFactory.create(lp);
+						astFactory.makeASTRoot(currentAST, lp_AST);
+					}
 					match(LPAREN);
 					if ( inputState.guessing==0 ) {
 						lp_AST.setType(TYPECAST);
 					}
 					classTypeSpec(true);
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					match(RPAREN);
 					unaryExpressionNotPlusMinus();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else if ((_tokenSet_114.member(LA(1))) && (_tokenSet_16.member(LA(2))) && (_tokenSet_5.member(LA(3)))) {
 					postfixExpression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 				}
 				else {
 					throw new NoViableAltException(LT(1), getFilename());
 				}
 				}
 				}
-				unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+				if ( inputState.guessing==0 ) {
+					unaryExpressionNotPlusMinus_AST = (AST)currentAST.root;
+				}
 				break;
 			}
 			default:
@@ -11030,56 +12485,80 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case INC:
 		{
-			AST tmp322_AST = null;
-			tmp322_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp322_AST);
+			AST tmp323_AST = null;
+			if (inputState.guessing==0) {
+				tmp323_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp323_AST);
+			}
 			match(INC);
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case DEC:
 		{
-			AST tmp323_AST = null;
-			tmp323_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp323_AST);
+			AST tmp324_AST = null;
+			if (inputState.guessing==0) {
+				tmp324_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp324_AST);
+			}
 			match(DEC);
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case MINUS:
 		{
-			AST tmp324_AST = null;
-			tmp324_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp324_AST);
+			AST tmp325_AST = null;
+			if (inputState.guessing==0) {
+				tmp325_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp325_AST);
+			}
 			match(MINUS);
 			if ( inputState.guessing==0 ) {
-				tmp324_AST.setType(UNARY_MINUS);
+				tmp325_AST.setType(UNARY_MINUS);
 			}
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case PLUS:
 		{
-			AST tmp325_AST = null;
-			tmp325_AST = astFactory.create(LT(1));
-			astFactory.makeASTRoot(currentAST, tmp325_AST);
+			AST tmp326_AST = null;
+			if (inputState.guessing==0) {
+				tmp326_AST = astFactory.create(LT(1));
+				astFactory.makeASTRoot(currentAST, tmp326_AST);
+			}
 			match(PLUS);
 			if ( inputState.guessing==0 ) {
-				tmp325_AST.setType(UNARY_PLUS);
+				tmp326_AST.setType(UNARY_PLUS);
 			}
 			nls();
 			unaryExpression();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case IDENT:
@@ -11105,8 +12584,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			unaryExpressionNotPlusMinus();
-			astFactory.addASTChild(currentAST, returnAST);
-			unaryExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				unaryExpression_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -11149,14 +12632,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			zz=pathExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case LBRACK:
 		case LCURLY:
 		{
 			pathExpressionFromBrackets();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -11170,8 +12657,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case INC:
 		{
 			in = LT(1);
-			in_AST = astFactory.create(in);
-			astFactory.makeASTRoot(currentAST, in_AST);
+			if (inputState.guessing==0) {
+				in_AST = astFactory.create(in);
+				astFactory.makeASTRoot(currentAST, in_AST);
+			}
 			match(INC);
 			if ( inputState.guessing==0 ) {
 				in_AST.setType(POST_INC);
@@ -11181,8 +12670,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case DEC:
 		{
 			de = LT(1);
-			de_AST = astFactory.create(de);
-			astFactory.makeASTRoot(currentAST, de_AST);
+			if (inputState.guessing==0) {
+				de_AST = astFactory.create(de);
+				astFactory.makeASTRoot(currentAST, de_AST);
+			}
 			match(DEC);
 			if ( inputState.guessing==0 ) {
 				de_AST.setType(POST_DEC);
@@ -11252,7 +12743,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		postfixExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			postfixExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = postfixExpression_AST;
 	}
 	
@@ -11272,44 +12765,64 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			constantNumber();
-			astFactory.addASTChild(currentAST, returnAST);
-			constant_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				constant_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case STRING_LITERAL:
 		{
-			AST tmp326_AST = null;
-			tmp326_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp326_AST);
+			AST tmp327_AST = null;
+			if (inputState.guessing==0) {
+				tmp327_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp327_AST);
+			}
 			match(STRING_LITERAL);
-			constant_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constant_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_true:
 		{
-			AST tmp327_AST = null;
-			tmp327_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp327_AST);
+			AST tmp328_AST = null;
+			if (inputState.guessing==0) {
+				tmp328_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp328_AST);
+			}
 			match(LITERAL_true);
-			constant_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constant_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_false:
 		{
-			AST tmp328_AST = null;
-			tmp328_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp328_AST);
+			AST tmp329_AST = null;
+			if (inputState.guessing==0) {
+				tmp329_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp329_AST);
+			}
 			match(LITERAL_false);
-			constant_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constant_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LITERAL_null:
 		{
-			AST tmp329_AST = null;
-			tmp329_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp329_AST);
+			AST tmp330_AST = null;
+			if (inputState.guessing==0) {
+				tmp330_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp330_AST);
+			}
 			match(LITERAL_null);
-			constant_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constant_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -11376,16 +12889,20 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST newExpression_AST = null;
 		boolean zz; /*ignored*/
 		
-		AST tmp330_AST = null;
-		tmp330_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp330_AST);
+		AST tmp331_AST = null;
+		if (inputState.guessing==0) {
+			tmp331_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp331_AST);
+		}
 		match(LITERAL_new);
 		{
 		switch ( LA(1)) {
 		case LT:
 		{
 			typeArguments();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		case IDENT:
@@ -11409,21 +12926,27 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		type();
-		astFactory.addASTChild(currentAST, returnAST);
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
 		{
 		switch ( LA(1)) {
 		case LPAREN:
 		{
 			match(LPAREN);
 			zz=argList();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			match(RPAREN);
 			break;
 		}
 		case LBRACK:
 		{
 			newArrayDeclarator();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -11432,7 +12955,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		newExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			newExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = newExpression_AST;
 	}
 	
@@ -11442,27 +12967,33 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST scopeEscapeExpression_AST = null;
 		
-		AST tmp333_AST = null;
-		tmp333_AST = astFactory.create(LT(1));
-		astFactory.makeASTRoot(currentAST, tmp333_AST);
+		AST tmp334_AST = null;
+		if (inputState.guessing==0) {
+			tmp334_AST = astFactory.create(LT(1));
+			astFactory.makeASTRoot(currentAST, tmp334_AST);
+		}
 		match(DOLLAR);
 		if ( inputState.guessing==0 ) {
-			tmp333_AST.setType(SCOPE_ESCAPE);
+			tmp334_AST.setType(SCOPE_ESCAPE);
 		}
 		{
 		switch ( LA(1)) {
 		case IDENT:
 		{
-			AST tmp334_AST = null;
-			tmp334_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp334_AST);
+			AST tmp335_AST = null;
+			if (inputState.guessing==0) {
+				tmp335_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp335_AST);
+			}
 			match(IDENT);
 			break;
 		}
 		case DOLLAR:
 		{
 			scopeEscapeExpression();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			break;
 		}
 		default:
@@ -11471,7 +13002,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		scopeEscapeExpression_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			scopeEscapeExpression_AST = (AST)currentAST.root;
+		}
 		returnAST = scopeEscapeExpression_AST;
 	}
 	
@@ -11484,10 +13017,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST strictContextExpression_AST = null;
 		
-		boolean synPredMatched441 = false;
+		boolean synPredMatched440 = false;
 		if (((_tokenSet_11.member(LA(1))) && (_tokenSet_104.member(LA(2))) && (_tokenSet_115.member(LA(3))))) {
-			int _m441 = mark();
-			synPredMatched441 = true;
+			int _m440 = mark();
+			synPredMatched440 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11495,35 +13028,55 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched441 = false;
+				synPredMatched440 = false;
 			}
-			rewind(_m441);
+			rewind(_m440);
 			inputState.guessing--;
 		}
-		if ( synPredMatched441 ) {
+		if ( synPredMatched440 ) {
 			singleDeclaration();
-			astFactory.addASTChild(currentAST, returnAST);
-			strictContextExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				strictContextExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((_tokenSet_18.member(LA(1))) && (_tokenSet_65.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 			expression();
-			astFactory.addASTChild(currentAST, returnAST);
-			strictContextExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				strictContextExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if (((LA(1) >= LITERAL_void && LA(1) <= LITERAL_any)) && (_tokenSet_116.member(LA(2)))) {
 			builtInType();
-			astFactory.addASTChild(currentAST, returnAST);
-			strictContextExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				strictContextExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if (((LA(1) >= LITERAL_return && LA(1) <= LITERAL_assert))) {
 			branchStatement();
-			astFactory.addASTChild(currentAST, returnAST);
-			strictContextExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				strictContextExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else if ((LA(1)==AT) && (LA(2)==IDENT) && (_tokenSet_117.member(LA(3)))) {
 			annotation();
-			astFactory.addASTChild(currentAST, returnAST);
-			strictContextExpression_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				strictContextExpression_AST = (AST)currentAST.root;
+			}
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -11542,15 +13095,23 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case IDENT:
 		{
 			identifier();
-			astFactory.addASTChild(currentAST, returnAST);
-			stringConstructorValuePart_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				stringConstructorValuePart_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case LCURLY:
 		{
 			openBlock();
-			astFactory.addASTChild(currentAST, returnAST);
-			stringConstructorValuePart_AST = (AST)currentAST.root;
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
+			if ( inputState.guessing==0 ) {
+				stringConstructorValuePart_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -11570,13 +13131,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lb_AST = null;
 		
 		{
-		int _cnt472=0;
-		_loop472:
+		int _cnt471=0;
+		_loop471:
 		do {
 			if ((LA(1)==LBRACK) && (_tokenSet_118.member(LA(2))) && (_tokenSet_16.member(LA(3)))) {
 				lb = LT(1);
-				lb_AST = astFactory.create(lb);
-				astFactory.makeASTRoot(currentAST, lb_AST);
+				if (inputState.guessing==0) {
+					lb_AST = astFactory.create(lb);
+					astFactory.makeASTRoot(currentAST, lb_AST);
+				}
 				match(LBRACK);
 				if ( inputState.guessing==0 ) {
 					lb_AST.setType(ARRAY_DECLARATOR);
@@ -11610,7 +13173,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				case NUM_BIG_DECIMAL:
 				{
 					expression();
-					astFactory.addASTChild(currentAST, returnAST);
+					if (inputState.guessing==0) {
+						astFactory.addASTChild(currentAST, returnAST);
+					}
 					break;
 				}
 				case RBRACK:
@@ -11626,13 +13191,15 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				match(RBRACK);
 			}
 			else {
-				if ( _cnt472>=1 ) { break _loop472; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt471>=1 ) { break _loop471; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt472++;
+			_cnt471++;
 		} while (true);
 		}
-		newArrayDeclarator_AST = (AST)currentAST.root;
+		if ( inputState.guessing==0 ) {
+			newArrayDeclarator_AST = (AST)currentAST.root;
+		}
 		returnAST = newArrayDeclarator_AST;
 	}
 	
@@ -11651,10 +13218,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST sp_AST = null;
 		
 		{
-		boolean synPredMatched459 = false;
+		boolean synPredMatched458 = false;
 		if (((_tokenSet_119.member(LA(1))) && (_tokenSet_120.member(LA(2))) && (_tokenSet_97.member(LA(3))))) {
-			int _m459 = mark();
-			synPredMatched459 = true;
+			int _m458 = mark();
+			synPredMatched458 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11662,17 +13229,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched459 = false;
+				synPredMatched458 = false;
 			}
-			rewind(_m459);
+			rewind(_m458);
 			inputState.guessing--;
 		}
-		if ( synPredMatched459 ) {
+		if ( synPredMatched458 ) {
 			argumentLabel();
-			astFactory.addASTChild(currentAST, returnAST);
+			if (inputState.guessing==0) {
+				astFactory.addASTChild(currentAST, returnAST);
+			}
 			c = LT(1);
-			c_AST = astFactory.create(c);
-			astFactory.makeASTRoot(currentAST, c_AST);
+			if (inputState.guessing==0) {
+				c_AST = astFactory.create(c);
+				astFactory.makeASTRoot(currentAST, c_AST);
+			}
 			match(COLON);
 			if ( inputState.guessing==0 ) {
 				c_AST.setType(LABELED_ARG);
@@ -11680,8 +13251,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		else if ((LA(1)==STAR)) {
 			sp = LT(1);
-			sp_AST = astFactory.create(sp);
-			astFactory.makeASTRoot(currentAST, sp_AST);
+			if (inputState.guessing==0) {
+				sp_AST = astFactory.create(sp);
+				astFactory.makeASTRoot(currentAST, sp_AST);
+			}
 			match(STAR);
 			if ( inputState.guessing==0 ) {
 				sp_AST.setType(SPREAD_ARG);
@@ -11695,8 +13268,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		strictContextExpression();
-		astFactory.addASTChild(currentAST, returnAST);
-		argument_AST = (AST)currentAST.root;
+		if (inputState.guessing==0) {
+			astFactory.addASTChild(currentAST, returnAST);
+		}
+		if ( inputState.guessing==0 ) {
+			argument_AST = (AST)currentAST.root;
+		}
 		returnAST = argument_AST;
 		return hasLabel;
 	}
@@ -11712,8 +13289,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case IDENT:
 		{
-			AST tmp336_AST = null;
-			tmp336_AST = astFactory.create(LT(1));
+			AST tmp337_AST = null;
+			if (inputState.guessing==0) {
+				tmp337_AST = astFactory.create(LT(1));
+			}
 			match(IDENT);
 			break;
 		}
@@ -11756,8 +13335,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		case STRING_LITERAL:
 		{
-			AST tmp337_AST = null;
-			tmp337_AST = astFactory.create(LT(1));
+			AST tmp338_AST = null;
+			if (inputState.guessing==0) {
+				tmp338_AST = astFactory.create(LT(1));
+			}
 			match(STRING_LITERAL);
 			break;
 		}
@@ -11775,8 +13356,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		}
-		AST tmp338_AST = null;
-		tmp338_AST = astFactory.create(LT(1));
+		AST tmp339_AST = null;
+		if (inputState.guessing==0) {
+			tmp339_AST = astFactory.create(LT(1));
+		}
 		match(COLON);
 		returnAST = argumentLabelStart_AST;
 	}
@@ -11797,10 +13380,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST id_AST = null;
 		AST kw_AST = null;
 		
-		boolean synPredMatched462 = false;
+		boolean synPredMatched461 = false;
 		if (((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_121.member(LA(3))))) {
-			int _m462 = mark();
-			synPredMatched462 = true;
+			int _m461 = mark();
+			synPredMatched461 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11808,26 +13391,30 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched462 = false;
+				synPredMatched461 = false;
 			}
-			rewind(_m462);
+			rewind(_m461);
 			inputState.guessing--;
 		}
-		if ( synPredMatched462 ) {
+		if ( synPredMatched461 ) {
 			id = LT(1);
-			id_AST = astFactory.create(id);
-			astFactory.addASTChild(currentAST, id_AST);
+			if (inputState.guessing==0) {
+				id_AST = astFactory.create(id);
+				astFactory.addASTChild(currentAST, id_AST);
+			}
 			match(IDENT);
 			if ( inputState.guessing==0 ) {
 				id_AST.setType(STRING_LITERAL);
 			}
-			argumentLabel_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				argumentLabel_AST = (AST)currentAST.root;
+			}
 		}
 		else {
-			boolean synPredMatched464 = false;
+			boolean synPredMatched463 = false;
 			if (((_tokenSet_122.member(LA(1))))) {
-				int _m464 = mark();
-				synPredMatched464 = true;
+				int _m463 = mark();
+				synPredMatched463 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -11835,24 +13422,32 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched464 = false;
+					synPredMatched463 = false;
 				}
-				rewind(_m464);
+				rewind(_m463);
 				inputState.guessing--;
 			}
-			if ( synPredMatched464 ) {
+			if ( synPredMatched463 ) {
 				keywordPropertyNames();
-				kw_AST = (AST)returnAST;
-				astFactory.addASTChild(currentAST, returnAST);
+				if (inputState.guessing==0) {
+					kw_AST = (AST)returnAST;
+					astFactory.addASTChild(currentAST, returnAST);
+				}
 				if ( inputState.guessing==0 ) {
 					kw_AST.setType(STRING_LITERAL);
 				}
-				argumentLabel_AST = (AST)currentAST.root;
+				if ( inputState.guessing==0 ) {
+					argumentLabel_AST = (AST)currentAST.root;
+				}
 			}
 			else if ((_tokenSet_93.member(LA(1))) && (_tokenSet_120.member(LA(2))) && (_tokenSet_97.member(LA(3)))) {
 				primaryExpression();
-				astFactory.addASTChild(currentAST, returnAST);
-				argumentLabel_AST = (AST)currentAST.root;
+				if (inputState.guessing==0) {
+					astFactory.addASTChild(currentAST, returnAST);
+				}
+				if ( inputState.guessing==0 ) {
+					argumentLabel_AST = (AST)currentAST.root;
+				}
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -11871,56 +13466,80 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case NUM_INT:
 		{
-			AST tmp339_AST = null;
-			tmp339_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp339_AST);
+			AST tmp340_AST = null;
+			if (inputState.guessing==0) {
+				tmp340_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp340_AST);
+			}
 			match(NUM_INT);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case NUM_FLOAT:
 		{
-			AST tmp340_AST = null;
-			tmp340_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp340_AST);
+			AST tmp341_AST = null;
+			if (inputState.guessing==0) {
+				tmp341_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp341_AST);
+			}
 			match(NUM_FLOAT);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case NUM_LONG:
 		{
-			AST tmp341_AST = null;
-			tmp341_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp341_AST);
+			AST tmp342_AST = null;
+			if (inputState.guessing==0) {
+				tmp342_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp342_AST);
+			}
 			match(NUM_LONG);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case NUM_DOUBLE:
 		{
-			AST tmp342_AST = null;
-			tmp342_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp342_AST);
+			AST tmp343_AST = null;
+			if (inputState.guessing==0) {
+				tmp343_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp343_AST);
+			}
 			match(NUM_DOUBLE);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case NUM_BIG_INT:
 		{
-			AST tmp343_AST = null;
-			tmp343_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp343_AST);
+			AST tmp344_AST = null;
+			if (inputState.guessing==0) {
+				tmp344_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp344_AST);
+			}
 			match(NUM_BIG_INT);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		case NUM_BIG_DECIMAL:
 		{
-			AST tmp344_AST = null;
-			tmp344_AST = astFactory.create(LT(1));
-			astFactory.addASTChild(currentAST, tmp344_AST);
+			AST tmp345_AST = null;
+			if (inputState.guessing==0) {
+				tmp345_AST = astFactory.create(LT(1));
+				astFactory.addASTChild(currentAST, tmp345_AST);
+			}
 			match(NUM_BIG_DECIMAL);
-			constantNumber_AST = (AST)currentAST.root;
+			if ( inputState.guessing==0 ) {
+				constantNumber_AST = (AST)currentAST.root;
+			}
 			break;
 		}
 		default:
@@ -11941,45 +13560,61 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		switch ( LA(1)) {
 		case LPAREN:
 		{
-			AST tmp345_AST = null;
-			tmp345_AST = astFactory.create(LT(1));
+			AST tmp346_AST = null;
+			if (inputState.guessing==0) {
+				tmp346_AST = astFactory.create(LT(1));
+			}
 			match(LPAREN);
 			balancedTokens();
-			AST tmp346_AST = null;
-			tmp346_AST = astFactory.create(LT(1));
+			AST tmp347_AST = null;
+			if (inputState.guessing==0) {
+				tmp347_AST = astFactory.create(LT(1));
+			}
 			match(RPAREN);
 			break;
 		}
 		case LBRACK:
 		{
-			AST tmp347_AST = null;
-			tmp347_AST = astFactory.create(LT(1));
+			AST tmp348_AST = null;
+			if (inputState.guessing==0) {
+				tmp348_AST = astFactory.create(LT(1));
+			}
 			match(LBRACK);
 			balancedTokens();
-			AST tmp348_AST = null;
-			tmp348_AST = astFactory.create(LT(1));
+			AST tmp349_AST = null;
+			if (inputState.guessing==0) {
+				tmp349_AST = astFactory.create(LT(1));
+			}
 			match(RBRACK);
 			break;
 		}
 		case LCURLY:
 		{
-			AST tmp349_AST = null;
-			tmp349_AST = astFactory.create(LT(1));
+			AST tmp350_AST = null;
+			if (inputState.guessing==0) {
+				tmp350_AST = astFactory.create(LT(1));
+			}
 			match(LCURLY);
 			balancedTokens();
-			AST tmp350_AST = null;
-			tmp350_AST = astFactory.create(LT(1));
+			AST tmp351_AST = null;
+			if (inputState.guessing==0) {
+				tmp351_AST = astFactory.create(LT(1));
+			}
 			match(RCURLY);
 			break;
 		}
 		case STRING_CTOR_START:
 		{
-			AST tmp351_AST = null;
-			tmp351_AST = astFactory.create(LT(1));
+			AST tmp352_AST = null;
+			if (inputState.guessing==0) {
+				tmp352_AST = astFactory.create(LT(1));
+			}
 			match(STRING_CTOR_START);
 			balancedTokens();
-			AST tmp352_AST = null;
-			tmp352_AST = astFactory.create(LT(1));
+			AST tmp353_AST = null;
+			if (inputState.guessing==0) {
+				tmp353_AST = astFactory.create(LT(1));
+			}
 			match(STRING_CTOR_END);
 			break;
 		}
@@ -12312,11 +13947,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_12 = new BitSet(mk_tokenSet_12());
 	private static final long[] mk_tokenSet_13() {
-		long[] data = new long[8];
-		data[0]=7009386627074L;
-		data[1]=-720576061913694208L;
-		data[2]=8646914583354661901L;
-		data[3]=1023L;
+		long[] data = { 4810363371522L, -1873919781166645248L, 16779273L, 0L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_13 = new BitSet(mk_tokenSet_13());
@@ -12472,11 +14103,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_37 = new BitSet(mk_tokenSet_37());
 	private static final long[] mk_tokenSet_38() {
-		long[] data = new long[8];
-		data[0]=7009386627074L;
-		data[1]=-576460752773447680L;
-		data[2]=8646914583337884718L;
-		data[3]=1023L;
+		long[] data = { 137438953474L, -720435205546442752L, 34L, 0L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_38 = new BitSet(mk_tokenSet_38());
@@ -12585,9 +14212,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_54 = new BitSet(mk_tokenSet_54());
 	private static final long[] mk_tokenSet_55() {
 		long[] data = new long[8];
-		data[0]=7009386627074L;
-		data[1]=-720575940379410432L;
-		data[2]=8646914583354670095L;
+		data[0]=4810363371522L;
+		data[1]=-720857415356121088L;
+		data[2]=8646914583153277967L;
 		data[3]=1023L;
 		return data;
 	}
@@ -12608,11 +14235,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_58 = new BitSet(mk_tokenSet_58());
 	private static final long[] mk_tokenSet_59() {
-		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-720576061913694208L;
-		data[2]=8646914583337884684L;
-		data[3]=1023L;
+		long[] data = { 4810363371520L, -1873919781166645248L, 8L, 0L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_59 = new BitSet(mk_tokenSet_59());
@@ -12724,11 +14347,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_74 = new BitSet(mk_tokenSet_74());
 	private static final long[] mk_tokenSet_75() {
-		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-7493989906042322944L;
-		data[2]=8646914583337884748L;
-		data[3]=1023L;
+		long[] data = { 0L, -8790885863440515072L, 64L, 0L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_75 = new BitSet(mk_tokenSet_75());
@@ -12810,9 +14429,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_87 = new BitSet(mk_tokenSet_87());
 	private static final long[] mk_tokenSet_88() {
 		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-1008806437863948288L;
-		data[2]=8646914583337893132L;
+		data[0]=4810363371520L;
+		data[1]=-1009087912840658944L;
+		data[2]=8646914583136498956L;
 		data[3]=1023L;
 		return data;
 	}
@@ -12841,9 +14460,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_91 = new BitSet(mk_tokenSet_91());
 	private static final long[] mk_tokenSet_92() {
 		long[] data = new long[8];
-		data[0]=7009386627074L;
-		data[1]=-7638105089554776064L;
-		data[2]=8646914583337884780L;
+		data[0]=137438953474L;
+		data[1]=-7782079540176093184L;
+		data[2]=8646914583098818668L;
 		data[3]=1023L;
 		return data;
 	}
@@ -12899,9 +14518,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_98 = new BitSet(mk_tokenSet_98());
 	private static final long[] mk_tokenSet_99() {
 		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-7926335465706487808L;
-		data[2]=8646914583337884684L;
+		data[0]=4810363371520L;
+		data[1]=-7926757686795042816L;
+		data[2]=8646914583098884108L;
 		data[3]=1023L;
 		return data;
 	}
@@ -12950,11 +14569,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_106 = new BitSet(mk_tokenSet_106());
 	private static final long[] mk_tokenSet_107() {
-		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-2882303883051532288L;
-		data[2]=8646914583337884684L;
-		data[3]=1023L;
+		long[] data = { 4810363371520L, -4035647602304483328L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_107 = new BitSet(mk_tokenSet_107());
@@ -13009,11 +14624,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_114 = new BitSet(mk_tokenSet_114());
 	private static final long[] mk_tokenSet_115() {
-		long[] data = new long[8];
-		data[0]=7009386627072L;
-		data[1]=-7493989901478920192L;
-		data[2]=8646914583337884684L;
-		data[3]=1023L;
+		long[] data = { 4810363371520L, -8647333620731871232L, 0L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_115 = new BitSet(mk_tokenSet_115());
