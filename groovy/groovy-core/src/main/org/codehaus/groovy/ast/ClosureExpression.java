@@ -45,38 +45,33 @@
  */
 package org.codehaus.groovy.ast;
 
+
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * Represents a closure creation expression such as { statement; } 
+ * or { i : statement; } or { i, x, String y: statement }
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyCodeVisitor {
+public class ClosureExpression extends Expression {
+    
+    private Parameter[] parameters;
+    private Statement code;
+    
+    public ClosureExpression(Parameter[] parameters, Statement code) {
+        this.parameters = parameters;
+        this.code = code;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitClosureExpression(this);
+    }
 
-    // statements
-    //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
-    public void visitExpressionStatement(ExpressionStatement statement);
-    public void visitReturnStatement(ReturnStatement statement);
-    public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
+    public Statement getCode() {
+        return code;
+    }
 
-    // expressions
-    //-------------------------------------------------------------------------
-    public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitConstantExpression(ConstantExpression expression);
-    public void visitBinaryExpression(BinaryExpression expression);
-    public void visitBooleanExpression(BooleanExpression expression);
-    public void visitTupleExpression(TupleExpression expression);
-    public void visitMapExpression(MapExpression expression);
-    public void visitMapEntryExpression(MapEntryExpression expression);
-    public void visitListExpression(ListExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitRangeExpression(RangeExpression expression);
-    public void visitClosureExpression(ClosureExpression expression);
+    public Parameter[] getParameters() {
+        return parameters;
+    }
 }
