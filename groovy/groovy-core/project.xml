@@ -462,7 +462,7 @@
   </dependencies>
 
   <build>
-    <nagEmailAddress>groovy-scm@codehaus.org</nagEmailAddress>
+    <nagEmailAddress>groovy-scm@groovy.codehaus.org</nagEmailAddress>
     <sourceDirectory>src/main</sourceDirectory>
     <unitTestSourceDirectory>src/test</unitTestSourceDirectory>
     <aspectSourceDirectory/>
