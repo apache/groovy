@@ -41,7 +41,7 @@ class ListIteratingTest extends GroovyTestCase {
 
     protected assertSequence(s) {
         result = 0
-        for i in s {
+        for ( i in s ) {
             result = result + i
         }
 	    
@@ -51,7 +51,7 @@ class ListIteratingTest extends GroovyTestCase {
         /** @todo parser
         assert(s[2] == 3)
         result = 0
-        for i in s[1:2] {
+        for ( i in s[1:2] ) {
             result += i
         }
         assert(result == 2+3)
