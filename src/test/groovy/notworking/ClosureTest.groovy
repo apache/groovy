@@ -8,26 +8,32 @@ package groovy;
  */
 class ClosureTest extends Test {
 
+	property callCount;
+
     testSimpleBlockCall() {
-        this.callCount = 0;
+        callCount = 0;
         
-        block = { ++ this.callCount; }
+        block = {owner| owner.incrementCallCount(); }
         
         block.call();
         
-        assert(this.callCount == 1);
+        assert(callCount == 1);
     }
 
 
     testBlockAsParameter() {
-        this.callCount = 0;
+        callCount = 0;
         
-        callBlock(5, { ++ this.callCount; });
+        callBlock(5, { | owner | owner.incrementCallCount(); });
         
-        assert(this.callCount == 5);
+        assert(callCount == 5);
     }
 
 
+	protected incrementCallCount() {
+	    callCount = callCount + 1;
+	}
+	
 	protected callBlock(count, block) {
 	    for i in range(0, count) {
 			block.call();	        

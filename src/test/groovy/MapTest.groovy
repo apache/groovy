@@ -60,12 +60,13 @@ class MapTest extends GroovyTestCase {
         */
     }
     
-    /** @todo parser
     void testEmptyMap() {
     	m = [:];
     	
     	assert m.size() := 0;
+        /** @todo parser
     	assert !m.containsKey("cheese");
+    	*/
     	
     	m.put("cheese", "cheddar");
 
@@ -73,6 +74,7 @@ class MapTest extends GroovyTestCase {
         assert m.containsKey("cheese");
     }
     
+    /** @todo parser
     void testMapMutation() {    
         m = [ 'abc' : 'def', 'def' : 134, 'xyz' : 'zzz' ];
 	    
