@@ -295,7 +295,10 @@ FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 // Compilation Unit: In Groovy, this is a single file or script. This is the start
 // rule for this parser
 compilationUnit
-	:	// A compilation unit starts with an optional package definition
+	:	
+		// we can have comments at the top of a file
+		nls!
+		// A compilation unit starts with an optional package definition
 		(	(annotations "package")=> packageDefinition
                 // The main part of the script is a sequence of any number of statements.
                 // Semicolons and/or significant newlines serve as separators.
