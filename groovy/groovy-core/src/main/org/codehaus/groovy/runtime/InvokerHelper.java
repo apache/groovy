@@ -60,6 +60,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -176,6 +177,10 @@ public class InvokerHelper {
 
     public static boolean matchRegex(Object left, Object right) {
     	return getInstance().objectMatchRegex(left, right);
+    }
+    
+    public static Pattern regexPattern(String regex) {
+    	return getInstance().regexPattern(regex);
     }
 
     public static boolean compareNotEqual(Object left, Object right) {

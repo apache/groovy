@@ -48,28 +48,26 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a regular expression of the form /regex/ which creates
- * a regular expression. In the source code the regular expression does
- * not need to escape the use of backslash \ which makes it easier to work
- * with regex's in Groovy.
+ * Represents a regular expression of the form ~<double quoted string> which creates
+ * a regular expression. 
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class RegexExpression extends Expression {
     
-    private String regex;
+    private Expression gstring;
     
-    public RegexExpression(String regex) {
-        this.regex = regex;
+    public RegexExpression(Expression gstring) {
+        this.gstring = gstring;
     }
     
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitRegexExpression(this);
     }
 
-    public String getRegex() {
-        return regex;
+    public Expression getRegex() {
+        return gstring;
     }
 
 }
