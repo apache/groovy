@@ -77,8 +77,10 @@
       <item name="Other Plugins"       href="/miscide.html"/>
     </menu>
     
-    <menu name="Articles">
-      <item name="Index"                href="/articles.html"/>
+    <menu name="Useful Links">
+      <item name="Articles"           href="/articles.html"/>
+      <item name="Just Groovy"        href="http://justgroovy.org/"/>
+	  <item name="Japenese Site"      href="http://www.sekiyas.net/groovylab/">
     </menu>
     
     <menu name="Modules">
