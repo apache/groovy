@@ -1,6 +1,8 @@
 Things to Test
 ==============
 
+* maybe refactor ScriptContext into GroovyShell?
+
 * test methods which return a specific type
 
 * why do the try/catch tests fail when run inside an IDE?
