@@ -86,7 +86,7 @@ class Foo {
   doSomething() {
     data = ["name": "James", "location": "London"]
     for (e in data) {
-      println("property ${e.key} is ${e.value}")
+      println("entry ${e.key} is ${e.value}")
     }
   }
   
@@ -96,7 +96,9 @@ class Foo {
   
   static void main(args) {
     values = [1, 2, 3, "abc"]
-    closureExample(values)
+    foo = new Foo()
+    foo.closureExample(values)
+    foo.doSomething()
   }
 }
 </source>
