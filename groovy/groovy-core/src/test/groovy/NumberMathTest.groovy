@@ -77,6 +77,7 @@ class NumberMathTest extends GroovyTestCase {
     	I3 = new Integer(3);
     	L1 = new Long(1);
     	L2 = new Long(2);
+    	L3 = new Long(3);
     	F1 = new Float("1.0");
     	F2 = new Float("2.0");
     	D1 = new Double("1.0");
@@ -91,6 +92,21 @@ class NumberMathTest extends GroovyTestCase {
     	assert I1/I2 instanceof BigDecimal;
     	assert I1/I2 == new BigDecimal("0.5");
 
+    	assert I1\I2 instanceof Integer;
+    	assert I1\I2 == 0;
+
+    	assert I3\I2 instanceof Integer;
+    	assert I3\I2 == 1;
+    	
+    	assert L1\I2 instanceof Long;
+    	assert L1\I2 == 0;
+
+    	assert L3\L2 instanceof Long;
+    	assert L3\L2 == 1;
+    	
+    	assert BI1\BI2 instanceof BigInteger;
+    	assert BI1\BI2 == 0;
+    	
     	assert I1/I3 instanceof BigDecimal;
     	assert I1/I3 == new BigDecimal("0.3333333333");
     	
@@ -105,5 +121,21 @@ class NumberMathTest extends GroovyTestCase {
 
     	BBD2 = new BigDecimal(".000000000000000008");
     	assert BBD1 + BBD2 == new BigDecimal("0.123456789012345678");
-	}    
+	}
+	
+	void testUnsupportedIntDivision() {
+	   	try {
+    		1.0 \ 3;
+    	} catch (UnsupportedOperationException uoe) {
+    		return
+    	}
+    	fail("Should catch an UnsupportedOperationException")
+    	
+	   	try {
+    		1.0G \ 3;
+    	} catch (UnsupportedOperationException uoe) {
+    		return
+    	}
+    	fail("Should catch an UnsupportedOperationException")
+	} 
 }

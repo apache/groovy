@@ -2715,6 +2715,50 @@ public class DefaultGroovyMethods {
     }
     
     /**
+     * Integer Divide a Character by a Number
+     *
+     * @param left a Character
+     * @param right a Number
+     * @return the integer division of both
+     */
+    public static Number intdiv(Character left, Number right) {
+        return intdiv(new Integer(left.charValue()), right);
+    }
+
+    /**
+     * Integer Divide a Number by a Character
+     *
+     * @param left a Number
+     * @param right a Character
+     * @return the integer division of both
+     */
+    public static Number intdiv(Number left, Character right) {
+        return intdiv(left, new Integer(right.charValue()));
+    }
+
+    /**
+     * Integer Divide two Characters
+     *
+     * @param left a Character
+     * @param right another Character
+     * @return the integer division of both
+     */
+    public static Number intdiv(Character left, Character right) {
+        return intdiv(new Integer(left.charValue()), right);
+    }
+
+    /**
+     * Integer Divide two Numbers
+     * 
+     * @param left a Number
+     * @param right another Number
+     * @return a Number (an Integer) resulting of the integer division operation
+     */
+    public static Number intdiv(Number left, Number right) {
+    	return NumberMath.intdiv(left, right);
+    }
+    
+    /**
      * Bitwise OR together two numbers
      *
      * @param left a Number

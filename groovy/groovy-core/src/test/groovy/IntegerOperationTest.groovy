@@ -85,16 +85,26 @@ class IntegerOperationTest extends GroovyTestCase {
         assert y == 10.0 : "y = " + y        
     }
     
+    void testIntegerDivide() {
+        x = 52 \ 3
+        assert x == 17 : "x = " + x
+        
+        y = x \ 2
+        assert y == 8 : "y = " + y 
+        
+        y = 11
+        y \= 3
+        assert y == 3       
+    }
+    
     void testMod() {
     	x = 100 % 3
     	
     	assert x == 1
     	
-    	/** @todo bug!
     	y = 11
     	y %= 3
     	assert y == 2
-    	*/
     }
     
     void testAnd() {

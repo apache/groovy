@@ -129,13 +129,15 @@ public class Types
     public static final int MINUS                       = 201;   // -
     public static final int MULTIPLY                    = 202;   // *
     public static final int DIVIDE                      = 203;   // /
-    public static final int MOD                         = 204;   // %
+    public static final int INTDIV                      = 204;   // \
+    public static final int MOD                         = 205;   // %
 
     public static final int PLUS_EQUAL                  = 210;   // +=
     public static final int MINUS_EQUAL                 = 211;   // -=
     public static final int MULTIPLY_EQUAL              = 212;   // *=
     public static final int DIVIDE_EQUAL                = 213;   // /=
-    public static final int MOD_EQUAL                   = 214;   // %=
+    public static final int INTDIV_EQUAL                = 214;   // \=
+    public static final int MOD_EQUAL                   = 215;   // %=
 
     public static final int PLUS_PLUS                   = 250;   // ++
     public static final int PREFIX_PLUS_PLUS            = 251;   // ++
@@ -975,6 +977,7 @@ public class Types
             case MINUS_EQUAL:
             case MULTIPLY_EQUAL:
             case DIVIDE_EQUAL:
+            case INTDIV_EQUAL:
             case MOD_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
@@ -1020,6 +1023,7 @@ public class Types
 
             case MULTIPLY:
             case DIVIDE:
+            case INTDIV:
             case MOD:
                 return 45;
 
@@ -1186,12 +1190,14 @@ public class Types
         addTranslation( "-"           , MINUS                       );
         addTranslation( "*"           , MULTIPLY                    );
         addTranslation( "/"           , DIVIDE                      );
+        addTranslation( "\\"          , INTDIV                      );
         addTranslation( "%"           , MOD                         );
 
         addTranslation( "+="          , PLUS_EQUAL                  );
         addTranslation( "-="          , MINUS_EQUAL                 );
         addTranslation( "*="          , MULTIPLY_EQUAL              );
         addTranslation( "/="          , DIVIDE_EQUAL                );
+        addTranslation( "\\="         , INTDIV_EQUAL                );
         addTranslation( "%="          , MOD_EQUAL                   );
 
         addTranslation( "++"          , PLUS_PLUS                   );

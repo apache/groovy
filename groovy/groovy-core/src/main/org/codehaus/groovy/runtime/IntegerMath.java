@@ -53,6 +53,10 @@ public class IntegerMath extends NumberMath {
         return new Integer(left.intValue() & right.intValue());
     }
 
+	protected Number intdivImpl(Number left, Number right) {
+        return new Integer(left.intValue() / right.intValue());
+	}
+	
     protected Number modImpl(Number left, Number right) {
         return new Integer(left.intValue() % right.intValue());
     }
