@@ -342,7 +342,7 @@ public class GroovyShell extends GroovyObjectSupport {
             } catch (ClassNotFoundException e) {
                 // fall through
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // fall through
         }
         return isUnitTestCase;
