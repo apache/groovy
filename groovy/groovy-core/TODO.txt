@@ -1,19 +1,74 @@
+Things to Test
+==============
+
+* test date range using Range object
+
+* test max, min, sort with closure comparator
+	- min/max/sort to allow closures for comparators
+		foo.max { a, b | a.length <=> b.length }
+	- ClosureComparator
+			
+* test map properties..
+
+	m = [:]
+	m.foo = ...
+	assert m.foo == ...
+	
+* test while, do while
+
+* test Button(actionPerformed:{event| event.println() }
+
+
 Core Groovy Tasks
 =================
 
-* bob - allow types to end in []
+* GroovyServlet - serves up *.groovy files
 
+* new GroovyMethods	to be added
+	- Object.getMetaClass()
+	- removeIf { x | x > 0 }
+	- List.first, List.last, pop
+	- List.eachWithindex { item, idx | ... }
+	- reverseEach { ... }
+	- Map.eachKey, eachValue
+	- Map.index, Map.indexes
+	- Object.display (rather than toConsoleOutput)
+	- grep(pattern)  { closure }
+		where pattern = range / regexp
+	- eval("....")
+	- gets
+	- load(...)
+	- Object.setProperties(foo:'abc', x:123)
+	- File.eachByte
+	- configure method on beans?
+		bean.setProperties(name:'James', location:'London')
+	- some kind of Regexp iterator of strings like Ruby's scan
+	- maybe support Pythons' zip and reduce functions?
+		
+* closures - handle passing in of variables from outer scope?	
+	use a Holder object for all local variables and pass holder
+	into the closure
+	
 * looks like a bug on generated methods, should use param name over any field name
 	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
 	methods
 	
+* support instanceof operator
+			
+* Switch statement to use matches to handle classes, ranges, regexp etc		
+	- matches(object) for Range or Regexp or Class
 
-* test getProperty, setProperty on Groovy objects
+* bug - x = methodName fails, but x = this.methodName works
+	- need to turn variableExpressions into property expressions
+	- if no local variable in scope
 
-* to document
-	- return statement optional
+* groovy thread...
+	foo = new GroovyThread(args) { closure }
 	
-* GroovyServlet - serves up *.groovy files
+* <=> for compareTo()
+
+* << for list append and for output to streams
+	maybe other optional IO methods like gets?
 
 * DocTool 
 	- use wiki parser and allow embedded test cases, documentation, examples
@@ -32,132 +87,38 @@ Core Groovy Tasks
 		assert x.whatnot == 7
 	]
 
-* GroovyMethods	
-	- Object.getMetaClass()
-	- removeIf { x | x > 0 }
-	- List.first, List.last, pop
-	- List.eachWithindex { item, idx | ... }
-	- reverseEach { ... }
-	- Map.eachKey, eachValue
-	- Map.index, Map.indexes
-	- Object.display (rather than toConsoleOutput)
-	- grep(pattern)  { closure }
-		where pattern = range / regexp
-	- eval("....")
-	- gets
-	- load(...)
-	- Object.setProperties(foo:'abc', x:123)
-
-* support instanceof operator
-			
-* Switch statement to use matches to handle classes, ranges, regexp etc		
-	- matches(object) for Range or Regexp or Class
-
-* sorting, min, max to use closures		
-	- min/max to allow clsoures for comparators
-		foo.max { a, b | a.length <=> b.length }
-	- ClosureComparator
-		
+	
 * something like Ruby's Binding & eval APIs		
 	
-* add get/SetProperty to GroovyObject 
-
-* GroovyMBean - takes an ObjectName and MBeanServer and looks like a pogo
-
 * is there a better way to add listeners in Groovy. e.g. how to remove added listeners
 
 	listener = bean.property + { some closure }
 	bean.property - listener
 	
-	
 * .@ support on W3C DOM trees...
-
-* when named method calls are supported with default values, refactor SwingBuilder
-	so that all the creations of widgets occur with SwingFactory which would be 
-	useful in and of itself
-	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
-	the long laborious Map coding
-	
-* add table layout cell spacing thingy
-
-* FormModel.addPropertyModel(property)
-	FormModel.addClosureModel(readClosure, writeClosure)
-
-* ListModel is-a List but delegates to an underlying list and has events
-
-* rename tableLayout -> table and table -> grid
-
-* add sortableGrid
-
-* a GroovyUI
-	-> interactive script + allows scripts to be run & objects explored
-
-* groovy.model -> groovy.mvc?
-
-* delete groovytablemodel / groovytablecolumn
-
-* test date range
 
 * article
 	- basics of groovy
-	- swing swing
-* main test main(args)
-
-* documentation in CVS as wiki text
-	- maven plugin to generate html / xdoc
-	- extract out unit tests / example code
-	- maybe write Swing editor of markup which talks
-		to the server (or CVS)
+	- groovy swing
 
 * doc to write
 	- using beans + listeners
 	- expression language
 
-* object range with increment/decrement and handling up/down
-
-* test max, min, sort with closure comparator
-
 * closure on construction of beans?
 	new JTable() {....}
 		invokes the closure with the new object as delegate for setting properties etc
 
-* configure method on beans?
-	foo.configure(named arguments...)
-	
-* groovy thread...
-	foo = new GroovyThread(args) { closure }
-	
-* File.eachByte
-
-* String.chomp / String.tokenize() / scan / dump
-
-* <=> for compareTo()
-
-* << for list append and for output to streams
-	maybe other optional IO methods like gets?
-
-* File.eachByte
-		
-* investigate Pythons' zip, map, reduce, filter
-
 * support -ve indices on subscript operator
 
 * foo[1, 2] versus foo[1..2] etc
-
 
 * MetaClass -> add getPropertyDescriptor which has methods
 	- get(), set(), type(), cardinality() etc
 	
 	could use naming conventions to detect cardinality - e.g. addFoo(), getFoos()
 	
-* bug - x = methodName fails, but x = this.methodName works
-	- need to turn variableExpressions into property expressions
-	- if no local variable in scope
-
-* test Button(actionPerformed:{event| event.println() }
-
-* tree demo...
-
+	
 * generate property change listener stuff on properties
 
 * test identity -> hashCode + equals methods
@@ -174,14 +135,6 @@ Core Groovy Tasks
 
 * use *args in method invocation to expand a list as argument values	
 	
-* test map properties..
-
-	m = [:]
-	m.foo = ...
-	assert m.foo == ...
-	
-* test while, do while
-
 * access to local variables from inside a closure
 
 * switch statements
@@ -200,10 +153,6 @@ Core Groovy Tasks
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
 
-* closures - handle passing in of variables from outer scope?	
-	use a Holder object for all local variables and pass holder
-	into the closure
-	
 * groovy dynamic proxy of any Java object in Java-land?
 	NullObject pattern
 	
@@ -239,8 +188,6 @@ Core Groovy Tasks
 
 * maybe split up ClassGenerator - do code gen & class gen separately
 
-* create MetaClass for JMX - so we can treat JMX objects as if they're normal objects
-
 * mixin support...
 
 	SomeClass.addMixin(Foo);
@@ -259,6 +206,36 @@ Core Groovy Tasks
 	e.g. Map?
 	
 	
+UI WORK
+=======
+
+* tree demo...
+
+* when named method calls are supported with default values, refactor SwingBuilder
+	so that all the creations of widgets occur with SwingFactory which would be 
+	useful in and of itself
+	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
+	the long laborious Map coding
+	
+* add table layout cell spacing thingy
+
+* FormModel.addPropertyModel(property)
+	FormModel.addClosureModel(readClosure, writeClosure)
+
+* ListModel is-a List but delegates to an underlying list and has events
+
+* rename tableLayout -> table and table -> grid
+
+* add sortableGrid
+
+* create a GroovyUI
+	-> interactive script + allows scripts to be run & objects explored
+
+* groovy.model -> groovy.mvc?
+
+* delete groovytablemodel / groovytablecolumn
+
+
 
 ECLIPSE WORK
 ============

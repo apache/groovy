@@ -4,6 +4,9 @@ A Wiki parser for documentation 4 Groovy docs
 - merge unit tests into GroovyWiki
 - documentation to contain unit tests
 	- FIT like thing
+- extract out unit tests / example code
+- maybe write Swing editor of markup which talks
+	to the server (or CVS)
 	
 - create documentation cook book which acts as a unit test case navigation suite & how-to cookbook
 - create GroovyUnit test case for each item in documentation
@@ -14,3 +17,6 @@ A Wiki parser for documentation 4 Groovy docs
 ]	
 
 - use expr language as test case in wiki as well as working with closures
+
+
+
