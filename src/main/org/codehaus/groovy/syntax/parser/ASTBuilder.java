@@ -9,6 +9,7 @@ import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.ExpressionStatement;
@@ -458,9 +459,23 @@ public class ASTBuilder
             {
                 return variableExpression( expressionRoot );
             }
+            case ( Token.DOT ):
+            {
+                return propertyExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected Expression propertyExpression(CSTNode expressionRoot)
+    {
+        Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
+
+        String propertyName = expressionRoot.getChild( 1 ).getToken().getText();
+
+        return new PropertyExpression ( objectExpression,
+                                        propertyName );
     }
 
     protected VariableExpression variableExpression(CSTNode expressionRoot)
