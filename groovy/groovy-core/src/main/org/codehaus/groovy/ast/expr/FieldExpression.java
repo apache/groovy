@@ -47,7 +47,7 @@ package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a field access such as the expression "this.foo".
@@ -105,7 +105,7 @@ public class FieldExpression extends Expression {
         field.setType(type);
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         String fldType = field.getType();
         setType(fldType);
     }

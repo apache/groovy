@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a boolean expression
@@ -59,7 +59,7 @@ public class BooleanExpression extends Expression {
 
     public BooleanExpression(Expression expression) {
         this.expression = expression;
-        setTypeClass(boolean.class); // for consistancy with AsmClassGenerator2. see AsmClassGenerator2.visitBooleanExpression.  
+        setTypeClass(boolean.class); // for consistancy with AsmClassGenerator. see AsmClassGenerator.visitBooleanExpression.  
     }
     
     public Expression getExpression() {
@@ -78,7 +78,7 @@ public class BooleanExpression extends Expression {
         return expression.getText();
     }
 
-    protected  void resolveType(AsmClassGenerator2 resolver) {
+    protected  void resolveType(AsmClassGenerator resolver) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 }

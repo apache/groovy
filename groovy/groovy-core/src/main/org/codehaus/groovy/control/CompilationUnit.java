@@ -556,7 +556,7 @@ public class CompilationUnit extends ProcessingUnit {
             ClassVisitor visitor = createClassVisitor();
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
-            ClassGenerator generator = new AsmClassGenerator2(context, visitor, classLoader, sourceName);
+            ClassGenerator generator = new AsmClassGenerator(context, visitor, classLoader, sourceName);
 
             //
             // Run the generation and create the class (if required)
@@ -870,7 +870,3 @@ public class CompilationUnit extends ProcessingUnit {
 
 
 }
-
-
-
-

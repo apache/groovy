@@ -51,7 +51,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 
@@ -106,7 +106,7 @@ public class ClosureExpression extends Expression {
         this.variableScope = variableScope;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

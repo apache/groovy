@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import java.util.regex.Pattern;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a regular expression of the form ~<double quoted string> which creates
@@ -74,7 +74,7 @@ public class RegexExpression extends Expression {
         return new RegexExpression(transformer.transform(string));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         //
     }
 

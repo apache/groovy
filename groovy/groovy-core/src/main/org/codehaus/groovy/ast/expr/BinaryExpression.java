@@ -57,7 +57,7 @@ import java.util.regex.Matcher;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Type;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import groovy.lang.GString;
@@ -397,7 +397,7 @@ public class BinaryExpression extends Expression {
         return new BinaryExpression( lhs, operator, rhs );
      }
 
-    protected  void resolveType(AsmClassGenerator2 resolver) {
+    protected  void resolveType(AsmClassGenerator resolver) {
         leftExpression.resolve(resolver);
         rightExpression.resolve(resolver);
         Class cls = resolveThisType(operation);

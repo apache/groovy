@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.MetaMethod;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * A method call on an object or class
@@ -87,7 +87,7 @@ public class MethodCallExpression extends Expression {
         return answer;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         this.objectExpression.resolve(resolver);
         this.arguments.resolve(resolver);
         resolver.resolve(this);
