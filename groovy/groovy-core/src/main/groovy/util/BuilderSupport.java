@@ -48,6 +48,7 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.MissingMethodException;
 
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * An abstract base class for creating arbitrary nested trees of objects
  * or events
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -66,25 +67,25 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
     private Object current;
     private Closure nameMappingClosure;
     private BuilderSupport proxyBuilder;
-    
+
     public BuilderSupport() {
         this.proxyBuilder = this;
     }
-    
+
     public BuilderSupport(BuilderSupport proxyBuilder) {
         this(null, proxyBuilder);
     }
-    
+
     public BuilderSupport(Closure nameMappingClosure, BuilderSupport proxyBuilder) {
         this.nameMappingClosure = nameMappingClosure;
         this.proxyBuilder = proxyBuilder;
     }
-    
+
     public Object invokeMethod(String methodName, Object args) {
         Object name = getName(methodName);
         return doInvokeMethod(methodName, name, args);
     }
-    
+
     protected Object doInvokeMethod(String methodName, Object name, Object args) {
         Object node = null;
         Closure closure = null;
@@ -94,6 +95,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
         switch (list.size()) {
         		case 0:
+	    	            node = proxyBuilder.createNode(name);
         		    break;
         	    	case 1:
         	    	{
@@ -123,24 +125,37 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
         	    	        if (object2 instanceof Closure) {
         	    	            closure = (Closure) object2;
         	    	            node = proxyBuilder.createNode(name, object1);
-        	    	        }
+				} else if (object2 instanceof Map) {
+				    node = proxyBuilder.createNode(name, (Map) object2, object1);
+        	    	        } else {
+				    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+				}
         	    	    }
         	    	}
         	    	break;
         	    	case 3:
         	    	{
-        	    	    Object attributes = list.get(0);
-        	    	    Object value = list.get(1);
-        	    	    closure = (Closure) list.get(2);
-        	    	    node = proxyBuilder.createNode(name, (Map) attributes, value);
+        	    	    Object arg0 = list.get(0);
+        	    	    Object arg1 = list.get(1);
+        	    	    Object arg2 = list.get(2);
+        	    	    if (arg0 instanceof Map && arg2 instanceof Closure) {
+        	    	        closure = (Closure) arg2;
+        	    	        node = proxyBuilder.createNode(name, (Map) arg0, arg1);
+			    } else if (arg1 instanceof Map && arg2 instanceof Closure) {
+        	    	        closure = (Closure) arg2;
+        	    	        node = proxyBuilder.createNode(name, (Map) arg1, arg0);
+			    } else {
+				throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+			   }
         	    	}
         	    	break;
+        	    	default:
+        	    	{
+			    throw new MissingMethodException(name.toString(), getClass(), list.toArray());
+			}
+
         }
 
-        	if (node == null) {
-	    	    node = proxyBuilder.createNode(name);
-        	}
-        
         if (current != null) {
             proxyBuilder.setParent(current, node);
         }
@@ -206,7 +221,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
     protected Object getCurrent() {
         return current;
     }
-    
+
     protected void setCurrent(Object current) {
         this.current = current;
     }
