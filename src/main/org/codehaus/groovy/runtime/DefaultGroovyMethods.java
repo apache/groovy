@@ -250,6 +250,42 @@ PropertyValue pv = (PropertyValue) itr.next();
         System.out.println(InvokerHelper.toString(value));
     }
 
+  /**
+   *  Printf to a console.  Only works with JDK1.5 or alter.
+   *
+   *  @author Russel Winder
+   *  @version 2005.02.01.15.53
+   */
+  public static void printf(final Object self, final String format, final Object[] values) {
+    if ( System.getProperty("java.version").charAt(2) == '5' ) {
+      //
+      //  Cannot just do:
+      //
+      //        System.out.printf(format, values) ;
+      //
+      //  because this fails to compile on JDK1.4.x and earlier.  So until the entire world is using
+      //  JDK1.5 or later then we have to do things by reflection so as to hide the use of printf
+      //  from the compiler.  In JDK1.5 you might try:
+      //
+      //        System.out.getClass().getMethod("printf", String.class, Object[].class).invoke(System.out, format, values) ;
+      //
+      //  but of course this doesn't work on JDK1.4 as it relies on varargs.  argh.  So we are
+      //  forced into:
+      //
+      try {
+        System.out.getClass().getMethod("printf", new Class[] {String.class, Object[].class}).invoke(System.out, new Object[] {format, values}) ;
+      } catch ( NoSuchMethodException nsme ) {
+        throw new RuntimeException ("getMethod threw a NoSuchMethodException.  This is impossible.") ;
+      } catch ( IllegalAccessException iae ) {
+        throw new RuntimeException ("invoke threw a IllegalAccessException.  This is impossible.") ;
+      } catch ( java.lang.reflect.InvocationTargetException ite ) {
+        throw new RuntimeException ("invoke threw a InvocationTargetException.  This is impossible.") ;
+      }
+    } else {
+      throw new RuntimeException ("printf requires JDK1.5 or later.") ;
+    }
+  }
+
     /**
      * @return a String that matches what would be typed into a terminal to
      *         create this object. e.g. [1, 'hello'].inspect() -> [1, "hello"]
