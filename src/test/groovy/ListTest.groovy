@@ -153,6 +153,14 @@ class ListTest extends GroovyTestCase {
         assert flat == [1, 3, 20, 21, 22, 23, 24, 33]
     }
     
+    void testListsAndRangesCompare() {
+        l = [1, 2, 3]
+        r = 1..3
+        
+        assert r == l
+        assert l == r
+    }
+    
     void testRemove() {
         l = ['a', 'b', 'c']
         
