@@ -101,19 +101,19 @@
       <name>Groovy JSR Discussion List</name>
       <subscribe>jsr-subscribe@groovy.codehaus.org</subscribe>
       <unsubscribe>jsr-unsubscribe@groovy.codehaus.org</unsubscribe>
-      <archive>http://archive.groovy.codehaus.org/jsr/</archive>
+      <archive>http://dir.gmane.org/gmane.comp.lang.groovy.jsr</archive>
     </mailingList>
     <mailingList>
       <name>Groovy Developer List</name>
       <subscribe>dev-subscribe@groovy.codehaus.org</subscribe>
       <unsubscribe>dev-unsubscribe@groovy.codehaus.org</unsubscribe>
-      <archive>http://archive.groovy.codehaus.org/dev/</archive>
+      <archive>http://dir.gmane.org/gmane.comp.lang.groovy.devel</archive>
     </mailingList>
     <mailingList>
       <name>Groovy User List</name>
       <subscribe>user-subscribe@groovy.codehaus.org</subscribe>
       <unsubscribe>user-unsubscribe@groovy.codehaus.org</unsubscribe>
-      <archive>http://archive.groovy.codehaus.org/user/</archive>
+      <archive>http://dir.gmane.org/gmane.comp.lang.groovy.user</archive>
     </mailingList>
     <mailingList>
       <name>Groovy SCM List</name>
