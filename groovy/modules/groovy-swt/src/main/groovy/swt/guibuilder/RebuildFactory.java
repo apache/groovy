@@ -6,6 +6,7 @@ package groovy.swt.guibuilder;
 
 import groovy.lang.Closure;
 import groovy.lang.MissingPropertyException;
+import groovy.swt.InvalidParentException;
 import groovy.swt.SwtUtils;
 import groovy.swt.factory.AbstractSwtFactory;
 import groovy.swt.factory.SwtFactory;
@@ -29,6 +30,9 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
         // get parent
         if( properties.containsKey("parent") ) {
             parent = properties.remove("parent");
+        }
+        if (parent == null) {
+            throw new InvalidParentException("not null");
         }
         
         Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
