@@ -278,6 +278,7 @@ public class Parser
                 break;
             }
             case ( Token.IDENTIFIER ):
+            case ( Token.KEYWORD_VOID ):
             {
                 bodyStatement = methodDeclaration( modifiers );
                 break;
@@ -336,6 +337,7 @@ public class Parser
         // com.Cheese foo(...)
 
         CSTNode type = null;
+
 
         switch ( lt( 2 ) )
         {
@@ -473,16 +475,31 @@ public class Parser
     protected CSTNode datatype()
         throws IOException, SyntaxException
     {
-        CSTNode datatype = rootNode( Token.IDENTIFIER );
+        CSTNode datatype = null;
 
-        while ( lt() == Token.DOT )
+        switch ( lt() )
         {
-            CSTNode dot = rootNode( Token.DOT,
-                                    datatype );
-            consume( dot,
-                     Token.IDENTIFIER );
-
-            datatype = dot;
+            case( Token.KEYWORD_VOID ):
+            case( Token.KEYWORD_INT ):
+            case( Token.KEYWORD_FLOAT ):
+            {
+                datatype = rootNode( lt() );
+                break;
+            }
+            default:
+            {
+                datatype = rootNode( Token.IDENTIFIER );
+                
+                while ( lt() == Token.DOT )
+                {
+                    CSTNode dot = rootNode( Token.DOT,
+                                            datatype );
+                    consume( dot,
+                             Token.IDENTIFIER );
+                    
+                    datatype = dot;
+                }
+            }
         }
 
         return datatype;
