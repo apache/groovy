@@ -29,6 +29,16 @@ class SampleTest extends GroovyTestCase {
         println new UDate()
     }
 
+    void testAsCastAndInstanceof() {
+        def x = "foo"
+
+        def foo = x as String
+        def bar = (String) x
+
+        assert foo == bar
+        assert foo instanceof String
+    }
+
     void testClosure() {
         def list = [1, 2, 3]
 

@@ -36,8 +36,8 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.parser.ParserException;
 import org.codehaus.groovy.syntax.parser.ASTHelper;
+import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
 
 import java.io.Reader;
@@ -684,8 +684,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return mapExpression(node);
 
             case INDEX_OP:
-            return indexExpression(node);
+                return indexExpression(node);
 
+            case LITERAL_instanceof:
+                return instanceofExpression(node);
+
+            case LITERAL_as:
+                return asExpression(node);
+
+            case TYPECAST:
+                return castExpression(node);
 
                 // literals
 
@@ -846,6 +854,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new MapEntryExpression(keyExpression, valueExpression);
     }
 
+
+    protected Expression instanceofExpression(AST node) {
+        AST leftNode = node.getFirstChild();
+        Expression leftExpression = expression(leftNode);
+
+        AST rightNode = leftNode.getNextSibling();
+        Expression rightExpression = classExpression(rightNode);
+
+        return new BinaryExpression(leftExpression, makeToken(Types.KEYWORD_INSTANCEOF, node), rightExpression);
+    }
+
+    protected Expression asExpression(AST node) {
+        AST leftNode = node.getFirstChild();
+        Expression leftExpression = expression(leftNode);
+
+        AST rightNode = leftNode.getNextSibling();
+        String typeName = resolvedName(rightNode);
+
+        return new CastExpression(typeName, leftExpression);
+    }
+
+    protected Expression castExpression(AST castNode) {
+        AST node = castNode.getFirstChild();
+        String typeName = resolvedName(node);
+
+        AST expressionNode = node.getNextSibling();
+        Expression expression = expression(expressionNode);
+
+        return new CastExpression(typeName, expression);
+    }
+
+
     protected Expression indexExpression(AST indexNode) {
         AST leftNode = indexNode.getFirstChild();
         Expression leftExpression = expression(leftNode);
@@ -881,7 +921,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression expression = expression(node.getFirstChild());
         return new PostfixExpression(expression, makeToken(token, node));
     }
-
 
     protected BooleanExpression booleanExpression(AST node) {
         BooleanExpression booleanExpression = new BooleanExpression(expression(node));
@@ -1036,6 +1075,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new GStringExpression(buffer.toString(), strings, values);
     }
 
+    protected ClassExpression classExpression(AST node) {
+        String typeName = resolvedName(node);
+        return new ClassExpression(typeName);
+    }
+
     protected String label(AST labelNode) {
         AST node = labelNode.getFirstChild();
         if (node == null) {
@@ -1060,6 +1104,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
      * to see if the given name is a type from imports, aliases or newly created classes
      */
     protected String resolvedName(AST node) {
+        if (isType(TYPE, node)) {
+            node = node.getFirstChild();
+        }
         String identifier = identifier(node);
         return resolveTypeName(identifier);
     }
