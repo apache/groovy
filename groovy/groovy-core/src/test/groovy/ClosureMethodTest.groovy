@@ -165,4 +165,14 @@ class ClosureMethodTest extends GroovyTestCase {
         
         println("")
     }
+    
+    void testTokenize() {
+        text = "hello-there-how-are-you"
+        
+        answer = []
+        for (i in text.tokenize('-')) {
+            answer.add(i)
+        }
+        assert answer == ['hello', 'there', 'how', 'are', 'you']
+    }
 }

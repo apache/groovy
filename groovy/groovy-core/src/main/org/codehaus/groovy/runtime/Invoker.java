@@ -50,9 +50,11 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.Tuple;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -165,6 +167,13 @@ public class Invoker {
         }
         else if (value.getClass().isArray()) {
             return Arrays.asList((Object[]) value);
+        }
+        else if (value instanceof Enumeration) {
+            List answer = new ArrayList();
+            for ( Enumeration e = (Enumeration) value; e.hasMoreElements(); ) {
+                answer.add(e.nextElement());
+            }
+            return answer;
         }
         else {
             // lets assume its a collection of 1
