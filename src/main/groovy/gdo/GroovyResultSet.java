@@ -43,45 +43,48 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.gdo;
 
+import groovy.lang.GroovyObjectSupport;
+
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.codehaus.groovy.runtime.NoSuchPropertyException;
+
 /**
- * An exception occurred if a dynamic property dispatch fails with an unknown property
+ * Represents an extent of objects
  * 
+ * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NoSuchPropertyException extends InvokerException {
+public class GroovyResultSet extends GroovyObjectSupport {
 
-    private String property;
-    private Class type;
+    private ResultSet resultSet;
 
-    public NoSuchPropertyException(String property, Class type) {
-        super("No such property: " + property + " for class: " + type.getName());
-        this.property = property;
-        this.type = type;
+    public GroovyResultSet(ResultSet resultSet) {
+        this.resultSet = resultSet;
     }
 
-    public NoSuchPropertyException(String property, Class type, SQLException e) {
-        super("No such property: " + property + " for class: " + type.getName() + ". Reason: " + e, e);
-        this.property = property;
-        this.type = type;
+
+    public Object getProperty(String property) {
+        try {
+            return resultSet.getObject(property);
+        }
+        catch (SQLException e) {
+            throw new NoSuchPropertyException(property, GroovyResultSet.class, e);
+        }
     }
 
-    /**
-     * @return the name of the property that could not be found
-     */
-    public String getProperty() {
-        return property;
+    public void setProperty(String property, Object newValue) {
+        // TODO Auto-generated method stub
+        super.setProperty(property, newValue);
     }
 
-    /**
-     * 
-     * @return The type on which the property was attempted to be called
-     */
-    public Class getType() {
-        return type;
+
+    public boolean next() throws SQLException {
+        return resultSet.next();
     }
+
 }

@@ -45,6 +45,12 @@
  */
 package groovy.gdo;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Map;
+
 import javax.sql.DataSource;
 
 import groovy.lang.Closure;
@@ -74,31 +80,77 @@ public class DataSet extends Sql {
         }
         this.table = table.toLowerCase();
     }
-    
+
     public DataSet(DataSource dataSource, String table) {
         super(dataSource);
         this.table = table;
     }
-    
+
     public DataSet(DataSet parent, Closure where) {
         this(parent.getDataSource(), parent.table);
         this.parent = parent;
         this.where = where;
     }
+
+    public void add(Map values) throws SQLException {
+        StringBuffer buffer = new StringBuffer("insert into ");
+        buffer.append(table);
+        buffer.append(" (");
+        StringBuffer paramBuffer = new StringBuffer();
+        boolean first = true;
+        for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String column = entry.getKey().toString();
+            if (first) {
+                first = false;
+                paramBuffer.append("?");
+            }
+            else {
+                buffer.append(", ");
+                paramBuffer.append(", ?");
+            }
+            buffer.append(column);
+        }
+        buffer.append(") values (");
+        buffer.append(paramBuffer.toString());
+        buffer.append(")");
+        
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            statement = connection.prepareStatement(buffer.toString());
+            int i = 1;
+            for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                setObject(statement, i++, entry.getValue());
+            }
+            int answer = statement.executeUpdate();
+            if (answer != 1) {
+                log.warn("Should have updated 1 row not " + answer + " when trying to add: " + values);
+            }
+        }
+        catch (SQLException e) {
+            log.warn("Failed to add row for: " + values, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
     
     public DataSet findAll(Closure where) {
         return new DataSet(this, where);
     }
-    
-    public void each(Closure closure) {
-        //this.query(getSql()), )
+
+    public void each(Closure closure) throws SQLException {
+        queryEach(getSql(), closure);
     }
-    
+
     public String getSql() {
         String sql = "select * from " + table;
         if (where != null) {
             sql += " where ";
-            if (parent != null && parent.where != null)  {
+            if (parent != null && parent.where != null) {
                 sql += parent.getWhereSql() + " and ";
             }
             sql += getWhereSql();
@@ -109,7 +161,7 @@ public class DataSet extends Sql {
     protected String getWhereSql() {
         MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
         Statement statement = method.getCode();
-        
+
         SqlWhereVisitor visitor = new SqlWhereVisitor();
         statement.visit(visitor);
         return visitor.getWhere();

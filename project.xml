@@ -133,6 +133,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name></name>
+      <id></id>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <dependencies>
@@ -223,6 +232,15 @@
   	<dependency>
 	  <id>axion</id>   
       <version>1.0-M3-dev</version>
+    </dependency>
+    <dependency>
+      <id>commons-collections</id>
+      <version>SNAPSHOT</version>
+      <url>http://jakarta.apache.org/commons/collections</url>
+    </dependency>
+    <dependency>
+      <id>regexp</id>
+      <version>1.2</version>
     </dependency>
   
   <!-- only used for servlet / gsp -->
