@@ -1,0 +1,59 @@
+1 Groovy math
+
+Groovy supports access to all Java math classes and operations.  However, in order to make scripting math
+operations as intuitive as possible to the end user, the groovy math model supports a 'least surprising' 
+approach to literal math operations.  To do this, groovy uses exact, or decimal math for default calculations.
+
+This means that user computations like:
+
+{code:groovy}
+1.1 + 0.1 == 1.2 
+{code}
+
+will return true rather than false (using float or double types in Java returns a result of 1.2000000000000002).
+To support this approach, groovy literals with decimal points are instantiated as java.math.BigDecimal types 
+rather than binary floating point types (Float, Double).  Float and Double types can of course be created explicitly
+or via the use of the "F" or "D" suffix on the numeric literal.
+
+While the default behavior is to use decimal math, no attempt is made to preserve this if a binary floating
+point number is introduced into an expression (i.e. groovy never automatically promotes a binary floating 
+point number to a BigDecimal).  This is done for two reasons:  First, doing so would imply a level of exactness
+to a result that is not guaranteed to be exact, and secondly, performance is slightly better under binary floating 
+point math, so once it is introduced it is kept.
+
+Finally, groovy's math implementation is as close as practical to the Java 1.5 BigDecimal math model 
+which implements precision based floating point decimal math (ANSI X3.274-1996 and ANSI X3.274-1996/AM 1-2000 
+(section 7.4).  
+
+Therefore, binary operations involving subclasses of java.lang.Number automatically convert their arguments according to 
+the following matrix (except for division, which is discussed below).
+
+{table}
+				|__BigDecimal__	|__BigInteger__	|__Double__		|__Float__		|__Long__		|__Integer__
+__BigDecimal__	|BigDecimal		|BigDecimal		|Double			|Double			|BigDecimal		|BigDecimal
+__BigInteger__	|BigDecimal		|BigInteger		|Double			|Double			|BigInteger		|BigInteger
+__Double__		|Double			|Double			|Double			|Double			|Double			|Double
+__Float__		|Double			|Double			|Double			|Double			|Double			|Double
+__Long__		|BigDecimal		|BigInteger		|Double			|Double			|Long			|Long
+__Integer__		|BigDecimal		|BigInteger		|Double			|Double			|Long			|Integer
+{table}
+
+Note 1: Byte, Character, and Short arguments are considered to be Integer types for the purposes of this matrix.
+
+Note 2: Division (/) produces a Double result if either operand is either Float or Double and a BigDecimal result 
+otherwise (both operands are any combination of Integer, Long, BigInteger, or BigDecimal).  BigDecimal Division is 
+performed as follows:
+
+{code:java}
+BigDecimal.divide(BigDecimal right, <scale>, BigDecimal.ROUND_HALF_UP)
+{code}
+
+where <scale> is MAX(this.scale(), right.scale(), 10).
+Finally, the resulting BigDecimal is normalized (trailing zeros are removed).  
+For example:
+
+{code:groovy}
+1/2 == new java.math.BigDecimal("0.5");
+1/3 == new java.math.BigDecimal("0.3333333333");
+2/3 == new java.math.BigDecimal("0.6666666667");
+{code}
