@@ -60,7 +60,7 @@ Things to Test
 Core Groovy Tasks
 =================
 
-* synchronized statement
+* test synchronized statement
 
 * allow maps to be created using identifiers?
 	{name:'James', address:'London'}
@@ -124,8 +124,6 @@ Core Groovy Tasks
 	- list.sort { a, b | a.name <=> b.name }
 	
 	to ensure the map has a list of things
-
-	
 
 		maybe add the various readonly List APIs to Object[] and *[] types
 		if we ever support the DTD / Xed style type*, type+ then we can do the same

@@ -56,9 +56,7 @@ class MapTest extends GroovyTestCase {
     	m = [:]
     	
     	assert m.size() == 0
-        /** @todo parser
     	assert !m.containsKey("cheese")
-    	*/
     	
     	m.put("cheese", "cheddar")
 

@@ -56,14 +56,11 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         assert b == a + 5
     }
 
-/*
     void testExampleUseOfClosureScopesUsingEach() {
         a = 123
         
         [5].each { b = a + it }
-        
-        println(b)
+
         assert b == a + 5
     }
-    */
 }
