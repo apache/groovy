@@ -23,7 +23,10 @@
   <property name="test.src.dir"	value="test"/>
   <property name="test.classes.dir" value="${build.dir}/test/classes"/>
   <property name="test.reports.dir" value="reports"/>
-  
+
+  <property name="standalone.working.dir" value="temp"/>
+
+
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <!--                     datatypes                     -->
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
@@ -72,6 +75,28 @@
     </jar>
   </target>
 
+    <target name="standalone" depends="dist" description="merge all jars together">
+      <mkdir dir="${standalone.working.dir}"/>
+      <unzip dest="${standalone.working.dir}">
+        <fileset dir="${lib.dir}">
+          <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${dist.dir}">
+          <include name="*.jar"/>
+        </fileset>
+      </unzip>
+      <copy todir="${standalone.working.dir}">
+          <fileset dir="licenses"/>
+      </copy>
+      <mkdir dir="standalone"/>
+      <jar jarfile="standalone/parser.jar"
+           manifest="${src.dir}/manifest.txt">
+      <fileset dir="${standalone.working.dir}"/>
+    </jar>
+    <delete dir="${standalone.working.dir}"/>
+    </target>
+
+
   <target name="docs" depends="init" description="generate documentation">
     <mkdir dir="${javadoc.dir}" />
     <javadoc sourcepath="${src.dir}" 
@@ -83,9 +108,11 @@
   </target>
 
   <target name="run" depends="compile" description="compile and run">
-    <java classname="com.javanicus.bpwj.ShowJavaParser"
+    <java classname="com.javanicus.bpwj.ParserMain"
           fork="yes"
-          classpathref="compile.classpath"/>
+          classpathref="compile.classpath">
+        <arg value="src/com/javanicus/bpwj/ParserMain.java"/>
+    </java>
   </target>
 
   <target name="beautify" 

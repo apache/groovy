@@ -35,14 +35,19 @@ class ParserFacade {
     /* utility wrapper for tokenizer and parser */
     public Assembly parse(String userInput) {
         try {
-            Assembly in = new TokenAssembly(userInput);
-            Assembly out = parser.completeMatch(in);
-            return out;
+            parseWithoutSwallowingExceptions(userInput);
         } catch (TrackSequenceException e) {
             System.err.println(e.getMessage());
         }
         return null;
     }
+    
+    public Assembly parseWithoutSwallowingExceptions(String userInput) {
+            Assembly in = new TokenAssembly(userInput);
+            Assembly out = parser.completeMatch(in);
+            return out;
+        }
+
 
     public String toString() {
         return parser.toString();
