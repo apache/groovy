@@ -413,7 +413,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     }
     
     private static class CurriedClosure extends DelegatingClosure {
-    	private Object[] curried_args;
+    	protected final Object[] curried_args;
     	/**
     	 * @param delegate
     	 */
@@ -450,11 +450,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     		Object[] args = getParameters(arguments);
     		Object[] new_curried_args = new Object[curried_args.length + args.length];
     		
-    		System.arraycopy(curried_args, 0, new_curried_args, 0, curried_args.length);
-    		System.arraycopy(args, 0, new_curried_args, curried_args.length, args.length);
-    		this.curried_args = new_curried_args;
+    		System.arraycopy(this.curried_args, 0, new_curried_args, 0, this.curried_args.length);
+    		System.arraycopy(args, 0, new_curried_args, this.curried_args.length, args.length);
     		
-    		return this;
+    		return new CurriedClosure(this.closure, new_curried_args);
     	}
 
     	/**
@@ -516,6 +515,19 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     	 */
     	public void writeTo(Writer out) throws IOException {
     		call(new Object[] { out });
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#curry(java.lang.Object)
+    	 */
+    	public Closure curry(Object arguments) {
+    		Object[] args = getParameters(arguments);
+    		Object[] new_curried_args = new Object[curried_args.length + args.length];
+    		
+    		System.arraycopy(this.curried_args, 0, new_curried_args, 0, this.curried_args.length);
+    		System.arraycopy(args, 0, new_curried_args, this.curried_args.length, args.length);
+    		
+    		return new CurriedWritableClosure(this.closure, new_curried_args);
     	}
     }
 }
