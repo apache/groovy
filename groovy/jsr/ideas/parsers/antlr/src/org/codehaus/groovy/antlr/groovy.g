@@ -1825,14 +1825,13 @@ returns [boolean endBrackets = false]
                 {boolean zz; /*ignore*/ }
         :
                 {   #pathElement = prefix;  }
-                // Stuff which can precede a DOT:
                 (   // Spread operator:  x*.y  ===  x?.collect{it.y}
-                        sp:STAR^                                {#sp.setType(SPREAD_ARG);}
+                    sp:STAR_DOT^                                {#sp.setType(SPREAD_ARG);}
                 |   // Optional-null operator:  x?.y  === (x==null)?null:x.y
-                        op:QUESTION^                    {#op.setType(OPTIONAL_ARG);}
-                )?
-                // The all-powerful dot.
-                DOT^ nls! namePart
+                    op:QUESTION_DOT^                    {#op.setType(OPTIONAL_ARG);}
+                |   // The all-powerful dot.
+                    DOT^
+                ) nls! namePart
                 {   endBrackets = false; }
         |
                 mca:methodCallArgs[prefix]
@@ -2682,6 +2681,9 @@ SEMI			:	';'		;
 DOLLAR          :   '$'     ;
 RANGE_INCLUSIVE	:   ".."    ;
 TRIPLE_DOT		:   "..."   ;
+STAR_DOT        :   "*."    ;
+QUESTION_DOT    :   "?."    ;
+
 
 // Whitespace -- ignored
 WS      :       (
