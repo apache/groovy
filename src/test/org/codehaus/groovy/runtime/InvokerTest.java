@@ -55,6 +55,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
+import java.util.Arrays;
 
 
 /**
@@ -108,6 +110,11 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(false, (String) null);
         assertAsBoolean(true, new Integer(1234));
         assertAsBoolean(false, new Integer(0));
+        assertAsBoolean(true, new Float(0.3f));
+        assertAsBoolean(true, new Double(3.0f));
+        assertAsBoolean(false, new Float(0.0f));
+		assertAsBoolean(false, Collections.EMPTY_LIST);
+		assertAsBoolean(true, Arrays.asList(new Integer[] { new Integer(1) }));
        }
     
     public void testLessThan() {
