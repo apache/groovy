@@ -45,6 +45,8 @@
  */
 package groovy.sql;
 
+import groovy.lang.Closure;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -53,10 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-
-import javax.sql.DataSource;
-
-import groovy.lang.Closure;
 
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -77,8 +75,8 @@ public class DataSet extends Sql {
     private String sql;
     private List params;
 
-    public DataSet(DataSource dataSource, Class type) {
-        super(dataSource);
+    public DataSet(Sql sql, Class type) {
+        super(sql);
         String table = type.getName();
         int idx = table.lastIndexOf('.');
         if (idx > 0) {
@@ -87,13 +85,14 @@ public class DataSet extends Sql {
         this.table = table.toLowerCase();
     }
 
-    public DataSet(DataSource dataSource, String table) {
-        super(dataSource);
+    public DataSet(Sql sql, String table) {
+        super(sql);
         this.table = table;
     }
 
     public DataSet(DataSet parent, Closure where) {
-        this(parent.getDataSource(), parent.table);
+        super(parent);
+        this.table = parent.table;
         this.parent = parent;
         this.where = where;
     }
