@@ -36,6 +36,8 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 
+import java.util.regex.Matcher;
+
 /**
  * This class defines all the new static groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
@@ -45,11 +47,6 @@ import groovy.lang.Closure;
  * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
-
-    // @todo should be removed, was there for testing purpose
-    public static void hello(String stringClass, String msg) {
-        System.out.println("Hello " + msg);
-    }
 
     /**
      * Start a Thread with the given closure as a Runnable instance.
@@ -74,5 +71,15 @@ public class DefaultGroovyStaticMethods {
         thread.setDaemon(true);
         thread.start();
         return thread;
+    }
+
+    /**
+     * Get the last hidden matcher that system used to do a match.
+     * 
+     * @param matcher
+     * @return
+     */
+    public static Matcher getLastMatcher(Matcher matcher) {
+        return RegexSupport.getLastMatcher();
     }
 }

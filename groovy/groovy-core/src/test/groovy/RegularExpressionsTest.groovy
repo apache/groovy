@@ -12,7 +12,7 @@ import java.util.regex.Pattern
 class RegularExpressionsTest extends GroovyTestCase {
  	
  	void testFindRegex() {
- 	
+
  		assert "cheese" =~ "cheese"
  		
  		regex = "cheese"
@@ -96,5 +96,35 @@ EOS
  	    value = b[0, 1..2]
  	    
  	    assert value == "eeeee"
+ 	}
+
+    void testGetLastMatcher() {
+        assert "cheese" ==~ "cheese"
+        assert Matcher.getLastMatcher().matches()
+
+        switch("cheesefoo") {
+            case ~"cheesecheese":
+                assert false;
+            case ~"(cheese)(foo)":
+                m = Matcher.getLastMatcher();
+                assert m.group(0) == "cheesefoo"
+                assert m.group(1) == "cheese"
+                assert m.group(2) == "foo"
+                assert m.groupCount() == 2
+                break;
+            default:
+                assert false
+        }
+    }
+
+ 	static void main(args) {
+ 	    regextest = new RegularExpressionsTest();
+ 	    regextest.testFindRegex();
+ 	    regextest.testMatchRegex();
+ 	    regextest.testRegexEach();
+ 	    regextest.testPatterns();
+ 	    regextest.testMatcher();
+ 	    regextest.testSubscript();
+ 	    regextest.testGetLastMatcher();
  	}
  }
