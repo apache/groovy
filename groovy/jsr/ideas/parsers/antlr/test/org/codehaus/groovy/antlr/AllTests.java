@@ -51,23 +51,11 @@ public class AllTests extends TestSuiteSupport {
         "PrivateVariableAccessFromAnotherInstanceTest.groovy",      // TODO: constructor bug
         "SocketTest.groovy",                    // TODO: constructor bug
 
-        "ClosureCloneTest.groovy",              // TODO: use of * with dot
-        "DoubleOperationTest.groovy",           // TODO: use of * with dot
-        "ClosureMethodTest.groovy",             // TODO: use of *
-        "ClosureWithDefaultParamTest.groovy",   // TODO: use of *
-        "GroovyMethodsTest.groovy",             // TODO: use of *
-        "IntegerOperationTest.groovy",          // TODO: use of *
-        "ListTest.groovy",                      // TODO: use of *
-        "ModuloTest.groovy",                    // TODO: use of *
-        "NumberMathTest.groovy",                // TODO: use of *
-        "OverloadInvokeMethodTest.groovy",      // TODO: use of *
-        "PrimitiveTypeFieldTest.groovy",        // TODO: use of *
-        "ReturnTest.groovy",                    // TODO: use of *
-
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
         "PropertyTest.groovy",                  // TODO: arrays
         "SubscriptTest.groovy",                 // TODO: arrays
+        "GroovyMethodsTest.groovy",             // TODO: arrays
 
         "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
@@ -75,6 +63,7 @@ public class AllTests extends TestSuiteSupport {
         "MapConstructionTest.groovy",           // TODO: map keys cannot be numeric literals
         "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
         "PrintTest.groovy",                     // TODO: map keys cannot be numeric literals
+        "ClosureMethodTest.groovy",             // TODO: map keys cannot be numeric literals
 
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
@@ -111,6 +100,8 @@ public class AllTests extends TestSuiteSupport {
 
         "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
 
+        "IntegerOperationTest.groovy",          // TODO: what to do about integer divide?
+        "NumberMathTest.groovy",                // TODO: what to do about integer divide?
 
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
@@ -134,6 +125,8 @@ public class AllTests extends TestSuiteSupport {
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
         // TODO: AST bugs I think...
+        "ReturnTest.groovy",
+        "PrimitiveTypeFieldTest.groovy",
         "PrintlnWithNewBug.groovy",
         "AntTest.groovy",                       // TODO: closure params
 
