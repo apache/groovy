@@ -123,6 +123,9 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	
 	private MinMLHTTPServer server = null;
 	private Closure defaultMethod = null;
+	private Closure preCallMethod = null;
+	private Closure postCallMethod = null;
+	private Closure exceptionMethod = null;
 	private final int minWorkers;
 	private final int maxWorkers;
 	private final int maxKeepAlives;
@@ -202,17 +205,25 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							final Closure closure = (Closure)XMLRPCServer.this.registeredMethods.get(methodName);
 							Object result = null;
 							
+							if (XMLRPCServer.this.preCallMethod != null) {
+								XMLRPCServer.this.preCallMethod.call(new Object[] {methodName, params.toArray()});
+							}
+							
 							if (closure == null) {
 								if (XMLRPCServer.this.defaultMethod == null) {
 									throw new GroovyRuntimeException("XML-RPC method " + methodName + " is not supported on this server");
 								}
 								
-								result = XMLRPCServer.this.defaultMethod.call(new Object[] {methodName,params.toArray()});
+								result = XMLRPCServer.this.defaultMethod.call(new Object[] {methodName, params.toArray()});
 							} else {
 								result = closure.call(params.toArray());
 							}
 							
 							if (result == null) result = new Integer(0);
+							
+							if (XMLRPCServer.this.postCallMethod != null) {
+								XMLRPCServer.this.postCallMethod.call(new Object[] {methodName, result});
+							}
 							
 							XMLRPCMessageProcessor.emit(buffer, result);
 							
@@ -238,6 +249,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							} else {
 								message = e.getMessage();
 								codeValue = 0;
+							}
+							
+							if (XMLRPCServer.this.exceptionMethod != null) {
+								XMLRPCServer.this.exceptionMethod.call(new Object[] {message, new Integer(codeValue)});
 							}
 							
 							final byte[] error = ((message == null) ? e.getClass().getName() : message).getBytes();
@@ -266,16 +281,81 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 		}.start();
 	}
 	
+	/**
+	 * Starts the server shutdown process
+	 * This will return before the server has shut down completely
+	 * Full shutdown may take some time
+	 * 
+	 * @throws IOException
+	 */
 	public void stopServer() throws IOException {
 		this.server.shutDown();
 	}
 	
+	/**
+	 * 
+	 * Convenience method to be called by closures executing remote calls
+	 * Called when the closure wants to return a fault
+	 * The method always throws an exception
+	 * 
+	 * @param msg Fault message to be returned to the caller
+	 * @param code Fault code to be returned to the caller
+	 */
 	public void returnFault(String msg, int code) {
 		throw new XMLRPCFailException(msg, code);
 	}
 	
+	/**
+	 * Supply a closure to be called if there is no closure supplied to handle the call
+	 * Typically this logs the bad call and returns a fault by calling returnFault
+	 * 
+	 * The closure is called with two parameters - a String containing the method
+	 * name and an array of Object containing the parameters
+	 * 
+	 * @param defaultMethod The closure to be called
+	 */
 	public void setupDefaultMethod(final Closure defaultMethod) {
 		this.defaultMethod = defaultMethod;
+	}
+	
+	/**
+	 * Supply a closure to be called before the closure which handles the remote call
+	 *  (or the default closure if there is no handler) is called.
+	 * 
+	 * The closure is called with two parameters - a String containing the method
+	 * name and an array of Object containing the parameters
+	 * 
+	 * @param preCallMethod The closure to be called
+	 */
+	public void setupPreCallMethod(final Closure preCallMethod) {
+		this.preCallMethod = preCallMethod;
+	}
+	
+	/**
+	 * Supply a closure to be called after the closure which handles the remote call
+	 *  (or the default closure if there is no handler) is called.
+	 * 
+	 * The closure is called with two parameters - a String containing the method
+	 * name and an Object containing the result
+	 * 
+	 * @param postCallMethod The closure to be called
+	 */
+	public void setupPostCallMethod(final Closure postCallMethod) {
+		this.postCallMethod = postCallMethod;
+	}
+	
+	/**
+	 * Supply a closure to be called if the process of executing the remote call throws an exception.
+	 * 
+	 * The closure is called with two parameters - a String containing the fault string
+	 * name and an Integer containing the fault value.
+	 * The name of the method being called is not passed as the fault could have been 
+	 * generated before the method name was known.
+	 * 
+	 * @param exceptionMethod The closure to be called
+	 */
+	public void setupExceptionMethod(final Closure exceptionMethod) {
+		this.exceptionMethod = exceptionMethod;
 	}
 	
 	/* (non-Javadoc)
