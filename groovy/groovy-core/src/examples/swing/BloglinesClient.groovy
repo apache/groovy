@@ -38,6 +38,23 @@ import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.UsernamePasswordCredentials
 import org.apache.commons.httpclient.methods.GetMethod
 
+import groovy.swing.SwingBuilder
+import org.codehaus.groovy.sandbox.util.XmlSlurper
+import java.awt.BorderLayout
+import java.net.URL
+import javax.swing.BorderFactory
+import javax.swing.JOptionPane
+import javax.swing.JSplitPane
+import javax.swing.JTree
+import javax.swing.ListSelectionModel
+import javax.swing.SwingUtilities
+import javax.swing.WindowConstants
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeSelectionModel
+import org.apache.commons.httpclient.HttpClient
+import org.apache.commons.httpclient.UsernamePasswordCredentials
+import org.apache.commons.httpclient.methods.GetMethod
+
 // Set up global variables and data types
 server   = 'rpc.bloglines.com'
 apiUrl   = { | method | "http://${server}/${method}" }
@@ -105,7 +122,7 @@ itemList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
 // Set up the action closures that will react to user selections
 listItems = { | feed |
-  rssStream = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0")  
+  rssStream = callBloglines("${apiUrl('getitems')}?s=${feed.id}&n=0")  
   if (rssStream != null) {
     try {
       rss = new XmlSlurper().parse(rssStream)
