@@ -424,9 +424,8 @@ public class AntBuilder extends BuilderSupport {
     }
 
     /**
-     * @param taskName
-     * @return
-     * @throws JellyTagException
+     * @param taskName the name of the task to create
+     * @return a newly created task
      */
     protected Task createTask(String taskName) {
         return createTask(taskName, (Class) getAntProject().getTaskDefinitions().get(taskName));
