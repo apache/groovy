@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 import javax.sql.DataSource;
 
@@ -131,11 +132,11 @@ public class DataSet extends Sql {
             }
             int answer = statement.executeUpdate();
             if (answer != 1) {
-                log.warn("Should have updated 1 row not " + answer + " when trying to add: " + values);
+                log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + values);
             }
         }
         catch (SQLException e) {
-            log.warn("Failed to add row for: " + values, e);
+            log.log(Level.WARNING, "Failed to add row for: " + values, e);
             throw e;
         }
         finally {

@@ -52,9 +52,9 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.BuildLogger;
 import org.apache.tools.ant.IntrospectionHelper;
@@ -77,7 +77,7 @@ public class AntBuilder extends BuilderSupport {
 
     private static final Class[] addTaskParamTypes = { String.class };
 
-    private Log log = LogFactory.getLog(getClass());
+    private Logger log = Logger.getLogger(getClass().getName());
     private Project project;
 
     public AntBuilder() {
@@ -154,8 +154,8 @@ public class AntBuilder extends BuilderSupport {
         if (nested == null) {
             task = createTask(tagName);
             if (task != null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Creating an ant Task for name: " + tagName);
+                if (log.isLoggable(Level.FINE)) {
+                    log.fine("Creating an ant Task for name: " + tagName);
                 }
 
                 // the following algorithm follows the lifetime of a tag
@@ -186,14 +186,14 @@ public class AntBuilder extends BuilderSupport {
 
         if (task == null) {
             if (nested == null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Trying to create a data type for tag: " + tagName);
+                if (log.isLoggable(Level.FINE)) {
+                    log.fine("Trying to create a data type for tag: " + tagName);
                 }
                 nested = createDataType(tagName);
             }
             else {
-                if (log.isDebugEnabled()) {
-                    log.debug("Created nested property tag: " + tagName);
+                if (log.isLoggable(Level.FINE)) {
+                    log.fine("Created nested property tag: " + tagName);
                 }
             }
 
@@ -219,8 +219,8 @@ public class AntBuilder extends BuilderSupport {
                 if (parentObject != null) {
                     IntrospectionHelper ih = IntrospectionHelper.getHelper(parentObject.getClass());
                     try {
-                        if (log.isDebugEnabled()) {
-                            log.debug(
+                        if (log.isLoggable(Level.FINE)) {
+                            log.fine(
                                 "About to set the: "
                                     + tagName
                                     + " property on: "
@@ -234,7 +234,7 @@ public class AntBuilder extends BuilderSupport {
                         ih.storeElement(project, parentObject, nested, (String) tagName);
                     }
                     catch (Exception e) {
-                        log.warn("Caught exception setting nested: " + tagName, e);
+                        log.log(Level.WARNING, "Caught exception setting nested: " + tagName, e);
                     }
 
                     // now try to set the property for good measure
@@ -244,12 +244,12 @@ public class AntBuilder extends BuilderSupport {
                         InvokerHelper.setProperty(parentObject, tagName, nested);
                     }
                     catch (Exception e) {
-                        log.debug("Caught exception trying to set property: " + tagName + " on: " + parentObject);
+                        log.fine("Caught exception trying to set property: " + tagName + " on: " + parentObject);
                     }
                 }
             }
             else {
-                log.warn("Could not convert tag: " + tagName + " into an Ant task, data type or property");
+                log.log(Level.WARNING, "Could not convert tag: " + tagName + " into an Ant task, data type or property");
             }
         }
 
@@ -265,7 +265,7 @@ public class AntBuilder extends BuilderSupport {
                 method.invoke(task, args);
             }
             catch (Exception e) {
-                log.warn("Cannot call addText on: " + task + ". Reason: " + e, e);
+                log.log(Level.WARNING, "Cannot call addText on: " + task + ". Reason: " + e, e);
             }
         }
     }
@@ -304,8 +304,8 @@ public class AntBuilder extends BuilderSupport {
     }
 
     protected void setBeanProperty(Object object, String name, Object value) {
-        if (log.isDebugEnabled()) {
-            log.debug("Setting bean property on: " + object + " name: " + name + " value: " + value);
+        if (log.isLoggable(Level.FINE)) {
+            log.fine("Setting bean property on: " + object + " name: " + name + " value: " + value);
         }
 
         IntrospectionHelper ih = IntrospectionHelper.getHelper(object.getClass());
@@ -343,7 +343,7 @@ public class AntBuilder extends BuilderSupport {
                     dataType = ih.createElement(getAntProject(), object, name.toLowerCase());
                 }
                 catch (BuildException be) {
-                    log.error(be);
+                    log.log(Level.SEVERE, "Caught: " + be, be);
                 }
             }
         }
@@ -375,7 +375,7 @@ public class AntBuilder extends BuilderSupport {
                     noArg = false;
                 }
                 catch (NoSuchMethodException nsme) {
-                    log.info("datatype '" + name + "' didn't have a constructor with an Ant Project", nsme);
+                    log.log(Level.INFO, "datatype '" + name + "' didn't have a constructor with an Ant Project", nsme);
                 }
             }
 
@@ -406,13 +406,13 @@ public class AntBuilder extends BuilderSupport {
             return datatype;
         }
         catch (InstantiationException ie) {
-            log.error("datatype '" + name + "' couldn't be created with " + argDescription, ie);
+            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, ie);
         }
         catch (IllegalAccessException iae) {
-            log.error("datatype '" + name + "' couldn't be created with " + argDescription, iae);
+            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, iae);
         }
         catch (InvocationTargetException ite) {
-            log.error("datatype '" + name + "' couldn't be created with " + argDescription, ite);
+            log.log(Level.SEVERE, "datatype '" + name + "' couldn't be created with " + argDescription, ite);
         }
         return null;
     }
@@ -448,7 +448,7 @@ public class AntBuilder extends BuilderSupport {
             return task;
         }
         catch (Exception e) {
-            log.warn("Could not create task: " + taskName + ". Reason: " + e, e);
+            log.log(Level.WARNING, "Could not create task: " + taskName + ". Reason: " + e, e);
             return null;
         }
     }

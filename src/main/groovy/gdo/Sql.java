@@ -45,22 +45,23 @@
  */
 package groovy.gdo;
 
+import groovy.lang.Closure;
+import groovy.lang.GString;
+
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.*;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.sql.*;
-
-import groovy.lang.Closure;
-import groovy.lang.GString;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import javax.sql.DataSource;
 
 /**
  * Represents an extent of objects
@@ -71,7 +72,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Sql {
 
-    protected Log log = LogFactory.getLog(getClass());
+    protected Logger log = Logger.getLogger(getClass().getName());
     
     private DataSource dataSource;
 
@@ -91,12 +92,12 @@ public class Sql {
         Statement statement = connection.createStatement();
         ResultSet results = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             results = statement.executeQuery(sql);
             closure.call(results);
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -112,14 +113,14 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
             results = statement.executeQuery();
             closure.call(results);
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -144,7 +145,7 @@ public class Sql {
         Statement statement = connection.createStatement();
         ResultSet results = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             results = statement.executeQuery(sql);
 
             GroovyResultSet groovyRS = new GroovyResultSet(results);
@@ -153,7 +154,7 @@ public class Sql {
             }
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -169,7 +170,7 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
             results = statement.executeQuery();
@@ -180,7 +181,7 @@ public class Sql {
             }
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -207,12 +208,12 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             statement = connection.createStatement();
             return statement.execute(sql);
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -227,13 +228,13 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.debug(sql);
+            log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
             return statement.execute();
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -264,12 +265,12 @@ public class Sql {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
-            log.debug(sql);
+            log.fine(sql);
             setParameters(params, statement);
             return statement.executeUpdate();
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.log(Level.WARNING, "Failed to execute: " + sql, e);
             throw e;
         }
         finally {
@@ -347,7 +348,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                log.error("Caught exception closing resultSet: " + e, e);
+                log.log(Level.SEVERE, "Caught exception closing resultSet: " + e, e);
             }
         }
         closeResources(connection, statement);
@@ -358,13 +359,13 @@ public class Sql {
             statement.close();
         }
         catch (SQLException e) {
-            log.error("Caught exception closing statement: " + e, e);
+            log.log(Level.SEVERE, "Caught exception closing statement: " + e, e);
         }
         try {
             connection.close();
         }
         catch (SQLException e) {
-            log.error("Caught exception closing connection: " + e, e);
+            log.log(Level.SEVERE, "Caught exception closing connection: " + e, e);
         }
     }
 

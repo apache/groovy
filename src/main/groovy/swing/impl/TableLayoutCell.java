@@ -47,9 +47,8 @@ package groovy.swing.impl;
 
 import java.awt.Component;
 import java.awt.GridBagConstraints;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /** 
  * Represents a cell in a table layout
@@ -59,7 +58,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class TableLayoutCell implements ContainerFacade {
 
-    protected static final Log log = LogFactory.getLog(TableLayoutCell.class);
+    protected static final Logger log = Logger.getLogger(TableLayoutCell.class.getName());
     
     private TableLayoutRow parent;
     private Component component;
@@ -78,7 +77,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     public void addComponent(Component component)  {
         if (this.component != null) {
-            log.warn("This td cell already has a component: " + component);
+            log.log(Level.WARNING, "This td cell already has a component: " + component);
         }
         this.component = component;
         parent.addCell(this);
