@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 
 
 /**
@@ -58,6 +60,7 @@ package org.codehaus.groovy.classgen;
 public class DumpClass3 extends DumpClass2 {
 
     String blah;
+    Object another;
     
     public DumpClass3(Object foo) {
         super(foo);
@@ -69,6 +72,15 @@ public class DumpClass3 extends DumpClass2 {
         
         if (x instanceof DumpClass2) {
             System.out.println("Hello");
+        }
+    }
+   
+    public void testAnd() {
+        if (InvokerHelper.asBool(blah) && InvokerHelper.asBool(another)) {
+            System.out.println("Hello!");
+        }
+        else {
+            System.out.println("False");
         }
     }
 }
