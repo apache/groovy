@@ -41,11 +41,13 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -571,7 +573,7 @@ public class DefaultGroovyMethods {
      * @return the Character object at the given index
      */
     public static Object get(String text, int index) {
-    	index = normaliseIndex(index, text.length());
+        index = normaliseIndex(index, text.length());
         return text.substring(index, index + 1);
     }
 
@@ -579,18 +581,18 @@ public class DefaultGroovyMethods {
      * Support the range subscript operator for String
      */
     public static Object get(String text, Range range) {
-    	int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
-    	int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
-    	int length = text.length();
-    	
-    	// if this is a backwards range, reverse the arguments to substring
-    	if (from > to) {
-    		int tmp = from;
-    		from = to;
-    		to = tmp;
-    	}
-    	
-    	return text.substring(from, to + 1);
+        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
+        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
+        int length = text.length();
+
+        // if this is a backwards range, reverse the arguments to substring
+        if (from > to) {
+            int tmp = from;
+            from = to;
+            to = tmp;
+        }
+
+        return text.substring(from, to + 1);
     }
 
     /**
@@ -601,7 +603,7 @@ public class DefaultGroovyMethods {
     public static String get(Matcher matcher, int idx) {
         matcher.reset();
         idx = normaliseIndex(idx, matcher.groupCount());
-        
+
         // are we using groups?
         if (matcher.groupCount() > 0) {
             // yes, so return the specified group
@@ -1405,6 +1407,17 @@ public class DefaultGroovyMethods {
     public static BufferedReader newReader(File file) throws IOException {
         CharsetToolkit toolkit = new CharsetToolkit(file);
         return toolkit.getReader();
+    }
+
+    /**
+     * Helper method to create a buffered output stream for a file
+     *
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static BufferedOutputStream newOutputStream(File file) throws IOException {
+        return new BufferedOutputStream(new FileOutputStream(file));
     }
 
     /**
