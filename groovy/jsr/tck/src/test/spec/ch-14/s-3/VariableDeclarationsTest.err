@@ -1,0 +1,12 @@
+class VariableDeclarationTest extends GroovyTestCase {
+
+    void testUninitialisedVariables() {
+    	c                  // @fail must use def/any
+        c = "whatever"
+    }
+
+
+    void testInitialisedVariables() {
+    	c = 2   // @fail must use def/any
+    }
+}
