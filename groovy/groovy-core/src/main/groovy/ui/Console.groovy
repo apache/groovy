@@ -2,19 +2,21 @@ package groovy.ui
 
 import groovy.swing.SwingBuilder
 import javax.swing.KeyStroke
+import org.codehaus.groovy.runtime.InvokerHelper
 
 class Console {
 
     property frame
 	property swing
-	property textArea
+    property textArea
+    property outputArea
     property shell
     property counter
+    property scriptList
 
 	static void main(args) {
         /** @todo bug in new 
         console = new Console()
-         * 
          */
         console = Console.newInstance()
         
@@ -22,9 +24,10 @@ class Console {
 	}
 
 	void run() {
+	    scriptList = []
         swing = new SwingBuilder()
 
-        frame = swing.frame(title:'GroovyConsole', location:[100,100], size:[800,400]) {
+        frame = swing.frame(title:'GroovyConsole'/*, location:[100,100],  size:[800,400]*/) {
             menuBar {
                 menu(text:'File') {
                     menuItem() {
@@ -49,18 +52,14 @@ class Console {
                     }
                 }
             }
-/*            
-            splitPane {
-*/            
+            splitPane() {
                 scrollPane {
                     owner.textArea = textArea()
                 }
-/*
                 scrollPane {
-                    tree(model:new MyTableModel())
+                    owner.outputArea = textArea()
                 }
             }
-*/            
         }        
         frame.show()
     }
@@ -73,6 +72,7 @@ class Console {
     
     runScript() {
         text = textArea.getText()
+        scriptList.add(text)
         if (shell == null) {
         	shell = new GroovyShell()
         }
@@ -84,10 +84,12 @@ class Console {
         }
         name = "Script" + counter
         
-        println("Running script: " + text)
-        
-        shell.run(text, name, null)
+        Object answer = shell.evaluate(text, name)
+
+        outputArea.setText(InvokerHelper.toString(answer))
         
         println("Variables: " + shell.context.variables)
+        
+        textArea.setText("")
     }
 }

@@ -8,19 +8,7 @@ class NodeGPathTest extends GroovyTestCase {
     void testSimpleGPathExpressions() {
         tree = createTree()
 
-        //println("People: " + tree.people)
-
-        x = tree.people.person
-        
-        println("type of person: " + x.getClass() + " value: " + x)
-        
-        x.each { println("each called with: " + it + " of type: " + it.getClass() ); return true }
-        
-        x.find { println("find called with: " + it + " of type: " + it.getClass() ); return true }
-        
-        println("Location: " + tree.people.person.find { it.name() == 'James' }.location.attribute('name'))
-        //println("Person: " + tree.people.person)
-        //println("location: " + tree.people.person.find { it.name == 'James' }.location )
+        assert tree.person.find { it.attribute('name') == 'James' }.location.get(0).attribute('name') == 'London'
     }
     
     protected createTree() {       
@@ -42,8 +30,6 @@ class NodeGPathTest extends GroovyTestCase {
         }
         
         assert root != null
-        
-        println(root)
         
         return root
     }

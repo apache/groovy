@@ -397,8 +397,13 @@ public class Invoker {
                 return Thread.currentThread().getContextClassLoader().loadClass(type);
             }
             catch (ClassNotFoundException e2) {
-                throw new InvokerException("Could not load type: " + type, e);
+                try {
+                    return Class.forName(type);
+                }
+                catch (ClassNotFoundException e3) {
+                }
             }
+            throw new InvokerException("Could not load type: " + type, e);
         }
     }
 

@@ -44,7 +44,7 @@
 
  */
 
-package groovy.lang;
+package groovy.util;
 
 
 import groovy.util.GroovyTestCase;
@@ -113,9 +113,11 @@ public class NodeTest extends GroovyTestCase {
         
         List children = new ArrayList();
         children.add("someText");
-        children.add(new Node(null, "person", "James"));
+        Node node1 = new Node(null, "person", "James");
+        children.add(node1);
         children.add("moreText");
-        children.add(new Node(null, "person", "Bob"));
+        Node node2 = new Node(null, "person", "Bob");
+        children.add(node2);
         children.add("moreText");
         
         Node attribute = new Node(null, "foo", attributes, children);
@@ -123,6 +125,14 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("attributes", 1, attribute.attributes().size());
         assertEquals("value", 5, attribute.children().size());
         assertEquals("text", "someTextmoreTextmoreText", attribute.text());
+        
+        
+        // lets test get
+        List list = (List) attribute.get("person");
+        assertEquals("Expected list size: " + list, 2, list.size());
+        
+        assertEquals("Node1", node1, list.get(0));
+        assertEquals("Node2", node2, list.get(1));
     }
 
 }
