@@ -1092,8 +1092,31 @@ public class Parser
             {
                 expr = rootNode( lt_bare(),
                         expr );
+                
                 optionalNewlines();
-                expr.addChild( rangeExpression() );
+                CSTNode rangeExpr = rangeExpression();
+                
+                // lets support the list notation inside subscript operators
+                if (lt_bare() != Token.COMMA) {
+                    expr.addChild(rangeExpr);
+                }
+                else {
+                    consume_bare(Token.COMMA);
+                    CSTNode listExpr = new CSTNode( Token.syntheticList() );
+                    expr.addChild(listExpr);
+                    listExpr.addChild(rangeExpr);
+                    
+                    while (true) {
+                        optionalNewlines();
+                        listExpr.addChild( rangeExpression() );
+                        if (lt_bare() == Token.COMMA) {
+                            consume_bare(Token.COMMA);
+                        }
+                        else {
+                            break;
+                        }
+                    }
+                }
                 optionalNewlines();
                 consume(Token.RIGHT_SQUARE_BRACKET);
                 break;
@@ -1115,10 +1138,10 @@ public class Parser
             optionalNewlines();
             expr.addChild( additiveExpression() );
         }
-
         return expr;
     }
 
+    
     protected CSTNode additiveExpression()
         throws IOException, SyntaxException
     {

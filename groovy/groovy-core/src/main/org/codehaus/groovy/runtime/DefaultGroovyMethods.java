@@ -1,47 +1,36 @@
 /*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
-
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
-
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * $Id$
+ * 
+ * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+ * 
+ * Redistribution and use of this software and associated documentation
+ * ("Software"), with or without modification, are permitted provided that the
+ * following conditions are met:
+ *  1. Redistributions of source code must retain copyright statements and
+ * notices. Redistributions must also contain a copy of this document.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *  3. The name "groovy" must not be used to endorse or promote products
+ * derived from this Software without prior written permission of The Codehaus.
+ * For written permission, please contact info@codehaus.org.
+ *  4. Products derived from this Software may not be called "groovy" nor may
+ * "groovy" appear in their names without prior written permission of The
+ * Codehaus. "groovy" is a registered trademark of The Codehaus.
+ *  5. Due credit should be given to The Codehaus - http://groovy.codehaus.org/
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *  
  */
 package org.codehaus.groovy.runtime;
 
@@ -70,6 +59,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,7 +74,7 @@ import java.util.regex.Pattern;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
- * classes inside the Groovy environment. Static methods are used with the 
+ * classes inside the Groovy environment. Static methods are used with the
  * first parameter the destination class.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -95,9 +85,9 @@ public class DefaultGroovyMethods {
     private static final Integer ONE = new Integer(1);
 
     /**
-     * Generates a detailed inspection string of an object showing its
-     * class, hashCode and fields 
-     */
+	 * Generates a detailed inspection string of an object showing its class,
+	 * hashCode and fields
+	 */
     public static String inspect(Object self) {
         if (self == null) {
             return "null";
@@ -134,30 +124,30 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format
-     */
+	 * Print to a console in interactive format
+	 */
     public static void print(Object self, Object value) {
         System.out.print(InvokerHelper.toString(value));
     }
 
     /**
-     * Print to a console in interactive format along with a newline
-     */
+	 * Print to a console in interactive format along with a newline
+	 */
     public static void println(Object self, Object value) {
         System.out.println(InvokerHelper.toString(value));
     }
 
     /**
-     * @return the String that would be printend on the console if
-     * the object were displayed in interactive mode
-     */
+	 * @return the String that would be printend on the console if the object
+	 *         were displayed in interactive mode
+	 */
     public static String toConsoleOutput(Object self) {
         return InvokerHelper.toString(self);
     }
 
     /**
-     * Print to a console in interactive format
-     */
+	 * Print to a console in interactive format
+	 */
     public static void print(Object self, PrintWriter out) {
         if (out == null) {
             out = new PrintWriter(System.out);
@@ -166,28 +156,19 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Print to a console in interactive format
-     */
+	 * Print to a console in interactive format
+	 */
     /*
-    public static void print(Collection self, PrintWriter out) {
-        out.print("[");
-        boolean first = true;
-        for (Iterator iter = self.iterator(); iter.hasNext(); ) {
-            if (first) {
-                first = false;
-            }
-            else {
-                out.print(", ");
-            }
-            InvokerHelper.invokeMethod(iter.next(), "print", out);
-        }
-        out.print("]");
-    }
-    */
+	 * public static void print(Collection self, PrintWriter out) {
+	 * out.print("["); boolean first = true; for (Iterator iter =
+	 * self.iterator(); iter.hasNext(); ) { if (first) { first = false; } else {
+	 * out.print(", "); } InvokerHelper.invokeMethod(iter.next(), "print",
+	 * out); } out.print("]"); }
+	 */
 
     /**
-     * Print to a console in interactive format
-     */
+	 * Print to a console in interactive format
+	 */
     public static void println(Object self, PrintWriter out) {
         if (out == null) {
             out = new PrintWriter(System.out);
@@ -197,9 +178,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Provide a dynamic method invocation method which can be overloaded in classes
-     * to implement dynamic proxies easily.
-     */
+	 * Provide a dynamic method invocation method which can be overloaded in
+	 * classes to implement dynamic proxies easily.
+	 */
     public static Object invokeMethod(Object object, String method, Object arguments) {
         return InvokerHelper.invokeMethod(object, method, arguments);
     }
@@ -228,12 +209,13 @@ public class DefaultGroovyMethods {
 
     // Collection based methods
     //-------------------------------------------------------------------------
-    
+
     /**
-     * Allows objects to be iterated through using a closure
-     * @param source
-     * @param closure
-     */
+	 * Allows objects to be iterated through using a closure
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static void each(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             closure.call(iter.next());
@@ -241,10 +223,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows objects to be iterated through using a closure
-     * @param source
-     * @param closure
-     */
+	 * Allows objects to be iterated through using a closure
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static void each(Collection self, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             closure.call(iter.next());
@@ -252,10 +235,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Allows objects to be iterated through using a closure
-     * @param source
-     * @param closure
-     */
+	 * Allows objects to be iterated through using a closure
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static void each(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             closure.call(iter.next());
@@ -263,8 +247,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * @return true if every item in the collection matches the closure predicate
-     */
+	 * @return true if every item in the collection matches the closure
+	 *         predicate
+	 */
     public static boolean every(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             if (!InvokerHelper.asBool(closure.call(iter.next()))) {
@@ -275,8 +260,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * @return true if any item in the collection matches the closure predicate
-     */
+	 * @return true if any item in the collection matches the closure predicate
+	 */
     public static boolean any(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             if (InvokerHelper.asBool(closure.call(iter.next()))) {
@@ -287,11 +272,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Maps the values of a collection to new values using the 
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Maps the values of a collection to new values using the
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static List map(Object self, Closure closure) {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -301,11 +286,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Collects the values of the closure
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Collects the values of the closure
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static List map(Collection self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -315,11 +300,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Collects the values of the closure
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Collects the values of the closure
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static List map(Map self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
@@ -329,11 +314,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds the first value matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds the first value matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object find(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
@@ -345,11 +330,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds the first value matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds the first value matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object find(Collection self, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
@@ -361,11 +346,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds the first value matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds the first value matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object find(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Object value = iter.next();
@@ -377,11 +362,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds all values matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds all values matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object findAll(Object self, Closure closure) {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -394,11 +379,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds all values matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds all values matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static List findAll(Collection self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -411,11 +396,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Finds all values matching the closure condition
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Finds all values matching the closure condition
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static List findAll(Map self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
@@ -428,14 +413,13 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given collection, passing in the initial
-     * value to the closure along with the current iterated item
-     * then passing into the next iteration the value of the previous 
-     * closure.
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Iterates through the given collection, passing in the initial value to
+	 * the closure along with the current iterated item then passing into the
+	 * next iteration the value of the previous closure.
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object inject(Collection self, Object value, Closure closure) {
         Object[] params = new Object[2];
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -448,9 +432,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Concatenates all of the items of the collection together with the
-     * given string as a separator
-     */
+	 * Concatenates all of the items of the collection together with the given
+	 * string as a separator
+	 */
     public static String join(Collection self, String separator) {
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
@@ -468,11 +452,11 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection
-     * 
-     * @param source
-     * @param closure
-     */
+	 * Selects the maximum value found in the collection
+	 * 
+	 * @param source
+	 * @param closure
+	 */
     public static Object max(Collection self) {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -487,8 +471,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given comparator
-     */
+	 * Selects the maximum value found in the collection using the given
+	 * comparator
+	 */
     public static Object max(Collection self, Comparator comparator) {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -501,8 +486,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection
-     */
+	 * Selects the minimum value found in the collection
+	 */
     public static Object min(Collection self) {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -517,8 +502,9 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given comparator
-     */
+	 * Selects the minimum value found in the collection using the given
+	 * comparator
+	 */
     public static Object min(Collection self, Comparator comparator) {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -532,105 +518,190 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given closure as a comparator
-     */
+	 * Selects the minimum value found in the collection using the given
+	 * closure as a comparator
+	 */
     public static Object min(Collection self, Closure closure) {
         return min(self, new ClosureComparator(closure));
     }
 
     /**
-     * Selects the maximum value found in the collection using the given closure as a comparator
-     */
+	 * Selects the maximum value found in the collection using the given
+	 * closure as a comparator
+	 */
     public static Object max(Collection self, Closure closure) {
         return max(self, new ClosureComparator(closure));
     }
 
     /**
-     * Makes a String look like a Collection by adding support for the size() method
-     * 
-     * @param text
-     * @return
-     */
+	 * Makes a String look like a Collection by adding support for the size()
+	 * method
+	 * 
+	 * @param text
+	 * @return
+	 */
     public static int size(String text) {
         return text.length();
     }
 
     /**
-     * Makes an Array look like a Collection by adding support for the size() method
-     * 
-     * @param text
-     * @return
-     */
+	 * Makes an Array look like a Collection by adding support for the size()
+	 * method
+	 * 
+	 * @param text
+	 * @return
+	 */
     public static int size(Object[] self) {
         return self.length;
     }
 
     /**
-     * Support the subscript operator for String
-     * 
-     * @param text
-     * @return the Character object at the given index
-     */
+	 * Support the subscript operator for String
+	 * 
+	 * @param text
+	 * @return the Character object at the given index
+	 */
     public static Object get(String text, int index) {
         return new String(text.getBytes(), index, 1);
     }
 
     /**
-     * Support the range subscript operator for String
-     */
+	 * Support the range subscript operator for String
+	 */
     public static Object get(String text, Range range) {
         return text.substring(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
 
     /**
-     * Support the range subscript operator for a List
-     * 
-     * @returns a range of a list from the range's from index up to
-     * but not including the ranges's to value
-     */
-    public static Object get(List list, Range range) {
+	 * Support the range subscript operator for a List
+	 * 
+	 * @returns a range of a list from the range's from index up to but not
+	 * including the ranges's to value
+	 */
+    public static List get(List list, Range range) {
         return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
-    
-    
+
     /**
-     * Support the range subscript operator for an Array
+	 * Allows a List to be used as the indices to be used on a List
+	 * 
+	 * @returns a new list of the values at the given indices
+	 */
+    public static List get(List self, Collection indices) {
+        List answer = new ArrayList(indices.size());
+        for (Iterator iter = indices.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value instanceof Range) {
+                answer.addAll(get(self, (Range) value));
+            }
+            else if (value instanceof List) {
+                answer.addAll(get(self, (List) value));
+            }
+            else {
+                int idx = InvokerHelper.asInt(value);
+                answer.add(self.get(idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Allows a List to be used as the indices to be used on a List
      * 
-     * @returns a range of a list from the range's from index up to
-     * but not including the ranges's to value
+     * @returns a new list of the values at the given indices
      */
-    public static Object get(Object[] array, Range range) {
+    public static List get(Object[] self, Collection indices) {
+        List answer = new ArrayList(indices.size());
+        for (Iterator iter = indices.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value instanceof Range) {
+                answer.addAll(get(self, (Range) value));
+            }
+            else if (value instanceof List) {
+                answer.addAll(get(self, (List) value));
+            }
+            else {
+                int idx = InvokerHelper.asInt(value);
+                answer.add(get(self, idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Allows a List to be used as the indices to be used on a String
+     * 
+     * @returns a String of the values at the given indices
+     */
+    public static String get(String self, Collection indices) {
+        StringBuffer answer = new StringBuffer();
+        for (Iterator iter = indices.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value instanceof Range) {
+                answer.append(get(self, (Range) value));
+            }
+            else if (value instanceof List) {
+                answer.append(get(self, (List) value));
+            }
+            else {
+                int idx = InvokerHelper.asInt(value);
+                answer.append(get(self, idx));
+            }
+        }
+        return answer.toString();
+    }
+
+    /**
+	 * Creates a sub-Map containing the given keys. This method is similar to
+	 * List.subList() but uses keys rather than index ranges.
+	 * 
+	 * @returns a new Map containing the given keys
+	 */
+    public static Map subMap(Map map, Collection keys) {
+        Map answer = new HashMap(keys.size());
+        for (Iterator iter = keys.iterator(); iter.hasNext();) {
+            Object key = iter.next();
+            answer.put(key, map.get(key));
+        }
+        return answer;
+    }
+
+    /**
+	 * Support the range subscript operator for an Array
+	 * 
+	 * @returns a range of a list from the range's from index up to but not
+	 * including the ranges's to value
+	 */
+    public static List get(Object[] array, Range range) {
         List list = Arrays.asList(array);
         return get(list, range);
     }
-    
-    
+
     /**
-     * Support the subscript operator for an Array
-     * 
-     * @returns the value at the given index
-     */
+	 * Support the subscript operator for an Array
+	 * 
+	 * @returns the value at the given index
+	 */
     public static Object get(Object[] array, int idx) {
         return array[normaliseIndex(idx, array.length)];
     }
 
     /**
-     * Support the subscript operator for an Array
-     * 
-     */
+	 * Support the subscript operator for an Array
+	 *  
+	 */
     public static void put(Object[] array, int idx, Object value) {
         array[normaliseIndex(idx, array.length)] = value;
     }
-    
-    
+
     /**
-     * A helper method to allow lists to work with subscript operators
-     */
+	 * A helper method to allow lists to work with subscript operators
+	 */
     public static void put(List self, Number n, Object value) {
         int i = n.intValue();
         int size = self.size();
         i = normaliseIndex(i, size);
-        if (i < size) { 
+        if (i < size) {
             self.set(i, value);
         }
         else {
@@ -640,7 +711,7 @@ public class DefaultGroovyMethods {
             self.add(i, value);
         }
     }
-    
+
     protected static int normaliseIndex(int i, int size) {
         while (i < 0) {
             i += size;
@@ -648,14 +719,11 @@ public class DefaultGroovyMethods {
         return i;
     }
 
-    
-
-    
     /**
-     * Support the subscript operator for List
-     * 
-     * @return
-     */
+	 * Support the subscript operator for List
+	 * 
+	 * @return
+	 */
     public static List get(Collection coll, String property) {
         List answer = new ArrayList(coll.size());
         for (Iterator iter = coll.iterator(); iter.hasNext();) {
@@ -672,67 +740,67 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * A convenience method for creating an immutable map
-     */
+	 * A convenience method for creating an immutable map
+	 */
     public static Map immutable(Map self) {
         return Collections.unmodifiableMap(self);
     }
 
     /**
-     * A convenience method for creating an immutable sorted map
-     */
+	 * A convenience method for creating an immutable sorted map
+	 */
     public static SortedMap immutable(SortedMap self) {
         return Collections.unmodifiableSortedMap(self);
     }
 
     /**
-     * A convenience method for creating an immutable list
-     */
+	 * A convenience method for creating an immutable list
+	 */
     public static List immutable(List self) {
         return Collections.unmodifiableList(self);
     }
 
     /**
-     * A convenience method for creating an immutable list
-     */
+	 * A convenience method for creating an immutable list
+	 */
     public static Set immutable(Set self) {
         return Collections.unmodifiableSet(self);
     }
 
     /**
-     * A convenience method for creating an immutable sorted set
-     */
+	 * A convenience method for creating an immutable sorted set
+	 */
     public static SortedSet immutable(SortedSet self) {
         return Collections.unmodifiableSortedSet(self);
     }
 
     /**
-     * A convenience method for sorting a List
-     */
+	 * A convenience method for sorting a List
+	 */
     public static List sort(List self) {
         Collections.sort(self);
         return self;
     }
 
     /**
-     * A convenience method for sorting a List with a specific comparator
-     */
+	 * A convenience method for sorting a List with a specific comparator
+	 */
     public static List sort(List self, Comparator comparator) {
         Collections.sort(self, comparator);
         return self;
     }
 
     /**
-     * A convenience method for sorting a List using a closure as a comparator
-     */
+	 * A convenience method for sorting a List using a closure as a comparator
+	 */
     public static List sort(List self, Closure closure) {
         Collections.sort(self, new ClosureComparator(closure));
         return self;
     }
 
     /**
-     * Reverses the list
-     */
+	 * Reverses the list
+	 */
     public static List reverse(List self) {
         int size = self.size();
         List answer = new ArrayList(size);
@@ -886,7 +954,7 @@ public class DefaultGroovyMethods {
 
     // Primitive type array methods
     //-------------------------------------------------------------------------
-    
+
     public static Object get(byte[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
@@ -908,7 +976,7 @@ public class DefaultGroovyMethods {
     public static Object get(double[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    
+
     public static Object get(byte[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
@@ -930,11 +998,33 @@ public class DefaultGroovyMethods {
     public static Object get(double[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    
+
+    public static Object get(byte[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(char[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(short[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(int[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(long[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(float[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    public static Object get(double[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+
     public static void put(byte[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    
+
     public static void put(char[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
@@ -953,7 +1043,7 @@ public class DefaultGroovyMethods {
     public static void put(double[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    
+
     public static int size(byte[] array) {
         return Array.getLength(array);
     }
@@ -975,34 +1065,54 @@ public class DefaultGroovyMethods {
     public static int size(double[] array) {
         return Array.getLength(array);
     }
-    
+
     /**
-     * Implements the get(int idx) method for primitve type arrays
-     */
+	 * Implements the get(int) method for primitve type arrays
+	 */
     protected static Object primitiveArrayGet(Object array, int idx) {
         return Array.get(array, normaliseIndex(idx, Array.getLength(array)));
     }
-    
+
     /**
-     * Implements the get(int idx) method for primitve type arrays
-     */
-    protected static Object primitiveArrayGet(Object array, Range range) {
+	 * Implements the get(Range) method for primitve type arrays
+	 */
+    protected static List primitiveArrayGet(Object array, Range range) {
         List answer = new ArrayList();
-        for (Iterator iter = range.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = range.iterator(); iter.hasNext();) {
             int idx = InvokerHelper.asInt(iter.next());
             answer.add(primitiveArrayGet(array, idx));
         }
         return answer;
     }
-    
+
     /**
-     * Implements the set(int idx) method for primitve type arrays
+     * Implements the get(Collection) method for primitve type arrays
      */
+    protected static List primitiveArrayGet(Object self, Collection indices) {
+        List answer = new ArrayList();
+        for (Iterator iter = indices.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value instanceof Range) {
+                answer.addAll(primitiveArrayGet(self, (Range) value));
+            }
+            else if (value instanceof List) {
+                answer.addAll(primitiveArrayGet(self, (List) value));
+            }
+            else {
+                int idx = InvokerHelper.asInt(value);
+                answer.add(primitiveArrayGet(self, idx));
+            }
+        }
+        return answer;
+    }
+
+    /**
+	 * Implements the set(int idx) method for primitve type arrays
+	 */
     protected static void primitiveArrayPut(Object array, int idx, Object newValue) {
         Array.set(array, normaliseIndex(idx, Array.getLength(array)), newValue);
     }
-    
-    
+
     // String methods
     //-------------------------------------------------------------------------
     public static Object tokenize(String self, String token) {
@@ -1114,8 +1224,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates a number of times
-     */
+	 * Iterates a number of times
+	 */
     public static void times(Number self, Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
             closure.call(new Integer(i));
@@ -1123,8 +1233,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates from this number up to the given number
-     */
+	 * Iterates from this number up to the given number
+	 */
     public static void upto(Number self, Number to, Closure closure) {
         for (int i = self.intValue(), size = to.intValue(); i < size; i++) {
             closure.call(new Integer(i));
@@ -1132,8 +1242,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates from this number up to the given number using a step increment
-     */
+	 * Iterates from this number up to the given number using a step increment
+	 */
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         for (int i = self.intValue(), size = to.intValue(), step = stepNumber.intValue(); i < size; i += step) {
             closure.call(new Integer(i));
@@ -1168,8 +1278,8 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Iterates through the given file line by line
-     */
+	 * Iterates through the given file line by line
+	 */
     public static void eachLine(File self, Closure closure) throws IOException {
         BufferedReader reader = newReader(self);
         try {
@@ -1198,8 +1308,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Reads the file into a list of Strings for each line
-     */
+	 * Reads the file into a list of Strings for each line
+	 */
     public static List readLines(File file) throws IOException {
         IteratorClosureAdapter closure = new IteratorClosureAdapter(file);
         eachLine(file, closure);
@@ -1207,8 +1317,8 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Invokes the closure for each file in the given directory
-     */
+	 * Invokes the closure for each file in the given directory
+	 */
     public static void eachFile(File self, Closure closure) {
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
@@ -1217,23 +1327,23 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Helper method to create a buffered reader for a file
-     * 
-     * @param file
-     * @return
-     * @throws FileNotFoundException
-     */
+	 * Helper method to create a buffered reader for a file
+	 * 
+	 * @param file
+	 * @return @throws
+	 *         FileNotFoundException
+	 */
     public static BufferedReader newReader(File file) throws FileNotFoundException {
         return new BufferedReader(new FileReader(file));
     }
 
     /**
-      * Helper method to create a buffered writer for a file
-      * 
-      * @param file
-      * @return
-      * @throws FileNotFoundException
-      */
+	 * Helper method to create a buffered writer for a file
+	 * 
+	 * @param file
+	 * @return @throws
+	 *         FileNotFoundException
+	 */
     public static BufferedWriter newWriter(File file) throws IOException {
         return new BufferedWriter(new FileWriter(file));
     }
@@ -1242,13 +1352,13 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Iterates through the result set of an SQL query passing the result set into 
-     * the closure
-     * 
-     * @param connection
-     * @param expression
-     * @param closure
-     */
+	 * Iterates through the result set of an SQL query passing the result set
+	 * into the closure
+	 * 
+	 * @param connection
+	 * @param expression
+	 * @param closure
+	 */
     public static void query(Connection connection, GString gstring, Closure closure) throws SQLException {
         ResultSet results = null;
 
