@@ -1242,12 +1242,25 @@ public class ASTBuilder {
      */
     protected Number createInteger(String text) {
         // lets use an Integer if it will fit as it makes for more efficient bytecode
-        Long answer = new Long(text);
-        long l = answer.longValue();
+    	final long l;
+    	
+    	if (text.startsWith("0") && text.length() > 1) {
+    		final char c = text.charAt(1);
+    		
+    		if (c == 'X' || c == 'x') {
+    			l = Long.parseLong(text.substring(2), 16);
+    		} else {
+    			l = Long.parseLong(text, 8);
+    		}
+    	} else {
+    		l = Long.parseLong(text);
+    	}
+
         if (l > Integer.MIN_VALUE && l < Integer.MAX_VALUE) {
             return new Integer((int) l);
+        } else {
+        	return new Long(l);
         }
-        return answer;
     }
 
     protected BinaryExpression binaryExpression(CSTNode expressionRoot) throws ParserException {
