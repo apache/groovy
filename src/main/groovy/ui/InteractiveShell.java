@@ -198,6 +198,9 @@ public class InteractiveShell {
     *  Reads a single statement from the command line.  Also identifies
     *  and processes command shell commands.  Returns the command text
     *  on success, or null when command processing is complete.
+    *  <p>
+    *  NOTE: Changed, for now, to read until 'execute' is issued.  At
+    *  'execute', the statement must be complete.
     */
 
     protected String read() {
@@ -208,7 +211,7 @@ public class InteractiveShell {
         boolean complete = false;
         boolean done     = false;
 
-        while( !complete && !done ) {
+        while( /* !complete && */ !done ) {
 
             //
             // Prompt
@@ -250,6 +253,15 @@ public class InteractiveShell {
 
                   case COMMAND_ID_EXPLAIN:
                     explainStatement();
+                    break;
+
+                  case COMMAND_ID_EXECUTE:
+                    if( complete ) {
+                        done = true;
+                    }
+                    else {
+                        System.err.println( "statement not complete" );
+                    }
                     break;
                 }
 
@@ -371,7 +383,9 @@ public class InteractiveShell {
         try {
             parser = Parser.create( code, tolerance );
             stream = parser.getTokenStream();
-            tree   = parser.topLevelStatement();
+            tree   = parser.compilationUnit();
+
+            /* see note on read(): tree   = parser.topLevelStatement(); */
 
             if( stream.atEnd() ) {
                 parsed = true;
@@ -437,9 +451,10 @@ public class InteractiveShell {
     private static final int COMMAND_ID_DISCARD = 2;
     private static final int COMMAND_ID_DISPLAY = 3;
     private static final int COMMAND_ID_EXPLAIN = 4;
-    private static final int LAST_COMMAND_ID    = 4;
+    private static final int COMMAND_ID_EXECUTE = 5;
+    private static final int LAST_COMMAND_ID    = 5;
 
-    private static final String[] COMMANDS = { "exit", "help", "discard", "display", "explain" };
+    private static final String[] COMMANDS = { "exit", "help", "discard", "display", "explain", "execute" };
 
     private static final Map COMMAND_MAPPINGS = new HashMap();
 
@@ -457,6 +472,7 @@ public class InteractiveShell {
         COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISCARD], "discard - discards the current statement" );
         COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISPLAY], "display - displays the current statement" );
         COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXPLAIN], "explain - explains the parsing of the current statement" );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXECUTE], "execute - temporary command to cause statement execution" );
     }
 
 
