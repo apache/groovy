@@ -24,6 +24,9 @@ class SubscriptTest extends GroovyTestCase {
         
         sub = list[3..1]
         assert sub == ['d', 'c', 'b']
+        
+        sub = list[1..-3]
+        assert sub == ['b', 'c']
     }
     
     void testObjectRangeRange() {
@@ -122,6 +125,10 @@ class SubscriptTest extends GroovyTestCase {
         
         sub = text[-2..-7]
         assert sub == 'timorg'
+        
+        sub = text[1..-3]
+        assert sub == "ice cheese gromi"
+        
     }
     
     void testListSubscriptWithList() {

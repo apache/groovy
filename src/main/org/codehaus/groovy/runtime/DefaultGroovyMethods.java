@@ -642,14 +642,16 @@ public class DefaultGroovyMethods {
         int length = text.length();
 
         // if this is a backwards range, reverse the arguments to substring
+        boolean reverse = range.isReverse();
         if (from > to) {
-            int tmp = from;
-            from = to;
-            to = tmp;
+            int tmp = to;
+            to = from;
+            from = tmp;
+            reverse = ! reverse;
         }
-
+        
         String answer = text.substring(from, to + 1);
-        if (range.isReverse()) {
+        if (reverse) {
             answer = reverse(answer);
         }
         return answer;
@@ -705,12 +707,11 @@ public class DefaultGroovyMethods {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
         boolean reverse = range.isReverse();
-        //System.out.println("Evaluting range: " + range + " with from: " + from + " to: " + to + " reverse: " + reverse);
         if (from > to) {
             int tmp = to;
             to = from;
             from = tmp;
-            //reverse = !reverse;
+            reverse = ! reverse;
         }
         if (++to > size) {
             to = size;
