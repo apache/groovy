@@ -1,7 +1,5 @@
 package org.codehaus.groovy.syntax.parser;
 
-import java.util.List;
-import java.util.ArrayList;
 
 public class SemanticVerificationResult
 {
