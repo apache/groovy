@@ -206,6 +206,16 @@ public class PropertyTest extends GroovyTestCase {
         assertArrayEquals(new Object[] { z }, value.toArray());
     }
 
+    public void testUsingInPropertyOnProcessViaGroovyMethod() throws Exception {
+        Process process = DefaultGroovyMethods.execute("java -version");
+        Object value = InvokerHelper.getProperty(process, "in");
+        assertNotNull(value);
+        
+        System.out.println("Found in: " + value);
+        
+        process.destroy();
+    }
+    
     public Object getCheese() {
         return "cheddar";
     }

@@ -1,23 +1,24 @@
 /*
  * $Id$
- * 
+ *
  * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
- * 
+ *
  * Redistribution and use of this software and associated documentation
  * ("Software"), with or without modification, are permitted provided that the
- * following conditions are met: 1. Redistributions of source code must retain
- * copyright statements and notices. Redistributions must also contain a copy
- * of this document. 2. Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer in
- * the documentation and/or other materials provided with the distribution. 3.
- * The name "groovy" must not be used to endorse or promote products derived
- * from this Software without prior written permission of The Codehaus. For
- * written permission, please contact info@codehaus.org. 4. Products derived
- * from this Software may not be called "groovy" nor may "groovy" appear in
- * their names without prior written permission of The Codehaus. "groovy" is a
- * registered trademark of The Codehaus. 5. Due credit should be given to The
- * Codehaus - http://groovy.codehaus.org/
- * 
+ * following conditions are met:
+ *  1. Redistributions of source code must retain copyright statements and
+ * notices. Redistributions must also contain a copy of this document.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *  3. The name "groovy" must not be used to endorse or promote products
+ * derived from this Software without prior written permission of The Codehaus.
+ * For written permission, please contact info@codehaus.org.
+ *  4. Products derived from this Software may not be called "groovy" nor may
+ * "groovy" appear in their names without prior written permission of The
+ * Codehaus. "groovy" is a registered trademark of The Codehaus.
+ *  5. Due credit should be given to The Codehaus - http://groovy.codehaus.org/
+ *
  * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,7 +30,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *  
+ *
  */
 package groovy.lang;
 
@@ -67,6 +68,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.objectweb.asm.ClassWriter;
@@ -127,6 +129,22 @@ public class MetaClass {
                 listeners.put(listenerMethod.getName(), metaMethod);
             }
         }
+    }
+
+    private void addInheritendMethods(Class theClass) {
+        // lets add all the base class methods
+        Class c = theClass;
+        if (c != Object.class) {
+            while (true) {
+                c = c.getSuperclass();
+                if (c == Object.class || c == null) {
+                    break;
+                }
+                addMethods(c);
+                addNewStaticMethodsFrom(c);
+
+            }
+        }
 
         // now lets see if there are any methods on one of my interfaces
         Class[] interfaces = theClass.getInterfaces();
@@ -134,19 +152,13 @@ public class MetaClass {
             addNewStaticMethodsFrom(interfaces[i]);
         }
 
+        // lets add Object methods after interfaces, as all interfaces derive from Object. 
+        // this ensures List and Collection methods come before Object etc
+        addMethods(Object.class);
+        addNewStaticMethodsFrom(Object.class);
+
         if (theClass.isArray() && !theClass.equals(Object[].class)) {
             addNewStaticMethodsFrom(Object[].class);
-        }
-
-        // lets add all the base class methods
-        Class c = theClass;
-        while (true) {
-            c = c.getSuperclass();
-            if (c == null) {
-                break;
-            }
-            addNewStaticMethodsFrom(c);
-            addMethods(c);
         }
     }
 
@@ -185,7 +197,9 @@ public class MetaClass {
             throw new RuntimeException("Already initialized, cannot add new method: " + method);
         }
         else {
-            addNewStaticInstanceMethod(createMetaMethod(method));
+            NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
+            addMethod(newMethod);
+            addNewStaticInstanceMethod(newMethod);
         }
     }
 
@@ -200,10 +214,6 @@ public class MetaClass {
     }
 
     public Object invokeMethod(Object object, String methodName, Object arguments) {
-        /*
-         * System.out.println( "MetaClass: Invoking method on object: " +
-         * object + " method: " + methodName + " arguments: " + arguments);
-         */
         return invokeMethod(object, methodName, asArray(arguments));
     }
 
@@ -213,23 +223,6 @@ public class MetaClass {
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         checkInitialised();
-
-        /** @todo...
-        if (object instanceof MetaClass && methodName.equals("invokeMethod")) {
-            MetaClass other = (MetaClass) object; 
-            return other.invokeMethod(arguments[0], (String) arguments[1], arguments[2]);
-            // we should throw an exception to find out why this happens
-        }
-        */
-        /*
-         * Class type = arguments == null ? null : arguments.getClass(); System
-         * .out .println( "MetaClass(Object[]) Invoking method on object: " +
-         * object + " method: " + methodName + " argument type: " + type + "
-         * arguments: " + InvokerHelper.toString(arguments));
-         * 
-         * //System.out.println("Type of first arg: " + arguments[0] + " type: " +
-         * arguments[0].getClass());
-         */
 
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
@@ -291,13 +284,10 @@ public class MetaClass {
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-        /*
-         * System.out.println("Calling static method: " + methodName + " on
-         * args: " + InvokerHelper.toString(arguments)); Class type = arguments ==
-         * null ? null : arguments.getClass(); System.out.println("Argument
-         * type: " + type); System.out.println("Type of first arg: " +
-         * arguments[0] + " type: " + arguments[0].getClass());
-         */
+        //        System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
+        //        Class type = arguments == null ? null : arguments.getClass();
+        //        System.out.println("Argument  type: " + type);
+        //        System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
 
         List methods = getStaticMethods(methodName);
 
@@ -434,7 +424,7 @@ public class MetaClass {
                 /* @todo one day we could try return the previously registered Closure listener for easy removal */
                 return null;
             }
-            
+
             // lets try the getter method
             if (lastException == null) {
                 throw new MissingPropertyException(property, theClass);
@@ -471,8 +461,6 @@ public class MetaClass {
                     for (int i = 0; i < constructors.length; i++) {
                         Constructor constructor = constructors[i];
                         if (constructor.getParameterTypes().length == params) {
-                            //System.out.println("Found constructor: " +
-                            // constructor);
                             Object value = doConstructorInvoke(constructor, list.toArray());
                             doMethodInvoke(object, metaMethod, new Object[] { value });
                             return;
@@ -603,38 +591,41 @@ public class MetaClass {
         Method[] methodArray = theClass.getDeclaredMethods();
         for (int i = 0; i < methodArray.length; i++) {
             MetaMethod method = createMetaMethod(methodArray[i]);
+            addMethod(method);
+        }
+    }
 
-            String name = method.getName();
-            if (isGenericGetMethod(method) && genericGetMethod == null) {
-                genericGetMethod = method;
-            }
-            else if (isGenericSetMethod(method) && genericSetMethod == null) {
-                genericSetMethod = method;
-            }
-            if (method.isStatic()) {
-                List list = (List) staticMethodIndex.get(name);
-                if (list == null) {
-                    list = new ArrayList();
-                    staticMethodIndex.put(name, list);
-                    list.add(method);
-                }
-                else {
-                    if (!containsMatchingMethod(list, method)) {
-                        list.add(method);
-                    }
-                }
+    protected void addMethod(MetaMethod method) {
+        String name = method.getName();
+        if (isGenericGetMethod(method) && genericGetMethod == null) {
+            genericGetMethod = method;
+        }
+        else if (isGenericSetMethod(method) && genericSetMethod == null) {
+            genericSetMethod = method;
+        }
+        if (method.isStatic()) {
+            List list = (List) staticMethodIndex.get(name);
+            if (list == null) {
+                list = new ArrayList();
+                staticMethodIndex.put(name, list);
+                list.add(method);
             }
             else {
-                List list = (List) methodIndex.get(name);
-                if (list == null) {
-                    list = new ArrayList();
-                    methodIndex.put(name, list);
+                if (!containsMatchingMethod(list, method)) {
                     list.add(method);
                 }
-                else {
-                    if (!containsMatchingMethod(list, method)) {
-                        list.add(method);
-                    }
+            }
+        }
+        else {
+            List list = (List) methodIndex.get(name);
+            if (list == null) {
+                list = new ArrayList();
+                methodIndex.put(name, list);
+                list.add(method);
+            }
+            else {
+                if (!containsMatchingMethod(list, method)) {
+                    list.add(method);
                 }
             }
         }
@@ -673,11 +664,17 @@ public class MetaClass {
      */
     protected void addNewStaticMethodsFrom(Class theClass) {
         MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
+        interfaceMetaClass.checkInitialised();
         Iterator iter = interfaceMetaClass.newStaticInstanceMethodIndex.entrySet().iterator();
         while (iter.hasNext()) {
             Map.Entry entry = (Map.Entry) iter.next();
             String name = (String) entry.getKey();
             List values = (List) entry.getValue();
+
+            // lets add each method
+            for (Iterator iter2 = values.iterator(); iter2.hasNext();) {
+                addMethod((MetaMethod) iter2.next());
+            }
 
             if (values != null) {
                 // lets add these methods to me
@@ -749,9 +746,10 @@ public class MetaClass {
     protected MetaMethod findGetter(Object object, String name) {
         checkInitialised();
 
-        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+        List methods = getMethods(name);
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
-            if (!method.isStatic() && method.getName().equals(name) && method.getParameterTypes().length == 0) {
+            if (method.getParameterTypes().length == 0) {
                 return method;
             }
         }
@@ -764,10 +762,10 @@ public class MetaClass {
     protected MetaMethod findStaticGetter(Class type, String name) {
         checkInitialised();
 
-        /** @todo optimise me! */
-        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+        List methods = getStaticMethods(name);
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
-            if (method.isStatic() && method.getName().equals(name) && method.getParameterTypes().length == 0) {
+            if (method.getParameterTypes().length == 0) {
                 return method;
             }
         }
@@ -823,10 +821,6 @@ public class MetaClass {
             else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
                 argumentArray = ARRAY_WITH_NULL;
             }
-            Reflector reflector = method.getReflector();
-
-            //            System.out.println("Invoking method on reflector: " + reflector);
-            //            System.out.println("With method index: " + method.getMethodIndex());
             return method.invoke(object, argumentArray);
         }
         catch (ClassCastException e) {
@@ -874,6 +868,7 @@ public class MetaClass {
                 e);
         }
         catch (IllegalArgumentException e) {
+            e.printStackTrace();
             if (coerceGStrings(argumentArray)) {
                 try {
                     return doMethodInvoke(object, method, argumentArray);
@@ -909,84 +904,6 @@ public class MetaClass {
                 e);
         }
     }
-
-    /*
-    protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-        //System.out.println("Evaluating method: " + method);
-        //System.out.println("on object: " + object + " with arguments: " +
-        // InvokerHelper.toString(argumentArray));
-        //System.out.println(this.theClass);
-    
-        try {
-            if (registry.useAccessible()) {
-                method.setAccessible(true);
-            }
-            if (argumentArray == null) {
-                argumentArray = EMPTY_ARRAY;
-            }
-            else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
-                argumentArray = ARRAY_WITH_NULL;
-            }
-            return method.invoke(object, argumentArray);
-        }
-        catch (InvocationTargetException e) {
-            Throwable t = e.getTargetException();
-            if (t instanceof Error) {
-                Error error = (Error) t;
-                throw error;
-            }
-            if (t instanceof RuntimeException) {
-                RuntimeException runtimeEx = (RuntimeException) t;
-                throw runtimeEx;
-            }
-            throw new InvokerInvocationException(e);
-        }
-        catch (IllegalAccessException e) {
-            throw new GroovyRuntimeException(
-                    "could not access method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
-        }
-        catch (IllegalArgumentException e) {
-            if (coerceGStrings(argumentArray)) {
-                try {
-                    return doMethodInvoke(object, method, argumentArray);
-                }
-                catch (Exception e2) {
-                    // allow fall through
-                }
-            }
-            throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
-        }
-        catch (Exception e) {
-            throw new GroovyRuntimeException(
-                    "failed to invoke method: "
-                    + method
-                    + " on: "
-                    + object
-                    + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
-        }
-    }
-    */
 
     protected Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
         //System.out.println("Evaluating constructor: " + constructor + " with
@@ -1379,6 +1296,7 @@ public class MetaClass {
     protected void checkInitialised() {
         if (!initialised) {
             initialised = true;
+            addInheritendMethods(theClass);
             generateReflector();
         }
     }
@@ -1493,14 +1411,12 @@ public class MetaClass {
 
     protected List getInterfaceMethods() {
         if (interfaceMethods == null) {
-            //System.out.println("#### Creating interface methods for: " + theClass);
             interfaceMethods = new ArrayList();
             Class type = theClass;
             while (type != null) {
                 Class[] interfaces = type.getInterfaces();
                 for (int i = 0; i < interfaces.length; i++) {
                     Class iface = interfaces[i];
-                    //System.out.println("## For interface: " + iface);
                     Method[] methods = iface.getMethods();
                     addInterfaceMethods(interfaceMethods, methods);
                 }
@@ -1512,7 +1428,6 @@ public class MetaClass {
 
     private void addInterfaceMethods(List list, Method[] methods) {
         for (int i = 0; i < methods.length; i++) {
-            //System.out.println("adding method: " + methods[i]);
             list.add(new MetaMethod(methods[i]));
         }
     }

@@ -43,39 +43,24 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.runtime;
 
-package groovy.lang;
+import java.util.ArrayList;
+import java.util.List;
 
+import junit.framework.TestCase;
 
 /**
- * A mock class for testing writer based code
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MockWriter {
+public class InheritedInterfaceMethodTest extends TestCase {
 
-    private String output;
-    
-    public String getOutput() {
-        String answer = output;
-        output = null;
-        return answer;
-    }
+    public void testInvokeNewListMethodOnArrayList() {
+        List list = new ArrayList();
+        Object answer = InvokerHelper.invokeMethod(list, "count", new Object[] { "123" });
+        assertEquals(new Integer(0), answer);
 
-    public void setOutput(String output) {
-        this.output = output;
-    }
-
-    public void println() {
-        setOutput("println()");
-    }
-    
-    public void println(Object object) {
-        setOutput("println(" + object + ")");
-    }
-
-    public void print(Object object) {
-        setOutput("print(" + object + ")");
+        System.out.println("Found: " + answer);
     }
 }

@@ -35,7 +35,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
-import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.Range;
 import groovy.lang.StringWriterIOException;
@@ -44,7 +43,24 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
