@@ -20,6 +20,7 @@ package org.codehaus.groovy.antlr;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.NoViableAltException;
+import antlr.BaseAST;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
@@ -706,7 +707,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Statement elseBlock = EmptyStatement.INSTANCE;
         node = node.getNextSibling();
         if (node != null) {
-			elseBlock = statement(node);
+            elseBlock = statement(node);
         }
         IfStatement ifStatement = new IfStatement(booleanExpression, ifBlock, elseBlock);
         configureAST(ifStatement, ifNode);
@@ -763,7 +764,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Statement returnStatement(AST node) {
         AST exprNode = node.getFirstChild();
-
+        
         // This will pick up incorrect sibling node if 'node' is a plain 'return'
 		//
 		//if (exprNode == null) {
@@ -1875,20 +1876,23 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void assertNodeType(int type, AST node) {
+        String[] tokenNames = BaseAST.getTokenNames();
         if (node == null) {
-            throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + type);
+            throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + tokenNames[type]);
         }
-        if (node.getType() != type) {
-            throw new ASTRuntimeException(node, "Unexpected node type: " + node.getType() + " found when expecting type: " + type);
+        if (node.getType() != type) {            
+            throw new ASTRuntimeException(node, "Unexpected node type: " + tokenNames[node.getType()] + " found when expecting type: " + tokenNames[type]);
         }
     }
 
     protected void notImplementedYet(AST node) {
-        throw new ASTRuntimeException(node, "AST node not implemented yet for type: " + node.getType());
+        String[] tokenNames = BaseAST.getTokenNames();
+        throw new ASTRuntimeException(node, "AST node not implemented yet for type: " + tokenNames[node.getType()]);
     }
 
     protected void unknownAST(AST node) {
-        throw new ASTRuntimeException(node, "Unknown type: " + node.getType());
+        String[] tokenNames = BaseAST.getTokenNames();
+        throw new ASTRuntimeException(node, "Unknown type: " + tokenNames[node.getType()]);
     }
 
     protected void dumpTree(AST ast) {
