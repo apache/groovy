@@ -46,7 +46,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	class StreamingMarkupBuilder {
 		pendingStack = []
-		badTagClosure = {tag, pendingNamespaces, namespaces, prefix, attrs, body, out |
+		badTagClosure = {tag, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 							uri = pendingNamespaces[prefix]
 							
 							if (uri == null) {
@@ -55,14 +55,18 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							
 							throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
 						}
-		commentClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out |
+		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 							out.unescaped() << "<!--"
 							out.bodyText() << body
 							out.unescaped() << "-->"
 						 }
-		noopClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out | out.bodyText() << body}
-		unescapedClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out | out.unescaped() << body}
-		tagClosure = {tag, pendingNamespaces, namespaces, prefix, attrs, body, out |
+		noopClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+							out.bodyText() << body
+					  }
+		unescapedClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+								out.unescaped() << body
+						   }
+		tagClosure = {tag, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 						if (prefix != "") {
 							if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
 								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
@@ -123,7 +127,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 													}
 											   }											   						
 					}
-		namespaceSetupClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out |
+		namespaceSetupClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 									attrs.each { key, value |
 										if ( key == "") {
 											key = ":"	// marker for default namespace
@@ -134,28 +138,56 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 										if (namespaces[key] != value) {
 											pendingNamespaces[key] = value
 										}
+										
+										if (!namespaceSpecificTags.containsKey value) {
+											baseEntry = namespaceSpecificTags[':']
+											namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
+										}
 									}
 								}
-						
+		aliasSetupClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+								attrs.each { key, value |
+									if (value instanceof Map) {
+										// key is a namespace prefix value is the mapping
+										info = null
+										
+										if (namespaces.containsKey key) {
+											info = namespaceSpecificTags[namespaces[key]]
+										} else if (pendingNamespaces.containsKey key) {
+											info = namespaceSpecificTags[pendingNamespaces[key]]
+										} else {
+											throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
+										}
+/*
+
+This is commented out because of a code generator bug
+This means that mkp.declareAlias(xsd:['fred':'schema']) won't work
+But mkp.declareAlias(jim:'harry') will work
+										
+										value.each { from, to |
+											info[2][to] = info[1].curry(from)
+										}*/
+									} else {
+										info = namespaceSpecificTags[':']
+										info[2][key] = info[1].curry(value)
+									}
+								}
+							}
+											
 		specialTags = ['yield':noopClosure,
 		               'yieldUnescaped':unescapedClosure,
 		               'comment':commentClosure,
-		               'declareNamespace':namespaceSetupClosure]
+		               'declareNamespace':namespaceSetupClosure,
+		               'declareAlias':aliasSetupClosure]
 		               
-		namespaceSpecificTags = ['http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+		nsSpecificTags = [':' : [tagClosure, tagClosure, [:]],	// the default namespace
+								 'http://www.w3.org/XML/1998/namespace' : [tagClosure, tagClosure, [:]],
+		                         'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 		
 		builder = null
 		
 		StreamingMarkupBuilder() {
-			this.builder = new BaseMarkupBuilder(this.tagClosure, this.tagClosure, [:], this.namespaceSpecificTags)
-		}
-		
-		StreamingMarkupBuilder(extraTags, extraNamespaceSpecificTags) {
-			nsTags = [:]
-			nsTags.putAll(this.namespaceSpecificTags)
-			nsTags.putAll(extraNamespaceSpecificTags)
-			
-			this.builder = new BaseMarkupBuilder(this.tagClosure, this.tagClosure, extraTags, nsTags)
+			this.builder = new BaseMarkupBuilder(this.nsSpecificTags)
 		}
 		
 		bind(closure) {

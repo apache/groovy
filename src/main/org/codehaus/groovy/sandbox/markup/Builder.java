@@ -54,27 +54,17 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Builder extends GroovyObjectSupport {
-	protected final Map methodMap;
 	protected final Map namespaceMethodMap = new HashMap();
-	protected final Closure defaultGenerator;
 	
-	public Builder(final Closure defaultGenerator, final Closure tagGenerator) {
-		this(defaultGenerator, tagGenerator, new HashMap(), new HashMap());
-	}
-	
-	public Builder(final Closure defaultGenerator, final Closure tagGenerator, final Map methodMap, final Map namespaceMethodMap) {
-		this.defaultGenerator = defaultGenerator.asWritable();
-		
-		this.methodMap = fettleMethodMap(this.defaultGenerator, methodMap);
-		
-		final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
+	public Builder(final Map namespaceMethodMap) {
+	final Iterator keyIterator = namespaceMethodMap.keySet().iterator();
 		
 		while (keyIterator.hasNext()) {
 		final Object key = keyIterator.next();
 		final List value = (List)namespaceMethodMap.get(key);
 		final Closure dg = ((Closure)value.get(1)).asWritable();
 		
-			this.namespaceMethodMap.put(key, new Object[]{value.get(0), fettleMethodMap(dg, (Map)value.get(2))});
+			this.namespaceMethodMap.put(key, new Object[]{value.get(0), dg, fettleMethodMap(dg, (Map)value.get(2))});
 		}
 	}
 	
@@ -100,13 +90,9 @@ public abstract class Builder extends GroovyObjectSupport {
 	
 	protected static abstract class Built extends GroovyObjectSupport {
 	protected final Closure root;
-	protected final Closure defaultTag;
-	protected final Map tagMap = new HashMap();
 	protected final Map namespaceSpecificTags = new HashMap();
 		
-		public Built(final Closure root, final Closure defaultTag, final Map tagMap, final Map namespaceTagMap) {
-			this.defaultTag = defaultTag;
-			this.tagMap.putAll(tagMap);
+		public Built(final Closure root, final Map namespaceTagMap) {
 			this.namespaceSpecificTags.putAll(namespaceTagMap);
 		
 			try {

@@ -51,16 +51,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BaseMarkupBuilder extends Builder {
-	public BaseMarkupBuilder(final Closure defaultGenerator, final Closure tagGenerator) {
-		super(defaultGenerator, tagGenerator);
-	}
-	
-	public BaseMarkupBuilder(final Closure defaultGenerator, final Closure tagGenerator, final Map methodMap, final Map namespaceMethodMap) {
-		super(defaultGenerator, tagGenerator, methodMap, namespaceMethodMap);
+	public BaseMarkupBuilder(final Map namespaceMethodMap) {
+		super(namespaceMethodMap);
 	}
 	
 	public Object bind(final Closure root) {
-		return new Document(root, this.defaultGenerator, this.methodMap, this.namespaceMethodMap);
+		return new Document(root, this.namespaceMethodMap);
 	}
 	
 	private static class Document extends Built {
@@ -69,8 +65,8 @@ public class BaseMarkupBuilder extends Builder {
 		private final Map namespaces = new HashMap();
 		private String prefix = "";
 		
-		public Document(final Closure root, final Closure defaultTag, final Map tagMap, final Map namespaceMethodMap) {
-			super(root, defaultTag, tagMap, namespaceMethodMap);
+		public Document(final Closure root, final Map namespaceMethodMap) {
+			super(root, namespaceMethodMap);
 			
 			this.namespaces.put("xml", "http://www.w3.org/XML/1998/namespace");				// built in namespace
 			this.namespaces.put("mkp", "http://www.codehaus.org/Groovy/markup/keywords");	// pseudo namespace for markup keywords
@@ -106,29 +102,6 @@ public class BaseMarkupBuilder extends Builder {
 			//
 			// call the closure corresponding to the tag
 			//
-/*			Map tagMap = this.tagMap;
-			Closure defaultTag = this.defaultTag;
-			
-			if (this.pendingNamespaces.containsKey(this.prefix)) {
-			final Object uri = this.pendingNamespaces.get(this.prefix);
-			
-				if (this.namespaceSpecificTags.containsKey(uri)) {
-				final Object[] info = (Object[])this.namespaceSpecificTags.get(uri);
-				
-					defaultTag = (Closure)info[0];
-					tagMap = (Map)info[1];
-				}
-			} else if (this.namespaces.containsKey(this.prefix)) {
-			final Object uri = this.namespaces.get(this.prefix);
-			
-				if (this.namespaceSpecificTags.containsKey(uri)) {
-				final Object[] info = (Object[])this.namespaceSpecificTags.get(uri);
-				
-					defaultTag = (Closure)info[0];
-					tagMap = (Map)info[1];
-				}
-			}*/
-			
 			final Object uri;
 			
 			if (this.pendingNamespaces.containsKey(this.prefix)) {
@@ -136,29 +109,20 @@ public class BaseMarkupBuilder extends Builder {
 			} else if (this.namespaces.containsKey(this.prefix)) {
 				uri = this.namespaces.get(this.prefix);
 			} else {
-				uri = null;
+				uri = ":";
 			}
 			
-			final Map tagMap;
-			final Closure defaultTag;
-			
-			if (uri != null && this.namespaceSpecificTags.containsKey(uri)) {
-			final Object[] info = (Object[])this.namespaceSpecificTags.get(uri);
-				
-				defaultTag = (Closure)info[0];
-				tagMap = (Map)info[1];
-			} else {
-				defaultTag = this.defaultTag;
-				tagMap = this.tagMap;
-			}
+			final Object[] info  = (Object[])this.namespaceSpecificTags.get(uri);
+			final Map tagMap = (Map)info[2];
+			final Closure defaultTagClosure = (Closure)info[0];
 			
 			final String prefix = this.prefix;
 			this.prefix = "";
 			
 			if (tagMap.containsKey(name)) {
-				return ((Closure)tagMap.get(name)).call(new Object[]{this.pendingNamespaces, this.namespaces, prefix, attrs, body, this.out});
+				return ((Closure)tagMap.get(name)).call(new Object[]{this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});
 			} else {
-				return defaultTag.call(new Object[]{name, this.pendingNamespaces, this.namespaces, prefix, attrs, body, this.out});		
+				return defaultTagClosure.call(new Object[]{name, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});		
 			}
 		}
 		
