@@ -5,7 +5,7 @@ import org.codehaus.groovy.classgen.TestSupport
  */
 class NestedClosure2Bug extends TestSupport {
      
-    def f
+    Object f
      
     void testFieldBug() {
     	closure = {

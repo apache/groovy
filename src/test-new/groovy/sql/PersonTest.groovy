@@ -45,19 +45,20 @@ class PersonTest extends GroovyTestCase {
         assert params == expectedParams
     }
     
-    protected def createDataSet() {
-        type = Person
-	
-        assert type != null , "failed to load Person class"
-    
-        dataSource = createDataSource()
-        sql = new Sql(dataSource)
-        
-        return sql.dataSet(type)
-    }
-    
     protected DataSource createDataSource() {
         return new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
     }
     
+    protected def createDataSet() {
+        type = Person
+
+        assert type != null , "failed to load Person class"
+
+        dataSource = createDataSource()
+        sql = new Sql(dataSource)
+
+        return sql.dataSet(type)
+    }
+
+
 }
