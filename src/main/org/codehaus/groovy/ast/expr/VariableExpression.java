@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
 
@@ -88,7 +88,7 @@ public class VariableExpression extends Expression {
         return this;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         resolver.resolve(this);
     }
 

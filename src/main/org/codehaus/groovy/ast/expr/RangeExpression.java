@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.Range;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a range expression such as for iterating
@@ -78,7 +78,7 @@ public class RangeExpression extends Expression {
         return new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         from.resolve(resolver);
         to.resolve(resolver);
         super.setTypeClass(Range.class);

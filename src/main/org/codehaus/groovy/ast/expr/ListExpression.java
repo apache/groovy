@@ -50,7 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List
@@ -86,7 +86,7 @@ public class ListExpression extends Expression {
         return new ListExpression(transformExpressions(getExpressions(), transformer));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         for (int i = 0; i < expressions.size(); i++) {
             Expression expression = (Expression) expressions.get(i);
             expression.resolve(resolver);

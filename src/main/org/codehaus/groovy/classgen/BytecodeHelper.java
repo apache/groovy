@@ -62,7 +62,7 @@ import org.objectweb.asm.Label;
 
 
 /**
- * A helper class for bytecode generation with AsmClassGenerator2.
+ * A helper class for bytecode generation with AsmClassGenerator.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
@@ -469,7 +469,7 @@ public class BytecodeHelper implements Constants {
         else {
             cv.visitVarInsn(ASTORE, idx);
         }
-        if (AsmClassGenerator2.CREATE_DEBUG_INFO && markStart) {
+        if (AsmClassGenerator.CREATE_DEBUG_INFO && markStart) {
             Label l = v.getStartLabel();
             if (l != null) {
                 cv.visitLabel(l);

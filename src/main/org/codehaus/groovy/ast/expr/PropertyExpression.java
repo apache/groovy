@@ -50,7 +50,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a property access such as the expression "foo.bar".
@@ -97,7 +97,7 @@ public class PropertyExpression extends Expression {
         return this;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         objectExpression.resolve(resolver);
         resolver.resolve(this);
     }

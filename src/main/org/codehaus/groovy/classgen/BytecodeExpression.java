@@ -65,6 +65,6 @@ public abstract class BytecodeExpression extends Expression {
         return this;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
     }
 }

@@ -114,14 +114,14 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.ClassWriter;
 
 /**
- * Generates Java class versions of Groovy classes using ASM
- * Based on AsmClassGenerator 1.6.
+ * Generates Java class versions of Groovy classes using ASM.
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
  *
  * @version $Revision$
  */
-public class AsmClassGenerator2 extends ClassGenerator {
+public class AsmClassGenerator extends ClassGenerator {
 
     private Logger log = Logger.getLogger(getClass().getName());
 
@@ -249,7 +249,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
     private DummyClassGenerator dummyGen = null;
     private ClassWriter dummyClassWriter = null;
 
-    public AsmClassGenerator2(
+    public AsmClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
         ClassLoader classLoader,
@@ -564,7 +564,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
                 iteratorNextMethod.call(cv);
             }
 
-            protected void resolveType(AsmClassGenerator2 resolver) {
+            protected void resolveType(AsmClassGenerator resolver) {
                 setTypeClass(elemClass);
             }
         };
@@ -3839,7 +3839,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
                                 public void visit(GroovyCodeVisitor visitor) {
                                     cv.visitVarInsn(ALOAD, rightTemp.getIndex());
                                 }
-                                protected void resolveType(AsmClassGenerator2 resolver) {
+                                protected void resolveType(AsmClassGenerator resolver) {
                                     setTypeClass(rclass);
                                 }
                             };
@@ -3871,7 +3871,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
                                 public void visit(GroovyCodeVisitor visitor) {
                                     cv.visitVarInsn(ALOAD, rightTemp.getIndex());
                                 }
-                                protected void resolveType(AsmClassGenerator2 resolver) {
+                                protected void resolveType(AsmClassGenerator resolver) {
                                     setTypeClass(rclass);
                                 }
                             };

@@ -51,7 +51,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a tuple expression {1, 2, 3} which creates an immutable List
@@ -91,7 +91,7 @@ public class TupleExpression extends Expression {
         return new TupleExpression(transformExpressions(getExpressions(), transformer));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         boolean failed = false;
         for (int i = 0; i < expressions.size(); i++) {
             Expression expression = (Expression) expressions.get(i);

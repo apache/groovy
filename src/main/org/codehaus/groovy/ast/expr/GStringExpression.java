@@ -52,7 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a String expression which contains embedded values inside
@@ -90,7 +90,7 @@ public class GStringExpression extends Expression {
             transformExpressions(values, transformer));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         //
     }
 

@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a ternary expression (booleanExpression) ? expression : expression
@@ -79,7 +79,7 @@ public class TernaryExpression extends Expression {
             transformer.transform(falseExpression));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         trueExpression.resolve(resolver);
         falseExpression.resolve(resolver);
         setTypeClass(trueExpression.getTypeClass());

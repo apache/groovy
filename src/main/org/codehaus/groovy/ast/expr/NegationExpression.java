@@ -34,7 +34,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * @author sam
@@ -59,7 +59,7 @@ public class NegationExpression extends Expression {
 	    return new NegationExpression(transformer.transform(expression));
 	}
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         expression.resolve(resolver);
         setTypeClass(expression.getTypeClass());
     }

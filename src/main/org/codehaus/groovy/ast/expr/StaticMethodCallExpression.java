@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.MetaMethod;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * A static method call on a class
@@ -77,7 +77,7 @@ public class StaticMethodCallExpression extends Expression {
         return new StaticMethodCallExpression(type, method, transformer.transform(arguments)); 
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         arguments.resolve(resolver);
         resolver.resolve(this);
     }

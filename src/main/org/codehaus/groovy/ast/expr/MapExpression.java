@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map
@@ -97,7 +97,7 @@ public class MapExpression extends Expression {
         addMapEntryExpression(new MapEntryExpression(keyExpression, valueExpression));
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         for (int i = 0; i < mapEntryExpressions.size(); i++) {
             MapEntryExpression mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(i);
             mapEntryExpression.resolve(resolver);

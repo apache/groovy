@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import java.lang.reflect.Constructor;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * A constructor call
@@ -95,7 +95,7 @@ public class ConstructorCallExpression extends Expression {
         return new ConstructorCallExpression(type, transformer.transform(arguments)); 
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         arguments.resolve(resolver);
         if (constructor == null) {
             resolver.resolve(this);

@@ -51,7 +51,7 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.classgen.BytecodeHelper;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents an array object construction either using a fixed size
@@ -161,7 +161,7 @@ public class ArrayExpression extends Expression {
         return super.toString() + expressions;
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         //
     }
 }

@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**
  * Represents access to a Java/Groovy class in an expression, such
@@ -81,7 +81,7 @@ public class ClassExpression extends Expression {
         return super.toString() + "[type: " + type + "]";
     }
 
-    protected void resolveType(AsmClassGenerator2 resolver) {
+    protected void resolveType(AsmClassGenerator resolver) {
         //should already have resolved the type in the constructor
     }
 }

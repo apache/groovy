@@ -50,7 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import groovy.lang.GroovyRuntimeException;
 
 /**
@@ -223,13 +223,13 @@ public abstract class Expression extends ASTNode {
         this.resolveFailed = false;
     }
 
-    public void resolve(AsmClassGenerator2 cg) {
+    public void resolve(AsmClassGenerator cg) {
         if (shouldContinue()) {
             resolveType(cg);
         }
     }
 
-    protected abstract void resolveType(AsmClassGenerator2 resolver);
+    protected abstract void resolveType(AsmClassGenerator resolver);
 
     protected boolean shouldContinue() {
         return !isResolveFailed() && !isTypeResolved();
