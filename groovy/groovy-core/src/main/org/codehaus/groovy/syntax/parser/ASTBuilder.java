@@ -543,6 +543,10 @@ public class ASTBuilder
     {
         Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
 
+        CSTNode node = expressionRoot.getChild( 1 );
+        
+        System.out.println("node: " + node );
+        
         String methodName = expressionRoot.getChild( 1 ).getToken().getText();
 
         TupleExpression args = tupleExpression( expressionRoot.getChild( 2 ) );
