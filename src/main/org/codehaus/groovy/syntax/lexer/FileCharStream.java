@@ -36,18 +36,6 @@ public class FileCharStream
         return getFile().getPath();
     }
 
-    public char la()
-        throws IOException
-    {
-        return getCharStream().la();
-    }
-
-    public char la(int k)
-        throws IOException
-    {
-        return getCharStream().la( k );
-    }
-
     public char consume()
         throws IOException
     {

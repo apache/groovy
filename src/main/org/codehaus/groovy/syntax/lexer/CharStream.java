@@ -72,36 +72,6 @@ public interface CharStream
 
     String getDescription();
 
-    /** Look-ahead to the next character.
-     *
-     *  <p>
-     *  This method is equivalent to <code>la(1)</code>.
-     *  </p>
-     *
-     *  @see #la(int)
-     *
-     *  @return The next character or -1 if no more characters
-     *          available.
-     *
-     *  @throws IOException If an error occurs attempting to lookahead
-     *          a character.
-     */
-    char la()
-        throws IOException;
-
-    /** Look-ahead to the <code>k</code><i>th</i> character.
-     *
-     *  @param k Number of characters to look ahead.
-     *
-     *  @return the <code>k</code><i>th</i> character or -1 if no
-     *          more characters available.
-     *
-     *  @throws IOException If an error occurs attempting to lookahead
-     *          a character.
-     */
-    char la(int k)
-        throws IOException;
-
     /** Consume the next character.
      *
      *  @return The consumed character or -1 if no more characters

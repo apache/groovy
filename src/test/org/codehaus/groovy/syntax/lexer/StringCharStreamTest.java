@@ -11,31 +11,31 @@ public class StringCharStreamTest
         StringCharStream charStream = new StringCharStream( "" );
 
         assertEquals( CharStream.EOS,
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( CharStream.EOS,
-                      charStream.nextChar() );
+                      charStream.consume() );
     }
 
-    public void testNextChar_NonEmptyString()
+    public void testconsume_NonEmptyString()
         throws Exception
     {
         StringCharStream charStream = new StringCharStream( "cheese" );
 
         assertEquals( 'c',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( 'h',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( 'e',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( 'e',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( 's',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( 'e',
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( CharStream.EOS,
-                      charStream.nextChar() );
+                      charStream.consume() );
         assertEquals( CharStream.EOS,
-                      charStream.nextChar() );
+                      charStream.consume() );
     }
 }

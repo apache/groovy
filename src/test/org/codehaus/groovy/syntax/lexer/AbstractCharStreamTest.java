@@ -1,7 +1,5 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import org.codehaus.groovy.syntax.LookAheadExhaustionException;
-
 import groovy.util.GroovyTestCase;
 
 import java.io.IOException;
@@ -29,7 +27,7 @@ public class AbstractCharStreamTest
             this.cur  = 0;
         }
 
-        public char nextChar()
+        public char consume()
             throws IOException
         {
             if ( this.cur >= this.text.length() )
@@ -64,174 +62,76 @@ public class AbstractCharStreamTest
                                           "/path/to/Cheddar.groovy" ).getDescription() );
     }
 
-    public void testNextChar()
+    public void testconsume()
         throws Exception
     {
         MockCharStream in = new MockCharStream( "cheddar" );
 
         assertEquals( 'c',
-                      in.nextChar() );
-
-        assertEquals( 'h',
-                      in.nextChar() );
-
-        assertEquals( 'e',
-                      in.nextChar() );
-
-        assertEquals( 'd',
-                      in.nextChar() );
-
-        assertEquals( 'd',
-                      in.nextChar() );
-
-        assertEquals( 'a',
-                      in.nextChar() );
-
-        assertEquals( 'r',
-                      in.nextChar() );
-
-        assertEquals( (char) -1,
-                      in.nextChar() );
-    }
-
-    public void testLa()
-        throws Exception
-    {
-        MockCharStream in = new MockCharStream( "cheddar" );
-
-        assertEquals( 'c',
-                      in.la() );
-
-        assertEquals( 'c',
-                      in.la() );
-
-        assertEquals( 'c',
-                      in.la( 1 ) );
-
-        assertEquals( 'c',
-                      in.la( 1 ) );
-
-        assertEquals( 'h',
-                      in.la( 2 ) );
-
-        assertEquals( 'h',
-                      in.la( 2 ) );
-
-        assertEquals( 'e',
-                      in.la( 3 ) );
-
-        assertEquals( 'e',
-                      in.la( 3 ) );
-    }
-
-    public void testLaAndConsume()
-        throws Exception
-    {
-        MockCharStream in = new MockCharStream( "cheddar" );
-
-        assertEquals( 'c',
-                      in.la() );
-
-        assertEquals( 'c',
                       in.consume() );
 
         assertEquals( 'h',
-                      in.la() );
-
-        assertEquals( 'h',
                       in.consume() );
-        
-        assertEquals( 'e',
-                      in.la() );
 
         assertEquals( 'e',
                       in.consume() );
-        
-        assertEquals( 'd',
-                      in.la() );
 
         assertEquals( 'd',
                       in.consume() );
-        
-        assertEquals( 'd',
-                      in.la() );
 
         assertEquals( 'd',
                       in.consume() );
-        
-        assertEquals( 'a',
-                      in.la() );
 
         assertEquals( 'a',
                       in.consume() );
-        
-        assertEquals( 'r',
-                      in.la() );
 
         assertEquals( 'r',
                       in.consume() );
 
         assertEquals( (char) -1,
-                      in.la() );
+                      in.consume() );
+    }
+
+    public void testConsume()
+        throws Exception
+    {
+        MockCharStream in = new MockCharStream( "cheddar" );
+
+        assertEquals( 'c',
+                      in.consume() );
+
+        assertEquals( 'h',
+                      in.consume() );
+
+        assertEquals( 'e',
+                      in.consume() );
+        
+        assertEquals( 'd',
+                      in.consume() );
+
+        assertEquals( 'd',
+                      in.consume() );
+        
+        assertEquals( 'a',
+                      in.consume() );
+
+        assertEquals( 'r',
+                      in.consume() );
 
         assertEquals( (char) -1,
                       in.consume() );
         
     }
 
-    public void testLaAndConsumeAtEnd()
+    public void testConsumeAtEnd()
         throws Exception
     {
         MockCharStream in = new MockCharStream( "" );
 
         assertEquals( (char) -1,
-                      in.la() );
-
-        assertEquals( (char) -1,
                       in.consume() );
 
         assertEquals( (char) -1,
-                      in.la() );
-
-        assertEquals( (char) -1,
                       in.consume() );
-    }
-
-    public void testExhaustLookAhead()
-        throws Exception
-    {
-        MockCharStream in = new MockCharStream( "123456789" );
-
-        assertEquals( '1',
-                      in.la( 1 ) );
-
-        assertEquals( '2',
-                      in.la( 2 ) );
-
-        assertEquals( '3',
-                      in.la( 3 ) );
-
-        assertEquals( '4',
-                      in.la( 4 ) );
-
-        assertEquals( '5',
-                      in.la( 5 ) );
-
-        in.consume();
-
-        assertEquals( '6',
-                      in.la( 5 ) );
-
-        try
-        {
-            in.la( 6 );
-            fail( "should have thrown LookAheadExhaustionException" );
-        }
-        catch (LookAheadExhaustionException e)
-        {
-            // expected and correct
-            assertEquals( 6,
-                          e.getLookAhead() );
-        }
     }
 }

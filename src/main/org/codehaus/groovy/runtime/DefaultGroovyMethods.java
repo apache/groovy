@@ -576,9 +576,21 @@ public class DefaultGroovyMethods {
         index = normaliseIndex(index, text.length());
         return text.subSequence(index, index + 1);
     }
+    
+    /**
+     * Support the subscript operator for String
+     * 
+     * @param text
+     * @return the Character object at the given index
+     */
+    public static String get(String text, int index) {
+        index = normaliseIndex(index, text.length());
+        return text.substring(index, index + 1);
+    }
+    
 
     /**
-     * Support the range subscript operator for String
+     * Support the range subscript operator for CharSequence
      */
     public static CharSequence get(CharSequence text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
@@ -593,6 +605,24 @@ public class DefaultGroovyMethods {
         }
 
         return text.subSequence(from, to + 1);
+    }
+
+    /**
+     * Support the range subscript operator for String
+     */
+    public static String get(String text, Range range) {
+        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
+        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
+        int length = text.length();
+
+        // if this is a backwards range, reverse the arguments to substring
+        if (from > to) {
+            int tmp = from;
+            from = to;
+            to = tmp;
+        }
+
+        return text.substring(from, to + 1);
     }
 
     /**
@@ -698,7 +728,16 @@ public class DefaultGroovyMethods {
         }
         return answer.toString();
     }
-
+    
+    /**
+     * Allows a List to be used as the indices to be used on a String
+     * 
+     * @returns a String of the values at the given indices
+     */
+    public static String get(String self, Collection indices) {
+        return (String) get((CharSequence) self, indices);
+    }
+        
     /**
      * Allows a List to be used as the indices to be used on a Matcher
      * 

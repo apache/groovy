@@ -13,7 +13,15 @@ import org.codehaus.groovy.syntax.Token;
  */
 public class Lexer
 {
-    private int line;
+	private final char[] buf = new char[5];
+	private final int[] charWidth = new int[buf.length];
+	private int cur = 0;
+	private int charsInBuffer = 0;
+	private boolean eosRead = false;
+	private boolean escapeLookahead = false;
+	private char escapeLookaheadChar;
+	
+	private int line;
     private int column;
 
     private int startLine;
@@ -21,96 +29,9 @@ public class Lexer
     
     private CharStream charStream;
 
-    public Lexer(final CharStream charStream)
+    public Lexer(CharStream charStream)
     {
-        this.charStream = new CharStream() {
-        	
-        	private final char[] buf = new char[5];
-        	private final int[] charWidth = new int[buf.length];
-        	private int cur = 0;
-        	private int charsInBuffer = 0;
-        	private boolean eosRead = false;
-        	private boolean escapeLookahead = false;
-        	private char escapeLookaheadChar;
-        	
-			public String getDescription() {
-				return charStream.getDescription();
-			}
-
-			public char la() throws IOException {
-				return la(1);
-			}
-
-			public char la(int k) throws IOException {
-				if (k > this.charsInBuffer) {
-					if (k > this.buf.length) throw new LookAheadExhaustionException(k);
-						
-					for (int i = 0; i != this.charsInBuffer; i++, this.cur++) {
-						this.buf[i] = this.buf[this.cur];
-						this.charWidth[i] = this.charWidth[this.cur];
-					}
-					
-					fillBuffer();
-				}
-		
-				return this.buf[this.cur + k - 1];
-			}
-
-			public char consume() throws IOException {
-				if (this.charsInBuffer == 0) fillBuffer();
-				
-				this.charsInBuffer--;
-				
-				Lexer.this.column += this.charWidth[this.cur];
-				this.charWidth[this.cur] = 1;
-		
-				return this.buf[this.cur++];
-			}
-
-			public void close() throws IOException {
-				charStream.close();
-			}
-			
-			private void fillBuffer() throws IOException {
-				this.cur = 0;
-				
-				do {
-					if (this.eosRead) {
-						this.buf[this.charsInBuffer] = CharStream.EOS;
-					} else {
-						char c = this.escapeLookahead ? this.escapeLookaheadChar : charStream.consume();
-						
-						this.escapeLookahead = false;
-
-						if (c == CharStream.EOS) this.eosRead = true;
-						
-						if (c == '\\') {
-							c = charStream.consume();
-							
-							if (c == 'u') {
-								do {
-									c = charStream.consume();
-								} while (c == 'u');	// the spec allows any number of u characters after the \	
-								
-								try {
-									c = (char)Integer.parseInt(new String(new char[] {c, charStream.consume(), charStream.consume(), charStream.consume()}), 16);
-								}
-								catch (NumberFormatException e) {
-									// TODO: this should be handled more gracefully when this code is refactored
-									throw new IOException("Bad Unicode escape sequence");
-								}
-							} else {
-								this.escapeLookahead = true;
-								this.escapeLookaheadChar = c;
-								c = '\\';
-							}
-						}
-						
-						this.buf[this.charsInBuffer] = c;
-					}
-				} while (++this.charsInBuffer != this.buf.length);
-			}
-        };
+        this.charStream = charStream;
         this.line   = 1;
         this.column = 1;
     }
@@ -1112,21 +1033,85 @@ public class Lexer
     }
 
     protected char la()
-        throws IOException
+        throws UnexpectedCharacterException, IOException
     {
         return la(1);
     }
 
     protected char la(int k)
-        throws IOException
+        throws UnexpectedCharacterException, IOException
     {
-        return getCharStream().la( k );
+    	if (k > this.charsInBuffer) {
+    		if (k > this.buf.length) throw new LookAheadExhaustionException(k);
+    		
+    		for (int i = 0; i != this.charsInBuffer; i++, this.cur++) {
+    			this.buf[i] = this.buf[this.cur];
+    			this.charWidth[i] = this.charWidth[this.cur];
+    		}
+    		
+    		fillBuffer();
+    	}
+    	
+    	return this.buf[this.cur + k - 1];
     }
 
     protected char consume()
-        throws IOException
+        throws UnexpectedCharacterException, IOException
     {
-        char c = getCharStream().consume();
-        return c;
+    	if (this.charsInBuffer == 0) fillBuffer();
+    	
+    	this.charsInBuffer--;
+    	
+    	this.column += this.charWidth[this.cur];
+    	
+    	return this.buf[this.cur++];
     }
+    
+    private void fillBuffer()
+    	throws IOException, UnexpectedCharacterException
+    {
+    	this.cur = 0;
+    	
+    	do {
+    		if (this.eosRead) {
+    			this.buf[this.charsInBuffer] = CharStream.EOS;
+    		} else {
+    			char c = this.escapeLookahead ? this.escapeLookaheadChar : charStream.consume();
+    			
+    			this.escapeLookahead = false;
+    			this.charWidth[this.charsInBuffer] = 1;
+
+    			if (c == CharStream.EOS) this.eosRead = true;
+    			
+    			if (c == '\\') {
+    				c = charStream.consume();
+    				
+    				if (c == 'u') {
+    					do {
+    						this.charWidth[this.charsInBuffer]++;
+    						c = charStream.consume();
+    					} while (c == 'u');	// the spec allows any number of u characters after the \	
+    					
+    					try {
+    						c = (char)Integer.parseInt(new String(new char[] {c, charStream.consume(), charStream.consume(), charStream.consume()}), 16);
+    						this.charWidth[this.charsInBuffer] += 4;
+    					}
+    					catch (NumberFormatException e) {
+    						throw new UnexpectedCharacterException( getStartLine(),
+    								getStartColumn()+1,
+    								c,
+									new char[] { } );    						
+     					}
+    				} else {
+    					this.escapeLookahead = true;
+    					this.escapeLookaheadChar = c;
+    					c = '\\';
+    				}
+    			}
+    			
+    			this.buf[this.charsInBuffer] = c;
+    		}
+    	} while (++this.charsInBuffer != this.buf.length);
+    }
+    
 }
