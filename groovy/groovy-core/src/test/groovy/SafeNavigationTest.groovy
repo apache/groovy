@@ -16,6 +16,12 @@ class SafeNavigationTest extends GroovyTestCase {
 		y = x->foo->bar
         
         assert y == null
+
+
+       java.awt.Color color = null
+        a = color->alpha
+        assert a == null
+
     }
     
     void testNormalMethodCall() {

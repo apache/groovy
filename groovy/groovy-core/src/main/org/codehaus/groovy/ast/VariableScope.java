@@ -59,18 +59,34 @@ import java.util.Set;
  * @version $Revision$
  */
 public class VariableScope  {
+	static int i = 0;
+    private Set declaredVariables = new HashSet(); // contain var names
+    private Set referencedVariables = new HashSet(); // contain var names
 
-    private Set declaredVariables = new HashSet();
-    private Set referencedVariables = new HashSet();
+    /**
+     *  br contain vars really declared and defined in the current scope.
+     * to be filler later by comparing with parent scope all the ancestors.
+     */
+    private Set varsDeclaredHere = null;
+    // each var should really have a scope decarator
+    // for now it's a naked name, which has the problem of name clashing with parameters
+    // and ancesters' vars with the same name. Effectively this means we cannot have a
+    // local var defined with the same name with any parameters or vars in any of the
+    // ancestors.
+    // we need to reengineer the scope and vars framework.
+
     private VariableScope parent;
     private List children = new ArrayList();
+    String name = null;
 
     public VariableScope() {
+    	name = String.valueOf(i++);  // should give it a more meaningful name, w/ class, methed, blockstatement etc.
     }
 
     public VariableScope(VariableScope parent) {
         this.parent = parent;
         parent.children.add(this);
+        name = String.valueOf(i);
     }
 
     public Set getDeclaredVariables() {
@@ -99,7 +115,7 @@ public class VariableScope  {
         for (Iterator iter = children.iterator(); iter.hasNext(); ) {
             answer.appendRecursive((VariableScope) iter.next());
         }
-        answer.parent = this;
+        answer.parent = this;  // shall we cache this for better performance?
         return answer;
     }
 
@@ -156,4 +172,36 @@ public class VariableScope  {
             appendRecursive((VariableScope) iter.next());
         }
      }
+
+    /*
+     * compute the real declares in the current scope
+     * @author bran
+     *
+     * To change the template for this generated type comment go to
+     * Window - Preferences - Java - Code Generation - Code and Comments
+     */
+    public void computeRealDeclares() {
+    	if (this.varsDeclaredHere == null) this.varsDeclaredHere = new HashSet();
+    	Set decls = this.declaredVariables;
+    	for (Iterator iter = decls.iterator(); iter.hasNext();) {
+			String var = (String) iter.next();
+			// simplistic way of determing declares by simple name matching
+			if (!createRecursiveParentScope().getDeclaredVariables().contains(var)) {
+				this.varsDeclaredHere.add(var);
+			}
+		}
+    }
+	/**
+	 * @return Returns the varsDeclaredHere.
+	 */
+	public Set getVarsDeclaredHere() {
+		if (this.varsDeclaredHere == null) computeRealDeclares();
+		return varsDeclaredHere;
+	}
+	/**
+	 * @param varsDeclaredHere The varsDeclaredHere to set.
+	 */
+	public void setVarsDeclaredHere(Set varsDeclaredHere) {
+		this.varsDeclaredHere = varsDeclaredHere;
+	}
 }

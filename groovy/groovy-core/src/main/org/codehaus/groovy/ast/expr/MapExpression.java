@@ -47,8 +47,10 @@ package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a map expression [1 : 2, "a" : "b", x : y] which creates a mutable Map
@@ -79,6 +81,10 @@ public class MapExpression extends Expression {
         visitor.visitMapExpression(this);
     }
 
+    public boolean isDynamic() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
     }
@@ -91,4 +97,11 @@ public class MapExpression extends Expression {
         addMapEntryExpression(new MapEntryExpression(keyExpression, valueExpression));
     }
 
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        for (int i = 0; i < mapEntryExpressions.size(); i++) {
+            MapEntryExpression mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(i);
+            mapEntryExpression.resolve(resolver);
+        }
+        super.setTypeClass(Map.class);
+    }
 }

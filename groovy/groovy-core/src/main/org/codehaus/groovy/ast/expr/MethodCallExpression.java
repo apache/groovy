@@ -45,7 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import groovy.lang.MetaMethod;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * A method call on an object or class
@@ -60,6 +63,12 @@ public class MethodCallExpression extends Expression {
     private Expression arguments;
     private boolean safe;
     private boolean implicitThis;
+
+    public MetaMethod getMetaMethod() {
+        return metaMethod;
+    }
+
+    private MetaMethod metaMethod = null;
 
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this.objectExpression = objectExpression;
@@ -76,6 +85,12 @@ public class MethodCallExpression extends Expression {
             new MethodCallExpression(transformer.transform(objectExpression), method, transformer.transform(arguments));
         answer.setSafe(safe);
         return answer;
+    }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        this.objectExpression.resolve(resolver);
+        this.arguments.resolve(resolver);
+        resolver.resolve(this);
     }
 
     public Expression getArguments() {
@@ -138,5 +153,10 @@ public class MethodCallExpression extends Expression {
             return variable.equals("super");
         }
         return false;
+    }
+
+    public void setMethod(MetaMethod mmeth) {
+        this.metaMethod = mmeth;
+        super.setTypeClass(mmeth.getReturnType());
     }
 }

@@ -51,6 +51,7 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents an array object construction either using a fixed size
@@ -60,15 +61,18 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
  * @version $Revision$
  */
 public class ArrayExpression extends Expression {
-    private String type;
     private List expressions;
     private Expression sizeExpression;
 
+    private String elementType;
     /**
      * Creates an array using an initializer expression
      */
     public ArrayExpression(String type, List expressions) {
-        this.type = type;
+        // there is never primitive element in native groovy code
+        String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
+        this.elementType = boxedType;
+        setSuperType(boxedType);
         this.expressions = expressions;
 
         for (Iterator iter = expressions.iterator(); iter.hasNext();) {
@@ -79,11 +83,23 @@ public class ArrayExpression extends Expression {
         }
     }
 
+    private void setSuperType(String type) {
+        if (type == null) System.out.println("setSuperType: null");
+        if (type.endsWith("[]")) {
+        }
+        else {
+            type += "[]";
+        }
+        super.setType(type); //  array type. todo probably need to wait until ClassGen time to avoid resolve "this" type
+    }
+
     /**
      * Creates an empty array of a certain size
      */
     public ArrayExpression(String type, Expression sizeExpression) {
-        this.type = type;
+        String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
+        this.elementType = boxedType;
+        setSuperType(boxedType);
         this.sizeExpression = sizeExpression;
         this.expressions = Collections.EMPTY_LIST;
     }
@@ -100,6 +116,10 @@ public class ArrayExpression extends Expression {
         visitor.visitArrayExpression(this);
     }
 
+    public boolean isDynamic() {
+        return false;
+    }
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new ArrayExpression(type, transformExpressions(expressions, transformer));
     }
@@ -109,11 +129,11 @@ public class ArrayExpression extends Expression {
         return (Expression) object;
     }
 
-    public String getType() {   	
-        if (BytecodeHelper.isPrimitiveType(type)) { 
-            return BytecodeHelper.getObjectTypeForPrimitive(type); 
+    public String getElementType() {
+        if (BytecodeHelper.isPrimitiveType(elementType)) { 
+            return BytecodeHelper.getObjectTypeForPrimitive(elementType);
         }
-        return type;
+        return elementType;
     }
     
     public String getText() {
@@ -139,5 +159,9 @@ public class ArrayExpression extends Expression {
 
     public String toString() {
         return super.toString() + expressions;
+    }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        //
     }
 }

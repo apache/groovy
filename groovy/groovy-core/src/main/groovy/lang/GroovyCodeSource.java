@@ -60,7 +60,7 @@ public class GroovyCodeSource {
 		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
 		}
 		try {
-			this.codeSource = new CodeSource(new URL("file", "", codeBase), null);
+			this.codeSource = new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
 		} catch (MalformedURLException murle) {
 			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
 		}
@@ -112,7 +112,7 @@ public class GroovyCodeSource {
 		}
 		this.inputStream = url.openStream();
 		this.name = url.toExternalForm();
-		this.codeSource = new CodeSource(url, null);
+		this.codeSource = new CodeSource(url, (java.security.cert.Certificate[])null);
 	}
 	
 	CodeSource getCodeSource() {
@@ -123,7 +123,7 @@ public class GroovyCodeSource {
 		return inputStream;
 	}
 
-	String getName() {
+	public String getName() {
 		return name;
 	}
 }

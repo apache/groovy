@@ -45,7 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import java.lang.reflect.Constructor;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * A constructor call
@@ -55,11 +58,32 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ConstructorCallExpression extends Expression {
 
-    private String type;
     private Expression arguments;
-    
+
+    public String getTypeToSet() {
+        return typeToSet;
+    }
+
+    private String typeToSet; // type to be set on the type field. delayed until classgen time to avoid resolving to the current class.
+
+    public Constructor getConstructor() {
+        return constructor;
+    }
+
+    private Constructor constructor = null;
+
+    protected boolean shouldContinue() {
+        if (super.isResolveFailed())
+            return false;
+        if (constructor == null)
+            return true;
+        return false;
+    }
+
     public ConstructorCallExpression(String type, Expression arguments) {
-        this.type = type;
+        //super.setType(type);
+        this.typeToSet = type;
+        setTypeResolved(false); // to set it when arguments is resolved
         this.arguments = arguments;
     }
     
@@ -70,10 +94,26 @@ public class ConstructorCallExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new ConstructorCallExpression(type, transformer.transform(arguments)); 
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        arguments.resolve(resolver);
+        if (constructor == null) {
+            resolver.resolve(this);
+        }
+//        if (getTypeClass() != null)
+//            setTypeResolved(true);
+//        else
+//            resolver.resolve(this);
+    }
+
     public String getType() {
         if (type == null) {
-            return "java.lang.Object";
+            if (typeToSet != null && typeToSet.length() > 0) {
+                return typeToSet;
+            }
+            else {
+                return "java.lang.Object";
+            }
         }
         return type;
     }
@@ -88,5 +128,10 @@ public class ConstructorCallExpression extends Expression {
 
     public String toString() {
         return super.toString() + "[type: " + type + " arguments: " + arguments + "]";
+    }
+
+    public void setConstructor(Constructor ctor) {
+        constructor = ctor;
+        super.setTypeClass(ctor.getDeclaringClass());
     }
 }

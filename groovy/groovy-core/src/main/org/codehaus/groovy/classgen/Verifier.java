@@ -50,6 +50,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -93,7 +94,8 @@ import org.objectweb.asm.Constants;
  */
 public class Verifier implements GroovyClassVisitor, Constants {
 
-    private ClassNode classNode;
+    public static final String __TIMESTAMP = "__timeStamp";
+	private ClassNode classNode;
     private MethodNode methodNode;
 
     public ClassNode getClassNode() {
@@ -104,6 +106,10 @@ public class Verifier implements GroovyClassVisitor, Constants {
         return methodNode;
     }
 
+    /**
+     * add code to implement GroovyObject
+     * @param node
+     */
     public void visitClass(ClassNode node) {
         this.classNode = node;
 
@@ -219,6 +225,19 @@ public class Verifier implements GroovyClassVisitor, Constants {
             constructor.setSynthetic(true);
             node.addConstructor(constructor);
         }
+        
+        if (!(node instanceof InnerClassNode)) {// add a static timestamp field to the class
+            FieldNode timeTagField = new FieldNode(
+                    Verifier.__TIMESTAMP,
+                    Modifier.PUBLIC | Modifier.STATIC,
+                    "java.lang.Long",
+                    //"",
+                    node.getName(),
+                    new ConstantExpression(new Long(System.currentTimeMillis())));
+            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+            timeTagField.setSynthetic(true);
+            node.addField(timeTagField);
+        }
 
         addFieldInitialization(node);
 
@@ -317,6 +336,15 @@ public class Verifier implements GroovyClassVisitor, Constants {
             getter.setSynthetic(true);
             classNode.addMethod(getter);
             visitMethod(getter);
+
+            if ("java.lang.Boolean".equals(node.getType())) {
+                String secondGetterName = "is" + capitalize(name);
+                MethodNode secondGetter =
+                    new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+                secondGetter.setSynthetic(true);
+                classNode.addMethod(secondGetter);
+                visitMethod(secondGetter);
+            }
         }
         if (setterBlock != null) {
             Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};

@@ -80,6 +80,10 @@ public class ArgumentListExpression extends TupleExpression {
         }
     }
 
+    public boolean isDynamic() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new ArgumentListExpression(transformExpressions(getExpressions(), transformer));
     }

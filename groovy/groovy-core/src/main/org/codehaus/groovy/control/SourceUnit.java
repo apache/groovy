@@ -49,10 +49,18 @@ package org.codehaus.groovy.control;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.io.StringReaderSource;
@@ -83,6 +91,7 @@ import org.codehaus.groovy.tools.Utilities;
  *  as it passes through the compiler system.
  *
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *  @author <a href="mailto:b55r@sina.com">Bing Ran</a>
  *
  *  @version $Id$
  */
@@ -277,7 +286,7 @@ public class SourceUnit extends ProcessingUnit
 
             //
             // Create a lexer and token stream
-        
+
             GroovyLexer lexer  = new GroovyLexer( new ReaderCharStream(reader) );
             TokenStream stream = new LexerTokenStream( lexer );
             
@@ -438,6 +447,72 @@ public class SourceUnit extends ProcessingUnit
         return sample;
     }
     
+    /**
+     * to quickly create a ModuleNode from a piece of Groovy code
+     * @param code
+     * @return
+     * @throws CompilationFailedException
+     */
+    public static ModuleNode createModule(String code) throws CompilationFailedException {
+        SourceUnit su = create("NodeGen", code);
+        su.parse();
+        su.convert();
+        return su.getAST();
+    }
+    
+    public static ClassNode createClassNode(String code) throws CompilationFailedException {
+    	ModuleNode module = createModule(code);
+    	List classes = module.getClasses();
+    	if (classes.size() > 1) {
+    		throw new RuntimeException("The code defines more than one class");
+    	}
+    	return (ClassNode) classes.get(0);
+    }
+
+    /**
+     * Takes a field definition statement and wrap it in class definition. The FieldNode object
+     * representing the field is extracted and returned, Types need to be fully qualified. 
+     * @param code a naked statement to define a field, such as: String prop = "hello"
+     * @return a FieldNode object. 
+     * @throws CompilationFailedException
+     */
+    public static FieldNode createFieldNode(String code) throws CompilationFailedException {
+    	ClassNode classNode = createClassNode(wrapCode(code));
+    	List flds = classNode.getFields();
+    	if (flds.size() > 1) 
+    		throw new RuntimeException("The code defines more than one field");    		
+    	return (FieldNode) flds.get(0);
+    }
+    
+	public Statement createStatement(String code) throws CompilationFailedException {
+		ModuleNode module = createModule(code);
+		BlockStatement block = module.getStatementBlock();
+		if (block == null)
+			throw new RuntimeException("no proper statement block is created.");
+		List stats = block.getStatements();
+		if (stats == null || stats.size() != 1)
+			throw new RuntimeException("no proper statement node is created.");
+		return (Statement)stats.get(0);
+	}
+	
+	public MethodNode createMethodNode(String code) throws CompilationFailedException {
+		code  = code.trim();
+		if (code.indexOf("def") != 0) {
+			code = "def " + code;
+		}
+		ModuleNode module = createModule(code);
+		List ms = module.getMethods();
+		if (ms == null || ms.size() != 1)
+			throw new RuntimeException("no proper method node is created.");
+		return (MethodNode)ms.get(0);
+	}
+	
+	private static String wrapCode(String code) {
+		String prefix = "class SynthedClass {\n";
+		String suffix = "\n }";
+		return prefix + code + suffix;
+			
+	}
 }
 
 

@@ -273,7 +273,10 @@ public class ModuleNode extends ASTNode implements Constants {
                     "Cannot use abstract methods in a script, they are only available inside classes. Method: "
                         + node.getName());
             }
-            node.setModifiers(modifiers | ACC_STATIC);
+            // br: the old logic seems to add static to all def f().... in a script, which makes enclosing
+            // inner classes (including closures) in a def function difficult. Comment it out.
+            node.setModifiers(modifiers /*| ACC_STATIC*/);
+
             classNode.addMethod(node);
         }
         return classNode;

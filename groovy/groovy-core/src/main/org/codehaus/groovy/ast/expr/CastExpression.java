@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a type cast expression
@@ -55,11 +56,10 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class CastExpression extends Expression {
     
-    private String type;
     private Expression expression;
     
     public CastExpression(String type, Expression expression) {
-        this.type = type;
+        super.setType(type);
         this.expression = expression;
     }
 
@@ -70,7 +70,7 @@ public class CastExpression extends Expression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCastExpression(this);
     }
-    
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new CastExpression(type, transformer.transform(expression));
     }
@@ -83,8 +83,7 @@ public class CastExpression extends Expression {
         return expression;
     }
 
-    public String getType() {
-        return type;
+    protected  void resolveType(AsmClassGenerator2 resolver) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
-
 }

@@ -45,11 +45,14 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import groovy.lang.GString;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a String expression which contains embedded values inside
@@ -66,12 +69,14 @@ public class GStringExpression extends Expression {
 
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
+        super.setTypeClass(GString.class);
     }
 
     public GStringExpression(String verbatimText, List strings, List values) {
         this.verbatimText = verbatimText;
         this.strings = strings;
         this.values = values;
+        super.setTypeClass(GString.class);
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -83,6 +88,10 @@ public class GStringExpression extends Expression {
             verbatimText,
             transformExpressions(strings, transformer),
             transformExpressions(values, transformer));
+    }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        //
     }
 
     public String toString() {

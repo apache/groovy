@@ -76,42 +76,46 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private Object curriedParams[] = emptyArray;
 
 
+    private int directive = 0;
+    public static int DONE = 1;
+    public static int SKIP = 2;
+
     public Closure(Object delegate) {
         this.delegate = delegate;
         this.owner = delegate;
-        
+
         Class closureClass = this.getClass();
-        
+
         while (true) {
-        final Method methods[] = closureClass.getDeclaredMethods();
-	        
-	        int i = 0;
-	        
-	        while (!methods[i].getName().equals("doCall")  && ++i != methods.length);
-        
-	        	if (i < methods.length) {
-	        		this.doCallMethod = methods[i];
-	        		break;
-	        	}
-	        	
-	        	closureClass = closureClass.getSuperclass();
+            final Method methods[] = closureClass.getDeclaredMethods();
+
+            int i = 0;
+
+            while (!methods[i].getName().equals("doCall")  && ++i != methods.length);
+
+            if (i < methods.length) {
+                this.doCallMethod = methods[i];
+                break;
+            }
+
+            closureClass = closureClass.getSuperclass();
         }
-        
-        		AccessController.doPrivileged(new PrivilegedAction() {
-        											public Object run() {
-        												Closure.this.doCallMethod.setAccessible(true);
-        												return null;
-        											}
-        										});
-        
+
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                Closure.this.doCallMethod.setAccessible(true);
+                return null;
+            }
+        });
+
         this.parameterTypes = this.doCallMethod.getParameterTypes();
-        
+
         this.numberOfParameters = this.parameterTypes.length;
-        
+
         if (this.numberOfParameters != 0) {
-        		this.supportsVarargs = this.parameterTypes[this.numberOfParameters - 1].equals(Object[].class);
+            this.supportsVarargs = this.parameterTypes[this.numberOfParameters - 1].equals(Object[].class);
         } else {
-        		this.supportsVarargs = false;
+            this.supportsVarargs = false;
         }
     }
 
@@ -219,72 +223,72 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call(final Object arguments) {
-	final Object params[];
-    		
-		if (this.curriedParams.length != 0) {
-    		final Object args[];
-    		
-    			if (arguments instanceof Object[]) {
-    				args = (Object[])arguments;
-    			} else {
-    				args = new Object[] {arguments};
-    			}
-    			
-			params = new Object[this.curriedParams.length + args.length];
-			
-			System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
-			System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
-		} else {	    		
-    			if (arguments instanceof Object[]) {
-    				params = (Object[])arguments;
-    			} else {
-    				return doCall(arguments);
-    			}
-		}
-		
-    		final int lastParam = this.numberOfParameters - 1;
-    		
-    		if (this.supportsVarargs && !(this.numberOfParameters == params.length && (params[lastParam] == null || params[lastParam].getClass() == Object [].class))) {
-	    	final Object actualParameters[] = new Object[this.numberOfParameters];
-	    	
-    			//
-    			// We have a closure which supports variable arguments and we haven't got actual
-    			// parameters which have exactly the right number of parameters and ends with a null or an Object[]
-    			//
-    			if (params.length < lastParam) {
-    				//
-					// Not enough parameters throw exception
-    				//
-    				// Note we allow there to be one fewer actual parameter than the number of formal parameters
-    				// in this case we pass an zero length Object[] as the last parameter
-    				//
-					throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
-				} else {
-				final Object rest[] = new Object[params.length - lastParam];	 // array used to pass the rest of the paraters
-				
-					// fill the parameter array up to but not including the last one
-					System.arraycopy(params, 0, actualParameters, 0, lastParam);
-    				
-					// put the rest of the parameters in the overflow araay
-					System.arraycopy(params, lastParam, rest, 0, rest.length);
-					
-					// pass the overflow array as the last parameter
-					actualParameters[lastParam] = rest;
-					
-					return callViaReflection(actualParameters);
-				}		    				
-    		}
-    		
-    		if (params.length == 0) {
-    			// pass a single null parameter if no parameters specified
-    			return doCall(null);
-    		} else if (params.length == 1) {
-    			return doCall(params[0]);
-    		} else if (params.length == 2) {
-    			return doCall(params[0], params[1]);
-    		} else {	
-    			return callViaReflection(params);
-    		}
+        final Object params[];
+
+        if (this.curriedParams.length != 0) {
+            final Object args[];
+
+            if (arguments instanceof Object[]) {
+                args = (Object[])arguments;
+            } else {
+                args = new Object[] {arguments};
+            }
+
+            params = new Object[this.curriedParams.length + args.length];
+
+            System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
+            System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
+        } else {
+            if (arguments instanceof Object[]) {
+                params = (Object[])arguments;
+            } else {
+                return doCall(arguments);
+            }
+        }
+
+        final int lastParam = this.numberOfParameters - 1;
+
+        if (this.supportsVarargs && !(this.numberOfParameters == params.length && (params[lastParam] == null || params[lastParam].getClass() == Object [].class))) {
+            final Object actualParameters[] = new Object[this.numberOfParameters];
+
+            //
+            // We have a closure which supports variable arguments and we haven't got actual
+            // parameters which have exactly the right number of parameters and ends with a null or an Object[]
+            //
+            if (params.length < lastParam) {
+                //
+                // Not enough parameters throw exception
+                //
+                // Note we allow there to be one fewer actual parameter than the number of formal parameters
+                // in this case we pass an zero length Object[] as the last parameter
+                //
+                throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
+            } else {
+                final Object rest[] = new Object[params.length - lastParam];	 // array used to pass the rest of the paraters
+
+                // fill the parameter array up to but not including the last one
+                System.arraycopy(params, 0, actualParameters, 0, lastParam);
+
+                // put the rest of the parameters in the overflow araay
+                System.arraycopy(params, lastParam, rest, 0, rest.length);
+
+                // pass the overflow array as the last parameter
+                actualParameters[lastParam] = rest;
+
+                return callViaReflection(actualParameters);
+            }
+        }
+
+        if (params.length == 0) {
+            // pass a single null parameter if no parameters specified
+            return doCall(null);
+        } else if (params.length == 1) {
+            return doCall(params[0]);
+        } else if (params.length == 2) {
+            return doCall(params[0], params[1]);
+        } else {
+            return callViaReflection(params);
+        }
     }
 
     protected static Object throwRuntimeException(Throwable throwable) {
@@ -396,15 +400,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @param arguments
      */
     public Closure curry(final Object arguments[]) {
-    	final Closure curriedClosure= (Closure)this.clone();
-    	final Object newCurriedParams[] = new Object[curriedClosure.curriedParams.length + arguments.length];
-    	
-		System.arraycopy(curriedClosure.curriedParams, 0, newCurriedParams, 0, curriedClosure.curriedParams.length);
-		System.arraycopy(arguments, 0, newCurriedParams, curriedClosure.curriedParams.length, arguments.length);
-    	
-    		curriedClosure.curriedParams = newCurriedParams;
-    		
-    		return curriedClosure;
+        final Closure curriedClosure= (Closure)this.clone();
+        final Object newCurriedParams[] = new Object[curriedClosure.curriedParams.length + arguments.length];
+
+        System.arraycopy(curriedClosure.curriedParams, 0, newCurriedParams, 0, curriedClosure.curriedParams.length);
+        System.arraycopy(arguments, 0, newCurriedParams, curriedClosure.curriedParams.length, arguments.length);
+
+        curriedClosure.curriedParams = newCurriedParams;
+
+        return curriedClosure;
     }
     
     /* (non-Javadoc)
@@ -559,4 +563,16 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 			return Closure.this.toString();
 		}
     }
+	/**
+	 * @return Returns the directive.
+	 */
+	public int getDirective() {
+		return directive;
+	}
+	/**
+	 * @param directive The directive to set.
+	 */
+	public void setDirective(int directive) {
+		this.directive = directive;
+	}
 }

@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a constant expression such as null, true, false
@@ -65,6 +66,8 @@ public class ConstantExpression extends Expression {
     
     public ConstantExpression(Object value) {
         this.value = value;
+        if (this.value != null)
+            setTypeClass(value.getClass());
     }
 
     public String toString() {
@@ -75,10 +78,15 @@ public class ConstantExpression extends Expression {
         visitor.visitConstantExpression(this);
     }
 
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        //
+    }
+
     /**
      * @return the value of this constant expression
      */    

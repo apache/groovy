@@ -445,6 +445,9 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
+            if (closure.getDirective() == Closure.DONE) {
+            	break;
+            }
         }
         return answer;
     }
@@ -1404,7 +1407,7 @@ public class DefaultGroovyMethods {
 
     /**
      * A convenience method for creating a synchronized SortedSet
-     * 
+     *
      * @param self a SortedSet
      * @return a synchronized SortedSet
      */
@@ -1998,6 +2001,9 @@ public class DefaultGroovyMethods {
     
 	private static final char[] tTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
     
+    public static Writable encodeBase64(final Byte[] data) {
+        return encodeBase64(InvokerHelper.convertToByteArray(data));
+    }
     /**
      * Produce a Writable object which writes the base64 encoding of the byte array
      * Calling toString() on the result rerurns the encoding as a String
@@ -2811,6 +2817,9 @@ public class DefaultGroovyMethods {
     public static void times(Number self, Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
             closure.call(new Integer(i));
+            if (closure.getDirective() == Closure.DONE){
+            	break;
+            }
         }
     }
 
@@ -3879,6 +3888,58 @@ public class DefaultGroovyMethods {
         Thread thread = new Thread(runnable);
         thread.start();
         runnable.waitForOrKill(numberOfMillis);
+    }
+    /**
+     * process each regex matched substring of a string object. The object
+     * passed to the closure is a matcher with rich information of the last
+     * successful match
+     *
+     * @author bing ran
+     * @param str the target string
+     * @param regex a Regex string
+     * @param closure a closure
+     */
+    public static void eachMatch(String str, String regex, Closure closure) {
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(str);
+        while (m.find()) {
+            int count = m.groupCount();
+            ArrayList groups = new ArrayList();
+            for (int i = 0; i <= count; i++) {
+                groups.add(m.group(i));
+            }
+    		closure.call(groups);
+    	}
+    }
+
+    public static void each (Matcher matcher, Closure closure) {
+        Matcher m = matcher;
+        while (m.find()) {
+            int count = m.groupCount();
+            ArrayList groups = new ArrayList();
+            for (int i = 0; i <= count; i++) {
+                groups.add(m.group(i));
+            }
+            closure.call(groups);
+    	}
+    }
+    /**
+     * Iterates over every element of the collection and return the index of the first object 
+     * that matches the condition specified in the closure
+     *
+     * @param self    the iteration object over which we iterate
+     * @param closure  the filter to perform a match on the collection 
+     * @return an integer that is the index of the first macthed object. 
+     */
+    public static int findIndexOf(Object self, Closure closure) {
+        int i = 0;
+    	for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
+            Object value = iter.next();
+            if (InvokerHelper.asBool(closure.call(value))) {
+                break;
+            }
+        }        
+    	return i;
     }
 
     /**

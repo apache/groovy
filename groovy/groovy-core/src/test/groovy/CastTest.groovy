@@ -85,4 +85,20 @@ class CastTest extends GroovyTestCase {
         
         assert idx == 2
     }
+    // br
+    void testPrimitiveCasting() {
+        d = 1.23
+        i1 = (int)d
+        i2 = (Integer)d
+        assert i1.class.name == 'java.lang.Integer'
+        assert i2.class.name == 'java.lang.Integer'
+
+        ch = (char) i1
+        assert ch.class.name == 'java.lang.Character'
+
+        dd = (double)d
+        assert dd.class.name == 'java.lang.Double'
+
+    }
+
 }

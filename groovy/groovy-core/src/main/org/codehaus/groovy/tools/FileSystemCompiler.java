@@ -55,7 +55,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
 
-public class FileSystemCompiler 
+public class FileSystemCompiler  
 {
     private CompilationUnit unit;
 
@@ -118,6 +118,15 @@ public class FileSystemCompiler
             {
                 System.err.println( "error: file not readable: " + file );
                 ++errors;
+            } else {
+                String name = file.getName();
+                int p = name.lastIndexOf(".");
+                if ( p++ >= 0) {
+                    if (name.substring(p).equals("java")) {
+                        System.err.println( "error: cannot compile file with .java extension: " + file );
+                        ++errors;
+                    }
+                }
             }
         }
 

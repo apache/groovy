@@ -5,9 +5,13 @@ import groovy.bugs.TestSupport
 class ConstructorIssueTest extends TestSupport {
     
     ConstructorIssueTest() {
-        println("Created test case!")
+        //println("Created test case!")
     }
-    
+
+    ConstructorIssueTest(String[] args) {
+        //println("Created test case!")
+    }
+
     static void main(args) {
         //println("in main() - called with ${array}")
         
@@ -23,7 +27,9 @@ class ConstructorIssueTest extends TestSupport {
     
     void testConstructorIssue() {
         array = getMockArguments()
-        
+
         main(array)
+
+        new ConstructorIssueTest(array).done()
     }
 }

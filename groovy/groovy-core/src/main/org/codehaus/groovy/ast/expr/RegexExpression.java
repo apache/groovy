@@ -45,7 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import java.util.regex.Pattern;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a regular expression of the form ~<double quoted string> which creates
@@ -60,6 +63,7 @@ public class RegexExpression extends Expression {
     
     public RegexExpression(Expression string) {
         this.string = string;
+        super.setTypeClass(Pattern.class);
     }
     
     public void visit(GroovyCodeVisitor visitor) {
@@ -69,7 +73,11 @@ public class RegexExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new RegexExpression(transformer.transform(string));
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        //
+    }
+
     public Expression getRegex() {
         return string;
     }

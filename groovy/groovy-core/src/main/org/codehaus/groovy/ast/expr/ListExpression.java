@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a list expression [1, 2, 3] which creates a mutable List
@@ -66,6 +67,7 @@ public class ListExpression extends Expression {
     
     public ListExpression(List expressions) {
         this.expressions = expressions;
+        //
     }
     
     public void addExpression(Expression expression) {
@@ -83,7 +85,15 @@ public class ListExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new ListExpression(transformExpressions(getExpressions(), transformer));
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        for (int i = 0; i < expressions.size(); i++) {
+            Expression expression = (Expression) expressions.get(i);
+            expression.resolve(resolver);
+        }
+        super.setTypeClass(List.class);
+    }
+
     public Expression getExpression(int i) {
         return (Expression) expressions.get(i);
     }
@@ -108,4 +118,29 @@ public class ListExpression extends Expression {
     public String toString() {
         return super.toString() + expressions;
     }
+
+    /**
+     * return the common element type of all the element
+     * @return
+     */
+    public Class getComponentTypeClass() {
+        boolean first = true;
+        Class cls = null;
+
+        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+            Expression exp = (Expression) iter.next();
+            if (cls == null) {
+                cls = exp.getTypeClass();
+            }
+            else {
+                if (cls != exp.getTypeClass()) {
+                    // a heterogenous list
+                    return null;
+                }
+            }
+        }
+        return cls;
+    }
+
+
 }

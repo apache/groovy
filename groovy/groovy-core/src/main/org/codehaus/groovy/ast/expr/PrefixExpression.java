@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -75,7 +76,12 @@ public class PrefixExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new PrefixExpression(operation, transformer.transform(expression));
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        expression.resolve(resolver);
+        setTypeClass(expression.getTypeClass());
+    }
+
     public void setExpression(Expression expression) {
         this.expression = expression;
     }
@@ -90,6 +96,13 @@ public class PrefixExpression extends Expression {
 
     public String getText() {
         return "(" + operation.getText() + expression.getText() + ")";
+    }
+    public Class getTypeClass() {
+        return expression.getTypeClass();
+    }
+
+    public String getType() {
+        return expression.getType();
     }
 
 }

@@ -45,7 +45,12 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * Represents a property access such as the expression "foo.bar".
@@ -58,6 +63,17 @@ public class PropertyExpression extends Expression {
     private Expression objectExpression;
     private String property;
     private boolean safe;
+    private boolean isStatic = false;
+
+    private Method getter = null;
+    private Method setter = null;
+
+    private Field field = null;
+    private int access = -1;
+
+    public boolean isStatic() {
+        return isStatic;
+    }
 
     public PropertyExpression(Expression objectExpression, String property) {
         this(objectExpression, property, false);
@@ -73,10 +89,19 @@ public class PropertyExpression extends Expression {
         visitor.visitPropertyExpression(this);
     }
 
+    public boolean isDynamic() {
+        return true;
+    }
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
-    
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        objectExpression.resolve(resolver);
+        resolver.resolve(this);
+    }
+
     public Expression getObjectExpression() {
         return objectExpression;
     }
@@ -101,4 +126,69 @@ public class PropertyExpression extends Expression {
         return super.toString() + "[object: " + objectExpression + " property: " + property + "]";
     }
 
+    public void setStatic(boolean aStatic) {
+        this.isStatic = aStatic;
+    }
+
+    public void setGetter(Method meth) {
+        Class returntype = meth.getReturnType();
+        Class oldType = getTypeClass();
+        if (oldType != null && oldType != Object.class && oldType != returntype) {
+            // something is wrong
+// in this rare case the getter is discarded. Field access takes over
+//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
+//                    ". now " + returntype;
+//            System.err.println(msg);
+//            setResolveFailed(true);
+//            setFailure(msg);
+        }
+        else {
+            getter = meth;
+            setTypeClass(returntype);
+            setTypeResolved(true);
+        }
+    }
+
+    public Method getGetter() {
+        return getter;
+    }
+
+    public void setSetter(Method method) {
+        Class paramType = method.getParameterTypes()[0];
+        Class wasType = getTypeClass();
+        if (wasType != null && wasType != Object.class && wasType != paramType) {
+//            // something is wrong
+// in this rare case the getter is discarded. Field access takes over
+//            String msg = "PropertyExpression.setSetter(): type mismatch: was " + getTypeClass() +
+//                    ". now " + paramType;
+//            System.err.println(msg);
+//            setResolveFailed(true);
+//            setFailure(msg);
+        }
+        else {
+            setter = method;
+            setTypeClass(paramType);
+            setTypeResolved(true);
+        }
+    }
+    public Method getSetter() {
+        return setter;
+    }
+
+    public void setField(Field fld) {
+        field = fld;
+        setStatic(Modifier.isStatic(fld.getModifiers()));
+        setTypeClass(fld.getType());
+    }
+    public Field getField() {
+        return field;
+    }
+
+    public void setAccess(int access) {
+        this.access = access;
+    }
+
+    public int getAccess() {
+        return access;
+    }
 }

@@ -133,17 +133,18 @@ public class CompileUnit {
     	}
     	
     	Class answer = null;
-    	
+    	ClassLoader lastLoader  = getClassLoader();
     	try {
-    		answer = getClassLoader().loadClass(type);
+    		answer = lastLoader.loadClass(type);
     	} catch (ClassNotFoundException e) {
     		// fall through
     	}
     	
-    	// lets try the context class loader
         try {
-        	if ( answer == null ) {
-        		answer = Thread.currentThread().getContextClassLoader().loadClass(type);
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        	if ( answer == null && loader != lastLoader /*&& loader != null*/) {
+                lastLoader = loader;
+        		answer = loader.loadClass(type);
         	}
         }
         catch (ClassNotFoundException e1) {
@@ -152,8 +153,10 @@ public class CompileUnit {
         
         // lets try our class loader
         try {
-        	if ( answer == null ) {
-        		answer = getClass().getClassLoader().loadClass(type);
+            ClassLoader loader = getClass().getClassLoader();
+        	if ( answer == null && loader != lastLoader) {
+                lastLoader = loader;
+        		answer = loader.loadClass(type);
         	}
         }
         catch (ClassNotFoundException e2) {
@@ -173,7 +176,12 @@ public class CompileUnit {
         	cachedClasses.put(type,NO_CLASS);
         	throw new ClassNotFoundException(type);
         } else {
-        	cachedClasses.put(type,answer);
+            if (!type.equals(answer.getName())) { // br case sensitive match
+                cachedClasses.put(type,NO_CLASS);
+                System.out.println("Mismatch: answer.getName() = " + answer.getName() + ", type = " + type);
+                throw new ClassNotFoundException(type);
+            }
+            cachedClasses.put(type,answer);
         }
         
         return answer;

@@ -126,12 +126,22 @@ public class SecurityTestSupport extends GroovyTestCase {
 			}
 		}
 		currentClassLoader = Thread.currentThread().getContextClassLoader();
-		Thread.currentThread().setContextClassLoader(loader);
-	}
-	
+		AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                Thread.currentThread().setContextClassLoader(loader);
+                return null;
+            }
+        });
+    }
+
 	protected void tearDown() {
-		System.setSecurityManager(securityManager);
-		Thread.currentThread().setContextClassLoader(currentClassLoader);
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                System.setSecurityManager(securityManager);
+                Thread.currentThread().setContextClassLoader(currentClassLoader);
+                return null;
+            }
+        });
 	}
 
     protected synchronized String generateClassName() {

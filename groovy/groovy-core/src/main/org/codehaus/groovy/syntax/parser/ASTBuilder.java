@@ -47,6 +47,8 @@ package org.codehaus.groovy.syntax.parser;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.InnerClassNode;
@@ -136,9 +138,11 @@ public class ASTBuilder
     private ClassLoader classLoader;   // Our ClassLoader, which provides information on external types
     private Map         imports;       // Our imports, simple name => fully qualified name
     private String      packageName;   // The package name in which the module sits
+    private List newClasses = new ArrayList(); // temporarily store the class names that the current modulenode contains
+    private ModuleNode output;
 
 
-   /**
+    /**
     *  Initializes the <code>ASTBuilder</code>.
     */
 
@@ -174,7 +178,8 @@ public class ASTBuilder
 
     public ModuleNode build( CSTNode input ) throws ParserException
     {
-        ModuleNode output = new ModuleNode( controller );
+        this.newClasses.clear();
+        this.output = new ModuleNode( controller );
         resolutions.clear();
 
         //
@@ -337,6 +342,7 @@ public class ASTBuilder
         // Calculate the easy stuff
 
         String   name = identifier( reduction );
+        this.newClasses.add(name);
         int modifiers = modifiers( reduction.get(1) );
         String parent = resolveName( reduction.get(2).get(1) );
 
@@ -1495,9 +1501,14 @@ public class ASTBuilder
     *  valid.
     */
 
-    protected VariableExpression variableExpression( CSTNode reduction )
+   protected VariableExpression variableExpression( CSTNode reduction )
+   {
+       return new VariableExpression( reduction.getRootText(), null );
+   }
+
+    protected VariableExpression variableExpression( CSTNode reduction, String type )
     {
-        return new VariableExpression( reduction.getRootText() );
+        return new VariableExpression( reduction.getRootText(), type );
     }
 
 
@@ -1538,8 +1549,8 @@ public class ASTBuilder
         {
             CSTNode node = reduction.get(2);
 
-            VariableExpression name = variableExpression( node );
-            name.setType( type );
+            VariableExpression name = variableExpression( node, type );
+            //name.setType( type );
 
             Token symbol = Token.newSymbol( Types.EQUAL, -1, -1 );
 
@@ -1954,7 +1965,7 @@ public class ASTBuilder
 
     protected String makeName( CSTNode root )
     {
-        return makeName( root, "java.lang.Object" );
+        return makeName( root, "" ); // br: the default name. was "java.lang.Object"
     }
 
 
@@ -2055,6 +2066,21 @@ public class ASTBuilder
                 }
             }
 
+            // search the package imports path
+            List packageImports = output.getImportPackages();
+            for (int i = 0; i < packageImports.size(); i++) {
+                String pack = (String) packageImports.get(i);
+                String clsName = pack + name;
+                try {
+                    getClassLoader().loadClass( clsName );
+                    resolution  = clsName;
+                    break;
+                } catch (Throwable e) {
+                    //
+                }
+            }
+            if (resolution != null)
+                break;
 
             //
             // Last chance, check the default imports.
@@ -2107,7 +2133,13 @@ public class ASTBuilder
     protected String resolveName( CSTNode root, boolean safe )
     {
         String name = makeName( root );
-        return resolveName( name, safe );
+        if (name.length() == 0)
+            return "";
+        if (this.newClasses.contains(name)) {
+            return dot(packageName, name);
+        } else {
+            return resolveName( name, safe );
+        }
     }
 
 

@@ -48,6 +48,7 @@ package org.codehaus.groovy.ast;
 import java.lang.reflect.Field;
 
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.objectweb.asm.Constants;
 
 /**
@@ -68,8 +69,8 @@ public class FieldNode extends MetadataNode implements Constants {
 
     public static FieldNode newStatic(Class theClass, String name) throws SecurityException, NoSuchFieldException {
         Field field = theClass.getField(name);
-        String type = field.getType().getName();
-        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, type, theClass.getName(), null);
+        String fldType = field.getType().getName();
+        return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, theClass.getName(), null);
     }
 
     public FieldNode(String name, int modifiers, String type, String owner, Expression initialValueExpression) {
@@ -78,9 +79,29 @@ public class FieldNode extends MetadataNode implements Constants {
         this.type = type;
         this.owner = owner;
         this.initialValueExpression = initialValueExpression;
-        if (type == null) {
-            this.type = "java.lang.Object";
+        if (type == null || type.length() == 0) {
             this.dynamicType = true;
+            if (initialValueExpression != null) {
+                String initType = initialValueExpression.getType();
+                if (initType != null && initType.length() > 0){
+                    this.type = initType;
+//                    this.dynamicType = false;
+                }
+                else {
+                    this.type = "java.lang.Object";
+//                    this.dynamicType = true;
+                }
+            }
+            else {
+                this.type = "java.lang.Object";
+//                this.dynamicType = true;
+            }
+        }
+        else {
+            String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
+            boxedType = BytecodeHelper.getObjectArrayTypeForPrimitiveArray(boxedType);
+            this.type = boxedType;
+            dynamicType = false;
         }
     }
 

@@ -45,10 +45,13 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import groovy.lang.Closure;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 
@@ -68,6 +71,7 @@ public class ClosureExpression extends Expression {
     public ClosureExpression(Parameter[] parameters, Statement code) {
         this.parameters = parameters;
         this.code = code;
+        super.setTypeClass(Closure.class);
     }
     
     public void visit(GroovyCodeVisitor visitor) {
@@ -100,6 +104,10 @@ public class ClosureExpression extends Expression {
 
     public void setVariableScope(VariableScope variableScope) {
         this.variableScope = variableScope;
+    }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 
 }

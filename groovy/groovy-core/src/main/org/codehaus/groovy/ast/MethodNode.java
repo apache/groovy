@@ -70,7 +70,8 @@ public class MethodNode extends MetadataNode implements Constants {
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
-        if (returnType == null) {
+        
+        if (returnType == null || returnType.length() == 0) {
             this.returnType = "java.lang.Object";
             this.dynamicReturnType = true;
         }
@@ -88,7 +89,10 @@ public class MethodNode extends MetadataNode implements Constants {
     // TODO: add test case for type descriptor
     public String getTypeDescriptor() {
         StringBuffer buf = new StringBuffer();
-        buf.append(dynamicReturnType ? "$dynamic" : returnType);
+        // buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
+        //
+        buf.append(ensureJavaTypeNameSyntax(returnType)); // br  to replace the above. Dynamic type returns Object.
+        //
         buf.append(' ');
         buf.append(name);
         buf.append('(');
