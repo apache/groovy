@@ -7,9 +7,9 @@ public class Table extends GroovyObjectSupport implements Cloneable {
     property schema
     property remarks
     property type
-    private columns
-    private foreignKeys
-    private indexes
+    property List columns
+    property List foreignKeys
+    property List indexes
     
     public Table(aName) {
         catalog = null
@@ -32,10 +32,9 @@ public class Table extends GroovyObjectSupport implements Cloneable {
         result.schema      = schema
         result.remarks     = remarks
         result.type        = type
-// @todo - cannot access private variables in other instances of this class                  
-//        result.columns     = columns.clone()
-//        result.foreignKeys = foreignKeys.clone()
-//        result.indexes     = indexes.clone()
+        result.columns     = columns.clone()
+        result.foreignKeys = foreignKeys.clone()
+        result.indexes     = indexes.clone()
         
         return result
     }
@@ -45,42 +44,6 @@ public class Table extends GroovyObjectSupport implements Cloneable {
 //        return (type == null) ? "(null)" : type
 //    }
 
-    public void addColumn(aColumn) {
-        columns << aColumn
-    }
-    public void addAll(someColumns) {
-        this.columns << someColumns
-    }
-    public List getColumns() {
-        return columns
-    }
-    public Column getColumn(idx) {
-        return columns[idx]
-    }
-
-    public void addForeignKey(aForeignKey) {
-        foreignKeys << aForeignKey
-    }
-    public List getForeignKeys() {
-        return foreignKeys
-    }
-    public ForeignKey getForeignKey(idx) {
-        return foreignKeys[idx]
-    }
-
-    public void addIndex(Index anIndex) {
-        indexes << anIndex
-    }
-    public List getIndexes() {
-        return indexes
-    }
-    public Index getIndex(int idx) {
-        (Index)indexes.get(idx)
-    }
-
-    public void addUnique(Unique aUniqueIndex) {
-        addIndex(aUniqueIndex)
-    }
     public List getUniques() {
         indexes.findAll() {it.isUnique()}
     }

@@ -31,13 +31,13 @@ public class RelationalBuilder extends BuilderSupport {
         if (child instanceof Column) {
             if (parent instanceof Table) {
                 Table table = (Table)parent;
-                table.addColumn((Column)child);
+                table.getColumns().add(child);
             }
         }
         if (child instanceof Table) {
             if (parent instanceof Database) {
                 Database database = (Database)parent;
-                database.addTable((Table)child);
+                database.getTables().add(child);
             }
         }
     }

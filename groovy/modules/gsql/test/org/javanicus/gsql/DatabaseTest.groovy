@@ -14,21 +14,21 @@ class DatabaseTest extends GroovyTestCase {
         idColumn = new Column(typeMap,"id","id",0,"10",true,true,true,null)     
                   
         fred = new Table("fred")
-        fred.addColumn(idColumn)
+        fred.columns << idColumn
                   
         barney = new Table("barney")
-        barney.addColumn(idColumn)          
+        barney.columns << idColumn          
                   
         wilma = new Table("wilma")
-        wilma.addColumn(idColumn)
+        wilma.columns << idColumn
                   
         db1 = new Database("db1")
-        db1.addTable(fred)
-        db1.addTable(barney)
+        db1.tables << fred
+        db1.tables << barney
                   
         db2 = new Database("db2")
-        db2.addTable(wilma)
-        db2.addTable(barney)
+        db2.tables << wilma
+        db2.tables << barney
     }
     
     void testMergeDatabasesTogether() {

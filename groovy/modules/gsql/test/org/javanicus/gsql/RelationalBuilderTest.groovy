@@ -9,6 +9,7 @@ package org.javanicus.gsql
 
 class RelationalBuilderTest extends GroovyTestCase {
     property database
+    property table
               
     void setUp() {
         build = new RelationalBuilder(new TypeMap())
@@ -19,6 +20,19 @@ class RelationalBuilderTest extends GroovyTestCase {
                 column(name:'bambam',size:'20')
             }
         }
+        
+        table = build.table(name:'individual') {
+            column(name:'individual_id', type:'integer', required:true, primaryKey:true, autoIncrement:true)
+            column(name:'surname', type:'varchar', size:15, required:true)
+            column(name:'event_id', type:'integer')
+            foreignKey(table:'event') {
+                reference(local:'event_id',foreign:'event_id')
+            }
+            index(name:'surname_index') {
+                indexColumn(name:'surname')
+            }
+        }
+                  
     }
     
     void testFinders() {
@@ -26,5 +40,6 @@ class RelationalBuilderTest extends GroovyTestCase {
         assert "pebbles" == database.wilma.pebbles.name
         assert 10 == database.wilma.pebbles.size
         assert 2 == database.wilma.pebbles.scale
+        println "${table}"          
     }
 }

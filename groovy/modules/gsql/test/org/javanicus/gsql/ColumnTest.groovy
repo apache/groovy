@@ -27,7 +27,7 @@ class ColumnTest extends GroovyTestCase {
     }
     
     void testTypeNameHasBeenInitialisedWhenOnlyColumnTypeHasBeenSet() {
-        assert "TypeMap not implemented yet" == idColumn.type
+        assert "null" == idColumn.type
     }
     
     

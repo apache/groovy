@@ -1,9 +1,12 @@
 package org.javanicus.gsql
 
+//@todo should extend Expando, super.getProperty() will currently always return
+//        something, even if it's null. Expando could either throw GroovyRuntimeException
+//        or this class could check for null return, and findTable() instead
 public class Database extends GroovyObjectSupport {
     property name
     property version
-    private tables
+    property List tables
 
     public Database(aName) {
         this.name = aName
@@ -15,19 +18,11 @@ public class Database extends GroovyObjectSupport {
             if (findTable(it.name) != null) {
                 //@todo throw new IllegalArgumentException("Table ${table.name} already defined in this database");
             } else {
-                addTable(it.clone())
+                tables << it.clone()
             }
         }
     }
 
-    public void addTable(aTable) {
-        tables.add(aTable)
-    }
-
-    public List getTables() {
-        return tables
-    }
-    
     public Object getProperty(String propertyName) {
         try {
             return super.getProperty(propertyName)
@@ -39,14 +34,6 @@ public class Database extends GroovyObjectSupport {
         tables.find() {it.name.equalsIgnoreCase(aName)}
     }
 
-    public void setTable(idx, aTable) {
-        addTable(aTable)
-    }
-
-    public Table getTable(idx) {
-        tables.get(idx)
-    }
-    
     public String toString() {
         "Database[name=${name};tableCount=${tables.size()}]"
     }
