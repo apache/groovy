@@ -1158,7 +1158,7 @@ public class DefaultGroovyMethods {
         Collections.sort(answer);
         return answer;
     }
-    
+
     /**
      * Avoids doing unnecessary work when sorting an already sorted set
      *
@@ -1168,7 +1168,7 @@ public class DefaultGroovyMethods {
     public static SortedSet sort(SortedSet self) {
         return self;
     }
-    
+
     /**
      * A convenience method for sorting a List
      *
@@ -1247,7 +1247,7 @@ public class DefaultGroovyMethods {
     public static List sort(Collection self, Closure closure) {
         return sort(asList(self), closure);
     }
-    
+
     /**
      * Converts the given collection into a List
      * 
@@ -1262,7 +1262,7 @@ public class DefaultGroovyMethods {
             return new ArrayList(self);
         }
     }
-    
+
     /**
      * Reverses the list
      *
@@ -1938,7 +1938,6 @@ public class DefaultGroovyMethods {
         return Runtime.getRuntime().exec(self);
     }
 
-    
     private static char next(char ch) {
         if (Character.isLetterOrDigit(++ch)) {
             return ch;
@@ -2006,7 +2005,7 @@ public class DefaultGroovyMethods {
 
     // Number based methods
     //-------------------------------------------------------------------------
-    
+
     /**
      * Increment a Character by one
      *
@@ -2014,7 +2013,7 @@ public class DefaultGroovyMethods {
      * @return an incremented Number
      */
     public static Number next(Character self) {
-    	return plus(self, ONE);
+        return plus(self, ONE);
     }
 
     /**
@@ -2024,9 +2023,9 @@ public class DefaultGroovyMethods {
      * @return an incremented Number
      */
     public static Number next(Number self) {
-    	return plus(self, ONE);
+        return plus(self, ONE);
     }
-    
+
     /**
      * Decrement a Character by one
      *
@@ -2034,9 +2033,9 @@ public class DefaultGroovyMethods {
      * @return a decremented Number
      */
     public static Number previous(Character self) {
-    	return minus(self, ONE);
+        return minus(self, ONE);
     }
-    
+
     /**
      * Decrement a Number by one
      *
@@ -2044,9 +2043,9 @@ public class DefaultGroovyMethods {
      * @return a decremented Number
      */
     public static Number previous(Number self) {
-    	return minus(self, ONE);
+        return minus(self, ONE);
     }
-    
+
     /**
      * Add a Character and a Number
      * 
@@ -2055,9 +2054,9 @@ public class DefaultGroovyMethods {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Character left, Number right) {
-    	return plus(new Integer(left.charValue()), right);
+        return plus(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Add a Number and a Character
      * 
@@ -2066,9 +2065,9 @@ public class DefaultGroovyMethods {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Number left, Character right) {
-    	return plus(left, new Integer(right.charValue()));
+        return plus(left, new Integer(right.charValue()));
     }
-    
+
     /**
      * Add two Characters
      * 
@@ -2077,9 +2076,9 @@ public class DefaultGroovyMethods {
      * @return the addition of both Characters
      */
     public static Number plus(Character left, Character right) {
-    	return plus(new Integer(left.charValue()), right);
+        return plus(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Add two Numbers
      *
@@ -2099,7 +2098,7 @@ public class DefaultGroovyMethods {
             return new Integer(left.intValue() + right.intValue());
         }
     }
-    
+
     /**
      * Compare a Character and a Number
      * 
@@ -2108,9 +2107,9 @@ public class DefaultGroovyMethods {
      * @return the result of the comparison
      */
     public static int compareTo(Character left, Number right) {
-    	return compareTo(new Integer(left.charValue()), right);
+        return compareTo(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Compare a Number and a Character
      * 
@@ -2119,9 +2118,9 @@ public class DefaultGroovyMethods {
      * @return the result of the comparison
      */
     public static int compareTo(Number left, Character right) {
-    	return compareTo(left, new Integer(right.charValue()));
+        return compareTo(left, new Integer(right.charValue()));
     }
-    
+
     /**
      * Compare two Characters
      * 
@@ -2130,9 +2129,9 @@ public class DefaultGroovyMethods {
      * @return the result of the comparison
      */
     public static int compareTo(Character left, Character right) {
-    	return compareTo(new Integer(left.charValue()), right);
+        return compareTo(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Compare two Numbers
      *
@@ -2171,7 +2170,6 @@ public class DefaultGroovyMethods {
         }
     }
 
-    
     /**
      * Subtract a Number from a Character
      * 
@@ -2180,9 +2178,9 @@ public class DefaultGroovyMethods {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Character left, Number right) {
-    	return minus(new Integer(left.charValue()), right);
+        return minus(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Subtract a Character from a Number
      * 
@@ -2191,9 +2189,9 @@ public class DefaultGroovyMethods {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Number left, Character right) {
-    	return minus(left, new Integer(right.charValue()));
+        return minus(left, new Integer(right.charValue()));
     }
-    
+
     /**
      * Subtraction two Characters
      * 
@@ -2202,7 +2200,7 @@ public class DefaultGroovyMethods {
      * @return the addition of both Characters
      */
     public static Number minus(Character left, Character right) {
-    	return minus(new Integer(left.charValue()), right);
+        return minus(new Integer(left.charValue()), right);
     }
 
     /**
@@ -2232,7 +2230,7 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number multiply(Character left, Number right) {
-    	return multiply(new Integer(left.charValue()), right);
+        return multiply(new Integer(left.charValue()), right);
     }
 
     /**
@@ -2243,9 +2241,9 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number multiply(Number left, Character right) {
-    	return multiply(left, new Integer(right.charValue()));
+        return multiply(left, new Integer(right.charValue()));
     }
-    
+
     /**
      * Multiply two Characters
      *
@@ -2254,27 +2252,27 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number multiply(Character left, Character right) {
-    	return multiply(new Integer(left.charValue()), right);
+        return multiply(new Integer(left.charValue()), right);
     }
-    
-	/**
-	 * Multiply two Numbers
-	 *
-	 * @param left a Number
-	 * @param right another Number
-	 * @return the multiplication of both
-	 */
-	public static Number multiply(Number left, Number right) {
-		if (isFloatingPoint(left) || isFloatingPoint(right)) {
-        return new Double(left.doubleValue() * right.doubleValue());
+
+    /**
+     * Multiply two Numbers
+     *
+     * @param left a Number
+     * @param right another Number
+     * @return the multiplication of both
+     */
+    public static Number multiply(Number left, Number right) {
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            return new Double(left.doubleValue() * right.doubleValue());
+        }
+        else if (isLong(left) || isLong(right)) {
+            return new Long(left.longValue() * right.longValue());
+        }
+        else {
+            return new Integer(left.intValue() * right.intValue());
+        }
     }
-    else if (isLong(left) || isLong(right)) {
-        return new Long(left.longValue() * right.longValue());
-    }
-    else {
-        return new Integer(left.intValue() * right.intValue());
-    }
-}
 
     /**
      * Power of a Number to a certain exponent
@@ -2304,7 +2302,7 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number divide(Character left, Number right) {
-    	return divide(new Integer(left.charValue()), right);
+        return divide(new Integer(left.charValue()), right);
     }
 
     /**
@@ -2315,9 +2313,9 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number divide(Number left, Character right) {
-    	return divide(left, new Integer(right.charValue()));
+        return divide(left, new Integer(right.charValue()));
     }
-    
+
     /**
      * Divide two Characters
      *
@@ -2326,9 +2324,9 @@ public class DefaultGroovyMethods {
      * @return the multiplication of both
      */
     public static Number divide(Character left, Character right) {
-    	return divide(new Integer(left.charValue()), right);
+        return divide(new Integer(left.charValue()), right);
     }
-    
+
     /**
      * Divide two Numbers
      *
@@ -2480,10 +2478,9 @@ public class DefaultGroovyMethods {
         return new Integer(self.intValue());
     }
 
-
     // Date methods
     //-------------------------------------------------------------------------
-    
+
     /**
      * Increments a Date by a day
      *
@@ -2528,8 +2525,6 @@ public class DefaultGroovyMethods {
         return plus(self, -days);
     }
 
-    
-    
     // File based methods
     //-------------------------------------------------------------------------
 
@@ -2960,62 +2955,6 @@ public class DefaultGroovyMethods {
         return closure.asList();
     }
 
-    // SQL based methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Iterates through the result set of an SQL query passing the result set into the closure
-     *
-     * @param connection a Connection
-     * @param gstring an SQL query
-     * @param closure a closure
-     */
-    public static void query(Connection connection, GString gstring, Closure closure) throws SQLException {
-        ResultSet results = null;
-
-        // lets turn the expression into an SQL string
-        String sql = null;
-        String[] text = gstring.getStrings();
-        if (text.length == 1) {
-            sql = text[0];
-        }
-        else {
-            StringBuffer buffer = new StringBuffer(text[0]);
-            for (int i = 1; i < text.length; i++) {
-                buffer.append("?");
-                buffer.append(text[i]);
-            }
-            sql = buffer.toString();
-        }
-        PreparedStatement statement = connection.prepareStatement(sql);
-        try {
-            // lets bind the values to the statement
-            Object[] values = gstring.getValues();
-            for (int i = 0; i < values.length; i++) {
-                statement.setObject(i + 1, values[i]);
-            }
-            results = statement.executeQuery();
-
-            closure.call(results);
-        }
-        finally {
-            if (results != null) {
-                try {
-                    results.close();
-                }
-                catch (SQLException e) {
-                    // ignore
-                }
-            }
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                // ignore
-            }
-        }
-    }
-
     /**
      * Converts the given String into a List of strings of one character
      *
@@ -3029,5 +2968,32 @@ public class DefaultGroovyMethods {
             answer.add(self.substring(i, i + 1));
         }
         return answer;
+    }
+
+    // Process methods
+    //-------------------------------------------------------------------------
+
+    /**
+     * An alias method so that a process appears similar to System.out, System.in, System.err; 
+     * you can use process.in, process.out, process.err in a similar way 
+     */
+    public static InputStream getIn(Process self) {
+        return self.getInputStream();
+    }
+
+    /**
+     * An alias method so that a process appears similar to System.out, System.in, System.err; 
+     * you can use process.in, process.out, process.err in a similar way 
+     */
+    public static InputStream getErr(Process self) {
+        return self.getErrorStream();
+    }
+
+    /**
+     * An alias method so that a process appears similar to System.out, System.in, System.err; 
+     * you can use process.in, process.out, process.err in a similar way 
+     */
+    public static OutputStream getOut(Process self) {
+        return self.getOutputStream();
     }
 }
