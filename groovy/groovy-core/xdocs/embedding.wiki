@@ -6,6 +6,24 @@ or system.
 You can use {link:BSF|bsf.html} to embed any scripting language into your Java code; however Groovy offers
 a lighter weight and closer integration. There are two main approaches
 
+
+1.1 Evaluate scripts or expressions using the shell
+
+You can evaluate any expression or script in Groovy using the {link:GroovyShell|apidocs/groovy/lang/GroovyShell.html}.
+The GroovyShell allows you to pass in and out variables via the {link:Binding|apidocs/groovy/lang/Binding.html} object.
+
+{code:java}
+// call groovy expressions from Java code
+Binding binding = new Binding();
+binding.setVariable("foo", new Integer(2));
+GroovyShell shell = new GroovyShell(binding);
+
+Object value = shell.evaluate("println 'Hello World!'; x = 123; return foo * 10");
+assert value.equals(new Integer(20));
+assert binding.getVariable("x").equals(new Integer(123))
+{code}
+
+
 1.1 Dynamically loading and running Groovy code inside Java
 
 You can use the {link:GroovyClassLoader|apidocs/groovy/lang/GroovyClassLoader.html} 
@@ -23,21 +41,21 @@ Object[] args = {};
 groovyObject.invokeMethod("run", args);
 {code}
 
-1.1 Evaluate scripts or expressions using the shell
-
-You can evaluate any expression or script in Groovy using the {link:GroovyShell|apidocs/groovy/lang/GroovyShell.html}.
-The GroovyShell allows you to pass in and out variables via the {link:Binding|apidocs/groovy/lang/Binding.html} object.
+If you have an interface you wish to use which you implement in the Groovy script you can use it as follows
 
 {code:java}
-// call groovy expressions from Java code
-Binding binding = new Binding();
-binding.setVariable("foo", new Integer(2));
-GroovyShell shell = new GroovyShell(binding);
-
-Object value = shell.evaluate("println 'Hello World!'; x = 123; return foo * 10");
-assert value.equals(new Integer(20));
-assert binding.getVariable("x").equals(new Integer(123))
+GroovyClassLoader gcl = new GroovyClassLoader();
+Class clazz = gcl.parseClass(myStringwithGroovyClassSource "SomeName.groovy");
+Object aScript = clazz.newInstance();
+MyInterface myObject = (MyInterface) aScript;
+myObject.interfaceMethod();
+  ...
 {code}
+
+This works fine if the Groovy class implements the inferface MyInterface.
+myObject can from then on be used as every other Java object implementing
+MyInterface.
+
 
 1.1 Runtime dependencies
 
