@@ -578,6 +578,11 @@ public class Parser {
                     statement = whileStatement();
                     break;
                 }
+            case (Token.KEYWORD_DO) :
+                {
+                    statement = doWhileStatement();
+                    break;
+                }
             case (Token.KEYWORD_CONTINUE) :
                 {
                     statement = continueStatement();
@@ -815,6 +820,21 @@ public class Parser {
         consume(Token.RIGHT_PARENTHESIS);
 
         statement.addChild(statementOrStatementBlock());
+
+        return statement;
+    }
+
+    protected CSTNode doWhileStatement() throws IOException, SyntaxException {
+        CSTNode statement = rootNode(Token.KEYWORD_DO);
+
+        statement.addChild(statementOrStatementBlock());
+
+        consume(Token.KEYWORD_WHILE);
+        consume(Token.LEFT_PARENTHESIS);
+
+        statement.addChild(expression());
+
+        consume(Token.RIGHT_PARENTHESIS);
 
         return statement;
     }
@@ -1165,7 +1185,8 @@ public class Parser {
                 {
                     expectIdentifier();
                     Token token = consume(lt_bare());
-                    identifier = new CSTNode(Token.identifier(token.getStartLine(), token.getStartColumn(), token.getText()));
+                    identifier =
+                        new CSTNode(Token.identifier(token.getStartLine(), token.getStartColumn(), token.getText()));
                     expr = identifier;
 
                     break PREFIX_SWITCH;
