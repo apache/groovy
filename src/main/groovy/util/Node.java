@@ -197,8 +197,8 @@ public class Node {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 List children = childNode.depthFirst();
-                answer.addAll(children);
                 answer.add(childNode);
+                answer.addAll(children);
             }
         }
         return answer;

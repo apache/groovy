@@ -8,25 +8,19 @@ class NavigationTest extends GroovyTestCase {
     void testDepthFirst() {
         tree = createTree()
         
-        System.out.println(tree.depthFirst())
+        names = tree.depthFirst().map { it.name() }
+        expected = ['b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
         
-        /** @todo
-        names = tree.depthFirst().collect { n | print(n); return n.name }
-        
-        assert names == ['b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
-        */
+        assert names == expected
     }
     
     void testBredthFirst() {
         tree = createTree()
         
-        System.out.println(tree.bredthFirst())
+        names = tree.bredthFirst().map { it.name() }
+        expected = ['b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
         
-        /** @todo
-        names = tree.bredthFirst().collect { n | print(n); return n.name }
-        
-        assert names == ['b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
-        */
+        assert names == expected
     }
     
     protected createTree() {       

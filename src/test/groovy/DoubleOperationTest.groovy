@@ -14,10 +14,10 @@ class DoubleOperationTest extends GroovyTestCase {
         assert x == 6.2
         
         y = x + 1
-	assert y == 7.2       
-		
-	z = y + x + 1 + 2
-	assert z == 16.4
+        assert y == 7.2       
+        	
+        z = y + x + 1 + 2
+        assert z == 16.4
     }
     
     void testMinus() {
@@ -28,7 +28,7 @@ class DoubleOperationTest extends GroovyTestCase {
         assert x == 3.8
         
         y = x - 1
-	assert y == 2.8        
+		assert y == 2.8        
     }
     
     void testMultiply() {
@@ -40,7 +40,6 @@ class DoubleOperationTest extends GroovyTestCase {
         
         x = 3.0 * 2.0
         assert x == 6.0
-        
         y = x * 2
         assert y == 12.0        
     }
@@ -53,6 +52,6 @@ class DoubleOperationTest extends GroovyTestCase {
         assert x == 20.0 : "x = " + x
         
         y = x / 2
-        assert y == 10.0 : "y = " + y        
+        assert y == 10.0 : "y = " + y     
     }
 }

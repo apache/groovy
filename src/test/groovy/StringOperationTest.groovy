@@ -18,11 +18,9 @@ class StringOperationTest extends GroovyTestCase {
     }
 
 	void testLongPlus() {
-	    /** @todo parser
 	    x = "hello" + " " + "there" + " nice" + " day"
 	    
 	    assert x == "hello there nice day"
-	    */
 	}
 	
     void testMinus() {

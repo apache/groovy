@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ModuleNode;
+
 /**
  * An exception thrown by the interpreter
  * 
@@ -53,12 +56,49 @@ package org.codehaus.groovy.runtime;
  */
 public class InvokerException extends RuntimeException {
 
+    private ModuleNode module;
+    private ASTNode node;
+
     public InvokerException(String message) {
         super(message);
+    }
+
+    public InvokerException(String message, ASTNode node) {
+        super(message);
+        this.node = node;
     }
 
     public InvokerException(String message, Throwable cause) {
         super(message, cause);
     }
 
+    public void setModule(ModuleNode module) {
+        this.module = module;
+    }
+
+    public ModuleNode getModule() {
+        return module;
+    }
+
+    public String getMessage() {
+        return super.getMessage() + getLocationText();
+    }
+
+    public ASTNode getNode() {
+        return node;
+    }
+
+    protected String getLocationText() {
+        String answer = ". ";
+        if (node != null) {
+            answer += "At [" + node.getLineNumber() + ":" + node.getColumnNumber() + "] ";
+        }
+        if (module != null) {
+            answer += module.getDescription();
+        }
+        if (answer.equals(". ")) {
+            return "";
+        }
+        return answer;
+    }
 }

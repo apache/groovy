@@ -28,16 +28,14 @@ class ListIteratingTest extends GroovyTestCase {
         assertSequence([1, 2, 3, 4 ])
     }
     
-    /** @todo parser
     testIteratingWithList() {
-        s = ArrayList()
+        s = new ArrayList()
         s.add(1)
         s.add(2)
         s.add(3)
         s.add(4)
         assertSequence(s)
     }
-*/    
 
     protected assertSequence(s) {
         result = 0

@@ -1,6 +1,38 @@
 Things to Test
 ==============
 
+* while bug - is it POP?
+
+* raise GStringTest bug, closure syntax sugar for constructors too (OrderByTest)
+
+* test GPath
+
+* add Dylan & maybe Self to wiki & background
+
+* refactor InvokerException to be groovy.lang
+
+* refactor MetaClass to GroovyClass?
+
+* allow if/switch to be the and of a function. i.e.
+	foo() {
+		if (x > 1) {
+			"hello"
+		}
+		else {
+			"cheese"
+		}
+	}
+	ditto for switch? i.e. make return statement optional.
+	
+* test compiler errors when
+	- duplicate methods test
+	- duplicate class in module
+	
+* why line numbers not right?
+
+* why this? java.lang.ClassFormatError: ExceptionInClosureTest (Illegal Class name "Lorg/codehaus/groovy/runtime/InvokerException;")
+	when running it in GroovyClassLoader
+	
 * duplicate class definition: ClosureMethodTest$4
 	<bob>	java.lang.LinkageError: duplicate class definition: ClosureMethodTest$4
 	<bob>	        at java.lang.ClassLoader.defineClass0(Native Method)
@@ -10,15 +42,7 @@ Things to Test
 	<bob>	        at org.codehaus.groovy.classgen.TestSupport$1.onClassNode(TestSupport.java:96)
 
 
-* error messages for exceptions thrown in closures are not right
-
 * why do the try/catch tests fail when run inside an IDE?
-
-* test compiler errors when
-	- unknown class
-		in new expression
-		in general class expression
-	- duplicate methods test
 
 * tidy up javadoc
 
@@ -154,6 +178,10 @@ sql.table("users") {
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
 
+		maybe add the various readonly List APIs to Object[] and *[] types
+		if we ever support the DTD / Xed style type*, type+ then we can do the same
+		there too
+		
 * BeanBuilder - builder which creates a tree of beans
 	builder.bean(class:SomeClass, x:123, b:'hello') {
 		nestedProperty(a:123)
@@ -311,6 +339,83 @@ sql.table("users") {
 
 	* allow meta classes to be added dynamically using closure syntax?
 	e.g. Map?
+	
+
+STUFF TO PONDER
+===============
+
+* if we allow statements in class declarations, then we could disallow the syntax sugar
+	for method invocation with closures. i.e. foo { code } would have to be foo ({code})
+	otherwise it'd be interpeted as a method declaration.
+	
+	e.g.
+	
+	module MyValidatingModule
+	
+	class Cheese {
+		readOnlyProperty('hello')
+		validatingProperty('name', { it.length > 0 } )
+		
+		lazilyCreatedProperty(:cheese, { new MySpecialCheese() })
+		
+		public(:methodA, :methodB, :methodC)
+	}
+	 
+	for now we could argue that only methods are allowed to be invoked inside the class declaration.
+	We could still do markup but just not as nice
+	
+	class Whatnot {
+		table( {
+			foo {
+			}
+			whatnot {
+			}
+		})
+		
+		blah = { 
+			a(x:1234, b:942) {
+				d()
+			}
+		}
+		
+	
+* Support multiple return values...
+
+	String, Number cheese() {
+		"hello", 7
+	}
+	
+	a, b = cheese()
+	
+	also if we do this we should do assignment / swapping
+	
+		a, b = 1, 2
+		a, b = b, a
+
+* maybe use syntax #[1, 2] to create arrays which behave just like immutable lists?
+		
+* maybe use * to represent fields if we need to differentiate properties & fields?	
+
+* using macros to avoid dependencies on logging stuff (say)
+
+	class GroovyLog {
+		switch (System.getProperty('groovy.log.impl', 'useCommonsLogging')) {
+			case 'useCommonsLogging': {
+				// lets define the new instance method
+				newInstance() {
+					return new CommonsLoggingThingy()
+				}
+			}
+			default {
+				newInstance() {
+					return new SimpleGroovyLog()
+				}
+			}
+		}
+	}
+	
+	doing things like this at compile time means no runtime dependencies. Ditto to do JDK based compiles
+	
 	
 	
 UI WORK

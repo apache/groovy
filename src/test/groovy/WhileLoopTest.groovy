@@ -1,7 +1,11 @@
 class WhileLoopTest extends GroovyTestCase {
 
-	void testRange() {
-	    /** @todo
+	void testVerySimpleWhile() {
+	    val = doWhileMethod(0, 5)
+        println(val)
+	}
+	
+    void testMoreComplexWhile() {
         x = 0
         y = 5
 
@@ -11,6 +15,17 @@ class WhileLoopTest extends GroovyTestCase {
         }
 
         assert x == 5
-        */
     }
+
+	doWhileMethod(x, m) {
+        while ( x < m ) {
+            x = increment(x)
+        }
+
+		return x
+    }
+	
+	increment(x) {
+	    x + 1
+	}
 }

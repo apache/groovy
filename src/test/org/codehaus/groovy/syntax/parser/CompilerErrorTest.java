@@ -37,7 +37,11 @@ package org.codehaus.groovy.syntax.parser;
 
 import groovy.lang.GroovyObject;
 
+import java.io.ByteArrayInputStream;
+
 import org.codehaus.groovy.classgen.TestSupport;
+import org.codehaus.groovy.runtime.NoSuchClassException;
+import org.codehaus.groovy.runtime.NoSuchPropertyException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -45,13 +49,66 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class CompilerErrorTest extends TestSupport {
 
-    public void testUnknownClass() throws Exception {
-        try {
-            GroovyObject object = compile("src/test/org/codehaus/groovy/syntax/parser/UnknownClass.groovy");
-            fail("Should have failed with a compiler error");
-        }
-        catch (ParserException e) {
-            System.out.println("Caught: " + e);
-        }
+    public void testUnknownClassCatch() throws Exception {
+        NoSuchClassException e =
+            assertCompileFailed(
+                "class UnknownClass {\n"
+                    + "    main() {\n"
+                    + "        try {\n"
+                    + "            println('Hello World!')\n"
+                    + "        }\n"
+                    + "        catch (UnknownException e) {\n"
+                    + "            println('This will never happen')\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n");
+
+        assertEquals("UnknownException", e.getType());
     }
+
+    public void testUnknownClassInNew() throws Exception {
+        NoSuchClassException e =
+            assertCompileFailed(
+                "class UnknownClass {\n" + "    main() {\n" + "        x = new UnknownThingy()\n" + "    }\n" + "}\n");
+        assertEquals("UnknownThingy", e.getType());
+    }
+
+    public void testUnknownClassInAssignment() throws Exception {
+        GroovyObject object =
+            assertCompileWorks(
+                "class UnknownClass {\n" + "    main() {\n" + "        x = UnknownThingy\n" + "    }\n" + "}\n");
+
+        try {
+            object.invokeMethod("main", null);
+            fail("Should have thrown exception due to unknown property");
+        }
+        catch (NoSuchPropertyException e) {
+            assertEquals("UnknownThingy", e.getProperty());
+        }
+        /*
+        catch (NoClassDefFoundError e) {
+        }
+        */
+    }
+
+    protected GroovyObject assertCompileWorks(String code) throws Exception {
+        Class type =
+            loader.parseClass(new ByteArrayInputStream(code.getBytes()), "ValidClass_" + getName() + ".groovy");
+        return (GroovyObject) type.newInstance();
+    }
+
+    protected NoSuchClassException assertCompileFailed(String code) throws Exception {
+        try {
+            assertCompileWorks(code);
+
+            fail("Should have thrown an exception");
+        }
+        catch (NoSuchClassException e) {
+            System.out.println("Worked, threw: " + e);
+            //e.printStackTrace();
+            return e;
+        }
+        return null;
+    }
+
 }

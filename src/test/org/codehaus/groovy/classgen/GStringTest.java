@@ -117,10 +117,10 @@ public class GStringTest extends TestSupport {
 
         System.out.println("################ Now about to invoke method");
 
-        Object[] array = { new Integer(1234), "abc", "def" };
+        //Object[] array = { new Integer(1234), "abc", "def" };
 
         try {
-            InvokerHelper.invokeMethod(bean, "stringDemo", array);
+            InvokerHelper.invokeMethod(bean, "stringDemo", null);
         }
         catch (InvokerInvocationException e) {
             System.out.println("Caught: " + e.getCause());

@@ -5,11 +5,7 @@ class TableModelTest extends GroovyTestCase {
     void testTableModel() {
         list = [ ['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
         
-        /** @todo fix when the MetaClass works better
         listModel = new ValueHolder(list)
-        */
-        listModel = new ValueHolder()
-        listModel.setValue(list)
         
 	    model = new DefaultTableModel(listModel)
 	    rowModel = model.getRowModel()
@@ -37,13 +33,6 @@ class TableModelTest extends GroovyTestCase {
     
     protected assertValueAt(model, row, col, expected) {
         value = model.getValueAt(row, col)
-        /** @todo parser
         assert value == expected : "for row " + row + " col " + col
-         */
-        /** @todo parser
-        text = "for row" + row + " col " + col
-        */
-        text = "for row" + row
-        assert value == expected : text
     }
 }

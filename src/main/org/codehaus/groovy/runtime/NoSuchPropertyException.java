@@ -43,57 +43,37 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-package org.codehaus.groovy.classgen;
-
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
+package org.codehaus.groovy.runtime;
 
 /**
+ * An exception occurred if a dynamic property dispatch fails with an unknown property
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ForTest extends TestSupport {
+public class NoSuchPropertyException extends InvokerException {
 
-    public void testLoop() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
-        classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
+    private String property;
+    private Class type;
 
-        Parameter[] parameters = { new Parameter("coll")};
+    public NoSuchPropertyException(String property, Class type) {
+        super("No such property: " + property + " for class: " + type.getName());
+        this.property = property;
+        this.type = type;
+    }
 
-        Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
+    /**
+     * @return the name of the property that could not be found
+     */
+    public String getProperty() {
+        return property;
+    }
 
-        ForStatement statement = new ForStatement("i", new VariableExpression("coll"), loopStatement);
-        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, "void", parameters, statement));
-
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
-
-        Object bean = fooClass.newInstance();
-        assertTrue("Managed to create bean", bean != null);
-
-        System.out.println("################ Now about to invoke method");
-
-        Object[] array = { new Integer(1234), "abc", "def" };
-
-        try {
-            InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[] {array});
-        }
-        catch (InvokerInvocationException e) {
-            System.out.println("Caught: " + e.getCause());
-            e.getCause().printStackTrace();
-            fail("Should not have thrown an exception");
-        }
-        System.out.println("################ Done");
+    /**
+     * 
+     * @return The type on which the property was attempted to be called
+     */
+    public Class getType() {
+        return type;
     }
 }

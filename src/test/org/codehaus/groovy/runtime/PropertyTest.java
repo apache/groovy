@@ -141,6 +141,15 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("Should have set a point", new Point(10, 20), bean.getPoint());
     }
 
+    public void testListNavigationProperty() throws Exception {
+        List list = new ArrayList();
+        list.add(new DummyBean("James"));
+        list.add(new DummyBean("Bob"));
+
+        List value = (List) InvokerHelper.getProperty(list, "name");
+        assertArrayEquals(new Object[] { "James", "Bob" }, value.toArray());
+    }
+
     public Object getCheese() {
         return "cheddar";
     }

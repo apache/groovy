@@ -44,56 +44,60 @@
 
  */
 
-package org.codehaus.groovy.classgen;
+package org.codehaus.groovy.runtime;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.util.GroovyTestCase;
 
 /**
+ * Tests failing method invocations to ensure correct exceptions
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ForTest extends TestSupport {
+public class MethodFailureTest extends GroovyTestCase {
 
-    public void testLoop() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
-        classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
-
-        Parameter[] parameters = { new Parameter("coll")};
-
-        Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
-
-        ForStatement statement = new ForStatement("i", new VariableExpression("coll"), loopStatement);
-        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, "void", parameters, statement));
-
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
-
-        Object bean = fooClass.newInstance();
-        assertTrue("Managed to create bean", bean != null);
-
-        System.out.println("################ Now about to invoke method");
-
-        Object[] array = { new Integer(1234), "abc", "def" };
-
+    public void testFailingMethod() {
+        MockGroovyObject object = new MockGroovyObject();
         try {
-            InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[] {array});
+            object.invokeMethod("nonExistentMethod", "hello");
+
+            fail("Should have thrown an exception");
         }
-        catch (InvokerInvocationException e) {
-            System.out.println("Caught: " + e.getCause());
-            e.getCause().printStackTrace();
-            fail("Should not have thrown an exception");
+        catch (InvokerException e) {
+            System.out.println(e);
         }
-        System.out.println("################ Done");
     }
+
+    public void testMethodWhichCallsTheFailingMethod() {
+        MockGroovyObject object = new MockGroovyObject();
+        try {
+            object.invokeMethod("methodThatFails", null);
+
+            fail("Should have thrown an exception");
+        }
+        catch (InvokerException e) {
+            System.out.println(e);
+            //e.printStackTrace();
+        }
+    }
+
+    public void testMethodWhichCallsTheFailingMethodInsideAClosure() {
+        MockGroovyObject object = new MockGroovyObject();
+        try {
+            object.invokeMethod("callClosure", new Closure(this) {
+                protected Object doCall(GroovyObject object) {
+                    return object.invokeMethod("nonExistentMethod", "hello");
+                }
+            });
+
+            fail("Should have thrown an exception");
+        }
+        catch (InvokerException e) {
+            System.out.println(e);
+            //e.printStackTrace();
+        }
+    }
+
 }
