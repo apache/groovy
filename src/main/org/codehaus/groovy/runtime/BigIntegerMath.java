@@ -34,10 +34,6 @@ public class BigIntegerMath extends NumberMath {
 		return toBigInteger(left).compareTo(toBigInteger(right));
 	}
 
-    protected Number andImpl(Number left, Number right) {
-        return toBigInteger(left).and(toBigInteger(right));
-    }
-    
     protected Number intdivImpl(Number left, Number right) {
         return toBigInteger(left).divide(toBigInteger(right));
     }
