@@ -60,6 +60,7 @@
       <item name="Classes"       	    href="/classes.html"/>
       <item name="Closures"       	    href="/closures.html"/>
       <item name="Operator Overloading" href="/operators.html"/>
+      <item name="Groovy JDK"           href="/groovy-jdk.html"/>
     </menu>
 
     <menu name="Presentation">
