@@ -787,16 +787,12 @@ public class Lexer
 
                     if ( c == '.' )
                     {
-                        if ( la( 2 ) == '.' )
+                        if ( ( c = la( 2 ) ) == '.' )
                         {
                             // int followed by range op, break out.
                         }
                         else
                         {
-                            isFloat = true;
-                            numericLiteral.append( consume() );
-                            c = la();
-                            boolean moreDigits = false;
                             while ( c == '0' 
                                     ||
                                     c == '1'
@@ -817,17 +813,10 @@ public class Lexer
                                     ||
                                     c == '9' )
                             {
-                                moreDigits = true;
+                            	if ( !isFloat ) numericLiteral.append( consume() );
+								isFloat = true;
                                 numericLiteral.append( consume() );
                                 c = la();
-                            }
-                            
-                            if ( ! moreDigits )
-                            {
-                                throw new UnexpectedCharacterException( getStartLine(),
-                                                                        getStartColumn() + numericLiteral.length(),
-                                                                        c,
-                                                                        new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' } );
                             }
                         }
                     }
