@@ -789,7 +789,11 @@ public class ASTBuilder
             }
             case ( Token.IDENTIFIER ):
             {
-                return  variableOrClassExpression( expressionRoot );
+                Expression expression = variableOrClassExpression( expressionRoot );
+                // if the next token is another identifier and this is a class then
+                // we should set the type on the assignment variable expression
+                //System.out.println("we have: " + expressionRoot);
+                return expression;
             }
             case ( Token.KEYWORD_THIS ):
             case ( Token.KEYWORD_SUPER ):

@@ -58,6 +58,7 @@ public interface GroovyCodeVisitor {
 
     // statements
     //-------------------------------------------------------------------------
+    public void visitBlockStatement(BlockStatement statement);
     public void visitForLoop(ForStatement forLoop);
     public void visitWhileLoop(WhileStatement loop);
     public void visitDoWhileLoop(DoWhileStatement loop);

@@ -72,6 +72,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
@@ -81,6 +82,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
@@ -95,6 +97,14 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
  * @version $Revision$
  */
 public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
+
+    public void visitBlockStatement(BlockStatement block) {
+        List statements = block.getStatements();
+        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
+            Statement statement = (Statement) iter.next();
+            statement.visit(this);
+        }
+    }
 
     public void visitForLoop(ForStatement forLoop) {
         forLoop.getCollectionExpression().visit(this);

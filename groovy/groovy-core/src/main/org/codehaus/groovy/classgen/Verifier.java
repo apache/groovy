@@ -69,10 +69,10 @@ import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
@@ -211,6 +211,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 else {
                     list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
+
                 node.setCode(new BlockStatement(list));
             }
         }

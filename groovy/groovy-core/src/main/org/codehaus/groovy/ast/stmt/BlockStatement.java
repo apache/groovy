@@ -70,10 +70,7 @@ public class BlockStatement extends Statement {
     }
     
     public void visit(GroovyCodeVisitor visitor) {
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
-            statement.visit(visitor);
-        }
+        visitor.visitBlockStatement(this);
     }
 
     public List getStatements() {

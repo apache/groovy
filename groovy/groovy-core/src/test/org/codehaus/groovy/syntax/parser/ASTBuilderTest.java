@@ -44,6 +44,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -146,6 +147,23 @@ public class ASTBuilderTest extends TestParserSupport {
         Expression exp = exprStmt.getExpression();
         
         System.out.println("expr: " + exp);
+    }
+
+    public void testRodsBug() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { if (x) { String n = 'foo' } } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+        
+        System.out.println(statement.getStatements());
+        
+        IfStatement ifStmt = (IfStatement) statement.getStatements().get(0);
+        BlockStatement trueStmt = (BlockStatement) ifStmt.getIfBlock();
+        
+        System.out.println("trueStmt: " + trueStmt);
+        
+        // ideally there would be 1 statement; though we're handling that in the verifier
+        assertEquals(2, trueStmt.getStatements().size());
     }
 
     protected BlockStatement getCode(ModuleNode module, String name) {
