@@ -1271,7 +1271,7 @@ public class Parser
             {
                 CSTNode replacementExpr = new CSTNode();
                 CSTNode resultExpr      = sugaryMethodCallExpression( replacementExpr,
-                                                                      identifier );
+                                                                      identifier, null );
                 if ( resultExpr != replacementExpr )
                 {
                     expr = resultExpr;
@@ -1280,18 +1280,18 @@ public class Parser
             else
             {
                 expr = sugaryMethodCallExpression( expr,
-                                                   identifier );
+                                                   identifier, null );
             }
         }
 
       DOT_LOOP:
-        while ( lt() == Token.DOT
+        while ( (lt() == Token.DOT || lt() == Token.NAVIGATE)
                 &&
                 ( lt( 2 ) == Token.IDENTIFIER
                   ||
                   lt( 2 ) == Token.KEYWORD_CLASS ) )
         {
-            CSTNode dotExpr = rootNode( Token.DOT );
+            CSTNode dotExpr = rootNode( lt() );
 
             identifier = rootNode( lt() );
             
@@ -1302,7 +1302,7 @@ public class Parser
                 case ( Token.LEFT_CURLY_BRACE ):
                 {
                     expr = sugaryMethodCallExpression( expr,
-                                                       identifier );
+                                                       identifier, dotExpr );
                     break DOT_TYPE_SWITCH;
                 }
                 default:
@@ -1319,7 +1319,7 @@ public class Parser
     }
 
     protected CSTNode sugaryMethodCallExpression(CSTNode expr,
-                                                 CSTNode identifier)
+                                                 CSTNode identifier, CSTNode dotExpr)
         throws IOException,SyntaxException
     {
         CSTNode methodExpr = null;
@@ -1353,6 +1353,10 @@ public class Parser
         if ( methodExpr != null )
         {
             expr = methodExpr;
+            if (dotExpr != null) 
+            {    
+                expr.addChild(dotExpr);
+            }
         }
 
         return expr;

@@ -138,12 +138,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // cached values
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethod");
+    MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethodSafe");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
+    MethodCaller getPropertySafeMethod = MethodCaller.newStatic(InvokerHelper.class, "getPropertySafe");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
+    MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setPropertySafe2");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
     MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
@@ -600,7 +603,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         //final String exceptionTypeInternalName = (catchStatement != null) ? getTypeDescription(exceptionType) : null;
         final String exceptionTypeInternalName = (catchStatement != null) ? getClassInternalName(exceptionType) : null;
-        
+
         exceptionBlocks.add(new Runnable() {
             public void run() {
                 cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
@@ -1097,7 +1100,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     arguments.visit(this);
                 }
 
-                invokeMethodMethod.call(cv);
+                if (call.isSafe()) {
+                    invokeMethodSafeMethod.call(cv);
+
+                }
+                else {
+                    invokeMethodMethod.call(cv);
+                }
             }
         }
     }
@@ -1163,14 +1172,22 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitLdcInsn(expression.getProperty());
 
-        if (left) {
-            setPropertyMethod2.call(cv);
+        if (expression.isSafe()) {
+            if (left) {
+                setPropertySafeMethod2.call(cv);
+            }
+            else {
+                getPropertySafeMethod.call(cv);
+            }
         }
         else {
-            getPropertyMethod.call(cv);
+            if (left) {
+                setPropertyMethod2.call(cv);
+            }
+            else {
+                getPropertyMethod.call(cv);
+            }
         }
-
-        //cv.visitInsn(POP);
     }
 
     public void visitFieldExpression(FieldExpression expression) {

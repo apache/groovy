@@ -1329,11 +1329,21 @@ public class ParserTest
     }
 
     public void testAssignmentExpression()
-        throws Exception
+    throws Exception
     {
         Parser parser = newParser( "answer = list.collect( { item | return item * 2 } )" );
 
         CSTNode root = parser.expression();
+    }
+
+    public void testSafeMethodCallExpression()
+    throws Exception
+    {
+        Parser parser = newParser( "answer = foo->someMethod()" );
+
+        CSTNode root = parser.expression();
+        
+        System.out.println("Got: " + root );
     }
 
     public void testLogicalAndExpression()
