@@ -53,8 +53,8 @@ class MockProcess extends Process {
     private i
     private o
     public MockProcess() {
-        e = new MockInputStream()
-        i = new MockInputStream()
+        e = new AnotherMockInputStream()
+        i = new AnotherMockInputStream()
         o = new ByteArrayOutputStream()
     }
     void destroy() {}
@@ -69,6 +69,6 @@ class MockProcess extends Process {
  * only needed for workaround in groovy, 
  *     new ByteArrayInputStream(myByteArray) doesn't work at mo... (28-Sep-2004)
  */
-class MockInputStream extends InputStream {
+class AnotherMockInputStream extends InputStream {
     int read() { return -1 }
 }
