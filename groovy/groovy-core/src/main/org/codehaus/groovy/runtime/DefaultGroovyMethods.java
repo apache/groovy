@@ -836,6 +836,104 @@ public class DefaultGroovyMethods {
         return buffer.toString();
     }
 
+    private static String getPadding(String padding, int length) {
+        if (padding.length() < length) {
+            return multiply(padding, new Integer(length / padding.length() + 1)).substring(0, length);
+        } else {
+            return padding.substring(0, length);
+        }
+    }
+
+    /**
+     * Pad a String with the characters appended to the left
+     *
+     * @param numberOfChars the total number of characters
+     * @param padding the charaters used for padding
+     * @return the String padded to the left
+     */
+    public static String padLeft(String self, Number numberOfChars, String padding) {
+        int numChars = numberOfChars.intValue();
+        if (numChars <= self.length()) {
+            return self;
+        } else {
+            return getPadding(padding, numChars - self.length()) + self;
+        }
+    }
+
+    /**
+     * Pad a String with the spaces appended to the left
+     *
+     * @param numberOfChars the total number of characters
+     * @return the String padded to the left
+     */
+
+    public static String padLeft(String self, Number numberOfChars) {
+        return padLeft(self, numberOfChars, " ");
+    }
+
+    /**
+     * Pad a String with the characters appended to the right
+     *
+     * @param numberOfChars the total number of characters
+     * @param padding the charaters used for padding
+     * @return the String padded to the right
+     */
+
+    public static String padRight(String self, Number numberOfChars, String padding) {
+        int numChars = numberOfChars.intValue();
+        if (numChars <= self.length()) {
+            return self;
+        }
+        else {
+            return self + getPadding(padding, numChars - self.length());
+        }
+    }
+
+    /**
+     * Pad a String with the spaces appended to the right
+     *
+     * @param numberOfChars the total number of characters
+     * @return the String padded to the right
+     */
+
+    public static String padRight(String self, Number numberOfChars) {
+        return padRight(self, numberOfChars, " ");
+    }
+
+    /**
+     * Center a String and padd it with the characters appended around it
+     *
+     * @param numberOfChars the total number of characters
+     * @param padding the charaters used for padding
+     * @return the String centered with padded character around
+     */
+    public static String center(String self, Number numberOfChars, String padding) {
+        int numChars = numberOfChars.intValue();
+        if (numChars <= self.length()) {
+            return self;
+        }
+        else {
+            int charsToAdd = numChars - self.length();
+            String semiPad = charsToAdd % 2 == 1 ?
+                getPadding(padding, charsToAdd / 2 + 1) :
+                getPadding(padding, charsToAdd / 2);
+            if (charsToAdd % 2 == 0)
+                return semiPad + self + semiPad;
+            else
+                return semiPad.substring(0, charsToAdd / 2) + self + semiPad;
+        }
+    }
+
+    /**
+     * Center a String and padd it with spaces appended around it
+     *
+     * @param numberOfChars the total number of characters
+     * @return the String centered with padded character around
+     */
+    public static String center(String self, Number numberOfChars) {
+        return center(self, numberOfChars, " ");
+    }
+
     /**
      * Support the subscript operator for a regex Matcher
      *
