@@ -587,10 +587,12 @@ public class Parser
             }
             case ( Token.KEYWORD_CONTINUE ):
             {
+                statement = continueStatement();
                 break;
             }
             case ( Token.KEYWORD_BREAK ):
             {
+                statement = breakStatement();
                 break;
             }
             case ( Token.KEYWORD_IF ):
@@ -605,10 +607,12 @@ public class Parser
             }
             case ( Token.KEYWORD_THROW ):
             {
+                statement = throwStatement();
                 break;
             }
             case ( Token.KEYWORD_SYNCHRONIZED ):
             {
+                statement = synchronizedStatement();
                 break;
             }
             case ( Token.KEYWORD_SWITCH ):
@@ -706,6 +710,53 @@ public class Parser
         return statement;
     }
 
+    protected CSTNode breakStatement() 
+    throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_BREAK );
+
+        if ( lt() == Token.IDENTIFIER )
+           {    
+            statement.addChild( rootNode( lt() ) );
+        }
+        
+        return statement;
+    }
+    
+    protected CSTNode continueStatement() 
+    throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_CONTINUE );
+
+        if ( lt() == Token.IDENTIFIER )
+           {    
+            statement.addChild( rootNode( lt() ) );
+        }
+        
+        return statement;
+    }
+    
+    protected CSTNode throwStatement() 
+    throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_THROW );
+
+        statement.addChild( expression() );
+        
+        return statement;
+    }
+    
+    protected CSTNode synchronizedStatement() 
+    throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_SYNCHRONIZED );
+
+        statement.addChild( expression() );
+        
+        statement.addChild( statementBlock() );
+        
+        return statement;
+    }
     
     protected CSTNode ifStatement()
         throws IOException, SyntaxException

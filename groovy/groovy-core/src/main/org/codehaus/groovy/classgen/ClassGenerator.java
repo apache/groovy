@@ -78,7 +78,10 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
+import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
@@ -86,6 +89,8 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerException;
@@ -573,6 +578,31 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitSwitch(SwitchStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitCaseStatement(CaseStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitBreakStatement(BreakStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitContinueStatement(ContinueStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitThrowStatement(ThrowStatement statement) {
         // TODO Auto-generated method stub
 
     }

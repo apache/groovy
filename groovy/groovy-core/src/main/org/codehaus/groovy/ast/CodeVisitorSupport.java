@@ -70,14 +70,18 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BreakStatement;
 import org.codehaus.groovy.ast.stmt.CaseStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.ContinueStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.SwitchStatement;
+import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
+import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
@@ -142,6 +146,25 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
             caseStatement.visit(this);
         }
         statement.getDefaultStatement().visit(this);
+    }
+
+    public void visitCaseStatement(CaseStatement statement) {
+        statement.getExpression().visit(this);
+    }
+
+    public void visitBreakStatement(BreakStatement statement) {
+    }
+
+    public void visitContinueStatement(ContinueStatement statement) {
+    }
+
+    public void visitSynchronizedStatement(SynchronizedStatement statement) {
+        statement.getExpression().visit(this);
+        statement.getCode().visit(this);
+    }
+
+    public void visitThrowStatement(ThrowStatement statement) {
+        statement.getExpression().visit(this);
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
