@@ -1,7 +1,3 @@
-package com.javanicus.bpwj;
-
-import java.util.*;
-import sjm.parse.*;
 /*
   $Id$
 
@@ -24,6 +20,10 @@ import sjm.parse.*;
    limitations under the License.
 */
 
+package com.javanicus.bpwj;
+
+import java.util.*;
+import sjm.parse.*;
 
 /**
  * A TrackSequence is a sequence that throws a <code>
@@ -31,9 +31,8 @@ import sjm.parse.*;
  * does not complete.
  * 
  * @author Steven J. Metsker
- * 
- * @version 1.0 
  */
+
 
 public class TrackSequence extends Sequence {
 /**
@@ -65,7 +64,11 @@ public TrackSequence(String name) {
  *
  */
 public Vector match(Vector in) {
-	boolean inTrack = false;
+
+    // This println is useful for examining left recursion during a parse
+    //System.out.println(name);
+
+    boolean inTrack = false;
 	Vector last = in;
 	Vector out = in;
 	Enumeration e = subparsers.elements();

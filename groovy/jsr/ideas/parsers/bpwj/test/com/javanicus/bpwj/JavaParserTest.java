@@ -1,5 +1,3 @@
-package com.javanicus.bpwj;
-
 /*
   $Id$
 
@@ -21,34 +19,21 @@ package com.javanicus.bpwj;
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+package com.javanicus.bpwj;
 
 import junit.framework.*;
 import sjm.parse.*;
 import sjm.parse.tokens.*;
+import sjm.examples.track.TrackException;
 
 public class JavaParserTest extends TestCase {
-    private Parser parser;
+    private ParserFacade parser;
 
     public void setUp() {
-        parser = new JavaParser().start();
-    }
-
-    public void testEmptyExpression() {
-//        assertNull(parse(""));
+        parser = new ParserFacade(new JavaParser().start());
     }
 
     public void testSimpleJavaProgram() {
-        assertNotNull(parse("package foo.wibble; public class Foo {}"));
-    }
-
-    /* utility wrapper for tokenizer and parser */
-    private Object parse(String userInput) {
-        Assembly in = new TokenAssembly(userInput);
-        Assembly out = parser.completeMatch(in);
-        if (out != null) {
-            return out.getTarget();
-        } else {
-            return null;
-        }
+        assertFalse(parser.parse("package foo.bar; public class Foo extends Bar{}").hasMoreElements());
     }
 }

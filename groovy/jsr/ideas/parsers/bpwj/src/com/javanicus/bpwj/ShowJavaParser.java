@@ -1,5 +1,3 @@
-package com.javanicus.bpwj;
-
 /*
   $Id$
 
@@ -21,6 +19,8 @@ package com.javanicus.bpwj;
    See the License for the specific language governing permissions and
    limitations under the License.
 */
+
+package com.javanicus.bpwj;
 
 import sjm.parse.*;
 import sjm.parse.tokens.*;

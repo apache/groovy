@@ -1,5 +1,3 @@
-package com.javanicus.bpwj;
-
 /*
   $Id$
 
@@ -22,6 +20,8 @@ package com.javanicus.bpwj;
    limitations under the License.
 */
 
+package com.javanicus.bpwj;
+
 import sjm.parse.*;
 import sjm.parse.tokens.*;
 
@@ -34,13 +34,18 @@ class ParserFacade {
 
     /* utility wrapper for tokenizer and parser */
     public Assembly parse(String userInput) {
-        Assembly in = new TokenAssembly(userInput);
-        Assembly out = parser.completeMatch(in);
-        return out;
+        try {
+            Assembly in = new TokenAssembly(userInput);
+            Assembly out = parser.completeMatch(in);
+            return out;
+        } catch (TrackSequenceException e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
     }
 
     public String toString() {
-        return "";//parser.toString();
+        return parser.toString();
     }
 
 }
