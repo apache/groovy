@@ -1,7 +1,5 @@
 package groovy;
 
-
-
 class MapTest extends GroovyTestCase {
 
     void testMap() {

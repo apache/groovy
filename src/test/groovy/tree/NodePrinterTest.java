@@ -44,47 +44,21 @@
 
  */
 
-package org.codehaus.groovy.classgen;
+package groovy.tree;
 
 import groovy.lang.GroovyObject;
-import groovy.lang.MetaClass;
 
-import java.lang.reflect.Field;
-
+import org.codehaus.groovy.classgen.TestSupport;
 
 /**
- * Tests dynamically compiling a new class
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyClassLoaderTest extends TestSupport {
+public class NodePrinterTest extends TestSupport {
 
-    public void testCompile() throws Exception {
-        Class groovyClass = loader.parseClass("src/test/org/codehaus/groovy/classgen/Main.groovy");
-
-        System.out.println("Invoking main...");
-        
-        GroovyObject object = (GroovyObject) groovyClass.newInstance();
-        
-        assertTrue(object != null);
-        
-        Field field = object.getClass().getDeclaredField("metaClass");
-        assertTrue("Found metaclass field", field != null);
-        
-        Object metaClassObject = field.get(object);
-        assertTrue("Found metaclass", metaClassObject != null && metaClassObject instanceof MetaClass);
-        
-        MetaClass metaClass = (MetaClass) metaClassObject;
-        System.out.println("Metaclass: " + metaClass);
-        
-        Class type = object.getClass();
-        System.out.println("Type: " + type);
-        
-        // invoke via metaclass
-        metaClass.invokeMethod(object, "main", null);
-        
-        // invoke directly
-        object.invokeMethod("main", null);
+    public void testTree() throws Exception {
+        GroovyObject object = compile("src/test/groovy/tree/VerboseTreeTest.groovy");
+        object.invokeMethod("testTree", null);
     }
 }

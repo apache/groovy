@@ -19,8 +19,7 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        System.out.println(root)
-        System.out.println(root.attributes())
+        root.print();
     }
     
     void testTree2() {
@@ -42,7 +41,7 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        System.out.println(root)
+        root.print();
 
 		elem1 = root.elem1
         assert elem1.value() := 'hello1'

@@ -45,6 +45,7 @@
  */
 package groovy.lang;
 
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -187,5 +188,9 @@ public class Node {
 
     public String toString() {
         return name + "[attributes=" + attributes + "; value=" + value + "]";
+    }
+
+    public void print(PrintWriter out) { 
+        new NodePrinter(out).print(this);
     }
 }
