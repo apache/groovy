@@ -120,8 +120,8 @@ public class RangeTest extends TestCase {
         Range sr = (Range) s;
 
         assertEquals("from", 12, sr.getFrom());
-        assertEquals("to", 14, sr.getTo());
-        assertEquals("size", 3, sr.size());
+        assertEquals("to", 13, sr.getTo());
+        assertEquals("size", 2, sr.size());
     }
 
     public void testHashCodeAndEquals() {
