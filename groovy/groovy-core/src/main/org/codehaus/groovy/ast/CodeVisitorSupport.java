@@ -62,6 +62,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NegationExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -245,6 +246,9 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getTo().visit(this);
     }
 
+    public void visitNegationExpression(NegationExpression expression) {
+    }
+    
     public void visitConstantExpression(ConstantExpression expression) {
     }
 

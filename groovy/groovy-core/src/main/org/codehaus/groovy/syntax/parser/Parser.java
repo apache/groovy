@@ -2,6 +2,7 @@ package org.codehaus.groovy.syntax.parser;
 
 import java.io.IOException;
 
+import org.codehaus.groovy.ast.expr.NegationExpression;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
@@ -1228,9 +1229,9 @@ public class Parser
 
         switch ( lt_bare() )
         {
+        	case ( Token.MINUS ):
 			case ( Token.NOT ):
             case ( Token.PLUS ):
-            case ( Token.MINUS ):
             {
                 expr = rootNode( lt_bare() );
                 expr.addChild( postfixExpression() );
