@@ -25,7 +25,9 @@ list = [1, 2, 3]
 for (i in list) { println i }
 {code}
 
-Once you have some collections you can then use some of the new collection helper methods or try working with closures... 1.1 Working with closures
+Once you have some collections you can then use some of the new collection helper methods or try working with closures...
+
+1.1 Working with closures
 
 Closures are similar to Java's inner classes, except they are a single method which is invokable, with arbitrary parameters.
 A closure can have as many parameters as you wish... 
@@ -47,7 +49,9 @@ closure.call("world!")
 
 Using closures allows us to process collections (arrays, maps, strings, files, SQL connections and so forth) in a clean way.
 
-Here are a number of helper methods available on collections & strings... 1.1.1 each
+Here are a number of helper methods available on collections & strings...
+
+1.1.1 each
 
 iterate via a closure 
 
@@ -122,7 +126,9 @@ value = [1, 2, 3].any { item | item > 3 }
 assert value == false
 {code}
 
-Other helper methods include 1.1.1 max / min
+Other helper methods include
+
+1.1.1  max / min
 
 returns the max/min values of the collection - for Comparable objects 
 
@@ -183,7 +189,7 @@ class Foo {
   myGenerator(yield) {
     yield "A"
     yield "B"
-    yield("C") 
+    yield "C" 
   }
   
   static void main(args) {
