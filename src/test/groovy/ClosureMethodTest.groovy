@@ -37,7 +37,6 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.get(3) := 12
     }
 
-/*    
     void testListFind() {
         list = ["a", "b", "c"]
         answer = list.find( { item | return item := "b" })
@@ -79,8 +78,6 @@ class ClosureMethodTest extends GroovyTestCase {
         assert keys.sort() := [3, 4]
         assert values.sort() := [6, 8]
     }
-*/    
-
 
 
     /** @todo : allow closure to see outer fields

@@ -243,7 +243,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (code != null) {
             code.visit(this);
         }
-        
+
         cv.visitInsn(RETURN);
         cv.visitMaxs(0, 0);
     }
@@ -537,9 +537,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         statement.getExpression().visit(this);
 
         Class c = getExpressionType(statement.getExpression());
+
         //return is based on class type
         //TODO: make work with arrays
-        if (!c.isPrimitive()) {
+        if (c == Boolean.class) {
+            Label l0 = new Label();
+            cv.visitJumpInsn(IFEQ, l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+            cv.visitInsn(ARETURN);
+            cv.visitLabel(l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+            cv.visitInsn(ARETURN);
+        }
+        else if (!c.isPrimitive()) {
             cv.visitInsn(ARETURN);
         }
         else {
@@ -639,7 +649,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(ALOAD, 0);
 
         // we may need to pass in some other constructors
-                
+
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + internalClassName + ";)V");
     }
 
@@ -973,7 +983,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     new FieldExpression(field),
                     Token.equal(-1, -1),
                     new VariableExpression("__outerInstance"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "__outerInstance", null) };
+        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "__outerInstance", null)};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
@@ -1030,8 +1040,21 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
 
         leftHandExpression = false;
-        expression.getRightExpression().visit(this);
 
+        Expression rightExpression = expression.getRightExpression();
+        rightExpression.visit(this);
+
+        if (comparisonExpression(rightExpression)) {
+            Label l0 = new Label();
+            cv.visitJumpInsn(IFEQ, l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+            Label l1 = new Label();
+            cv.visitJumpInsn(GOTO, l1);
+
+            cv.visitLabel(l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+            cv.visitLabel(l1);
+        }
         leftHandExpression = true;
         leftExpression.visit(this);
         leftHandExpression = false;
@@ -1077,6 +1100,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 case Token.COMPARE_NOT_EQUAL :
                     return true;
             }
+        }
+        else if (expression instanceof BooleanExpression) {
+            return true;
         }
         return false;
     }
@@ -1178,6 +1204,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * this method returns the type - otherwise java.lang.Object is returned.
      */
     protected Class getExpressionType(Expression expression) {
+        if (comparisonExpression(expression)) {
+            return Boolean.class;
+        }
         /** @todo we need a way to determine this from an expression */
         return Object.class;
     }
@@ -1218,7 +1247,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
-        
+
         for (int i = 0; i < paramTypeNames.length; i++) {
             buffer.append(getTypeDescription(paramTypeNames[i].getType()));
         }

@@ -105,15 +105,6 @@ public class DumpClass {
         }
     }
 
-    public void ifDemo() {
-        if (InvokerHelper.compareEqual(bar, "abc")) {
-            result = "worked";
-        }
-        else {
-            InvokerHelper.invokeMethod(System.out, "println", "false");
-        }
-    }
-
     public Object emptyMethod() {
         return null;
     }
@@ -229,4 +220,15 @@ public class DumpClass {
             }
         };
     }
+    
+    public Object ifDemo() {
+        if (InvokerHelper.compareEqual(bar, "abc")) {
+            return Boolean.TRUE;
+        }
+        else {
+            return Boolean.FALSE;
+        }
+    }
+
+
 }
