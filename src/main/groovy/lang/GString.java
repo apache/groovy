@@ -57,8 +57,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable {
 
     private Object[] values;
-    /** cached value of the GString */
-    private String text;
 
     public GString(Object values) {
         this.values = (Object[]) values;
@@ -149,17 +147,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public String toString() {
-        if (text == null) {
-            StringWriter buffer = new StringWriter();
-            try {
-                writeTo(buffer);
-            }
-            catch (IOException e) {
-                throw new StringWriterIOException(e);
-            }
-            text = buffer.toString();
+        StringWriter buffer = new StringWriter();
+        try {
+            writeTo(buffer);
         }
-        return text;
+        catch (IOException e) {
+            throw new StringWriterIOException(e);
+        }
+        return buffer.toString();
     }
 
     public void writeTo(Writer out) throws IOException {
