@@ -3070,4 +3070,39 @@ public class DefaultGroovyMethods {
     public static OutputStream getOut(Process self) {
         return self.getOutputStream();
     }
+
+    /**
+     * Wait for the process to finish during a certain amount of time, otherwise stops the process.
+     *
+     * @param self a Process
+     * @param numberOfMillis the number of milliseconds to wait before stopping the process
+     */
+    public static void waitForOrKill(final Process self, Number numberOfMillis) {
+        Thread thread = new Thread(new Runnable()
+        {
+            public void run() {
+                try {
+                    self.waitFor();
+                }
+                catch (InterruptedException e) {
+                }
+            }
+        });
+        thread.start();
+        try {
+            long increment = numberOfMillis.longValue() / 10;
+            long ellapsed = 0;
+            while (thread.isAlive() && ellapsed < numberOfMillis.longValue()) {
+                Thread.sleep(increment);
+                ellapsed += increment;
+            }
+        }
+        catch (InterruptedException e) {
+        }
+        if (thread.isAlive())
+        {
+            self.destroy();
+            thread.interrupt();
+        }
+    }
 }
