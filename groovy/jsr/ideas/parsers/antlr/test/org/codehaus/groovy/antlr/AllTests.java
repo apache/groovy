@@ -49,6 +49,7 @@ public class AllTests extends TestSuiteSupport {
         "ClosureWithStaticVariablesBug.groovy", // TODO: closure params
         "bugs/Bytecode4Bug.groovy",             // TODO: closure params
         "bugs/ForAndSqlBug.groovy",             // TODO: closure params
+        "bugs/VariblePrecedence.groovy",        // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 

@@ -13,7 +13,7 @@ class NestedClosureBug extends GroovyTestCase {
     	}
     }
     
-    getValues() {
+    def getValues() {
     	[5, 6, 7]
     }
 }
