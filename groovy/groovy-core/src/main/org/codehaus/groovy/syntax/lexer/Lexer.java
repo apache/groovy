@@ -157,12 +157,11 @@ public class Lexer
                                     case ( '\r' ):
                                     {
                                         consume();
-                                        
                                         if ( la() == '\n' )
                                         {
                                             consume();
                                         }
-                                    break CONSUME_LOOP;
+                                        break CONSUME_LOOP;
                                     }
                                     case ( '\n' ):
                                     {
@@ -188,7 +187,7 @@ public class Lexer
                                     case ( '*' ):
                                     {
                                         consume();
-                                        if ( la( 2 ) == '/' )
+                                        if ( la() == '/' )
                                         {
                                             consume();
                                             break CONSUME_LOOP;
