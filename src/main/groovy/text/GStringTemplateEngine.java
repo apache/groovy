@@ -93,7 +93,7 @@ public class GStringTemplateEngine extends TemplateEngine {
 		 * @throws IOException
 		 */
 		public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-			final StringBuffer templateExpressions = new StringBuffer("class C { getTemplate() { { |out| out << \"");
+			final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\nclass C { getTemplate() { { |out| out << \"");
 			boolean writingString = true;
        
 	        while(true) {
