@@ -341,6 +341,18 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Convert a collection to a List.
+     *
+     * @param self a collection
+     * @return a List
+     */
+    public static List toList(Collection self) {
+        List answer = new ArrayList(self.size());
+        answer.addAll(self);
+        return answer;
+    }
+
+    /**
      * Maps the values of an object (through an iterator) to new values using the closure as a filter.
      *
      * @param self the values of the object to map
@@ -2618,6 +2630,17 @@ public class DefaultGroovyMethods {
      */
     public static void withOutputStream(File file, Closure closure) throws IOException {
         withStream(newOutputStream(file), closure);
+    }
+
+    /**
+     * Helper method to create a new InputStream for a file and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param file a File
+     * @throws FileNotFoundException
+     */
+    public static void withInputStream(File file, Closure closure) throws IOException {
+        withStream(newInputStream(file), closure);
     }
 
     /**
