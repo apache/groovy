@@ -599,13 +599,19 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitTryCatchFinally(TryCatchStatement statement) {
         onLineNumber(statement);
 
+        
         CatchStatement catchStatement = statement.getCatchStatement(0);
 
+        Statement tryStatement = statement.getTryStatement();
+        if (tryStatement.isEmpty()) {
+            return;
+        }
+        
         if (catchStatement == null) {
             final Label l0 = new Label();
             cv.visitLabel(l0);
 
-            statement.getTryStatement().visit(this);
+            tryStatement.visit(this);
 
             int index1 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
             int index2 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
@@ -652,7 +658,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             final Label l0 = new Label();
             cv.visitLabel(l0);
 
-            statement.getTryStatement().visit(this);
+            tryStatement.visit(this);
 
             final Label l1 = new Label();
             cv.visitLabel(l1);

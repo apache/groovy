@@ -60,4 +60,8 @@ public class EmptyStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
     }
 
+    public boolean isEmpty() {
+        return true;
+    }
+
 }

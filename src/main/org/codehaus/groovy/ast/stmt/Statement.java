@@ -54,5 +54,9 @@ import org.codehaus.groovy.ast.ASTNode;
  * @version $Revision$
  */
 public class Statement extends ASTNode {
+
+    public boolean isEmpty() {
+        return false;
+    }
     
 }
