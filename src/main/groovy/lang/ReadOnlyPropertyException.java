@@ -47,49 +47,14 @@ package groovy.lang;
 
 
 /**
- * An exception occurred if a dynamic property dispatch fails with an unknown property.
- * 
- * Note that the Missing*Exception classes were named for consistency and
- * to avoid conflicts with JDK exceptions of the same name.
+ * This exception is thrown if an attempt is made to set a read only property
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MissingPropertyException extends GroovyRuntimeException {
+public class ReadOnlyPropertyException extends MissingPropertyException {
 
-    private String property;
-    private Class type;
-
-    public MissingPropertyException(String property, Class type) {
-        super("No such property: " + property + " for class: " + type.getName());
-        this.property = property;
-        this.type = type;
-    }
-
-    public MissingPropertyException(String property, Class type, Throwable e) {
-        super("No such property: " + property + " for class: " + type.getName() + ". Reason: " + e, e);
-        this.property = property;
-        this.type = type;
-    }
-
-    public MissingPropertyException(String message, String property, Class type) {
-        super(message);
-        this.property = property;
-        this.type = type;
-    }
-
-    /**
-     * @return the name of the property that could not be found
-     */
-    public String getProperty() {
-        return property;
-    }
-
-    /**
-     * 
-     * @return The type on which the property was attempted to be called
-     */
-    public Class getType() {
-        return type;
+    public ReadOnlyPropertyException(String property, Class type) {
+        super("Cannot set readonly property: " + property + " for class: " + type.getName(), property, type);
     }
 }
