@@ -1,4 +1,4 @@
-package groovy.tree;
+
 
 /**
  * Test case for a bug with nested closures
@@ -16,6 +16,6 @@ class NestedClosureBugTest extends GroovyTestCase {
             })
         })
 
-        System.out.println(root)
+		root.println()
     }
 }

@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests Closures in Groovy
  * 
@@ -21,7 +17,6 @@ class ClosureReturnTest extends GroovyTestCase {
     }
 	
 
-/** @todo
     void testReturnValueUsingFunction() {
         block = {x| return someFunction(x) }
         
@@ -35,5 +30,4 @@ class ClosureReturnTest extends GroovyTestCase {
     someFunction(x) {
         return x > 5
     }
-*/
 }

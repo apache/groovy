@@ -45,9 +45,6 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerException;
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 /**
  * Represents a dynamic text expression with embedded values
  * 

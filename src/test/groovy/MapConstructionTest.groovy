@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests creating Maps in Groovy
  * 
@@ -11,49 +7,52 @@ package groovy;
 class MapConstructionTest extends GroovyTestCase {
 
     void testMap() {
-        m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ];
+        m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
 
-        System.err.println( m );
+        m.println()
 
-        mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ];
+        mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ]
 
-        System.err.println( mtoo );
+        mtoo.println()
 
-        assertMap(m);
+        assertMap(m)
+    }
+
+    testMapAsParameter() {
+        assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ])
     }
 
     /** @todo parser
-    testMapAsParameter() {
-        assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]);
-    }
-
     testMapViaHashMap() {
-        m = new HashMap();
-        m.put(1, 'abc');
-        m.put(2, 'def');
-        m.put(3, 'xyz');
-        assertMap(m);
+        m = new HashMap()
+        m.put(1, 'abc')
+        m.put(2, 'def')
+        m.put(3, 'xyz')
+        assertMap(m)
     }
 
 
     */
     
     assertMap(m) {
-        //assert m instanceof Map;
         /** @todo parser
-        assertEquals( "java.util.HashMap", m.getClass().getName() );
-
-        result = 0;
-        text = "";
+        assert m instanceof Map
+        */
+        assert m.getClass().getName() := "java.util.HashMap"
+        
+        result = 0
+        text = ""
         for e in m {
-            result += e.key;
-            text += e.value;
+            result = result + e.key
+            text = text + e.value
         }
-        assertEquals(result, 6);
-        assertEquals(text, "abcdefxyz");
-*/
+        assert result := 6
+        assert text := "abcdefxyz"
 	    
-        assertEquals(m.size(), 3);
-        // assertEquals(s[2], 'def');
+        assert m.size() := 3
+
+        /** @todo parser
+        assert s[2] := 'def'
+         */
     }
 }

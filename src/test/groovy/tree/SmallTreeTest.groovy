@@ -1,4 +1,4 @@
-package groovy.tree;
+
 
 class SmallTreeTest extends GroovyTestCase {
     
@@ -13,6 +13,6 @@ class SmallTreeTest extends GroovyTestCase {
         
         //assert root != null
         
-        root.print();
+        root.print()
     }
 }

@@ -1,7 +1,3 @@
-package groovy
-
-
-
 class IfElseTest extends GroovyTestCase {
 
     void testIf_NoElse() {

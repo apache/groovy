@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests the use of returns in Groovy
  * 

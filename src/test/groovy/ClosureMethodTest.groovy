@@ -1,5 +1,3 @@
-package groovy;
-
 /** 
  * Tests the various Closure methods in Groovy
  * 
@@ -8,7 +6,7 @@ package groovy;
  */
 class ClosureMethodTest extends GroovyTestCase {
 
-	property count;
+	property count
 
     void testListCollect() {
         list = [1, 2, 3, 4]
@@ -22,7 +20,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testMapCollect() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.collect( { e | return e.key + e.value } );
+        answer = map.collect( { e | return e.key + e.value } )
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -57,7 +55,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testListSelect() {
         list = [20, 5, 40, 2]
-        answer = list.select( { item | return item < 10 } );
+        answer = list.select( { item | return item < 10 } )
 
         assert answer.size() := 2
         assert answer := [5, 2]
@@ -78,7 +76,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testListEach() {
-        count = 0;
+        count = 0
 
         list = [1, 2, 3, 4]
         list.each({ item | count = count + item })
@@ -87,7 +85,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testMapEach() {
-        count = 0;
+        count = 0
 
         map = [1:2, 2:4, 3:6, 4:8]
         map.each({ e | count = count + e.value })

@@ -1,4 +1,3 @@
-
 package cheese;
 
 import java.util.HashMap as Goober;

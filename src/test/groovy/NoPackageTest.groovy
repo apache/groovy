@@ -1,9 +1,8 @@
-
 class NoPackageTest
 	extends GroovyTestCase
 {
     void testClassDef()
     {
-        assert getClass().equals( Class.forName( "NoPackageTest" ) );
+        assert getClass().name := "NoPackageTest"
     }
 }
