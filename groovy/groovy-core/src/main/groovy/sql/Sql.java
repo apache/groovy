@@ -75,6 +75,8 @@ public class Sql {
     /** lets only warn of using deprecated methods once */
     private boolean warned;
 
+// store the last row count for executeUpdate
+    int updateCount = 0;
     /**
      * A helper method which creates a new Sql instance from a JDBC connection URL
      * 
@@ -364,7 +366,9 @@ public class Sql {
         try {
             log.fine(sql);
             statement = connection.createStatement();
-            return statement.execute(sql);
+            boolean isResultSet = statement.execute(sql);
+            this.updateCount = statement.getUpdateCount();
+            return isResultSet;
         }
         catch (SQLException e) {
             log.log(Level.WARNING, "Failed to execute: " + sql, e);
@@ -386,7 +390,8 @@ public class Sql {
         try {
             log.fine(sql);
             statement = connection.createStatement();
-            return statement.executeUpdate(sql);
+            this.updateCount = statement.executeUpdate(sql);
+            return this.updateCount;
         }
         catch (SQLException e) {
             log.log(Level.WARNING, "Failed to execute: " + sql, e);
@@ -407,7 +412,9 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
-            return statement.execute();
+            boolean isResultSet = statement.execute(); 
+            this.updateCount = statement.getUpdateCount();
+            return isResultSet;
         }
         catch (SQLException e) {
             log.log(Level.WARNING, "Failed to execute: " + sql, e);
@@ -430,7 +437,8 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
-            return statement.executeUpdate();
+            this.updateCount = statement.executeUpdate();
+            return this.updateCount;
         }
         catch (SQLException e) {
             log.log(Level.WARNING, "Failed to execute: " + sql, e);
@@ -718,5 +726,26 @@ public class Sql {
             warned = true;
             log.warning("queryEach() is deprecated, please use eachRow() instead");
         }
+    }
+    
+    public void commit() {
+    	try {
+			this.useConnection.commit();
+		} catch (SQLException e) {
+			log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
+		}
+    }
+    public void rollback() {
+    	try {
+			this.useConnection.rollback();
+		} catch (SQLException e) {
+			log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
+		}
+    }
+    /**
+     * @return Returns the updateCount.
+     */
+    public int getUpdateCount() {
+    	return updateCount;
     }
 }
