@@ -87,7 +87,7 @@ public class ModuleNode extends ASTNode implements Constants {
     private String packageName;
     private String description;
     private boolean createClassForStatements = true;
-    private SourceUnit context;
+    private transient SourceUnit context;
 
 
     public ModuleNode( SourceUnit context ) {
