@@ -80,6 +80,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
 /**
@@ -106,7 +107,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
         this.classNode = node;
 
         addDefaultParameterMethods(node);
-        
+
         if (!node.isDerivedFromGroovyObject()) {
             node.addInterface(GroovyObject.class.getName());
 
@@ -321,31 +322,72 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
     // Implementation methods
     //-------------------------------------------------------------------------
-    
+
+    /**
+     * Creates a new helper method for each combination of default parameter expressions 
+     */
     protected void addDefaultParameterMethods(ClassNode node) {
-        /*
-        for (Iterator iter = node.getMethods().iterator(); iter.hasNext(); ) {
+        List methods = new ArrayList(node.getMethods());
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             Parameter[] parameters = method.getParameters();
             int size = parameters.length;
-            for (int i = 0; i < size; i++ ) {
+            for (int i = 0; i < size; i++) {
                 Parameter parameter = parameters[i];
                 Expression exp = parameter.getDefaultValue();
                 if (exp != null) {
-                    // lets create a method using this expression
-                    Parameter[] newParams = new Parameter[i];
-                    System.arraycopy(parameters, 0, newParams, 0, i);
-                    
-                    MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName()), )
-                    node.addMethod(method.getName(), method.getReturnType(), newParams, )
-                    System.out.println("Creating defaultParam method for param: " + parameter);
+                    addDefaultParameterMethod(node, method, parameters, i);
                 }
             }
         }
-        */
     }
 
-    
+    /**
+     * Adds a new method which defaults the values for all the parameters starting 
+     * from and including the given index
+     * 
+     * @param node the class to add the method
+     * @param method the given method to add a helper of
+     * @param parameters the parameters of the method to add a helper for
+     * @param index the index of the first default value expression parameter to use
+     */
+    protected void addDefaultParameterMethod(ClassNode node, MethodNode method, Parameter[] parameters, int index) {
+        // lets create a method using this expression
+        Parameter[] newParams = new Parameter[index];
+        System.arraycopy(parameters, 0, newParams, 0, index);
+
+        ArgumentListExpression arguments = new ArgumentListExpression();
+        int size = parameters.length;
+        for (int i = 0; i < size; i++) {
+            if (i < index) {
+                arguments.addExpression(new VariableExpression(parameters[i].getName()));
+            }
+            else {
+                Expression defaultValue = parameters[i].getDefaultValue();
+                if (defaultValue == null) {
+                    throw new RuntimeParserException(
+                        "The " + parameters[i].getName() + " parameter must have a default value",
+                        method);
+                }
+                else {
+                    arguments.addExpression(defaultValue);
+                }
+            }
+        }
+
+        MethodCallExpression expression =
+            new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+        Statement code = null;
+        if (method.isVoidMethod()) {
+            code = new ExpressionStatement(expression);
+            }
+        else {
+            code = new ReturnStatement(expression);
+        }
+
+        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
+    }
+
     protected void addClosureCode(InnerClassNode node) {
         // add a new invoke
     }
