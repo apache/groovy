@@ -40,9 +40,24 @@ class CastTest extends GroovyTestCase {
  
         assert b.class == Short : "Type is ${b.class}"
     }
-
+    
+    void testCharCast() {
+        c = (Character) 'x'
+        
+        assert c instanceof Character
+    }
+    
     void methodWithShort(Short s) {
         println("Called with ${s} with type ${s.class}")
         assert s.class == Short
+    }
+    
+    void methodWithChar(Character x) {
+        println("Called with ${x} with type ${s.class}")
+        
+        text = "text"
+        idx = text.indexOf(x)
+        
+        assert idx == 2
     }
 }
