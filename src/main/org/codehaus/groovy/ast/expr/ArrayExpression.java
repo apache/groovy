@@ -96,9 +96,8 @@ public class ArrayExpression extends Expression {
      * Creates an empty array of a certain size
      */
     public ArrayExpression(String type, Expression sizeExpression) {
-        String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-        this.elementType = boxedType;
-        setSuperType(boxedType);
+        if (!type.endsWith("[]")) type += "[]";
+        this.elementType = type;        
         this.sizeExpression = sizeExpression;
         this.expressions = Collections.EMPTY_LIST;
     }
@@ -129,9 +128,6 @@ public class ArrayExpression extends Expression {
     }
 
     public String getElementType() {
-        if (BytecodeHelper.isPrimitiveType(elementType)) { 
-            return BytecodeHelper.getObjectTypeForPrimitive(elementType);
-        }
         return elementType;
     }
     

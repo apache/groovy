@@ -3203,85 +3203,70 @@ public class AsmClassGenerator extends ClassGenerator {
         if (type!=null && type.endsWith("[]")) type = type.substring(0,type.length()-2);
         String typeName = BytecodeHelper.getClassInternalName(type);        
         Expression sizeExpression = expression.getSizeExpression();
+
+        int size=0;
         if (sizeExpression != null) {
             // lets convert to an int
             visitAndAutoboxBoolean(sizeExpression);
             asIntMethod.call(cv);
+        } else {
+            size = expression.getExpressions().size();
+            helper.pushConstant(size);
+        }
 
+        int storeIns=AASTORE;
+        if (BytecodeHelper.isPrimitiveType(type)) {
+            int primType=0;
+            if (type.equals("boolean")) {
+                primType = T_BOOLEAN;
+                storeIns = BASTORE;
+            } else if (type.equals("char")) {
+                primType = T_CHAR;
+                storeIns = CASTORE;
+            } else if (type.equals("float")) {
+                primType = T_FLOAT;
+                storeIns = FASTORE;
+            } else if (type.equals("double")) {
+                primType = T_DOUBLE;
+                storeIns = DASTORE;
+            } else if (type.equals("byte")) {
+                primType = T_BYTE;
+                storeIns = BASTORE;
+            } else if (type.equals("short")) {
+                primType = T_SHORT;
+                storeIns = SASTORE;
+            } else if (type.equals("int")) {
+                primType = T_INT;
+                storeIns=IASTORE;
+            } else if (type.equals("long")) {
+                primType = T_LONG;
+                storeIns = LASTORE;
+            } 
+            cv.visitIntInsn(NEWARRAY, primType);
+        } else {
             cv.visitTypeInsn(ANEWARRAY, typeName);
         }
-        else {
-            int size = expression.getExpressions().size();
-            helper.pushConstant(size);
 
-            if (BytecodeHelper.isPrimitiveType(type)) {
-                int primType=0;
-                if (type.equals("boolean")) {
-                    primType = T_BOOLEAN;
-                } else if (type.equals("char")) {
-                    primType = T_CHAR;
-                } else if (type.equals("float")) {
-                    primType = T_FLOAT;
-                } else if (type.equals("double")) {
-                    primType = T_DOUBLE;
-                } else if (type.equals("byte")) {
-                    primType = T_BYTE;
-                } else if (type.equals("short")) {
-                    primType = T_SHORT;
-                } else if (type.equals("int")) {
-                    primType = T_INT;
-                } else if (type.equals("long")) {
-                    primType = T_LONG;
-                }
-                cv.visitIntInsn(NEWARRAY, primType);
+        for (int i = 0; i < size; i++) {
+            cv.visitInsn(DUP);
+            helper.pushConstant(i);
+            Expression elementExpression = expression.getExpression(i);
+            if (elementExpression == null) {
+                ConstantExpression.NULL.visit(this);
             } else {
-                cv.visitTypeInsn(ANEWARRAY, typeName);
-            }
-
-            for (int i = 0; i < size; i++) {
-                cv.visitInsn(DUP);
-                helper.pushConstant(i);
-                Expression elementExpression = expression.getExpression(i);
-                if (elementExpression == null) {
-                    ConstantExpression.NULL.visit(this);
-                }
-                else {
-                    if(!type.equals(elementExpression.getClass().getName())) {
-                        visitCastExpression(new CastExpression(type, elementExpression, true));
-                    } else {
-                        visitAndAutoboxBoolean(elementExpression);
-                    }
-                }
-                if (type.equals("int")) {
-                    cv.visitInsn(IASTORE);
-                }
-                else if (type.equals("long")) {
-                    cv.visitInsn(LASTORE);
-                }
-                else if (type.equals("short")) {
-                    cv.visitInsn(SASTORE);
-                }
-                else if (type.equals("float")) {
-                    cv.visitInsn(FASTORE);
-                }
-                else if (type.equals("double")) {
-                    cv.visitInsn(DASTORE);
-                }
-                else if (type.equals("byte") || type.equals("boolean")) {
-                    cv.visitInsn(BASTORE);
-                }
-                else if (type.equals("char")) {
-                    cv.visitInsn(CASTORE);
-                }
-                else {
-                    cv.visitInsn(AASTORE);
+                if (!type.equals(elementExpression.getClass().getName())) {
+                    visitCastExpression(new CastExpression(type, elementExpression, true));
+                } else {
+                    visitAndAutoboxBoolean(elementExpression);
                 }
             }
-            if (BytecodeHelper.isPrimitiveType(type)) {
-                int par = defineVariable("par","java.lang.Object").getIndex();
-                cv.visitVarInsn(ASTORE, par);
-                cv.visitVarInsn(ALOAD, par);
-            }
+            cv.visitInsn(storeIns);            
+        }
+        
+        if (BytecodeHelper.isPrimitiveType(type)) {
+            int par = defineVariable("par","java.lang.Object").getIndex();
+            cv.visitVarInsn(ASTORE, par);
+            cv.visitVarInsn(ALOAD, par);
         }
     }
 
