@@ -295,7 +295,7 @@ public class Parser
 
         return interfaceDeclaration;
     }
-
+    
     public CSTNode bodyStatement()
         throws IOException, SyntaxException
     {
@@ -327,19 +327,35 @@ public class Parser
         if (lt_bare() == Token.IDENTIFIER) 
         {
             // could be method name or could be part of datatype
-            if ( lt_bare( 2 ) == Token.DOT )
-            {
-                // has datatype
-                type = datatype();
-            }
-            else if ( lt_bare( 2 ) == Token.IDENTIFIER ) 
-            {
-                type = new CSTNode(consume_bare(lt()));
+            switch ( lt_bare( 2 ) ) {
+            	case Token.DOT:
+                {
+            		// has datatype
+            		type = datatype();
+            		break;
+            	}
+            	case ( Token.IDENTIFIER ):
+            	{
+            		type = new CSTNode(consume_bare(lt()));
+            		break;
+            	}
             }
         }
-        else if (lt_bare() == Token.KEYWORD_VOID)
-        {
-            type = new CSTNode(consume_bare(Token.KEYWORD_VOID));
+        else {
+        	switch( lt_bare() ) {
+        		case ( Token.KEYWORD_VOID ):
+        		case ( Token.KEYWORD_INT ):
+        		case ( Token.KEYWORD_FLOAT ):
+        		case ( Token.KEYWORD_DOUBLE ):
+        		case ( Token.KEYWORD_CHAR ):
+        		case ( Token.KEYWORD_BYTE ):
+        		case ( Token.KEYWORD_SHORT ):
+        		case ( Token.KEYWORD_LONG ):
+        		case ( Token.KEYWORD_BOOLEAN ):
+        		{
+        			type = new CSTNode(consume_bare(lt_bare()));
+        		}
+        	}
         }
         
         // lets consume the identifier
@@ -517,9 +533,15 @@ public class Parser
 
         switch ( lt() )
         {
-            case( Token.KEYWORD_VOID ):
-            case( Token.KEYWORD_INT ):
-            case( Token.KEYWORD_FLOAT ):
+            case ( Token.KEYWORD_VOID ):
+            case ( Token.KEYWORD_INT ):
+            case ( Token.KEYWORD_FLOAT ):
+            case ( Token.KEYWORD_DOUBLE ):
+            case ( Token.KEYWORD_CHAR ):
+            case ( Token.KEYWORD_BYTE ):
+            case ( Token.KEYWORD_SHORT ):
+            case ( Token.KEYWORD_LONG ):
+            case ( Token.KEYWORD_BOOLEAN ):
             {
                 datatype = rootNode( lt() );
                 break;

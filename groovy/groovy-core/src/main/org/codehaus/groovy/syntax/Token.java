@@ -249,7 +249,13 @@ public class Token
     public static final int KEYWORD_VOID = 543;
     public static final int KEYWORD_INT = 544;
     public static final int KEYWORD_FLOAT = 545;
-
+    public static final int KEYWORD_DOUBLE = 546;
+    public static final int KEYWORD_CHAR = 547;
+    public static final int KEYWORD_BYTE = 548;
+    public static final int KEYWORD_LONG = 549;
+    public static final int KEYWORD_SHORT = 550;
+    public static final int KEYWORD_BOOLEAN = 551;
+    
     public static final int SYNTH_METHOD = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
     public static final int SYNTH_LIST = 802;
@@ -364,7 +370,19 @@ public class Token
                     KEYWORD_INT );
         addKeyword( "float",
                     KEYWORD_FLOAT );
-    }
+        addKeyword( "double",
+                    KEYWORD_DOUBLE );
+        addKeyword( "short",
+                    KEYWORD_SHORT );
+        addKeyword( "boolean",
+                    KEYWORD_BOOLEAN );
+        addKeyword( "char",
+                    KEYWORD_CHAR );
+        addKeyword( "byte",
+                    KEYWORD_BYTE );
+        addKeyword( "long",
+                    KEYWORD_LONG );
+        }
 
     private static final Map TOKEN_DESCRIPTIONS = new HashMap();
 
@@ -515,7 +533,9 @@ public class Token
                              "<number>" );
         addTokenDescription( FLOAT_NUMBER,
                              "<number>" );
-    }
+        addTokenDescription( INTEGER_NUMBER,
+                             "<number>" );
+        }
 
     // ----------------------------------------------------------------------
     //     Instance members

@@ -748,39 +748,45 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         //return is based on class type
         //TODO: make work with arrays
-        if (c == Boolean.class) {
-            Label l0 = new Label();
-            cv.visitJumpInsn(IFEQ, l0);
-            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-            cv.visitInsn(ARETURN);
-            cv.visitLabel(l0);
-            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-            cv.visitInsn(ARETURN);
+        // we may need to cast
+        String returnType = methodNode.getReturnType();
+        if (returnType.equals("double")) {
+        	MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
+        	cv.visitInsn(DRETURN);
+        } else if (returnType.equals("float")) {
+        	MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
+        	cv.visitInsn(D2F);
+        	cv.visitInsn(FRETURN);
+        } else if (returnType.equals("long")) {
+        	MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
+        	cv.visitInsn(I2L);
+        	cv.visitInsn(LRETURN);
+        } else if (returnType.equals("boolean")) {
+        	MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
+        	cv.visitInsn(IRETURN);
+        } else if (returnType.equals("char") ||
+        		   returnType.equals("byte") ||
+        		   returnType.equals("int") ||
+        		   returnType.equals("short")) { //byte,short,boolean,int are all IRETURN
+          	MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
+            cv.visitInsn(IRETURN);
+        } else {
+        	if (c == Boolean.class) {
+        		Label l0 = new Label();
+        		cv.visitJumpInsn(IFEQ, l0);
+        		cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+        		cv.visitInsn(ARETURN);
+        		cv.visitLabel(l0);
+        		cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+        		cv.visitInsn(ARETURN);
+        	} else {
+        		if (returnType != null && !returnType.equals("java.lang.Object") && !returnType.equals(c.getName())) {
+        			doCast(returnType);
+        		}
+        		cv.visitInsn(ARETURN);
+        	}
         }
-        else if (!c.isPrimitive()) {
 
-            // we may need to cast
-            String returnType = methodNode.getReturnType();
-            if (returnType != null && !returnType.equals("java.lang.Object")) {
-                doCast(returnType);
-            }
-
-            cv.visitInsn(ARETURN);
-        }
-        else {
-            if (c == double.class) {
-                cv.visitInsn(DRETURN);
-            }
-            else if (c == float.class) {
-                cv.visitInsn(FRETURN);
-            }
-            else if (c == long.class) {
-                cv.visitInsn(LRETURN);
-            }
-            else { //byte,short,boolean,int are all IRETURN
-                cv.visitInsn(IRETURN);
-            }
-        }
         outputReturn = true;
     }
 
@@ -2245,23 +2251,36 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (name.equals("void")) {
             return "V";
         }
+        if (name.equals("int")) {
+        	return "I";
+        }
+        if (name.equals("long")) {
+        	return "J";
+        }
+        if (name.equals("short")) {
+        	return "S";
+        }
+        if (name.equals("float")) {
+        	return "F";
+        }
+        if (name.equals("double")) {
+        	return "D";
+        }
+        if (name.equals("byte")) {
+        	return "B";
+        }
+        if (name.equals("char")) {
+        	return "C";
+        }
+        if (name.equals("boolean")) {
+        	return "Z";
+        }
         String prefix = "";
         if (name.endsWith("[]")) {
             prefix = "[";
             name = name.substring(0, name.length() - 2);
         }
         return prefix + "L" + name.replace('.', '/') + ";";
-    }
-
-    /**
-     * @return the ASM type for the given class name
-     */
-    protected Type getType(String className) {
-        if (className.equals("void")) {
-            return Type.VOID_TYPE;
-        }
-        return Type.getType(loadClass(className));
-        //return Type.getType(className);
     }
 
     /**
