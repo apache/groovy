@@ -325,6 +325,12 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 			return this.name;
 		} else if ("children".equals(name)) {
 			return this.children;
+		} else if ("contents".equals(name)) {
+			return new Buildable() {
+				public void build(GroovyObject builder) {
+					buildChildren(builder);
+				}
+			};
 		} else if ("text".equals(name)) {
 		final StringBuffer buff = new StringBuffer();
 
@@ -391,14 +397,7 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 		// TODO handle Namespaces
 	final Closure rest = new Closure(null) {
 		public Object doCall(final Object o) {
-			for (int i = 0; i != XmlList.this.children.length; i++) {
-				if (XmlList.this.children[i] instanceof Buildable) {
-					((Buildable)XmlList.this.children[i]).build(builder);
-				} else {
-					builder.getProperty("mkp");
-					builder.invokeMethod("yield", new Object[]{XmlList.this.children[i]});
-				}
-			}
+			buildChildren(builder);
 			
 			return null;
 		}
@@ -406,6 +405,17 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 
 		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
 		
+	}
+	
+	private void buildChildren(final GroovyObject builder) {
+		for (int i = 0; i != this.children.length; i++) {
+			if (this.children[i] instanceof Buildable) {
+				((Buildable)this.children[i]).build(builder);
+			} else {
+				builder.getProperty("mkp");
+				builder.invokeMethod("yield", new Object[]{this.children[i]});
+			}
+		}
 	}
 
     	protected int getNextXmlElement(final String name, final int lastFound) {
@@ -434,14 +444,14 @@ abstract class ElementIterator implements Iterator {
 	}
 	
 	/* (non-Javadoc)
-	 * @see java.util.Enumeration#hasMoreElements()
-	*/
+	 * @see java.util.Iterator#hasNext()
+	 */
 	public boolean hasNext() {
 		return this.nextParentElements[0] != -1;
 	}
 	
 	/* (non-Javadoc)
-	 * @see java.util.Enumeration#nextElement()
+	 * @see java.util.Iterator#next()
 	 */
 	public Object next() {
 	final Object result = this.parents[0].children[this.nextParentElements[0]];
@@ -543,7 +553,7 @@ class ComplexElementCollection extends ElementCollection {
 		System.arraycopy(parentElementNames, 0, this.parentElementNames, 1, parentElementNames.length);
 		
 		//
-		// Use the iterator to get the index of the first elemeny
+		// Use the iterator to get the index of the first element
 		//
 		
 		final ElementIterator iter = this.iterator();
