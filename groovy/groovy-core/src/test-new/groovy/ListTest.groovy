@@ -32,14 +32,14 @@ class ListTest extends GroovyTestCase {
             // ignore
         }
         else {
-            assert false : "x should contain cheese!"
+            assert false , "x should contain cheese!"
         }
 		
         if ( x.contains(10) ) {
             // ignore
         }
         else {
-            assert false : "x should contain 1!"
+            assert false , "x should contain 1!"
         }
     }
     

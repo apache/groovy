@@ -17,7 +17,7 @@ class XmlSlurperTest extends GroovyTestCase {
         node = new XmlSlurper().parseText(text);
         
         assert node != null
-        assert node.children().size() == 2 : "Children ${node.children()}"
+        assert node.children().size() == 2 , "Children ${node.children()}"
         
         characters = node.character
         
@@ -27,11 +27,11 @@ class XmlSlurperTest extends GroovyTestCase {
         
         assert characters.size() == 2
         
-        assert node.character.likes.size() == 2 : "Likes ${node.character.likes}"
+        assert node.character.likes.size() == 2 , "Likes ${node.character.likes}"
         
         // lets find Gromit
         gromit = node.character.find { it['@id'] == '2' }
-        assert gromit != null : "Should have found Gromit!"
+        assert gromit != null , "Should have found Gromit!"
         assert gromit['@name'] == "Gromit"
         
         

@@ -14,8 +14,8 @@ class TryCatchTest extends GroovyTestCase {
             onFinally()
         }
         afterTryCatch()
-        assert exceptionCalled : "should have invoked the catch clause"        
-        assert finallyCalled : "should have invoked the finally clause"
+        assert exceptionCalled , "should have invoked the catch clause"
+        assert finallyCalled , "should have invoked the finally clause"
         println("After try/catch")
      }
 
@@ -29,14 +29,14 @@ class TryCatchTest extends GroovyTestCase {
              touched = true;
          }
 
-         assert touched : "finally not called with empty try"
+         assert touched , "finally not called with empty try"
      }
 
 
 
      void testWorkingMethod() {
          /** @todo causes inconsistent stack height
-          assert exceptionCalled == false : "should not invoked the catch clause"        
+          assert exceptionCalled == false , "should not invoked the catch clause"
           */
          
          try {
@@ -48,17 +48,17 @@ class TryCatchTest extends GroovyTestCase {
 	     finally {
 		     onFinally()
 	     }
-	     assert exceptionCalled == false : "should not invoked the catch clause"        
-	     assert finallyCalled : "should have invoked the finally clause"
+	     assert exceptionCalled == false , "should not invoked the catch clause"
+	     assert finallyCalled , "should have invoked the finally clause"
 	     println("After try/catch")
     }
     
     void failingMethod() {
-        assert false : "Failing on purpose"
+        assert false , "Failing on purpose"
 	}
 	
     void workingMethod() {
-        assert true : "Should never fail"
+        assert true , "Should never fail"
     }
     
     void onException(e) {
@@ -71,8 +71,8 @@ class TryCatchTest extends GroovyTestCase {
 	}
 
     void afterTryCatch() {
-        assert exceptionCalled : "should have invoked the catch clause"        
-        assert finallyCalled : "should have invoked the finally clause"
+        assert exceptionCalled , "should have invoked the catch clause"        
+        assert finallyCalled , "should have invoked the finally clause"
         println("After try/catch")
     }
     

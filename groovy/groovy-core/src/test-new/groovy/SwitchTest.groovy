@@ -49,7 +49,7 @@ class SwitchTest extends GroovyTestCase {
         }
         println("Found result ${result}")
         
-        assert result == expected : "when calling switch with ${x}"
+        assert result == expected , "when calling switch with ${x}"
     }
 
     // test the continue in switch, which should jump to the the while start

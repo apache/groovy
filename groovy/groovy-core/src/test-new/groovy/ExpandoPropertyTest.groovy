@@ -22,7 +22,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
 
         assert foo.cheese == "Cheddar"
         assert foo.fullName == "Gromit"
-        assert foo.nameLength() == 6 : foo.nameLength()
+        assert foo.nameLength() == 6 , foo.nameLength()
         assert foo.multiParam(1, 2, 3) == 6
         
         // lets test using wrong number of parameters

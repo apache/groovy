@@ -64,11 +64,11 @@ class GStringTest extends GroovyTestCase {
 
         println("Created ${c}")
         
-        assert c.toString() == "a dog cat" : c
+        assert c.toString() == "a dog cat" , c
         
         b += " cat"
         
-        assert b.toString() == "a dog cat" : b
+        assert b.toString() == "a dog cat" , b
     }
     
     void testAppendGString() {
@@ -76,7 +76,7 @@ class GStringTest extends GroovyTestCase {
         b = "a ${a}" 
         b += " cat${a}"
         
-        assert b.toString() == "a dog catdog" : b
+        assert b.toString() == "a dog catdog" , b
         
         println("Created ${b}")
     }

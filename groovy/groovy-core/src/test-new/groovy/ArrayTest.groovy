@@ -18,7 +18,7 @@ class ArrayTest extends GroovyTestCase {
         println "Created array ${array.inspect()} with type ${array.class}"
         
         assert array.size() == 3
-        assert array[0] == "nice" : array.inspect()
+        assert array[0] == "nice" , array.inspect()
         assert array[1] == "cheese"
         assert array[2] == "gromit"
     }
@@ -34,7 +34,7 @@ class ArrayTest extends GroovyTestCase {
         println "Created array ${array.inspect()} with type ${array.class}"
         
         assert array.size() == 3
-        assert array[0] == 'a' : array.inspect()
+        assert array[0] == 'a' , array.inspect()
         assert array[1] == 'b'
         assert array[2] == 'c'
     }
@@ -50,7 +50,7 @@ class ArrayTest extends GroovyTestCase {
         println "Created array ${array.inspect()} with type ${array.class}"
         
         assert array.size() == 4
-        assert array[0] == 0 : array.inspect()
+        assert array[0] == 0 , array.inspect()
         assert array[1] == 1
         assert array[2] == 2
         assert array[3] == 3
@@ -85,7 +85,7 @@ class ArrayTest extends GroovyTestCase {
         println "Created array ${array.inspect()} with type ${array.class}"
         
         assert array.size() == 3
-        assert array[0] == 1.3 : array.inspect()
+        assert array[0] == 1.3 , array.inspect()
         assert array[1] == 3.14
         assert array[2] == 2.7
     }		
@@ -103,7 +103,7 @@ class ArrayTest extends GroovyTestCase {
         println "Created array ${array.inspect()} with type ${array.class}"
         
         assert array.size() == 3
-        assert array[0] == 42 : array.inspect()
+        assert array[0] == 42 , array.inspect()
         assert array[1] == -5
         assert array[2] == 360
     }

@@ -8,7 +8,7 @@ class LoopBreakTest extends GroovyTestCase {
             }
             x++
             
-            assert x < 10 : "Should never get here"
+            assert x < 10 , "Should never get here"
         }
         
         println "worked: while completed with value ${x}"
@@ -25,7 +25,7 @@ class LoopBreakTest extends GroovyTestCase {
             }
             x++
             
-            assert x < 10 : "Should never get here"
+            assert x < 10 , "Should never get here"
         }
     	while (true)
         
@@ -39,7 +39,7 @@ class LoopBreakTest extends GroovyTestCase {
             if (x == 5) {
                 break
             }
-            assert x < 10 : "Should never get here"
+            assert x < 10 , "Should never get here"
         }
         
         println "worked: for loop completed with value ${x}"

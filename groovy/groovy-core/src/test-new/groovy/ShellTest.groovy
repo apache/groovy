@@ -14,7 +14,7 @@ EOF, "Dummy1.groovy")
 
         
         assert value == 2
-        assert shell.foo == 2 : "Value is now ${shell.foo}"
+        assert shell.foo == 2 , "Value is now ${shell.foo}"
 	}
     
     void testDefineNewVariable() {
@@ -28,6 +28,6 @@ EOF2, "Dummy2.groovy")
 
         
         assert value == 3
-        assert shell.bar == 3 : "Value is now ${shell.bar}"
+        assert shell.bar == 3 , "Value is now ${shell.bar}"
     }
 }

@@ -79,18 +79,18 @@ class IntegerOperationTest extends GroovyTestCase {
     
     void testDivide() {
         x = 80 / 4
-        assert x == 20.0 : "x = " + x
+        assert x == 20.0 , "x = " + x
         
         y = x / 2
-        assert y == 10.0 : "y = " + y        
+        assert y == 10.0 , "y = " + y
     }
     
     void testIntegerDivide() {
         x = 52 \ 3
-        assert x == 17 : "x = " + x
+        assert x == 17 , "x = " + x
         
         y = x \ 2
-        assert y == 8 : "y = " + y 
+        assert y == 8 , "y = " + y 
         
         y = 11
         y \= 3
