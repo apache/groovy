@@ -1,3 +1,26 @@
-<project default="jar:jar">
+<project default="jar:jar" xmlns:j="jelly:core">
+
+  <goal name="setclasspath" prereqs="java:compile, test:compile">
+	<path id="test.classpath">
+	    <pathelement path="${maven.build.dest}"/>
+	    <pathelement path="target/classes"/>
+	    <pathelement path="target/test-classes"/>
+	    <path refid="maven.dependency.classpath"/>
+	</path>
+  </goal>
+
+    <goal name="asm:dump" prereqs="setclasspath"
+		description="Dumps the ASM instructions to generate the given class using the name property">
+
+		<j:if test="${empty(name)}">
+			<j:set var="name" value="org.codehaus.groovy.classgen.DumpClass"/>
+		</j:if>
+		
+		<echo>Dumping class $$name = ${name}</echo>
+        <java classname="org.objectweb.asm.util.DumpClassVisitor" fork="yes">
+            <classpath refid="test.classpath"/>
+            <arg value="${name}"/>
+        </java>
+  </goal>
 
 </project>
