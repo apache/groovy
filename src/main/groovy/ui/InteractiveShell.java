@@ -466,7 +466,7 @@ public class InteractiveShell {
      * Displays the current binding used when instanciating the shell.
      */
     private void displayBinding() {
-        out.println("Avaialble variables in the current binding");
+        out.println("Available variables in the current binding");
         Binding context = shell.getContext();
         Map variables = context.getVariables();
         Set set = variables.keySet();
