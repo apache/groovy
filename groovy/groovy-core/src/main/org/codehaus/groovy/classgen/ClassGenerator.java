@@ -197,7 +197,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
     
     // current stack index
-    private int idx;
+    private int lastVariableIndex;
     private static int tempVariableNameCounter;
     
     // exception blocks list
@@ -1642,7 +1642,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 }
                 String type = variable.getTypeName();
                 int index = variable.getIndex();
-                //lastVariableIndex = index;
                 boolean holder = variable.isHolder() && !passingClosureParams;
 
                 if (leftHandExpression) {
@@ -2705,7 +2704,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void resetVariableStack(Parameter[] parameters) {
-        idx = 0;
+        lastVariableIndex = -1;
         variableStack.clear();
         
         scope = null;
@@ -2730,7 +2729,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void popScope() {
-        /*
         int lastID = scope.getLastVariableIndex();
         
         List removeKeys = new ArrayList();
@@ -2745,7 +2743,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (Iterator iter = removeKeys.iterator(); iter.hasNext();) {
             variableStack.remove(iter.next());
         }
-        */
+        /*
+               */
         scope = scope.getParent();
     }
 
@@ -2768,8 +2767,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     private Variable defineVariable(String name, Type type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
-            idx = getNextVariableID();
-            answer = new Variable(idx, type, name);
+            lastVariableIndex = getNextVariableID();
+            answer = new Variable(lastVariableIndex, type, name);
             if (mutableVars.contains(name)) {
                 answer.setHolder(true);
             }
@@ -2779,9 +2778,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     if (answer.isHolder()) {
                         cv.visitTypeInsn(NEW, "groovy/lang/Reference");
                         cv.visitInsn(DUP);
-                        cv.visitVarInsn(ALOAD, idx);
+                        cv.visitVarInsn(ALOAD, lastVariableIndex);
                         cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V");
-                        cv.visitVarInsn(ASTORE, idx);
+                        cv.visitVarInsn(ASTORE, lastVariableIndex);
                     }
                 }
                 else {
@@ -2794,13 +2793,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         cv.visitInsn(DUP);
                         cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
 
-                        cv.visitVarInsn(ASTORE, idx);
+                        cv.visitVarInsn(ASTORE, lastVariableIndex);
                         //cv.visitVarInsn(ALOAD, idx + 1);
                     }
                     else {
                         if (!leftHandExpression) {
                             cv.visitInsn(ACONST_NULL);
-                            cv.visitVarInsn(ASTORE, idx);
+                            cv.visitVarInsn(ASTORE, lastVariableIndex);
                         }
                     }
                 }
@@ -2810,7 +2809,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     private int getNextVariableID() {
-        return Math.max(idx, variableStack.size());
+        return Math.max(lastVariableIndex + 1, variableStack.size());
     }
 
     /** @return true if the given name is a local variable or a field */
