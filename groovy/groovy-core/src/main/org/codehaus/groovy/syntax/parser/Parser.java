@@ -656,8 +656,8 @@ public class Parser
             case ( Token.MULTIPLY_EQUAL ):
             case ( Token.MOD_EQUAL ):
             {
-                rootNode( lt(),
-                          expr );
+                expr = rootNode( lt(),
+                                 expr );
                 expr.addChild( conditionalExpression() );
                 break;
             }
