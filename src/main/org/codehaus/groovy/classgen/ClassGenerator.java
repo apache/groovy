@@ -927,14 +927,21 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement);
-
+        String returnType = methodNode.getReturnType();
+        //If the return type of the method is explicitly declared as void,
+        //ignore any return expression that was specified.
+        if (returnType.equals("void")) {
+            cv.visitInsn(RETURN);
+            outputReturn = true;
+            return;
+        }
+            
         Expression expression = statement.getExpression();
         evaluateExpression(expression);
 
         //return is based on class type
         //TODO: make work with arrays
         // we may need to cast
-        String returnType = methodNode.getReturnType();
         helper.unbox(returnType);
         if (returnType.equals("double")) {
             cv.visitInsn(DRETURN);
@@ -955,9 +962,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 || returnType.equals("short")) { //byte,short,boolean,int are
             // all IRETURN
             cv.visitInsn(IRETURN);
-        }
-        else if (returnType.equals("void")) {
-            cv.visitInsn(RETURN);
         }
         else {
             doConvertAndCast(returnType, expression);
