@@ -60,6 +60,8 @@ class ListTest extends GroovyTestCase {
        	
        	assert x.get(0) := "cheese"; 
 
+        assert x.size() := 1;
+
         /** @todo parser
        	assert x[0] := "cheese";
        	*/
