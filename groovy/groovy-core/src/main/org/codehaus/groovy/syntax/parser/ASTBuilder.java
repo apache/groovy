@@ -369,11 +369,11 @@ public class ASTBuilder {
             interfaceNames = resolvedQualifiedNamesNotNull(classRoot.getChild(3).getChildren());
         }
 
-        /** @todo parser 
-         * do we think the parser can iterate through the 
+        /** @todo parser
+         * do we think the parser can iterate through the
          * interface names and find any MixinNodes avaiilable
          * and pass those into the AST?
-         * 
+         *
          * Maybe loading the class for the interface name and then
          * we could check if it extends the groovy.lang.Mixin
          * interface
@@ -391,7 +391,7 @@ public class ASTBuilder {
         }
 
         ClassNode classNode = new ClassNode(fqClassName, modifiers, superClassName, interfaceNames, mixinNames);
-
+		classNode.setCSTNode(classRoot.getChild(1));
         CSTNode[] bodyRoots = classRoot.getChild(4).getChildren();
 
         for (int i = 0; i < bodyRoots.length; ++i) {
@@ -422,7 +422,7 @@ public class ASTBuilder {
         }
 
         PropertyNode propertyNode = classNode.addProperty(identifier, modifiers, typeName, initialValue, null, null);
-        propertyNode.setCSTNode(propertyRoot);
+        propertyNode.setCSTNode(propertyRoot.getChild(1));
         return propertyNode;
     }
 
@@ -438,12 +438,13 @@ public class ASTBuilder {
         if (identifier.equals(classNode.getNameWithoutPackage())) {
             ConstructorNode constructorNode =
                 new ConstructorNode(modifiers, parameters, statementBlock(methodRoot.getChild(4)));
+            constructorNode.setCSTNode(methodRoot.getChild(1));
             classNode.addConstructor(constructorNode);
         }
         else {
             MethodNode methodNode =
                 new MethodNode(identifier, modifiers, returnType, parameters, statementBlock(methodRoot.getChild(4)));
-            methodNode.setCSTNode(methodRoot);
+            methodNode.setCSTNode(methodRoot.getChild(1));
             classNode.addMethod(methodNode);
         }
     }
@@ -451,14 +452,14 @@ public class ASTBuilder {
     protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException {
         int modifiers = modifiers(methodRoot.getChild(0));
 
-        String identifier = methodRoot.getChild(1).getToken().getText();
+		String identifier = methodRoot.getChild(1).getToken().getText();
 
         String returnType = resolvedQualifiedName(methodRoot.getChild(2));
 
         Parameter[] parameters = parameters(methodRoot.getChild(3).getChildren());
         MethodNode methodNode =
             new MethodNode(identifier, modifiers, returnType, parameters, statementBlock(methodRoot.getChild(4)));
-        methodNode.setCSTNode(methodRoot);
+        methodNode.setCSTNode(methodRoot.getChild(1));
         return methodNode;
     }
 
@@ -601,7 +602,7 @@ public class ASTBuilder {
                     break;
                 }
             case (Token.SYNTH_LABEL) :
-                { 
+                {
                     statement = statement(statementRoot.getChild(1));
                     statement.setStatementLabel( statementRoot.getChild(0).getToken().getText() );
                     break;
@@ -741,7 +742,7 @@ public class ASTBuilder {
     protected ForStatement forStatement(CSTNode statementRoot) throws ParserException {
         CSTNode variableNode = statementRoot.getChild(0);
         String variable = variableNode.getToken().getText();
-        
+
         Type variableType = Type.DYNAMIC_TYPE;
         if (variableNode.getChildren().length > 0) {
             variableType = new Type(resolvedQualifiedNameNotNull(variableNode.getChild(0)));
@@ -1212,7 +1213,7 @@ public class ASTBuilder {
     /**
      * Chooses the right Number implementation for the given integer number.
      * Typically this is an Integer for efficiency or a Long if the number is very large
-     * 
+     *
      * @param text
      * @return
      */
