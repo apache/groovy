@@ -3,9 +3,14 @@ package groovy.ui
 import groovy.swing.SwingBuilder
 
 import java.awt.Toolkit
+import java.awt.Insets
+import java.awt.Color
+import java.awt.Font
 import java.awt.event.KeyEvent
 import java.util.EventObject
 
+import javax.swing.event.CaretListener
+import javax.swing.event.CaretEvent
 import javax.swing.KeyStroke
 import javax.swing.JSplitPane
 import javax.swing.JFileChooser
@@ -20,7 +25,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  *
  * @author Danno Ferrin
  */
-class Console extends ConsoleSupport {
+class Console extends ConsoleSupport implements CaretListener {
 
     frame
     swing
@@ -29,6 +34,8 @@ class Console extends ConsoleSupport {
     scriptList
     scriptFile
     private boolean dirty
+    private int textSelectionStart  // keep track of selections in textArea
+    private int textSelectionEnd
 
     static void main(args) {
         console = new Console()
@@ -38,41 +45,31 @@ class Console extends ConsoleSupport {
     void run() {
         scriptList = []
         // if menu modifier is two keys we are out of luck as the javadocs
-        // incicates it returns "Control+Shift" instead of "Control Shift"
+        // indicates it returns "Control+Shift" instead of "Control Shift"
         menuModifier = KeyEvent.getKeyModifiersText( 
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())
             .toLowerCase() + ' '
 
         swing = new SwingBuilder()
         frame = swing.frame(
-		title:'GroovyConsole', 
-		location:[100,100], 
-		size:[800,400], 
-		defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
+            title:'GroovyConsole',
+            location:[100,100],
+            size:[500,400],
+            defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
             newAction = action(
-                name:'New',
-                closure: fileNew,
-                mnemonic: 'N',
-                accelerator: menuModifier + 'N'
+                name:'New', closure: fileNew, mnemonic: 'N', accelerator: menuModifier + 'N'
             )
             openAction = action(
-                name:'Open',
-                closure: fileOpen,
-                mnemonic: 'O',
-                accelerator: menuModifier + 'O'
+                name:'Open', closure: fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
             )
             saveAction = action(
-                name:'Save',
-                closure: fileSave,
-                mnemonic: 'S',
-                accelerator: menuModifier + 'S'
+                name:'Save', closure: fileSave, mnemonic: 'S', accelerator: menuModifier + 'S'
             )
-            exitAction = action(name:'Exit', closure: exit, mnemonic: 'x')
+            exitAction = action(
+                name:'Exit', closure: exit, mnemonic: 'x'
+            )
             runAction = action(
-                name:'Run',
-                closure: runScript,
-                mnemonic: 'R',
-                keyStroke: 'ctrl ENTER',
+                name:'Run', closure: runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
                 accelerator: 'ctrl R'
             )
             aboutAction = action(name:'About', closure: showAbout, mnemonic: 'A')
@@ -94,24 +91,29 @@ class Console extends ConsoleSupport {
             }
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT, resizeWeight:0.50F) {
                 scrollPane {
-                    outputArea = textPane(editable:false)
-                    addStylesToDocument(outputArea)
+                    textArea = textArea(
+                        margin: new Insets(3,3,3,3), font: new Font('Monospaced',Font.PLAIN,12)
+                    ) { action(runAction) }
                 }
                 scrollPane {
-                    textArea = textArea() { action(runAction) }
-                    
+                    outputArea = textPane(editable:false, background: new Color(255,255,218))
+                    addStylesToDocument(outputArea)
                 }
             }
-        }
-        
-        frame.setSize(500,400)
+        }   // end of SwingBuilder use
 
         // add listeners
         frame.windowClosing = exit
+        textArea.addCaretListener(this)
         textArea.document.undoableEditHappened = { setDirty(true) }
 
         frame.show()
         SwingUtilities.invokeLater({textArea.requestFocus()});
+    }
+
+    void caretUpdate(CaretEvent e){
+        textSelectionStart = Math.min(e.dot,e.mark)
+        textSelectionEnd = Math.max(e.dot,e.mark)
     }
 
     void setDirty(boolean newDirty) {
@@ -162,27 +164,30 @@ class Console extends ConsoleSupport {
             return false
         }
     }
+
+    append(doc, text, style){
+        doc.insertString(doc.getLength(), text, style)
+    }
     
     runScript(EventObject evt = null) {
         text = textArea.getText()
+        if (textSelectionStart != textSelectionEnd) {   // we have a real selection
+            text = textArea.getText(textSelectionStart, textSelectionEnd)
+        }
         scriptList.add(text)
 
         doc = outputArea.getStyledDocument();
 
-        promptStyle = getPromptStyle()
-        commandStyle = getCommandStyle()
-        outputStyle = getOutputStyle()
-
         for (line in text.tokenize("\n")) {
-            doc.insertString(doc.getLength(), "\ngroovy> ", promptStyle)
-            doc.insertString(doc.getLength(), line, commandStyle)
+            if (doc.length > 0) { append(doc,  "\n", promptStyle)}
+            append(doc, 'groovy> ', promptStyle)
+            append(doc, line, commandStyle)
         }
 
         answer = evaluate(text)
-
         output = "\n" + InvokerHelper.inspect(answer)
 
-        doc.insertString(doc.getLength(), output, outputStyle)
+        append(doc, output, outputStyle)
 
         println("Variables: " + shell.context.variables)
 
