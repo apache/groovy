@@ -58,8 +58,7 @@ class DoubleSizeParametersBug extends TestSupport {
     void testBug() {
         assertScript( """
 def foo(double x, y) {
-   println "x: "+x
-   println "y: "+y
+   y
 }
 
 foo(10.0d, 0)
