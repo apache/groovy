@@ -474,8 +474,10 @@ classTypeSpec[boolean addImagNode]
 	:	t:classOrInterfaceType[false]
 		(   ata:arrayOrTypeArgs[#t]  )?
 		{
-			if (#ata != null)  #classTypeSpec = #ata;
-			if ( addImagNode ) {
+// TODO - following line seems to cause stack overflow errors
+//      - need to figure out why INDEX_OP isn't being added to AST... 
+//			if (#ata != null)  #classTypeSpec = #ata;
+		if ( addImagNode ) {
 				#classTypeSpec = #(#[TYPE,"TYPE"], #classTypeSpec);
 			}
 		}
@@ -1969,7 +1971,6 @@ arrayOrTypeArgs[AST indexee]
                         RBRACK!
                 )+
         ;
-
 
 // assignment expression (level 13)
 assignmentExpression
