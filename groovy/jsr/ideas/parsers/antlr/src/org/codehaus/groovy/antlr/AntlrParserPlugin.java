@@ -1049,6 +1049,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return binaryExpression(Types.MULTIPLY_EQUAL, node);
 
 
+            case STAR_STAR:
+                return binaryExpression(Types.POWER, node);
+
+            case STAR_STAR_ASSIGN:
+                return binaryExpression(Types.POWER_EQUAL, node);
+
+
             case DIV:
                 return binaryExpression(Types.DIVIDE, node);
 

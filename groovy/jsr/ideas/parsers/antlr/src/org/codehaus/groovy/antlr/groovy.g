@@ -2194,7 +2194,16 @@ additiveExpression
 
 // multiplication/division/modulo (level 2)
 multiplicativeExpression
-        :       unaryExpression ((STAR^ | DIV^ | MOD^ ) nls! unaryExpression)*
+        : ( INC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+        | ( DEC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+        | ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+        | ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+        | (      powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+        ;
+
+// power operator (**) (level 1)
+powerExpression
+        :       unaryExpressionNotPlusMinus (STAR_STAR^ nls! unaryExpression)*
         ;
 
 unaryExpression
@@ -2811,6 +2820,8 @@ STAR_DOT        :   "*."    ;
 QUESTION_DOT    :   "?."    ;
 REGEX_FIND      :   "=~"    ;
 REGEX_MATCH     :   "==~"   ;
+STAR_STAR		:	"**"		;
+STAR_STAR_ASSIGN	:	"**="	;
 
 
 // Whitespace -- ignored
