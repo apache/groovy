@@ -74,6 +74,7 @@
     <delete dir="${build.dir}" />
     <delete dir="${dist.dir}" />
     <delete dir="${generated.test.src.dir}" />
+    <delete dir="${standalone.dir}" />
     <delete dir="${standalone.working.dir}" />
     <delete dir="${test.reports.dir}" />
   </target>

@@ -16,8 +16,8 @@ public class GroovyRecognizerTest extends TestCase {
 
     protected void setUp() {
         Reader r = new StringReader("public class Foo {}");
-	GroovyLexer lexer = new GroovyLexer(r);
-	g = new GroovyRecognizer(lexer);
+        GroovyLexer lexer = new GroovyLexer(r);
+        g = new GroovyRecognizer(lexer);
     }
 
     public void testInstatiation() {
@@ -28,7 +28,7 @@ public class GroovyRecognizerTest extends TestCase {
 	try {
 	    g.compilationUnit();
 	} catch (Exception e) {
-	    fail(e.getMessage());
+        fail(e.getMessage());
 	}
     }
 

@@ -21,6 +21,7 @@
     <delete file="TemplatePage.html"/>
 
     <ant dir="spec" target="clean"/> 
+    <ant dir="tck" target="clean"/> 
     <ant dir="ideas/parsers/antlr" target="clean"/>
   </target>
 
@@ -30,13 +31,38 @@
     <copy file="spec/SearchAndReplaceRegex" todir="."/>
     <copy file="spec/TemplatePage.html" todir="."/>
 
+    <echo>
+--------------------
+create the parser...
+--------------------
+</echo>
     <ant dir="ideas/parsers/antlr" target="standalone" inheritAll="false"/>
+
+    <!-- place parser in tck -->
+    <copy todir="tck/testlib">
+      <fileset dir="ideas/parsers/antlr/standalone"/>
+    </copy>
+    <echo>
+--------------------------------------
+execute the tck over the new parser...
+--------------------------------------
+</echo>
+    <ant dir="tck" target="pretty-test" inheritAll="false"/>
+
+    <echo>
+-----------------------
+render specification...
+-----------------------
+</echo>
     <ant dir="spec" target="render" inheritAll="false"/>
   </target>
 
   <target name="publish" depends="dist" description="publish distributables">
     <copy todir="${publish.dir}/spec">
       <fileset dir="${spec.wiki.dir}"/>
+    </copy>
+    <copy todir="${publish.dir}/tck">
+      <fileset dir="tck/reports"/>
     </copy>
   </target>
 

@@ -32,25 +32,41 @@ class TestGenerator{
 
             // test for each of the '@pass' alternatives
             passAlternatives = generateAlternatives(srcText,"@pass")
-            passAlternatives.eachWithIndex{aPassSrcText,i|
-                printCommonTestMethodStart(result, "${methodName}Pass${i+1}",aPassSrcText);
+            passAlternatives.eachWithIndex{anAlternative,i|
+                printCommonTestMethodStart(result, "${methodName}Pass${i+1}",anAlternative[0]);
                 result.println("        parse(srcBuffer.toString());")
                 result.println("    }")
             }
 
-            // test for each of the '@fail' alternatives
-            failureAlternatives = generateAlternatives(srcText,"@fail")
-            failureAlternatives.eachWithIndex{aFailSrcText,i|
-                printCommonTestMethodStart(result, "${methodName}Fail${i+1}",aFailSrcText);
+            // test for each of the '@fail:parse' alternatives
+            failureToParseAlternatives = generateAlternatives(srcText,"@fail:parse")
+            failureToParseAlternatives.eachWithIndex{anAlternative,i|
+                printCommonTestMethodStart(result, "${methodName}FailParse${i+1}",anAlternative[0]);
                 result.println("        try {")
                 result.println("            parse(srcBuffer.toString());")
-                result.println('            fail("' + behaviourDescription + '");')
+                result.println('            fail("This line did not fail to parse: ' + anAlternative[1].replaceAll('"','\\\\"') + '");')
                 result.println("        } catch (Exception e) {")
                 result.println("            // ignore an exception as that is what we're hoping for in this case.")
                 result.println("        }")
                 result.println("    }")
             }
 
+            // test for each of the '@fail' alternatives, i.e. without being followed by a colon
+            failureAlternatives = generateAlternatives(srcText,"@fail(?!:)")
+            failureAlternatives.eachWithIndex{anAlternative,i|
+                printCommonTestMethodStart(result, "${methodName}Fail${i+1}",anAlternative[0]);
+                result.println("        try {")
+                result.println("            evaluate(srcBuffer.toString());")
+                result.println('            fail("This line did not fail to evaluate: ' + anAlternative[1].replaceAll('"','\\\\"') + '");')
+                result.println("        } catch (Exception e) {")
+                result.println("            // ignore an exception as that is what we're hoping for in this case.")
+                result.println("        }")
+                result.println("    }")
+            }
+
+            result.println('    public void evaluate(String theSrcText) throws Exception {')
+            result.println("        parse(theSrcText);") //@todo - hook up evaluation of groovy src here!!!
+            result.println("    }")
             result.println('    public void parse(String theSrcText) throws Exception {')
             result.println('        Reader reader = new StringReader(theSrcText);')
             result.println('        GroovyLexer lexer = new GroovyLexer(reader);')
@@ -83,9 +99,11 @@ class TestGenerator{
      */
     List generateAlternatives(String srcText, String tag) {
         alternatives = []
-        m = java.util.regex.Pattern.compile("//.*?//\\s*" + tag).matcher(srcText)
+        m = java.util.regex.Pattern.compile("//(.*?//\\s*" + tag + "\\S*)\\s").matcher(srcText)
         while (m.find()) {
-            alternatives << (srcText.substring(0,m.start()) + srcText.substring(m.start() + 2))
+            foundText = m.group(1)
+            uncommentedSrcText = (srcText.substring(0,m.start()) + srcText.substring(m.start() + 2))
+            alternatives << [uncommentedSrcText, foundText]
         }
         return alternatives
     }

@@ -10,6 +10,8 @@ class Main {
 	static boolean showTree = false;
 	static boolean verbose = false;
     public static void main(String[] args) {
+	System.out.println("groovy compiler - JSR 241 preview - v0.0.0.0.1");
+	System.out.println("");
 		// Use a try/catch block for parser exceptions
 		try {
 			// if we have at least one command-line argument
@@ -39,7 +41,7 @@ class Main {
 					}
 				} }
 			else
-				System.err.println("Usage: java Main [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
+				System.err.println("Usage: java -jar groovyc.jar [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
                                    "<directory or file name>");
 		}
 		catch(Exception e) {

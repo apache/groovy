@@ -129,7 +129,7 @@
           depends="test-compile" 
           description="HTML output of test cases">
     <mkdir dir="${test.reports.dir}"/>
-    <junit haltonfailure="true" fork="yes">
+    <junit haltonfailure="false" fork="yes">
       <classpath refid="test.classpath"/>
       <formatter type="xml" usefile="true"/>
 
