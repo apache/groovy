@@ -306,6 +306,31 @@ public class Invoker {
     }
 
     /**
+     * @return true if the two objects are null or the objects are equal
+     */
+    public boolean objectsEqual(Object left, Object right) {
+        if (left == right) {
+            return true;
+        }
+        if (left != null) {
+            if (right == null) {
+                return false;
+            }
+            if (left instanceof Comparable) {
+                return compareTo(left, right) == 0;
+            }
+            else {
+                return left.equals(right);
+            }
+        }
+        return false;
+    }
+
+    public String inspect(Object self) {
+        return format(self, true);
+    }
+
+    /**
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public int compareTo(Object left, Object right) {
@@ -320,49 +345,38 @@ public class Invoker {
             return 1;
         }
         if (left instanceof Comparable) {
-        	if (left instanceof Number) {
-        		return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
-        	}
-        	else if (right instanceof Number) {
-    			return DefaultGroovyMethods.compareTo(asNumber(left), (Number)right);
-    		}
-    		else {
-    			try {
-    				return DefaultGroovyMethods.compareTo(asNumber(left), asNumber(right));
-    			}
-    			catch (Exception e) {
-    				Comparable comparable = (Comparable) left;
-    				return comparable.compareTo(right);
-    			}
+            if (left instanceof Number) {
+                if (isValidCharacterString(right)) {
+                    return asCharacter((Number) left).compareTo(asCharacter((String) right));
+                }
+                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
             }
+            else if (left instanceof Character) {
+                if (isValidCharacterString(right)) {
+                    return ((Character) left).compareTo(asCharacter((String) right));
+                }
+                else if (right instanceof Number) {
+                    return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
+                }
+            }
+            else if (right instanceof Number) {
+                if (isValidCharacterString(left)) {
+                    return asCharacter((String) left).compareTo(asCharacter((Number) right));
+                }
+                return DefaultGroovyMethods.compareTo(asNumber(left), (Number) right);
+            }
+            Comparable comparable = (Comparable) left;
+            return comparable.compareTo(right);
+        }
+        if (left.getClass().isArray()) {
+            Collection leftList = asCollection(left);
+            if (right.getClass().isArray()) {
+                right = asCollection(right);
+            }
+            return ((Comparable) leftList).compareTo(right);
         }
         /** todo we might wanna do some type conversion here */
         throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + right);
-    }
-
-    /**
-     * @return true if the two objects are null or the objects are equal
-     */
-    public boolean objectsEqual(Object left, Object right) {
-        if (left == right) {
-            return true;
-        }
-        if (left != null) {
-            if (right == null) {
-                return false;
-            }
-            if (left instanceof Number) {
-                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right)) == 0;
-            }
-            if (left.equals(right)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public String inspect(Object self) {
-        return format(self, true);
     }
 
     /**
@@ -502,15 +516,15 @@ public class Invoker {
             return (Number) value;
         }
         else if (value instanceof String) {
-        String s = (String)value;
-        
-        	if (s.length() == 1)
-        		return new Integer(s.charAt(0));
-        	else
-        		return Double.valueOf(s);
+            String s = (String) value;
+
+            if (s.length() == 1)
+                return new Integer(s.charAt(0));
+            else
+                return Double.valueOf(s);
         }
         else if (value instanceof Character) {
-        	return new Integer(((Character)value).charValue());
+            return new Integer(((Character) value).charValue());
         }
         else {
             throw new GroovyRuntimeException("Could not convert object: " + value + " into a Number");
@@ -610,29 +624,32 @@ public class Invoker {
             return object.toString();
         }
         if (type.equals(Character.class)) {
-        	if (object instanceof Number) {
-        		return new Character((char) ((Number) object).intValue());
-        	} else {
-	            String text = object.toString();
-	            if (text.length() == 1) {
-	                return new Character(text.charAt(0));
-	            }
-	            else {
-	                throw new ClassCastException("Cannot cast: " + text + " to a Character");
-	            }
-        	}
+            if (object instanceof Number) {
+                return asCharacter((Number) object);
+            }
+            else {
+                String text = object.toString();
+                if (text.length() == 1) {
+                    return new Character(text.charAt(0));
+                }
+                else {
+                    throw new ClassCastException("Cannot cast: " + text + " to a Character");
+                }
+            }
         }
         if (Number.class.isAssignableFrom(type)) {
-        	if (object instanceof Character) {
-        		return new Integer(((Character)object).charValue());
-        	} else if (object instanceof String) {
-        	String c = (String)object;
-        		if (c.length() == 1) {
-        			return new Integer(c.charAt(0));
-        		} else {
-        			throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
-        		}
-        	}
+            if (object instanceof Character) {
+                return new Integer(((Character) object).charValue());
+            }
+            else if (object instanceof String) {
+                String c = (String) object;
+                if (c.length() == 1) {
+                    return new Integer(c.charAt(0));
+                }
+                else {
+                    throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
+                }
+            }
         }
         if (object instanceof Number) {
             Number n = (Number) object;
@@ -713,4 +730,24 @@ public class Invoker {
             object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
     }
 
+    protected Character asCharacter(Number value) {
+        return new Character((char) value.intValue());
+    }
+
+    protected Character asCharacter(String text) {
+        return new Character(text.charAt(0));
+    }
+
+    /**
+     * @return true if the given value is a valid character string (i.e. has length of 1)
+     */
+    protected boolean isValidCharacterString(Object value) {
+        if (value instanceof String) {
+            String s = (String) value;
+            if (s.length() == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
