@@ -1,4 +1,4 @@
-* AST for maps, tuples, sequences, closures
+* AST closures and range
 
 * AST's to handle null for types & set the isDynamic flag
 
