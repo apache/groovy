@@ -541,7 +541,18 @@ public class ASTBuilder
 
     protected MethodCallExpression methodCallExpression(CSTNode expressionRoot)
     {
-        Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
+        CSTNode objectExpressionRoot = expressionRoot.getChild( 0 );
+
+        Expression objectExpression = null;
+
+        if ( objectExpressionRoot.getToken() == null )
+        {
+            objectExpression = new VariableExpression( "this" );
+        }
+        else
+        {
+            objectExpression = expression( expressionRoot.getChild( 0 ) );
+        }
 
         CSTNode node = expressionRoot.getChild( 1 );
         
