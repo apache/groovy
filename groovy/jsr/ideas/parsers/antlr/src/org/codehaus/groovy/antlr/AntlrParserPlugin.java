@@ -1534,12 +1534,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String answer = null;
         AST node = typeNode.getFirstChild();
         if (node != null) {
-            if (isType(INDEX_OP, node)) {
+            if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
                 return resolveTypeName(node.getFirstChild().getText()) + "[]";
             }
             answer = resolveTypeName(node.getText());
             node = node.getNextSibling();
-            if (isType(INDEX_OP, node)) {
+            if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
                 return answer + "[]";
             }
         }
@@ -1580,7 +1580,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else if (isPrimitiveTypeLiteral(node)) {
             answer = node.getText();
         }
-        else if (isType(INDEX_OP, node)) {
+        else if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
             AST child = node.getFirstChild();
             return resolvedName(child);
         }
@@ -1589,7 +1589,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             answer = resolveTypeName(identifier);
         }
         AST nextSibling = node.getNextSibling();
-        if (isType(INDEX_OP, nextSibling)) {
+        if (isType(INDEX_OP, nextSibling) || isType(ARRAY_DECLARATOR, node)) {
             return answer + "[]";
         }
         else {
