@@ -1,8 +1,0 @@
-a grave    à
-e acute    é
-e grave    è
-i umlaut   ï
-o circ     ô
-u grave    ù
-c cedil    ç
-n tilde    ñ
