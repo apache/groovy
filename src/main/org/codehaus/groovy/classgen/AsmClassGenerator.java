@@ -918,9 +918,13 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitReturnStatement(ReturnStatement statement) {
         onLineNumber(statement);
         String returnType = methodNode.getReturnType();
-        //If the return type of the method is explicitly declared as void,
-        //ignore any return expression that was specified.
         if (returnType.equals("void")) {
+        	if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
+                throw new RuntimeParserException(
+                        "Cannot use return statement with an expression on a method that returns void",
+                        statement);
+
+        	}
             cv.visitInsn(RETURN);
             outputReturn = true;
             return;
