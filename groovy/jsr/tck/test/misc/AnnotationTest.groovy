@@ -1,4 +1,4 @@
-class AnotationTest {
+class AnnotationTest extends GroovyTestCase {
     @Property String foo
     @Property protected def bar
     protected @Property def mooky
@@ -6,10 +6,17 @@ class AnotationTest {
     @Property
     String wibble = "wobble"
 
-    @Property Cheese gouda, edam, wensleydale, gorgonzola, parmesan,
+    @Property String gouda, edam, wensleydale, gorgonzola, parmesan,
     mozarella, 
     cheddar
 
-    def bazouki = "off" 
+    def bazouki = "off"
+
+    public void testValues() {
+        assert bazouki == "off"
+
+        assert wibble == "wobble"
+        assert getWibble() == "wobble"
+    }
 }
 
