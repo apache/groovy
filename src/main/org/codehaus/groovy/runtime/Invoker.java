@@ -321,10 +321,22 @@ public class Invoker {
         }
         if (left instanceof Comparable) {
         	if (left instanceof Number) {
+        	    if (isValidCharacterString(right)) {
+        	        return asCharacter((Number) left).compareTo(asCharacter((String) right));
+        	    }
         		return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
         	}
+        	else if (left instanceof Character) {
+        	    if (isValidCharacterString(right)) {
+        	        return ((Character) left).compareTo(asCharacter((String) right));
+        	    }
+        	    return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
+        	}
         	else if (right instanceof Number) {
-    			return DefaultGroovyMethods.compareTo(asNumber(left), (Number)right);
+        	    if (isValidCharacterString(left)) {
+        	        return asCharacter((String) left).compareTo(asCharacter((Number) right));
+        	    }
+        	    return DefaultGroovyMethods.compareTo(asNumber(left), (Number)right);
     		}
     		else {
     			try {
@@ -351,12 +363,7 @@ public class Invoker {
             if (right == null) {
                 return false;
             }
-            if (left instanceof Number) {
-                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right)) == 0;
-            }
-            if (left.equals(right)) {
-                return true;
-            }
+            return compareTo(left, right) == 0;
         }
         return false;
     }
@@ -611,7 +618,7 @@ public class Invoker {
         }
         if (type.equals(Character.class)) {
         	if (object instanceof Number) {
-        		return new Character((char) ((Number) object).intValue());
+        		return asCharacter((Number) object);
         	} else {
 	            String text = object.toString();
 	            if (text.length() == 1) {
@@ -713,4 +720,25 @@ public class Invoker {
             object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
     }
 
+
+    protected Character asCharacter(Number value) {
+        return new Character((char) value.intValue());
+    }
+
+    protected Character asCharacter(String text) {
+        return new Character(text.charAt(0));
+    }
+
+    /**
+     * @return true if the given value is a valid character string (i.e. has length of 1)
+     */
+    protected boolean isValidCharacterString(Object value) {
+        if (value instanceof String) {
+            String s = (String) value;
+            if (s.length() == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

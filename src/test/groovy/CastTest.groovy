@@ -56,13 +56,10 @@ class CastTest extends GroovyTestCase {
         assert c == 'x'
 		assert i == i
 		assert c == c
-        
-        /** @todo
-        
-        assert 'x' == i
-        assert 'x' == c
+
         assert 'x' == 'x'
-         */
+        assert 'x' == c
+        assert 'x' == i
     }
     
     void testCharCast() {
