@@ -334,10 +334,29 @@ public class CompilationUnit extends ProcessingUnit
         
         source.setClassLoader( this.classLoader );
 
-        sources.put( name, source );
         names.add( name );
+        sources.put( name, source );
         
         return source;
+    }
+    
+    
+    
+   /**
+    *  Returns an iterator on the unit's SourceUnits.
+    */
+    
+    public Iterator iterator()
+    {
+        return new Iterator() {
+            Iterator nameIterator = names.iterator();
+            
+            public boolean hasNext() { return nameIterator.hasNext(); }
+            
+            public Object next() { String name = (String)nameIterator.next(); return sources.get(name); }
+            
+            public void remove() { throw new UnsupportedOperationException(); }
+        };
     }
     
     
