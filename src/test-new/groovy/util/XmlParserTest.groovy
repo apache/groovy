@@ -41,9 +41,9 @@ class XmlParserTest extends GroovyTestCase {
     }
     
     void testMixedMarkup() {
-        text = <<<EOF
+        text = """
 <p>Please read the <a href="index.html">Home</a> page</p>
-EOF
+"""
         
         node = new XmlParser().parseText(text)
         
