@@ -99,7 +99,7 @@ import org.codehaus.groovy.tools.Utilities;
 public class SourceUnit extends ProcessingUnit
 {
     
-    private static ParserPlugin parserPlugin;
+    private ParserPlugin parserPlugin;
 
     protected ReaderSource source;    // Where we can get Readers for our source unit
     protected String       name;      // A descriptive name of the source unit
@@ -282,6 +282,9 @@ public class SourceUnit extends ProcessingUnit
         {
             reader = source.getReader();
 
+            // lets force the recreation of the plugin
+            parserPlugin = null;
+
             cst = getParserPlugin().parseCST(this, reader);
 
             completePhase();
@@ -434,7 +437,7 @@ public class SourceUnit extends ProcessingUnit
         return sample;
     }
 
-    public static ParserPlugin getParserPlugin() {
+    public ParserPlugin getParserPlugin() {
         if (parserPlugin == null) {
             parserPlugin = ParserPlugin.newInstance();
         }
