@@ -4638,11 +4638,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 answer.setHolder(true);
             }
             variableStack.put(name, answer);
-            if (isDoubleSizeVariable(type)) {
-                // lets put a dummy veriable on the stack to increase the next variable size
-                String generatedName = createVariableName("doubleSizeVariablePadding");
-                variableStack.put(generatedName, answer);
-            }
 
             Label startLabel  = new Label();
             answer.setStartLabel(startLabel);
@@ -4689,8 +4684,16 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private int getNextVariableID() {
-        //return Math.max(lastVariableIndex + 1, variableStack.size());
-        return variableStack.size(); // todo : rework
+    	int index = 0;
+    	for (Iterator iter = variableStack.values().iterator(); iter.hasNext();) {
+    		Variable var = (Variable) iter.next();
+    		if (isDoubleSizeVariable(var.getType())) {
+    			index += 2;
+    		} else {
+    			index++;
+    		}
+    	}
+    	return index;
     }
 
     /** @return true if the given name is a local variable or a field */
