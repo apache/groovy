@@ -144,8 +144,12 @@ public class Invoker {
                     }
                     catch (MissingMethodException e)
                     {
-                        // in case there's nothing else, invoke the object's own invokeMethod()
-                        return groovy.invokeMethod(methodName, arguments);
+                        if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+                            // in case there's nothing else, invoke the object's own invokeMethod()
+                            return groovy.invokeMethod(methodName, arguments);
+                        } else {
+                            throw e;
+                        }
                     }
                 }
             }
