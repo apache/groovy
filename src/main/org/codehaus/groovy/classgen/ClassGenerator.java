@@ -847,7 +847,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected void onLineNumber(Statement statement) {
         int number = statement.getLineNumber();
-        if (number >= 0) {
+        if (number >= 0 && cv != null) {
             cv.visitLineNumber(number, new Label());
         }
     }

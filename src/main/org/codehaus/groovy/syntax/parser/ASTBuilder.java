@@ -3,6 +3,7 @@ package org.codehaus.groovy.syntax.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
@@ -323,7 +324,7 @@ public class ASTBuilder
                                                       null,
                                                       null,
                                                       null );
-
+        setLineNumber(propertyNode, propertyRoot);
         return propertyNode;
     }
 
@@ -343,6 +344,7 @@ public class ASTBuilder
                                                 parameters,
                                                 statementBlock( methodRoot.getChild( 4 ) ) );
 
+        setLineNumber(methodNode, methodRoot);
         return methodNode;
     }
 
@@ -376,7 +378,10 @@ public class ASTBuilder
 
         for ( int i = 0 ; i < statementRoots.length ; ++i )
         {
-            statementBlock.addStatement( statement( statementRoots[ i ] ) );
+            CSTNode statementRoot = statementRoots[ i ];
+            Statement statement = statement( statementRoot );
+            statementBlock.addStatement( statement );
+            setLineNumber(statement, statementRoot);
         }
 
         return statementBlock;
@@ -413,6 +418,7 @@ public class ASTBuilder
                 statement = expressionStatement( statementRoot );
             }
         }
+        setLineNumber(statement, statementRoot);
 
         return statement;
     }
@@ -740,6 +746,16 @@ public class ASTBuilder
     protected String identifier(CSTNode identifierRoot)
     {
         return identifierRoot.getToken().getText();
+    }
+
+    /**
+     * Stores the line number information in the new AST node
+     * @param text
+     * @return
+     */
+    protected void setLineNumber(ASTNode astNode, CSTNode cstNode) 
+    {
+        astNode.setLineNumber(cstNode.getToken().getStartLine());
     }
 
     boolean matches(CSTNode root,
