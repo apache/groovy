@@ -36,7 +36,7 @@ class FailsGenerator {
         if (!dir.isDirectory() throw new RuntimeException("${dir} has to be a directory containg the xml tests reports")
         dir.eachFileRecurse {file::
             if (!file.getName().endsWith(".xml")) return
-            if (!file.getName().indexOf("$")>-1) {
+            if (!file.getName().indexOf("\$")>-1) {
               println("${file.name) is ignored because it's output for a subclass")
               return
             }
