@@ -594,13 +594,17 @@ public class Invoker {
             return object.toString();
         }
         if (type.equals(Character.class)) {
-            String text = object.toString();
-            if (text.length() == 1) {
-                return new Character(text.charAt(0));
-            }
-            else {
-                throw new ClassCastException("Cannot cast: " + text + " to a Character");
-            }
+        	if (object instanceof Number) {
+        		return new Character((char) ((Number) object).intValue());
+        	} else {
+	            String text = object.toString();
+	            if (text.length() == 1) {
+	                return new Character(text.charAt(0));
+	            }
+	            else {
+	                throw new ClassCastException("Cannot cast: " + text + " to a Character");
+	            }
+        	}
         }
         if (object instanceof Number) {
             Number n = (Number) object;

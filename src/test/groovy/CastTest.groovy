@@ -45,6 +45,10 @@ class CastTest extends GroovyTestCase {
         c = (Character) 'x'
         
         assert c instanceof Character
+        
+        c = (Character) 10
+        
+        assert c instanceof Character
     }
     
     void methodWithShort(Short s) {
