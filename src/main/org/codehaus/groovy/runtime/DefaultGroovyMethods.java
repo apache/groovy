@@ -807,8 +807,7 @@ public class DefaultGroovyMethods {
     /**
      * A helper method to allow lists to work with subscript operators
      */
-    public static void put(List self, Number n, Object value) {
-        int i = n.intValue();
+    public static void put(List self, int i, Object value) {
         int size = self.size();
         i = normaliseIndex(i, size);
         if (i < size) {

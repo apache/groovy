@@ -961,9 +961,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 break;
 
             case Token.LEFT_SQUARE_BRACKET :
-                evaluateBinaryExpression(leftHandExpression ? "set" : "get", expression);
                 if (leftHandExpression) {
-                    cv.visitInsn(POP);
+                    throw new RuntimeException("Should not be called");
+                    //evaluateBinaryExpression("put", expression);
+                }
+                else {
+                    evaluateBinaryExpression("get", expression);
                 }
                 break;
 
@@ -1268,40 +1271,40 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        
+
         // lets check if we're a fully qualified class name
-        
+
         String className = checkForQualifiedClass(expression);
-        if (className != null) { 
+        if (className != null) {
             visitClassExpression(new ClassExpression(className));
         }
         else {
-        boolean left = leftHandExpression;
-        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
-        // rather than ALOAD
-        leftHandExpression = false;
+            boolean left = leftHandExpression;
+            // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
+            // rather than ALOAD
+            leftHandExpression = false;
 
-        Expression objectExpression = expression.getObjectExpression();
-        objectExpression.visit(this);
+            Expression objectExpression = expression.getObjectExpression();
+            objectExpression.visit(this);
 
-        cv.visitLdcInsn(expression.getProperty());
+            cv.visitLdcInsn(expression.getProperty());
 
-        if (expression.isSafe()) {
-            if (left) {
-                setPropertySafeMethod2.call(cv);
+            if (expression.isSafe()) {
+                if (left) {
+                    setPropertySafeMethod2.call(cv);
+                }
+                else {
+                    getPropertySafeMethod.call(cv);
+                }
             }
             else {
-                getPropertySafeMethod.call(cv);
+                if (left) {
+                    setPropertyMethod2.call(cv);
+                }
+                else {
+                    getPropertyMethod.call(cv);
+                }
             }
-        }
-        else {
-            if (left) {
-                setPropertyMethod2.call(cv);
-            }
-            else {
-                getPropertyMethod.call(cv);
-            }
-        }
         }
     }
 
@@ -1432,7 +1435,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     variable = (Variable) variableStack.get(name);
                 }
                 else {
-                    if (! useProperty) {
+                    if (!useProperty) {
                         variable = defineVariable(name, variableType);
                     }
                 }
@@ -1525,7 +1528,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
      */
     protected boolean isInScriptBody() {
         String superClass = classNode.getSuperClass();
-        return superClass != null && superClass.equals("groovy.lang.Script") && methodNode != null && methodNode.getName().equals("run");
+        return superClass != null
+            && superClass.equals("groovy.lang.Script")
+            && methodNode != null
+            && methodNode.getName().equals("run");
     }
 
     /**
@@ -1551,7 +1557,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return true;
     }
 
-    
     protected boolean firstStatementIsSuperMethodCall(Statement code) {
         if (code instanceof BlockStatement) {
             BlockStatement block = (BlockStatement) code;
@@ -1752,7 +1757,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return innerClasses.add(innerClass);
     }
 
-
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = classNode;
         if (owner instanceof InnerClassNode) {
@@ -1946,9 +1950,36 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void evaluateBinaryExpressionWithAsignment(String method, BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        if (leftExpression instanceof BinaryExpression) {
+            BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+            if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
+                // lets replace this assignment to a subscript operator with a
+                // method call
+                // e.g. x[5] += 10
+                // -> (x, [], 5), =, x[5] + 10
+                // -> methodCall(x, "put", [5, methodCall(x[5], "plus", 10)])
+
+                MethodCallExpression methodCall =
+                    new MethodCallExpression(
+                        expression.getLeftExpression(),
+                        method,
+                        new ArgumentListExpression(new Expression[] { expression.getRightExpression()}));
+
+                Expression safeIndexExpr = createReusableExpression(leftBinExpr.getRightExpression());
+
+                visitMethodCallExpression(
+                    new MethodCallExpression(
+                        leftBinExpr.getLeftExpression(),
+                        "put",
+                        new ArgumentListExpression(new Expression[] { safeIndexExpr, methodCall })));
+                cv.visitInsn(POP);
+                return;
+            }
+        }
+
         evaluateBinaryExpression(method, expression);
 
-        Expression leftExpression = expression.getLeftExpression();
         leftHandExpression = true;
         leftExpression.visit(this);
         leftHandExpression = false;
@@ -2041,7 +2072,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 }
                 if (field != null) {
                     type = field.getType();
-                    if (! field.isHolder() && type != null && !type.equals("java.lang.Object")) {
+                    if (!field.isHolder() && type != null && !type.equals("java.lang.Object")) {
                         return type;
                     }
                 }
@@ -2177,22 +2208,29 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
             if (binExpr.getOperation().isAssignmentToken()) {
-                return binExpr.getLeftExpression().transformExpression(new ExpressionTransformer() {
-                    public Expression transform(Expression expression) {
-                        if (expression instanceof PostfixExpression) {
-                            PostfixExpression postfixExp = (PostfixExpression) expression;
-                            return postfixExp.getExpression();
-                        }
-                        else if (expression instanceof PrefixExpression) {
-                            PrefixExpression prefixExp = (PrefixExpression) expression;
-                            return prefixExp.getExpression();
-                        }
-                        return expression;
-                    }
-                });
+                return createReusableExpression(binExpr.getLeftExpression());
             }
         }
         return null;
+    }
+
+    protected Expression createReusableExpression(Expression expression) {
+        ExpressionTransformer transformer = new ExpressionTransformer() {
+            public Expression transform(Expression expression) {
+                if (expression instanceof PostfixExpression) {
+                    PostfixExpression postfixExp = (PostfixExpression) expression;
+                    return postfixExp.getExpression();
+                }
+                else if (expression instanceof PrefixExpression) {
+                    PrefixExpression prefixExp = (PrefixExpression) expression;
+                    return prefixExp.getExpression();
+                }
+                return expression;
+            }
+        };
+        
+        // could just be a postfix / prefix expression or nested inside some other expression
+        return transformer.transform(expression.transformExpression(transformer));
     }
 
     protected boolean comparisonExpression(Expression expression) {
