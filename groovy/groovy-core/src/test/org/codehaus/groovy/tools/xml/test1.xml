@@ -4,7 +4,13 @@
   </head>
   <body>
     <h1>XML encoding with Groovy</h1>
-    <p><a href="http://groovy.codehaus.org">Groovy</a> can be used as an alternative markup to XML</p>
-    <p>This is some <b>mixed</b> text</p>
+    <p>this format can be used as an alternative markup to XML</p>
+    <!-- an element with attributes and text content -->
+    <a href="http://groovy.codehaus.org">Groovy</a>
+    <!-- mixed content -->
+    <p>This is some <b>mixed</b> text. For more see the
+    <a href="http://groovy.codehaus.org">Groovy</a> project
+    </p>
+    <p>some text</p>
   </body>
 </html>

@@ -181,6 +181,22 @@ html {
   }
 }  
 
+Or even use lists....
+
+    a(href:'http://blah', title:"foo") [
+      "the text"
+    ]
+    
+    p [
+      "some text", b("this is bold"), "more text"
+    ]
+    
+could also use nested expressions
+
+	p("some text ${b('this is bold')} some text");
+
+    
+
 For something heavily namespaced we could do...
 
 xsl = xml.namespace("http://foo");
