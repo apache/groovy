@@ -38,6 +38,7 @@ package groovy.lang;
  * Represents a property on a bean which may have a getter and/or a setter
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Kim Pilho
  * @version $Revision$
  */
 public class MetaBeanProperty extends MetaProperty {
@@ -79,6 +80,54 @@ public class MetaBeanProperty extends MetaProperty {
 			// we'll convert a GString to String if needed
 			if(getType() == String.class && !(newValue instanceof String))
 				newValue = newValue.toString();
+
+			// Set property for primitive types
+			if (newValue instanceof java.math.BigDecimal) {
+				if (getType() == Double.class)
+					newValue = new Double(((java.math.BigDecimal) newValue).doubleValue());
+				else if (getType() == Float.class)
+					newValue = new Float(((java.math.BigDecimal) newValue).floatValue());
+				else if (getType() == Long.class)
+					newValue = new Long(((java.math.BigDecimal) newValue).longValue());
+				else if (getType() == Integer.class)
+					newValue = new Integer(((java.math.BigDecimal) newValue).intValue());
+				else if (getType() == Short.class)
+					newValue = new Short((short) ((java.math.BigDecimal) newValue).intValue());
+				else if (getType() == Byte.class)
+					newValue = new Byte((byte) ((java.math.BigDecimal) newValue).intValue());
+				else if (getType() == Character.class)
+					newValue = new Character((char) ((java.math.BigDecimal) newValue).intValue());
+			}
+			else if (newValue instanceof java.math.BigInteger) {
+				if (getType() == Long.class)
+					newValue = new Long(((java.math.BigInteger) newValue).longValue());
+				else if (getType() == Integer.class)
+					newValue = new Integer(((java.math.BigInteger) newValue).intValue());
+				else if (getType() == Short.class)
+					newValue = new Short((short) ((java.math.BigInteger) newValue).intValue());
+				else if (getType() == Byte.class)
+					newValue = new Byte((byte) ((java.math.BigInteger) newValue).intValue());
+				else if (getType() == Character.class)
+					newValue = new Character((char) ((java.math.BigInteger) newValue).intValue());
+			}
+			else if (newValue instanceof java.lang.Long) {
+				if (getType() == Integer.class)
+					newValue = new Integer(((Long) newValue).intValue());
+				else if (getType() == Short.class)
+					newValue = new  Short(((Long) newValue).shortValue());
+				else if (getType() == Byte.class)
+					newValue = new Byte(((Long) newValue).byteValue());
+				else if (getType() == Character.class)
+					newValue = new Character((char) ((Long) newValue).intValue());
+			}
+			else if (newValue instanceof java.lang.Integer) {
+				if (getType() == Short.class)
+					newValue = new  Short(((Integer) newValue).shortValue());
+				else if (getType() == Byte.class)
+					newValue = new Byte(((Integer) newValue).byteValue());
+				else if (getType() == Character.class)
+					newValue = new Character((char) ((Integer) newValue).intValue());
+			}
 
 			setter.invoke(object, new Object[] { newValue });
 		}
