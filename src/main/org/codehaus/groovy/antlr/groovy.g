@@ -3204,7 +3204,7 @@ STRING_LITERAL
         {int tt=0;}
     :   ("'''") =>  //...shut off ambiguity warning
         "'''"!
-        (   STRING_CH | ESC | '"' | '$'
+        (   STRING_CH | ESC | '"' | '$' | STRING_NL[true]
         |   ('\'' (~'\'' | '\'' ~'\'')) => '\''  // allow 1 or 2 close quotes
         )*
         "'''"!
@@ -3230,7 +3230,7 @@ returns [int tt=STRING_CTOR_END]
     :
         (
             options {  greedy = true;  }:
-            STRING_CH | ESC | '\''
+            STRING_CH | ESC | '\'' | STRING_NL[tripleQuote]
         |   ('"' (~'"' | '"' ~'"'))=> {tripleQuote}? '"'  // allow 1 or 2 close quotes
         )*
         (   (   { !tripleQuote }? "\""!
@@ -3373,7 +3373,13 @@ ESC
             {char ch = (char)Integer.parseInt($getText,8); $setText(ch);}
         )
     |!  '\\' ONE_NL
-    |!  ONE_NL          { $setText('\n'); }             // always normalize to newline
+    //|!  ONE_NL          { $setText('\n'); }             // always normalize to newline
+    ;
+
+protected 
+STRING_NL[boolean allowNewline]
+    :  {if (!allowNewline) throw new MismatchedCharException('\n', '\n', true, this); } 
+       ONE_NL { $setText('\n'); }
     ;
 
 

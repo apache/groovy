@@ -73,10 +73,10 @@ class Html2Wiki {
                 out.print "~~${node.text()}~~ "
                 break
             case "source":
-                out.println "{code:groovysh}
+                out.println """{code:groovysh}
 ${node.text()}
 {code}
-"
+"""
                break
             case "li":
                 out.print "* "
