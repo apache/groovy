@@ -28,9 +28,7 @@ class AssertTest extends GroovyTestCase {
 	void testAssertFail() {
 	    x = 1234;
 	    
-	    /** @todo 
         runCode = false;
-        
 	    try {
 	        runCode = true;
 	    	assert x := 5;
@@ -42,8 +40,9 @@ class AssertTest extends GroovyTestCase {
 	        assert e.getMessage() := msg;
 	        assert e.message := msg;
 	    }
-	    
 	    assert runCode : "has not ran the try / catch block code";
+        /*
+	    
 	    */
 	}
 }

@@ -1,9 +1,9 @@
 Core Groovy Tasks
 =================
 
+* AST for new object expressions, constructors with map / tuple expressions, named parameter calling
+ 
 * test try / catch
-
-* line numbering for exceptions
 
 * change to use == for equals?
 
@@ -199,10 +199,10 @@ could also use nested expressions
 
 For something heavily namespaced we could do...
 
-xsl = xml.namespace("http://foo");
+xsl = xmlns.namespace("http://foo");
 xsl.template {
   xsl.element (match:"*") {
-     foo = xml.namespace("whatnot");
+     foo = xmlns.namespace("whatnot");
      
      // lets use some namespaced attributes
      foo.bar(a:"123", b:5, xmlns:[foo.x:"abc", xsl.y:"abc"]) {
@@ -238,3 +238,50 @@ If we could remove the ;
 
 
 
+BOB's PARSER HACKING LIST
+=========================
+
+* implement closures (handle ClosureExpression)
+
+* support method invocation where last parameter can be specified as a closure
+
+	collection.each {i| print(i); }
+
+	table(valign:"Centre") {
+		tr {
+			td("hello") {
+		}
+	}
+	
+* support named parameter arguments. e.g. foo(a:1234, b:542);
+
+* support for new object expressions
+
+	foo = new Foo(1, 2, 3);
+
+* support subscript operator
+
+	foo[expression]
+	foo[0];
+	foo["hello"] = 123;
+	
+* maps "{" entry ["," entry]* "}"
+	entry =  keyExpression ":" valueExpression
+
+* allow new object expressions to take a Map or List expression as a last expression
+
+	foo = new MySpecialMap(123, 10) [a:1, b:2];
+	blah = new LinkedList [1, 2, 3, 4];
+	
+* make ; optional
+
+* methods on literals - e.g. "abc".length() or 1234.doubleValue();
+
+* support for [] as a type. e.g. main(String[] args)
+
+* grep for "@todo parser" in the src/test for **/*.groovy to find all the
+  current bugs in the parser
+  
+* check all the other operations are there + - / * % & | subscript operator foo[bar] foo[i] etc - along with the += *= abbreviations etc
+
+* regexp notation /regexp/ -> RegexExpression
