@@ -154,15 +154,13 @@ public class InteractiveShell {
                 } catch (Exception e) {
                     err.println("Exception: " + e.getMessage());
                     e.printStackTrace(err);
+                    // TODO: figure out what value ErrorReporter adds here and below
+                    // and how to use it more effectively if so. It seems either
+                    // err.println and printStackTrace() should be used, or 
+                    // ErrorReporter should, but not both.
                     new ErrorReporter(e, false).write(err);
                 } catch (Throwable e) {
-                    err.println("Unrecoverable Error: " + e.getMessage());
-                    e.printStackTrace(err);
                     new ErrorReporter(e, false).write(err);
-                    err.println(">>> exiting");
-
-                    // cleanly exit the while loop
-                    running = false;
                 }
             }
         }
