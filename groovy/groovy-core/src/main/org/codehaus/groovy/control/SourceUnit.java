@@ -62,6 +62,7 @@ import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.control.messages.WarningMessage;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -78,6 +79,9 @@ import java.io.Reader;
 import java.io.FileWriter;
 import java.net.URL;
 import java.util.List;
+
+import antlr.NoViableAltException;
+import antlr.MismatchedTokenException;
 
 
 /**
@@ -190,6 +194,8 @@ public class SourceUnit extends ProcessingUnit {
         boolean result = false;
 
         if (this.errors != null) {
+
+            // Classic support
             Message last = (Message) errors.get(errors.size() - 1);
             if (last instanceof SyntaxErrorMessage) {
                 SyntaxException cause = ((SyntaxErrorMessage) last).getCause();
@@ -200,9 +206,27 @@ public class SourceUnit extends ProcessingUnit {
                     }
                 }
             }
+
+            // JSR support
+            if (last instanceof ExceptionMessage) {
+                ExceptionMessage exceptionMessage = (ExceptionMessage) last;
+                Exception cause = exceptionMessage.getCause();
+                if (cause instanceof NoViableAltException) {
+                    NoViableAltException antlrException = (NoViableAltException) cause;
+                    result = isEofToken(antlrException.token);
+                }
+                if (cause instanceof MismatchedTokenException) {
+                    MismatchedTokenException antlrException = (MismatchedTokenException) cause;
+                    result = isEofToken(antlrException.token);
+                }
+            }
         }
 
         return result;
+    }
+
+    protected boolean isEofToken(antlr.Token token) {
+        return token.getType() == antlr.Token.EOF_TYPE;
     }
 
 

@@ -19,6 +19,7 @@ package org.codehaus.groovy.antlr;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
+import antlr.NoViableAltException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
