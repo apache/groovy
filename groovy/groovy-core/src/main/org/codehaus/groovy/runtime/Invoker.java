@@ -338,7 +338,7 @@ public class Invoker {
             return buffer.toString();
         }
         else if (arguments instanceof String) {
-            return "'" + arguments + "'";
+            return "\"" + arguments + "\"";
         }
         else {
             return arguments.toString();
