@@ -61,6 +61,7 @@ import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
+import org.codehaus.groovy.ast.ConstructorCallExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DoWhileLoop;
 import org.codehaus.groovy.ast.Expression;
@@ -697,6 +698,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         invokeMethodMethod.call(cv);
 
         //cv.visitInsn(POP);
+    }
+
+    public void visitConstructorCallExpression(ConstructorCallExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

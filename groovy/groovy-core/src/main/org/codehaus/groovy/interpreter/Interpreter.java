@@ -56,6 +56,7 @@ import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
+import org.codehaus.groovy.ast.ConstructorCallExpression;
 import org.codehaus.groovy.ast.DoWhileLoop;
 import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.ExpressionStatement;
@@ -270,6 +271,11 @@ public class Interpreter implements GroovyCodeVisitor {
                 "Exception occurred when invoking method: " + call.getMethod() + " on: " + value + " reason: " + e,
                 e);
         }
+    }
+
+    public void visitConstructorCallExpression(ConstructorCallExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

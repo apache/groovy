@@ -54,25 +54,32 @@ package org.codehaus.groovy.ast;
  */
 public class Parameter {
 
-    public static final Parameter[] EMPTY_ARRAY = {};
-    
+    public static final Parameter[] EMPTY_ARRAY = {
+    };
+
     private String type;
     private String name;
     private boolean dynamicType;
+    private Expression defaultValue;
 
     public Parameter(String name) {
         this("java.lang.Object", name);
     }
-    
+
     public Parameter(String type, String name) {
+        this(type, name, null);
+    }
+
+    public Parameter(String type, String name, Expression defaultValue) {
         this.name = name;
         this.type = type;
+        this.defaultValue = defaultValue;
         if (type == null) {
             this.type = "java.lang.Object";
             this.dynamicType = true;
         }
     }
-    
+
     public String getName() {
         return name;
     }
@@ -84,5 +91,12 @@ public class Parameter {
     public boolean isDynamicType() {
         return dynamicType;
     }
-
+    
+    /**
+     * @return the default value expression for this parameter or null if
+     * no default value is specified
+     */
+    public Expression getDefaultValue() {
+        return defaultValue;
+    }
 }
