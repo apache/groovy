@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-beta-10</currentVersion>
+  <currentVersion>1.0-jsr-01-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
