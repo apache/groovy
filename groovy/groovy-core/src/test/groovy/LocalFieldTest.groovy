@@ -5,7 +5,7 @@ import org.codehaus.groovy.GroovyTestCase;
 class LocalFieldTest extends GroovyTestCase {
 
 	// lets define some fields - no necessary for instance variables but supported
-	/* @todo
+	/** @todo
     private x;
     private static z;
     private String y;
@@ -17,6 +17,8 @@ class LocalFieldTest extends GroovyTestCase {
         this.x = "abc";
 	    
 	    assert this.x := "abc";
+	    /** @todo
 	    assert this.x != "def";
+	    */
 	}
 }
