@@ -11,14 +11,9 @@ class CompilerBugsTest extends GroovyTestCase {
     property x;
     
 	void testAssert() {
-        x = "abc";
+        this.x = "abc";
 	    
-	    assert x := "abc";
-	    
-/*	    
-	    this.x = "def";
-	    
-        assert x := "def";
-*/        
+	    assert this.x := "abc";
+	    assert this.x != "def";
 	}
 }
