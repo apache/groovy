@@ -45,7 +45,7 @@
   <repository>
     <connection>scm:cvs:pserver:anonymous@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</connection>
     <developerConnection>scm:cvs:ext:${maven.username}@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/groovy/groovy-core/</url>
+    <url>http://cvs.groovy.codehaus.org/viewrep/groovy/groovy-core</url>
   </repository>
   
   <versions>
