@@ -90,8 +90,7 @@ class SqlCompleteTest extends GroovyTestCase {
     }
     
     protected createSql() {
-        dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
-        sql = new Sql(dataSource)
+        sql = newSql("jdbc:axiondb:foo" + getName())
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")
@@ -115,5 +114,10 @@ class SqlCompleteTest extends GroovyTestCase {
         features.add( id:2, name:'GPath' )
         features.add( id:3, name:'GroovyMarkup' )
         return sql
+    }
+    
+    protected newSql(String uri) {
+	    dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
+	    return new Sql(dataSource)
     }
 }
