@@ -59,7 +59,7 @@ A closure can have as many parameters as you wish...
   groovy&gt; closure = { param | println("hello ${param}") }
   groovy&gt; closure.call("world!")
   hello world!
-  groovy&gt; closure = { greeting, name | println(greeting + param) }
+  groovy&gt; closure = { greeting, name | println(greeting + name) }
   groovy&gt; closure.call("hello ", "world!")
   hello world!
 </source>
