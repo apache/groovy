@@ -472,6 +472,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     answer |= Constants.ACC_VOLATILE;
                     break;
 
+                case LITERAL_def:
+                    // ignore def
+                    break;
+
                 default:
                     unknownAST(node);
             }
@@ -684,6 +688,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Statement variableDef(AST variableDef) {
         AST node = variableDef.getFirstChild();
         String type = null;
+        if (isType(MODIFIERS, node)) {
+            node = node.getNextSibling();
+        }
         if (isType(TYPE, node)) {
             type = typeName(node);
             node = node.getNextSibling();
