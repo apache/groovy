@@ -53,6 +53,8 @@ import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Range;
 import groovy.lang.Tuple;
+import groovy.lang.Spreadable;
+import groovy.lang.SpreadList;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Element;
@@ -146,7 +148,7 @@ public class Invoker {
                 // if it's a closure, use the closure's invokeMethod()
                 if (object instanceof Closure) {
                     Closure closure = (Closure) object;
-                    return closure.invokeMethod(methodName, arguments);
+                    return closure.invokeMethod(methodName, asArray(arguments));
                 }
                 // it's some kind of wacky object that overrides invokeMethod() to do some groovy stuff
                 // (like a proxy, a builder, some custom funny object which controls the invokation mechanism)
@@ -154,12 +156,12 @@ public class Invoker {
                     GroovyObject groovy = (GroovyObject) object;
                     try {
                         // if there's a statically typed method or a GDK method
-                        return groovy.getMetaClass().invokeMethod(object, methodName, arguments);
+                        return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
                     }
                     catch (MissingMethodException e) {
                         if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                             // in case there's nothing else, invoke the object's own invokeMethod()
-                            return groovy.invokeMethod(methodName, arguments);
+                            return groovy.invokeMethod(methodName, asArray(arguments));
                         }
                         else {
                             throw e;
@@ -205,15 +207,51 @@ public class Invoker {
         if (arguments == null) {
             return EMPTY_ARGUMENTS;
         }
-        if (arguments instanceof Tuple) {
+        else if (arguments instanceof Tuple) {
             Tuple tuple = (Tuple) arguments;
-            return tuple.toArray();
+            Object[] objects = tuple.toArray();
+      	     ArrayList array = new ArrayList();
+            for (int i = 0; i < objects.length; i++) {
+                if ((objects[i] instanceof Spreadable) && (objects[i] instanceof SpreadList)) {
+                    SpreadList slist = (SpreadList) objects[i];
+                    for (int j = 0; j < slist.size(); j++) {
+                        array.add(slist.get(j));
+                    }
+                }
+                else {
+                    array.add(objects[i]);
+                }
+            }
+	     return array.toArray();
         }
-        if (arguments instanceof Object[]) {
-            return (Object[]) arguments;
+        else if (arguments instanceof Object[]) {
+            Object[] objects = (Object[]) arguments;
+            ArrayList array = new ArrayList();
+            for (int i = 0; i < objects.length; i++) {
+                if ((objects[i] instanceof Spreadable) && (objects[i] instanceof SpreadList)) {
+                    SpreadList slist = (SpreadList) objects[i];
+                    for (int j = 0; j < slist.size(); j++) {
+                        array.add(slist.get(j));
+                    }
+                }
+                else {
+                    array.add(objects[i]);
+                }
+            }
+            return array.toArray();
         }
         else {
-            return new Object[]{arguments};
+            if ((arguments instanceof Spreadable) && (arguments instanceof SpreadList)) {
+                ArrayList array = new ArrayList();
+                SpreadList slist = (SpreadList) arguments;
+                for (int j = 0; j < slist.size(); j++) {
+                    array.add(slist.get(j));
+                }
+                return array.toArray();
+            }
+            else {
+                return new Object[]{arguments};
+            }
         }
     }
 

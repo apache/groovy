@@ -901,6 +901,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LABELED_ARG:
                 return mapEntryExpression(node);
 
+            case SPREAD_ARG:
+                return spreadExpression(node);
+
             case INDEX_OP:
                 return indexExpression(node);
 
@@ -1147,6 +1150,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression left = expression(node);
         Expression right = expression(node.getNextSibling());
         return new RangeExpression(left, right, inclusive);
+    }
+
+    protected Expression spreadExpression(AST node) {
+        AST exprNode = node.getFirstChild();
+        AST listNode = exprNode.getFirstChild();
+        Expression right = expression(listNode);
+        return new SpreadExpression(right);
     }
 
     protected Expression listExpression(AST listNode) {

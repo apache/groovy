@@ -152,6 +152,7 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller notBoolean = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notBoolean");
     MethodCaller notObject = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notObject");
     MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
+    MethodCaller spreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadList");
     MethodCaller negation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "negate");
     MethodCaller bitNegation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitNegate");
     MethodCaller convertPrimitiveArray = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "convertPrimitiveArray");
@@ -1831,6 +1832,12 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitConstantExpression(ConstantExpression expression) {
         Object value = expression.getValue();
         helper.loadConstant(value);
+    }
+
+    public void visitSpreadExpression(SpreadExpression expression) {
+        Expression subExpression = expression.getExpression();
+        subExpression.visit(this);
+        spreadList.call(cv);
     }
 
     public void visitNegationExpression(NegationExpression expression) {
