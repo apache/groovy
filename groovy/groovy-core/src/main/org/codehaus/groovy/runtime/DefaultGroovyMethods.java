@@ -53,6 +53,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.Writer;
@@ -1124,6 +1125,15 @@ public class DefaultGroovyMethods {
      * to a writer
      */
     public static PrintWriter leftShift(PrintWriter self, Object value) {
+        self.print(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an append mechanism to add things
+     * to a stream
+     */
+    public static PrintStream leftShift(PrintStream self, Object value) {
         self.print(value);
         return self;
     }
