@@ -151,6 +151,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructorOf");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
+    MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeSuperMethod");
+    MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeNoArgumentsMethod");
+    MethodCaller invokeStaticNoArgumentsMethod =
+        MethodCaller.newStatic(InvokerHelper.class, "invokeStaticNoArgumentsMethod");
+
     MethodCaller asIntMethod = MethodCaller.newStatic(InvokerHelper.class, "asInt");
     MethodCaller asTypeMethod = MethodCaller.newStatic(InvokerHelper.class, "asType");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
@@ -1195,16 +1200,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
          * ConstantExpression.EMPTY_ARRAY; } }
          */
 
-        if (MethodCallExpression.isSuperMethodCall(call)) {
+        boolean superMethodCall = MethodCallExpression.isSuperMethodCall(call);
+        String method = call.getMethod();
+        if (superMethodCall && method.equals("<init>")) {
             /** @todo handle method types! */
             cv.visitVarInsn(ALOAD, 0);
             cv.visitVarInsn(ALOAD, 1);
             cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "(Ljava/lang/Object;)V");
         }
         else {
-
-            String method = call.getMethod();
-
             // are we a local variable
             if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(call.getMethod())) {
                 /*
@@ -1221,56 +1225,80 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 invokeClosureMethod.call(cv);
             }
             else {
-                if (argumentsUseStack(arguments)) {
-                    int paramIdx = defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
-
-                    arguments.visit(this);
-
-                    cv.visitVarInsn(ASTORE, paramIdx);
-
-                    call.getObjectExpression().visit(this);
-
-                    cv.visitLdcInsn(method);
-
-                    cv.visitVarInsn(ALOAD, paramIdx);
-                }
-                else {
+                if (emptyArguments(arguments) && !call.isSafe()) {
                     call.getObjectExpression().visit(this);
                     cv.visitLdcInsn(method);
-                    arguments.visit(this);
-                }
-
-                if (call.isSafe()) {
-                    invokeMethodSafeMethod.call(cv);
-
+                    invokeNoArgumentsMethod.call(cv);
                 }
                 else {
-                    invokeMethodMethod.call(cv);
+                    if (argumentsUseStack(arguments)) {
+                        int paramIdx =
+                            defineVariable(createVariableName("iterator"), "java.lang.Object", false).getIndex();
+
+                        arguments.visit(this);
+
+                        cv.visitVarInsn(ASTORE, paramIdx);
+
+                        call.getObjectExpression().visit(this);
+
+                        cv.visitLdcInsn(method);
+
+                        cv.visitVarInsn(ALOAD, paramIdx);
+                    }
+                    else {
+                        call.getObjectExpression().visit(this);
+                        cv.visitLdcInsn(method);
+                        arguments.visit(this);
+                    }
+
+                    if (superMethodCall) {
+                        invokeSuperMethodMethod.call(cv);
+                    }
+                    else if (call.isSafe()) {
+                        invokeMethodSafeMethod.call(cv);
+                    }
+                    else {
+                        invokeMethodMethod.call(cv);
+                    }
                 }
             }
         }
+    }
+
+    protected boolean emptyArguments(Expression arguments) {
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tupleExpression = (TupleExpression) arguments;
+            int size = tupleExpression.getExpressions().size();
+            return size == 0;
+        }
+        return false;
     }
 
     public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
         this.leftHandExpression = false;
 
         Expression arguments = call.getArguments();
-        if (arguments instanceof TupleExpression) {
-            TupleExpression tupleExpression = (TupleExpression) arguments;
-            int size = tupleExpression.getExpressions().size();
-            if (size == 0) {
-                arguments = ConstantExpression.EMPTY_ARRAY;
-            }
-            else if (size == 1) {
-                arguments = (Expression) tupleExpression.getExpressions().get(0);
-            }
+        if (emptyArguments(arguments)) {
+            cv.visitLdcInsn(call.getType());
+            cv.visitLdcInsn(call.getMethod());
+
+            invokeStaticNoArgumentsMethod.call(cv);
         }
+        else {
+            if (arguments instanceof TupleExpression) {
+                TupleExpression tupleExpression = (TupleExpression) arguments;
+                int size = tupleExpression.getExpressions().size();
+                if (size == 1) {
+                    arguments = (Expression) tupleExpression.getExpressions().get(0);
+                }
+            }
 
-        cv.visitLdcInsn(call.getType());
-        cv.visitLdcInsn(call.getMethod());
-        arguments.visit(this);
+            cv.visitLdcInsn(call.getType());
+            cv.visitLdcInsn(call.getMethod());
+            arguments.visit(this);
 
-        invokeStaticMethodMethod.call(cv);
+            invokeStaticMethodMethod.call(cv);
+        }
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
@@ -1316,7 +1344,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         else {
             Expression objectExpression = expression.getObjectExpression();
-            
+
             if (isThisExpression(objectExpression)) {
                 // lets use the field expression if its available
                 String name = expression.getProperty();
@@ -1326,7 +1354,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     return;
                 }
             }
-            
+
             boolean left = leftHandExpression;
             // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
             // rather than ALOAD
@@ -1334,7 +1362,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
             objectExpression.visit(this);
 
-            
             cv.visitLdcInsn(expression.getProperty());
 
             if (expression.isSafe()) {
