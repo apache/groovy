@@ -27,4 +27,10 @@ class PrintTest extends GroovyTestCase {
         assertInspect([['bob':'drools', 'james':'geronimo']], '[["james":"geronimo", "bob":"drools"]]')
         assertInspect([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, ["bob", "james"], ["james":"geronimo", "bob":"drools"], "cheese"]')
     }
+    
+    void testCPlusPlusStylePrinting() {
+        endl = "\n"
+        
+        System.out << "Hello world!" << endl
+    }
 }
