@@ -2011,48 +2011,17 @@ unaryExpressionNotPlusMinus
 	)
 	;
 
-// ----- TODO - GOT TO HERE JRR ----->
-
 // qualified names, array expressions, method invocation, post inc/dec
 postfixExpression
+		{boolean zz; /*ignored*/}
 	:
-		primaryExpression
+		(   zz=pathExpression                           // x, x.f, x(), x{}, etc.
+                |   pathExpressionFromBrackets          // {c}, {c}(), [x].f, etc.
+                )
 
-		(
-			/*
-			options {
-				// the use of postfixExpression in SUPER_CTOR_CALL adds DOT
-				// to the lookahead set, and gives loads of false non-det
-				// warnings.
-				// shut them off.
-				generateAmbigWarnings=false;
-			}
-		:	*/
-			//type arguments are only appropriate for a parameterized method/ctor invocations
-			//semantic check may be needed here to ensure that this is the case
-			DOT^ (typeArguments)?
-				(	IDENT
-					(	lp:LPAREN^ {#lp.setType(METHOD_CALL);}
-						argList
-						RPAREN!
-					)?
-				|	"super"
-					(	// (new Outer()).super() (create enclosing instance)
-						lp3:LPAREN^ argList RPAREN!
-						{#lp3.setType(SUPER_CTOR_CALL);}
-					|	DOT^ (typeArguments)? IDENT
-						(	lps:LPAREN^ {#lps.setType(METHOD_CALL);}
-							argList
-							RPAREN!
-						)?
-					)
-				)
-		|	DOT^ "this"
-		|	DOT^ newExpression
-		|	lb:LBRACK^ {#lb.setType(INDEX_OP);} expression RBRACK!
-		)*
-
-		(	// possibly add on a post-increment or post-decrement.
+                (
+                        options {greedy=true;} :
+                        // possibly add on a post-increment or post-decrement.
 			// allows INC/DEC on too much, but semantics can check
 			in:INC^ {#in.setType(POST_INC);}
 	 	|	de:DEC^ {#de.setType(POST_DEC);}
@@ -2061,25 +2030,90 @@ postfixExpression
 
 // the basic element of an expression
 primaryExpression
-	:	identPrimary ( options {greedy=true;} : DOT^ "class" )?
-	|	constant
-	|	"true"
-	|	"false"
-	|	"null"
-	|	newExpression
-	|	"this"
-	|	"super"
-	|	LPAREN! assignmentExpression RPAREN!
-		// look for int.class and int[].class
-	|	builtInType
-		( lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK! )*
-		DOT^ "class"
-	;
+        :       IDENT
+        /*OBS*  //class names work fine as expressions, no need for T.class in Groovy
+                ( options {greedy=true;} : DOT^ "class" )?
+        *OBS*/
+    |   constant
+        |       "true"
+        |       "false"
+        |       "null"
+    |   newExpression
+        |       "it"                                                    // implicit or explicit closure parameter (or method parameter)
+        |       "this"
+        |       "super"
+        |       parenthesizedExpression                 // (general stuff..,.)
+        |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
+        |   builtInType                                         // type expressions work in Groovy
+        /*OBS*  //class names work fine as expressions
+                // look for int.class and int[].class
+        |       builtInType
+                ( lbt:LBRACK^ {#lbt.setType(ARRAY_DECLARATOR);} RBRACK! )*
+                DOT^ nls! "class"
+        *OBS*/
+        ;
 
+parenthesizedExpression
+        :   lp:LPAREN^ expression RPAREN!                       { #lp.setType(EXPR); }
+        ;
+
+// Groovy syntax for "$x $y".
+stringConstructorExpression
+        :   cs:STRING_CTOR_START
+                { #cs.setType(STRING_LITERAL); }
+
+                stringConstructorValuePart
+
+                (   cm:STRING_CTOR_MIDDLE
+                        { #cm.setType(STRING_LITERAL); }
+                        stringConstructorValuePart
+                )*
+
+                ce:STRING_CTOR_END
+                { #ce.setType(STRING_LITERAL);
+                  #stringConstructorExpression =
+                        #(#[STRING_CONSTRUCTOR,"STRING_CONSTRUCTOR"], stringConstructorExpression);
+                }
+        ;
+
+stringConstructorValuePart
+        :   identifier          // aka, pathExpression
+        |   openBlock
+        ;
+
+/**
+ * A list constructor is a argument list enclosed in square brackets, without labels.
+ * Any argument can be decorated with a spread or optional operator (*x, ?x), but not a label (a:x).
+ * Examples:  [], [1], [1,2], [1,*l1,2], [*l1,*l2], [1,?x,2].
+ * (The l1, l2 must be a sequence or null.)
+ * <p>
+ * A map constructor is an argument list enclosed in square brackets, with labels everywhere,
+ * except possibly on spread arguments, which stand for whole maps spliced in.
+ * A colon immediately after the left bracket also forces the expression to be a map constructor.
+ * Examples: [:], [a:1], [: a:1], [a:1,b:2], [a:1,*m1,b:2], [:*m1,*m2], [a:1,q:?x,b:2], [a:1,a:*x,b:2]
+ * (The m1, m2 must be a map or null.)
+ * Values associated with identical keys overwrite from left to right:
+ * [a:1,a:2]  ===  [a:2]
+ * <p>
+ * Some malformed constructor expressions are not detected in the parser, but in a post-pass.
+ * Bad examples: [1,b:2], [a:1,2], [:1], [a:1,?x], [a:1, b:*x].
+ * (Note that method call arguments, by contrast, can be a mix of keyworded and non-keyworded arguments.)
+ */
+listOrMapConstructorExpression
+                { boolean hasLabels = false, hal; }
+        :   lcon:LBRACK^
+                (  COLON!               { hasLabels |= true; }  )?  // [:], [:*x], [:*x,*y] are map constructors
+                hal=argList             { hasLabels |= hal;  }      // any argument label implies a map
+                RBRACK!
+                {   #lcon.setType(hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR);  }
+        ;
+
+/*OBS*
 /** Match a, a.b.c refs, a.b.c(...) refs, a.b.c[], a.b.c[].class,
  *  and a.b.c.class refs. Also this(...) and super(...). Match
  *  this or super.
  */
+/*OBS*
 identPrimary
 	:	(ta1:typeArguments!)?
 		IDENT
@@ -2129,6 +2163,7 @@ identPrimary
 			)+
 		)?
 	;
+*OBS*/
 
 /** object instantiation.
  *  Trees are built as illustrated by the following input/tree pairs:
@@ -2180,9 +2215,12 @@ identPrimary
  *
  */
 newExpression
+		{boolean zz; /*ignored*/}
 	:	"new"^ (typeArguments)? type
-		(	LPAREN! argList RPAREN! (classBlock)?
+		(	LPAREN! zz=argList RPAREN! 
+			/*TODO - NYI* (anonymousInnerClassBlock)? *NYI*/
 
+/*OBS*
 			//java 1.1
 			// Note: This will allow bad constructs like
 			//	new int[4][][3] {exp,exp}.
@@ -2192,16 +2230,81 @@ newExpression
 			//   b) [ expr ] and an init are not used together
 
 		|	newArrayDeclarator (arrayInitializer)?
+			// Groovy does not support Java syntax for initialized new arrays.
+                        // Use sequence constructors instead.
+
+*OBS*/
 		)
+	// DECIDE:  Keep 'new x()' syntax?
 	;
+
+/*NYI*
+anonymousInnerClassBlock
+        :   classBlock
+        ;
+*NYI*/
 
 argList
-	:	(	expressionList
-		|	/*nothing*/
-			{#argList = #[ELIST,"ELIST"];}
-		)
-	;
+returns [boolean hasLabels = false]
+{ boolean hl2; }
+        :       (
+                        hasLabels=argument
+                        (
+                                options { greedy=true; }:
+                                COMMA! hl2=argument             { hasLabels |= hl2; }
+                        )*
+                        {#argList = #(#[ELIST,"ELIST"], argList);}
+                |       /*nothing*/
+                        {#argList = #[ELIST,"ELIST"];}
+                )
 
+                // DECIDE: Allow an extra trailing comma, for easy editing of long lists.
+                // This applies uniformly to [x,y,] and (x,y,).  It is inspired by Java's a[] = {x,y,}.
+                (   COMMA!  )?
+        ;
+
+/** A single argument in (...) or [...].  Corresponds to to a method or closure parameter.
+ *  May be labeled.  May be modified by the spread or optionality operators *, ?.
+ */
+argument
+returns [boolean hasLabel = false]
+        :
+                // Optional argument label.
+                // Usage:  Specifies a map key, or a keyworded argument.
+                (   (argumentLabelStart) =>
+                        argumentLabel c:COLON^                  {#c.setType(LABELED_ARG);}
+                )?
+
+                (       // Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
+                        sp:STAR^                                {#sp.setType(SPREAD_ARG);}
+                |       // Optional-null operator:  f(1,?x,2)  ===  (x==null)?f(1,2):f(1,x,2)
+                        op:QUESTION^                    {#op.setType(OPTIONAL_ARG);}
+                )?
+
+                expression
+        ;
+
+/** A label for an argument is of the form a:b, 'a':b, "a":b, or (a):b.
+ *      The labels in (a:b), ('a':b), and ("a":b) are in all ways equivalent,
+ *      except that the quotes allow more spellings.
+ *  Equivalent dynamically computed labels are (('a'):b) and ("${'a'}":b)
+ *  but not ((a):b) or "$a":b, since the latter cases evaluate (a) as a normal identifier.
+ *      Bottom line:  If you want a truly variable label, use parens and say ((a):b).
+ */
+argumentLabel
+        :   STRING_LITERAL
+        |   id:IDENT                    {#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
+        |   stringConstructorExpression                                                 // dynamic expression
+        |   parenthesizedExpression                                                             // dynamic expression
+        ;
+
+/** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
+argumentLabelStart!
+        :   ( IDENT | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
+                COLON
+        ;
+
+/*OBS*
 newArrayDeclarator
 	:	(
 			// CONFLICT:
@@ -2218,30 +2321,74 @@ newArrayDeclarator
 			RBRACK!
 		)+
 	;
+*OBS*/
 
 constant
-	:	NUM_INT
-	|	CHAR_LITERAL
-	|	STRING_LITERAL
-	|	NUM_FLOAT
-	|	NUM_LONG
-	|	NUM_DOUBLE
-	;
+        :       NUM_INT
+        |       STRING_LITERAL
+        |       NUM_FLOAT
+        |       NUM_LONG
+        |       NUM_DOUBLE
+        |   NUM_BIG_INT
+        |   NUM_BIG_DECIMAL
+        ;
+
+/** Fast lookahead across balanced brackets of all sorts. */
+balancedBrackets!
+        :   LPAREN balancedTokens RPAREN
+        |   LBRACK balancedTokens RBRACK
+        |   LCURLY balancedTokens RCURLY
+        |   STRING_CTOR_START balancedTokens STRING_CTOR_END
+        ;
+
+balancedTokens!
+        :   (   balancedBrackets
+                |   ~(LPAREN|LBRACK|LCURLY | STRING_CTOR_START
+                     |RPAREN|RBRACK|RCURLY | STRING_CTOR_END)
+                )*
+        ;
+
+balancedTokensNoSep!
+        :   (   balancedBrackets
+                |   ~(LPAREN|LBRACK|LCURLY | STRING_CTOR_START
+                     |RPAREN|RBRACK|RCURLY | STRING_CTOR_END     | SEMI|NLS)
+                )*
+        ;
+
+/** A statement separator is either a semicolon or a significant newline. 
+ *  Any number of additional (insignificant) newlines may accompany it.
+ *  (All the '!' signs simply suppress the default AST building.)
+ */
+sep!
+        :   SEMI! nls!
+        |   NLS!                // this newline is significant!
+                (
+                        options { greedy=true; }:
+                        SEMI! nls!      // this superfluous semicolon is gobbled
+                )?
+        ;
+
+/** Zero or more insignificant newlines, all gobbled up and thrown away. */
+nls!    :
+                (options { greedy=true; }: NLS!)?
+        ;
 
 
+// TO DO: declarations in expression position
+
 //----------------------------------------------------------------------------
-// The Java scanner
+// The Groovy scanner
 //----------------------------------------------------------------------------
-class JavaLexer extends Lexer;
+class GroovyLexer extends Lexer;
 
 options {
-	exportVocab=Java;		// call the vocabulary "Java"
+	exportVocab=Groovy;		// call the vocabulary "Groovy"
 	testLiterals=false;		// don't automatically test for literals
 	k=4;					// four characters of lookahead
 	charVocabulary='\u0003'..'\uFFFF';
 	// without inlining some bitset tests, couldn't do unicode;
 	// I need to make ANTLR generate smaller bitsets; see
-	// bottom of JavaLexer.java
+	// bottom of GroovyLexer.java
 	codeGenBitsetTestThreshold=20;
 }
 
@@ -2263,12 +2410,12 @@ options {
 
 // OPERATORS
 QUESTION		:	'?'		;
-LPAREN			:	'('		;
-RPAREN			:	')'		;
-LBRACK			:	'['		;
-RBRACK			:	']'		;
-LCURLY			:	'{'		;
-RCURLY			:	'}'		;
+LPAREN			:	'('		{++parenLevel;};
+RPAREN			:	')'		{--parenLevel;};
+LBRACK			:	'['		{++parenLevel;};
+RBRACK			:	']'		{--parenLevel;};
+LCURLY			:	'{'		{pushParenLevel();};
+RCURLY			:	'}'		{popParenLevel(); if(stringCtorState!=0) restartStringCtor(true);};
 COLON			:	':'		;
 COMMA			:	','		;
 //DOT			:	'.'		;
@@ -2308,22 +2455,51 @@ BAND			:	'&'		;
 BAND_ASSIGN		:	"&="	;
 LAND			:	"&&"	;
 SEMI			:	';'		;
-
+DOLLAR                  :       '$'             ;
+ATSIGN                  :       '@'             ;
+RANGE_INCLUSIVE		:       ".."    ;
 
 // Whitespace -- ignored
-WS	:	(	' '
-		|	'\t'
-		|	'\f'
-			// handle newlines
-		|	(	options {generateAmbigWarnings=false;}
-			:	"\r\n"	// Evil DOS
-			|	'\r'	// Macintosh
-			|	'\n'	// Unix (the right way)
-			)
-			{ newline(); }
-		)+
-		{ _ttype = Token.SKIP; }
-	;
+WS      :       (
+                options { greedy=true; }:
+                        ' '
+                |       '\t'
+                |       '\f'
+                )+
+                { _ttype = Token.SKIP; }
+        ;
+
+protected
+ONE_NL! :       // handle newlines, which are significant in Groovy
+                (       options {generateAmbigWarnings=false;}
+                :       "\r\n"  // Evil DOS
+                |       '\r'    // Macintosh
+                |       '\n'    // Unix (the right way)
+                )
+                {
+                        // update current line number for error reporting
+                        newlineCheck();
+                }
+        ;
+        
+// Group any number of newlines (with comments and whitespace) into a single token.
+// This reduces the amount of parser lookahead required to parse around newlines.
+// It is an invariant that the parser never sees NLS tokens back-to-back.
+NLS     :       
+                (       ONE_NL
+                        (WS | SL_COMMENT | ML_COMMENT)*
+                        // (gobble, gobble)*
+                )+
+                // Inside (...) and [...] but not {...}, ignore newlines.
+                {   if (parenLevel != 0) {
+                                $setType(Token.SKIP);
+                        } else {
+                                $setText("<lineterm>");
+                        }
+                }
+        ;
+
+// TODO - GOT TO HERE JRR ---->
 
 // Single-line comments
 SL_COMMENT
