@@ -38,6 +38,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
@@ -406,9 +407,15 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return null; /** TODO */
     }
 
-    protected Statement whileStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
+    protected Statement whileStatement(AST whileNode) {
+        AST node = whileNode.getFirstChild();
+        assertNodeType(EXPR, node);
+        BooleanExpression booleanExpression = booleanExpression(node);
+
+        node = node.getNextSibling();
+        assertNodeType(SLIST, node);
+        Statement block = statement(node);
+        return new WhileStatement(booleanExpression, block);
     }
 
     protected Statement forStatement(AST node) {

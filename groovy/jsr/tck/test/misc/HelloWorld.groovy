@@ -42,6 +42,15 @@ class HelloWorld extends GroovyTestCase {
         assert y == 2
     }
 
+    void testWhile() {
+        def x = 10
+
+        while (x > 0) {
+            println "loop value with x=$x"
+            x = x - 1
+        }
+    }
+    
     String foo(a, b) {
         return a + b
     }
