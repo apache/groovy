@@ -42,30 +42,30 @@ class TedsClosureBug extends GroovyTestCase {
 
 
 class Feed {
-    String title
-    String link
-    Person author
-    String tagline
-    String generator
-    String copyright
-    String modified
-    List entries
+    @Property String title
+    @Property String link
+    @Property Person author
+    @Property String tagline
+    @Property String generator
+    @Property String copyright
+    @Property String modified
+    @Property List entries
 }
 
 class Entry {
-    String title
-    String link
-    String id
-    String summary
-    String content
-    Person author
-    String created
-    String issued
-    String modified
+    @Property String title
+    @Property String link
+    @Property String id
+    @Property String summary
+    @Property String content
+    @Property Person author
+    @Property String created
+    @Property String issued
+    @Property String modified
 }
 
 class Person {
-    String name
-    String url
-    String email
+    @Property String name
+    @Property String url
+    @Property String email
 }

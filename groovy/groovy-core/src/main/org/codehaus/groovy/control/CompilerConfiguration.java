@@ -108,7 +108,7 @@ public class CompilerConfiguration {
     /**
      * should we use the New JSR Groovy parser or stay with the static one
      */
-    private boolean useNewGroovy = true;
+    private boolean useNewGroovy = getDefaultJsrFlag();
 
     private ParserPluginFactory pluginFactory;
 
@@ -506,6 +506,22 @@ public class CompilerConfiguration {
     public static void setJsrGroovy(boolean value) {
         jsrGroovy = value;
     }
+
+    protected static boolean getDefaultJsrFlag() {
+        // TODO a temporary hack while we have 2 parsers
+        String property = null;
+        try {
+             property = System.getProperty("groovy.jsr");
+        }
+        catch (Throwable e) {
+            // ignore security warnings
+        }
+        if (property != null) {
+            return "true".equalsIgnoreCase(property);
+        }
+        return true;
+    }
+
 }
 
 

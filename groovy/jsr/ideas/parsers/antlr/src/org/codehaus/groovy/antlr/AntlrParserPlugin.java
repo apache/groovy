@@ -335,7 +335,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // lets check for a property annotation first
         if (fieldNode.getAnnotations("Property") != null) {
             // lets set the modifiers on the field
-            int fieldModifiers = Constants.ACC_PRIVATE;
+            int fieldModifiers = 0;
             int flags = Constants.ACC_STATIC | Constants.ACC_TRANSIENT | Constants.ACC_VOLATILE | Constants.ACC_FINAL;
 
             // lets pass along any other modifiers we need
@@ -348,10 +348,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             classNode.addProperty(new PropertyNode(fieldNode, modifiers, null, null));
         }
         else {
+            /*
             if (!hasVisibility(modifiers)) {
                 modifiers |= Constants.ACC_PRIVATE;
                 fieldNode.setModifiers(modifiers);
             }
+            */
+            fieldNode.setModifiers(modifiers);
 
             classNode.addField(fieldNode);
         }
@@ -1116,8 +1119,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         // TODO we might wanna only try to resolve the name if we are
         // on the left hand side of an expression or before a dot?
-        String newText = resolveTypeName(text);
-        if (text.equals(newText)) {
+        String newText = resolveTypeName(text, false);
+        if (newText == null) {
             return new VariableExpression(text);
         }
         else {
@@ -1548,11 +1551,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
      * Performs a name resolution to see if the given name is a type from imports,
      * aliases or newly created classes
      */
-    protected String resolveTypeName(String name) {
+    protected String resolveTypeName(String name, boolean safe) {
         if (name == null) {
             return null;
         }
-        return resolveNewClassOrName(name, true); // TODO should it be true or false?
+        return resolveNewClassOrName(name, safe);
+    }
+
+    /**
+     * Performs a name resolution to see if the given name is a type from imports,
+     * aliases or newly created classes
+     */
+    protected String resolveTypeName(String name) {
+        return resolveTypeName(name, true);
     }
 
     /**
