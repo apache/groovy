@@ -62,6 +62,9 @@ public class Token
     //     Constants
     // ----------------------------------------------------------------------
 
+    /** Token type for "\n". */
+    public static final int NEWLINE = 5;
+    
     /** Token type for "{". */
     public static final int LEFT_CURLY_BRACE = 10;
 
@@ -422,6 +425,8 @@ public class Token
                                  keyword );
         }
 
+        addTokenDescription( NEWLINE,
+                             "<newline>" );
         addTokenDescription( LEFT_CURLY_BRACE,
                              "{" );
         addTokenDescription( RIGHT_CURLY_BRACE,
@@ -604,6 +609,22 @@ public class Token
     //     Factory methods
     // ----------------------------------------------------------------------
 
+    /** Factory method for token for "\n".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token newline(int startLine,
+                                int startColumn)
+    {
+        return newToken( NEWLINE,
+                         "<newline>",
+                         startLine,
+                         startColumn );
+    }
+
     /** Factory method for token for "{".
      *
      *  @param startLine Line upon which the token starts.
@@ -615,9 +636,9 @@ public class Token
                                        int startColumn)
     {
         return newToken( LEFT_CURLY_BRACE,
-                         "{",
-                         startLine,
-                         startColumn );
+                "{",
+                startLine,
+                startColumn );
     }
 
     /** Factory method for token for "}".

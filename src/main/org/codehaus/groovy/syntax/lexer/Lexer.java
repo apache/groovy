@@ -56,9 +56,14 @@ public class Lexer
                     if ( la() == '\n' )
                     {
                         consume();
+                        token = Token.newline( getStartLine(),
+                                              getStartColumn() );
+                    }
+                    else
+                    {
+                        token = null;
                     }
                     eol();
-                    token = null;
                     break ROOT_SWITCH;
                 }
                 case ( '\n' ):
@@ -69,7 +74,8 @@ public class Lexer
                         consume();
                     }
                     eol();
-                    token = null;
+                    token = Token.newline( getStartLine(),
+                            getStartColumn() );
                     break ROOT_SWITCH;
                 }
                 case ( '{' ):

@@ -9,6 +9,7 @@ public class LookAheadExhaustionException
 
     public LookAheadExhaustionException(int la)
     {
+        super("Could not look ahead for token: " + la + " due to buffer exhaustion");
         this.la = la;
     }
 

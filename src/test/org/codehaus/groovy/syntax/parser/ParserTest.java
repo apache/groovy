@@ -1347,9 +1347,9 @@ public class ParserTest
     }
 
     public void testLogicalAndExpression()
-        throws Exception
+    throws Exception
     {
-        Parser parser = newParser( "x > 1 && y < 2" );
+        Parser parser = newParser( "x > 1 && \n y < 2" );
 
         CSTNode root = parser.expression();
         

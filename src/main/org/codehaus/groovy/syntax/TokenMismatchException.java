@@ -9,6 +9,7 @@ public class TokenMismatchException
     public TokenMismatchException(Token token,
                                   int expectedType)
     {
+        super("Expected token: " + expectedType + " but found: " + token);
         this.token        = token;
         this.expectedType = expectedType;
     }

@@ -17,7 +17,7 @@ public abstract class AbstractTokenStream
 
     public AbstractTokenStream(String sourceLocator)
     {
-        this.buf           = new Token[5];
+        this.buf           = new Token[8 * 1024];
         this.first         = -1;
         this.avail         = 0;
         this.sourceLocator = sourceLocator;
