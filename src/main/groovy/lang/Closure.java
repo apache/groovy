@@ -62,11 +62,13 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     private static final Object noParameters[] = new Object[] { null };
 
     private Object delegate;
+    private Object owner;
     private MetaMethod doCallMethod;
 
     public Closure(Object delegate) {
         this.delegate = delegate;
-    }
+        this.owner = delegate;
+       }
 
     public Object invokeMethod(String method, Object arguments) {
         if ("doCall".equals(method)) {
@@ -87,7 +89,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
                         return InvokerHelper.invokeMethod(delegate, method, arguments);
                     }
                     catch (GroovyRuntimeException e2) {
-                        // ignore, we'll throw e
+                        if (owner != this && delegate != owner) {
+                            try {
+                                // lets try invoke method on delegate
+                                return InvokerHelper.invokeMethod(owner, method, arguments);
+                            }
+                            catch (GroovyRuntimeException e3) {
+                                // ignore, we'll throw e
+                            }
+                        }
                     }
                 }
                 throw e;
@@ -100,14 +110,21 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
             return getMetaClass().getProperty(this, property);
         }
         catch (GroovyRuntimeException e) {
-            Object delegate = getDelegate();
             if (delegate != this && delegate != null) {
                 try {
                     // lets try invoke method on delegate
                     return InvokerHelper.getProperty(delegate, property);
                 }
                 catch (GroovyRuntimeException e2) {
-                    // ignore, we'll throw e
+                    if (owner != this && delegate != owner) {
+                        try {
+                            // lets try invoke method on delegate
+                            return InvokerHelper.getProperty(owner, property);
+                        }
+                        catch (GroovyRuntimeException e3) {
+                            // ignore, we'll throw e
+                        }
+                    }
                 }
             }
             throw e;
@@ -128,7 +145,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
                     return;
                 }
                 catch (GroovyRuntimeException e2) {
-                    // ignore, we'll throw e
+                    if (owner != this && delegate != owner) {
+                        try {
+                            // lets try invoke method on delegate
+                            InvokerHelper.setProperty(owner, property, newValue);
+                        }
+                        catch (GroovyRuntimeException e3) {
+                            // ignore, we'll throw e
+                        }
+                    }
                 }
             }
             throw e;
