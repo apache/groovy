@@ -1365,16 +1365,20 @@ public class MetaClass {
     protected Reflector loadReflector(List methods) {
         ReflectorGenerator generator = new ReflectorGenerator(methods);
         String className = theClass.getName();
-        String packagePrefix = "";
+        String packagePrefix = "gjdk.";
+        /*
         if (className.startsWith("java.")) {
             packagePrefix = "gjdk.";
         }
+        */
         String name = packagePrefix + className + "_GroovyReflector";
         if (theClass.isArray()) {
             String componentName = theClass.getComponentType().getName();
+            /*
             if (componentName.startsWith("java.")) {
                 packagePrefix = "gjdk.";
             }
+            */
             name = packagePrefix + componentName + "_GroovyReflectorArray";
         }
         // lets see if its already loaded
