@@ -47,10 +47,8 @@ class PropertyTest extends GroovyTestCase {
 
         println("count ${foo.count}")
         
-        /* @todo
         assert foo.getCount() == 1
         assert foo.count == 1
-        */
         
         foo.count = 7
         
@@ -84,4 +82,10 @@ class PropertyTest extends GroovyTestCase {
         
         println("created bean ${foo.inspect()}")
     }
+    
+    void testToString() {
+        foo = new Foo(name:'Gromit', location:'Moon')
+
+		println foo
+	}    	
 }
