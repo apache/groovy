@@ -144,6 +144,7 @@
           <directory>src/test</directory>
           <includes>
             <include>**/*.properties</include>
+            <include>**/*.xml</include>
           </includes>
         </resource>
       </resources>
