@@ -785,7 +785,7 @@ public class MetaClass {
                 return method;
             }
         }
-        log.warning("Creating reflection based dispatcher for: " + aMethod);
+        //log.warning("Creating reflection based dispatcher for: " + aMethod);
         return new ReflectionMetaMethod(aMethod);
     }
 
