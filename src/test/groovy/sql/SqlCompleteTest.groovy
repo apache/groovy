@@ -1,10 +1,5 @@
 package groovy.sql
 
-import org.axiondb.jdbc.AxionDataSource
-
-/** @todo bug - should not need this line */
-import groovy.sql.TestHelper
-
 class SqlCompleteTest extends TestHelper {
 
     void testSqlQuery() {
