@@ -21,11 +21,11 @@ class MapConstructionTest extends GroovyTestCase {
         assertMap(m)
     }
 
-    testMapAsParameter() {
+    def testMapAsParameter() {
         assertMap([ 1 : 'abc', 2 : 'def', 3 : 'xyz' ])
     }
 
-    testMapViaHashMap() {
+    def testMapViaHashMap() {
         m = new HashMap()
         m.put(1, 'abc')
         m.put(2, 'def')
@@ -33,7 +33,7 @@ class MapConstructionTest extends GroovyTestCase {
         assertMap(m)
     }
 
-    assertMap(m) {
+    void assertMap(m) {
         assert m instanceof Map
         assert m.getClass().getName() == "java.util.HashMap"
 

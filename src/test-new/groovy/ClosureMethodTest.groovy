@@ -21,10 +21,10 @@ class ClosureMethodTest extends GroovyTestCase {
     void testMapCollect() {
         map = [1:2, 2:4, 3:6, 4:8]
         answer = map.collect( {e| return e.key + e.value } )
-		
-		// lest sort the results since maps are in hash code order
-		answer = answer.sort()
-		
+
+        // lest sort the results since maps are in hash code order
+        answer = answer.sort()
+
         assert answer.size() == 4
         assert answer == [3, 6, 9, 12]
         assert answer.get(0) == 3
@@ -71,7 +71,7 @@ class ClosureMethodTest extends GroovyTestCase {
         values = answer.collect {entry| return entry.value }
 
         println("keys " + keys + " values " + values)
-		
+
         // maps are in hash order so lets sort the results       
         keys.sort() 
         values.sort() 
@@ -85,11 +85,11 @@ class ClosureMethodTest extends GroovyTestCase {
 
         list = [1, 2, 3, 4]
         list.each({item| count = count + item })
-		
+
         assert count == 10
 
         list.each{item| count = count + item }
-		
+
         assert count == 20
     }
 
@@ -102,7 +102,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert count == 20
         
         map.each({e| count = count + e.value + e.key })
-		
+
         assert count == 50
     }
     
@@ -162,8 +162,9 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false)
+        if(file.exists() == false) {
             file = new File("Bar.groovy")
+        }
         
         println("Contents of file: " + file)
         
@@ -174,8 +175,9 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testForEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false)
+        if(file.exists() == false) {
             file = new File("Bar.groovy")
+        }
         
         println("For loop to display contents of file: " + file)
         
@@ -186,21 +188,23 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testReadLines() {
         file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false)
+        if(file.exists() == false) {
             file = new File("Bar.groovy")
+        }
 
-		lines = file.readLines()
-		
-		assert lines != null
-		assert lines.size() > 0
+        lines = file.readLines()
+
+        assert lines != null
+        assert lines.size() > 0
 
         println("File has: " + lines.size() + " line(s)")
     }
     
     void testEachFile() {
         file = new File("src/test/groovy")
-        if(!file.exists())
+        if(!file.exists()) {
             file = new File(".")
+        }
         
         println("Closure loop to display contents of dir: " + file)
         
