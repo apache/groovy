@@ -332,17 +332,7 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 				}
 			};
 		} else if ("text".equals(name)) {
-		final StringBuffer buff = new StringBuffer();
-
-			for (int i = 0; i != this.children.length; i++) {
-			final Object child = this.children[i];
-			
-				if (child instanceof String) {
-					buff.append(child);
-				}
-			}	
-		
-			return buff.toString();
+			return text();
 		} else if ("getAt".equals(name) && ((Object[])args)[0] instanceof String) {
 			return getProperty((String)((Object[])args)[0]);
 		} else if ("depthFirst".equals(name)) {
@@ -405,6 +395,24 @@ class XmlList extends GroovyObjectSupport implements Buildable {
 
 		builder.invokeMethod(this.name, new Object[]{this.attributes, rest});
 		
+	}
+	
+	public String toString() {
+		return text();
+	}
+	
+	private String text() {
+	final StringBuffer buff = new StringBuffer();
+
+		for (int i = 0; i != this.children.length; i++) {
+		final Object child = this.children[i];
+		
+			if (child instanceof String) {
+				buff.append(child);
+			}
+		}	
+	
+		return buff.toString();
 	}
 	
 	private void buildChildren(final GroovyObject builder) {
