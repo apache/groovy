@@ -66,6 +66,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+
 import uk.co.wilson.net.http.MinMLHTTPServer;
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
@@ -241,10 +243,14 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							out.write(response);
 							out.write(endResponse);
 						}
-						catch (final Throwable e) {
+						catch (Throwable e) {
 //						e.printStackTrace();
 						final String message;
 						final int codeValue;
+						
+							if (e instanceof InvokerInvocationException) {
+								e = ((InvokerInvocationException)e).getCause();
+							}
 							
 							if (e instanceof XMLRPCFailException) {
 								message = ((XMLRPCFailException)e).getFaultString();
@@ -255,7 +261,12 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							}
 							
 							if (XMLRPCServer.this.faultMethod != null) {
-								XMLRPCServer.this.faultMethod.call(new Object[] {message, new Integer(codeValue)});
+								try {
+									XMLRPCServer.this.faultMethod.call(new Object[] {message, new Integer(codeValue)});
+								}
+								catch (final Throwable e1) {
+									// swallow this and return the orginal fault
+								}
 							}
 							
 							final byte[] error = ((message == null) ? e.getClass().getName() : message).getBytes();
@@ -304,7 +315,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * @param msg Fault message to be returned to the caller
 	 * @param code Fault code to be returned to the caller
 	 */
-	public void returnFault(String msg, int code) {
+	public void returnFault(String msg, int code) throws XMLRPCFailException {
 		throw new XMLRPCFailException(msg, code);
 	}
 	
@@ -317,7 +328,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * @param msg Fault message to be returned to the caller
 	 * @param code Fault code to be returned to the caller
 	 */
-	public void returnFault(GString msg, int code) {
+	public void returnFault(GString msg, int code) throws XMLRPCFailException {
 		returnFault(msg.toString(), code);	// sometimes Groovy doesn't do the cconversion to String 
 	}
 	

@@ -94,7 +94,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			+ "\u0031\u0032\u0033").getBytes();
 	
 	private interface Emitter {
-		void emit(StringBuffer buffer, Object value);
+		void emit(StringBuffer buffer, Object value) throws XMLRPCFailException;
 	}
 	
 	private final static Map elements = new HashMap();
@@ -122,7 +122,7 @@ public class XMLRPCMessageProcessor extends MinML {
 		
 		elements.put(String.class,
 				new Emitter() {
-					public void emit(final StringBuffer buffer, final Object string) {
+					public void emit(final StringBuffer buffer, final Object string) throws XMLRPCFailException {
 						encodeString(buffer.append("<value><string>"), string.toString()).append("</string></value>");
 					}
 				});
@@ -187,7 +187,7 @@ public class XMLRPCMessageProcessor extends MinML {
 				});
 	}
 	
-	public static StringBuffer emit(final StringBuffer buffer, final Object param) {
+	public static StringBuffer emit(final StringBuffer buffer, final Object param) throws XMLRPCFailException {
 		if (param == null) {
 			throw new XMLRPCFailException("an XML-RPC data value cannot be null", 0);
 		}
@@ -239,7 +239,7 @@ public class XMLRPCMessageProcessor extends MinML {
 		return buffer;
 	}
 	
-	public static StringBuffer encodeString(final StringBuffer buffer, final String string) {
+	public static StringBuffer encodeString(final StringBuffer buffer, final String string) throws XMLRPCFailException {
 		for (int i = 0; i != string.length(); i++) {
 			final char c = string.charAt(i);
 			
@@ -293,9 +293,11 @@ public class XMLRPCMessageProcessor extends MinML {
 	private final DateFormat dateTime1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	private final Boolean bools[] = {new Boolean(false), new Boolean(true)};
 	
-	public void parseMessage(final InputStream in) throws IOException { 
+	public void parseMessage(final InputStream in) throws IOException, XMLRPCFailException { 
 		try {
 			parse(new InputStreamReader(in, "ISO-8859-1"));
+		} catch (final XMLRPCFailException e) {
+			throw e;
 		} catch (final SAXException e) {
 			throw new XMLRPCFailException("XML error in response from remote system: " + e.getMessage(), 0);
 		}
@@ -340,7 +342,7 @@ public class XMLRPCMessageProcessor extends MinML {
 	/* (non-Javadoc)
 	 * @see org.xml.sax.DocumentHandler#endElement(java.lang.String)
 	 */
-	public void endElement(final String name) {
+	public void endElement(final String name) throws SAXException {
 		if ("value".equals(name)) {
 			if (!this.gotValue) {
 				this.params = this.buffer.toString();

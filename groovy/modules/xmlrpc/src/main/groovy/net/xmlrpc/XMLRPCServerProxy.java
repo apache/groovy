@@ -107,17 +107,17 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			
 			final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
 		
-			XMLRPCMessageProcessor.encodeString(buffer, methodName).append("</methodName>\n\t<params>\n");
 			
-			for (int i = 0; i != numberOfparams; i++) {
-			final Object param = params[i];
+			try {
+				XMLRPCMessageProcessor.encodeString(buffer, methodName).append("</methodName>\n\t<params>\n");
 				
-				try {
+				for (int i = 0; i != numberOfparams; i++) {
+				final Object param = params[i];
 					XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
 				}
-				catch (final XMLRPCFailException e) {
-					throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
-				}
+			}
+			catch (final XMLRPCFailException e) {
+				throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
 			}
 			
 			buffer.append("\t</params>\n</methodCall>\n");
@@ -145,6 +145,7 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 				responseParser.parseMessage(connection.getInputStream());
 			}
 			catch (final XMLRPCFailException e) {
+//				e.printStackTrace();
 				throw new XMLRPCCallFailureException(e.getFaultString(), new Integer(e.getFaultCode()));
 			}
 			

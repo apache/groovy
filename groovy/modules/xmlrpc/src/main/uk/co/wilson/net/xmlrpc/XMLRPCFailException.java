@@ -1,5 +1,7 @@
 package uk.co.wilson.net.xmlrpc;
 
+import org.xml.sax.SAXException;
+
 /*
 
 Copyright 2004 (C) John Wilson. All Rights Reserved.
@@ -45,12 +47,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-public class XMLRPCFailException extends RuntimeException {
+public class XMLRPCFailException extends SAXException {
 	private final String faultString;
 	private final int faultCode;
 	
 	public XMLRPCFailException(final String faultString, final int faultCode) {
-		super("XML-RPC call Failure: fault string = \"" + faultString + "\", fault code = " + faultCode);
+		super(faultString);
 		
 		this.faultString = faultString;
 		this.faultCode = faultCode;
