@@ -34,22 +34,20 @@
  */
 package groovy.lang;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+
+import java.io.*;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
-import java.security.SecureClassLoader;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,18 +58,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.control.Phases;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
-
 /**
  * A ClassLoader which can load Groovy classes
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  * @author Guillaume Laforge
  * @author Steve Goetze
@@ -81,6 +70,10 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
+
+    public void removeFromCache(Class aClass) {
+        cache.remove(aClass);
+    }
 
     private class PARSING {
     };
@@ -111,7 +104,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /**
      * Loads the given class node returning the implementation Class
-     * 
+     *
      * @param classNode
      * @return
      */
@@ -121,7 +114,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /**
      * Loads the given class node returning the implementation Class
-     * 
+     *
      * @param classNode
      * @return
      */
@@ -129,8 +122,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         CodeSource codeSource = null;
         try {
             codeSource = new CodeSource(new URL("file", "", newCodeBase), (java.security.cert.Certificate[]) null);
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             //swallow
         }
 
@@ -146,17 +138,15 @@ public class GroovyClassLoader extends SecureClassLoader {
             unit.compile(Phases.CLASS_GENERATION);
 
             return collector.generatedClass;
-        }
-        catch (CompilationFailedException e) {
+        } catch (CompilationFailedException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
      * Parses the given file into a Java class capable of being run
-     * 
-     * @param file
-     *            the file name to parse
+     *
+     * @param file the file name to parse
      * @return the main class defined in the given script
      */
     public Class parseClass(File file) throws CompilationFailedException, IOException {
@@ -165,11 +155,9 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /**
      * Parses the given text into a Java class capable of being run
-     * 
-     * @param text
-     *            the text of the script/class to parse
-     * @param fileName
-     *            the file name to use as the name of the class
+     *
+     * @param text     the text of the script/class to parse
+     * @param fileName the file name to use as the name of the class
      * @return the main class defined in the given script
      */
     public Class parseClass(String text, String fileName) throws CompilationFailedException, IOException {
@@ -178,9 +166,8 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /**
      * Parses the given text into a Java class capable of being run
-     * 
-     * @param text
-     *            the text of the script/class to parse
+     *
+     * @param text the text of the script/class to parse
      * @return the main class defined in the given script
      */
     public Class parseClass(String text) throws CompilationFailedException, IOException {
@@ -189,9 +176,8 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /**
      * Parses the given character stream into a Java class capable of being run
-     * 
-     * @param in
-     *            an InputStream
+     *
+     * @param in an InputStream
      * @return the main class defined in the given script
      */
     public Class parseClass(InputStream in) throws CompilationFailedException, IOException {
@@ -212,12 +198,17 @@ public class GroovyClassLoader extends SecureClassLoader {
         return parseClass(gcs);
     }
 
+
+    public Class parseClass(GroovyCodeSource codeSource) throws IOException, CompilationFailedException {
+        return parseClass(codeSource, true);
+    }
+
     /**
      * Parses the given code source into a Java class capable of being run
-     * 
+     *
      * @return the main class defined in the given script
      */
-    public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
+    public Class parseClass(GroovyCodeSource codeSource, boolean shouldCache) throws CompilationFailedException, IOException {
         String name = codeSource.getName();
         Class answer = null;
         //ASTBuilder.resolveName can call this recursively -- for example when
@@ -227,8 +218,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             answer = (Class) cache.get(name);
             if (answer != null) {
                 return (answer == PARSING.class ? null : answer);
-            }
-            else {
+            } else {
                 cache.put(name, PARSING.class);
             }
         }
@@ -248,13 +238,11 @@ public class GroovyClassLoader extends SecureClassLoader {
             // catch( CompilationFailedException e ) {
             //     throw new RuntimeException( e );
             // }
-        }
-        finally {
+        } finally {
             synchronized (cache) {
-                if (answer == null) {
+                if (answer == null || !shouldCache) {
                     cache.remove(name);
-                }
-                else {
+                } else {
                     cache.put(name, answer);
                 }
             }
@@ -285,8 +273,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                     return findGroovyClass(name);
                 }
             });
-        }
-        catch (PrivilegedActionException pae) {
+        } catch (PrivilegedActionException pae) {
             throw (ClassNotFoundException) pae.getException();
         }
     }
@@ -337,20 +324,17 @@ public class GroovyClassLoader extends SecureClassLoader {
                             if (files[j].getName().equals(classname)) {
                                 try {
                                     return parseClass(files[j]);
-                                }
-                                catch (CompilationFailedException e) {
+                                } catch (CompilationFailedException e) {
                                     e.printStackTrace();
                                     throw new ClassNotFoundException("Syntax error in groovy file: " + files[j].getAbsolutePath(), e);
-                                }
-                                catch (IOException e) {
+                                } catch (IOException e) {
                                     e.printStackTrace();
                                     throw new ClassNotFoundException("Error reading groovy file: " + files[j].getAbsolutePath(), e);
                                 }
                             }
                         }
                     }
-                }
-                else {
+                } else {
                     try {
                         JarFile jarFile = new JarFile(path);
                         JarEntry entry = jarFile.getJarEntry(filename);
@@ -359,19 +343,16 @@ public class GroovyClassLoader extends SecureClassLoader {
                             Certificate[] certs = entry.getCertificates();
                             try {
                                 return parseClass(new GroovyCodeSource(new ByteArrayInputStream(bytes), filename, path, certs));
-                            }
-                            catch (CompilationFailedException e1) {
+                            } catch (CompilationFailedException e1) {
                                 e1.printStackTrace();
                                 throw new ClassNotFoundException("Syntax error in groovy file: " + filename, e1);
-                            }
-                            catch (IOException e1) {
+                            } catch (IOException e1) {
                                 e1.printStackTrace();
                                 throw new ClassNotFoundException("Error reading groovy file: " + filename, e1);
                             }
                         }
 
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         // Bad jar in classpath, ignore
                     }
                 }
@@ -392,8 +373,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             while ((b = bis.read()) != -1) {
                 baos.write(b);
             }
-        }
-        catch (IOException ioe) {
+        } catch (IOException ioe) {
             throw new GroovyRuntimeException("Could not read the jar bytes for " + entry.getName());
         }
         return baos.toByteArray();
@@ -436,8 +416,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
                     if ("".equals(base)) {
                         path = new File(paths[i]);
-                    }
-                    else {
+                    } else {
                         path = new File(base, paths[i]);
                     }
 
@@ -455,13 +434,11 @@ public class GroovyClassLoader extends SecureClassLoader {
                                     if (manifestClassPath != null)
                                         expandClassPath(pathList, paths[i], manifestClassPath);
                                 }
-                            }
-                            catch (IOException e) {
+                            } catch (IOException e) {
                                 // Bad jar, ignore
                                 continue;
                             }
-                        }
-                        else {
+                        } else {
                             pathList.add(paths[i]);
                         }
                     }
@@ -578,8 +555,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                     if (source != null && cls != null && isSourceNewer(source, cls)) {
                         cls = parseClass(source);
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     synchronized (cache) {
                         cache.put(name, NOT_RESOLVED.class);
@@ -597,8 +573,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         try {
             field = cls.getField(Verifier.__TIMESTAMP);
             o = (Long) field.get(null);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             //throw new RuntimeException(e);
             return Long.MAX_VALUE;
         }

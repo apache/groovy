@@ -45,37 +45,32 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+
 import java.beans.IntrospectionException;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import java.util.*;
 
 /**
- * A registery of MetaClass instances which caches introspection & 
- * reflection information and allows methods to be dynamically added to 
+ * A registery of MetaClass instances which caches introspection &
+ * reflection information and allows methods to be dynamically added to
  * existing classes at runtime
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new HashMap());
     private boolean useAccessible;
-    private GroovyClassLoader loader =  
-    	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-    		public Object run() {
-    			return new GroovyClassLoader(getClass().getClassLoader()); 
-    		}
-    	});
+    private GroovyClassLoader loader =
+            (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return new GroovyClassLoader(getClass().getClassLoader());
+                }
+            });
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -102,7 +97,7 @@ public class MetaClassRegistry {
 
     /**
      * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
-     * method will be called to enable access to all methods when using reflection
+     *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistry(boolean useAccessible) {
         this.useAccessible = useAccessible;
@@ -119,20 +114,23 @@ public class MetaClassRegistry {
             try {
                 answer = new MetaClass(this, theClass);
                 answer.checkInitialised();
-            }
-            catch (IntrospectionException e) {
-                throw new GroovyRuntimeException(
-                    "Could not introspect class: " + theClass.getName() + ". Reason: " + e,
-                    e);
+            } catch (IntrospectionException e) {
+                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
+                        e);
             }
             metaClasses.put(theClass, answer);
         }
         return answer;
     }
 
+    public void removeMetaClass(Class theClass) {
+        metaClasses.remove(theClass);
+    }
+
+
     /**
      * Registers a new MetaClass in the registry to customize the type
-     * 
+     *
      * @param theClass
      * @param theMetaClass
      */
@@ -148,11 +146,11 @@ public class MetaClassRegistry {
      * A helper class to load meta class bytecode into the class loader
      */
     public Class loadClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
-    	return (Class) AccessController.doPrivileged(new PrivilegedAction() {
-    		public Object run() {
-    			return loader.defineClass(name, bytecode, getClass().getProtectionDomain());
-    		}
-    	});
+        return (Class) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return loader.defineClass(name, bytecode, getClass().getProtectionDomain());
+            }
+        });
     }
 
     public Class loadClass(String name) throws ClassNotFoundException {
@@ -161,7 +159,6 @@ public class MetaClassRegistry {
 
     /**
      * Ensures that all the registered MetaClass instances are initalized
-     *
      */
     void checkInitialised() {
         // lets copy all the classes in the repository right now 
@@ -181,11 +178,9 @@ public class MetaClassRegistry {
         if (answer == null) {
             try {
                 answer = new MetaClass(this, theClass);
-            }
-            catch (IntrospectionException e) {
-                throw new GroovyRuntimeException(
-                    "Could not introspect class: " + theClass.getName() + ". Reason: " + e,
-                    e);
+            } catch (IntrospectionException e) {
+                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
+                        e);
             }
             metaClasses.put(theClass, answer);
         }
@@ -214,21 +209,22 @@ public class MetaClassRegistry {
             return metaclass.retrieveConstructor(args);
         }
     }
-            /**
+
+    /**
      * Singleton of MetaClassRegistry. Shall we use threadlocal to store the instance?
+     *
      * @param includeExtension
      * @return
      */
     public static MetaClassRegistry getIntance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {
             if (instanceInclude == null) {
-                instanceInclude  = new MetaClassRegistry();
+                instanceInclude = new MetaClassRegistry();
             }
             return instanceInclude;
-        }
-        else {
+        } else {
             if (instanceExclude == null) {
-                instanceExclude  = new MetaClassRegistry(DONT_LOAD_DEFAULT);
+                instanceExclude = new MetaClassRegistry(DONT_LOAD_DEFAULT);
             }
             return instanceExclude;
         }
