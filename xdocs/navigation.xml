@@ -39,6 +39,7 @@
       <item name="GroovyMarkup"       href="/markup.html"/>
       <item name="More GroovyMarkup"  href="http://wiki.codehaus.org/groovy/TreeBasedSyntax"/>
       <item name="GPath"         	  href="http://wiki.codehaus.org/groovy/PathExpressionLanguage"/>
+      <item name="Groovlets"          href="/servlets.html"/>
     </menu>
 
     <menu name="Examples">
