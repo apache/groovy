@@ -197,6 +197,7 @@ public class MetaClass {
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         /*
+        Class type = arguments == null ? null : arguments.getClass();
         System
             .out
             .println(
@@ -204,11 +205,13 @@ public class MetaClass {
                     + object
                     + " method: "
                     + methodName
+                    + " argument type: "
+                    + type
                     + " arguments: "
                     + InvokerHelper.toString(arguments));
         
         //System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
-        */
+         */
 
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
@@ -261,8 +264,13 @@ public class MetaClass {
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-        // System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
-
+        /*
+        System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
+        Class type = arguments == null ? null : arguments.getClass();
+        System.out.println("Argument type: " + type);
+        System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
+        */
+        
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {

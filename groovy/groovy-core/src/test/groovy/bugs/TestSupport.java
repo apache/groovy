@@ -54,7 +54,7 @@ import groovy.util.GroovyTestCase;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TestSupport extends GroovyTestCase  {
+public class TestSupport extends GroovyTestCase {
 
     public String[] getMockArguments() {
         return new String[] { "a", "b", "c" };

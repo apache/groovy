@@ -100,4 +100,8 @@ public class DumpClass4 {
         foo.set(new Integer(12));
         return foo.get();
     }
+    
+    public static void makeInstance() {
+        InvokerHelper.invokeConstructorOf(DumpClass4.class, null);
+    }
 }

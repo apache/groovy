@@ -141,6 +141,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeMethodSafe");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
+    MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructorOf");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller getPropertySafeMethod = MethodCaller.newStatic(InvokerHelper.class, "getPropertySafe");
@@ -1056,10 +1057,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             if (size == 0) {
                 arguments = ConstantExpression.EMPTY_ARRAY;
             }
-            else if (size == 1) {
-                arguments = (Expression) tupleExpression.getExpressions().get(0);
-            }
         }
+        /*
+        else {
+            // lets put the argument into a tuple
+            arguments = new TupleExpression(new Expression[] { arguments });
+        }
+        */
 
         if (MethodCallExpression.isSuperMethodCall(call)) {
             /** @todo handle method types! */
@@ -1073,6 +1077,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
             // are we a local variable
             if (isThisExpression(call.getObjectExpression()) && isFieldOrVariable(call.getMethod())) {
+                /*
+                if (arguments instanceof TupleExpression) {
+                    TupleExpression tupleExpression = (TupleExpression) arguments;
+                    int size = tupleExpression.getExpressions().size();
+                    if (size == 1) {
+                        arguments = (Expression) tupleExpression.getExpressions().get(0);
+                    }
+                }
+                */
+
                 // lets invoke the closure method
                 visitVariableExpression(new VariableExpression(method));
                 arguments.visit(this);
@@ -1153,12 +1167,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         //System.out.println("Constructing: " + type);
 
-        //visitClassExpression(new ClassExpression(type));
-        cv.visitLdcInsn(type);
-
+        visitClassExpression(new ClassExpression(type));
         arguments.visit(this);
+        invokeConstructorOfMethod.call(cv);
 
+        /*
+        cv.visitLdcInsn(type);
+        
+        arguments.visit(this);
+        
         invokeConstructorMethod.call(cv);
+        */
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

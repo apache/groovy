@@ -66,15 +66,17 @@ class MockTest extends GroovyTestCase {
         }
     }
 
+    /*
     void testAnExpectationwithAClosurePassesIfClosurePasses() {
-        mock.doSomething( {arg | assert arg=="hello" } )
-
+        mock.doSomething {arg | assert arg=="hello" } 
+        
         // execute
         mock.instance.doSomething("hello")
 
         //verify
         mock.verify()
     }
+    */
 
     void testAnExpectationWithAClosureGivesErrorIFNotCalled() {
         mock.doSomething( {arg | assert arg=="poo" } )

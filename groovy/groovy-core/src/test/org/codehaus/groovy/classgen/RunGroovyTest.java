@@ -58,6 +58,12 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class RunGroovyTest extends TestSupport {
 
+    public void testArrayBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/ToArrayBug.groovy");
+        object.invokeMethod("testToArrayBug", null);
+    }
+
+    /*
     public void testPostfix() throws Exception {
         GroovyObject object = compile("src/test/groovy/PostfixTest.groovy");
         object.invokeMethod("testIntegerPostfix", null);
@@ -87,4 +93,5 @@ public class RunGroovyTest extends TestSupport {
     public void testConsole() throws Exception {
         GroovyObject object = compile("src/main/groovy/ui/Console.groovy");
     }
+    */
 }

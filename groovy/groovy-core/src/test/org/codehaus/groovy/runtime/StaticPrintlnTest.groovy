@@ -1,7 +1,9 @@
-class StaticPrintlnTest extends GroovyTestCase {
+import groovy.bugs.TestSupport
+
+class StaticPrintlnTest extends TestSupport {
 
     void testStaticPrint() {
-        main([null].toArray())
+        main(getMockArguments())
 	}
 	
     static void main(args) {

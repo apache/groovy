@@ -134,6 +134,7 @@ public class Invoker {
 
 
     public Object invokeConstructor(String type, Object arguments) {
+        System.out.println("Invoking constructor of type: " + type);
         return invokeConstructorOf(loadClass(type), arguments);
     }
 
