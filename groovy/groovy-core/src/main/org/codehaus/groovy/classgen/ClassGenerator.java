@@ -1403,20 +1403,23 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 String name = variableName;
                 Variable variable = null;
                 String variableType = expression.getType();
+                boolean useProperty = isInScriptBody();
                 if (!leftHandExpression) {
                     variable = (Variable) variableStack.get(name);
                 }
                 else {
-                    variable = defineVariable(name, variableType);
+                    if (! useProperty) {
+                        variable = defineVariable(name, variableType);
+                    }
                 }
                 if (variable == null) {
-                    variable = defineVariable(name, variableType, false);
+                    //variable = defineVariable(name, variableType, false);
                     visitPropertyExpression(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name));
                     // We need to store this in a local variable now since it
                     // has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
-                    cv.visitInsn(DUP);
-                    cv.visitVarInsn(ASTORE, variable.getIndex());
+                    //cv.visitInsn(DUP);
+                    //cv.visitVarInsn(ASTORE, variable.getIndex());
                     return;
                 }
                 String type = variable.getType();
@@ -1486,6 +1489,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 }
             }
         }
+    }
+
+    /**
+     * @return true if we are in a script body, where all variables declared are no longer
+     * local variables but are properties
+     */
+    protected boolean isInScriptBody() {
+        String superClass = classNode.getSuperClass();
+        return superClass != null && superClass.equals("groovy.lang.Script") && methodNode != null && methodNode.getName().equals("run");
     }
 
     protected boolean firstStatementIsSuperMethodCall(Statement code) {

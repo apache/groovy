@@ -132,7 +132,12 @@ public class GroovyShell extends GroovyObjectSupport {
 
     public void setProperty(String property, Object newValue) {
         setVariable(property, newValue);
-        super.setProperty(property, newValue);
+        try {
+            super.setProperty(property, newValue);
+        }
+        catch (GroovyRuntimeException e) {
+            // ignore, was probably a dynamic property
+        }
     }
 
     /**
