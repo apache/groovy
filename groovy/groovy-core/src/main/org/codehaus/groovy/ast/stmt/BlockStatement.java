@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.stmt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,6 +70,11 @@ public class BlockStatement extends Statement {
         this.statements = statements;
     }
     
+    public BlockStatement(Statement[] statements) {
+        this();
+        this.statements.addAll(Arrays.asList(statements));
+    }
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBlockStatement(this);
     }
