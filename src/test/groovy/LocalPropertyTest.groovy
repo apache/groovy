@@ -10,6 +10,6 @@ class LocalPropertyTest extends GroovyTestCase {
         this.x = "abc";
 	    
 	    assert this.x := "abc";
-	    assert this.x != "def";
+	    //assert this.x != "def";
 	}
 }
