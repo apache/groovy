@@ -37,6 +37,11 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      * @return Returns the toolkit.
      */
     public static FormToolkit getToolkit() {
+        if (toolkit == null) {
+            FormColors formColors = new FormColors(Display.getCurrent());
+            toolkit = new FormToolkit(formColors);
+            toolkit.setBorderStyle(SWT.BORDER);
+        }
         return toolkit;
     }
 
@@ -57,11 +62,6 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
     public Object newInstance(Map properties, Object parent) throws GroovyException {
         Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
 
-        if (toolkit == null) {
-            FormColors formColors = new FormColors(Display.getCurrent());
-            toolkit = new FormToolkit(formColors);
-            toolkit.setBorderStyle(SWT.BORDER);
-        }
         String styleProperty = (String) properties.remove("style");
         String text = (String) properties.remove("text");
         int style = SWT.NULL;
