@@ -49,7 +49,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport {
+public abstract class GString extends GroovyObjectSupport implements Comparable {
 
     private Object[] values;
     /** cached value of the GString */
@@ -157,6 +157,10 @@ public abstract class GString extends GroovyObjectSupport {
 
     public int hashCode() {
         return 37 + toString().hashCode();
+    }
+
+    public int compareTo(Object that) {
+        return toString().compareTo(that.toString());
     }
 
 }
