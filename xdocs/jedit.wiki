@@ -4,10 +4,17 @@ To use Groovy from inside jEdit download this {link:plugin|http://plugins.jedit.
 You'll need a fairly recent jEdit distribution.
 
 Right now BSF isn't yet released with inbuilt Groovy support so you have to add the following code
-to the startup script in ~~<jedit.home>/startup/startup.bsh~~. 
+to the startup script in 
+
+{code}
+<jedit.home>/startup/startup.bsh
+{code}
 
 You can also add a startup.bsh script into your home directory at
-~~<user.settings.home>/.jedit/startup/startup.bsh~~
+
+{code}
+<user.settings.home>/.jedit/startup/startup.bsh
+{code}
 
 {code:bsh}
 org.apache.bsf.BSFManager.registerScriptingEngine(
