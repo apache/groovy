@@ -801,7 +801,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitConstructorCallExpression(ConstructorCallExpression expression) {
         // TODO Auto-generated method stub
-
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {

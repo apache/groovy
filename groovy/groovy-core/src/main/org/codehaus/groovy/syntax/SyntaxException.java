@@ -56,5 +56,15 @@ import org.codehaus.groovy.GroovyException;
 public class SyntaxException
     extends GroovyException
 {
+    private String sourceLocator;
 
+    public void setSourceLocator(String sourceLocator)
+    {
+        this.sourceLocator = sourceLocator;
+    }
+
+    public String getSourceLocator()
+    {
+        return this.sourceLocator;
+    }
 }

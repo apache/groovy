@@ -96,4 +96,6 @@ public interface TokenStream
      */
     Token consume(int type)
         throws IOException, SyntaxException;
+
+    String getSourceLocator();
 }

@@ -1203,115 +1203,12 @@ public class ParserTest
     {
         Parser parser = newParser( "" );
 
-        CSTNode root = parser.parameterList();
+        CSTNode root = parser.parameterDeclarationList();
 
         assertNullNode( root,
                         0 );
     }
 
-    /*
-    public void testParameterList_One_WithoutDatatype()
-        throws Exception
-    {
-        Parser parser = newParser( "cheese" );
-
-        CSTNode root = parser.parameterList();
-
-        assertNullNode( root,
-                        1 );
-
-        {
-            assertNode( root.getChild( 0 ),
-                        "<synthetic>",
-                        Token.SYNTH_PARAMETER_DECLARATION,
-                        2 );
-
-            {
-                assertNode( root.getChild( 0 ).getChild( 0 ),
-                            "cheese",
-                            Token.IDENTIFIER,
-                            0 );
-
-                assertNullNode( root.getChild( 0 ).getChild( 1 ),
-                                0 );
-            }
-        }
-    }
-
-    public void testParameterList_One_WithDatatype()
-        throws Exception
-    {
-        Parser parser = newParser( "String cheese" );
-
-        CSTNode root = parser.parameterList( new CSTNode() );
-
-        assertNullNode( root,
-                        1 );
-
-        {
-            assertNode( root.getChild( 0 ),
-                        "<synthetic>",
-                        Token.SYNTH_PARAMETER_DECLARATION,
-                        2 );
-
-            {
-                assertNode( root.getChild( 0 ).getChild( 0 ),
-                            "String",
-                            Token.IDENTIFIER,
-                            0 );
-
-                assertNode( root.getChild( 0 ).getChild( 1 ),
-                            "cheese",
-                            Token.IDENTIFIER,
-                            0 );
-            }
-        }
-    }
-
-    public void testParameterList_Two_WithoutDatatype()
-        throws Exception
-    {
-        Parser parser = newParser( "cheese, toast" );
-
-        CSTNode root = parser.parameterList( new CSTNode() );
-
-        assertNullNode( root,
-                        2 );
-
-        {
-            assertNode( root.getChild( 0 ),
-                        "<synthetic>",
-                        Token.SYNTH_PARAMETER_DECLARATION,
-                        2 );
-            
-            {
-                assertNode( root.getChild( 0 ).getChild( 0 ),
-                            "cheese",
-                            Token.IDENTIFIER,
-                            0 );
-                
-                assertNullNode( root.getChild( 0 ).getChild( 1 ),
-                                0 );
-            }
-            
-            assertNode( root.getChild( 1 ),
-                        "<synthetic>",
-                        Token.SYNTH_PARAMETER_DECLARATION,
-                        2 );
-            
-            {
-                assertNode( root.getChild( 1 ).getChild( 0 ),
-                            "toast",
-                            Token.IDENTIFIER,
-                            0 );
-                
-                assertNullNode( root.getChild( 1 ).getChild( 1 ),
-                                0 );
-            }
-        }
-    }
-    */
-    
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     //     method
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -1381,7 +1278,6 @@ public class ParserTest
         }
     }
 
-    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     //     ((misc))
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -1425,6 +1321,59 @@ public class ParserTest
         parser.consumeUntil( Token.SEMICOLON );
 
         assertNull( parser.la() );
+    }
+
+    public void testAssignmentExpression()
+        throws Exception
+    {
+        Parser parser = newParser( "answer = list.collect( { item | return item * 2 } )" );
+
+        CSTNode root = parser.expression();
+    }
+
+    public void testStatement_CharacterizeMePlease()
+        throws Exception
+    {
+        Parser parser = newParser( "callBlock(5, { owner | owner.incrementCallCount() })" );
+
+        CSTNode root = parser.statement();
+    }
+
+    public void testStatementBlock_CharacterizeMePlease()        
+        throws Exception
+    {
+        Parser parser = newParser( "keys = answer.collect( { entry | return entry.key } ) values = answer.collect( { entry | return entry.value })" );
+
+        CSTNode root = parser.statement();
+
+        System.err.println( "LA __ " + parser.la() );
+
+        root = parser.statement();
+    }
+
+    public void testNewExpression()
+        throws Exception
+    {
+        Parser parser = newParser( "new Cheese()" );
+
+        CSTNode root = parser.newExpression();
+
+        assertNode( root,
+                    "new",
+                    Token.KEYWORD_NEW,
+                    2 );
+
+        {
+            assertNode( root.getChild( 0 ),
+                        "Cheese",
+                        Token.IDENTIFIER,
+                        0 );
+
+            assertNode( root.getChild( 1 ),
+                        "<synthetic>",
+                        Token.SYNTH_LIST,
+                        0 );
+        }
     }
 
     public void testDatatype_NoDots()
