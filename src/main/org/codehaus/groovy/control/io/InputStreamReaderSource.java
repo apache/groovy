@@ -91,7 +91,7 @@ public class InputStreamReaderSource extends AbstractReaderSource
     {
         if( stream != null )
         {
-            Reader reader = new InputStreamReader( stream );
+            Reader reader = new InputStreamReader( stream, configuration.getSourceEncoding() );
             stream = null;
             
             return reader;
