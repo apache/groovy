@@ -26,22 +26,18 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.parser.ASTHelper;
 import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
 
 import java.io.Reader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.text.NumberFormat;
-import java.text.ParseException;
 
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
@@ -54,7 +50,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     private AST ast;
     private ClassNode classNode;
-    private NumberFormat numberFormat = NumberFormat.getInstance();
 
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
@@ -248,14 +243,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        String name = null;
-
-        // constructor with def which looks like a method
-        boolean constructor = isType(CTOR_IDENT, node);
-        if (!constructor) {
-            name = identifier(node);
+        String name = identifier(node);
+        if (classNode != null) {
+            if (classNode.getNameWithoutPackage().equals(name)) {
+                throw new ASTRuntimeException(methodDef, "Invalid constructor format. Try remove the 'def' expression?");
+            }
         }
-
         node = node.getNextSibling();
 
         assertNodeType(PARAMETERS, node);
@@ -265,10 +258,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(SLIST, node);
         Statement code = statementList(node);
 
-        if (constructor) {
-            classNode.addConstructor(modifiers, parameters, code);
-        }
-        else {
             MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
             methodNode.addAnnotations(annotations);
             configureAST(methodNode, methodDef);
@@ -278,7 +267,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             else {
                 output.addMethod(methodNode);
             }
-        }
     }
 
     protected void constructorDef(AST constructorDef) {
@@ -883,6 +871,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return dotExpression(node);
 
             case IDENT:
+            case LITERAL_boolean:
+            case LITERAL_byte:
+            case LITERAL_char:
+            case LITERAL_double:
+            case LITERAL_float:
+            case LITERAL_int:
+            case LITERAL_long:
+            case LITERAL_short:
                 return variableExpression(node);
 
             case LIST_CONSTRUCTOR:
@@ -1199,7 +1195,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST rightNode = leftNode.getNextSibling();
         String typeName = resolvedName(rightNode);
 
-        return new CastExpression(typeName, leftExpression);
+        return CastExpression.asExpression(typeName, leftExpression);
     }
 
     protected Expression castExpression(AST castNode) {
@@ -1538,6 +1534,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String answer = null;
         AST node = typeNode.getFirstChild();
         if (node != null) {
+            if (isType(INDEX_OP, node)) {
+                return resolveTypeName(node.getFirstChild().getText()) + "[]";
+            }
             answer = resolveTypeName(node.getText());
             node = node.getNextSibling();
             if (isType(INDEX_OP, node)) {
@@ -1574,14 +1573,28 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (isType(TYPE, node)) {
             node = node.getFirstChild();
         }
+        String answer = null;
         if (isType(DOT, node)) {
-            return qualifiedName(node);
+            answer = qualifiedName(node);
         }
-        if (isPrimitiveTypeLiteral(node)) {
-            return node.getText();
+        else if (isPrimitiveTypeLiteral(node)) {
+            answer = node.getText();
         }
-        String identifier = identifier(node);
-        return resolveTypeName(identifier);
+        else if (isType(INDEX_OP, node)) {
+            AST child = node.getFirstChild();
+            return resolvedName(child);
+        }
+        else {
+            String identifier = identifier(node);
+            answer = resolveTypeName(identifier);
+        }
+        AST nextSibling = node.getNextSibling();
+        if (isType(INDEX_OP, nextSibling)) {
+            return answer + "[]";
+        }
+        else {
+            return answer;
+        }
     }
 
     protected boolean isPrimitiveTypeLiteral(AST node) {

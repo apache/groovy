@@ -1088,14 +1088,10 @@ variableDefinitions[AST mods, AST t]
                 // this constructor clause is only used for constructors using 'def'
                 // which look like method declarations
         (
-            {isConstructorIdent(id)}?
-            {#id.setType(CTOR_IDENT);}
-                        cb:constructorBody!
-        |       mb:openBlock!
+                mb:openBlock!
         |   /*or nothing at all*/
         )
-        {   if (#cb != null)   #mb = #cb;
-                        if (#qid != null)  #id = #qid;
+        {               if (#qid != null)  #id = #qid;
                         #variableDefinitions =
                                 #(#[METHOD_DEF,"METHOD_DEF"],
                                   mods, #(#[TYPE,"TYPE"],t), id, param, tc, mb);

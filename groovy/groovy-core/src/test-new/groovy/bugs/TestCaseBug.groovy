@@ -4,8 +4,9 @@ import junit.framework.TestCase
  * @version $Revision$
  */
 class TestCaseBug extends TestCase {
-    
-    def TestCaseBug(String name) {
+
+    // using def here is wrong
+    TestCaseBug(String name) {
     		super(name)
     	}
     	

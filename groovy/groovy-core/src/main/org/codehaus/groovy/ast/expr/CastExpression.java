@@ -58,7 +58,14 @@ public class CastExpression extends Expression {
     
     private Expression expression;
     private boolean ignoreAutoboxing=false;
-    
+    private boolean coerce = false;
+
+    public static CastExpression asExpression(String typeName, Expression expression) {
+        CastExpression answer = new CastExpression(typeName, expression);
+        answer.setCoerce(true);
+        return answer;
+    }
+
     public CastExpression(String type, Expression expression) {
         super.setType(type);
         this.expression = expression;
@@ -73,7 +80,15 @@ public class CastExpression extends Expression {
     public boolean isIgnoringAutoboxing(){
         return ignoreAutoboxing;
     }
-    
+
+    public boolean isCoerce() {
+        return coerce;
+    }
+
+    public void setCoerce(boolean coerce) {
+        this.coerce = coerce;
+    }
+
     public String toString() {
         return super.toString() +"[(" + type + ") " + expression + "]";
     }
@@ -97,4 +112,5 @@ public class CastExpression extends Expression {
     protected  void resolveType(AsmClassGenerator resolver) {
         //To change body of implemented methods use File | Settings | File Templates.
     }
+
 }
