@@ -1,13 +1,13 @@
 Core Groovy Tasks
 =================
 
-* AST for new object expressions, constructors with map / tuple expressions, named parameter calling
+* constructors with map / tuple expressions, named parameter calling
  
 * default values for parameters
 
 * allow protected methods to be called
 
-* test try / catch
+* test try / catch with multiple exception types
 
 * change to use == for equals?
 

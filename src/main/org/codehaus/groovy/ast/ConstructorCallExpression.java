@@ -46,42 +46,34 @@
 package org.codehaus.groovy.ast;
 
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * A constructor call
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyCodeVisitor {
+public class ConstructorCallExpression extends Expression {
 
-    // statements
-    //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
-    public void visitExpressionStatement(ExpressionStatement statement);
-    public void visitReturnStatement(ReturnStatement statement);
-    public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
-
-    // expressions
-    //-------------------------------------------------------------------------
-    public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitConstructorCallExpression(ConstructorCallExpression expression);
-    public void visitBinaryExpression(BinaryExpression expression);
-    public void visitBooleanExpression(BooleanExpression expression);
-    public void visitClosureExpression(ClosureExpression expression);
-
-    public void visitTupleExpression(TupleExpression expression);
-    public void visitMapExpression(MapExpression expression);
-    public void visitMapEntryExpression(MapEntryExpression expression);
-    public void visitListExpression(ListExpression expression);
-    public void visitRangeExpression(RangeExpression expression);
+    private String type;
+    private Expression arguments;
     
-    public void visitConstantExpression(ConstantExpression expression);
-    public void visitClassExpression(ClassExpression expression);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitRegexExpression(RegexExpression expression);
+    public ConstructorCallExpression(String type, Expression arguments) {
+        this.type = type;
+        this.arguments = arguments;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitConstructorCallExpression(this);
+    }
+    
+    public Expression getArguments() {
+        return arguments;
+    }
+
+    public String getText() {
+        return "new " + type + "(" + arguments.getText() + ")";
+    }
+
+    public String toString() {
+        return super.toString() + "[type: " + type + " arguments: " + arguments + "]";
+    }
 }
