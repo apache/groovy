@@ -117,10 +117,6 @@ public class MetaClass {
             }
         }
 
-        System.out.println("class: " + theClass);
-        System.out.println("instance: " + this.methodIndex);
-        System.out.println("static: " + this.staticMethodIndex);
-
         // introspect
         BeanInfo info = Introspector.getBeanInfo(theClass);
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
