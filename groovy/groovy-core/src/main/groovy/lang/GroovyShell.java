@@ -89,6 +89,10 @@ public class GroovyShell extends GroovyObjectSupport {
         this(null, binding);
     }
 
+    public GroovyShell(CompilerConfiguration config) {
+        this(new Binding(), config);
+    }
+
     public GroovyShell(Binding binding, CompilerConfiguration config) {
         this(null, binding, config);
     }
@@ -248,17 +252,14 @@ public class GroovyShell extends GroovyObjectSupport {
      * }
      */
     private void runMainOrTestOrRunnable(Class scriptClass, String[] args) {
-        // first, we try to see if we can call the main() method
         try {
-            InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args } );
+            // let's find a main method
+            scriptClass.getMethod("main", new Class[] { String[].class} );
+            // if that main method exist, invoke it
+            InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
         }
-        catch (MissingMethodException e) {
-
-            // if the class had a main method, but the code inside threw a MissingMethodException
-            if (!"main".equals(e.getMethod()))
-                throw e; // let's rethrow it
-
-            // if no main() method was found, let's see if it's a unit test
+        catch (NoSuchMethodException e) {
+            // As no main() method was found, let's see if it's a unit test
             // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
             if (isUnitTestCase(scriptClass)) {
                 runTest(scriptClass);
@@ -324,7 +325,7 @@ public class GroovyShell extends GroovyObjectSupport {
             InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[] {scriptClass});
         }
         catch (Exception e) {
-            throw new GroovyRuntimeException("Failed to run the unit test");
+            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
         }
     }
 
