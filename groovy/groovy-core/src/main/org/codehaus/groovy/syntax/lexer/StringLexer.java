@@ -188,6 +188,10 @@ public class StringLexer extends TextLexerBase
     private int[]  widths     = new int[3];    // the source widths of the next characters
 
 
+    public char la() throws LexerException, ReadException
+    {
+		return la(1);
+    }
 
    /**
     *  Returns the next <code>k</code>th character, without consuming any.
@@ -207,8 +211,9 @@ public class StringLexer extends TextLexerBase
                     throw new GroovyBugError( "StringLexer lookahead tolerance exceeded" );
                 }
 
-                if( lookahead >= k )
+                if( lookahead >= k && k >= 1)
                 {
+                    lookahead = 1;
                     return characters[k-1];
                 }
 
@@ -238,22 +243,15 @@ public class StringLexer extends TextLexerBase
 
                                 case '\\':
                                     c = '\\';
+                                    characters[0] = c;
+                                    widths[0] = 2;
+                                    lookahead = 1;
+                                    return c;
+
+                                case 'f':
+                                    c = '\f';
                                     width = 2;
                                     break ESCAPE_SWITCH;
-                                case '$':
-                                {
-                                    if( allowGStrings )
-                                    {
-                                        c = c1;
-                                        width = 1;
-                                    }
-                                    else
-                                    {
-                                        c = c2;
-                                        width = 2;
-                                    }
-                                    break ESCAPE_SWITCH;
-                                }
 
                                 case 'r':
                                     c = '\r';
@@ -270,11 +268,34 @@ public class StringLexer extends TextLexerBase
                                     width = 2;
                                     break ESCAPE_SWITCH;
 
+                                case '$':
+                                    if ( allowGStrings )
+                                    {
+                                        c = c1;
+                                        width = 1;
+                                    }
+                                    else
+                                    {
+                                        c = c2;
+                                        width = 2;
+                                    }
+                                    break ESCAPE_SWITCH;
+
+
+                                case '"':
+                                case '\'':
+                                    c = c2;
+                                    characters[0] = c;
+                                    widths[0] = 2;
+                                    lookahead = 1;
+                                    return c;
 
                                 default:
-                                    c = c2;
-                                    width = 2;
-                                    break ESCAPE_SWITCH;
+                                    c = '\\';
+                                    characters[0] = c;
+                                    widths[0] = 1;
+                                    lookahead = 1;
+                                    return c;
                             }
                             break C1_SWITCH;
                         }
@@ -284,12 +305,23 @@ public class StringLexer extends TextLexerBase
                             if( c1 == watchFor )
                             {
                                 boolean atEnd = true;
-                                for( int j = 1; j < delimiter.length(); j++ )
+                                if (delimiter.length() == 1)
                                 {
-                                    if( source.la(offset+j) != delimiter.charAt(j) )
+                                    if (source.la(offset) != watchFor)
                                     {
                                         atEnd = false;
-                                        break;
+                                        c = c1;
+                                        break C1_SWITCH;
+                                    }
+                                }
+                                else {
+                                    for( int j = 1; j < delimiter.length(); j++ )
+                                    {
+                                        if( source.la(offset+j) != delimiter.charAt(j) )
+                                        {
+                                            atEnd = false;
+                                            break;
+                                        }
                                     }
                                 }
 
@@ -301,6 +333,10 @@ public class StringLexer extends TextLexerBase
 
                             c = c1;
                             width = 1;
+                            if (c == '$' && allowGStrings)
+                            {
+                                lookahead = 0;
+                            }
                             break C1_SWITCH;
                         }
                     }
