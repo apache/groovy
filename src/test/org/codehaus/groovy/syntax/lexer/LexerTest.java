@@ -230,10 +230,24 @@ public class LexerTest
     }
 
     public void testCompareGreaterThanEqual()
-        throws Exception
+    throws Exception
     {
         assertSimple( ">=",
-                      Token.COMPARE_GREATER_THAN_EQUAL );
+            Token.COMPARE_GREATER_THAN_EQUAL );
+    }
+
+    public void testCompareTo()
+    throws Exception
+    {
+        assertSimple( "<=>",
+            Token.COMPARE_TO );
+    }
+
+    public void testNavigate()
+    throws Exception
+    {
+        assertSimple( "->",
+            Token.NAVIGATE );
     }
 
     public void testLogicalOr()

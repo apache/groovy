@@ -125,6 +125,9 @@ public class Token
     /** Token type for "<=>". */
     public static final int COMPARE_TO = 155;
 
+    /** Token type for "->". */
+    public static final int NAVIGATE = 158;
+
     /** Token type for "||". */
     public static final int LOGICAL_OR = 160;
 
@@ -908,12 +911,28 @@ public class Token
                                   int startColumn)
     {
         return newToken( COMPARE_TO,
-                         "<=>",
-                         startLine,
-                         startColumn );
+                "<=>",
+                startLine,
+                startColumn );
     }
 
- 
+    /** Factory method for token for "->".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token navigate(int startLine,
+                                  int startColumn)
+    {
+        return newToken( NAVIGATE,
+                "->",
+                startLine,
+                startColumn );
+    }
+
+    
     /** Factory method for token for "||".
      *
      *  @param startLine Line upon which the token starts.
