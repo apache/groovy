@@ -63,4 +63,8 @@ public class TestSupport extends GroovyTestCase {
     public static String mockStaticMethod() {
         return "cheese";
     }
+    
+    public static String getMockStaticProperty() {
+        return "cheese";
+    }
 }

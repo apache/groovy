@@ -45,7 +45,6 @@
  */
 package groovy.lang;
 
-import java.sql.SQLException;
 
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
@@ -67,7 +66,7 @@ public class MissingPropertyException extends GroovyRuntimeException {
         this.type = type;
     }
 
-    public MissingPropertyException(String property, Class type, SQLException e) {
+    public MissingPropertyException(String property, Class type, Throwable e) {
         super("No such property: " + property + " for class: " + type.getName() + ". Reason: " + e, e);
         this.property = property;
         this.type = type;

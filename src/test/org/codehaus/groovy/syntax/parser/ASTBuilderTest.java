@@ -166,6 +166,19 @@ public class ASTBuilderTest extends TestParserSupport {
         assertEquals(2, trueStmt.getStatements().size());
     }
 
+    public void testStaticMethodCallBug() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { ASTBuilderTest.mockHelperMethod() } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+        
+        System.out.println(statement.getStatements());
+    }
+
+    public static Object mockHelperMethod() {
+        return "cheese";
+    }
+    
     protected BlockStatement getCode(ModuleNode module, String name) {
         assertEquals("class count", 1, module.getClasses().size());
 
