@@ -50,7 +50,7 @@ import org.xml.sax.ext.LexicalHandler
 	class StreamingSAXBuilder extends AbstractStreamingBuilder {
 		pendingStack = []
 		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
-							if (contentHandler instanceOf LexicalHandler) {
+							if (contentHandler instanceof LexicalHandler) {
 								contentHandler.comment(body.toCharArray(), 0, body.length())
 							}
 						 }
