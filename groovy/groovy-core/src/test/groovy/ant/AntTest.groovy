@@ -10,14 +10,14 @@ class AntTest extends GroovyTestCase {
         ant.echo('hello')
         
         /** @todo change to concise syntax when its available */
-        ant.sequential() {|
+        ant.sequential() {
 			echo('inside sequential')
 			
 			myDir = 'src/target/dummy'
 			
 			mkdir(['dir':myDir])
-			copy(['todir':myDir]) {|
-			    fileset(['dir':'src/test']) {|
+			copy(['todir':myDir]) {
+			    fileset(['dir':'src/test']) {
 			        include(['name':'**/*.groovy'])
 			    }
 			}

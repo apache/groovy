@@ -10,8 +10,8 @@ class NestedClosureBugTest extends GroovyTestCase {
     void testNestedClosureBug() {
         b = NodeBuilder.newInstance()
         
-        root = b.root(['a':'xyz'], {|
-            b.child({|
+        root = b.root(['a':'xyz'], {
+            b.child({
                 b.grandChild()  
             })
         })
