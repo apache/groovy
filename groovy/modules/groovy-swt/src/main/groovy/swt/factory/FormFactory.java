@@ -5,7 +5,7 @@
 package groovy.swt.factory;
 
 import groovy.swt.InvalidParentException;
-import groovy.swt.SwtHelper;
+import groovy.swt.SwtUtils;
 
 import java.util.Map;
 
@@ -41,7 +41,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      *      java.lang.Object)
      */
     public Object newInstance(Map properties, Object parent) throws GroovyException {
-        Composite parentComposite = (Composite) getParentWidget(parent);
+        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
         if (toolkit == null) {
             toolkit = new FormToolkit(parentComposite.getDisplay());
         }
@@ -50,10 +50,10 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
         int style = SWT.NULL;
         if (styleProperty != null) {
             if (type.equals("formSection")) {
-                style = SwtHelper.parseStyle(Section.class, styleProperty);
+                style = SwtUtils.parseStyle(Section.class, styleProperty);
             }
             else {
-                style = SwtHelper.parseStyle(SWT.class, styleProperty);
+                style = SwtUtils.parseStyle(SWT.class, styleProperty);
             }
         }
         if (parentComposite != null) {

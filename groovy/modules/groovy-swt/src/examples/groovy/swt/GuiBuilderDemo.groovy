@@ -2,19 +2,17 @@ package groovy.swt.examples
 
 import groovy.swt.guibuilder.ApplicationGuiBuilder
 
-class ApplicationGuiDemo extends Script {
-    //property builder1
-	// property mainapp
-	//property comp2
-
+class ApplicationGuiDemo {
+    property comp1
+	property builder1
+	property mainapp1
     
     run() {
-    	println "THIS DEMO IS UNDER CONSTRUCTION, EXPECT THE UNEXPECTED"
     	
-        builder1 = new ApplicationGuiBuilder("src/test/groovy/swt/examples/")
+        builder1 = new ApplicationGuiBuilder("src/examples/groovy/swt/")
 
 		mainapp1 = builder1.applicationWindow( title:"The ApplicationGuiDemo", size:[700,400] ) { 
-			gridLayout(numColumns:2) 
+			gridLayout( numColumns:2 ) 
 			
 			toolBar( style:"horizontal" ){
 				toolItem( text:"Blue" ) {
@@ -22,9 +20,8 @@ class ApplicationGuiDemo extends Script {
 						builder1.rebuild( parent:comp1, closure:{ 
 							builder1.composite( it ) {
 								fillLayout()
-								label( text:"12121212" )
+								label( text:"This is fresh new blue label ...", background:[0, 0, 255] )
 							}
-							comp1.pack()
 						})
 					})
 				}				
@@ -34,35 +31,29 @@ class ApplicationGuiDemo extends Script {
 						builder1.rebuild( parent:comp1, closure:{ 
 							builder1.composite( it ) {
 								fillLayout()
-								label( text:"34343434" )
+								label( text:"This is fresh new red label ...", background:[255, 0, 0] )
 							}
-							comp1.pack()
 						})
 					})
 				}				
 				
-				toolItem( text:"Show About" ){
+				toolItem( text:"Run script About.groovy" ){
 					onEvent( type:"Selection", closure:{
-						// builder1.run( script:"About.groovy", parent:mainapp1 )
+						builder1.runScript( src:"About.groovy", parent:mainapp1 )
 					})
 				}				
 			}			
 		
-			parent = composite() {
+			composite() {
 				gridData( horizontalAlignment:"fill", horizontalSpan:2, grabExcessHorizontalSpace:true )
-				gridLayout(numColumns:2) 
+				gridLayout() 
 				
-				comp1 = composite( background:[100, 100, 100], foreground:[100, 255, 100] ) {
+				comp1 = composite() {
 					fillLayout()
-					button( text:"test" )
+					label( text:"This is green label", background:[0, 255, 0]  )
 				}
-				comp2 = composite( background:[0, 255, 0], foreground:[100, 255, 100] ) {
-					fillLayout()				
-					button( text:"test" )
-				}
-				comp3 = composite( background:[255, 50, 200] )
-				comp4 = composite( background:[200, 70, 99] )
 			}
+			
 		}
 		
 		mainapp1.getShell().pack()

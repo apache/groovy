@@ -7,8 +7,11 @@ import groovy.lang.GroovyObject;
  * @version $Revision$
  */
 public class RunDemoTableTree extends SwtTest {
-    public void testBasic() throws Exception {
-        GroovyObject object = compile("src/examples/groovy/swt/TableTreeDemo.groovy");
+    
+    public static void main(String[] args) throws Exception {
+        RunDemoTableTree demo = new RunDemoTableTree();
+        GroovyObject object = demo.compile("src/examples/groovy/swt/TableTreeDemo.groovy");
         object.invokeMethod("run", null);
     }
+    
 }

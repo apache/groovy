@@ -8,8 +8,11 @@ import groovy.swt.SwtTest;
  * @version $Revision$
  */
 public class RunDemoPreferences extends SwtTest {
-    public void testPreferencesDemo() throws Exception {
-        GroovyObject object = compile("src/examples/groovy/jface/PreferencesDemo.groovy");
+    
+    public static void main(String[] args) throws Exception {
+        RunDemoPreferences demo = new RunDemoPreferences();
+        GroovyObject object = demo.compile("src/examples/groovy/jface/PreferencesDemo.groovy");
         object.invokeMethod("run", null);
     }
+    
 }

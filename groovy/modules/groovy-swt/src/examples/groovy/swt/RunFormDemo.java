@@ -7,9 +7,11 @@ import groovy.lang.GroovyObject;
  * @version $Revision$
  */
 public class RunFormDemo extends SwtTest {
-    public void testBasic() throws Exception
-    {
-        GroovyObject object = compile("src/examples/groovy/swt/FormDemo.groovy");
+    
+    public static void main(String[] args) throws Exception {
+        RunFormDemo demo = new RunFormDemo();
+        GroovyObject object = demo.compile("src/examples/groovy/swt/FormDemo.groovy");
         object.invokeMethod("run", null);
     }
+    
 }

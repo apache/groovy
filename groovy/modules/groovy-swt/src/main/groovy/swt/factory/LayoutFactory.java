@@ -4,6 +4,8 @@
  */
 package groovy.swt.factory;
 
+import groovy.swt.SwtUtils;
+
 import java.util.Map;
 
 import org.codehaus.groovy.GroovyException;
@@ -46,7 +48,7 @@ public class LayoutFactory extends AbstractSwtFactory implements SwtFactory {
             setBeanProperties(layout, properties);
         }
 
-        Widget parentComposite = getParentWidget(parent);
+        Widget parentComposite = SwtUtils.getParentWidget(parent);
         if (parentComposite != null) {
             ((Composite) parentComposite).setLayout(layout);
         }

@@ -1,22 +1,34 @@
 package groovy.swt;
 
+import groovy.jface.impl.ApplicationWindowImpl;
+
 import java.lang.reflect.Field;
 import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.GroovyException;
+import org.eclipse.jface.window.ApplicationWindow;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Widget;
+import org.eclipse.ui.forms.widgets.Form;
+import org.eclipse.ui.forms.widgets.ScrolledForm;
+import org.eclipse.ui.forms.widgets.Section;
 
 /** 
  * A helper class for working with SWT.
  *
  * @author <a href="mailto:jstrachan@apache.org">James Strachan</a>
+ * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
+ *  
  * @version 1.1
  */
-public class SwtHelper  {
+public class SwtUtils  {
 
     /** The Log to which logging calls will be made. */
-    private static final Log log = LogFactory.getLog(SwtHelper.class);
+    private static final Log log = LogFactory.getLog(SwtUtils.class);
     
 
     /**
@@ -75,4 +87,64 @@ public class SwtHelper  {
             throw new GroovyException("The value: " + text + " is not understood");
         }
     }
+    
+    /**
+     * dispose all children
+     * 
+     * @param parent
+     */
+    public static void disposeChildren(Composite parent) {
+        Control[] children = parent.getChildren();
+        for (int i = 0; i < children.length; i++) {
+            Control control = children[i];
+            control.dispose();
+        }
+    }
+
+    /**
+     * return the parent shell
+     * 
+     * @param parent
+     * @return
+     */
+    public static Shell getParentShell(Object parent) {
+        if (parent instanceof ApplicationWindow) {
+            return ((ApplicationWindowImpl) parent).getShell();
+        }
+        else if (parent instanceof Shell) {
+            return (Shell) parent;
+        }
+        else {
+            return null;
+        }
+    }
+
+    /**
+     * return the parent widget
+     * 
+     * @param parent
+     * @return
+     */
+    public static Widget getParentWidget(Object parent) {
+        if (parent instanceof ApplicationWindow) {
+            return (Composite) ((ApplicationWindowImpl) parent).getContents();
+        }
+        else if (parent instanceof Form) {
+            return ((Form) parent).getBody();
+        }
+        else if (parent instanceof ScrolledForm) {
+            return ((ScrolledForm) parent).getBody();
+        }
+        else if (parent instanceof Section) {
+            return ((Section) parent).getClient();
+        }
+        else if (parent instanceof Composite) {
+            return (Composite) parent;
+        }
+        else {
+            return null;
+        }
+    }
+    
+    
 }

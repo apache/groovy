@@ -5,7 +5,7 @@
 package groovy.swt.factory;
 
 import groovy.jface.impl.ApplicationWindowImpl;
-import groovy.swt.SwtHelper;
+import groovy.swt.SwtUtils;
 import groovy.swt.convertor.ColorConverter;
 import groovy.swt.convertor.PointConverter;
 
@@ -54,7 +54,7 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         }
         String styleProperty = (String) properties.remove("style");
         if (styleProperty != null) {
-            style = SwtHelper.parseStyle(SWT.class, styleProperty);
+            style = SwtUtils.parseStyle(SWT.class, styleProperty);
         }
         Object bean = createWidget(parent);
         if (bean != null) {

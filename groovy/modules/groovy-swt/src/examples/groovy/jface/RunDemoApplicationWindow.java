@@ -8,8 +8,11 @@ import groovy.swt.SwtTest;
  * @version $Revision$
  */
 public class RunDemoApplicationWindow extends SwtTest {
-    public void testWizardDemo() throws Exception {
-        GroovyObject object = compile("src/examples/groovy/jface/ApplicationWindowDemo.groovy");
-        object.invokeMethod("run", null);
+    
+    public static void main(String[] args) throws Exception {
+        RunDemoApplicationWindow demo = new RunDemoApplicationWindow();
+        GroovyObject object = demo.compile("src/examples/groovy/jface/ApplicationWindowDemo.groovy");
+        object.invokeMethod("run", null);        
     }
+    
 }

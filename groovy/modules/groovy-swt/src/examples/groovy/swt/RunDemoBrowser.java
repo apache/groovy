@@ -7,9 +7,10 @@ import groovy.lang.GroovyObject;
  * @version $Revision$
  */
 public class RunDemoBrowser extends SwtTest {
-    public void testBasic() throws Exception
-    {
-        GroovyObject object = compile("src/examples/groovy/swt/BrowserDemo.groovy");
+    
+    public static void main(String[] args) throws Exception {
+        RunDemoBrowser demo = new RunDemoBrowser();
+        GroovyObject object = demo.compile("src/examples/groovy/swt/BrowserDemo.groovy");
         object.invokeMethod("run", null);
     }
 }

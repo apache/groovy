@@ -100,7 +100,7 @@ public class SwtBuilder extends BuilderSupport {
      */
     protected Object createNode(Object name, Map attributes) {
         
-        Closure closure = (Closure) attributes.remove("closure");
+        Closure closure = (Closure) attributes.get("closure");
         
         Object widget = createWidget(name, attributes, getCurrent());
 

@@ -3,7 +3,7 @@
  */
 package groovy.swt.factory;
 
-import groovy.swt.SwtHelper;
+import groovy.swt.SwtUtils;
 import groovy.swt.impl.ExpansionListenerImpl;
 import groovy.swt.impl.HyperLinkListenerImpl;
 import groovy.swt.impl.ListenerImpl;
@@ -98,6 +98,6 @@ public class ListenerFactory extends AbstractSwtFactory implements SwtFactory {
      * @return the SWT integer event type
      */
     protected int getEventType(String type) throws GroovyException {
-        return SwtHelper.parseStyle(SWT.class, type, false);
+        return SwtUtils.parseStyle(SWT.class, type, false);
     }
 }

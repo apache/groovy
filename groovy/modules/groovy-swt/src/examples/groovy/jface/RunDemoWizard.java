@@ -8,8 +8,11 @@ import groovy.swt.SwtTest;
  * @version $Revision$
  */
 public class RunDemoWizard extends SwtTest {
-    public void testWizardDemo() throws Exception {
-        GroovyObject object = compile("src/examples/groovy/jface/WizardDemo.groovy");
+    
+    public static void main(String[] args) throws Exception {
+        RunDemoWizard demo = new RunDemoWizard();
+        GroovyObject object = demo.compile("src/examples/groovy/jface/WizardDemo.groovy");
         object.invokeMethod("run", null);
     }
+    
 }

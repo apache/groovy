@@ -4,8 +4,7 @@
  */
 package groovy.swt.factory;
 
-import groovy.jface.impl.ApplicationWindowImpl;
-import groovy.swt.SwtHelper;
+import groovy.swt.SwtUtils;
 
 import java.lang.reflect.Field;
 import java.util.Iterator;
@@ -13,14 +12,7 @@ import java.util.Map;
 
 import org.codehaus.groovy.GroovyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Widget;
-import org.eclipse.ui.forms.widgets.Form;
-import org.eclipse.ui.forms.widgets.ScrolledForm;
-import org.eclipse.ui.forms.widgets.Section;
 
 /**
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
@@ -45,7 +37,7 @@ public abstract class AbstractSwtFactory {
             try {
                 field = bean.getClass().getDeclaredField(property);
                 if (value instanceof String) {
-                    int style = SwtHelper.parseStyle(SWT.class, (String) value);
+                    int style = SwtUtils.parseStyle(SWT.class, (String) value);
                     field.setInt(bean, style);
                 }
                 else if (value instanceof Boolean) {
@@ -69,51 +61,6 @@ public abstract class AbstractSwtFactory {
             if (field == null) {
                 InvokerHelper.setProperty(bean, property, value);
             }
-        }
-    }
-
-    /**
-     * return the parent widget
-     * 
-     * @param parent
-     * @return
-     */
-    protected Widget getParentWidget(Object parent) {
-        if (parent instanceof ApplicationWindow) {
-            return (Composite) ((ApplicationWindowImpl) parent).getContents();
-        }
-        else if (parent instanceof Form) {
-            return ((Form) parent).getBody();
-        }
-        else if (parent instanceof ScrolledForm) {
-            return ((ScrolledForm) parent).getBody();
-        }
-        else if (parent instanceof Section) {
-            return ((Section) parent).getClient();
-        }
-        else if (parent instanceof Composite) {
-            return (Composite) parent;
-        }
-        else {
-            return null;
-        }
-    }
-
-    /**
-     * return the parent shell
-     * 
-     * @param parent
-     * @return
-     */
-    protected Shell getParentShell(Object parent) {
-        if (parent instanceof ApplicationWindow) {
-            return ((ApplicationWindowImpl) parent).getShell();
-        }
-        else if (parent instanceof Shell) {
-            return (Shell) parent;
-        }
-        else {
-            return null;
         }
     }
 }

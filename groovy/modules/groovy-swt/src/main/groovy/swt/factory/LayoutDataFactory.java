@@ -4,7 +4,7 @@
  */
 package groovy.swt.factory;
 
-import groovy.swt.SwtHelper;
+import groovy.swt.SwtUtils;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -56,7 +56,7 @@ public class LayoutDataFactory extends AbstractSwtFactory implements SwtFactory{
 
         String styleText = (String) properties.remove("style");
         if (styleText != null) {
-            int style = SwtHelper.parseStyle(beanClass, styleText);
+            int style = SwtUtils.parseStyle(beanClass, styleText);
 
             // now lets try invoke a constructor
             Class[] types = { int.class};

@@ -6,6 +6,7 @@ package groovy.jface.factory;
 
 import groovy.jface.impl.WizardDialogImpl;
 import groovy.jface.impl.WizardImpl;
+import groovy.swt.SwtUtils;
 import groovy.swt.factory.AbstractSwtFactory;
 import groovy.swt.factory.SwtFactory;
 
@@ -28,7 +29,7 @@ public class WizardDialogFactory extends AbstractSwtFactory implements SwtFactor
      */
     public Object newInstance(Map properties, Object parent)
     throws GroovyException {
-        Shell parentShell = getParentShell(parent);
+        Shell parentShell = SwtUtils.getParentShell(parent);
         Wizard wizard = new WizardImpl();
         WizardDialog wizardDialog = new WizardDialogImpl(parentShell, wizard);
         return wizardDialog;

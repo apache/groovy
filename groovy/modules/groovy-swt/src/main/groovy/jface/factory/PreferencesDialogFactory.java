@@ -2,6 +2,7 @@ package groovy.jface.factory;
 
 import groovy.jface.impl.PreferenceDialogImpl;
 import groovy.swt.InvalidParentException;
+import groovy.swt.SwtUtils;
 import groovy.swt.factory.AbstractSwtFactory;
 import groovy.swt.factory.SwtFactory;
 
@@ -24,7 +25,7 @@ SwtFactory {
      */
     public Object newInstance(Map properties, Object parent)
     throws GroovyException {
-        Shell parentShell = getParentShell(parent);
+        Shell parentShell = SwtUtils.getParentShell(parent);
         if (parent != null) {
             PreferenceManager pm = new PreferenceManager();
             return new PreferenceDialogImpl(parentShell, pm);
