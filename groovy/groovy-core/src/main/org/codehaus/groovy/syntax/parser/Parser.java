@@ -991,11 +991,40 @@ public class Parser
                 expr = rootNode( lt() );
                 break;
             }
+            case ( Token.LEFT_SQUARE_BRACKET ):
+            {
+                expr = listExpression();
+                break;
+            }
             default:
             {
                 throwExpected( new int[] { } );
             }
         }
+
+        return expr;
+    }
+
+    protected CSTNode listExpression()
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = rootNode( Token.LEFT_SQUARE_BRACKET );
+
+        while ( lt() != Token.RIGHT_SQUARE_BRACKET )
+        {
+            expr.addChild( expression() );
+
+            if ( lt() == Token.COMMA )
+            {
+                consume( Token.COMMA );
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        consume( Token.RIGHT_SQUARE_BRACKET );
 
         return expr;
     }

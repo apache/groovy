@@ -17,6 +17,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
+import org.codehaus.groovy.ast.ListExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
@@ -523,9 +524,27 @@ public class ASTBuilder
             {
                 return propertyExpression( expressionRoot );
             }
+            case ( Token.LEFT_SQUARE_BRACKET ):
+            {
+                return listExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected ListExpression listExpression(CSTNode expressionRoot)
+    {
+        ListExpression listExpression = new ListExpression();
+
+        CSTNode[] exprRoots = expressionRoot.getChildren();
+
+        for ( int i = 0 ; i < exprRoots.length ; ++i )
+        {
+            listExpression.addExpression( expression( exprRoots[ i ] ) );
+        }
+
+        return listExpression;
     }
 
     protected RangeExpression rangeExpression(CSTNode expressionRoot)
