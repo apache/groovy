@@ -96,4 +96,24 @@ class ClosureTest extends GroovyTestCase {
             block.call(this)
         }
     }
+
+
+    int numAgents = 4
+    boolean testDone = false
+
+    void testIntFieldAccess() {
+        agents = new ArrayList();
+        numAgents.times {
+            TinyAgent btn = new TinyAgent()
+            testDone = true
+            btn.x = numAgents
+            agents.add(btn)
+        }
+        assert agents.size() == numAgents
+    }
 }
+
+public class TinyAgent {
+    int x
+}
+
