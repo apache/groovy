@@ -30,14 +30,14 @@ class ListTest extends GroovyTestCase {
 		*/
 		
 		
-		if x.contains("cheese") {
+		if ( x.contains("cheese") ) {
             // ignore
         }
         else {
             assert false : "x should contain cheese!"
         }
 		
-        if x.contains(10) {
+        if ( x.contains(10) ) {
             // ignore
         }
         else {
