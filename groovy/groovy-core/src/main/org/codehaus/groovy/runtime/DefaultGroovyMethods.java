@@ -302,6 +302,19 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Allows object to be iterated through a closure with a counter
+     *
+     * @param self an Object
+     * @param closure a Closure
+     */
+    public static void eachWithIndex(Object self, Closure closure) {
+        int counter = 0;
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            closure.call(new Object[] { iter.next(), new Integer(counter++) });
+        }
+    }
+
+    /**
      * Allows objects to be iterated through using a closure
      *
      * @param self    the collection over which we iterate
