@@ -464,3 +464,4 @@ foo.invokeMethod(method, args);
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
 
+
