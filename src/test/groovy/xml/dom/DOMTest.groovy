@@ -1,3 +1,5 @@
+package groovy.xml.dom;
+
 import java.io.*;
 import groovy.xml.*;
 import org.codehaus.groovy.sandbox.markup.*;

@@ -154,7 +154,7 @@ public class DOMBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Object value) {
         Element element = (Element) createNode(name);
-        element.setNodeValue(value.toString());
+        element.appendChild(document.createTextNode(value.toString()));
         return element;
     }
 
