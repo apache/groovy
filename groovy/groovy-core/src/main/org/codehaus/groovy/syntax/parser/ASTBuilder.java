@@ -141,7 +141,16 @@ public class ASTBuilder
             }
             catch (ClassNotFoundException ee)
             {
-                // swallow
+                try
+                {
+                    getClassLoader().loadClass( "groovy.util." + name );
+
+                    return "groovy.util." + name;
+                }
+                catch (ClassNotFoundException eee)
+                {
+                    // swallow
+                }
             }
         }
 
