@@ -449,7 +449,7 @@ declarationStart!
 /** Used to look ahead for a constructor 
  */
 constructorStart!:
-				(modifier!)* IDENT! nls! LPAREN! balancedTokens! RPAREN!
+				(modifier!)* id:IDENT! {isConstructorIdent(id)}? nls! LPAREN! balancedTokens! RPAREN!
 			;
 				
 
