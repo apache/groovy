@@ -47,7 +47,7 @@ class Console extends ConsoleSupport implements CaretListener {
         scriptList = []
         // if menu modifier is two keys we are out of luck as the javadocs
         // indicates it returns "Control+Shift" instead of "Control Shift"
-        menuModifier = KeyEvent.getKeyModifiersText( 
+        menuModifier = KeyEvent.getKeyModifiersText(
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toLowerCase() + ' '
 
         swing = new SwingBuilder()
@@ -197,7 +197,7 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 
     protected void handleException(String text, Exception e) {
-        pane = swing.optionPane(message:'Error: ' + e.getMessage() + '\nafter compiling: ' + text)
+        pane = swing.optionPane(message:'Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
         dialog = pane.createDialog(frame, 'Compile error')
         dialog.show()
     }

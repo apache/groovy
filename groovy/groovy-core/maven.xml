@@ -317,10 +317,6 @@
 
         <!-- TODO stuff that doesn't yet work with the JSR -->
 
-        <!-- unicode handling -->
-        <exclude name="**/EscapedUnicodeTest.groovy"/>
-        <exclude name="**/EscapedMetaCharacterTest.groovy"/>
-
         <!-- Parser decisions to make -->
 
         <!-- handling newlines with closure passing to method calls -->

@@ -53,19 +53,16 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(ClosureInClosureBug.class);
         suite.addTestSuite(ClosureInClosureTest.class);
 
-        // TODO
-        //suite.addTestSuite(ClosureInStaticMethodTest.class);
+        suite.addTestSuite(ClosureInStaticMethodTest.class);
 
-        // TODO
-        //suite.addTestSuite(ClosureMethodCallTest.class);
+        suite.addTestSuite(ClosureMethodCallTest.class);
         suite.addTestSuite(ClosureMethodTest.class);
         suite.addTestSuite(ClosureParameterPassingBug.class);
         suite.addTestSuite(ClosureReturnTest.class);
         suite.addTestSuite(ClosureReturnWithoutReturnStatementTest.class);
         suite.addTestSuite(ClosureSugarTest.class);
 
-        // TODO
-        //suite.addTestSuite(ClosureTest.class);
+        suite.addTestSuite(ClosureTest.class);
         suite.addTestSuite(ClosureTypedVariableBug.class);
         suite.addTestSuite(ClosureUsingOuterVariablesTest.class);
         suite.addTestSuite(ClosureVariableBug.class);
@@ -79,17 +76,14 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(DefaultParamTest.class);
         suite.addTestSuite(DollarEscapingTest.class);
         suite.addTestSuite(DoubleOperationTest.class);
-        // TODO
-        //suite.addTestSuite(EscapedMetaCharacterTest.class);
+        suite.addTestSuite(EscapedMetaCharacterTest.class);
 
-        // TODO
-        //suite.addTestSuite(EscapedUnicodeTest.class);
+        suite.addTestSuite(EscapedUnicodeTest.class);
         suite.addTestSuite(ExceptionInClosureTest.class);
         suite.addTestSuite(ExpandoPropertyTest.class);
         suite.addTestSuite(FilterLineTest.class);
 
-        // TODO
-        //suite.addTestSuite(ForAndSqlBug.class);
+        suite.addTestSuite(ForAndSqlBug.class);
         suite.addTestSuite(ForLoopBug.class);
         suite.addTestSuite(ForLoopTest.class);
         suite.addTestSuite(ForLoopWithLocalVariablesTest.class);
@@ -97,8 +91,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(GPathTest.class);
         suite.addTestSuite(GStringTest.class);
 
-        // TODO
-        //suite.addTestSuite(GeneratorTest.class);
+        suite.addTestSuite(GeneratorTest.class);
         suite.addTestSuite(GetterBug.class);
         suite.addTestSuite(GlobalPrintlnTest.class);
         suite.addTestSuite(Groovy239_Bug.class);
@@ -134,8 +127,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(LogTest.class);
         suite.addTestSuite(LogicTest.class);
 
-        // TODO
-        //suite.addTestSuite(LoopBreakTest.class);
+        suite.addTestSuite(LoopBreakTest.class);
         suite.addTestSuite(MapConstructionTest.class);
         suite.addTestSuite(MapPropertyTest.class);
         suite.addTestSuite(MapTest.class);
@@ -175,13 +167,11 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(PowerOperationTest.class);
         suite.addTestSuite(PrefixTest.class);
 
-        // TODO
-        //suite.addTestSuite(PrimitiveArraysTest.class);
+        suite.addTestSuite(PrimitiveArraysTest.class);
         suite.addTestSuite(PrimitiveTypeFieldTest.class);
         suite.addTestSuite(PrimitiveTypesTest.class);
 
-        // TODO
-        //suite.addTestSuite(PrintTest.class);
+        suite.addTestSuite(PrintTest.class);
         suite.addTestSuite(PrintlnWithNewBug.class);
         suite.addTestSuite(PrivateVariableAccessFromAnotherInstanceTest.class);
         suite.addTestSuite(ProcessTest.class);
@@ -196,8 +186,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(RodsBooleanBug.class);
         suite.addTestSuite(RodsBug.class);
 
-        // TODO
-        //suite.addTestSuite(SafeNavigationTest.class);
+        //todo suite.addTestSuite(SafeNavigationTest.class);
         suite.addTestSuite(SpreadOperatorTest.class);
         suite.addTestSuite(SerializeTest.class);
         suite.addTestSuite(ShellTest.class);
