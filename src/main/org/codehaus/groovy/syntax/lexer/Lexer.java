@@ -182,6 +182,7 @@ public class Lexer
                           CONSUME_LOOP:
                             while ( true )
                             {
+                              CONSUME_SWITCH:
                                 switch ( la() )
                                 {
                                     case ( '*' ):
@@ -192,6 +193,7 @@ public class Lexer
                                             consume();
                                             break CONSUME_LOOP;
                                         }
+                                        break CONSUME_SWITCH;
                                     }
                                     default:
                                     {
