@@ -157,7 +157,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         return buffer.toString();
     }
 
-    public void writeTo(Writer out) throws IOException {
+    public Writer writeTo(Writer out) throws IOException {
         String[] s = getStrings();
         int numberOfValues = values.length;
         for (int i = 0, size = s.length; i < size; i++) {
@@ -166,6 +166,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
                 InvokerHelper.write(out, values[i]);
             }
         }
+        return out;
     }
 
     public boolean equals(Object that) {

@@ -62,6 +62,6 @@ public interface Writable {
     /**
      * writes this object to the given stream
      */
-    public void writeTo(Writer out) throws IOException;
+    public Writer writeTo(Writer out) throws IOException;
         
 }

@@ -508,8 +508,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         /* (non-Javadoc)
          * @see groovy.lang.Writable#writeTo(java.io.Writer)
          */
-        public void writeTo(Writer out) throws IOException {
+        public Writer writeTo(Writer out) throws IOException {
             call(new Object[] { out });
+            return out;
         }
 
         /**
@@ -539,8 +540,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         /* (non-Javadoc)
          * @see groovy.lang.Writable#writeTo(java.io.Writer)
          */
-        public void writeTo(Writer out) throws IOException {
+        public Writer writeTo(Writer out) throws IOException {
             call(new Object[] { out });
+            return out;
         }
 
         /* (non-Javadoc)
