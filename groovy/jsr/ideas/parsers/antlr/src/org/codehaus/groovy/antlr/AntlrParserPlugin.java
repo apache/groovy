@@ -859,6 +859,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_this:
                 return VariableExpression.THIS_EXPRESSION;
 
+            case LITERAL_super:
+                return VariableExpression.SUPER_EXPRESSION;
+
 
                 // Unary expressions
             case LNOT:

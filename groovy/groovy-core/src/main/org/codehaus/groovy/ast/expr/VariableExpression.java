@@ -59,6 +59,7 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
 public class VariableExpression extends Expression {
 
     public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", null);
+    public static final VariableExpression SUPER_EXPRESSION = new VariableExpression("super", null);
 
     private String variable;
 
