@@ -81,7 +81,49 @@ public abstract class Closure extends GroovyObjectSupport {
             throw e;
         }
     }
+    
+    public Object getProperty(String property) {
+        /** @todo optimise me! */
+        try {
+            return getMetaClass().getProperty(this, property);
+        }
+        catch (InvokerException e) {
+            Object delegate = getDelegate();
+            if (delegate != this) {
+                try {
+                    // lets try invoke method on delegate
+                    return InvokerHelper.getProperty(delegate, property);
+                }
+                catch (InvokerException e2) {
+                    // ignore, we'll throw e
+                }
+            }
+            throw e;
+        }
+    }
 
+    public void setProperty(String property, Object newValue) {
+        /** @todo optimise me! */
+        try {
+            getMetaClass().setProperty(this, property, newValue);
+            return;
+        }
+        catch (InvokerException e) {
+            Object delegate = getDelegate();
+            if (delegate != this) {
+                try {
+                    // lets try invoke method on delegate
+                    InvokerHelper.setProperty(delegate, property, newValue);
+                    return;
+                }
+                catch (InvokerException e2) {
+                    // ignore, we'll throw e
+                }
+            }
+            throw e;
+        }
+    }
+    
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
      * 
@@ -117,4 +159,5 @@ public abstract class Closure extends GroovyObjectSupport {
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
     }
+    
 }

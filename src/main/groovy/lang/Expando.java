@@ -95,6 +95,24 @@ public class Expando extends GroovyObjectSupport {
         }
     }
 
+    public Object invokeMethod(String name, Object args) {
+        try {
+            return super.invokeMethod(name, args);
+        }
+        catch (InvokerException e) {
+            Object value = getExpandoProperties().get(name);
+            if (value instanceof Closure) {
+                Closure closure = (Closure) value;
+                closure.setDelegate(this);
+                return closure.call(args);
+            }
+            else {
+                throw e;
+            }
+        }
+        
+    }
+    
     /**
      * Factory method to create a new Map used to store the expando properties map
      * @return a newly created Map implementation
@@ -102,4 +120,5 @@ public class Expando extends GroovyObjectSupport {
     protected Map createMap() {
         return new HashMap();
     }
+
 }
