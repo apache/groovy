@@ -153,6 +153,7 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller notObject = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notObject");
     MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
     MethodCaller negation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "negate");
+    MethodCaller bitNegation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitNegate");
     MethodCaller convertPrimitiveArray = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "convertPrimitiveArray");
     MethodCaller convertToPrimitiveArray = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "convertToPrimitiveArray");
 
@@ -1176,6 +1177,30 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateLogicalOrExpression(expression);
                 break;
 
+	    case Types.BITWISE_AND :
+                evaluateBinaryExpression("and", expression);
+                break;
+
+            case Types.BITWISE_AND_EQUAL :
+                evaluateBinaryExpressionWithAsignment("and", expression);
+                break;
+
+            case Types.BITWISE_OR :
+                evaluateBinaryExpression("or", expression);
+                break;
+
+            case Types.BITWISE_OR_EQUAL :
+                evaluateBinaryExpressionWithAsignment("or", expression);
+                break;
+
+            case Types.BITWISE_XOR :
+                evaluateBinaryExpression("xor", expression);
+                break;
+
+            case Types.BITWISE_XOR_EQUAL :
+                evaluateBinaryExpressionWithAsignment("xor", expression);
+                break;
+
             case Types.PLUS :
                 {
                     if (ENABLE_EARLY_BINDING) {
@@ -1456,14 +1481,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateBinaryExpressionWithAsignment("intdiv", expression);
                 break;
 
-            case Types.BITWISE_AND :
-                evaluateBinaryExpression("and", expression);
-                break;
-
-            case Types.PIPE :
-                evaluateBinaryExpression("or", expression);
-                break;
-
             case Types.MOD :
                 evaluateBinaryExpression("mod", expression);
                 break;
@@ -1476,12 +1493,22 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateBinaryExpression("leftShift", expression);
                 break;
 
+            case Types.LEFT_SHIFT_EQUAL :
+                evaluateBinaryExpressionWithAsignment("leftShift", expression);
+
             case Types.RIGHT_SHIFT :
                 evaluateBinaryExpression("rightShift", expression);
                 break;
 
+            case Types.RIGHT_SHIFT_EQUAL :
+                evaluateBinaryExpressionWithAsignment("rightShift", expression);
+
             case Types.RIGHT_SHIFT_UNSIGNED :
                 evaluateBinaryExpression("rightShiftUnsigned", expression);
+                break;
+
+            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL :
+                evaluateBinaryExpressionWithAsignment("rightShiftUnsigned", expression);
                 break;
 
             case Types.KEYWORD_INSTANCEOF :
@@ -1798,6 +1825,12 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
         negation.call(cv);
+    }
+
+    public void visitBitwiseNegExpression(BitwiseNegExpression expression) {
+        Expression subExpression = expression.getExpression();
+        subExpression.visit(this);
+        bitNegation.call(cv);
     }
 
     public void visitCastExpression(CastExpression expression) {

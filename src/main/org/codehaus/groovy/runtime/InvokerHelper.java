@@ -249,13 +249,46 @@ public class InvokerHelper {
         } else if (value instanceof Float) {
             Float number = (Float) value;
             return new Float(-number.floatValue());
+        } else if (value instanceof ArrayList) {
+            // value is an list.
+            ArrayList newlist = new ArrayList();
+            Iterator it = ((ArrayList) value).iterator();
+	    for(; it.hasNext(); ) {
+	        newlist.add(negate(it.next()));
+	    }
+            return newlist;
         } else {
             throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
         }
     }
 
+    public static Object bitNegate(Object value) {
+        if (value instanceof Integer) {
+            Integer number = (Integer) value;
+            return integerValue(~number.intValue());
+        } else if (value instanceof Long) {
+            Long number = (Long) value;
+            return new Long(~number.longValue());
+        } else if (value instanceof BigInteger) {
+            return ((BigInteger) value).not();
+        } else if (value instanceof String) {
+            // value is a regular expression.
+            return getInstance().regexPattern(value);
+        } else if (value instanceof ArrayList) {
+            // value is an list.
+            ArrayList newlist = new ArrayList();
+            Iterator it = ((ArrayList) value).iterator();
+	    for(; it.hasNext(); ) {
+	        newlist.add(bitNegate(it.next()));
+	    }
+            return newlist;
+        } else {
+            throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
+        }
+    }
+
     public static boolean isCase(Object switchValue, Object caseExpression) {
-        return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
+    return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
     }
 
     public static boolean compareIdentical(Object left, Object right) {

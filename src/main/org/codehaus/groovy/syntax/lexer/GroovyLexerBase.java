@@ -391,9 +391,16 @@ public class GroovyLexerBase extends LexerBase
 
                             break MULTICHAR_SWITCH;
                         }
+                        case ('=') :
+                        {
+                            consume();
+                            token = symbol( Types.BITWISE_AND_EQUAL );
+                            break MULTICHAR_SWITCH;
+                        }
                         default :
                         {
-                            unexpected( c, new char[] { '&' }, 1 );
+                            token = symbol( Types.BITWISE_AND );
+                            break MULTICHAR_SWITCH;
                         }
                     }
                     break ROOT_SWITCH;
@@ -420,6 +427,13 @@ public class GroovyLexerBase extends LexerBase
                                 token = symbol( Types.LOGICAL_OR );
                             }
 
+                            break MULTICHAR_SWITCH;
+                        }
+                        case ('=') :
+                        {
+                            consume();
+
+			    token = symbol( Types.BITWISE_OR_EQUAL );
                             break MULTICHAR_SWITCH;
                         }
                         default :
@@ -517,6 +531,29 @@ public class GroovyLexerBase extends LexerBase
                     }
                     break ROOT_SWITCH;
                 }
+                case ('^') :
+                {
+                    mark();
+                    consume();
+
+                    c = la();
+
+                    MULTICHAR_SWITCH : switch (c)
+                    {
+                        case ('=') :
+                        {
+                            consume();
+                            token = symbol( Types.BITWISE_XOR_EQUAL );
+                            break MULTICHAR_SWITCH;
+                        }
+                        default :
+                        {
+                            token = symbol( Types.BITWISE_XOR );
+                            break MULTICHAR_SWITCH;
+                        }
+                    }
+                    break ROOT_SWITCH;
+                }
                 case (':') :
                 {
                     mark();
@@ -601,6 +638,12 @@ public class GroovyLexerBase extends LexerBase
 
                                 break ROOT_SWITCH;
                             }
+                            else if (c == '=')
+                            {
+                                consume();
+                                token = symbol( Types.LEFT_SHIFT_EQUAL );
+                                break MULTICHAR_SWITCH;
+                            }
                             else
                             {
                                 token = symbol( Types.LEFT_SHIFT );
@@ -632,12 +675,27 @@ public class GroovyLexerBase extends LexerBase
                         }
                         case ('>') :
                         {
-                            consume();
+                            c = la();
+                            if( c == '>' )
                             if( la() == '>' )
                             {
                                 consume();
-                                token = symbol( Types.RIGHT_SHIFT_UNSIGNED );
+                                c = la();
+                                if (c == '=')
+                                {
+                                    consume();
+                                    token = symbol( Types.RIGHT_SHIFT_UNSIGNED_EQUAL );
+                                }
+				else
+                                {
+                                    token = symbol( Types.RIGHT_SHIFT_UNSIGNED );
+                                }
                             } 
+                            else if (c == '=')
+                            {
+                                consume();
+                                token = symbol( Types.RIGHT_SHIFT_EQUAL );
+                            }
                             else
                             {	
                             	token = symbol( Types.RIGHT_SHIFT );

@@ -15,10 +15,6 @@ public class BigIntegerMath extends NumberMath {
 		return toBigInteger(number).abs();
 	}
 	
-	protected Number addImpl(Number left, Number right) {
-		return toBigInteger(left).add(toBigInteger(right));
-	}
-
 	protected Number subtractImpl(Number left, Number right) {
 		return toBigInteger(left).subtract(toBigInteger(right));
 	}
@@ -51,7 +47,19 @@ public class BigIntegerMath extends NumberMath {
         return toBigInteger(left).negate();
     }
 
+    protected Number bitNegateImpl(Number left) {
+        return toBigInteger(left).not();
+    }
+
     protected Number orImpl(Number left, Number right) {
         return toBigInteger(left).or(toBigInteger(right));
+    }
+
+    protected Number andImpl(Number left, Number right) {
+        return toBigInteger(left).and(toBigInteger(right));
+    }
+    
+    protected Number xorImpl(Number left, Number right) {
+        return toBigInteger(left).xor(toBigInteger(right));
     }
 }

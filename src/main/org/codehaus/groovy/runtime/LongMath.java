@@ -41,10 +41,6 @@ public class LongMath extends NumberMath {
 		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
 	}
 
-    protected Number andImpl(Number left, Number right) {
-        return new Long(left.longValue() & right.longValue());
-    }
-    
 	protected Number intdivImpl(Number left, Number right) {
         return new Long(left.longValue() / right.longValue());
 	}
@@ -57,19 +53,35 @@ public class LongMath extends NumberMath {
         return new Long(-left.longValue());
     }
     
+    protected Number bitNegateImpl(Number left) {
+        return new Long(~left.longValue());
+    }
+    
     protected Number orImpl(Number left, Number right) {
         return new Long(left.longValue() | right.longValue());
     }
 
-	protected Number leftShiftImpl(Number left, Number right) {
-		return new Long(left.longValue() << right.longValue());
-	}
+    protected Number andImpl(Number left, Number right) {
+        return new Long(left.longValue() & right.longValue());
+    }
+    
+    protected Number xorImpl(Number left, Number right) {
+        return new Long(left.longValue() ^ right.longValue());
+    }
+    
+    protected Number leftShiftImpl(Number left, Number right) {
+        return new Long(left.longValue() << right.longValue());
+    }
 
-	protected Number rightShiftImpl(Number left, Number right) {
-		return new Long(left.longValue() >> right.longValue());
-	}
+    protected Number rightShiftImpl(Number left, Number right) {
+        return new Long(left.longValue() >> right.longValue());
+    }
 
-	protected Number rightShiftUnsignedImpl(Number left, Number right) {
-		return new Long(left.longValue() >>> right.longValue());
-	}
+    protected Number rightShiftUnsignedImpl(Number left, Number right) {
+        return new Long(left.longValue() >>> right.longValue());
+    }
+
+    protected Number bitAndImpl(Number left, Number right) {
+        return new Long(left.longValue() & right.longValue());
+    }
 }

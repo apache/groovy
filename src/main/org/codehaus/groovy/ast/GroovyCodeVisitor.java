@@ -102,8 +102,10 @@ public interface GroovyCodeVisitor {
     public void visitRegexExpression(RegexExpression expression);
     public void visitGStringExpression(GStringExpression expression);
     public void visitArrayExpression(ArrayExpression expression);
-	public void visitNotExpression(NotExpression expression);
-	public void visitNegationExpression(NegationExpression expression);
-	public void visitCastExpression(CastExpression expression);
+
+    public void visitNotExpression(NotExpression expression);
+    public void visitNegationExpression(NegationExpression expression);
+    public void visitBitwiseNegExpression(BitwiseNegExpression expression);
+    public void visitCastExpression(CastExpression expression);
 
 }

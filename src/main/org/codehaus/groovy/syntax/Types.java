@@ -152,6 +152,7 @@ public class Types
     public static final int LEFT_SHIFT                  = 280;   // <<
     public static final int RIGHT_SHIFT                 = 281;   // >>
     public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
+    public static final int RIGHT_SHIFT_UNSIGNED_EQUAL  = 287;   // >>>=
 
     public static final int LEFT_SHIFT_EQUAL            = 285;   // <<=
     public static final int RIGHT_SHIFT_EQUAL           = 286;   // >>=
@@ -165,8 +166,15 @@ public class Types
 
     // TODO refactor PIPE to be BITWISE_OR
     public static final int PIPE                        = 340;   // |
+    public static final int DOUBLE_PIPE                 = LOGICAL_OR;   // ||
+    public static final int BITWISE_OR                  = PIPE;  // |
     public static final int BITWISE_AND                 = 341;   // &
-    public static final int DOUBLE_PIPE                 = LOGICAL_OR;
+    public static final int BITWISE_XOR                 = 342;   // ^
+
+    public static final int BITWISE_OR_EQUAL            = 350;   // |=
+    public static final int BITWISE_AND_EQUAL           = 351;   // &=
+    public static final int BITWISE_XOR_EQUAL           = 352;   // ^=
+    public static final int BITWISE_NEGATION            = REGEX_PATTERN;    // ~
 
 
     //
@@ -323,6 +331,7 @@ public class Types
     public static final int RANGE_OPERATOR              = 1104;  // .., ...
     public static final int REGEX_COMPARISON_OPERATOR   = 1105;  // =~, etc.
     public static final int DEREFERENCE_OPERATOR        = 1106;  // ., ->
+    public static final int BITWISE_OPERATOR            = 1107;  // |, &, <<, >>, >>>, ^, ~
 
     public static final int PREFIX_OPERATOR             = 1200;  // ++, !, etc.
     public static final int POSTFIX_OPERATOR            = 1210;  // ++, etc.
@@ -433,16 +442,22 @@ public class Types
                 break;
 
             case ASSIGNMENT_OPERATOR:
-                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL);
+                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                                         || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
+                                         || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
             case COMPARISON_OPERATOR:
                 return specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO;
 
             case MATH_OPERATOR:
-                return (specific >= PLUS && specific <= RIGHT_SHIFT_UNSIGNED) || (specific >= NOT && specific <= LOGICAL_AND);
+                return (specific >= PLUS && specific <= RIGHT_SHIFT_UNSIGNED) || (specific >= NOT && specific <= LOGICAL_AND)
+                                 || (specific >= BITWISE_OR && specific <= BITWISE_XOR);
 
             case LOGICAL_OPERATOR:
                 return specific >= NOT && specific <= LOGICAL_AND;
+
+            case BITWISE_OPERATOR:
+                return (specific >= BITWISE_OR && specific <= BITWISE_XOR) || specific == BITWISE_NEGATION;
 
             case RANGE_OPERATOR:
                 return specific == DOT_DOT || specific == DOT_DOT_DOT;
@@ -496,6 +511,9 @@ public class Types
                     case NAVIGATE:
                     case LOGICAL_OR:
                     case LOGICAL_AND:
+                    case BITWISE_OR:
+                    case BITWISE_AND:
+                    case BITWISE_XOR:
                     case LEFT_SHIFT:
                     case RIGHT_SHIFT:
                     case RIGHT_SHIFT_UNSIGNED:
@@ -507,7 +525,8 @@ public class Types
                         return true;
                 }
 
-                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL);
+                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                                 || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
             case PREFIX_OR_INFIX_OPERATOR:
                 switch( specific )
@@ -990,6 +1009,12 @@ public class Types
             case MOD_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
+            case LEFT_SHIFT_EQUAL:
+            case RIGHT_SHIFT_EQUAL:
+            case RIGHT_SHIFT_UNSIGNED_EQUAL:
+            case BITWISE_OR_EQUAL:
+            case BITWISE_AND_EQUAL:
+            case BITWISE_XOR_EQUAL:
                 return 5;
 
             case QUESTION:
@@ -1020,6 +1045,11 @@ public class Types
             case DOT_DOT:
             case DOT_DOT_DOT:
                 return 30;
+
+            case BITWISE_OR:
+	    case BITWISE_AND:
+            case BITWISE_XOR:
+                return 33;
 
             case LEFT_SHIFT:
             case RIGHT_SHIFT:
@@ -1216,6 +1246,17 @@ public class Types
         addTranslation( ">>"          , RIGHT_SHIFT                 );
         addTranslation( ">>>"         , RIGHT_SHIFT_UNSIGNED        );
 
+        addTranslation( "<<="         , LEFT_SHIFT_EQUAL            );
+        addTranslation( ">>="         , RIGHT_SHIFT_EQUAL           );
+        addTranslation( ">>>="        , RIGHT_SHIFT_UNSIGNED_EQUAL  );
+
+        addTranslation( "&"           , BITWISE_AND                 );
+        addTranslation( "^"           , BITWISE_XOR                 );
+
+        addTranslation( "|="          , BITWISE_OR_EQUAL           );
+        addTranslation( "&="          , BITWISE_AND_EQUAL           );
+        addTranslation( "^="          , BITWISE_XOR_EQUAL           );
+
         addTranslation( ","           , COMMA                       );
         addTranslation( ":"           , COLON                       );
         addTranslation( ";"           , SEMICOLON                   );
@@ -1389,6 +1430,7 @@ public class Types
         addDescription( COMPARISON_OPERATOR         , "<comparison operator>"        );
         addDescription( MATH_OPERATOR               , "<math operator>"              );
         addDescription( LOGICAL_OPERATOR            , "<logical operator>"           );
+        addDescription( BITWISE_OPERATOR            , "<bitwise operator>"           );
         addDescription( RANGE_OPERATOR              , "<range operator>"             );
         addDescription( REGEX_COMPARISON_OPERATOR   , "<regex comparison operator>"  );
         addDescription( DEREFERENCE_OPERATOR        , "<dereference operator>"       );
