@@ -1,7 +1,13 @@
+/**
+ * to prove GROOVY-467 is no longer an issue    
+ * 
+ * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
+ * @version $Revision$
+ */
+
 import groovy.DummyMethods
 
 class AmbiguousInvocationTest extends GroovyTestCase { 
-    // to prove GROOVY-467 is no longer an issue    
     property dummy
     
     void setUp() {
