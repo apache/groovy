@@ -332,7 +332,7 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>1.4.1</version>
+      <version>1.4.3</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
