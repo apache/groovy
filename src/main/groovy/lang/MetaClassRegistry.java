@@ -94,6 +94,16 @@ public class MetaClassRegistry {
         }
         return answer;
     }
+    
+    /**
+     * Registers a new MetaClass in the registry to customize the type
+     * 
+     * @param theClass
+     * @param theMetaClass
+     */
+    public void setMetaClass(Class theClass, MetaClass theMetaClass) {
+        metaClasses.put(theClass, theMetaClass);
+    }
 
     public boolean useAccessible() {
         return useAccessible;
