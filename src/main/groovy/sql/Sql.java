@@ -62,7 +62,7 @@ import javax.sql.DataSource;
  * Represents an extent of objects
  * 
  * @author Chris Stevenson
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  * @version $Revision$
  */
 public class Sql {
@@ -70,15 +70,18 @@ public class Sql {
     protected Logger log = Logger.getLogger(getClass().getName());
 
     private DataSource dataSource;
+
     private Connection useConnection;
 
     /** lets only warn of using deprecated methods once */
     private boolean warned;
 
-// store the last row count for executeUpdate
+    // store the last row count for executeUpdate
     int updateCount = 0;
+
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL
      * 
      * @param url
      * @return a new Sql instance with a connection
@@ -89,7 +92,8 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL
      * 
      * @param url
      * @return a new Sql instance with a connection
@@ -100,20 +104,20 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL
-     * and driver class name
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL and driver class name
      * 
      * @param url
      * @return a new Sql instance with a connection
      */
-    public static Sql newInstance(String url, Properties properties, String driverClassName)
-        throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(String url, Properties properties, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL, username and password
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL, username and password
      * 
      * @param url
      * @return a new Sql instance with a connection
@@ -124,24 +128,25 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL, username, password
-     * and driver class name
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL, username, password and driver class name
      * 
      * @param url
      * @return a new Sql instance with a connection
      */
-    public static Sql newInstance(String url, String user, String password, String driverClassName)
-        throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(String url, String user, String password, String driverClassName) throws SQLException,
+            ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, user, password);
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection URL
-     * and driver class name
+     * A helper method which creates a new Sql instance from a JDBC connection
+     * URL and driver class name
      * 
      * @param url
-     * @param driverClassName the class name of the driver
+     * @param driverClassName
+     *            the class name of the driver
      * @return a new Sql instance with a connection
      */
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
@@ -150,7 +155,8 @@ public class Sql {
     }
 
     /**
-     * Attempts to load the JDBC driver on the thread, current or system class loaders
+     * Attempts to load the JDBC driver on the thread, current or system class
+     * loaders
      * 
      * @param driverClassName
      * @throws ClassNotFoundException
@@ -178,10 +184,9 @@ public class Sql {
     }
 
     /**
-     * Constructs an SQL instance using the given DataSource. 
-     * Each operation will use a Connection
-     * from the DataSource pool and close it when the operation is completed
-     * putting it back into the pool.
+     * Constructs an SQL instance using the given DataSource. Each operation
+     * will use a Connection from the DataSource pool and close it when the
+     * operation is completed putting it back into the pool.
      * 
      * @param dataSource
      */
@@ -190,10 +195,10 @@ public class Sql {
     }
 
     /**
-     * Construts an SQL instance using the given Connection.
-     * It is the callers responsibility to close the Connection after 
-     * the Sql instance has been used. You can do this on the connection
-     * object directly or by calling the {@link close()} method.
+     * Construts an SQL instance using the given Connection. It is the callers
+     * responsibility to close the Connection after the Sql instance has been
+     * used. You can do this on the connection object directly or by calling the
+     * {@link close()}method.
      * 
      * @param connection
      */
@@ -239,8 +244,8 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query with parameters calling the closure with
-     * the result set
+     * Performs the given SQL query with parameters calling the closure with the
+     * result set
      */
     public void query(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
@@ -266,13 +271,13 @@ public class Sql {
      * Performs the given SQL query calling the closure with the result set
      */
     public void query(GString gstring, Closure closure) throws SQLException {
-        String sql = asSql(gstring);
         List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
         query(sql, params, closure);
     }
 
-    /** 
-     * @deprecated please use eachRow instead 
+    /**
+     * @deprecated please use eachRow instead
      */
     public void queryEach(String sql, Closure closure) throws SQLException {
         warnDeprecated();
@@ -305,8 +310,8 @@ public class Sql {
         }
     }
 
-    /** 
-     * @deprecated please use eachRow instead 
+    /**
+     * @deprecated please use eachRow instead
      */
     public void queryEach(String sql, List params, Closure closure) throws SQLException {
         warnDeprecated();
@@ -344,13 +349,13 @@ public class Sql {
      * Performs the given SQL query calling the closure with the result set
      */
     public void eachRow(GString gstring, Closure closure) throws SQLException {
-        String sql = asSql(gstring);
         List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
         eachRow(sql, params, closure);
     }
 
-    /** 
-     * @deprecated please use eachRow instead 
+    /**
+     * @deprecated please use eachRow instead
      */
     public void queryEach(GString gstring, Closure closure) throws SQLException {
         warnDeprecated();
@@ -412,7 +417,7 @@ public class Sql {
             log.fine(sql);
             statement = connection.prepareStatement(sql);
             setParameters(params, statement);
-            boolean isResultSet = statement.execute(); 
+            boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
         }
@@ -453,8 +458,8 @@ public class Sql {
      * Executes the given SQL with embedded expressions inside
      */
     public boolean execute(GString gstring) throws SQLException {
-        String sql = asSql(gstring);
         List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
         return execute(sql, params);
     }
 
@@ -464,8 +469,8 @@ public class Sql {
      * @return the number of rows updated
      */
     public int executeUpdate(GString gstring) throws SQLException {
-        String sql = asSql(gstring);
         List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
         return executeUpdate(sql, params);
     }
 
@@ -500,15 +505,15 @@ public class Sql {
      * Performs a stored procedure call with the given parameters
      */
     public int call(GString gstring) throws Exception {
-        String sql = asSql(gstring);
         List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
         return call(sql, params);
     }
 
     /**
-     * If this SQL object was created with a Connection then this method
-     * closes the connection. If this SQL object was created from a DataSource
-     * then this method does nothing.
+     * If this SQL object was created with a Connection then this method closes
+     * the connection. If this SQL object was created from a DataSource then
+     * this method does nothing.
      * 
      * @throws SQLException
      */
@@ -526,110 +531,121 @@ public class Sql {
      * @return the SQL version of the given query using ? instead of any
      *         parameter
      */
-    protected String asSql(GString gstring) {
-    	boolean nulls = false;
+    protected String asSql(GString gstring, List values) {
+        boolean nulls = false;
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
         }
-        Object[] values = gstring.getValues();
         StringBuffer buffer = new StringBuffer();
+        boolean warned = false;
+        Iterator iter = values.iterator();
         for (int i = 0; i < strings.length; i++) {
-            buffer.append(strings[i]);
-            if (i < values.length) {
-            	if(values[i]!=null){
-                   buffer.append("?");
-            	}else{
-            		nulls = true;
-            		buffer.append("?'\"?"); // will replace these with nullish values
-            	}
+            String text = strings[i];
+            if (text != null) {
+                buffer.append(text);
+            }
+            if (iter.hasNext()) {
+                Object value = iter.next();
+                if (value != null) {
+                    boolean validBinding = true;
+                    if (i < strings.length - 1) {
+                        String nextText = strings[i + 1];
+                        if ((text.endsWith("\"") || text.endsWith("'")) && (nextText.startsWith("'") || nextText.startsWith("\""))) {
+                            if (!warned) {
+                                log.warning("In Groovy SQL please do not use quotes around dynamic expressions "
+                                        + "(which start with $) as this means we cannot use a JDBC PreparedStatement "
+                                        + "and so is a security hole. Groovy has worked around your mistake but the security hole is still there. The expression so far is: " + buffer.toString() + "?" + nextText);
+                                warned = true;
+                            }
+                            buffer.append(value);
+                            iter.remove();
+                            validBinding = false;
+                        }
+                    }
+                    if (validBinding) {
+                        buffer.append("?");
+                    }
+                }
+                else {
+                    nulls = true;
+                    buffer.append("?'\"?"); // will replace these with nullish
+                    // values
+                }
             }
         }
-        String sql =  buffer.toString();
-        if(nulls){
-        		sql = nullify(sql);
+        String sql = buffer.toString();
+        if (nulls) {
+            sql = nullify(sql);
         }
         return sql;
     }
-    
-	/**
-	 * replace ?'"? references with NULLish
-	 * @param sql
-	 * @return
-	 */
-	protected String nullify(String sql) {
-		/*
-		 * Some drivers (Oracle classes12.zip) have difficulty resolving data type
-		 * if setObject(null).  We will modify the query to pass 'null', 'is null', and 'is not null'
-		 */
-		//could be more efficient by compiling expressions in advance.
-		int firstWhere = findWhereKeyword(sql);
-		if (firstWhere >= 0) {
-			Pattern[] patterns =
-				{
-					Pattern.compile(
-						"(?is)^(.{"
-							+ firstWhere
-							+ "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
-					Pattern.compile(
-						"(?is)^(.{"
-							+ firstWhere
-							+ "}.*?)<>\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
-					Pattern.compile(
-						"(?is)^(.{"
-							+ firstWhere
-							+ "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
-					};
-			String[] replacements =
-				{
-					"$1 is not $2null$3",
-					"$1 is not $2null$3",
-					"$1 is $2null$3",
-					};
-			for (int i = 0; i < patterns.length; i++) {
-				Matcher matcher = patterns[i].matcher(sql);
-				while (matcher.matches()) {
-					sql = matcher.replaceAll(replacements[i]);
-					matcher = patterns[i].matcher(sql);
-				}
-			}
-		}
-		return sql.replaceAll("\\?'\"\\?", "null");
-	}
 
-	/**
-	 * Find the first 'where' keyword in the sql.
-	 * @param sql
-	 * @return
-	 */
-	protected int findWhereKeyword(String sql) {
-		char[] chars = sql.toLowerCase().toCharArray();
-		char[] whereChars = "where".toCharArray();
-		int i = 0;
-		boolean inString = false; //TODO: Cater for comments?
-		boolean noWhere = true;
-		int inWhere = 0;
-		while (i < chars.length && noWhere) {
-			switch (chars[i]) {
-				case '\'' :
-					if (inString) {
-						inString = false;
-					} else {
-						inString = true;
-					}
-					break;
-				default :
-					if (!inString && chars[i] == whereChars[inWhere]) {
-						inWhere++;
-						if (inWhere == whereChars.length) {
-							return i;
-						}
-					}
-			}
-			i++;
-		}
-		return -1;
-	}
+    /**
+     * replace ?'"? references with NULLish
+     * 
+     * @param sql
+     * @return
+     */
+    protected String nullify(String sql) {
+        /*
+         * Some drivers (Oracle classes12.zip) have difficulty resolving data
+         * type if setObject(null). We will modify the query to pass 'null', 'is
+         * null', and 'is not null'
+         */
+        //could be more efficient by compiling expressions in advance.
+        int firstWhere = findWhereKeyword(sql);
+        if (firstWhere >= 0) {
+            Pattern[] patterns = { Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)<>\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"), };
+            String[] replacements = { "$1 is not $2null$3", "$1 is not $2null$3", "$1 is $2null$3", };
+            for (int i = 0; i < patterns.length; i++) {
+                Matcher matcher = patterns[i].matcher(sql);
+                while (matcher.matches()) {
+                    sql = matcher.replaceAll(replacements[i]);
+                    matcher = patterns[i].matcher(sql);
+                }
+            }
+        }
+        return sql.replaceAll("\\?'\"\\?", "null");
+    }
+
+    /**
+     * Find the first 'where' keyword in the sql.
+     * 
+     * @param sql
+     * @return
+     */
+    protected int findWhereKeyword(String sql) {
+        char[] chars = sql.toLowerCase().toCharArray();
+        char[] whereChars = "where".toCharArray();
+        int i = 0;
+        boolean inString = false; //TODO: Cater for comments?
+        boolean noWhere = true;
+        int inWhere = 0;
+        while (i < chars.length && noWhere) {
+            switch (chars[i]) {
+                case '\'':
+                    if (inString) {
+                        inString = false;
+                    }
+                    else {
+                        inString = true;
+                    }
+                    break;
+                default:
+                    if (!inString && chars[i] == whereChars[inWhere]) {
+                        inWhere++;
+                        if (inWhere == whereChars.length) {
+                            return i;
+                        }
+                    }
+            }
+            i++;
+        }
+        return -1;
+    }
 
     /**
      * @return extracts the parameters from the expression as a List
@@ -638,9 +654,9 @@ public class Sql {
         Object[] values = gstring.getValues();
         List answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
-        	if(values[i] != null){
-            	answer.add(values[i]);
-        	}
+            if (values[i] != null) {
+                answer.add(values[i]);
+            }
         }
         return answer;
     }
@@ -657,35 +673,40 @@ public class Sql {
     }
 
     /**
-     * Strategy method allowing derived classes to handle types differently
-     * such as for CLOBs etc.
+     * Strategy method allowing derived classes to handle types differently such
+     * as for CLOBs etc.
      */
     protected void setObject(PreparedStatement statement, int i, Object value) throws SQLException {
         statement.setObject(i, value);
     }
 
     protected Connection createConnection() throws SQLException {
-    	if (dataSource != null) {
-    		//Use a doPrivileged here as many different properties need to be read, and the policy
-    		//shouldn't have to list them all.
-        	Connection con = null;
-        	try {
-        		con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-        			public Object run() throws SQLException {return dataSource.getConnection(); } 
-        		});
-        	} catch(PrivilegedActionException pae) {
-        		Exception e = pae.getException();
-        		if (e instanceof SQLException) {
-        			throw (SQLException) e;
-        		}
-        		else {
-        			throw (RuntimeException) e;
-        		}
-        	}
-        	return con;
+        if (dataSource != null) {
+            //Use a doPrivileged here as many different properties need to be
+            // read, and the policy
+            //shouldn't have to list them all.
+            Connection con = null;
+            try {
+                con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws SQLException {
+                        return dataSource.getConnection();
+                    }
+                });
+            }
+            catch (PrivilegedActionException pae) {
+                Exception e = pae.getException();
+                if (e instanceof SQLException) {
+                    throw (SQLException) e;
+                }
+                else {
+                    throw (RuntimeException) e;
+                }
+            }
+            return con;
         }
         else {
-            //System.out.println("createConnection returning: " + useConnection);
+            //System.out.println("createConnection returning: " +
+            // useConnection);
             return useConnection;
         }
     }
@@ -727,36 +748,39 @@ public class Sql {
             log.warning("queryEach() is deprecated, please use eachRow() instead");
         }
     }
-    
+
     public void commit() {
-    	try {
-			this.useConnection.commit();
-		} catch (SQLException e) {
-			log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
-		}
+        try {
+            this.useConnection.commit();
+        }
+        catch (SQLException e) {
+            log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
+        }
     }
 
     public void rollback() {
-    	try {
-			this.useConnection.rollback();
-		} catch (SQLException e) {
-			log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
-		}
+        try {
+            this.useConnection.rollback();
+        }
+        catch (SQLException e) {
+            log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
+        }
     }
 
     /**
      * @return Returns the updateCount.
      */
     public int getUpdateCount() {
-    	return updateCount;
+        return updateCount;
     }
 
     /**
      * If this instance was created with a single Connection then the connection
-     * is returned. Otherwise if this instance was created with a DataSource then
-     * this method returns null
-     *
-     * @return the connection wired into this object, or null if this object uses a DataSource
+     * is returned. Otherwise if this instance was created with a DataSource
+     * then this method returns null
+     * 
+     * @return the connection wired into this object, or null if this object
+     *         uses a DataSource
      */
     public Connection getConnection() {
         return useConnection;
