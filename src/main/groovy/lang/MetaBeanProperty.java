@@ -134,16 +134,30 @@ public class MetaBeanProperty extends MetaProperty {
 
 			setter.invoke(object, new Object[] { newValue });
 		}
-                catch (IllegalArgumentException e) {
+                catch (IllegalArgumentException e) {    // exception for executing as scripts
                     try {
                         newValue = InvokerHelper.asType(newValue, getType());
                         setter.invoke(object, new Object[] { newValue });
                     }
 		    catch (Exception ex) {
-		        throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
+		         throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
                                                          + "' can not refer to the value '"
                                                          + newValue + "' (type " + toName(newValue.getClass())
-                                                         + "), because it is of the type " + toName(getType()) );
+                                                         + "), because it is of the type " + toName(getType())
+                                                         + ". The reason is from java.lang.IllegalArgumentException."  );
+	             }
+                }
+                catch (ClassCastException e) {    // exception for executing as compiled classes
+                    try {
+                        newValue = InvokerHelper.asType(newValue, getType());
+                        setter.invoke(object, new Object[] { newValue });
+                    }
+		    catch (Exception ex) {
+		         throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
+                                                         + "' can not refer to the value '"
+                                                         + newValue + "' (type " + toName(newValue.getClass())
+                                                         + "), because it is of the type " + toName(getType())
+                                                         + ". The reason is from java.lang.ClassCastException."  );
 	            }
                 }
 		catch (Exception e) {

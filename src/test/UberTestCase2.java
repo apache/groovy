@@ -30,7 +30,7 @@ public class UberTestCase2 extends TestCase {
         // TODO
         //suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
-        //todo suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
 
         // TODO
         //suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
