@@ -92,6 +92,7 @@ public class PropertyTest extends GroovyTestCase {
         assertGetSetProperty(bean, "dynamicFoo", "aValue", "NewValue");
     }
 
+/** todo this is no longer possible in new groovy
     public void testUsingMethodProperty() throws Exception {
         DummyBean bean = new DummyBean();
 
@@ -103,6 +104,8 @@ public class PropertyTest extends GroovyTestCase {
         Object result = closure.call(null);
         assertEquals("Result of call to closure", "Bob", result);
     }
+**/   
+    
 
     public void testStaticProperty() throws Exception {
         Object value = InvokerHelper.getProperty(System.class, "out");
@@ -128,6 +131,7 @@ public class PropertyTest extends GroovyTestCase {
         assertEquals("value property", "x", value);
     }
 
+/** todo this is no longer possible in new groovy
     public void testMethodProperty() throws Exception {
         Object value = InvokerHelper.getProperty(this, "getCheese");
         assertTrue("Should have returned a closure: " + value, value instanceof Closure);
@@ -137,6 +141,7 @@ public class PropertyTest extends GroovyTestCase {
 
         System.out.println("Closure: " + value + " and cheese: " + result);
     }
+**/
 
     public void testListCoercionProperty() throws Exception {
         DummyBean bean = new DummyBean();
