@@ -95,6 +95,7 @@ public class DummyClassGenerator extends ClassGenerator {
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
             cw.visit(
+                asmJDKVersion,
                 classNode.getModifiers(),
                 internalClassName,
                 internalBaseClassName,
