@@ -427,45 +427,30 @@ public class TemplateServlet extends HttpServlet {
      */
     protected URL resolveTemplateName(String templateName) throws Exception {
 
-        URL url = null;
-
-        //servletContext.log("Resolving \"" + templateName + "\"...");
-        //servletContext.log(servletContext.getRealPath(templateName));
-
         /*
          * Try servlet context resource facility.
          * 
          * Good for names pointing to templates relatively to the servlet
          * context.
          */
-        url = servletContext.getResource(templateName);
+        URL url = servletContext.getResource(templateName);
+        if (url != null) { return url; }
+
+        /*
+         * Precedence: Context classloader, Class classloader
+         * (those classloaders will delegate to the system classloader)
+         */
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        url = classLoader.getResource(templateName);
         if (url != null) { return url; }
 
         /*
          * Try the class loader, that loaded this class.
          * 
          * Good for templates located within the class path.
+         * 
          */
         url = getClass().getResource(templateName);
-        if (url != null) { return url; }
-
-        /*
-         * Still here? Try system and other class loaders.
-         */
-        ClassLoader classLoader = null;
-
-        /*
-         * Try the system class loader.
-         */
-        classLoader = ClassLoader.getSystemClassLoader();
-        url = classLoader.getResource(templateName);
-        if (url != null) { return url; }
-
-        /*
-         * Try the thread context class loader.
-         */
-        classLoader = Thread.currentThread().getContextClassLoader();
-        url = classLoader.getResource(templateName);
         if (url != null) { return url; }
 
         /*
