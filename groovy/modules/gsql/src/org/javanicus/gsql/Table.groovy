@@ -11,9 +11,9 @@ public class Table implements Cloneable {
     private foreignKeys
     private indexes
     
-    public Table() {
+    public Table(aName) {
         catalog = null
-        name = null
+        name = aName
         groovyName = null
         schema = null
         remarks = null
@@ -24,17 +24,18 @@ public class Table implements Cloneable {
     }
 
     public Object clone() { // throws CloneNotSupportedException {
-        result = new Table()
+        result = new Table(name)
 
         result.catalog     = catalog
         result.name        = name
         result.groovyName  = groovyName
         result.schema      = schema
         result.remarks     = remarks
-        result.type        = type
-        result.columns     = columns.clone()
-        result.foreignKeys = foreignKeys.clone()
-        result.indexes     = indexes.clone()
+// @todo - strange stuff happening with the following assignment
+//        result.type        = type
+//        result.columns     = columns.clone()
+//        result.foreignKeys = foreignKeys.clone()
+//        result.indexes     = indexes.clone()
         
         return result
     }
@@ -43,44 +44,44 @@ public class Table implements Cloneable {
         return (type == null) ? "(null)" : type
     }
 
-    public void addColumn(column) {
-        columns << column
+    public void addColumn(aColumn) {
+        columns << aColumn
     }
-    public void addAll(columns) {
-        this.columns << columns
+    public void addAll(someColumns) {
+        this.columns << someColumns
     }
     public List getColumns() {
         return columns
     }
-    public Column getColumn(index) {
-        return columns[index]
+    public Column getColumn(idx) {
+        return columns[idx]
     }
 
-    public void addForeignKey(foreignKey) {
-        foreignKeys << foreignKey
+    public void addForeignKey(aForeignKey) {
+        foreignKeys << aForeignKey
     }
     public List getForeignKeys() {
         return foreignKeys
     }
-    public ForeignKey getForeignKey(index) {
-        return foreignKeys[index]
+    public ForeignKey getForeignKey(idx) {
+        return foreignKeys[idx]
     }
 
-    public void addIndex(Index index) {
-        indexes << index
+    public void addIndex(Index anIndex) {
+        indexes << anIndex
     }
     public List getIndexes() {
         return indexes
     }
-    public Index getIndex(int index) {
-        return (Index)indexes.get(index)
+    public Index getIndex(int idx) {
+        (Index)indexes.get(idx)
     }
 
-    public void addUnique(Unique index) {
-        addIndex(index)
+    public void addUnique(Unique aUniqueIndex) {
+        addIndex(aUniqueIndex)
     }
     public List getUniques() {
-        return indexes.findAll() {it.isUnique()}
+        indexes.findAll() {it.isUnique()}
     }
     
     
@@ -89,19 +90,20 @@ public class Table implements Cloneable {
         return aPrimaryKeyColumn != null
     }
 
-    public Column findColumn(name) {
-        return getColumns().find() {it.name.equalsIgnoreCase(name)}
+    public Column findColumn(aName) {
+        //todo? warning ${name} inside closure refers to this.name, not method parameter called 'name' (in groovy 1.0b6) !!!
+        getColumns().find() {it.name.equalsIgnoreCase(aName)}
     }
 
-    public Index findIndex(name) {
-        return getIndexes().find() {it.name.equalsIgnoreCase(name)}
+    public Index findIndex(aName) {
+        getIndexes().find() {it.name.equalsIgnoreCase(aName)}
     }
 
     public List getPrimaryKeyColumns() {
-        return getColumns().findAll() {it.isPrimaryKey()}
+        getColumns().findAll() {it.isPrimaryKey()}
     }
 
     public Column getAutoIncrementColumn() {
-        return getColumns().find() {it.isAutoIncrement()}
+        getColumns().find() {it.isAutoIncrement()}
     }
 }

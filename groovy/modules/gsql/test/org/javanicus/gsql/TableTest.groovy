@@ -9,7 +9,7 @@ class TableTest extends GroovyTestCase {
         typeMap = new TypeMap()          
         idColumn = new Column(typeMap,"id","id",0,"10",true,true,true,null)     
         nameColumn = new Column(typeMap,"name","name",0,"250",true,false,false,"<no name>")
-        table = new Table()
+        table = new Table("wheelbarrow")
         table.addColumn(idColumn)          
         table.addColumn(nameColumn)     
     }
@@ -27,6 +27,6 @@ class TableTest extends GroovyTestCase {
     
     void testFindColumnUsingCaseInsensitiveName() {
         //todo: fails for some reason
-        //assert nameColumn == table.findColumn("name")
+        assert nameColumn == table.findColumn("NaMe")
     }
 }
