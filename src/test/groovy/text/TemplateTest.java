@@ -33,9 +33,9 @@
  */
  package groovy.text;
 
-import groovy.lang.Binding;
-
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -44,9 +44,6 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * @author sam
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
  */
 public class TemplateTest extends TestCase {
     
@@ -56,8 +53,8 @@ public class TemplateTest extends TestCase {
     }
     
     public void testBinding() throws SyntaxException, ClassNotFoundException, IOException {
-        Binding binding = new Binding();
-        binding.setVariable("sam", "pullara");
+        Map binding = new HashMap();
+        binding.put("sam", "pullara");
         Template template = new SimpleTemplateEngine().createTemplate("<%= sam %>");
         template.setBinding(binding.getVariables());
         assertEquals("pullara", template.toString());
