@@ -57,9 +57,24 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class NodePrinterTest extends TestSupport {
 
-    public void testTree() throws Exception {
-        // GroovyObject object = compile("src/test/groovy/tree/VerboseTreeTest.groovy");
-        GroovyObject object = compile("src/test/groovy/tree/SmallVerboseTreeTest.groovy");
+    public void testVerboseTree() throws Exception {
+        GroovyObject object = compile("src/test/groovy/tree/VerboseTreeTest.groovy");
+        object.invokeMethod("testTree", null);
+    }
+
+    public void testSmallTree() throws Exception {
+        GroovyObject object = compile("src/test/groovy/tree/SmallTreeTest.groovy");
+        object.invokeMethod("testTree", null);
+    }
+
+    public void testLittleClosure() throws Exception {
+        GroovyObject object = compile("src/test/groovy/LittleClosureTest.groovy");
+        object.invokeMethod("testClosure", null);
+    }
+
+    /** @todo Why does this fail when using the GroovyClassLoader? */
+    public void TODO_testClosureClassLoaderBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/tree/ClosureClassLoaderBug.groovy");
         object.invokeMethod("testTree", null);
     }
 }

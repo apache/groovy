@@ -46,6 +46,9 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.Closure;
+import groovy.lang.MetaClass;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 
@@ -60,6 +63,19 @@ public class DumpClass2 {
 
     private String bar = (String) InvokerHelper.invokeStaticMethod("InvokerHelper", "getMetaClass", null);
 
+    public DumpClass2(Object foo) {
+    }
+    
+    public Object makeClosure() {
+        return new Closure(this) {
+            public void doCall() {
+                
+            }  
+            public MetaClass getMetaClass() {
+                return null;
+            }
+        };
+    }
     public String getBar() {
         return bar;
     }

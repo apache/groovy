@@ -80,7 +80,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected static boolean CHECK_CLASS = true;
     protected static boolean DUMP_CLASS = false;
 
-    protected GroovyClassLoader loader = new GroovyClassLoader();
+    protected GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
     protected ClassGenerator checker = new ClassGenerator(new GeneratorContext(), new CheckClassAdapter(invisibleDumpVisitor), loader, null);

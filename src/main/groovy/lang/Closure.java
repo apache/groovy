@@ -45,8 +45,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-
 
 /**
  * Represents any closure object in Groovy.
@@ -54,8 +54,24 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Closure {
+public abstract class Closure implements GroovyObject {
 
+    private Object delegate;
+
+    public Closure(Object delegate) {
+        this.delegate = delegate;
+    }
+
+    public Object invokeMethod(String method, Object arguments) {
+        /** @todo optimise me! */
+        try {
+            return getMetaClass().invokeMethod(this, method, arguments);
+        }
+        catch (InvokerException e) {
+            // lets try invoke method on delegate
+            return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+        }
+    }
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
      * 
@@ -64,7 +80,7 @@ public abstract class Closure {
     public Object call() {
         return call(null);
     }
-    
+
     /**
      * Invokes the closure, returning any value if applicable.
      * 
@@ -76,4 +92,19 @@ public abstract class Closure {
         return InvokerHelper.invokeMethod(this, "doCall", arguments);
     }
 
+    /**
+     * @return the delegate Object to which method calls will go which is
+     * typically the outer class when the closure is constructed
+     */
+    public Object getDelegate() {
+        return delegate;
+    }
+
+    /**
+     * Allows the delegate to be changed such as when performing markup building
+     * @param delegate
+     */
+    public void setDelegate(Object delegate) {
+        this.delegate = delegate;
+    }
 }
