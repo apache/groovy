@@ -26,22 +26,30 @@ class TestGenerator{
         }
         result.println("import junit.framework.*;")
         result.println("import java.io.*;")
+
+        // --- only needed for classic AST evaluation
+        result.println("import java.util.ArrayList;")
+        result.println("import groovy.lang.GroovyShell;")
+        result.println("import groovy.ui.GroovyMain;")
+        result.println("import org.codehaus.groovy.control.CompilerConfiguration;")
+
         result.println("import org.codehaus.groovy.antlr.*; //@todo - refactor pulling generic parser interface up")
         result.println("public class ${fileStem}Test extends TestCase {")
 
-        methodName = turnSentenceIntoJavaName(behaviourDescription)
+        //methodName = turnSentenceIntoJavaName(behaviourDescription)
+        methodName = ""
         methodName = "test${methodName}"
 
         // test for the source 'as is'
         printCommonTestMethodStart(result, "${methodName}Pass",srcText)
-        result.println("        parse(srcBuffer.toString());")
+        result.println('        evaluate(srcBuffer.toString(),"' + "${methodName}Pass" + '");')
         result.println("    }")
 
         // test for each of the '@pass' alternatives
         passAlternatives = generateAlternatives(srcText,"@pass")
         passAlternatives.eachWithIndex{anAlternative,i|
             printCommonTestMethodStart(result, "${methodName}Pass${i+1}",anAlternative[0]);
-            result.println("        parse(srcBuffer.toString());")
+            result.println('        evaluate(srcBuffer.toString(),"' + "${methodName}Pass${i+1}" + '");')
             result.println("    }")
         }
 
@@ -50,7 +58,7 @@ class TestGenerator{
         failureToParseAlternatives.eachWithIndex{anAlternative,i|
             printCommonTestMethodStart(result, "${methodName}FailParse${i+1}",anAlternative[0]);
             result.println("        try {")
-            result.println("            parse(srcBuffer.toString());")
+            result.println('            parse(srcBuffer.toString(),"' + "${methodName}FailParse${i+1}" + '");')
 
 
             result.println('            fail("This line did not fail to parse: ' + anAlternative[1] + '");')
@@ -65,18 +73,24 @@ class TestGenerator{
         failureAlternatives.eachWithIndex{anAlternative,i|
             printCommonTestMethodStart(result, "${methodName}Fail${i+1}",anAlternative[0]);
             result.println("        try {")
-            result.println("            evaluate(srcBuffer.toString());")
+            result.println('            evaluate(srcBuffer.toString(),"' + "${methodName}Fail${i+1}" + '");')
             result.println('            fail("This line did not fail to evaluate: ' + anAlternative[1] + '");')
             result.println("        } catch (Exception e) {")
             result.println("            // ignore an exception as that is what we're hoping for in this case.")
             result.println("        }")
             result.println("    }")
         }
-
-        result.println('    public void evaluate(String theSrcText) throws Exception {')
-        result.println("        parse(theSrcText);") //@todo - hook up evaluation of groovy src here!!!
+        result.println('    public void evaluate(String theSrcText, String testName) throws Exception {')
+        result.println('        parse(theSrcText, testName); // fail early with a direct message if possible')
+        result.println('        //GroovyShell groovy = new GroovyShell(new CompilerConfiguration());')
+        result.println('        //groovy.run(theSrcText, "main", new ArrayList());')
         result.println("    }")
-        result.println('    public void parse(String theSrcText) throws Exception {')
+        result.println('    public void parse(String theSrcText, String testName) throws Exception {')
+        result.println('        System.out.println("-------------------------------");')
+        result.println('        System.out.println("  " + testName);')
+        result.println('        System.out.println("-------------------------------");')
+        result.println('        System.out.println(theSrcText);')
+        result.println('        System.out.println("-------------------------------");')
         result.println('        Reader reader = new StringReader(theSrcText);')
         result.println('        GroovyLexer lexer = new GroovyLexer(reader);')
         result.println('        GroovyRecognizer recognizer = new GroovyRecognizer(lexer);')

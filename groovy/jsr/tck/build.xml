@@ -17,6 +17,8 @@
   <property name="standalone.working.dir" value="temp"/>
   <property name="standalone.dir" value="standalone"/>
 
+  <!-- TODO limit exposure to groovy classic -->
+  <property name="groovy.classic.lib.dir" value="../../groovy-core/target/install/embeddable"/>
 
   <!-- javadoc properties -->
   <property name="javadoc.dir" value="doc"/>
@@ -46,7 +48,11 @@
     <pathelement location="${test.classes.dir}"/>
     <fileset dir="${test.lib.dir}">
       <include name="**/*.jar"/>
-    </fileset>  
+    </fileset>
+    <!-- TODO limit exposure to groovy classic -->
+    <fileset dir="${groovy.classic.lib.dir}">
+      <include name="**/*.jar" />
+    </fileset>
   </path>
 
   <path id="my.classpath">

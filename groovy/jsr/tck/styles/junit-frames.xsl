@@ -241,8 +241,14 @@ h6 {
                 <xsl:call-template name="testsuite.test.header"/>
                 <xsl:apply-templates select="." mode="print.test"/>
             </table>
-
             <h2>Tests</h2>
+            <xsl:if test="string-length(./system-out)!=0">
+                    <a>
+                        <xsl:attribute name="href">./<xsl:value-of select="@name"/>-out.txt</xsl:attribute>
+                        sources &#187;
+                    </a>
+            </xsl:if>
+            <p/>
             <table class="details" border="0" cellpadding="5" cellspacing="2" width="95%">
         <xsl:call-template name="testcase.test.header"/>
               <!--
