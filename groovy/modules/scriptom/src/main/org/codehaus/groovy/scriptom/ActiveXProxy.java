@@ -38,6 +38,7 @@ import com.jacob.activeX.ActiveXComponent;
 import com.jacob.com.Variant;
 import com.jacob.com.Dispatch;
 import com.jacob.com.DispatchEvents;
+import com.jacob.com.ComThread;
 import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -101,7 +102,7 @@ public class ActiveXProxy extends GroovyObjectSupport
         Variant[] variants = new Variant[objs.length];
         for (int i = 0; i < variants.length; i++)
         {
-            variants[i] = new Variant(objs[i]);
+            variants[i] = new Variant(VariantProxy.toValue(objs[i]));
         }
         return toReturn(activex.invoke(methodName, variants));
     }
@@ -116,7 +117,7 @@ public class ActiveXProxy extends GroovyObjectSupport
     {
         if ("events".equals(propertyName))
             new DispatchEvents(activex, newValue);
-        activex.setProperty(propertyName, new Variant(newValue));
+        activex.setProperty(propertyName, new Variant(VariantProxy.toValue(newValue)));
     }
 
     private Object toReturn(Object obj)
@@ -140,6 +141,7 @@ public class ActiveXProxy extends GroovyObjectSupport
     protected void finalize() throws Throwable
     {
         activex.release();
+        ComThread.Release();
         super.finalize();
     }
 }

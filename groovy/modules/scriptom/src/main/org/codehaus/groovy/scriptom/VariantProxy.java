@@ -37,6 +37,7 @@ package org.codehaus.groovy.scriptom;
 import com.jacob.com.Dispatch;
 import com.jacob.com.Variant;
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GString;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.math.BigDecimal;
@@ -90,7 +91,7 @@ public class VariantProxy extends GroovyObjectSupport
         switch (v.getvt())
         {
             case Variant.VariantEmpty:
-                return v;
+                return null;
             case Variant.VariantNull:
                 return null;
             case Variant.VariantShort:
@@ -138,14 +139,20 @@ public class VariantProxy extends GroovyObjectSupport
      */
     public void setProperty(String property, Object newValue)
     {
+        Dispatch.put(variant.toDispatch(), property, toValue(newValue));
+    }
+
+    public static Object toValue(Object newValue)
+    {
         // special case for Groovy's arithmetics:
         // BigInteger and BigDecimal aren't recognized by the Jacob library
         if (newValue instanceof BigInteger)
             newValue = new Integer(((BigInteger) newValue).intValue());
         else if (newValue instanceof BigDecimal)
             newValue = new Double(((BigDecimal) newValue).doubleValue());
-
-        Dispatch.put(variant.toDispatch(), property, newValue);
+        else if (newValue instanceof GString)
+            newValue = ((GString)newValue).toString();
+        return newValue;
     }
 
     /**
@@ -164,7 +171,7 @@ public class VariantProxy extends GroovyObjectSupport
         Variant[] variants = new Variant[objs.length];
         for (int i = 0; i < variants.length; i++)
         {
-            variants[i] = new Variant(objs[i]);
+            variants[i] = new Variant(toValue(objs[i]));
         }
         return new VariantProxy(Dispatch.callN(variant.toDispatch(), name, variants));
     }
