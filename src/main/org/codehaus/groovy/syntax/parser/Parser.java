@@ -1029,11 +1029,32 @@ public class Parser
                 expr = listExpression();
                 break;
             }
+            case ( Token.LEFT_CURLY_BRACE ):
+            {
+                expr = closureExpression();
+                break;
+            }
             default:
             {
                 throwExpected( new int[] { } );
             }
         }
+
+        return expr;
+    }
+
+    protected CSTNode closureExpression()
+        throws IOException, SyntaxException
+    {
+        CSTNode expr = rootNode( Token.LEFT_CURLY_BRACE );
+
+        expr.addChild( parameterList() );
+
+        consume( Token.PIPE );
+
+        expr.addChild( statementBlock() );
+
+        consume( Token.RIGHT_CURLY_BRACE );
 
         return expr;
     }
