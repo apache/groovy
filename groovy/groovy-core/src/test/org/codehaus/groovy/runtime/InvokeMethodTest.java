@@ -193,6 +193,15 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("private method call", aPrivateMethod(param), value);
     }
 
+    public void testStringSubstringMethod() throws Throwable {
+        String object = "hello";
+        Object value = invoke(object, "substring", new Integer(2));
+        assertEquals("substring(2)", object.substring(2), value);
+
+        value = invoke(object, "substring", new Object[] { new Integer(1), new Integer(3) });
+        assertEquals("substring(1,3)", object.substring(1,3), value);
+    }
+
     public void testInvokeUnknownMethod() throws Throwable {
         try {
             Object value = invoke(this, "unknownMethod", "abc");
