@@ -11,7 +11,7 @@ class VerboseTreeTest extends GroovyTestCase {
     void testSmallTree() {
         b = NodeBuilder.newInstance()
         
-        root = b.root1(['a':5, 'b':7], {|
+        root = b.root1(['a':5, 'b':7], {
             elem1('hello1')
             elem2('hello2')
             elem3(['x':7])
@@ -25,15 +25,15 @@ class VerboseTreeTest extends GroovyTestCase {
     void testTree() {
         b = NodeBuilder.newInstance()
         
-        root = b.root2(['a':5, 'b':7], {|
+        root = b.root2(['a':5, 'b':7], {
             elem1('hello1')
             elem2('hello2')
-            nestedElem(['x':'abc', 'y':'def'], {|
+            nestedElem(['x':'abc', 'y':'def'], {
                 child(['z':'def'])
                 child2()  
             })
             
-            nestedElem2(['z':'zzz'], {|
+            nestedElem2(['z':'zzz'], {
                 child(['z':'def'])
                 child2("hello")  
             })
