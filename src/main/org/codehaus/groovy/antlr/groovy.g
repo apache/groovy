@@ -3270,9 +3270,9 @@ REGEXP_LITERAL
         // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
         // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
         (
-            (   REGEXP_SYMBOL
-            |   {!atValidDollarEscape()}? '$'
-            )
+            REGEXP_SYMBOL
+            tt=REGEXP_CTOR_END[true]
+        |   {!atValidDollarEscape()}? '$'
             tt=REGEXP_CTOR_END[true]
         |   '$'!
             {

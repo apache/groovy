@@ -1,11 +1,6 @@
 class GStringTest extends GroovyTestCase {
 
-    void testWithOneVariable() {
-        
-        name = "Bob"
-        
-        template = "hello ${name} how are you?"
-				
+    void check(template, teststr) {
         assert template instanceof GString
 
         count = template.getValueCount()
@@ -13,31 +8,80 @@ class GStringTest extends GroovyTestCase {
         assert template.getValue(0) == "Bob"
 
         string = template.toString()
-        assert string == "hello Bob how are you?"
+        assert string == teststr
     }
-    
+
+    void testWithOneVariable() {
+        name = "Bob"
+        teststr = "hello Bob how are you?"
+
+
+    check("hello $name how are you?", teststr)
+    check("hello ${name} how are you?", teststr)
+    check("hello ${println "feep"; name} how are you?", teststr)
+    check(/hello $name how are you?/, teststr)
+    check(/hello ${name} how are you?/, teststr)
+    check(/hello ${println "feep"; name} how are you?/, teststr)
+    }
+
     void testWithVariableAtEnd() {
         name = "Bob"
-        template = "hello ${name}"
-        string = template.toString()
-        
-        assert string == "hello Bob"
+        teststr = "hello Bob"
+
+        check("hello $name", teststr)
+        check("hello ${name}", teststr)
+        check("hello ${def name = "Bob"; name}", teststr)
+        check(/hello $name/, teststr)
+        check(/hello ${name}/, teststr)
+        check(/hello ${def name = "Bob"; name}/, teststr)
     }
     
     void testWithVariableAtBeginning() {
         name = "Bob"
-        template = "${name} hey"
-        string = template.toString()
-        
-        assert string == "Bob hey"
+        teststr = "Bob hey"
+        check("$name hey", teststr)
+        check("${name} hey", teststr)
+        name = ""
+        check("${name += "Bob"; name} hey", teststr)
+        assert name == "Bob"
+        check(/$name hey/, teststr)
+        check(/${name} hey/, teststr)
+        name = ""
+        check(/${name += "Bob"; name} hey/, teststr)
     }
 
     void testWithJustVariable() {
-        name = "Bob"
-        template = "${name}"
-        string = template.toString()
-        
-        assert string == "Bob"
+        name = teststr = "Bob"
+        check("$name", teststr)
+        check("${name}", teststr)
+        check("${assert name=="Bob"; name}", teststr)
+        // Put punctuation after the variable name:
+        check("$name.", "Bob.")
+        check("$name...", "Bob...")
+        check("$name?", "Bob?")
+
+        check(/$name/, teststr)
+        check(/${name}/, teststr)
+        check(/${assert name=="Bob"; name}/, teststr)
+        // Put punctuation after the variable name:
+        check(/$name./, "Bob.")
+        check(/$name.../, "Bob...")
+        check(/$name?/, "Bob?")
+        check(/$name\?/, "Bob\\?")
+        check(/$name$/, "Bob\$")
+
+        guy = [name: name]
+        check("${guy.name}", "Bob")
+        check("$guy.name", "Bob")
+        check("$guy.name.", "Bob.")
+        check("$guy.name...", "Bob...")
+        check("$guy.name?", "Bob?")
+        check(/$guy.name/, "Bob")
+        check(/$guy.name./, "Bob.")
+        check(/$guy.name.../, "Bob...")
+        check(/$guy.name?/, "Bob?")
+        check(/$guy.name\?/, "Bob\\?")
+        check(/$guy.name$/, "Bob\$")
     }
     
     void testWithTwoVariables() {
