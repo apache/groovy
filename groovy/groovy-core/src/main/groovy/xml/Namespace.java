@@ -43,43 +43,53 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.xml;
 
+import java.util.Map;
+
+import groovy.util.BuilderSupport;
 
 
 /**
- * Represents an arbitrary logging service. By default this outputs to
- * System.out though derivations of this class could log to Jakarta Commons Logging
- * or log4j or JDK 1.5 logging etc
+ * A helper class for creating namespaced GroovyMarkup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyLog extends GroovyObjectSupport {
+public class Namespace extends BuilderSupport {
 
-    String prefix;
+    private Object builder;
+    private String uri;
+    private String prefix;
 
-    /** 
-     * Factory method to create new instances 
-     */
-    public static GroovyLog newInstance(Class aClass) {
-        return new GroovyLog(aClass);
-    }
-    
-    public GroovyLog() {
-        this("");
+    public Namespace(BuilderSupport builder, String uri) {
+        this(builder, uri, "");
     }
 
-    public GroovyLog(Class owner) {
-        this(owner.getName());
+    public Namespace(BuilderSupport builder, String uri, String prefix) {
+        super(builder);
+        this.builder = builder;
+        this.uri = uri;
+        this.prefix = prefix;
     }
 
-    public GroovyLog(String prefix) {
-        this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
+    protected void setParent(Object parent, Object child) {
     }
 
-    public Object invokeMethod(String name, Object args) {
-        System.out.println(prefix + name + "] " + args);
-        return null;
+    protected Object getName(String methodName) {
+        QName qname = new QName(uri, methodName, prefix);
+        return qname;
+    }
+
+    protected Object createNode(Object name) {
+        return name;
+    }
+
+    protected Object createNode(Object name, Object value) {
+        return name;
+    }
+
+    protected Object createNode(Object name, Map attributes) {
+        return name;
     }
 }

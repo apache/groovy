@@ -5,6 +5,10 @@ Core Groovy Tasks
 	
 * test while, do while
 
+* access to local variables from inside a closure
+
+* switch statements
+
 * go through all not-working @todo tests in src/test
 	
 * to support dynamic mixins we should use dynamic proxies to allow

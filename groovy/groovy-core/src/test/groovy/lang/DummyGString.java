@@ -43,54 +43,41 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.List;
+package groovy.lang;
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import groovy.lang.GString;
+import groovy.lang.MetaClass;
+
 
 /**
- * Represents a String expression which contains embedded values inside
- * it such as "hello there ${user} how are you" which is expanded lazily
+ * A hand crafted example GString
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompositeStringExpression extends Expression {
+public class DummyGString extends GString {
 
-    private List strings = new ArrayList();
-    private List values = new ArrayList();
+    private static String[] strings = { "Hello ", "!" };
+    private MetaClass metaClass;
     
-    public CompositeStringExpression() {
+    public DummyGString(Object[] values) {
+        super(values);
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitCompositeStringExpression(this);
-    }
-
-    public String toString() {
-        return super.toString() + "[strings: " + strings + " values: " + values + "]";
-    }
-
-    public List getStrings() {
+    public String[] getStrings() {
         return strings;
     }
 
-    public List getValues() {
-        return values;
+    public MetaClass getMetaClass() {
+        return metaClass;
     }
 
-
-    public void addString(Expression text) {
-        strings.add(text);
-    }
-    
-    public void addValue(Expression value) {
-        values.add(value);
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
     }
 
-    public Expression getValue(int idx) {
-        return (Expression) values.get(idx);
+    public Object invokeMethod(String name, Object arguments) {
+        return metaClass.invokeMethod(this, name, arguments);
     }
 }

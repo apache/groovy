@@ -43,41 +43,33 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package groovy.lang;
 
-import groovy.lang.CompositeString;
-import groovy.lang.MetaClass;
-
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * A hand crafted example CompositeString
+ * A useful base class for Java objects wishing to be Groovy objects
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DummyCompositeString extends CompositeString {
+public abstract class GroovyObjectSupport implements GroovyObject {
 
-    private static String[] strings = { "Hello ", "!" };
     private MetaClass metaClass;
-    
-    public DummyCompositeString(Object[] values) {
-        super(values);
-    }
-    
-    public String[] getStrings() {
-        return strings;
-    }
 
+    public GroovyObjectSupport() {
+        this.metaClass = InvokerHelper.getMetaClass(this);
+    }
+    
+    public Object invokeMethod(String name, Object args) {
+        return getMetaClass().invokeMethod(this, name, args);
+    }
+    
     public MetaClass getMetaClass() {
         return metaClass;
     }
-
+    
     public void setMetaClass(MetaClass metaClass) {
         this.metaClass = metaClass;
-    }
-
-    public Object invokeMethod(String name, Object arguments) {
-        return metaClass.invokeMethod(this, name, arguments);
     }
 }

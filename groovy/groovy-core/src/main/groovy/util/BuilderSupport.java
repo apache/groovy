@@ -47,8 +47,7 @@ package groovy.util;
 
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
-import groovy.lang.MetaClass;
+import groovy.lang.GroovyObjectSupport;
 
 import java.util.List;
 import java.util.Map;
@@ -62,29 +61,48 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class BuilderSupport implements GroovyObject {
+public abstract class BuilderSupport extends GroovyObjectSupport {
 
     private Object current;
-    MetaClass metaClass = InvokerHelper.getMetaClass(this);
-
-    public Object invokeMethod(String name, Object args) {
+    private Closure nameMappingClosure;
+    private BuilderSupport proxyBuilder;
+    
+    public BuilderSupport() {
+        this.proxyBuilder = this;
+    }
+    
+    public BuilderSupport(BuilderSupport proxyBuilder) {
+        this(null, proxyBuilder);
+    }
+    
+    public BuilderSupport(Closure nameMappingClosure, BuilderSupport proxyBuilder) {
+        this.nameMappingClosure = nameMappingClosure;
+        this.proxyBuilder = proxyBuilder;
+    }
+    
+    public Object invokeMethod(String methodName, Object args) {
+        Object name = getName(methodName);
+        return doInvokeMethod(methodName, name, args);
+    }
+    
+    protected Object doInvokeMethod(String methodName, Object name, Object args) {
         Object node = null;
         Closure closure = null;
         List list = InvokerHelper.asList(args);
 
-        //System.out.println("Called invokeMethod with arguments: " + list);
+        //System.out.println("Called invokeMethod with name: " + name + " arguments: " + list);
 
         if (!list.isEmpty()) {
             Object object = list.get(0);
             if (object instanceof Map) {
-                node = createNode(name, (Map) object);
+                node = proxyBuilder.createNode(name, (Map) object);
             }
             else if (object instanceof Closure) {
                 closure = (Closure) object;
-                node = createNode(name);
+                node = proxyBuilder.createNode(name);
             }
             else {
-                node = createNode(name, object);
+                node = proxyBuilder.createNode(name, object);
             }
             if (list.size() > 1) {
                 object = list.get(1);
@@ -94,10 +112,10 @@ public abstract class BuilderSupport implements GroovyObject {
             }
         }
         else {
-            node = createNode(name);
+            node = proxyBuilder.createNode(name);
         }
         if (current != null) {
-            setParent(current, node);
+            proxyBuilder.setParent(current, node);
         }
 
         //System.out.println("Created node: " + node);
@@ -113,22 +131,28 @@ public abstract class BuilderSupport implements GroovyObject {
 
             current = oldCurrent;
         }
-        nodeCompleted(node);
+        proxyBuilder.nodeCompleted(node);
         return node;
-    }
-
-    public MetaClass getMetaClass() {
-        return metaClass;
-    }
-
-    public void setMetaClass(MetaClass metaClass) {
-        this.metaClass = metaClass;
     }
 
     protected abstract void setParent(Object parent, Object child);
     protected abstract Object createNode(Object name);
     protected abstract Object createNode(Object name, Object value);
     protected abstract Object createNode(Object name, Map attributes);
+
+    /**
+     * A hook to allow names to be converted into some other object
+     * such as a QName in XML or ObjectName in JMX
+     * @param methodName
+     * @return
+     */
+    protected Object getName(String methodName) {
+        if (nameMappingClosure != null) {
+            return nameMappingClosure.call(methodName);
+        }
+        return methodName;
+    }
+
 
     /**
      * A hook to allow nodes to be processed once they have had all of their

@@ -43,43 +43,54 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package org.codehaus.groovy.ast.expr;
 
+import java.util.ArrayList;
+import java.util.List;
 
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents an arbitrary logging service. By default this outputs to
- * System.out though derivations of this class could log to Jakarta Commons Logging
- * or log4j or JDK 1.5 logging etc
+ * Represents a String expression which contains embedded values inside
+ * it such as "hello there ${user} how are you" which is expanded lazily
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyLog extends GroovyObjectSupport {
+public class GStringExpression extends Expression {
 
-    String prefix;
-
-    /** 
-     * Factory method to create new instances 
-     */
-    public static GroovyLog newInstance(Class aClass) {
-        return new GroovyLog(aClass);
+    private List strings = new ArrayList();
+    private List values = new ArrayList();
+    
+    public GStringExpression() {
     }
     
-    public GroovyLog() {
-        this("");
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitGStringExpression(this);
     }
 
-    public GroovyLog(Class owner) {
-        this(owner.getName());
+    public String toString() {
+        return super.toString() + "[strings: " + strings + " values: " + values + "]";
     }
 
-    public GroovyLog(String prefix) {
-        this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
+    public List getStrings() {
+        return strings;
     }
 
-    public Object invokeMethod(String name, Object args) {
-        System.out.println(prefix + name + "] " + args);
-        return null;
+    public List getValues() {
+        return values;
+    }
+
+
+    public void addString(Expression text) {
+        strings.add(text);
+    }
+    
+    public void addValue(Expression value) {
+        values.add(value);
+    }
+
+    public Expression getValue(int idx) {
+        return (Expression) values.get(idx);
     }
 }

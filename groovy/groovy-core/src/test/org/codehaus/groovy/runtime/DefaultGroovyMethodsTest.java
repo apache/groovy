@@ -44,21 +44,31 @@
 
  */
 
-package groovy.lang;
+package org.codehaus.groovy.runtime;
+
+import groovy.lang.GroovyTestCase;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
- * Tests the use of the structured Attribute type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompositeStringTest extends GroovyTestCase {
+public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
-    public void testIterateOverText() {
-        DummyCompositeString compString = new DummyCompositeString(new Object[] {"James"});
+    public void testPrint() throws Exception {      
+        Map map = new HashMap();
+        map.put("bob", "drools");
+        map.put("james", "geronimo");
+        List list = new ArrayList();
+        list.add(map);
         
-        assertArrayEquals(new String[] { "Hello ", "!" }, compString.getStrings());
-        assertArrayEquals(new Object[] { "James" }, compString.getValues());
+        /** @todo fix this! */
+        //assertConsoleOutput(list, "[['bob':'drools', 'james':'geronimo']]");
     }
-
 }

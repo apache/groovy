@@ -51,7 +51,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.CompositeStringExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -67,7 +67,7 @@ import org.codehaus.groovy.syntax.Token;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompositeStringTest extends TestSupport {
+public class GStringTest extends TestSupport {
 
     public void testConstructor() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
@@ -75,7 +75,7 @@ public class CompositeStringTest extends TestSupport {
         //Statement printStatement = createPrintlnStatement(new VariableExpression("str"));
 
         // simulate "Hello ${user}!"
-        CompositeStringExpression compositeStringExpr = new CompositeStringExpression();
+        GStringExpression compositeStringExpr = new GStringExpression();
         compositeStringExpr.addString(new ConstantExpression("Hello "));
         compositeStringExpr.addValue(new VariableExpression("user"));
         compositeStringExpr.addString(new ConstantExpression("!"));

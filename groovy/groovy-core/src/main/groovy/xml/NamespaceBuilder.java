@@ -43,43 +43,30 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.xml;
 
+import groovy.util.BuilderSupport;
 
 
 /**
- * Represents an arbitrary logging service. By default this outputs to
- * System.out though derivations of this class could log to Jakarta Commons Logging
- * or log4j or JDK 1.5 logging etc
+ * A helper class for creating namespaces for GroovyMarkup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyLog extends GroovyObjectSupport {
+public class NamespaceBuilder {
 
-    String prefix;
+    private BuilderSupport builder;
 
-    /** 
-     * Factory method to create new instances 
-     */
-    public static GroovyLog newInstance(Class aClass) {
-        return new GroovyLog(aClass);
-    }
-    
-    public GroovyLog() {
-        this("");
+    public NamespaceBuilder(BuilderSupport builder) {
+        this.builder = builder;
     }
 
-    public GroovyLog(Class owner) {
-        this(owner.getName());
+    public Namespace namespace(String uri) {
+        return namespace(uri, "");
     }
 
-    public GroovyLog(String prefix) {
-        this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
-    }
-
-    public Object invokeMethod(String name, Object args) {
-        System.out.println(prefix + name + "] " + args);
-        return null;
+    public Namespace namespace(String uri, String prefix) {
+        return new Namespace(builder, uri, prefix);
     }
 }

@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head>
+  <title>XML, HTML and other markup languages with Groovy</title>
+</head>
+
+<body>
+<h1>XML, HTML and other markup languages</h1>
+
+Groovy has native support for various markup languages from XML, HTML,
+SAX, W3C DOM, Ant tasks and so forth. This is all accomplished via the
+following syntax...<br>
+
+
+<source>
+someBuilder.people(kind:'folks', groovy:true) {
+  person(x:123,  name:'James', cheese:'edam') {
+    project(name:'groovy')
+    project(name:'geronimo')
+  }
+  person(x:234,  name:'bob', cheese:'cheddar') {
+    project(name:'groovy')
+    project(name:'drools')
+  }
+}
+</source>
+
+Whichever kind of builder object is used, the syntax is the same. What
+the above means is that the someBuilder object has a method called
+'people' invoked with 2 parameters...<br>
+
+<ul>
+
+  <li>a Map of arguments ['kind':'folks', 'groovy':true]</li>
+  <li>a Closure object which when invoked will call 2 methods on the
+builder called 'person', each taking 2 parameters, a map of values and
+a closure...</li>
+</ul>
+
+So we can easily represent any arbitrary nested markup with ease using
+a simple concise syntax. No pointy brackets! :)<br>
+
+<br>
+
+Whats more is this is native Groovy syntax; so you can mix and match
+this markup syntax with any other Groovy features (iteration,
+branching, method calls, variables, expressions etc). e.g.<br>
+
+<br>
+
+// lets create a form with a label &amp; text field for each property
+of a bean&lt;
+<source>
+widget = swing.frame(title:'My Frame') {
+    panel() {
+       for (entry in someBean) {
+          label(text:entry.key)
+          textField(text:entry.value)
+       }
+    }
+}
+widget.show()
+</source>
+
+<h2>Trees, DOMs, beans and event processing</h2>
+
+The really neat thing about GroovyMarkup is that its just a syntax
+which maps down to method calls. So it can easily support the building
+of any arbitary object structure - so it can build any DOMish model, a
+bean structure, JMX MBeans, PicoComponents, Swing front ends, Ant tasks
+etc. Whats more since its just normal method invocations it can
+naturally map to SAX event processing too.<br>
+
+<br>
+
+Out of the box Groovy comes with a few different markup builders you
+can use<br>
+
+<ul>
+
+  <li>NodeBuilder - creates a tree of Node instances which can be
+easily navigated in Groovy using an XPath-like syntax</li>
+  <li>DOMBuilder - creates a W3C DOM document from the markup its given</li>
+  <li>SAXBuilder - fires SAX events into a given SAX ContentHandler</li>
+  <li>MarkupBuilder - outputs XML / HTML markup to some PrintWriter for
+things like implementing servlets or code generation</li>
+  <li>AntBuilder - fires off Ant tasks using familiar markup for
+processing build tasks<source></source></li>
+</ul>
+<h2>Examples</h2>
+To see a bunch of examples of using GroovyMarkup try looking at our unit test cases<br>
+<ul>
+  <li>xml unit tests</li>
+  <li>Ant unit tests<br>
+  </li>
+</ul>
+<br>
+</body></html>
