@@ -144,19 +144,14 @@ public class GroovyCategorySupport {
     };
     
     private static void newScope() {
-        System.out.println("before: " + getProperties());
         List stack = (List) local.get();
     	Map properties = new WeakHashMap(getProperties());
     	stack.add(properties);
-        System.out.println("newScope");
     }
     
     private static void endScope() {
-        System.out.println("during: " + getProperties());
         List stack = (List) local.get();
     	stack.remove(stack.size() - 1);
-        System.out.println("after: " + getProperties());
-        System.out.println("endScope");
     }
     
     private static Map getProperties() {
