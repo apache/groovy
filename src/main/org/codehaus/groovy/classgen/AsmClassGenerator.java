@@ -1107,6 +1107,14 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateBinaryExpressionWithAsignment("div", expression);
                 break;
 
+            case Types.INTDIV :
+                evaluateBinaryExpression("intdiv", expression);
+                break;
+
+            case Types.INTDIV_EQUAL :
+                evaluateBinaryExpressionWithAsignment("intdiv", expression);
+                break;
+
             case Types.MOD :
                 evaluateBinaryExpression("mod", expression);
                 break;
@@ -2037,6 +2045,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 case Types.MINUS_EQUAL :
                 case Types.MULTIPLY_EQUAL :
                 case Types.DIVIDE_EQUAL :
+                case Types.INTDIV_EQUAL :
                 case Types.MOD_EQUAL :
                     return false;
             }

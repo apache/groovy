@@ -255,6 +255,29 @@ public class GroovyLexerBase extends LexerBase
                     }
                     break ROOT_SWITCH;
                 }
+                case ('\\') :
+                {
+                    mark();
+                    consume();
+
+                    c = la();
+
+                    MULTICHAR_SWITCH : switch (c)
+                    {
+                        case ('=') :
+                        {
+                            consume();
+                            token = symbol( Types.INTDIV_EQUAL );
+                            break MULTICHAR_SWITCH;
+                        }
+                        default :
+                        {
+                            token = symbol( Types.INTDIV );
+                            break MULTICHAR_SWITCH;
+                        }
+                    }
+                    break ROOT_SWITCH;
+                }
                 case ('~') :
                 {
                     mark();

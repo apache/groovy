@@ -39,6 +39,10 @@ public class BigIntegerMath extends NumberMath {
         return toBigInteger(left).and(toBigInteger(right));
     }
     
+    protected Number intdivImpl(Number left, Number right) {
+        return toBigInteger(left).divide(toBigInteger(right));
+    }
+    
     protected Number modImpl(Number left, Number right) {
         return toBigInteger(left).mod(toBigInteger(right));
     }

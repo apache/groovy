@@ -65,7 +65,11 @@ public abstract class NumberMath extends Object {
         return getMath(left,right).andImpl(left, right);
     }
     
-    public static Number mod(Number left, Number right) {
+	public static Number intdiv(Number left, Number right) {
+		return getMath(left,right).intdivImpl(left,right);
+ 	}
+
+	public static Number mod(Number left, Number right) {
         return getMath(left,right).modImpl(left, right);
     }
 
@@ -209,6 +213,10 @@ public abstract class NumberMath extends Object {
 
     protected Number modImpl(Number left, Number right) {
         throw createUnsupportedException("mod()", left);
+    }
+    
+    protected Number intdivImpl(Number left, Number right) {
+        throw createUnsupportedException("intdiv()", left);
     }
     
     protected Number orImpl(Number left, Number right) {

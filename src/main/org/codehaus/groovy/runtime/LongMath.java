@@ -49,6 +49,10 @@ public class LongMath extends NumberMath {
         return new Long(left.longValue() & right.longValue());
     }
     
+	protected Number intdivImpl(Number left, Number right) {
+        return new Long(left.longValue() / right.longValue());
+	}
+	
     protected Number modImpl(Number left, Number right) {
         return new Long(left.longValue() % right.longValue());
     }
