@@ -43,46 +43,33 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.interpreter;
+package org.codehaus.groovy.ast.stmt;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.codehaus.groovy.ast.expr.Expression;
+
 
 /**
- * Represents the current runtime context on which the interpreter is running
+ * Represents a case statement in a switch statement
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class RuntimeContext {
+public class CaseStatement extends Statement {
 
-    private RuntimeContext parent;
-    private Map variables = new HashMap();
-
-    public RuntimeContext() {
+    private Statement code;
+    private Expression expression;
+    
+    public CaseStatement(Expression expression, Statement code) {
+        this.expression = expression;
+        this.code = code;
+    }
+    
+    public Statement getCode() {
+        return code;
+    }
+    
+    public Expression getExpression() {
+        return expression;
     }
 
-    public RuntimeContext(RuntimeContext parent) {
-        this.parent = parent;
-    }
-
-    /**
-     * Sets the variable to the given value
-     * 
-     * @param name
-     * @param value
-     */
-    public synchronized void setVariable(String name, Object value) {
-        variables.put(name, value);
-    }
-
-    public synchronized Object getVariable(String name) {
-        Object answer = variables.get(name);
-        if (answer == null) {
-            if (parent != null && !variables.containsKey(name)) {
-                return parent.getVariable(name);
-            }
-        }
-        return answer;
-    }
 }

@@ -43,51 +43,52 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-package org.codehaus.groovy.interpreter;
-
-import groovy.util.GroovyTestCase;
+package org.codehaus.groovy.ast.stmt;
 
 import java.util.ArrayList;
+import java.util.List;
 
-import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
+ * Represents a switch (object) { case value: ... case [1, 2, 3]: ...  default: ... } statement in Groovy.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ForLoopTest extends GroovyTestCase {
+public class SwitchStatement extends Statement {
 
-    public void testForLoopWithArray() {
-        Object[] array = { "A", "B", "C" };
-        testLoop(array);
-    }
-
-    public void testForLoopWithList() {
-        ArrayList list = new ArrayList();
-        list.add("A");
-        list.add("B");
-        list.add("C");
-        testLoop(list);
-    }
-
-    protected void testLoop(Object collection) {
-        RuntimeContext context = new RuntimeContext();
-        context.setVariable("fooCollection", collection);
-        DummyBean bean = new DummyBean();
-        context.setVariable("bean", bean);
-
-        GroovyCodeVisitor visitor = new Interpreter(context);
-
+    private List caseStatements = new ArrayList();
+    private Statement defaultStatement;
     
-        Statement statement = new ExpressionStatement( new MethodCallExpression(new VariableExpression("bean"), "foo", new VariableExpression("i")));
-        Expression expression = new VariableExpression("fooCollection");
-        ForStatement loop = new ForStatement("i", expression, statement);
-        loop.visit(visitor);
-        
-        assertEquals("invocations count", "ABC", bean.getBuffer());
+
+    public SwitchStatement(Statement defaultStatement) {
+        this.defaultStatement = defaultStatement;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitSwitch(this);
+    }
+    
+    public List getCasetatements() {
+        return caseStatements;
+    }
+
+    public Statement getDefaultStatement() {
+        return defaultStatement;
+    }
+
+    public void addCase(CaseStatement caseStatement) {
+        caseStatements.add(caseStatement);
+    }
+
+    /**
+     * @return the case statement of the given index or null
+     */
+    public CaseStatement getCaseStatement(int idx) {
+        if (idx >= 0 && idx < caseStatements.size()) {
+            return (CaseStatement) caseStatements.get(idx);
+        }
+        return null;
     }
 }

@@ -83,6 +83,7 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.SwitchStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -542,6 +543,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 cv.visitTryCatchBlock(l7, l8, l7, null);
             }
         });
+    }
+
+    public void visitSwitch(SwitchStatement statement) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
