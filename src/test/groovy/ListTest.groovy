@@ -15,8 +15,22 @@ class ListTest extends GroovyTestCase {
 		
 		assert x.size() := 3;
 		
-		//assert x.contains(1);
-		//assert x.contains("cheese");
+		assert x.contains(1);
+		assert x.contains("cheese");
+		
+        if x.contains("cheese") {
+            // ignore
+        }
+        else {
+            assert fail : "x should contain cheese!";
+        }
+		
+        if x.contains(1) {
+            // ignore
+        }
+        else {
+            assert fail : "x should contain cheese!";
+        }
 
     }
 

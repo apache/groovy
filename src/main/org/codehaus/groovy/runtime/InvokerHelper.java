@@ -93,6 +93,14 @@ public class InvokerHelper {
     }
 
     public static boolean asBool(Object object) {
+        if (object instanceof Boolean) {
+            Boolean booleanValue = (Boolean) object;
+            return booleanValue.booleanValue();
+        }
+        else if (object instanceof String) {
+            String text = (String) object;
+            return text.equals("true");
+        }
         return false;
     }
 
