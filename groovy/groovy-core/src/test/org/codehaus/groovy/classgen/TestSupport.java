@@ -46,13 +46,16 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
+import groovy.lang.Script;
 import groovy.util.GroovyTestCase;
 
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -63,6 +66,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Constants;
 
 /**
@@ -148,6 +152,19 @@ public class TestSupport extends GroovyTestCase implements Constants {
                 expression));
     }
 
+    /**
+     * Asserts that the script runs without any exceptions
+     * @param script
+     */
+    protected void assertScript(String text) throws Exception {
+        log.info("About to execute script");
+        log.info(text);
+        
+        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), "TestScript.groovy");
+        Script script = InvokerHelper.createScript(groovyClass, new Binding());
+        script.run();
+    }
+    
     protected GroovyObject compile(String fileName) throws Exception {
         Class groovyClass = loader.parseClass(fileName);
 

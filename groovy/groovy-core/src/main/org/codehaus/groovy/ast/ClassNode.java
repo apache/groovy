@@ -65,7 +65,8 @@ public class ClassNode extends MetadataNode implements Constants {
     private Map fieldIndex = new HashMap();
     private ModuleNode module;
     private boolean staticClass = false;
-
+    private boolean scriptBody = false;
+    
     /**
      * @param name
      *            is the full name of the class
@@ -394,6 +395,17 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public void setStaticClass(boolean staticClass) {
         this.staticClass = staticClass;
+    }
+
+    /**
+     * @return Returns true if this inner class or closure was declared inside a script body
+     */
+    public boolean isScriptBody() {
+        return scriptBody;
+    }
+
+    public void setScriptBody(boolean scriptBody) {
+        this.scriptBody = scriptBody;
     }
 
 }

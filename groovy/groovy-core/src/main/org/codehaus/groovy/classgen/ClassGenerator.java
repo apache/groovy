@@ -1339,8 +1339,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 doCast(type);
             }
             else {
-	            // this may be superflous
-	            doConvertAndCast(type);
+                // this may be superflous
+                doConvertAndCast(type);
             }
         }
         int opcode =
@@ -1534,11 +1534,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
      * local variables but are properties
      */
     protected boolean isInScriptBody() {
-        String superClass = classNode.getSuperClass();
-        return superClass != null
-            && superClass.equals("groovy.lang.Script")
-            && methodNode != null
-            && methodNode.getName().equals("run");
+        if (classNode.isScriptBody()) {
+            return true;
+        }
+        else {
+            String superClass = classNode.getSuperClass();
+            return superClass != null
+                && superClass.equals("groovy.lang.Script")
+                && methodNode != null
+                && methodNode.getName().equals("run");
+        }
     }
 
     /**
@@ -1785,8 +1790,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
         if (staticMethodOrInStaticClass) {
-            //System.out.println("#### Declaring closure in static method");
             answer.setStaticClass(true);
+        }
+        if (isInScriptBody()) {
+            answer.setScriptBody(true);
         }
         answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
         if (parameters.length > 1
@@ -2350,10 +2357,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     vars.add(new Parameter(type, var));
                 }
             }
-
-            //            if (!vars.isEmpty()) {
-            //                System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);
-            //            }
         }
         Parameter[] answer = new Parameter[vars.size()];
         vars.toArray(answer);
