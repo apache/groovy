@@ -699,10 +699,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression leftExpression = new VariableExpression(name, type);
 
-        assertNodeType(ASSIGN, node);
-        Token token = makeToken(Types.ASSIGN, node);
+        Expression rightExpression = ConstantExpression.NULL;
+        if (node != null) {
+            assertNodeType(ASSIGN, node);
 
-        Expression rightExpression = expression(node.getFirstChild());
+            rightExpression = expression(node.getFirstChild());
+        }
+        Token token = makeToken(Types.ASSIGN, variableDef);
 
         // TODO should we have a variable declaration statement?
         return new ExpressionStatement(new BinaryExpression(leftExpression, token, rightExpression));
@@ -1304,6 +1307,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // there is an appended closure
             return constructorCallExpression(node);
         }
+        else if (isPrimitiveTypeLiteral(node)) {
+            throw new ASTRuntimeException(node, "Primitive type literal: " + node.getText()
+                    + " cannot be used as a method name; maybe you need to use a double || with a closure expression? {|int x| ..} rather than {int x|...}");
+        }
         else {
             name = identifier(node);
         }
@@ -1529,6 +1536,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (isType(DOT, node)) {
             return qualifiedName(node);
         }
+        if (isPrimitiveTypeLiteral(node)) {
+            return node.getText();
+        }
+        String identifier = identifier(node);
+        return resolveTypeName(identifier);
+    }
+
+    protected boolean isPrimitiveTypeLiteral(AST node) {
         int type = node.getType();
         switch (type) {
             case LITERAL_boolean:
@@ -1539,10 +1554,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_int:
             case LITERAL_long:
             case LITERAL_short:
-                return node.getText();
+                return true;
+
+            default:
+                return false;
         }
-        String identifier = identifier(node);
-        return resolveTypeName(identifier);
     }
 
     /**
