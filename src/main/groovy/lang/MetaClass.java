@@ -1346,12 +1346,12 @@ public class MetaClass {
     }
 
     protected boolean isGenericSetMethod(MetaMethod method) {
-        return (method.getName().equals("set") || method.getName().equals("setAttribute") || method.getName().equals("setProperty"))
+        return (method.getName().equals("set") || method.getName().equals("setAttribute"))
             && method.getParameterTypes().length == 2;
     }
 
     protected boolean isGenericGetMethod(MetaMethod method) {
-        if (method.getName().equals("get") || method.getName().equals("getAttribute") || method.getName().equals("getProperty")) {
+        if (method.getName().equals("get") || method.getName().equals("getAttribute")) {
             Class[] parameterTypes = method.getParameterTypes();
             return parameterTypes.length == 1 && parameterTypes[0] == String.class;
         }
@@ -1516,5 +1516,4 @@ public class MetaClass {
             list.add(new MetaMethod(methods[i]));
         }
     }
-
 }
