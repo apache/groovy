@@ -45,6 +45,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -53,21 +55,19 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 /**
  * Represents any closure object in Groovy.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author <a href="mailto:tug@wilson.co.uk">John Wilson</a>
  * @version $Revision$
  */
 public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
 
-    private static final Object noParameters[] = new Object[] { null };
+    private static final Object noParameters[] = new Object[]{null};
     private static final Object emptyArray[] = new Object[0];
-    private static final Object emptyArrayParameter[] = new Object[] { emptyArray };
-    
+    private static final Object emptyArrayParameter[] = new Object[]{emptyArray};
+
     private Object delegate;
     private final Object owner;
     private final Method doCallMethod;
@@ -92,7 +92,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
             int i = 0;
 
-            while (!methods[i].getName().equals("doCall")  && ++i != methods.length);
+            while (!methods[i].getName().equals("doCall") && ++i != methods.length) ;
 
             if (i < methods.length) {
                 this.doCallMethod = methods[i];
@@ -124,7 +124,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         if ("doCall".equals(method) || "call".equals(method)) {
             return call(arguments);
         } else if ("curry".equals(method)) {
-            return curry((Object [])arguments);
+            return curry((Object[]) arguments);
         } else {
             try {
                 return getMetaClass().invokeMethod(this, method, arguments);
@@ -135,15 +135,11 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                         return InvokerHelper.invokeMethod(this.owner, method, arguments);
                     } catch (GroovyRuntimeException e1) {
                         if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
-                            try {
-                                // lets try invoke method on the delegate
-                                return InvokerHelper.invokeMethod(this.delegate, method, arguments);
-                            } catch (GroovyRuntimeException e2) {
-                                // ignore, we'll throw e
-                            }
+                            // lets try invoke method on the delegate
+                            return InvokerHelper.invokeMethod(this.delegate, method, arguments);
                         }
                     }
-                 }
+                }
                 throw e;
             }
         }
@@ -151,66 +147,66 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     public Object getProperty(String property) {
-        	if ("delegate".equals(property)) {
-        		return getDelegate();
-        	} else if ("owner".equals(property)) {
-        		return getOwner();
-        	} else if ("method".equals(property)) {
-        		return getMethod();
-        	} else if ("parameterTypes".equals(property)) {
-        		return getParameterTypes();
-        	} else if ("metaClass".equals(property)) {
-        		return getMetaClass();
-        	} else if ("class".equals(property)) {
-        		return getClass();
-        	} else {
+        if ("delegate".equals(property)) {
+            return getDelegate();
+        } else if ("owner".equals(property)) {
+            return getOwner();
+        } else if ("method".equals(property)) {
+            return getMethod();
+        } else if ("parameterTypes".equals(property)) {
+            return getParameterTypes();
+        } else if ("metaClass".equals(property)) {
+            return getMetaClass();
+        } else if ("class".equals(property)) {
+            return getClass();
+        } else {
             try {
-                // lets try getting the property on the owner
+// lets try getting the property on the owner
                 return InvokerHelper.getProperty(this.owner, property);
             } catch (GroovyRuntimeException e1) {
                 if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                     try {
-                        // lets try getting the property on the delegate
+// lets try getting the property on the delegate
                         return InvokerHelper.getProperty(this.delegate, property);
                     } catch (GroovyRuntimeException e2) {
-                        // ignore, we'll throw e1
+// ignore, we'll throw e1
                     }
                 }
-                
+
                 throw e1;
             }
-         }
+        }
     }
 
     public void setProperty(String property, Object newValue) {
-	    	if ("delegate".equals(property)) {
-	    		setDelegate(newValue);
-	    	} else if ("metaClass".equals(property)) {
-        		setMetaClass((MetaClass)newValue);
-        	} else {
+        if ("delegate".equals(property)) {
+            setDelegate(newValue);
+        } else if ("metaClass".equals(property)) {
+            setMetaClass((MetaClass) newValue);
+        } else {
             try {
-                // lets try setting the property on the owner
+// lets try setting the property on the owner
                 InvokerHelper.setProperty(this.owner, property, newValue);
                 return;
             } catch (GroovyRuntimeException e1) {
                 if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                     try {
-                        // lets try setting the property on the delegate
+// lets try setting the property on the delegate
                         InvokerHelper.setProperty(this.delegate, property, newValue);
                         return;
                     } catch (GroovyRuntimeException e2) {
-                        // ignore, we'll throw e1
+// ignore, we'll throw e1
                     }
-                 }
-                
+                }
+
                 throw e1;
-           }
+            }
         }
     }
 
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
-     * 
+     *
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call() {
@@ -219,7 +215,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * Invokes the closure, returning any value if applicable.
-     * 
+     *
      * @param arguments could be a single value or a List of values
      * @return the value if applicable or null if there is no return statement in the closure
      */
@@ -230,9 +226,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             final Object args[];
 
             if (arguments instanceof Object[]) {
-                args = (Object[])arguments;
+                args = (Object[]) arguments;
             } else {
-                args = new Object[] {arguments};
+                args = new Object[]{arguments};
             }
 
             params = new Object[this.curriedParams.length + args.length];
@@ -241,7 +237,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
         } else {
             if (arguments instanceof Object[]) {
-                params = (Object[])arguments;
+                params = (Object[]) arguments;
             } else {
                 return doCall(arguments);
             }
@@ -249,7 +245,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
         final int lastParam = this.numberOfParameters - 1;
 
-        if (this.supportsVarargs && !(this.numberOfParameters == params.length && (params[lastParam] == null || params[lastParam].getClass() == Object [].class))) {
+        if (this.supportsVarargs && !(this.numberOfParameters == params.length && (params[lastParam] == null || params[lastParam].getClass() == Object[].class))) {
             final Object actualParameters[] = new Object[this.numberOfParameters];
 
             //
@@ -299,61 +295,63 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             throw new GroovyRuntimeException(throwable.getMessage(), throwable);
         }
     }
-    
+
     /**
      * An attempt to optimise calling closures with one parameter
      * If the closure has one untyped parameter then it will overload this function
      * If not this will be called ans will use reflection to deal with the case of a
      * single typed parameter
+     *
      * @param p1
      * @return the result of calling the closure
      */
     protected Object doCall(final Object p1) {
-		return callViaReflection(new Object[] {p1});
+        return callViaReflection(new Object[]{p1});
     }
-    
+
     /**
      * An attempt to optimise calling closures with two parameters
      * If the closure has two untyped parameters then it will overload this function
      * If not this will be called ans will use reflection to deal with the case of one
      * or two typed parameters
+     *
      * @param p1
      * @return the result of calling the closure
      */
-    
+
     protected Object doCall(final Object p1, final Object p2) {
-    		return callViaReflection(new Object[] {p1, p2});
+        return callViaReflection(new Object[]{p1, p2});
     }
-    
-    private Object callViaReflection(final Object params[]) {   	
-		try {
-			// invoke the closure
-			return this.doCallMethod.invoke(this, params);
-		} catch (final IllegalArgumentException e) {
-			throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
-		} catch (final IllegalAccessException e) {
-        final Throwable cause = e.getCause();
-        
+
+    private Object callViaReflection(final Object params[]) {
+        try {
+            // invoke the closure
+            return this.doCallMethod.invoke(this, params);
+        } catch (final IllegalArgumentException e) {
+            throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
+        } catch (final IllegalAccessException e) {
+            final Throwable cause = e.getCause();
+
             return throwRuntimeException((cause == null) ? e : cause);
-		} catch (final InvocationTargetException e) {
-        final Throwable cause = e.getCause();
-        
+        } catch (final InvocationTargetException e) {
+            final Throwable cause = e.getCause();
+
             return throwRuntimeException((cause == null) ? e : cause);
-		}
+        }
     }
-    
+
     /**
      * Used when a closure wraps a method on a class
-     * 
+     *
      * @return empty string
      */
     public String getMethod() {
-    		return "";
+        return "";
     }
 
     /**
      * @return the owner Object to which method calls will go which is
-     * typically the outer class when the closure is constructed
+     *         typically the outer class when the closure is constructed
      */
     public Object getOwner() {
         return this.owner;
@@ -361,7 +359,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * @return the delegate Object to which method calls will go which is
-     * typically the outer class when the closure is constructed
+     *         typically the outer class when the closure is constructed
      */
     public Object getDelegate() {
         return this.delegate;
@@ -369,6 +367,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * Allows the delegate to be changed such as when performing markup building
+     *
      * @param delegate
      */
     public void setDelegate(Object delegate) {
@@ -386,7 +385,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return a version of this closure which implements Writable
      */
     public Closure asWritable() {
-    		return new WritableClosure();
+        return new WritableClosure();
     }
 
     /* (non-Javadoc)
@@ -398,10 +397,11 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     /**
      * Support for closure currying
+     *
      * @param arguments
      */
     public Closure curry(final Object arguments[]) {
-        final Closure curriedClosure= (Closure)this.clone();
+        final Closure curriedClosure = (Closure) this.clone();
         final Object newCurriedParams[] = new Object[curriedClosure.curriedParams.length + arguments.length];
 
         System.arraycopy(curriedClosure.curriedParams, 0, newCurriedParams, 0, curriedClosure.curriedParams.length);
@@ -411,177 +411,179 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
         return curriedClosure;
     }
-    
+
     /* (non-Javadoc)
      * @see java.lang.Object#clone()
      */
     public Object clone() {
-    		try {
-    			return super.clone();
-    		} catch (final CloneNotSupportedException e) {
-    			return null;
-    		}
+        try {
+            return super.clone();
+        } catch (final CloneNotSupportedException e) {
+            return null;
+        }
     }
-    
-    private class WritableClosure extends Closure implements Writable {
-    		public WritableClosure() {
-    			super(null);
-    		}
-    		
-    		/* (non-Javadoc)
-		 * @see groovy.lang.Writable#writeTo(java.io.Writer)
-		 */
-		public Writer writeTo(Writer out) throws IOException {
-			Closure.this.call(out);
-			
-			return out;
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
-		 */
-		public Object invokeMethod(String method, Object arguments) {
-			if ("clone".equals(method)) {
-				return clone();
-			} else if ("curry".equals(method)) {
-				return curry((Object[])arguments);
-			} else if ("asWritable".equals(method)) {
-				return asWritable();
-			} else {
-				return Closure.this.invokeMethod(method, arguments);
-			}
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-		 */
-		public Object getProperty(String property) {
-			return Closure.this.getProperty(property);
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
-		 */
-		public void setProperty(String property, Object newValue) {
-			Closure.this.setProperty(property, newValue);
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#call()
-		 */
-		public Object call() {
-			return Closure.this.call();
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#call(java.lang.Object)
-		 */
-		public Object call(Object arguments) {
-			return Closure.this.call(arguments);
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#doCall(java.lang.Object)
-		 */
-		protected Object doCall(Object p1) {
-			return Closure.this.doCall(p1);
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#doCall(java.lang.Object, java.lang.Object)
-		 */
-		protected Object doCall(Object p1, Object p2) {
-			return Closure.this.doCall(p1, p2);
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#getDelegate()
-		 */
-		public Object getDelegate() {
-			return Closure.this.getDelegate();
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#setDelegate(java.lang.Object)
-		 */
-		public void setDelegate(Object delegate) {
-			Closure.this.setDelegate(delegate);
-		}
 
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#getParameterTypes()
-		 */
-		public Class[] getParameterTypes() {
-			return Closure.this.getParameterTypes();
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#asWritable()
-		 */
-		public Closure asWritable() {
-			return this;
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Runnable#run()
-		 */
-		public void run() {
-			Closure.this.run();
-		}
-		
-		/* (non-Javadoc)
-		 * @see groovy.lang.Closure#curry(java.lang.Object[])
-		 */
-		public Closure curry(Object[] arguments) {
-			return Closure.this.curry(arguments).asWritable();
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Object#clone()
-		 */
-		public Object clone() {
-			return ((Closure)Closure.this.clone()).asWritable();
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
-		public int hashCode() {
-			return Closure.this.hashCode();
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		public boolean equals(Object arg0) {
-			return Closure.this.equals(arg0);
-		}
-		
-		/* (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		public String toString() {
-		final StringWriter writer = new StringWriter();
-		
-			try {
-				writeTo(writer);
-			} catch (IOException e) {
-				return null;
-			}
-		
-			return writer.toString();
-		}
+    private class WritableClosure extends Closure implements Writable {
+        public WritableClosure() {
+            super(null);
+        }
+
+        /* (non-Javadoc)
+     * @see groovy.lang.Writable#writeTo(java.io.Writer)
+     */
+        public Writer writeTo(Writer out) throws IOException {
+            Closure.this.call(out);
+
+            return out;
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
+         */
+        public Object invokeMethod(String method, Object arguments) {
+            if ("clone".equals(method)) {
+                return clone();
+            } else if ("curry".equals(method)) {
+                return curry((Object[]) arguments);
+            } else if ("asWritable".equals(method)) {
+                return asWritable();
+            } else {
+                return Closure.this.invokeMethod(method, arguments);
+            }
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+         */
+        public Object getProperty(String property) {
+            return Closure.this.getProperty(property);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+         */
+        public void setProperty(String property, Object newValue) {
+            Closure.this.setProperty(property, newValue);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#call()
+         */
+        public Object call() {
+            return Closure.this.call();
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#call(java.lang.Object)
+         */
+        public Object call(Object arguments) {
+            return Closure.this.call(arguments);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#doCall(java.lang.Object)
+         */
+        protected Object doCall(Object p1) {
+            return Closure.this.doCall(p1);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#doCall(java.lang.Object, java.lang.Object)
+         */
+        protected Object doCall(Object p1, Object p2) {
+            return Closure.this.doCall(p1, p2);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#getDelegate()
+         */
+        public Object getDelegate() {
+            return Closure.this.getDelegate();
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#setDelegate(java.lang.Object)
+         */
+        public void setDelegate(Object delegate) {
+            Closure.this.setDelegate(delegate);
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#getParameterTypes()
+         */
+        public Class[] getParameterTypes() {
+            return Closure.this.getParameterTypes();
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#asWritable()
+         */
+        public Closure asWritable() {
+            return this;
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Runnable#run()
+         */
+        public void run() {
+            Closure.this.run();
+        }
+
+        /* (non-Javadoc)
+         * @see groovy.lang.Closure#curry(java.lang.Object[])
+         */
+        public Closure curry(Object[] arguments) {
+            return Closure.this.curry(arguments).asWritable();
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#clone()
+         */
+        public Object clone() {
+            return ((Closure) Closure.this.clone()).asWritable();
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#hashCode()
+         */
+        public int hashCode() {
+            return Closure.this.hashCode();
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        public boolean equals(Object arg0) {
+            return Closure.this.equals(arg0);
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#toString()
+         */
+        public String toString() {
+            final StringWriter writer = new StringWriter();
+
+            try {
+                writeTo(writer);
+            } catch (IOException e) {
+                return null;
+            }
+
+            return writer.toString();
+        }
     }
-	/**
-	 * @return Returns the directive.
-	 */
-	public int getDirective() {
-		return directive;
-	}
-	/**
-	 * @param directive The directive to set.
-	 */
-	public void setDirective(int directive) {
-		this.directive = directive;
-	}
+
+    /**
+     * @return Returns the directive.
+     */
+    public int getDirective() {
+        return directive;
+    }
+
+    /**
+     * @param directive The directive to set.
+     */
+    public void setDirective(int directive) {
+        this.directive = directive;
+    }
 }
