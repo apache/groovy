@@ -12,6 +12,17 @@ class BooleanBug extends GroovyTestCase {
         y.foo = true
         assert y.foo
     }
+    
+    void testBug2() {
+        BooleanBean bean = new BooleanBean(name:'Gromit', foo:false)
+        value = isApplicableTo(bean)
+        assert value
+    }
+    
+    public boolean isApplicableTo(BooleanBean field) {
+        return !field.isFoo();
+    }
+
 }
 
 class BooleanBean {
