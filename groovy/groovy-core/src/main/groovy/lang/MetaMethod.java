@@ -177,4 +177,20 @@ public class MetaMethod implements Cloneable {
     public boolean isProtected() {
         return (modifiers & Modifier.PROTECTED) != 0;
     }
+
+    /**
+     * @return true if the given method has the same name, parameters, return type 
+     * and modifiers but may be defined on another type
+     */
+    public boolean isSame(MetaMethod method) {
+        return name.equals(method.getName())
+        && compatibleModifiers(modifiers, method.getModifiers())
+        && returnType.equals(method.getReturnType())
+        && equal(parameterTypes, method.getParameterTypes());
+    }
+
+    protected boolean compatibleModifiers(int modifiersA, int modifiersB) {
+        int mask = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC | Modifier.STATIC;
+        return (modifiersA & mask) == (modifiersB & mask);
+    }
 }
