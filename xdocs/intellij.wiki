@@ -1,6 +1,0 @@
-1 Groovy IntelliJ plugin
-
-There is a Groovy plugin for IntelliJ avaiable for editing and running groovy scripts
-from inside IntelliJ. Its currently in the {link:groovy-intellij|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/ide/groovy-intellij/} CVS module. 
-
-
