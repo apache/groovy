@@ -18,7 +18,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
         builder = NodeBuilder.newInstance()
         
         root = builder.people() {
-            person(name:getName()) {
+            person(name:getTestName()) {
             /*
                 location(name:'London')
                 projects {
@@ -39,7 +39,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
         return root
     }
     
-    protected def getName() {
+    protected def getTestName() {
         "James"
     }
 }
