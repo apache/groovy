@@ -663,7 +663,7 @@ public class CompilationUnit extends ProcessingUnit
             // Ensure the path is ready for the file
             
             File directory = path.getParentFile();
-            if( !directory.exists() ) 
+            if( directory != null && !directory.exists() ) 
             {
                 directory.mkdirs();
             }

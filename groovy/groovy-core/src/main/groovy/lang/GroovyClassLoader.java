@@ -38,7 +38,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -444,9 +443,11 @@ public class GroovyClassLoader extends SecureClassLoader {
     //
     // BUG: Should this be replaced with CompilationUnit.output()?
     
+    /*
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
-        File targetDir = config.getTargetDirectory();
-        if (targetDir != null) {
+        if (config.getTargetDirectory().length() > 0 ) {
+            File targetDir = new File(config.getTargetDirectory());
+
             String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
             int index = filename.lastIndexOf(File.separator);
             String dirname;
@@ -469,6 +470,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
         }
     }
+    */
 
 	/* (non-Javadoc)
 	 * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
