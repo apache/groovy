@@ -22,7 +22,7 @@ class BytecodeBug extends GroovyTestCase {
         }
     }
     
-    talk(a) {
+    def talk(a) {
         println("hello "+a)
     }
 }

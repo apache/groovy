@@ -9,7 +9,7 @@ class Bytecode5Bug extends GroovyTestCase {
         assert c == 10
     }
     
-    getCollection() {
+    def getCollection() {
         [1, 2, 3, 4]
     }
 }

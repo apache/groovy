@@ -22,7 +22,7 @@ class ClosureParameterPassingBug extends TestSupport {
     }
     
     void testBug() {
-    	assertScript <<<EOF
+    	assertScript """
 c = { x | 
 	y = 123
 	c1 = { 
@@ -35,7 +35,7 @@ c = { x |
 } 
 
 c([1]) 
-EOF    	
+"""
 	}
    
 }

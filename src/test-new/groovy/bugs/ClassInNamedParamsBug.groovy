@@ -14,7 +14,7 @@ class ClassInNamedParamsBug extends GroovyTestCase {
         assert foo.class == "cheese"
     }
     
-    method(Map data) {
+    def method(Map data) {
         data
     }
 }

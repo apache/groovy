@@ -10,7 +10,7 @@ class ConstructorParameterBug extends GroovyTestCase {
     	*/
     }
 
-    blah2(int[] wobble) {
+    def blah2(int[] wobble) {
        println(wobble)
     }
 
