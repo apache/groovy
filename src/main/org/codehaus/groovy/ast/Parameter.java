@@ -76,7 +76,7 @@ public class Parameter {
     }
 
     public Parameter(String type, String name, Expression defaultValue) {
-        this.name = name;
+        this.name = MethodNode.ensureJavaTypeNameSyntax(name);
         this.type = type;
         this.defaultValue = defaultValue;
         if (type == null) {

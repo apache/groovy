@@ -68,12 +68,14 @@ public class MethodNode extends MetadataNode implements Constants {
     public MethodNode(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
-        this.returnType = returnType;
         this.parameters = parameters;
         this.code = code;
         if (returnType == null) {
             this.returnType = "java.lang.Object";
             this.dynamicReturnType = true;
+        }
+        else {
+            this.returnType = ensureJavaTypeNameSyntax(returnType);   
         }
     }
     
@@ -86,33 +88,36 @@ public class MethodNode extends MetadataNode implements Constants {
     // TODO: add test case for type descriptor
     public String getTypeDescriptor() {
         StringBuffer buf = new StringBuffer();
-        buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
+        buf.append(dynamicReturnType ? "$dynamic" : returnType);
         buf.append(' ');
         buf.append(name);
         buf.append('(');
         for (int i=0; i < parameters.length; i++) {
             if (i>0) buf.append(',');
             Parameter param = parameters[i];
-            buf.append(cleanupTypeName(param.getType()));
+            buf.append(ensureJavaTypeNameSyntax(param.getType()));
         }
         buf.append(')');
         return buf.toString();
     }
 
-    protected String cleanupTypeName(String typename) {
+    public static String ensureJavaTypeNameSyntax(String typename) {
         // if the typename begins with "[", ends with ";", or is
         // one character long, it's in .class syntax.
         if (typename.charAt(0) == '[') {
-            return cleanupTypeName(typename.substring(1)) + "[]";
+            return ensureJavaTypeNameSyntax(typename.substring(1)) + "[]";
         }
         if (typename.length() == 1) {
             switch (typename.charAt(0)) {
-            case 'J': return "long"; 
-            case 'I': return "int"; 
-            case 'C' : return "char"; 
-            case 'F' : return "float";
-            case 'V' : return "void"; 
-            case 'D' : return "double";            
+                case 'B': return "byte";
+                case 'C': return "char";
+                case 'D': return "double";
+                case 'F': return "float";
+                case 'J': return "long";
+                case 'I': return "int";
+                case 'S': return "short";
+                case 'V': return "void";
+                case 'Z': return "boolean";
             }
         }
         if (typename.endsWith(";")) {
