@@ -3,7 +3,7 @@ class VariableDeclarationTest extends GroovyTestCase {
     void testUninitialisedVariables() {
     	Integer a
     	String b
-    	def c
+    	any c
 
         a = 1
         b = "hello"
@@ -15,8 +15,8 @@ class VariableDeclarationTest extends GroovyTestCase {
     	Integer a = 1
     	String b = "Hello"
 
-        def c = 2
-        def Integer d = 3
+        any c = 2
+        Integer d = 3
 
         assert a == 1
         assert b == "Hello"
