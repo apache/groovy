@@ -38,10 +38,11 @@
   </developers>
 
   <dependencies>
+    
     <dependency>
       <groupId>groovy</groupId>
       <artifactId>groovy</artifactId>
-      <version>1.0-beta-6</version>
+      <version>1.0-beta-8</version>
       <type>jar</type>
       <properties/>
     </dependency>
