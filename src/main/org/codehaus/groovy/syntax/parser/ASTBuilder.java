@@ -649,6 +649,8 @@ public class ASTBuilder {
             case (Token.MATCH_REGEX) :
             case (Token.COMPARE_TO) :
             case (Token.LEFT_SQUARE_BRACKET) :
+            case (Token.LEFT_SHIFT) :
+            case (Token.RIGHT_SHIFT) :
                 {
                     return binaryExpression(expressionRoot);
                 }
@@ -661,14 +663,14 @@ public class ASTBuilder {
                     return prefixExpression(expressionRoot);
                 }
             case (Token.DOT_DOT) :
-            {
-            	return rangeExpression(expressionRoot);
-            }
+                {
+                    return rangeExpression(expressionRoot);
+                }
             case (Token.DOT_DOT_DOT) :
-            {
-            	return rangeExpression(expressionRoot);
-            }
-                       case (Token.SINGLE_QUOTE_STRING) :
+                {
+                    return rangeExpression(expressionRoot);
+                }
+            case (Token.SINGLE_QUOTE_STRING) :
             case (Token.INTEGER_NUMBER) :
             case (Token.FLOAT_NUMBER) :
             case (Token.KEYWORD_NULL) :
@@ -796,13 +798,28 @@ public class ASTBuilder {
         return expr;
     }
 
-    protected ConstructorCallExpression newExpression(CSTNode expressionRoot) throws ParserException {
+    protected Expression newExpression(CSTNode expressionRoot) throws ParserException {
         String datatype = resolvedQualifiedNameNotNull(expressionRoot.getChild(0));
 
-        //TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
-        Expression args = actualParameterList(expressionRoot.getChild(1));
+        CSTNode node = expressionRoot.getChild(1);
+        if (node.getToken().getType() == Token.LEFT_SQUARE_BRACKET) {
+            CSTNode next = expressionRoot.getChild(2);
+            if (next.getToken().getType() == Token.LEFT_CURLY_BRACE) {
+                // lets use an initializer list
+                TupleExpression args = nonNamedActualParameterList(expressionRoot.getChild(3));
+                return new ArrayExpression(datatype, args.getExpressions());
+            }
+            else {
+                // use a basic size
+                return new ArrayExpression(datatype, expression(next));
+            }
+        }
+        else {
+            //TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
+            Expression args = actualParameterList(expressionRoot.getChild(1));
 
-        return new ConstructorCallExpression(datatype, args);
+            return new ConstructorCallExpression(datatype, args);
+        }
     }
 
     protected ClosureExpression closureExpression(CSTNode expressionRoot) throws ParserException {
@@ -815,7 +832,7 @@ public class ASTBuilder {
         CSTNode objectExpressionRoot = expressionRoot.getChild(0);
 
         //System.out.println("Got method: " + expressionRoot);
-        
+
         Expression objectExpression = null;
 
         boolean implicitThis = false;
@@ -833,7 +850,7 @@ public class ASTBuilder {
 
         MethodCallExpression answer = new MethodCallExpression(objectExpression, methodName, paramList);
         answer.setImplicitThis(implicitThis);
-        
+
         if (expressionRoot.getChildren().length > 3) {
             CSTNode notExpr = expressionRoot.getChild(3);
             if (notExpr != null && notExpr.getToken().getType() == Token.NAVIGATE) {
@@ -898,7 +915,7 @@ public class ASTBuilder {
         return paramList;
     }
 
-    protected Expression nonNamedActualParameterList(CSTNode paramRoot) throws ParserException {
+    protected TupleExpression nonNamedActualParameterList(CSTNode paramRoot) throws ParserException {
         return tupleExpression(paramRoot);
     }
 

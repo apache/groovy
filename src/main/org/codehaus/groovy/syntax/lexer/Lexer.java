@@ -128,10 +128,11 @@ public class Lexer {
                         if (la() == '.') {
                             consume();
                             if (la() == '.') {
-                            	consume();
-                            	token = Token.dotDotDot(getStartLine(), getStartColumn());
-                            } else {
-                            	token = Token.dotDot(getStartLine(), getStartColumn());
+                                consume();
+                                token = Token.dotDotDot(getStartLine(), getStartColumn());
+                            }
+                            else {
+                                token = Token.dotDot(getStartLine(), getStartColumn());
                             }
                         }
                         else {
@@ -608,12 +609,8 @@ public class Lexer {
 
                                     }
                                     else {
-                                        throw new UnexpectedCharacterException(
-                                            getStartLine(),
-                                            getStartColumn() + 1,
-                                            c,
-                                            new char[] {
-                                        });
+                                        token = Token.leftShift(getStartLine(), getStartColumn());
+                                        break ROOT_SWITCH;
                                     }
                                 }
                             default :
@@ -636,6 +633,12 @@ public class Lexer {
                                 {
                                     consume();
                                     token = Token.compareGreaterThanEqual(getStartLine(), getStartColumn());
+                                    break MULTICHAR_SWITCH;
+                                }
+                            case ('>') :
+                                {
+                                    consume();
+                                    token = Token.rightShift(getStartLine(), getStartColumn());
                                     break MULTICHAR_SWITCH;
                                 }
                             default :
