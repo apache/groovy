@@ -62,9 +62,9 @@
     one = new ComparableFoo(5)
     another = new ComparableFoo(-5)
 
-    assertEquals(10L, comparator.compare(one, another))
-    assertEquals(0L, comparator.compare(one, one))
-    assertEquals(-10L, comparator.compare(another, one))
+    assertEquals(10, comparator.compare(one, another))
+    assertEquals(0, comparator.compare(one, one))
+    assertEquals(-10, comparator.compare(another, one))
 
   }
 
@@ -74,9 +74,9 @@
       one - another
     }
 
-    assertEquals(1L, comparator.compare(Integer.MAX_VALUE, Integer.MAX_VALUE-1))
-    assertEquals(0L, comparator.compare(Double.MIN_VALUE, Double.MIN_VALUE))
-    assertEquals(-1L, comparator.compare(Long.MIN_VALUE, Long.MIN_VALUE+1))
+    assertEquals(1, comparator.compare(Integer.MAX_VALUE, Integer.MAX_VALUE-1))
+    assertEquals(0, comparator.compare(Double.MIN_VALUE, Double.MIN_VALUE))
+    assertEquals(-1, comparator.compare(Long.MIN_VALUE, Long.MIN_VALUE+1))
   }
 
 }
