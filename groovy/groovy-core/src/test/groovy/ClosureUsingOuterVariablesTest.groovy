@@ -3,7 +3,7 @@
  * @version $Revision$
  */
 class ClosureUsingOuterVariablesTest extends GroovyTestCase {
-
+    
     void testUseOfOuterVariable() {
         
         x = 123
@@ -37,4 +37,33 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         
         assert m == 456
     }
+    
+    void testCounting() {
+        sum = 0
+
+        [1, 2, 3, 4].each { sum = sum + it }
+
+        assert sum == 10
+    }
+    
+    void testExampleUseOfClosureScopes() {
+        a = 123
+		
+        c = { b = a + it }
+        c(5)
+        
+        println(b)
+        assert b == a + 5
+    }
+
+/*
+    void testExampleUseOfClosureScopesUsingEach() {
+        a = 123
+        
+        [5].each { b = a + it }
+        
+        println(b)
+        assert b == a + 5
+    }
+    */
 }
