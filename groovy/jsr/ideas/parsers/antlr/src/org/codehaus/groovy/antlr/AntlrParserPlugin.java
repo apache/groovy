@@ -1210,17 +1210,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
         if (namedArguments) {
-            // if the last expression is a ClosureExpression then lets wrap the named method calls in a Map expression
             if (! expressionList.isEmpty()) {
-                int lastIndex = expressionList.size() - 1;
-                Object closureExpr = expressionList.get(lastIndex);
-                if (closureExpr instanceof ClosureExpression) {
-                    // lets remove the last expression and make an expression list
-                    expressionList.remove(lastIndex);
+                // lets remove any non-MapEntryExpression instances
+                // such as if the last expression is a ClosureExpression
+                // so lets wrap the named method calls in a Map expression
+                List argumentList = new ArrayList();
+                for (Iterator iter = expressionList.iterator(); iter.hasNext();) {
+                    Expression expression = (Expression) iter.next();
+                    if (! (expression instanceof MapEntryExpression)) {
+                        argumentList.add(expression);
+                    }
+                }
+                if (!argumentList.isEmpty()) {
+                    expressionList.removeAll(argumentList);
                     MapExpression mapExpression = new MapExpression(expressionList);
-                    List argumentList = new ArrayList();
-                    argumentList.add(mapExpression);
-                    argumentList.add(closureExpr);
+                    argumentList.add(0, mapExpression);
                     return new ArgumentListExpression(argumentList);
                 }
             }
