@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -57,34 +58,64 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public abstract class Closure extends GroovyObjectSupport implements Cloneable {
 
+    private static final Object noParameters[] = new Object[] { null };
+
     private Object delegate;
+    private Method doCallMethod;
 
     public Closure(Object delegate) {
         this.delegate = delegate;
+
+        Class c = getClass();
+        do {
+            Method[] methods = getClass().getDeclaredMethods();
+
+            for (int i = 0; i != methods.length; i++) {
+                if ("doCall".equals(methods[i].getName())) {
+                    doCallMethod = methods[i];
+                    doCallMethod.setAccessible(true);
+                    break;
+                }
+            }
+
+            c = c.getSuperclass();
+
+        }
+        while (doCallMethod == null && c != Object.class);
+        
+        if (doCallMethod == null) {
+            throw new MissingMethodException("doCall", getClass(), noParameters);
+        }
     }
 
     public Object invokeMethod(String method, Object arguments) {
-        /** @todo optimise me! */
-        try {
-            return getMetaClass().invokeMethod(this, method, arguments);
+        if ("doCall".equals(method)) {
+            return call(arguments);
         }
-        catch (MissingMethodException e) {
-            Object delegate = getDelegate();
-            if (delegate != this) {
-                try {
-                    // lets try invoke method on delegate
-                    return InvokerHelper.invokeMethod(delegate, method, arguments);
-                }
-                catch (GroovyRuntimeException e2) {
-                    // ignore, we'll throw e
-                }
+        else if ("call".equals(method)) {
+            return call(arguments);
+        }
+        else {
+            try {
+                return getMetaClass().invokeMethod(this, method, arguments);
             }
-            throw e;
+            catch (MissingMethodException e) {
+                Object delegate = getDelegate();
+                if (delegate != this) {
+                    try {
+                        // lets try invoke method on delegate
+                        return InvokerHelper.invokeMethod(delegate, method, arguments);
+                    }
+                    catch (GroovyRuntimeException e2) {
+                        // ignore, we'll throw e
+                    }
+                }
+                throw e;
+            }
         }
     }
-    
+
     public Object getProperty(String property) {
-        /** @todo optimise me! */
         try {
             return getMetaClass().getProperty(this, property);
         }
@@ -104,7 +135,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     }
 
     public void setProperty(String property, Object newValue) {
-        /** @todo optimise me! */
         try {
             getMetaClass().setProperty(this, property, newValue);
             return;
@@ -124,7 +154,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
             throw e;
         }
     }
-    
+
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
      * 
@@ -142,30 +172,28 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
      */
     public Object call(Object arguments) {
         try {
-            return InvokerHelper.invokeMethod(this, "doCall", arguments);
-        }
-        catch (MissingMethodException e) {
-            if (Closure.class.isAssignableFrom(e.getType())) {
-	            Class[] expected = null;
-	            try {
-	                Method[] methods = getClass().getMethods();
-	                for (int i = 0; i < methods.length; i++ ) {
-	                    Method method = methods[i];
-	                    if (method.getName().equals("doCall")) {
-	                        expected = method.getParameterTypes();
-	                        break;
-	                    }
-	                }
-	            }
-	            catch (Exception e2) {
-	                // ignore
-	            }
-	            throw new IncorrectClosureArgumentsException(this, arguments, expected);
+            if (arguments instanceof Object[]) {
+                Object[] parameters = (Object[]) arguments;
+                if (parameters == null || parameters.length == 0) {
+                    return this.doCallMethod.invoke(this, noParameters);
+                }
+                else {
+                    return this.doCallMethod.invoke(this, parameters);
+                }
             }
             else {
-                // a problem evaluating the method on some other non-closure object
-                throw e;
+
+                return this.doCallMethod.invoke(this, new Object[] { arguments });
             }
+        }
+        catch (IllegalArgumentException e) {
+            throw new IncorrectClosureArgumentsException(this, arguments, doCallMethod.getParameterTypes());
+        }
+        catch (IllegalAccessException e) {
+            throw (RuntimeException) e.getCause();
+        }
+        catch (InvocationTargetException e) {
+            throw (RuntimeException) e.getCause();
         }
     }
 
@@ -184,7 +212,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
     }
-    
+
+    /**
+     * Allows access to the 
+     */
     /**
      * Allows the closure to be cloned
      */
