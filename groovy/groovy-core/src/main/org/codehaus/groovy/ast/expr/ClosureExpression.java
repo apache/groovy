@@ -82,4 +82,8 @@ public class ClosureExpression extends Expression {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    public boolean isParameterSpecified() {
+        return parameters != null && parameters.length > 0;
+    }
 }

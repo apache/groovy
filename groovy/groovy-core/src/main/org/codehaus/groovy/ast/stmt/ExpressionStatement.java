@@ -74,6 +74,10 @@ public class ExpressionStatement extends Statement {
         return expression;
     }
 
+    public void setExpression(Expression expression) {
+        this.expression = expression;
+    }
+
     public String toString() {
         return super.toString() + "[expression:" + expression + "]";
     }
