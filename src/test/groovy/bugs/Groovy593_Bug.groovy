@@ -7,6 +7,12 @@ import groovy.xml.MarkupBuilder
  * Tests that special XML chars are entitized by MarkupBuilder.
  *
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
+ *
+ * @version Revision 1.2 $
+ *
+ *     Fix the crlf handling, depending on operating system.
+ *
+ *     @author <a href="mailto:phkim@cluecom.co.kr">Pilho Kim</a>
  */
 class Groovy593_Bug extends GroovyTestCase {
     
@@ -36,7 +42,16 @@ EOF
         //println writer
 
         // Test MarkupBuilder state with expectedXML
-        assertEquals(expectedXML, writer.toString())
+	// Handling the cr lf characters, depending on operating system. 
+        outputValue = writer.toString()
+        if (expectedXML.indexOf("\r\n") >= 0 && outputValue.indexOf("\r\n") < 0) {
+                assert expectedXML.replaceAll("\r\n", "\n").length() == outputValue.length()
+                assertEquals(expectedXML.replaceAll("\r\n", "\n"), outputValue)
+        }
+        else if (expectedXML.indexOf("\r\n") < 0 && outputValue.indexOf("\r\n") >= 0) {
+                assert expectedXML.length() == outputValue.replaceAll("\r\n", "\n").length()
+                assertEquals(expectedXML, outputValue.replaceAll("\r\n", "\n"))
+        }
 
         // parser will throw a SAXParseException if XML is not valid
         parser.parseText(writer.toString())
