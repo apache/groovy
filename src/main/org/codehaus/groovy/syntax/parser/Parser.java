@@ -1121,8 +1121,25 @@ public class Parser
 
         expr.addChild( parameterList() );
 
-        CSTNode block = rootNode( Token.PIPE );
+        boolean pipeRequired = true;
 
+        if ( expr.getChild( 0 ).getChildren().length > 0 ) {
+            pipeRequired = true;
+        }
+
+        CSTNode block = null;
+
+        if ( pipeRequired
+             ||
+             lt() == Token.PIPE )
+        {
+            block = rootNode( Token.PIPE );
+        }
+        else
+        { 
+            block = new CSTNode();
+        }
+            
         statementsUntilRightCurly( block );
 
         consume( Token.RIGHT_CURLY_BRACE );
