@@ -44,12 +44,14 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,7 +62,7 @@ import javax.sql.DataSource;
 
 /**
  * Represents an extent of objects
- * 
+ *
  * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  * @version $Revision$
@@ -85,7 +87,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL
-     * 
+     *
      * @param url
      * @return a new Sql instance with a connection
      */
@@ -97,7 +99,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL
-     * 
+     *
      * @param url
      * @return a new Sql instance with a connection
      */
@@ -109,7 +111,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL and driver class name
-     * 
+     *
      * @param url
      * @return a new Sql instance with a connection
      */
@@ -121,7 +123,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL, username and password
-     * 
+     *
      * @param url
      * @return a new Sql instance with a connection
      */
@@ -133,7 +135,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL, username, password and driver class name
-     * 
+     *
      * @param url
      * @return a new Sql instance with a connection
      */
@@ -146,7 +148,7 @@ public class Sql {
     /**
      * A helper method which creates a new Sql instance from a JDBC connection
      * URL and driver class name
-     * 
+     *
      * @param url
      * @param driverClassName
      *            the class name of the driver
@@ -160,7 +162,7 @@ public class Sql {
     /**
      * Attempts to load the JDBC driver on the thread, current or system class
      * loaders
-     * 
+     *
      * @param driverClassName
      * @throws ClassNotFoundException
      */
@@ -190,7 +192,7 @@ public class Sql {
      * Constructs an SQL instance using the given DataSource. Each operation
      * will use a Connection from the DataSource pool and close it when the
      * operation is completed putting it back into the pool.
-     * 
+     *
      * @param dataSource
      */
     public Sql(DataSource dataSource) {
@@ -202,7 +204,7 @@ public class Sql {
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
      * {@link java.sql.Connection#close()}  method.
-     * 
+     *
      * @param connection
      */
     public Sql(Connection connection) {
@@ -367,6 +369,88 @@ public class Sql {
     public void queryEach(GString gstring, Closure closure) throws SQLException {
         warnDeprecated();
         eachRow(gstring, closure);
+    }
+
+    /**
+     * Performs the given SQL query and return the rows of the result set
+     */
+     public List rows(String sql) throws SQLException {
+    	List results = new ArrayList();
+        Connection connection = createConnection();
+        Statement statement = connection.createStatement();
+        configure(statement);
+        ResultSet rs = null;
+        try {
+            log.fine(sql);
+            rs = statement.executeQuery(sql);
+            while (rs.next()) {
+            	ResultSetMetaData metadata = rs.getMetaData();
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
+            	for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
+            	      lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                }
+                GroovyRowResult row = new GroovyRowResult(lhm);
+            	results.add(row);
+            }
+            return(results);
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, rs);
+        }
+    }
+
+    /**
+     * Performs the given SQL query and return the first row of the result set
+     */
+    public Object firstRow(String sql) throws SQLException {
+    	return( rows(sql).get(0));
+    }
+
+    /**
+     * Performs the given SQL query with the list of params and return
+     * the rows of the result set
+     */
+     public List rows(String sql, List params) throws SQLException {
+    	List results = new ArrayList();
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet rs = null;
+        try {
+            log.fine(sql);
+            statement = connection.prepareStatement(sql);
+            setParameters(params, statement);
+            configure(statement);
+            rs = statement.executeQuery();
+            while (rs.next()) {
+            	ResultSetMetaData metadata = rs.getMetaData();
+            	LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
+            	for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
+            	      lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                }
+                GroovyRowResult row = new GroovyRowResult(lhm);
+            	results.add(row);
+            }
+            return(results);
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, rs);
+        }
+    }
+
+     /**
+      * Performs the given SQL query with the list of params and return
+      * the first row of the result set
+      */
+    public Object firstRow(String sql, List params) throws SQLException {
+    	return( rows(sql, params).get(0));
     }
 
     /**
