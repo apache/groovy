@@ -1808,6 +1808,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     public void visitClassExpression(ClassExpression expression) {
         String type = expression.getText();
+        type = checkValidType(type, expression, "Must be a valid type name for a constructor call");
+
 
         if (helper.isPrimitiveType(type)) {
             String objectType = helper.getObjectTypeForPrimitive(type);
@@ -2442,6 +2444,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             throw new RuntimeException(
                 "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
         }
+        className = checkValidType(className, expression, "Must be a valid type name for an instanceof statement");
         String classInternalName = BytecodeHelper.getClassInternalName(className);
         cv.visitTypeInsn(INSTANCEOF, classInternalName);
     }
