@@ -5,6 +5,12 @@ class SwitchTest extends GroovyTestCase {
         callSwitch("bar", "barfoo")
         callSwitch("xyz", "xyzDefault")
         callSwitch("zzz", "Default")
+        callSwitch(4, "List")
+        callSwitch(5, "List")
+        callSwitch(6, "List")
+        callSwitch("inList", "List")
+        callSwitch(1, "Integer")
+        callSwitch(1.2, "Number")
     }
     
     callSwitch(x, expected) {
@@ -18,6 +24,18 @@ class SwitchTest extends GroovyTestCase {
                 
             case "foo":
     	        result = result + "foo"
+                break
+
+            case [4, 5, 6, 'inList']:
+                result = "List"
+                break
+                
+            case Integer:
+                result = "Integer"
+                break
+                
+            case Number:
+                result = "Number"
                 break
                 
             case "xyz":
@@ -33,4 +51,5 @@ class SwitchTest extends GroovyTestCase {
         
         assert result == expected : "when calling switch with ${x}"
     }
+    
 }

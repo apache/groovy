@@ -154,7 +154,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller compareLessThanEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareLessThanEqual");
     MethodCaller compareGreaterThanMethod = MethodCaller.newStatic(InvokerHelper.class, "compareGreaterThan");
     MethodCaller compareGreaterThanEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareGreaterThanEqual");
-    MethodCaller matchesMethod = MethodCaller.newStatic(InvokerHelper.class, "matches");
+    MethodCaller isCaseMethod = MethodCaller.newStatic(InvokerHelper.class, "isCase");
 
     MethodCaller createListMethod = MethodCaller.newStatic(InvokerHelper.class, "createList");
     MethodCaller createTupleMethod = MethodCaller.newStatic(InvokerHelper.class, "createTuple");
@@ -641,7 +641,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(ALOAD, switchVariableIndex);
         statement.getExpression().visit(this);
 
-        matchesMethod.call(cv);
+        isCaseMethod.call(cv);
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
