@@ -22,6 +22,7 @@
  */
 
 import groovy.swing.SwingBuilder
+import org.codehaus.groovy.sandbox.util.XmlSlurper
 import java.awt.BorderLayout
 import java.net.URL
 import javax.swing.BorderFactory
@@ -44,7 +45,7 @@ class Feed { name; id; unread; String toString() {
     return (unread == "0" ? name : "${name} (${unread})")
   } 
 }
-class Item { title; contents; String toString() { return title } }
+class Item { title; description; String toString() { title } }
 
 // Ask the user for account information (using simple dialogs)
 email = 
@@ -60,7 +61,7 @@ credentials = new UsernamePasswordCredentials(email, password)
 client.state.setCredentials("Bloglines RPC", server, credentials)
 
 // Get the list of subscriptions and parse it into a GPath structure
-opml = new XmlParser().parseText(callBloglines(apiUrl('listsubs')))
+opml = new XmlSlurper().parseText(callBloglines(apiUrl('listsubs')))
 
 def callBloglines(url) {
   try {
@@ -107,9 +108,9 @@ listItems = { | feed |
   rssText = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0")  
   if (rssText != null) {
     try {
-      rss = new XmlParser().parseText(rssText)
+      rss = new XmlSlurper().parseText(rssText)
       itemList.listData =  rss.channel.item.collect(new Vector()) {
-		new Item(title:it.title[0].text(), contents:it.description[0].text())
+		new Item(title:it.title, description:it.description)
       }
       feed.unread = "0"  // update the unread item count in the feed list
     } catch (Exception e) {
@@ -131,8 +132,8 @@ feedTree.valueChanged = { | event |
 
 itemList.valueChanged = { | event |
   item = event.source.selectedValue
-  if (item != null && item instanceof Item) {
-    itemText.text = "<html><body>${item.contents}</body></html>"
+  if (item instanceof Item && item->description != null) {
+    itemText.text = "<html><body>${item.description}</body></html>"
   }
 }
 
