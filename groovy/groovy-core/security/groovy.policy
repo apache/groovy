@@ -191,6 +191,10 @@ grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
 	permission java.io.FilePermission "src${/}test${/}groovy${/}-", "read";
 };
 
+grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
+	permission java.io.FilePermission "src${/}test${/}groovy${/}script${/}HelloWorld.groovy", "read";
+};
+
 grant codeBase "file:${user.dir}/src/test/groovy/sql/PersonTest.groovy" {
 	permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
 };

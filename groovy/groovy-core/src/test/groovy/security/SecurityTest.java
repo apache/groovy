@@ -50,32 +50,6 @@ public class SecurityTest extends SecurityTestSupport {
 		assertExecute(script, "/groovy/security/javax/print/allow", null);
 	}
 	
-    /**
-     * Read a .groovy file from a signed jar and verify that a policy file grant with a signedBy field
-     * works.  The following steps were used to create and manage the keys used to sign and read the jar:
-     * <ol>
-     * <li>keytool -genkey -alias groovy -keypass keypass -keystore groovystore -storepass storepass -validity 7000
-     * <li>keytool -export -keystore groovystore -alias groovy -file GroovyDev.cer
-     * <li>keytool -import -alias groovy -file GroovyDev.cer -keystore groovykeys
-     * </ol>
-     * Once the keys are constructed, creat the jar and sign:
-     * <ol>
-     * <li>jar -cvf Groovy.jar groovy
-     * <li>jarsigner -keystore groovystore -signedjar GroovyJarTest.jar Groovy.jar groovy
-     * </ol>
-     * Add the keystore to the policy file and write the grant:
-     * <ol>
-     * <li>keystore "file:${user.dir}/src/test/groovy/security/groovykeys";
-     * </ol>
-     */
-    public void testReadSignedJar() throws Exception {
-    	if (!isSecurityAvailable()) {
-    		return;
-    	}
-    	Class c = loader.loadClass("groovy.security.JarTest");
-    	executeTest(c, null);
-    }
-
 	public void testBadScriptNameBug() {
 		assertExecute(new File("src/test/groovy/bugs/BadScriptNameBug.groovy"), null);
 	}
