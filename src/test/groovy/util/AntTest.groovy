@@ -55,26 +55,26 @@ class AntTest extends GroovyTestCase {
     }
     
     void testJunitTask() {
-    	ant = new AntBuilder()
+        ant = new AntBuilder()
         
         ant.junit {
-        	test(name:'groovy.util.SomethingThatDoesNotExist')
+            test(name:'groovy.util.SomethingThatDoesNotExist')
         }
     }
     
     void testPathBuilding() {
-    	ant = new AntBuilder()
+        ant = new AntBuilder()
         
         value = ant.path {
-    		fileset(dir:"xdocs") {
-    			include(name:"*.wiki")
-    		}
-    	}
-    	
-    	assert value != null
-    	
-    	println "Found path of type ${value.class.name}"
-    	println value
+            fileset(dir:"xdocs") {
+                include(name:"*.wiki")
+            }
+        }
+
+        assert value != null
+
+        println "Found path of type ${value.getClass().name}"
+        println value
     }
 
     void testTaskContainerAddTaskIsCalled() {

@@ -10,7 +10,7 @@ class ZoharsBug extends GroovyTestCase {
         result.each{println(it)}
     }
     
-    bloo(a,b){
+    def bloo(a,b){
         return a.findAll{b.call(it)}
     }    
 }

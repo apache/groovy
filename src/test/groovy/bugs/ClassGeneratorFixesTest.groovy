@@ -2,16 +2,16 @@ package groovy.bugs
 
 
 class ClassGeneratorFixesTest extends GroovyTestCase {
-    pf(int p) {
+    def count = 0;
+
+    def pf(int p) {
         int i = p
         boolean b = true
     }
 
-	void testPrimitvesInFunc() { // groovy-373, 453, 385, 451, 199
-		pf(10)
-	}
-
-    count = 0;
+    void testPrimitvesInFunc() { // groovy-373, 453, 385, 451, 199
+        pf(10)
+    }
 
     void testPlusEqual() { // 372
         count += 1
@@ -63,15 +63,16 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
     void returnVoid() {
         return
     }
+
     void testReturnVoid() { // groovy-405, 387
         returnVoid()
     }
     
     void testBooleanValue() { // groovy-385
-    		/** @todo
-    		boolean value
-    		*/
-    	}
+            /** @todo
+            boolean value
+            */
+        }
 
 }
 

@@ -8,7 +8,7 @@ class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
         assert array.size() == 3
         
         methodWithArrayParam(array)
-	}
+    }
     
     void methodWithArrayParam(String[] args) {
         println("first item: ${args[0]}")

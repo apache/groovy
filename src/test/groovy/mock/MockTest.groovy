@@ -5,7 +5,7 @@ import junit.framework.AssertionFailedError
 
 class MockTest extends GroovyTestCase {
 
-    property mock
+    def mock
 
     void setUp() {
         mock = GroovyMock.newInstance()
@@ -60,8 +60,7 @@ class MockTest extends GroovyTestCase {
             mock.instance.doSomething("hello")
             fail("Expected verify to fail");
         }
-        catch (RuntimeException ex)
-        {
+        catch (RuntimeException ex) {
             //expected
         }
     }
@@ -86,8 +85,7 @@ class MockTest extends GroovyTestCase {
             mock.verify()
             fail("Expected verify to fail");
         }
-        catch (AssertionFailedError ex)
-        {
+        catch (AssertionFailedError ex) {
             //expected
         }
     }

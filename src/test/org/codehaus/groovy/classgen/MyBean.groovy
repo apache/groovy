@@ -2,6 +2,6 @@ package org.codehaus.groovy.classgen
 
 class MyBean {
 
-	name = "James"
-	foo = 123
+	@Property def name = "James"
+	@Property def foo = 123
 }

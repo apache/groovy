@@ -17,7 +17,7 @@ class ArrayAutoboxingTest extends GroovyTestCase {
       assert cl == "[F"
     }
     
-    blah2(Object o) {
+    def blah2(Object o) {
        return o.class.name
     }
         

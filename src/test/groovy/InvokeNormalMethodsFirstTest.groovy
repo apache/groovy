@@ -18,7 +18,7 @@ class InvokeNormalMethodsFirstTest extends GroovyTestCase {
     }
 
     void testCallClosure() {
-        clos = { |msg| return msg + " is Groovy" }
+        clos = { |msg| msg + " is Groovy" }
         str = clos("Guillaume")
 
         assert str == "Guillaume is Groovy"

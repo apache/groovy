@@ -6,7 +6,7 @@
  */
 class ClosureTest extends GroovyTestCase {
 
-	property count
+	def count
 
     void testSimpleBlockCall() {
         count = 0
@@ -33,7 +33,7 @@ class ClosureTest extends GroovyTestCase {
         assert count == 1
          
         count = 0
-        c1(new Object[]{1, 2, 3})
+        c1([1, 2, 3] as Object[])
         assert count == 6
 
         c2 = {| a, Object[] args | count += a; args.each{count += it}}
@@ -47,7 +47,7 @@ class ClosureTest extends GroovyTestCase {
         assert count == 1
          
         count = 0
-        c2(1, new Object[]{2, 3})
+        c2(1, [2, 3] as Object[])
         assert count == 6
     }
 
@@ -75,23 +75,23 @@ class ClosureTest extends GroovyTestCase {
         block.call("I just invoked a closure!")
     }
   
-    incrementCallCount() {
+    def incrementCallCount() {
         //System.out.println("invoked increment method!")
         count = count + 1
     }
 	
-    assertClosure(Closure block) {
+    def assertClosure(Closure block) {
         assert block != null
         block.call(this)
     }
 	
-    protected callBlock(Integer num, Closure block) {
+    protected void callBlock(Integer num, Closure block) {
         for ( i in 0..num ) {
             block.call(this)
         }
     }
 
-    protected callBlock2(num, block) {
+    protected void callBlock2(num, block) {
         for ( i in 0..num ) {
             block.call(this)
         }
@@ -114,6 +114,6 @@ class ClosureTest extends GroovyTestCase {
 }
 
 public class TinyAgent {
-    int x
+    @Property int x
 }
 

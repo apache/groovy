@@ -9,25 +9,23 @@
  *
  * @authour Guillaume Laforge
  */
-class ClosureInClosureBug extends GroovyTestCase
-{
-	void testInvisibleVariable()
-	{
-		text = "test "
+class ClosureInClosureBug extends GroovyTestCase {
 
-		l = [1..11, 2..12, 3..13, 4..14]
+    void testInvisibleVariable() {
+        text = "test "
 
-		l.each{
-			//println(text)
-			it.each{
-				println(text)
-			}
-		}
-	}
+        l = [1..11, 2..12, 3..13, 4..14]
 
-	static void main(args)
-	{
-		bug = new ClosureInClosureBug()
-		bug.testInvisibleVariable()
-	}
+        l.each {
+            //println(text)
+            it.each{
+                println(text)
+            }
+        }
+    }
+
+    static void main(args) {
+        bug = new ClosureInClosureBug()
+        bug.testInvisibleVariable()
+    }
 }

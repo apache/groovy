@@ -1,7 +1,6 @@
-class ClosureSugarTest
-	extends GroovyTestCase
-{
-    property count;
+class ClosureSugarTest extends GroovyTestCase {
+    /*
+    def count;
 
     void testClosureSugar()
     {
@@ -13,9 +12,9 @@ class ClosureSugarTest
 
         assert count == 20;
     }
+    */
 
-    void testMixedClosureSugar()
-    {
+    void testMixedClosureSugar() {
         count = 11;
 
         mixedSugar (5){a|
@@ -26,13 +25,14 @@ class ClosureSugarTest
 
     }
 
-    mixedSugar(incrBy, Closure closure)
-    {
+    def mixedSugar(incrBy, Closure closure) {
         closure.call( incrBy ); 
     }
 
-    sugar(Closure closure)
+    /*
+    def sugar(Closure closure)
     {
         closure.call();
     }
+    */
 }

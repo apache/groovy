@@ -7,7 +7,7 @@ class MetaClassTest extends GroovyTestCase {
         test { print(it) }
     }
     
-    protected test(object) {
+    protected def test(object) {
         metaClass = object.metaClass
         assert metaClass != null
         

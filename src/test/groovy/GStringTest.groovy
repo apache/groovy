@@ -6,15 +6,15 @@ class GStringTest extends GroovyTestCase {
         
         template = "hello ${name} how are you?"
 				
-		assert template instanceof GString
-											 
-	 	count = template.getValueCount()
-		assert count == 1
-		assert template.getValue(0) == "Bob"
-											 
-		string = template.toString()
-		assert string == "hello Bob how are you?"
-	}
+        assert template instanceof GString
+
+        count = template.getValueCount()
+        assert count == 1
+        assert template.getValue(0) == "Bob"
+
+        string = template.toString()
+        assert string == "hello Bob how are you?"
+    }
     
     void testWithVariableAtEnd() {
         name = "Bob"
@@ -60,15 +60,15 @@ class GStringTest extends GroovyTestCase {
         a = "dog" 
         b = "a ${a}"
         
-		c = b + " cat"
+        c = b + " cat"
 
         println("Created ${c}")
         
-        assert c.toString() == "a dog cat" : c
+        assert c.toString() == "a dog cat" , c
         
         b += " cat"
         
-        assert b.toString() == "a dog cat" : b
+        assert b.toString() == "a dog cat" , b
     }
     
     void testAppendGString() {
@@ -76,7 +76,7 @@ class GStringTest extends GroovyTestCase {
         b = "a ${a}" 
         b += " cat${a}"
         
-        assert b.toString() == "a dog catdog" : b
+        assert b.toString() == "a dog catdog" , b
         
         println("Created ${b}")
     }
@@ -100,17 +100,16 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testGroovy441() {
-		arg = "test" 
-		content = "${arg} =" 
+        arg = "test"
+        content = "${arg} ="
 
-		if (arg != "something") 
-		{ 
-			content += "?" 
-		}
+        if (arg != "something") {
+            content += "?"
+        }
 
-		content += "= ${arg}." 
+        content += "= ${arg}."
 
-		assert content == "test =?= test."
+        assert content == "test =?= test."
     }
 
     void testTwoStringsInMiddle() {

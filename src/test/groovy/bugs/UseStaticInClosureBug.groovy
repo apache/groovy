@@ -3,7 +3,7 @@
  */
 class UseStaticInClosureBug extends GroovyTestCase {
 
-    static stuff = [:]
+    static def stuff = [:]
 
     void testBug() {
         [1,2,3].each { stuff[it] = "dog" }
@@ -16,7 +16,7 @@ class UseStaticInClosureBug extends GroovyTestCase {
         doStatic()
     }
 
-    static doStatic() {
+    static def doStatic() {
         [1,2,3].each { stuff[it] = "dog" }
 
         assert stuff.size() == 3

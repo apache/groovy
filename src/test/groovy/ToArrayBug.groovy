@@ -9,7 +9,7 @@ class ToArrayBug extends GroovyTestCase {
         callArrayMethod(array)
     }
     
-    protected getArray() {
+    protected def getArray() {
         list = [1, 2, 3, 4]
         array = list.toArray()
         
@@ -18,7 +18,7 @@ class ToArrayBug extends GroovyTestCase {
         return array
     }
     
-    protected callArrayMethod(array) {
+    protected def callArrayMethod(array) {
         System.out.println("Called method with ${array}")
         
         list = Arrays.asList(array)

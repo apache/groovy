@@ -2,7 +2,7 @@ package groovy.sql
 
 class Person {
 
-    property firstName
-    property lastName
-    property age
+    def firstName
+    def lastName
+    def age
 }

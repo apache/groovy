@@ -65,14 +65,14 @@ class PropertyTest extends GroovyTestCase {
     }
     
     void testCannotSeePrivateProperties() {
-	    foo = new Foo()
-	    
-	    // property access fails on non-existent property
-		shouldFail { x = foo.invisible }														
-	    
-	    // methods should fail on non-existent method calls
-	    shouldFail { foo.getQ() }
-	}
+        foo = new Foo()
+
+        // def access fails on non-existent def
+        shouldFail { x = foo.invisible }
+
+        // methods should fail on non-existent method calls
+        shouldFail { foo.getQ() }
+    }
 
     void testConstructorWithNamedProperties() {
         foo = new Foo(name:'Gromit', location:'Moon')
@@ -86,28 +86,28 @@ class PropertyTest extends GroovyTestCase {
     void testToString() {
         foo = new Foo(name:'Gromit', location:'Moon')
 
-		println foo
-	}
+        println foo
+    }
 
     void testArrayLengthProperty() {
-		// create two arrays, since all use the same MetaArrayLengthProperty object -
-		// make sure it can work for all types and sizes
-		i = new Integer[5]
-		s = new String[10]
-		
-		// put something in it to make sure we're returning the *allocated* length, and
-		// not the *used* length
-		s[0] = "hello"
-		
-		assert i.length == 5
-		assert s.length == 10
-		
-		// this property does not mean there is a getLength() method
-		shouldFail { i.getLength() }
-		
-		// verify we can't set this property, it's read-only
-		shouldFail { i.length = 6 }
-	}
+        // create two arrays, since all use the same MetaArrayLengthProperty object -
+        // make sure it can work for all types and sizes
+        i = new Integer[5]
+        s = new String[10]
+
+        // put something in it to make sure we're returning the *allocated* length, and
+        // not the *used* length
+        s[0] = "hello"
+
+        assert i.length == 5
+        assert s.length == 10
+
+        // this def does not mean there is a getLength() method
+        shouldFail { i.getLength() }
+
+        // verify we can't set this def, it's read-only
+        shouldFail { i.length = 6 }
+    }
 
     void testGstringAssignment() {
         foo = new Foo()

@@ -7,15 +7,15 @@ class DateTest extends GroovyTestCase {
         y = x + 2
         
         assert x < y
-        x++
-        y--
+        ++x
+        --y
         
         assert x == y
         x += 2
         assert x > y
         
         println "have dates ${x} and ${y}"
-	}
+    }
     
     void testDateRange() {
         

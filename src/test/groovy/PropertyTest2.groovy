@@ -1,5 +1,5 @@
 /** 
- * Tests the use of new property methods in Groovy: eachProperty(), eachPropertyName(), and
+ * Tests the use of new def methods in Groovy: eachProperty(), eachPropertyName(), and
  * allProperties()
  * 
  * @author john stump

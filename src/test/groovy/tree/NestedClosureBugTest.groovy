@@ -5,7 +5,7 @@
  */
 class NestedClosureBugTest extends GroovyTestCase {
     
-    property b
+    def b
 
     void testNestedClosureBug() {
         b = NodeBuilder.newInstance()

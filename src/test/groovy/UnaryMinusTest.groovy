@@ -1,6 +1,4 @@
-import org.codehaus.groovy.classgen.TestSupport
-
-class UnaryMinusTest extends TestSupport {
+class UnaryMinusTest extends GroovyTestCase {
 
     void testUnaryMinus() {
         value = -1
@@ -22,10 +20,10 @@ class UnaryMinusTest extends TestSupport {
     }
     
     void testShellBug() {
-        assertScript("
+        assertScript("""
 a = 1
 b = -a
 assert b == -1            
-")
+""")
     }
 }

@@ -2,7 +2,7 @@ package org.codehaus.groovy.classgen
 
 class Main {
     
-    main() {
+    def main() {
         println("Hello World!")
     }
 }

@@ -9,10 +9,8 @@
  *
  * @authour Guillaume Laforge
  */
-class ClosureInClosureTest extends GroovyTestCase
-{
-	void testInvisibleVariable()
-	{
+class ClosureInClosureTest extends GroovyTestCase {
+	void testInvisibleVariable() {
 		text = "test "
 
 		l = [1..11, 2..12, 3..13, 4..14]
@@ -24,8 +22,7 @@ class ClosureInClosureTest extends GroovyTestCase
 		}
 	}
 
-	static void main(args)
-	{
+	static void main(args) {
 		bug = new ClosureInClosureTest()
 		bug.testInvisibleVariable()
 	}

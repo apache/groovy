@@ -15,32 +15,32 @@ class SqlTest extends GroovyTestCase {
     }
     
     void testQueryUsingColumnIndex() {
-	    	sql = createSql()
-	    	
-	    	answer = null
-	    	
-	    	sql.eachRow("select count(*) from PERSON") { answer = it[0] }
-	    	
-	    	println "Found the count of ${answer}"
-	    	
-	    	assert answer == 3
-	    }
+            sql = createSql()
+
+            answer = null
+
+            sql.eachRow("select count(*) from PERSON") { answer = it[0] }
+
+            println "Found the count of ${answer}"
+
+            assert answer == 3
+        }
     
     void testQueryUsingNegativeColumnIndex() {
-	    	sql = createSql()
+            sql = createSql()
 
-		first = null
-		last = null
-		    	
-	    	sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
-	    		first = row[-2]
-	    		last = row[-1]
-	    	}
-	    	
-	    	println "Found name ${first} ${last}"
-    	
-	    	assert first == "James"
-	    	assert last == "Strachan"
+        first = null
+        last = null
+
+            sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
+                first = row[-2]
+                last = row[-1]
+            }
+
+            println "Found name ${first} ${last}"
+
+            assert first == "James"
+            assert last == "Strachan"
     }
     
     void testSqlQueryWithWhereClause() {
@@ -87,10 +87,10 @@ class SqlTest extends GroovyTestCase {
         nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
         if(nRows == 0){
             sql.executeUpdate("insert into FOOD (type,name) values (${foo},${bar})");
-    		}
+            }
     }
     
-    protected createSql() {
+    protected def createSql() {
         dataSource = new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
         sql = new Sql(dataSource)
         

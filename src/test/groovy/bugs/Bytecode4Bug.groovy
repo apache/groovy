@@ -3,7 +3,7 @@
  */
 class Bytecode4Bug extends GroovyTestCase {
 
-    count = 0
+    @Property def count = 0
      
     void testInject() {
         x = [1, 2, 3].inject(0) { c, s | c += s }
@@ -22,7 +22,7 @@ class Bytecode4Bug extends GroovyTestCase {
         assert count == 4
     }
     
-    getCollection() {
+    def getCollection() {
         [1, 2, 3, 4]
     }
 }

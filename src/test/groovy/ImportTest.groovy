@@ -1,12 +1,13 @@
 import java.io.*
-import java.util.Map, List
+import java.util.Map
+import java.util.List
 
 class ImportTest extends GroovyTestCase {
 
     void testImportAll() {
         file = new File("foo.txt")
-		assert file instanceof File
-		assert file.class.name == "java.io.File"
+        assert file instanceof File
+        assert file.getClass().name == "java.io.File"
     }
     
     void testImportByName() {

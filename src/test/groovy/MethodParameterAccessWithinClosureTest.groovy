@@ -6,8 +6,8 @@
  */
 
 class MethodParameterAccessWithinClosureTest extends GroovyTestCase { 
-    property cheese
-    property shop
+    def cheese
+    def shop
        
     void setUp() {
         cheese = null
@@ -33,7 +33,7 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
     }
     
     private String vendor3(cheese) {
-        // problem is that cheese here refers to property 'cheese'
+        // problem is that cheese here refers to def 'cheese'
         // and not the method parameter 'cheese'
         shop.find() {it == cheese}      
     }

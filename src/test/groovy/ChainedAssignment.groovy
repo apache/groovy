@@ -1,6 +1,6 @@
 class ChainedAssignment extends GroovyTestCase {
 
-    dummy(v) {
+    def dummy(v) {
         print v
     }
 
@@ -13,6 +13,6 @@ class ChainedAssignment extends GroovyTestCase {
         assert i2 == 123
 
         dummy(s1 = s)
-        assert  s1 == "hello"
-	}
+        assert s1 == "hello"
+    }
 }

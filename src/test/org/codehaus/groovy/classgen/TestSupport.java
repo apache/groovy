@@ -1,3 +1,5 @@
+package org.codehaus.groovy.classgen;
+
 /*
  $Id$
 
@@ -44,8 +46,6 @@
 
  */
 
-package org.codehaus.groovy.classgen;
-
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
@@ -90,9 +90,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected GroovyClassLoader loader = 
     	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
     		public Object run() {
-    			return (DUMP_CLASS) 
-					? new DumpingClassLoader(parentLoader)
-					: new GroovyClassLoader(parentLoader); 
+    			return new GroovyClassLoader(parentLoader);
     		}
     	});
     CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfiguration());
@@ -179,7 +177,6 @@ public class TestSupport extends GroovyTestCase implements Constants {
 
     /**
      * Asserts that the script runs without any exceptions
-     * @param script
      */
     protected void assertScript(String text) throws Exception {
         assertScript(text, getTestClassName());
