@@ -156,6 +156,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructorOf");
+    MethodCaller invokeNoArgumentsConstructorOf = MethodCaller.newStatic(InvokerHelper.class, "invokeNoArgumentsConstructorOf");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
     MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeSuperMethod");
     MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeNoArgumentsMethod");
@@ -1488,7 +1489,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             TupleExpression tupleExpression = (TupleExpression) arguments;
             int size = tupleExpression.getExpressions().size();
             if (size == 0) {
-                arguments = ConstantExpression.EMPTY_ARRAY;
+                arguments = null;
             }
             else if (size == 1) {
                 arguments = (Expression) tupleExpression.getExpressions().get(0);
@@ -1501,9 +1502,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         //System.out.println("Constructing: " + type);
 
         visitClassExpression(new ClassExpression(type));
-        arguments.visit(this);
-        invokeConstructorOfMethod.call(cv);
-
+        if (arguments !=null) {
+               arguments.visit(this);
+            invokeConstructorOfMethod.call(cv);
+        } else {
+               invokeNoArgumentsConstructorOf.call(cv);
+        }
         /*
          * cv.visitLdcInsn(type);
          * 
