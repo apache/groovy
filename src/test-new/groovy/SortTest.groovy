@@ -27,7 +27,7 @@ class SortTest extends GroovyTestCase {
         list.each { println it.dump() }
     }
     
-    getPeople() {
+    def getPeople() {
         answer = []
         answer << new Expando(name:'James', cheese:'Edam', location:'London')
         answer << new Expando(name:'Bob', cheese:'Cheddar', location:'Atlanta')

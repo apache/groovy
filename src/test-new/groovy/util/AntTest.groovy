@@ -73,7 +73,7 @@ class AntTest extends GroovyTestCase {
     	
     	assert value != null
     	
-    	println "Found path of type ${value.class.name}"
+    	println "Found path of type ${value.getClass().name}"
     	println value
     }
 

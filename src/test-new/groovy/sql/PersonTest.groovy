@@ -34,18 +34,18 @@ class PersonTest extends GroovyTestCase {
         assertSql(blogs, "select * from person where size < ? and lastName = ?", [10, 'Bloggs'])
     }
  
-    protected compareFn(value) {
+    protected def compareFn(value) {
         value > 1 && value < 10
     }
     
-    protected assertSql(dataSet, expectedSql, expectedParams) {
+    protected def assertSql(dataSet, expectedSql, expectedParams) {
         sql = dataSet.sql
         params = dataSet.parameters
         assert sql == expectedSql
         assert params == expectedParams
     }
     
-    protected createDataSet() {
+    protected def createDataSet() {
         type = Person
 	
         assert type != null , "failed to load Person class"

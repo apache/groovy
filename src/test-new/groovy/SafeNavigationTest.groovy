@@ -13,7 +13,7 @@ class SafeNavigationTest extends GroovyTestCase {
     void testNullPropertyNavigation() {
         x = null
         
-		y = x->foo->bar
+        y = x->foo->bar
         
         assert y == null
 

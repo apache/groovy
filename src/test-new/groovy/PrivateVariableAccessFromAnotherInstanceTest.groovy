@@ -8,7 +8,7 @@
 
 class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implements Cloneable { 
     def foo
-    private bar
+    private def bar
               
     public PrivateVariableAccessFromAnotherInstanceTest() {
         super()

@@ -59,12 +59,14 @@ class SocketTest extends GroovyTestCase {
  * simple, unconnected Socket, used purely for test cases
  */
 class MockSocket extends Socket {
-    private i
-    private o
+    private def i
+    private def o
+
     public MockSocket() {
         i = new MockInputStream()
         o = new ByteArrayOutputStream()
     }
+
     public InputStream getInputStream() { return i }
     public OutputStream getOutputStream() { return o }
 }

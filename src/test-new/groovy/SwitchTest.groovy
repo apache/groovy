@@ -13,17 +13,17 @@ class SwitchTest extends GroovyTestCase {
         callSwitch(1.2, "Number")
     }
     
-    callSwitch(x, expected) {
-		println("Calling switch with ${x}")
-		
-		result = ""
-		
+    def callSwitch(x, expected) {
+        println("Calling switch with ${x}")
+
+        result = ""
+
         switch (x) {
             case "bar":
-	            result = result + "bar"
+                result = result + "bar"
                 
             case "foo":
-    	        result = result + "foo"
+                result = result + "foo"
                 break
 
             case [4, 5, 6, 'inList']:
@@ -39,7 +39,7 @@ class SwitchTest extends GroovyTestCase {
                 break
                 
             case "xyz":
-        	    result = result + "xyz"
+                result = result + "xyz"
                 
             default:
                 result = result + "Default"
@@ -57,7 +57,7 @@ class SwitchTest extends GroovyTestCase {
         i = 0
         j = 0
         while (true) {
-            i++;
+            ++i;
             switch(i) {
                 case 4:
                     continue
