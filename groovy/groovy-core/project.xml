@@ -285,6 +285,15 @@
           <role>Developer</role>
         </roles>
    </developer>
+    <developer>
+      <name>Russel Winder</name>
+      <id>russel</id>
+      <email>russel@russel.org.uk</email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
    
   </developers>
 
@@ -360,7 +369,7 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>1.4.3</version>
+      <version>1.5.2</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
@@ -419,13 +428,13 @@
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>    
-      <version>1.4.3</version>
+      <version>1.5.2</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm-attrs</artifactId>    
-      <version>1.4.3</version>
+      <version>1.5.2</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
