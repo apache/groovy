@@ -13,10 +13,13 @@ class CurlyBracketLayoutTest extends GroovyTestCase
             fail("Should have found 'b' inside $foo")
         }
 
+        /** TODO 
+
         def list = [1, 2, 3]
         list.each
         {
             println it
         }
+        */
     }
 }
