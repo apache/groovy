@@ -35,6 +35,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.MissingClassException;
 import groovy.lang.Script;
 
 import java.lang.reflect.Constructor;
@@ -116,6 +117,10 @@ public class ClassNode extends MetadataNode implements Constants {
         return superClass;
     }
 
+    public void setSuperClass(String superClass) {
+        this.superClass = superClass;
+    }
+    
     public List getFields() {
         return fields;
     }
@@ -425,6 +430,13 @@ public class ClassNode extends MetadataNode implements Constants {
     public ClassNode getSuperClassNode() {
         if (superClass != null && superClassNode == null && !name.equals("java.lang.Object")) {
             // lets try find the class in the compile unit
+            String temp = resolveClassName(superClass);
+            if (temp == null) {
+                throw new MissingClassException(superClass, this, "No such superclass");
+            }
+            else {
+                superClass = temp;
+            }
             superClassNode = findClassNode(superClass);
         }
         return superClassNode;
@@ -450,6 +462,7 @@ public class ClassNode extends MetadataNode implements Constants {
                 catch (ClassNotFoundException e) {
                     // lets ignore class not found exceptions
                     log.warning("Cannot find class: " + type + " due to: " + e);
+                    e.printStackTrace();
                 }
             }
         }

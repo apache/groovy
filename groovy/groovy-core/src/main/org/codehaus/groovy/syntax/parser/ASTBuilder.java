@@ -311,19 +311,30 @@ public class ASTBuilder {
         return qualifiedName;
     }
 
+    /**
+     * @todo we should actually remove all resolving code from the ASTBuilder and 
+     * move it into the verifier / analyser
+     */
     protected String resolvedQualifiedName(CSTNode nameRoot) {
         return resolveName(qualifiedName(nameRoot));
     }
 
+    /**
+     * @todo we should actually remove all resolving code from the ASTBuilder and 
+     * move it into the verifier / analyser
+     */
     protected String resolvedQualifiedNameNotNull(CSTNode child) throws ParserException {
         String answer = resolvedQualifiedName(child);
         if (answer == null) {
             return qualifiedName(child);
-            //throw new ParserException("Unknown type: " + child.getToken().getText() + " could not be resolved", child.getToken());
         }
         return answer;
     }
 
+    /**
+     * @todo we should actually remove all resolving code from the ASTBuilder and 
+     * move it into the verifier / analyser
+     */
     protected String[] qualifiedNames(CSTNode[] nameRoots) {
         String[] qualifiedNames = new String[nameRoots.length];
 
@@ -334,15 +345,19 @@ public class ASTBuilder {
         return qualifiedNames;
     }
 
-    protected String[] resolvedQualifiedNamesNotNull(CSTNode[] nameRoots) throws ParserException {
+    /**
+     * @todo we should actually remove all resolving code from the ASTBuilder and 
+     * move it into the verifier / analyser
+     */
+    protected String[] resolvedQualifiedNames(CSTNode[] nameRoots) throws ParserException {
         String[] qualifiedNames = qualifiedNames(nameRoots);
 
         for (int i = 0; i < qualifiedNames.length; ++i) {
-            qualifiedNames[i] = resolveName(qualifiedNames[i]);
-            if (qualifiedNames[i] == null) {
-                Token token = nameRoots[i].getToken();
-                throw new ParserException("Unknown type: " + token.getText() + " could not be resolved", token);
+            String name = resolveName(qualifiedNames[i]);
+            if (name == null) {
+                name = qualifiedNames[i];
             }
+            qualifiedNames[i] = name;
         }
 
         return qualifiedNames;
@@ -381,7 +396,7 @@ public class ASTBuilder {
         String[] interfaceNames = EMPTY_STRING_ARRAY;
 
         if (matches(classRoot.getChild(3), Token.KEYWORD_IMPLEMENTS)) {
-            interfaceNames = resolvedQualifiedNamesNotNull(classRoot.getChild(3).getChildren());
+            interfaceNames = resolvedQualifiedNames(classRoot.getChild(3).getChildren());
         }
 
         /** @todo parser
