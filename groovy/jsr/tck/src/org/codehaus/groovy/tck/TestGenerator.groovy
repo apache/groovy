@@ -6,8 +6,8 @@ package org.codehaus.groovy.tck
 import java.io.*;
 class TestGenerator{
     public String generate(realOutputPath, targetDir, srcName,srcText) {
-        System.out.println('single \\\\')
-        System.out.println("double \\\\")
+//        System.out.println('single \\\\')
+//        System.out.println("double \\\\")
         srcText = srcText.replaceAll('\\\\','\\\\\\\\') // need to escape a slash with slash slash
 
         resultWriter = new StringWriter()
@@ -82,8 +82,8 @@ class TestGenerator{
         }
         result.println('    public void evaluate(String theSrcText, String testName) throws Exception {')
         result.println('        parse(theSrcText, testName); // fail early with a direct message if possible')
-        result.println('        //GroovyShell groovy = new GroovyShell(new CompilerConfiguration());')
-        result.println('        //groovy.run(theSrcText, "main", new ArrayList());')
+        result.println('        GroovyShell groovy = new GroovyShell(new CompilerConfiguration());')
+        result.println('        groovy.run(theSrcText, "main", new ArrayList());')
         result.println("    }")
         result.println('    public void parse(String theSrcText, String testName) throws Exception {')
         result.println('        System.out.println("-------------------------------");')
