@@ -63,6 +63,8 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
@@ -185,7 +187,15 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getRightExpression().visit(this);
     }
 
-	public void visitBooleanExpression(BooleanExpression expression) {
+    public void visitPostfixExpression(PostfixExpression expression) {
+        expression.getExpression().visit(this);
+    }
+
+    public void visitPrefixExpression(PrefixExpression expression) {
+        expression.getExpression().visit(this);
+    }
+
+    public void visitBooleanExpression(BooleanExpression expression) {
 		expression.getExpression().visit(this);
 	}
 
@@ -196,7 +206,6 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitClosureExpression(ClosureExpression expression) {
         expression.getCode().visit(this);
     }
-
     
     public void visitTupleExpression(TupleExpression expression) {
         visitListOfExpressions(expression.getExpressions());
