@@ -20,6 +20,37 @@ class ClosureTest extends GroovyTestCase {
         assert count == 2
     }
 
+    void testVariableLengthParameterList() {
+
+        c1 = {| Object[] args | args.each{count += it}}
+        
+        count = 0
+        c1(1, 2, 3)
+        assert count == 6
+        
+        count = 0
+        c1(1)
+        assert count == 1
+         
+        count = 0
+        c1(new Object[]{1, 2, 3})
+        assert count == 6
+
+        c2 = {| a, Object[] args | count += a; args.each{count += it}}
+        
+        count = 0
+        c2(1, 2, 3)
+        assert count == 6
+        
+        count = 0
+        c2(1)
+        assert count == 1
+         
+        count = 0
+        c2(1, new Object[]{2, 3})
+        assert count == 6
+    }
+
     void testBlockAsParameter() {
         count = 0
         
