@@ -13,7 +13,7 @@
   </organization>
   <inceptionYear>2003</inceptionYear>
   
-  <package></package>
+  <package>groovy,org.codehaus.groovy</package>
   <packageGroups>
     <packageGroup>
       <title>Groovy Development Kit API used in the Groovy language</title>
