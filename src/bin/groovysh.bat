@@ -98,7 +98,7 @@ set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dclassworlds.conf="%CLASSWORLDS_CONF%"
 
 @rem Execute Groovy
-"%JAVA_EXE%" %JAVA_OPTS% -classpath "%CLASSWORLDS_CLASSPATH%" %CLASSWORLDS_MAIN_CLASS% %CMD_LINE_ARGS%
+"%JAVA_EXE%" %JAVA_OPTS% -Xverify:none -classpath "%CLASSWORLDS_CLASSPATH%" %CLASSWORLDS_MAIN_CLASS% %CMD_LINE_ARGS%
 
 :end
 @rem End local scope for the variables with windows NT shell
