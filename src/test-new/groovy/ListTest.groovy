@@ -3,38 +3,38 @@ class ListTest extends GroovyTestCase {
     void testList() {
         x = [10, 11]
 		
-		assert x.size() == 2
-		
-		x.add("cheese")
-		
-		assert x.size() == 3
-		
+        assert x.size() == 2
+
+        x.add("cheese")
+
+        assert x.size() == 3
+
         assert x.contains(10)
         assert x.contains(11)
-		assert x.contains("cheese")
+        assert x.contains("cheese")
 
 
         assert x.get(0) == 10
         assert x.get(1) == 11
         assert x.get(2) == "cheese"
 
-		// subscript operator
-		assert x[0] == 10
+        // subscript operator
+        assert x[0] == 10
         assert x[1] == 11
         assert x[2] == "cheese"
-		
+
         x[3] = 12
-		
-		assert x[3] == 12
-		
-		
-		if ( x.contains("cheese") ) {
+
+        assert x[3] == 12
+
+
+        if ( x.contains("cheese") ) {
             // ignore
         }
         else {
             assert false , "x should contain cheese!"
         }
-		
+
         if ( x.contains(10) ) {
             // ignore
         }
@@ -48,13 +48,13 @@ class ListTest extends GroovyTestCase {
         
         assert x.size() == 0
         
-       	x.add("cheese")
-       	
-       	assert x.get(0) == "cheese"
+        x.add("cheese")
+
+        assert x.get(0) == "cheese"
 
         assert x.size() == 1
 
-       	assert x[0] == "cheese"
+        assert x[0] == "cheese"
     }
     
     void testSubscript() {
