@@ -140,13 +140,19 @@ public class ObjectRange extends AbstractList implements Range {
         if (fromIndex < 0) {
             throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
         }
-        if (toIndex > size()) {
+        int size = size();
+        if (toIndex > size) {
             throw new IndexOutOfBoundsException("toIndex = " + toIndex);
         }
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
-        return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex));
+        if (--toIndex >= size) {
+            return new ObjectRange((Comparable) get(fromIndex), (Comparable) getTo());
+        }
+        else {
+            return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex));
+        }
     }
 
     public String toString() {

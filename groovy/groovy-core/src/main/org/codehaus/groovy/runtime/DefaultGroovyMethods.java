@@ -681,8 +681,14 @@ public class DefaultGroovyMethods {
      * @returns a range of a list from the range's from index up to but not
      * including the ranges's to value
      */
-    public static List getAt(List list, Range range) {
-        return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()) + 1);
+    public static List getAt(List self, Range range) {
+        int size = self.size();
+        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
+        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()) + 1, size);
+        if (to > size) {
+            to = size;
+        }
+        return self.subList(from, to);
     }
 
     /**
