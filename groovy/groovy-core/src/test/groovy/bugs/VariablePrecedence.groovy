@@ -8,9 +8,10 @@ class VariblePrecedence extends GroovyTestCase {
  
         assertScript( """
             class VariableFoo {
-                x = 100
-                y = 93
-                c = {x -> assert x == 1; assert y == 93; }
+                @Property x = 100
+                @Property y = 93
+                @Property c = {x -> assert x == 1; assert y == 93; }
+
                 static void main(args) {
                     vfoo = new VariableFoo()
                     vfoo.c.call(1)

@@ -25,7 +25,7 @@ class SafeNavigationTest extends GroovyTestCase {
         assert y == null
 
 
-       java.awt.Color color = null
+        def java.awt.Color color = null
         a = color?.alpha
         assert a == null
 

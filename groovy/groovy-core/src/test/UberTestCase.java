@@ -95,7 +95,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(GetterBug.class);
         suite.addTestSuite(GlobalPrintlnTest.class);
         suite.addTestSuite(Groovy239_Bug.class);
-        todo suite.addTestSuite(Groovy249_Bug.class);
+        suite.addTestSuite(Groovy249_Bug.class);
         suite.addTestSuite(Groovy252_Bug.class);
         suite.addTestSuite(Groovy389_Bug.class);
         suite.addTestSuite(Groovy513_Bug.class);
@@ -118,7 +118,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(IntegerOperationTest.class);
         suite.addTestSuite(IterateOverCustomTypeBug.class);
         suite.addTestSuite(ListIteratingTest.class);
-        todo suite.addTestSuite(ListTest.class);
+        suite.addTestSuite(ListTest.class);
         suite.addTestSuite(LiteralTypesTest.class);
         suite.addTestSuite(LittleClosureTest.class);
         suite.addTestSuite(LocalFieldTest.class);
@@ -131,7 +131,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(MapConstructionTest.class);
         suite.addTestSuite(MapPropertyTest.class);
         suite.addTestSuite(MapTest.class);
-        //todo suite.addTestSuite(MarkupAndMethodBug.class);
+        suite.addTestSuite(MarkupAndMethodBug.class);
         suite.addTestSuite(MethodCallTest.class);
         suite.addTestSuite(MethodCallWithoutParensInStaticMethodBug.class);
         suite.addTestSuite(MethodCallWithoutParenthesisTest.class);
@@ -186,7 +186,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(RodsBooleanBug.class);
         suite.addTestSuite(RodsBug.class);
 
-        //todo suite.addTestSuite(SafeNavigationTest.class);
+        suite.addTestSuite(SafeNavigationTest.class);
         suite.addTestSuite(SpreadOperatorTest.class);
         suite.addTestSuite(SerializeTest.class);
         suite.addTestSuite(ShellTest.class);
@@ -201,7 +201,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(StringTest.class);
         suite.addTestSuite(SubscriptAndExpressionBug.class);
         suite.addTestSuite(SubscriptTest.class);
-        //todo suite.addTestSuite(SuperMethod2Bug.class);
+        suite.addTestSuite(SuperMethod2Bug.class);
         suite.addTestSuite(SuperMethodBug.class);
         suite.addTestSuite(SwitchTest.class);
         suite.addTestSuite(SwitchWithDifferentTypesTest.class);
@@ -223,7 +223,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(UseClosureInClosureBug.class);
         suite.addTestSuite(UseStaticInClosureBug.class);
         suite.addTestSuite(VariableScopingBug.class);
-        //todo suite.addTestSuite(VariblePrecedence.class);
+        suite.addTestSuite(VariblePrecedence.class);
         suite.addTestSuite(VerbatimGStringTest.class);
         suite.addTestSuite(VerboseTreeTest.class);
         suite.addTestSuite(WhileLoopTest.class);
