@@ -33,6 +33,11 @@
       <copy file="${lib.path}" toDir="${groovy.install.staging.dest}/lib"/>
     </j:forEach>
     <copy file="${maven.build.dir}/${maven.final.name}.jar" toDir="${groovy.install.staging.dest}/lib"/>
+    <copy toDir="${groovy.install.staging.dest}/conf">
+      <fileset dir="${maven.src.dir}/conf">
+        <include name="*"/>
+      </fileset>
+    </copy>
     <copy toDir="${groovy.install.staging.dest}/bin">
       <fileset dir="${maven.src.dir}/bin">
         <include name="*"/>
@@ -43,7 +48,6 @@
         <include name="*"/>
       </fileset>
     </chmod>
-    <copy file="${maven.src.dir}/conf/classworlds.conf" toDir="${groovy.install.staging.dest}/conf"/>
   </goal>
 
 </project>
