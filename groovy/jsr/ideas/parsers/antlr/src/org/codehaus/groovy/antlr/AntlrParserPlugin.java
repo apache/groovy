@@ -242,7 +242,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         node = node.getNextSibling();
 
         assertNodeType(SLIST, node);
-        Statement code = statement(node);
+        Statement code = statementList(node);
 
         MethodNode methodNode = classNode.addMethod(name, modifiers, returnType, parameters, code);
         methodNode.addAnnotations(annotations);
@@ -552,8 +552,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement statementList(AST code) {
+        return statementListNoChild(code.getFirstChild());
+    }
+
+    protected Statement statementListNoChild(AST node) {
         BlockStatement block = new BlockStatement();
-        for (AST node = code.getFirstChild(); node != null; node = node.getNextSibling()) {
+        for (; node != null; node = node.getNextSibling()) {
             block.addStatement(statement(node));
         }
         return block;
@@ -1222,7 +1226,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST paramNode = node.getFirstChild();
         Parameter[] parameters = parameters(paramNode);
         AST codeNode = paramNode.getNextSibling();
-        Statement code = statement(codeNode);
+        Statement code = statementListNoChild(codeNode);
         return new ClosureExpression(parameters, code);
     }
 
