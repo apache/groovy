@@ -53,8 +53,6 @@ public class AllTests extends TestSuiteSupport {
         "ConstructorBug.groovy",                // TODO: arrays
         "ClosureTest.groovy",                   // TODO: arrays
 
-        "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
-
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
 
