@@ -63,7 +63,7 @@ public class GetPropertyTest extends TestSupport {
         System.out.println("Got object: " + object);
 
         Object value = object.getProperty("name");
-        assertEquals("name property", null, value);
+        assertEquals("name property", "James", value);
 
         object.setProperty("name", "Bob");
         assertEquals("name property", "Bob", object.getProperty("name"));
