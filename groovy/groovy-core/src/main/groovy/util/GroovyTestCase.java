@@ -73,6 +73,15 @@ public class GroovyTestCase extends TestCase {
     public GroovyTestCase() {
     }
 
+
+    /**
+     * Overload the getName() method to make the test cases look more like AgileDox
+     * (thanks to Joe Walnes for this tip!)
+     */
+    public String getName() {
+        return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();
+    }
+    
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
             "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
