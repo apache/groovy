@@ -1598,8 +1598,7 @@ public class MetaClass {
                     + " with arguments: "
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
-                    + e,
-                e);
+                    + e);
         }
         catch (IllegalAccessException e) {
             throw new GroovyRuntimeException(
@@ -1608,8 +1607,7 @@ public class MetaClass {
                     + " with arguments: "
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
-                    + e,
-                e);
+                    + e);
         }
         catch (Exception e) {
             throw new GroovyRuntimeException(
@@ -1619,7 +1617,7 @@ public class MetaClass {
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
                     + e,
-                e);
+                    e);
         }
     }
 
