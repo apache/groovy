@@ -3,18 +3,26 @@ import java.math.BigInteger;
 
 /** 
  * Basic NumberMath test.
+ * @see org.codehaus.groovy.runtime.NumberMath
  */
 class NumberMathTest extends GroovyTestCase {
 
     void testPromotions() {
+    	C = '1'.toCharacter();
+    	B = new Byte("1");
     	I = new Integer(1);
     	L = new Long(1);
-    	F = new Float(1.0);
-    	D = new Double(1.0);
+    	F = new Float("1.0");
+    	D = new Double("1.0");
     	BI = new BigInteger("1");
     	BD = new BigDecimal("1.0");
     	
     	//+, -, and * all promote the same way, so sample the matrix
+    	assert C+B instanceof Integer;
+    	assert C-BD instanceof BigDecimal;
+    	assert B+F instanceof Double;
+    	assert B+I instanceof Integer;
+    	
     	assert I+I instanceof Integer;
     	assert I-F instanceof Double;
     	assert I*D instanceof Double;
@@ -69,10 +77,10 @@ class NumberMathTest extends GroovyTestCase {
     	I3 = new Integer(3);
     	L1 = new Long(1);
     	L2 = new Long(2);
-    	F1 = new Float(1.0);
-    	F2 = new Float(2.0);
-    	D1 = new Double(1.0);
-    	D2 = new Double(2.0);
+    	F1 = new Float("1.0");
+    	F2 = new Float("2.0");
+    	D1 = new Double("1.0");
+    	D2 = new Double("2.0");
     	BI1 = new BigInteger("1");
     	BI2 = new BigInteger("2");
     	BD1 = new BigDecimal("1.0");
@@ -90,5 +98,12 @@ class NumberMathTest extends GroovyTestCase {
     	assert I2/I3 == new BigDecimal("0.6666666667");
     	    	
     	assert I1/BD2 instanceof BigDecimal;
+    	
+    	//Test keeping max scale of (L, R or 10)
+    	BBD1 = new BigDecimal("0.12345678901234567");
+    	assert BD1 + BBD1 == new BigDecimal("1.12345678901234567");
+
+    	BBD2 = new BigDecimal(".000000000000000008");
+    	assert BBD1 + BBD2 == new BigDecimal("0.123456789012345678");
 	}    
 }

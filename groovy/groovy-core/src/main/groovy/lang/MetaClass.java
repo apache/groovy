@@ -388,8 +388,12 @@ public class MetaClass {
                 }
             }
         }
-
-        throw new GroovyRuntimeException("Could not find matching constructor for class: " + theClass.getName());
+        StringBuffer argBuf = new StringBuffer();
+        for (int i = 0; i < arguments.length; i++) {
+        	if (i>0)argBuf.append(",");
+			argBuf.append(arguments == null?"null":arguments[i].getClass().getName());
+		}
+        throw new GroovyRuntimeException("Could not find matching constructor for: " + theClass.getName()+ "("+argBuf+")");
     }
 
     /**

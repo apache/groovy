@@ -58,6 +58,8 @@ import groovy.lang.Writable;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -208,16 +210,31 @@ public class InvokerHelper {
     }
 
     public static Object negate(Object value) {
-        if (value instanceof Double) {
+        if (value instanceof Integer) {
+            Integer number = (Integer) value;
+            return new Integer(-number.intValue());
+        }
+        else if (value instanceof Long) {
+            Long number = (Long) value;
+            return new Long(-number.longValue());
+        }
+        else if (value instanceof BigInteger) {
+            return ((BigInteger)value).negate();
+        }
+        else if (value instanceof BigDecimal) {
+            return ((BigDecimal)value).negate();
+        }
+        else if (value instanceof Double) {
             Double number = (Double) value;
             return new Double(-number.doubleValue());
         }
-        else if (value instanceof Number) {
-            Number number = (Number) value;
-            return new Integer(-number.intValue());
+        else if (value instanceof Float) {
+            Float number = (Float) value;
+            return new Float(-number.floatValue());
         }
         else {
-            return value;
+            throw new GroovyRuntimeException(
+                    "Cannot negate type " + value.getClass().getName() + ", value "+value);
         }
     }
 
