@@ -892,6 +892,8 @@ public class ParserTest
 
         CSTNode root = parser.bodyStatement();
 
+        System.out.println("Got: " + root);
+        
         assertNode( root,
                     "property",
                     Token.KEYWORD_PROPERTY,
@@ -982,6 +984,175 @@ public class ParserTest
         }
     }
 
+    
+    
+    
+    public void testBodyStatement_PropertyDeclaration_NoProperty_NoModifiers_NoType()
+    throws Exception
+    {
+        Parser parser = newParser( "cheese;" );
+
+        CSTNode root = parser.bodyStatement();
+
+        System.out.println("Got: " + root);
+        
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                3 );
+
+        {
+            assertNullNode( root.getChild( 0 ),
+                0 );
+
+            assertNode( root.getChild( 1 ),
+                        "cheese",
+                        Token.IDENTIFIER,
+                        0 );
+
+            assertNullNode( root.getChild( 2 ),
+                                0 );
+        }
+    }
+
+    public void testBodyStatement_PropertyDeclaration_NoProperty_OneModifier_NoType()
+    throws Exception
+    {
+        Parser parser = newParser( "static cheese;" );
+
+        CSTNode root = parser.bodyStatement();
+
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                3 );
+
+        {
+            assertNullNode( root.getChild( 0 ),
+                1 );
+
+            {
+                assertNode( root.getChild( 0 ).getChild( 0 ),
+                    "static",
+                    Token.KEYWORD_STATIC,
+                    0 );
+            }
+
+            assertNode( root.getChild( 1 ),
+                    "cheese",
+                    Token.IDENTIFIER,
+                    0 );
+
+            assertNullNode( root.getChild( 2 ),
+                            0 );
+        }
+    }
+
+    public void testBodyStatement_PropertyDeclaration_NoProperty_TwoModifiers_NoType()
+    throws Exception
+    {
+        Parser parser = newParser( "static synchronized cheese;" );
+
+        CSTNode root = parser.bodyStatement();
+
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                3 );
+
+        {
+            assertNullNode( root.getChild( 0 ),
+                2 );
+
+            {
+                assertNode( root.getChild( 0 ).getChild( 0 ),
+                    "static",
+                    Token.KEYWORD_STATIC,
+                    0 );
+
+                assertNode( root.getChild( 0 ).getChild( 1 ),
+                            "synchronized",
+                            Token.KEYWORD_SYNCHRONIZED,
+                            0 );
+            }
+            
+            assertNode( root.getChild( 1 ),
+                    "cheese",
+                    Token.IDENTIFIER,
+                    0 );
+
+            assertNullNode( root.getChild( 2 ),
+                            0 );
+        }
+    }
+
+    
+
+    public void testBodyStatement_PropertyDeclaration_NoType_WithExpression()
+    throws Exception
+    {
+        Parser parser = newParser( "cheese = 1234" );
+
+        CSTNode root = parser.bodyStatement();
+
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                4 );
+
+        {
+            assertNullNode( root.getChild( 0 ),
+                0 );
+
+            assertNode( root.getChild( 1 ),
+                    "cheese",
+                    Token.IDENTIFIER,
+                    0 );
+
+            assertNullNode( root.getChild( 2 ),
+                            0 );
+            
+            assertNode( root.getChild(3),
+                        "1234",
+                         Token.INTEGER_NUMBER, 0);
+        }
+    }
+    
+    public void testBodyStatement_PropertyDeclaration_Type_WithExpression()
+    throws Exception
+    {
+        Parser parser = newParser( "Food cheese = defaultValue()" );
+
+        CSTNode root = parser.bodyStatement();
+
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                4 );
+
+        {
+            assertNullNode( root.getChild( 0 ),
+                0 );
+
+            assertNode( root.getChild( 1 ),
+                        "cheese",
+                        Token.IDENTIFIER,
+                        0 );
+
+            assertNode( root.getChild( 2 ),
+                                "Food",
+                                Token.IDENTIFIER,
+                                0 );
+            
+            assertNode( root.getChild(3),
+                                        "(",
+                                        Token.LEFT_PARENTHESIS, 3);
+        }
+    }
+    
+    
+    
+    
     public void testBodyStatement_MethodDeclaration_NoReturnType_NoParameters()
         throws Exception
     {
@@ -1223,9 +1394,7 @@ public class ParserTest
     {
         Parser parser = newParser( "cheeseIt() { }" );
 
-        CSTNode modifiers = new CSTNode();
-
-        CSTNode root = parser.methodDeclaration( modifiers );
+        CSTNode root = parser.bodyStatement();
 
         assertNode( root,
                     "<synthetic>",
@@ -1260,9 +1429,7 @@ public class ParserTest
     {
         Parser parser = newParser( "property cheese" );
 
-        CSTNode modifiers = new CSTNode();
-
-        CSTNode root = parser.propertyDeclaration( modifiers );
+        CSTNode root = parser.bodyStatement();
 
         assertNode( root,
                     "property",
@@ -1270,13 +1437,37 @@ public class ParserTest
                     3 );
 
         {
-            assertSame( modifiers,
-                        root.getChild( 0 ) );
+            assertNullNode( root.getChild( 0 ), 0 );
 
             assertNode( root.getChild( 1 ),
                         "cheese",
                         Token.IDENTIFIER,
                         0 );
+
+            assertNullNode( root.getChild( 2 ),
+                            0 );
+        }
+    }
+
+    public void testProperty_NoModifiers_NoProperty_NoType()
+    throws Exception
+    {
+        Parser parser = newParser( "cheese" );
+
+        CSTNode root = parser.bodyStatement();
+
+        assertNode( root,
+                "property",
+                Token.KEYWORD_PROPERTY,
+                3 );
+
+        {
+            assertNullNode( root.getChild( 0 ), 0 );
+
+            assertNode( root.getChild( 1 ),
+                    "cheese",
+                    Token.IDENTIFIER,
+                    0 );
 
             assertNullNode( root.getChild( 2 ),
                             0 );
@@ -1500,7 +1691,7 @@ public class ParserTest
                               int type,
                               int numChildren)
     {
-        assertNotNull( node );
+        assertNotNull( "Node should not be null!", node );
         assertNotNull( node.getToken() );
         assertEquals( text,
                       node.getToken().getText() );

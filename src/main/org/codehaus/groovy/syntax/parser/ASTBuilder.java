@@ -372,7 +372,7 @@ public class ASTBuilder
         return classNode;
     }
 
-    protected PropertyNode addPropertyDeclaration(ClassNode classNode, CSTNode propertyRoot)
+    protected PropertyNode addPropertyDeclaration(ClassNode classNode, CSTNode propertyRoot) throws ParserException
     {
         int modifiers = modifiers( propertyRoot.getChild( 0 ) );
 
@@ -380,10 +380,16 @@ public class ASTBuilder
 
         String typeName = resolvedQualifiedName( propertyRoot.getChild( 2 ) );
 
+        Expression initialValue = null;
+        if (propertyRoot.getChildren().length > 3) 
+        {    
+            initialValue = expression(propertyRoot.getChild(3));
+        }
+        
         PropertyNode propertyNode = classNode.addProperty( identifier,
                                                       modifiers,
                                                       typeName,
-                                                      null,
+                                                      initialValue,
                                                       null,
                                                       null );
         propertyNode.setCSTNode(propertyRoot);

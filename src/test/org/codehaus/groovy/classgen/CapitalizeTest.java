@@ -48,8 +48,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.util.GroovyTestCase;
 
-import org.codehaus.groovy.ast.ClassNode;
-
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -58,11 +56,11 @@ import org.codehaus.groovy.ast.ClassNode;
 public class CapitalizeTest extends GroovyTestCase {
 
     public void testCapitalize() {
-        assertEquals("Foo", ClassNode.capitalize("foo"));
-        assertEquals("Foo", ClassNode.capitalize("Foo"));
-        assertEquals("FOo", ClassNode.capitalize("fOo"));
-        assertEquals("FOO", ClassNode.capitalize("fOO"));
-        assertEquals("F", ClassNode.capitalize("f"));
+        assertEquals("Foo", Verifier.capitalize("foo"));
+        assertEquals("Foo", Verifier.capitalize("Foo"));
+        assertEquals("FOo", Verifier.capitalize("fOo"));
+        assertEquals("FOO", Verifier.capitalize("fOO"));
+        assertEquals("F", Verifier.capitalize("f"));
     }
 
 }

@@ -1,13 +1,13 @@
 package org.codehaus.groovy.syntax.parser;
 
+import java.io.IOException;
+
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
-import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.lexer.Lexer;
-import org.codehaus.groovy.syntax.lexer.StringCharStream;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
-
-import java.io.IOException;
+import org.codehaus.groovy.syntax.lexer.StringCharStream;
 
 public class Parser
 {
@@ -300,96 +300,93 @@ public class Parser
             consume( modifiers,
                      lt() );
         }
-
-        switch ( lt() )
+        
+        // lets consume a property keyword until we deprecate it
+        if (lt() == Token.KEYWORD_PROPERTY)
         {
-            case ( Token.KEYWORD_PROPERTY ):
-            {
-                bodyStatement = propertyDeclaration( modifiers );
-                optionalSemicolon();
-                //consume( Token.SEMICOLON );
-                break;
-            }
-            case ( Token.IDENTIFIER ):
-            case ( Token.KEYWORD_VOID ):
-            {
-                bodyStatement = methodDeclaration( modifiers );
-                break;
-            }
-            default:
-            {
+            consume(lt());
+        }
 
+        // lets consume any newlines
+        while (lt_bare() == Token.NEWLINE)
+        {
+            consume_bare(lt_bare());
+        }
+        
+        // lets consume the type if present
+        // either an identifier, void or foo.bar.whatnot
+        CSTNode type = new CSTNode();
+        if (lt_bare() == Token.IDENTIFIER) 
+        {
+            // could be method name or could be part of datatype
+            if ( lt_bare( 2 ) == Token.DOT )
+            {
+                // has datatype
+                type = datatype();
             }
+            else if ( lt_bare( 2 ) == Token.IDENTIFIER ) 
+            {
+                type = new CSTNode(consume_bare(lt()));
+            }
+        }
+        else if (lt_bare() == Token.KEYWORD_VOID)
+        {
+            type = new CSTNode(consume_bare(Token.KEYWORD_VOID));
+        }
+        
+        // lets consume the identifier
+        CSTNode identifier = new CSTNode(consume_bare(Token.IDENTIFIER));
+        
+        // now we must be either a property or method
+        // not that after the identifier, the left parenthesis *must* be on the same line
+        switch (lt_bare())
+        {
+            case Token.LEFT_PARENTHESIS:
+                bodyStatement = methodDeclaration(modifiers, type, identifier);
+                break;
+                
+            case Token.EQUAL:
+            case Token.SEMICOLON:
+            case Token.NEWLINE:
+            case Token.RIGHT_CURLY_BRACE:
+            case -1:
+                bodyStatement = propertyDeclaration(modifiers, type, identifier);
+                optionalSemicolon();
+                break;
+         
+            default:
+                throwExpected(new int[] {Token.LEFT_PARENTHESIS, Token.EQUAL, Token.SEMICOLON, Token.NEWLINE, Token.RIGHT_CURLY_BRACE});
         }
 
         return bodyStatement;
     }
 
-    public CSTNode propertyDeclaration(CSTNode modifiers)
+    public CSTNode propertyDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
         throws IOException, SyntaxException
     {
-        CSTNode propertyDeclaration = rootNode( Token.KEYWORD_PROPERTY );
+        CSTNode propertyDeclaration = new CSTNode( Token.keyword(-1, -1, "property") );
 
         propertyDeclaration.addChild( modifiers );
-
-        // property | cheese;
-        // property | foo.Bar cheese;
-        // property | Foo cheese;
-
-        CSTNode type = null;
-
-        if ( lt( 2 ) == Token.DOT
-             ||
-             lt( 2 ) == Token.IDENTIFIER )
-        {
-            // has datatype
-            type = datatype();
-        }
-        else
-        {
-            type = new CSTNode();
-        }
-
-        consume( propertyDeclaration,
-                 Token.IDENTIFIER );
-
+        propertyDeclaration.addChild( identifier );
         propertyDeclaration.addChild( type );
 
+        if (lt() == Token.EQUAL)
+        {
+            consume(lt());
+            propertyDeclaration.addChild(expression());
+        }
         return propertyDeclaration;
     }
 
-    public CSTNode methodDeclaration(CSTNode modifiers)
+    public CSTNode methodDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
         throws IOException, SyntaxException
     {
         CSTNode methodDeclaration = new CSTNode( Token.syntheticMethod() );
 
         methodDeclaration.addChild( modifiers );
-
-        // foo(...)
-        // void foo(...)
-        // com.Cheese foo(...)
-
-        CSTNode type = null;
-
-
-        switch ( lt( 2 ) )
-        {
-            case ( Token.LEFT_PARENTHESIS ):
-            {
-                type = new CSTNode();
-                break;
-            }
-            default:
-            {
-                type = datatype();
-            }
-        }
-
-        consume( methodDeclaration,
-                 Token.IDENTIFIER );
-
+        methodDeclaration.addChild( identifier );
         methodDeclaration.addChild( type );
-
+        
         CSTNode paramsRoot = rootNode( Token.LEFT_PARENTHESIS );
 
         methodDeclaration.addChild( paramsRoot );
