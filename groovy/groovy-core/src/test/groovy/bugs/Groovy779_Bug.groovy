@@ -1,11 +1,16 @@
-// Test of TypeCheckingBug with named parameters
-
 package groovy.bugs
 
-public class Groovy779_Bug extends GroovyTestCase {
+class Groovy779_Bug extends GroovyTestCase {
 
     def boolean exceptionCalled = false
     def boolean finallyCalled = false
+
+    public static void main(String[] args) {
+        Groovy779_Bug app = new Groovy779_Bug()
+        app.testFieldProperty()
+        app.testBeanProperty()
+        app.testAutoboxingProperty()
+    }
 
     public void testFieldProperty() {
 
@@ -13,10 +18,10 @@ public class Groovy779_Bug extends GroovyTestCase {
         finallyCalled = false
 
         try {
-            p = new OnePerson(nameID:"Dave Ford", age:12.2)
+            p = new Groovy779OnePerson(nameID:"foo-", age:12.2)
             assert p.age == 12
-            assert p.nameID == "Dave Ford"
-            p = new OnePerson(nameID:"Dave Ford", age:"12")
+            assert p.nameID == "foo-"
+            p = new Groovy779OnePerson(nameID:"foo-", age:"12")
             println p.age
             println p.nameID
         }
@@ -28,7 +33,7 @@ public class Groovy779_Bug extends GroovyTestCase {
         }
         assert exceptionCalled , "should have invoked the catch clause"
         assert finallyCalled , "should have invoked the finally clause"
-        println("Success!")
+        // println("Success!")
     }
 
     public void testBeanProperty() {
@@ -36,10 +41,10 @@ public class Groovy779_Bug extends GroovyTestCase {
         finallyCalled = false
 
         try {
-            p2 = new AnotherPerson(nameID:1234, age:12.2)
+            p2 = new Groovy779AnotherPerson(nameID:1234, age:12.2)
             assert p2.age == 12
             assert p2.nameID == "1234"
-            p2 = new AnotherPerson(nameID:111, age:"12")
+            p2 = new Groovy779AnotherPerson(nameID:111, age:"12")
             println p2.age
             println p2.nameID
         }
@@ -49,25 +54,25 @@ public class Groovy779_Bug extends GroovyTestCase {
         finally {
             onFinally()
         }
-        assert exceptionCalled , " should have invoked the catch clause"
-        assert finallyCalled , " should have invoked the finally clause"
-        println("Success!")
+        assert exceptionCalled , "should have invoked the catch clause"
+        assert finallyCalled , "should have invoked the finally clause"
+        // println("Success!")
     }
 
     public void testAutoboxingProperty() {
-        p = new OneProfit(signal:"bar", rate:15)
+        p = new Groovy779OneProfit(signal:"bar", rate:15)
         assert p.signal == "bar"
         assert p.rate == 15.0
 
-        p = new OneProfit(signal:11+22, rate:new java.math.BigDecimal("15"))
-        assert p.signal == "33"
+        p = new Groovy779OneProfit(signal:111+22, rate:new java.math.BigDecimal("15"))
+        assert p.signal == "133"
         assert p.rate == 15.0
 
-        p2 = new AnotherProfit(signal:"fooBar", rate:15)
-        assert p2.signal == "fooBar"
+        p2 = new Groovy779AnotherProfit(signal:"bar~", rate:15)
+        assert p2.signal == "bar~"
         assert p2.rate == 15.0
 
-        p2 = new AnotherProfit(signal:111-22, rate:new java.math.BigDecimal("15"))
+        p2 = new Groovy779AnotherProfit(signal:111-22, rate:new java.math.BigDecimal("15"))
         assert p2.signal == "89"
         assert p2.rate == 15.0
     }
@@ -83,22 +88,22 @@ public class Groovy779_Bug extends GroovyTestCase {
 
 }
 
-class OnePerson {
+class Groovy779OnePerson {
    def public String nameID
    def public int age
 }
 
-class AnotherPerson {
+class Groovy779AnotherPerson {
    @Property def public String nameID
    @Property def public int age
 }
 
-class OneProfit {
+class Groovy779OneProfit {
    public String signal
    public double rate
 }
 
-class AnotherProfit {
+class Groovy779AnotherProfit {
    @Property public String signal
    @Property public double rate
 }
