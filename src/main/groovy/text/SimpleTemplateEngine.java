@@ -154,7 +154,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
             }
             endScript(sw);
             String result = sw.toString();
-            System.out.println( "source text:\n" + result );
+            //System.out.println( "source text:\n" + result );
             return result;
         }
 
