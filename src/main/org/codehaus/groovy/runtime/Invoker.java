@@ -681,8 +681,8 @@ public class Invoker {
      * @param regex
      * @return
      */
-    public Pattern regexPattern(String regex) {
-        return Pattern.compile(regex);
+    public Pattern regexPattern(Object regex) {
+        return Pattern.compile(regex.toString());
     }
 
     public Object asType(Object object, Class type) {
