@@ -47,144 +47,143 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Node
 	
-	class StreamingDOMBuilder extends AbstractStreamingBuilder {
-		def pendingStack = []
-		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
-							comment = dom.document.createComment(body)
+    class StreamingDOMBuilder extends AbstractStreamingBuilder {
+        @Property pendingStack = []
+        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+                            comment = dom.document.createComment(body)
 
-							if (comment != null) {
-								dom.element.appendChild(comment)
-							}
-						 }
-		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
-						if (body instanceof Closure) {
-							body()
-						} else {
-							dom.element.appendChild(dom.document.createTextNode(body))
-						}
-					  }
-		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
-						attributes = []
-						nsAttributes = []
+                            if (comment != null) {
+                                dom.element.appendChild(comment)
+                            }
+                         }
+        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+                        if (body instanceof Closure) {
+                            body()
+                        } else {
+                            dom.element.appendChild(dom.document.createTextNode(body))
+                        }
+                      }
+        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
+                        attributes = []
+                        nsAttributes = []
 
-					    attrs.each {key, value ->
-			    				if (key.contains('$')) {
-			    					parts = key.tokenize('$')
+                        attrs.each {key, value ->
+                                if (key.contains('$')) {
+                                    parts = key.tokenize('$')
 
-			    					if (namespaces.containsKey(parts[0])) {
-			    						namespaceUri = namespaces[parts[0]]
+                                    if (namespaces.containsKey(parts[0])) {
+                                        namespaceUri = namespaces[parts[0]]
 
-//									nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}", value])
+//                                    nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}", value])
 // workround for bug GROOVY-309
-									nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}".toString(), value])
-			    					} else {
-			    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-			    					}
-			    				} else {
-								attributes.add([key, value])
-			    				}
-					  	}
+                                    nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}".toString(), value])
+                                    } else {
+                                        throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                    }
+                                } else {
+                                attributes.add([key, value])
+                                }
+                          }
 
-						hiddenNamespaces = [:]
+                        hiddenNamespaces = [:]
 
-						pendingNamespaces.each {key, value ->
-							hiddenNamespaces[key] = namespaces[key]
-							namespaces[key] = value
-//							nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", value])
+                        pendingNamespaces.each {key, value ->
+                            hiddenNamespaces[key] = namespaces[key]
+                            namespaces[key] = value
+//                            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", value])
 // workround for bug GROOVY-309
-							nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}".toString(), value])
-						}
+                            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}".toString(), value])
+                        }
 
-						// setup the tag info
+                        // setup the tag info
 
-						uri = ""
-						qualifiedName = tag
+                        uri = ""
+                        qualifiedName = tag
 
-						if (prefix != "") {
-							if (namespaces.containsKey(prefix)) {
-								uri = namespaces[prefix]
-							} else if (pendingNamespaces.containsKey(prefix)) {
-								uri = pendingNamespaces[prefix]
-							} else {
-								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
-							}
+                        if (prefix != "") {
+                            if (namespaces.containsKey(prefix)) {
+                                uri = namespaces[prefix]
+                            } else if (pendingNamespaces.containsKey(prefix)) {
+                                uri = pendingNamespaces[prefix]
+                            } else {
+                                throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
+                            }
 
-							if (prefix != ":") {
-								qualifiedName = prefix + ":" + tag
-							}
-						}
+                            if (prefix != ":") {
+                                qualifiedName = prefix + ":" + tag
+                            }
+                        }
 
-						element = dom.document.createElementNS(uri, qualifiedName)
+                        element = dom.document.createElementNS(uri, qualifiedName)
 
-						nsAttributes.each {
-							element.setAttributeNS(it[0], it[1], it[2])
-						}
+                        nsAttributes.each {
+                            element.setAttributeNS(it[0], it[1], it[2])
+                        }
 
-						attributes.each {
-							element.setAttribute(it[0], it[1])
-						}
+                        attributes.each {
+                            element.setAttribute(it[0], it[1])
+                        }
 
-						dom.element.appendChild(element)
-						dom.element = element
+                        dom.element.appendChild(element)
+                        dom.element = element
 
-						if (body != null) {
-							pendingStack.add pendingNamespaces.clone()
-							pendingNamespaces.clear()
+                        if (body != null) {
+                            pendingStack.add pendingNamespaces.clone()
+                            pendingNamespaces.clear()
 
-							if (body instanceof Closure) {
-								body()
-							} else {
-								dom.element.appendChild(dom.document.createTextNode(body))
-							}
+                            if (body instanceof Closure) {
+                                body()
+                            } else {
+                                dom.element.appendChild(dom.document.createTextNode(body))
+                            }
 
-							pendingNamespaces.clear()
-							pendingNamespaces.putAll pendingStack.pop()
-						}
+                            pendingNamespaces.clear()
+                            pendingNamespaces.putAll pendingStack.pop()
+                        }
 
-						dom.element = dom.element.getParentNode()
+                        dom.element = dom.element.getParentNode()
 
-						hiddenNamespaces.each {key, value ->
-													if (value == null) {
-														namespaces.remove key
-													} else {
-														namespaces[key] = value
-													}
-											   }					
-					}
-		
-		def builder = null
-				
-		StreamingDOMBuilder() {
-			specialTags.putAll(['yield':noopClosure,
-		               			'yieldUnescaped':noopClosure,
-		               			'comment':commentClosure])
-		               
-			nsSpecificTags = [':' 											   : [tagClosure, tagClosure, [:]],	// the default namespace
-						      'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
-		                      'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
-		               			
-			this.builder = new BaseMarkupBuilder(nsSpecificTags)
-		}
-		
-		def bind(closure) {
-			def boundClosure = this.builder.bind(closure)
-			
-			return {
-				if (it instanceof Node) {
-					document = it.getOwnerDocument()
-					
-					boundClosure.trigger = ['document' : document, 'element' : it]
-					
-					return document
-					
-				} else {
-					newDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
-					
-					boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
-					
-					return newDocument
-				}
-			}
-		}
-	}
-	
+                        hiddenNamespaces.each {key, value ->
+                                                    if (value == null) {
+                                                        namespaces.remove key
+                                                    } else {
+                                                        namespaces[key] = value
+                                                    }
+                                               }
+                    }
+
+        @Property builder = null
+
+        StreamingDOMBuilder() {
+            specialTags.putAll(['yield':noopClosure,
+                                   'yieldUnescaped':noopClosure,
+                                   'comment':commentClosure])
+
+            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+                              'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                              'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+
+            this.builder = new BaseMarkupBuilder(nsSpecificTags)
+        }
+
+        @Property bind(closure) {
+            @Property boundClosure = this.builder.bind(closure)
+
+            return {
+                if (it instanceof Node) {
+                    document = it.getOwnerDocument()
+
+                    boundClosure.trigger = ['document' : document, 'element' : it]
+
+                    return document
+
+                } else {
+                    newDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+
+                    boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
+
+                    return newDocument
+                }
+            }
+        }
+    }
