@@ -314,16 +314,6 @@
         <exclude name="**/notworking/*.groovy"/>
         <exclude name="**/parser/*.groovy"/>
         <exclude name="CVS/*"/>
-
-        <!-- TODO stuff that doesn't yet work with the JSR -->
-
-        <!-- Parser decisions to make -->
-
-        <!-- handling newlines with closure passing to method calls -->
-        <exclude name="**/CurlyBracketLayoutTest.groovy"/>
-
-        <!-- handling fully qualified class names in variable declarations -->
-        <exclude name="**/FullyQualifiedVariableTypeBug.groovy"/>
       </fileset>
     </copy>
     <!--
