@@ -1,0 +1,75 @@
+/**
+ *
+ * Copyright 2004 James Strachan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ **/
+package org.codehaus.groovy.antlr;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.framework.TestResult;
+import groovy.ui.GroovyMain;
+
+/**
+ * A simpler test runner to run multiple test cases straight from the groovy scripts
+ *
+ * @version $Revision$
+ */
+public class UberTest implements Test {
+
+    static String[] classicTests = {
+        "AssertNumberTest.groovy",
+        "IfElseTest.groovy",
+    };
+
+    static String[] tckTests = {
+        "misc/AnnotationTest.groovy",
+        "misc/FieldPropertyMethodDisambiguationTest.groovy",
+        "misc/PropertyCalledNameTest.groovy",
+        "misc/PropertyTest.groovy",
+        "misc/SampleTest.groovy",
+    };
+
+    private String fullName;
+
+    public UberTest(String fullName) {
+        this.fullName = fullName;
+    }
+
+
+    public static Test suite() {
+        TestSuite suite = new TestSuite();
+        addTests(suite, "../../../../groovy-core/src/test-new/groovy/", classicTests);
+        addTests(suite, "../../../tck/test/", tckTests);
+        return suite;
+    }
+
+    protected static void addTests(TestSuite suite, String root, String[] names) {
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i];
+            String fullName = root + name;
+
+            suite.addTest(new UberTest(fullName));
+        }
+    }
+
+    public int countTestCases() {
+        return 1;
+    }
+
+    public void run(TestResult testResult) {
+        GroovyMain.main(new String[] { fullName } );
+    };
+}
