@@ -3245,6 +3245,31 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Reads the content of this InputStream and returns it as a String
+     *
+     * @param is an input stream
+     * @return the text from that URL
+     * @throws IOException
+     */
+    public static String getText(InputStream is) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        return getText(reader);
+    }
+
+    /**
+     * Reads the content of this InputStream with a specified charset and returns it as a String
+     *
+     * @param is an input stream
+     * @param charset opens the stream with a specified charset
+     * @return the text from that URL
+     * @throws IOException
+     */
+    public static String getText(InputStream is, String charset) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
+        return getText(reader);
+    }
+
+    /**
      * Reads the content of the BufferedReader and returns it as a String
      *
      * @param reader a BufferedReader whose content we want to read
