@@ -11,6 +11,9 @@
   <goal name="groovy:release" description="Performs a release of the source, binary and jar distros">
    <attainGoal name="site"/>
    <attainGoal name="dist:deploy-bin"/>
+   
+   <!-- we've run the tests by now once already, lets avoid it again -->
+   <j:set var="maven.test.skip" value="true"/>
    <attainGoal name="dist:deploy-src"/>
    <attainGoal name="jar:deploy"/>
   </goal>
