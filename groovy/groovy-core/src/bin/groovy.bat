@@ -89,7 +89,7 @@ set CMD_LINE_ARGS=%$
 
 :execute
 @rem Setup the command line
-set CLASSWORLDS_CLASSPATH=%GROOVY_HOME%\lib\classworlds-%CLASSWORLDS_VERSION%.jar
+set CLASSWORLDS_CLASSPATH=%GROOVY_HOME%\lib\classworlds-%CLASSWORLDS_VERSION%.jar;%CLASSPATH%
 if "x" == "x%CP%" set CP=%CLASSWORLDS_CLASSPATH%
 if not "x" == "x%CP%" set CP=%CLASSWORLDS_CLASSPATH%;%CP%
 set CLASSWORLDS_MAIN_CLASS=org.codehaus.classworlds.Launcher
