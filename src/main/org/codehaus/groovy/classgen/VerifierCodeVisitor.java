@@ -45,11 +45,19 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
@@ -66,21 +74,66 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
     VerifierCodeVisitor(Verifier verifier) {
         this.verifier = verifier;
     }
-    
+
+    public void visitBlockStatement(BlockStatement block) {
+        mergeClassExpressionAndVariableExpression(block.getStatements());
+        super.visitBlockStatement(block);
+    }
+
     public void visitBinaryExpression(BinaryExpression expression) {
         if (verifier.getClassNode().isScriptClass() && expression.getOperation().getType() == Token.EQUAL) {
             // lets turn variable assignments into property assignments
             Expression left = expression.getLeftExpression();
             if (left instanceof VariableExpression) {
                 VariableExpression varExp = (VariableExpression) left;
-                
+
                 System.out.println("Converting varriable expression: " + varExp.getVariable());
-                
-                PropertyExpression propExp = new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
+
+                PropertyExpression propExp =
+                    new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
                 expression.setLeftExpression(propExp);
             }
         }
         super.visitBinaryExpression(expression);
     }
 
+    /**  
+     * lets look for a ClassExpression followed by a BinaryExpression with a
+     * VariableExpression on the LHS and associate the type with the VariableExpression
+     * and remove the ClassExpression.
+     * 
+     * The parser should output this correctly really.
+     */
+    protected void mergeClassExpressionAndVariableExpression(List list) {
+        ClassExpression classExpr = null;
+        ExpressionStatement lastExpStmt = null;
+        List removalList = new ArrayList();
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            Statement statement = (Statement) iter.next();
+            if (statement instanceof ExpressionStatement) {
+                ExpressionStatement expStmt = (ExpressionStatement) statement;
+                Expression exp = expStmt.getExpression();
+                if (classExpr != null) {
+                    if (exp instanceof BinaryExpression) {
+                        BinaryExpression binExpr = (BinaryExpression) exp;
+                        Expression lhs = binExpr.getLeftExpression();
+                        if (lhs instanceof VariableExpression) {
+                            VariableExpression varExp = (VariableExpression) lhs;
+                            varExp.setType(classExpr.getType());
+                            removalList.add(lastExpStmt);
+                        }
+                    }
+                }
+                if (exp instanceof ClassExpression) {
+                    classExpr = (ClassExpression) exp;
+                    lastExpStmt = expStmt;
+                }
+                else {
+                    classExpr = null;
+                    lastExpStmt = null;
+                }
+            }
+        }
+        list.removeAll(removalList);
+    }
 }

@@ -58,6 +58,7 @@ public class VariableExpression extends Expression {
     public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
     
     private String variable;
+    private String type;
     
     public VariableExpression(String variable) {
         this.variable = variable;
@@ -75,7 +76,25 @@ public class VariableExpression extends Expression {
         return variable;
     }
 
+    public String getType() {
+        if (type == null) {
+            return "java.lang.Object";
+        }
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    /**
+     * @return true if this variable is dynamically typed
+     */
+    public boolean isDynamic() {
+        return type == null;
+    }
+    
     public String toString() {
-        return super.toString() + "[variable: " + variable + "]";
+        return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
     }
 }

@@ -48,10 +48,10 @@ import java.util.Set;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -113,7 +113,7 @@ import org.objectweb.asm.Type;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Constants {
+public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVisitor, Constants {
 
     private ClassVisitor cw;
     private ClassLoader classLoader;
@@ -1334,14 +1334,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             else {
                 String name = variableName;
                 Variable variable = null;
+                String variableType = expression.getType();
                 if (!leftHandExpression) {
                     variable = (Variable) variableStack.get(name);
                 }
                 else {
-                    variable = defineVariable(name, "java.lang.Object");
+                    variable = defineVariable(name, variableType);
                 }
                 if (variable == null) {
-                    variable = defineVariable(name, "java.lang.Object", false);
+                    variable = defineVariable(name, variableType, false);
                     visitPropertyExpression(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name));
                     // We need to store this in a local variable now since it has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
@@ -1357,7 +1358,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 if (leftHandExpression) {
                     if (holder) {
                         int tempIndex =
-                            defineVariable(createVariableName("reference"), "java.lang.Object", false).getIndex();
+                            defineVariable(createVariableName("reference"), variableType, false).getIndex();
                         cv.visitVarInsn(ASTORE, tempIndex);
 
                         cv.visitVarInsn(ALOAD, index);
