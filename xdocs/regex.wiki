@@ -4,6 +4,9 @@ Groovy supports regular expressions natively using the ~~~"..."~~ expression. Pl
 Groovy supports the =~ (create Matcher) and ==~ (matches regex) operators. e.g. 
 
 {code:groovysh}
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 assert "cheesecheese" =~ "cheese"
 
 // lets create a regex Pattern

@@ -53,6 +53,7 @@
     </menu>
 
     <menu name="User Guide">
+      <item name="Contents"       		href="/guide.html"/>
       <item name="Statements"       	href="/statements.html"/>
       <item name="Strings"       		href="/strings.html"/>
       <item name="Collections"       	href="/collections.html"/>
