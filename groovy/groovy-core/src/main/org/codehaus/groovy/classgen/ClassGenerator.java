@@ -2670,50 +2670,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected String resolveClassName(String type) {
-        if (type != null) {
-            if (classNode.getNameWithoutPackage().equals(type)) {
-                return classNode.getName();
-            }
-            for (int i = 0; i < 2; i++) {
-                if (context.getCompileUnit().getClass(type) != null) {
-                    return type;
-                }
-
-                try {
-                    classLoader.loadClass(type);
-                    return type;
-                }
-                catch (Throwable e) {
-                    // fall through
-                }
-
-                // lets try our class loader
-                try {
-                    getClass().getClassLoader().loadClass(type);
-                    return type;
-                }
-                catch (Throwable e) {
-                    // fall through
-                }
-
-                // lets try the system class loader
-                try {
-                    Class.forName(type);
-                    return type;
-                }
-                catch (Throwable e) {
-                    // fall through
-                }
-
-                // lets try class in same package
-                String packageName = classNode.getPackageName();
-                if (packageName == null || packageName.length() <= 0) {
-                    break;
-                }
-                type = packageName + "." + type;
-            }
-        }
-        return null;
+        return classNode.resolveClassName(type);
     }
 
     protected String createVariableName(String type) {

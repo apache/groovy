@@ -54,10 +54,12 @@ public class CompileUnit {
     private List modules = new ArrayList();
     private Map classes = new HashMap();
     private CompilerConfig config;
+    private ClassLoader classLoader;
 
-    public CompileUnit(CompilerConfig config) {
+    public CompileUnit(ClassLoader classLoader, CompilerConfig config) {
+        this.classLoader = classLoader;
         this.config = config;
-    }
+       }
 
     public List getModules() {
         return modules;
@@ -70,11 +72,11 @@ public class CompileUnit {
     }
 
     /**
-	 * @return the ClassNode for the given qualified name
+     * @return the ClassNode for the given qualified name
      * or returns null if the name does not exist in the
      * current compilation unit (ignoring the .class files 
      * on the classpath)
-	 */
+     */
     public ClassNode getClass(String name) {
         return (ClassNode) classes.get(name);
     }
@@ -85,14 +87,50 @@ public class CompileUnit {
      */
     public List getClasses() {
         List answer = new ArrayList();
-        for (Iterator iter = modules.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = modules.iterator(); iter.hasNext();) {
             ModuleNode module = (ModuleNode) iter.next();
             answer.addAll(module.getClasses());
         }
         return answer;
     }
-    
+
     public CompilerConfig getConfig() {
         return config;
     }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    /**
+     * Loads a class on the compile classpath so that it can be introspected
+     * 
+     * @param type
+     * @return
+     * @throws ClassNotFoundException
+     */
+    public Class loadClass(String type) throws ClassNotFoundException {
+        try {
+            return getClassLoader().loadClass(type);
+        }
+        catch (ClassNotFoundException e) {
+            // lets try our class loader
+            try {
+                return getClass().getClassLoader().loadClass(type);
+            }
+            catch (ClassNotFoundException e2) {
+                // fall through
+            }
+
+            // lets try the system class loader
+            try {
+                return Class.forName(type);
+            }
+            catch (ClassNotFoundException e2) {
+                // fall through
+            }
+            throw e;
+        }
+    }
+
 }

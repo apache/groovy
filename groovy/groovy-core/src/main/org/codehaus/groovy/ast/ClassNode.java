@@ -329,6 +329,42 @@ public class ClassNode extends MetadataNode implements Constants {
         return null;
     }
 
+    public String resolveClassName(String type) {
+        if (type != null) {
+            if (getNameWithoutPackage().equals(type)) {
+                return getName();
+            }
+            for (int i = 0; i < 2; i++) {
+                CompileUnit compileUnit = getCompileUnit();
+                if (compileUnit != null) {
+                    if (compileUnit.getClass(type) != null) {
+                        return type;
+                    }
+
+                    try {
+                        compileUnit.loadClass(type);
+                        return type;
+                    }
+                    catch (Throwable e) {
+                        // fall through
+                    }
+                }
+
+                // lets try class in same package
+                String packageName = getPackageName();
+                if (packageName == null || packageName.length() <= 0) {
+                    break;
+                }
+                type = packageName + "." + type;
+            }
+        }
+        return null;
+    }
+
+    public CompileUnit getCompileUnit() {
+        return (module != null) ? module.getUnit() : null;
+    }
+
     /**
      * @return true if the two arrays are of the same size and have the same contents
      */
@@ -465,7 +501,7 @@ public class ClassNode extends MetadataNode implements Constants {
     public void setScriptBody(boolean scriptBody) {
         this.scriptBody = scriptBody;
     }
-    
+
     public boolean isScript() {
         return script | superClass.equals(Script.class.getName());
     }

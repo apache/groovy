@@ -86,7 +86,7 @@ public class GroovyClassLoader extends ClassLoader {
      * @return
      */
     public Class defineClass(ClassNode classNode, String file) {
-        CompileUnit unit = new CompileUnit(config);
+        CompileUnit unit = new CompileUnit(getParent(), config);
         ClassCollector compiler = createCollector(unit);
         compiler.generateClass(new GeneratorContext(unit), classNode, file);
         return compiler.generatedClass;
@@ -143,7 +143,7 @@ public class GroovyClassLoader extends ClassLoader {
     public Class parseClass(InputStream in, String fileName) throws SyntaxException, IOException {
         Class answer = (Class) cache.get(fileName);
         if (answer == null) {
-            CompileUnit unit = new CompileUnit(config);
+            CompileUnit unit = new CompileUnit(getParent(), config);
             ClassCollector compiler = createCollector(unit);
             compiler.parseClass(in, fileName);
             answer = compiler.generatedClass;

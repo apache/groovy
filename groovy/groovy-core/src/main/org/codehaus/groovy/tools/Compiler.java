@@ -215,7 +215,7 @@ public class Compiler {
         //
         // Next, compile the CSTs to ASTs, and from there to classes.
 
-        CompileUnit unit = new CompileUnit(config);
+        CompileUnit unit = new CompileUnit(getClassLoader(), config);
         ArrayList classes = new ArrayList();
 
         for (int i = 0; i < csts.length; ++i) {
