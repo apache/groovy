@@ -456,6 +456,8 @@ public class ASTBuilder
 
     protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException
     {
+        return statementBlock(blockRoot, 0);
+         /*
         if (blockRoot.getToken() == null || blockRoot.getToken().getType() == Token.LEFT_CURLY_BRACE) 
         {    
             return statementBlock(blockRoot, 0);
@@ -470,6 +472,7 @@ public class ASTBuilder
             
             return statementBlock;
         }
+        */
     }
 
     protected BlockStatement statementBlock(CSTNode blockRoot, int startIndex) throws ParserException
