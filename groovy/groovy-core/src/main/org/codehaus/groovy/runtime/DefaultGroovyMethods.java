@@ -580,14 +580,11 @@ public class DefaultGroovyMethods {
      * @return the Character object at the given index
      */
     public static Object get(String text, int index) {
-        return new Character(text.charAt(index));
+        return new String(text.getBytes(), index, 1);
     }
 
     /**
      * Support the range subscript operator for String
-     * 
-     * @param text
-     * @return
      */
     public static Object get(String text, Range range) {
         return text.substring(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
@@ -596,13 +593,14 @@ public class DefaultGroovyMethods {
     /**
      * Support the range subscript operator for a List
      * 
-     * @param text
-     * @return
+     * @returns a range of a list from the range's from index up to
+     * but not including the ranges's to value
      */
     public static Object get(List list, Range range) {
         return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
     }
-
+    
+    
     /**
      * Support the subscript operator for List
      * 
