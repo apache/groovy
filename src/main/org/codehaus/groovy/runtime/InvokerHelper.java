@@ -81,6 +81,10 @@ public class InvokerHelper {
 
     private static final Invoker singleton = new Invoker();
 
+    private static final Integer ZERO = new Integer(0);
+    private static final Integer MINUS_ONE = new Integer(-1);
+    private static final Integer ONE = new Integer(1);
+
     public static MetaClass getMetaClass(Object object) {
         return getInstance().getMetaClass(object);
     }
@@ -251,6 +255,16 @@ public class InvokerHelper {
 
     public static boolean compareGreaterThanEqual(Object left, Object right) {
         return getInstance().compareTo(left, right) >= 0;
+    }
+
+    public static Integer compareTo(Object left, Object right) {
+        int answer = getInstance().compareTo(left, right);
+        if (answer == 0) {
+            return ZERO;
+        }
+        else {
+            return answer > 0 ? ONE : MINUS_ONE;
+        }
     }
 
     public static Tuple createTuple(Object[] array) {
