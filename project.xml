@@ -84,6 +84,11 @@
       <name>1.0-beta7</name>
       <tag>GROOVY_1_0_BETA_7</tag>
     </version>
+    <version>
+      <id>b8</id>
+      <name>1.0-beta8</name>
+      <tag>GROOVY_1_0_BETA_8</tag>
+    </version>
   </versions>
 
   <mailingLists>
@@ -362,7 +367,16 @@
       <name>Mark Chu-Carroll</name>
       <email></email>
     </contributor>
-  	  	  </contributors>
+    <contributor>
+      <name>Pilho Kim</name>
+      <email></email>
+    </contributor>
+    <contributor>
+      <name>Mark Turansky</name>
+      <email></email>
+    </contributor>
+  </contributors>
+
   <dependencies>
 
     <!-- core dependencies -->
