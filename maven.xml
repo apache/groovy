@@ -38,16 +38,12 @@
   <goal name="groovy:compile-tests"
   		description="Compiles the Groovy unit test cases">
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
-    <!-- lets touch all the groovy files -->
+    <!-- lets copy and touch all the groovy files to ensure they all recompile -->
     <mkdir dir="${basedir}/target/groovy"/>
     <copy todir="${basedir}/target/groovy">
       <fileset dir="${basedir}/src/test">
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
-        <!--
-        <exclude name="**/LocalField*.groovy"/>
-        <exclude name="**/ListTest*.groovy"/>
-        -->
       </fileset>
     </copy>
     <touch>

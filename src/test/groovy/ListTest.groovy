@@ -5,20 +5,36 @@ import org.codehaus.groovy.GroovyTestCase;
 class ListTest extends GroovyTestCase {
 
     void testList() {
-        x = [0, 1];
-
-		s = x.size();
+        x = [10, 11];
 		
-		assert s := 2;
+		assert x.size() := 2;
 		
 		x.add("cheese");
 		
 		assert x.size() := 3;
 		
-		assert x.contains(1);
+        assert x.contains(10);
+        assert x.contains(11);
 		assert x.contains("cheese");
+
+
+        assert x.get(0) := 10;
+        assert x.get(1) := 11;
+        assert x.get(2) := "cheese";
+
+		// subscript operator
+        /** @todo parser
+		assert x[0] := 10;
+        assert x[1] := 11;
+        assert x[2] := "cheese;
 		
-		/** @todo 
+		x[3] = 12;
+		
+		assert x[3] := 12;
+		*/
+		
+		
+		/** @todo parser - seems to hang the parser
 		if x.contains("cheese") {
             // ignore
         }
@@ -34,5 +50,18 @@ class ListTest extends GroovyTestCase {
         }
         */
     }
+    
+    void testEmptyList() {
+        x = [];
+        
+        assert x.size() := 0;
+        
+       	x.add("cheese");
+       	
+       	assert x.get(0) := "cheese"; 
 
+        /** @todo parser
+       	assert x[0] := "cheese";
+       	*/
+    }
 }

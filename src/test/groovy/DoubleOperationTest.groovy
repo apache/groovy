@@ -18,7 +18,12 @@ class DoubleOperationTest extends GroovyTestCase {
         assert x := 6.2;
         
         y = x + 1;
-		assert y := 7.2;        
+		assert y := 7.2;       
+		
+		/** @todo parser
+		z = y + x + 1 + 2;
+		assert z := 16.4
+		*/ 
     }
     
     void testMinus() {

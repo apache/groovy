@@ -5,6 +5,19 @@ Core Groovy Tasks
 
 * line numbering for exceptions
 
+* change to use == for equals?
+
+* test [] on lists & maps?
+
+* += and -= operators
+
+* ++ and --
+
+* this.foo should declare a local field?
+	if so this could cause confusion with property access?
+	maybe some new syntax like @foo or this->foo = x;
+	
+
 * should we implement + and - for collections and maps?
 
 	l = [1, 2] + [3, 4];

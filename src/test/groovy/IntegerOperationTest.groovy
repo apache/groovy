@@ -12,7 +12,12 @@ class IntegerOperationTest extends GroovyTestCase {
         assert x := 4;
         
         y = x + 1;
-		assert y := 5;        
+		assert y := 5;
+		
+		/** @todo parser
+		z = y + x + 1 + 2;
+		assert z := 12; 
+		*/       
     }
     
     void testMinus() {
