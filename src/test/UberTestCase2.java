@@ -18,6 +18,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.DoubleSizeParametersBug.class);
         suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
 
         // TODO
         //suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);

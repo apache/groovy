@@ -1850,7 +1850,7 @@ PropertyValue pv = (PropertyValue) itr.next();
         //since AbstractCollection only does a remove on the first
         //element it encounter.
 
-        if (nlgnSort) {
+        if (nlgnSort && (self.get(0) instanceof Comparable)) {
             //n*log(n) version
             Set answer = new TreeSet(self);
             answer.removeAll(removeMe);
