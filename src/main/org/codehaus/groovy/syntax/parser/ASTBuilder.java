@@ -51,8 +51,7 @@ public class ASTBuilder
 
         for ( int i = 2 ; i < children.length ; ++i )
         {
-            answer.addClass( datatypeDeclaration( packageName,
-                                                  children[ i ] ));
+            datatypeDeclaration( answer, packageName, children[ i ] );
         }
 
         return answer;
@@ -274,19 +273,22 @@ public class ASTBuilder
         return qualifiedNames;
     }
 
-    protected ClassNode datatypeDeclaration(String packageName,
+    protected void datatypeDeclaration(ModuleNode module, String packageName,
                                             CSTNode datatypeCst) throws ParserException
     {
         if ( matches( datatypeCst,
                       Token.KEYWORD_CLASS ) )
         {
-            return classDeclaration( packageName,
-                                     datatypeCst );
+            module.addClass( classDeclaration( packageName, datatypeCst ) );
+        }
+        else if ( matches( datatypeCst,
+                      Token.KEYWORD_INTERFACE ) )
+        {
+            module.addClass( interfaceDeclaration( packageName, datatypeCst ) );
         }
         else
         {
-            return interfaceDeclaration( packageName,
-                                         datatypeCst );
+            module.addStatement( statement(datatypeCst) );
         }
     }
 

@@ -156,10 +156,13 @@ public class Parser
             }
             default:
             {
+                declaration = statement();
+/*                
                 throwExpected( new int[] {
                     Token.KEYWORD_CLASS,
                     Token.KEYWORD_INTERFACE
                 } );
+*/                
             }
         }
 

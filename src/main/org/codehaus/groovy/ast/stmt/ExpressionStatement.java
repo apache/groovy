@@ -74,4 +74,8 @@ public class ExpressionStatement extends Statement {
         return expression;
     }
 
+    public String toString() {
+        return super.toString() + "[expression:" + expression + "]";
+    }
+
 }
