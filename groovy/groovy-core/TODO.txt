@@ -1,21 +1,22 @@
 Core Groovy Tasks
 =================
 
-* sort out the packages & default imports
-
 * allow test cases to not require void return type
-
+	this requires a clever static method when we generate the
+	bytecode which can instantiate a special kind of TestSuite
+	unless there's another way?
+	
 * integer.times() method?
 
 * validator for things like - undeclared variables
 
 * test use of constructors
 
-* closures need to be able to access fields, properties and methods of outer class
-
-* remove log4j dependency
+* closures need to be able to access properties and methods of outer class
 
 * closures - handle passing in of variables from outer scope?
+
+* remove log4j dependency
 
 * constructors with map / tuple expressions, named parameter calling
  
