@@ -103,7 +103,8 @@ public class Expando extends GroovyObjectSupport {
             return super.invokeMethod(name, args);
         }
         catch (GroovyRuntimeException e) {
-            Object value = getExpandoProperties().get(name);
+        	// br should get a "native" property match first. getProperty includes such fall-back logic
+            Object value = this.getProperty(name);
             if (value instanceof Closure) {
                 Closure closure = (Closure) value;
                 closure.setDelegate(this);
