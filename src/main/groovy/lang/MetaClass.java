@@ -493,10 +493,8 @@ public class MetaClass {
                     if (paramTypes.length == 1 && paramTypes[0] == String.class) {
                         Object[] arguments = {property};
                         Object answer = doMethodInvoke(object, mmethod, arguments);
-                        if (answer != null) {
-                            return answer;
-                        }
-                    }	
+                        return answer;
+                    }
                 }
             }
         } else {
@@ -647,7 +645,21 @@ public class MetaClass {
                 return;
             }
 
-            if (genericSetMethod != null) {
+            if (genericGetMethod == null) {
+                // Make sure there isn't a generic method in the "use" cases
+                List possibleGenericMethods = getMethods("set");
+                if (possibleGenericMethods != null) {
+                    for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
+                        MetaMethod mmethod = (MetaMethod) i.next();
+                        Class[] paramTypes = mmethod.getParameterTypes();
+                        if (paramTypes.length == 2 && paramTypes[0] == String.class) {
+                            Object[] arguments = {property, newValue};
+                            Object answer = doMethodInvoke(object, mmethod, arguments);
+                            return;
+                        }
+                    }
+                }
+            } else{
                 Object[] arguments = { property, newValue };
                 doMethodInvoke(object, genericSetMethod, arguments);
                 return;
