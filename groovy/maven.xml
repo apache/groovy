@@ -44,9 +44,6 @@
       <fileset dir="${basedir}/src/test">
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
-<!-- 
-        <include name="**/ClosureTest.groovy"/>
--->
       </fileset>
     </copy>
     <touch>

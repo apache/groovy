@@ -71,7 +71,13 @@ public class NodePrinterTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/LittleClosureTest.groovy");
         object.invokeMethod("testClosure", null);
     }
-
+    
+    /** @todo Why does this fail when using the GroovyClassLoader? */
+    public void TODO_testNestedClosureBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/tree/NestedClosureBugTest.groovy");
+        object.invokeMethod("testNestedClosureBug", null);
+    }
+    
     /** @todo Why does this fail when using the GroovyClassLoader? */
     public void TODO_testClosureClassLoaderBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/tree/ClosureClassLoaderBug.groovy");

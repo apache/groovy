@@ -54,44 +54,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.codehaus.groovy.ast.AssertStatement;
-import org.codehaus.groovy.ast.BinaryExpression;
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.CatchStatement;
-import org.codehaus.groovy.ast.ClassExpression;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ClosureExpression;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.ConstructorCallExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.DoWhileLoop;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.FieldExpression;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.IfElse;
 import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.ListExpression;
-import org.codehaus.groovy.ast.MapEntryExpression;
-import org.codehaus.groovy.ast.MapExpression;
-import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.RangeExpression;
-import org.codehaus.groovy.ast.RegexExpression;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.StatementBlock;
-import org.codehaus.groovy.ast.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.TryCatchFinally;
-import org.codehaus.groovy.ast.TupleExpression;
-import org.codehaus.groovy.ast.VariableExpression;
-import org.codehaus.groovy.ast.WhileLoop;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.RegexExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.CatchStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.ClassVisitor;
@@ -315,7 +315,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // Statements
     //-------------------------------------------------------------------------
 
-    public void visitForLoop(ForLoop loop) {
+    public void visitForLoop(ForStatement loop) {
         onLineNumber(loop);
 
         loop.getCollectionExpression().visit(this);
@@ -348,21 +348,21 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitJumpInsn(IFNE, label2);
     }
 
-    public void visitWhileLoop(WhileLoop loop) {
+    public void visitWhileLoop(WhileStatement loop) {
         onLineNumber(loop);
 
         // TODO Auto-generated method stub
 
     }
 
-    public void visitDoWhileLoop(DoWhileLoop loop) {
+    public void visitDoWhileLoop(DoWhileStatement loop) {
         onLineNumber(loop);
 
         // TODO Auto-generated method stub
 
     }
 
-    public void visitIfElse(IfElse ifElse) {
+    public void visitIfElse(IfStatement ifElse) {
         onLineNumber(ifElse);
 
         ifElse.getBooleanExpression().visit(this);
@@ -469,7 +469,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
     }
 
-    public void visitTryCatchFinally(TryCatchFinally statement) {
+    public void visitTryCatchFinally(TryCatchStatement statement) {
         onLineNumber(statement);
 
         CatchStatement catchStatement = statement.getCatchStatement(0);
@@ -801,6 +801,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitConstructorCallExpression(ConstructorCallExpression expression) {
         // TODO Auto-generated method stub
+
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
@@ -936,8 +937,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     protected boolean firstStatementIsSuperMethodCall(Statement code) {
-        if (code instanceof StatementBlock) {
-            StatementBlock block = (StatementBlock) code;
+        if (code instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) code;
             if (!block.getStatements().isEmpty()) {
                 Object expr = block.getStatements().get(0);
                 if (expr instanceof ExpressionStatement) {
@@ -1088,7 +1089,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
 
         // lets make the constructor
-        StatementBlock block = new StatementBlock();
+        BlockStatement block = new BlockStatement();
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(

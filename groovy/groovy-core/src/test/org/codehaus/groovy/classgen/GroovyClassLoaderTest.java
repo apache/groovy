@@ -49,8 +49,6 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
-import java.lang.reflect.Field;
-
 
 /**
  * Tests dynamically compiling a new class
@@ -68,14 +66,8 @@ public class GroovyClassLoaderTest extends TestSupport {
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
         
         assertTrue(object != null);
-        
-        Field field = object.getClass().getDeclaredField("metaClass");
-        assertTrue("Found metaclass field", field != null);
-        
-        Object metaClassObject = field.get(object);
-        assertTrue("Found metaclass", metaClassObject != null && metaClassObject instanceof MetaClass);
-        
-        MetaClass metaClass = (MetaClass) metaClassObject;
+
+        MetaClass metaClass = object.getMetaClass();
         System.out.println("Metaclass: " + metaClass);
         
         Class type = object.getClass();

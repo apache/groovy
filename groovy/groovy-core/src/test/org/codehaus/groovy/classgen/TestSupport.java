@@ -60,11 +60,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.FieldExpression;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;

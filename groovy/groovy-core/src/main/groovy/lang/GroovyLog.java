@@ -89,4 +89,8 @@ public class GroovyLog implements GroovyObject {
         return metaClass;
     }
 
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
 }

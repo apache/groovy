@@ -1,6 +1,25 @@
 Core Groovy Tasks
 =================
 
+* make TestMixin which would allow...
+	use to use a GroovyTestSuite to avoid the 'void' issue
+	allow other naming conventions - endsWith("Test" || "Bug")
+	allow a Groovy test to derive from *any* object!
+	
+	class FooTest extends Cheese mixin TestMixin {
+		
+		normalOperationTest() {
+		}
+		
+		nullPointerBug() {
+			...
+		}
+	}	
+
+* expose AST of Closures
+
+* refactor to groovy.test + groovy.util?	
+	
 * add mixin syntax
 
 	mixin Foo {
@@ -135,8 +154,6 @@ Core Groovy Tasks
 Ê Ê Ê Ê Ê Ê }
 Ê Ê Ê Ê }
 Ê Ê };
-
-* refactor ast into expression, statement packages
 
 * maybe split up ClassGenerator - do code gen & class gen separately
 

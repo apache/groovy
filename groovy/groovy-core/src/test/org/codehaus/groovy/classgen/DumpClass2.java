@@ -74,6 +74,9 @@ public class DumpClass2 {
             public MetaClass getMetaClass() {
                 return null;
             }
+            
+            public void setMetaClass(MetaClass metaClass) {
+            }
         };
     }
     public String getBar() {

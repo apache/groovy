@@ -67,4 +67,9 @@ public interface GroovyObject {
      * @return the metaClass of this instance
      */
     public MetaClass getMetaClass();
+    
+    /**
+     * Allows the MetaClass to be replaced with a derived implementation
+     */
+    public void setMetaClass(MetaClass metaClass);
 }

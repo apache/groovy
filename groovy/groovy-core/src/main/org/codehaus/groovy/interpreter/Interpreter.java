@@ -52,34 +52,34 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.codehaus.groovy.ast.AssertStatement;
-import org.codehaus.groovy.ast.BinaryExpression;
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.ClassExpression;
-import org.codehaus.groovy.ast.ClosureExpression;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.ConstructorCallExpression;
-import org.codehaus.groovy.ast.DoWhileLoop;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.FieldExpression;
-import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.IfElse;
-import org.codehaus.groovy.ast.ListExpression;
-import org.codehaus.groovy.ast.MapEntryExpression;
-import org.codehaus.groovy.ast.MapExpression;
-import org.codehaus.groovy.ast.MethodCallExpression;
-import org.codehaus.groovy.ast.PropertyExpression;
-import org.codehaus.groovy.ast.RangeExpression;
-import org.codehaus.groovy.ast.RegexExpression;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.TryCatchFinally;
-import org.codehaus.groovy.ast.TupleExpression;
-import org.codehaus.groovy.ast.VariableExpression;
-import org.codehaus.groovy.ast.WhileLoop;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.RangeExpression;
+import org.codehaus.groovy.ast.expr.RegexExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.TryCatchStatement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.Invoker;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -152,7 +152,7 @@ public class Interpreter implements GroovyCodeVisitor {
         evaluate(statement.getExpression());
     }
 
-    public void visitIfElse(IfElse ifElse) {
+    public void visitIfElse(IfStatement ifElse) {
         if (evaluateBoolean(ifElse.getBooleanExpression())) {
             ifElse.getIfBlock().visit(this);
         }
@@ -161,7 +161,7 @@ public class Interpreter implements GroovyCodeVisitor {
         }
     }
 
-    public void visitForLoop(ForLoop forLoop) {
+    public void visitForLoop(ForStatement forLoop) {
         Statement block = forLoop.getLoopBlock();
         Iterator iter = createIterator(forLoop.getCollectionExpression());
         while (iter.hasNext()) {
@@ -170,7 +170,7 @@ public class Interpreter implements GroovyCodeVisitor {
         }
     }
 
-    public void visitWhileLoop(WhileLoop loop) {
+    public void visitWhileLoop(WhileStatement loop) {
         Statement block = loop.getLoopBlock();
         BooleanExpression expression = loop.getBooleanExpression();
         while (evaluateBoolean(expression)) {
@@ -178,7 +178,7 @@ public class Interpreter implements GroovyCodeVisitor {
         }
     }
 
-    public void visitDoWhileLoop(DoWhileLoop loop) {
+    public void visitDoWhileLoop(DoWhileStatement loop) {
         Statement block = loop.getLoopBlock();
         BooleanExpression expression = loop.getBooleanExpression();
         do {
@@ -195,7 +195,7 @@ public class Interpreter implements GroovyCodeVisitor {
 
     }
 
-    public void visitTryCatchFinally(TryCatchFinally finally1) {
+    public void visitTryCatchFinally(TryCatchStatement finally1) {
         // TODO Auto-generated method stub
 
     }

@@ -129,4 +129,9 @@ public class NodeBuilder implements GroovyObject {
     public MetaClass getMetaClass() {
         return metaClass;
     }
+    
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
 }

@@ -7,7 +7,7 @@ class SmallTreeTest extends GroovyTestCase {
     void testTree() {
         b = NodeBuilder.newInstance()
         
-        root = b.root1( { i |
+        root = b.root1( {|
             elem1('hello1')
         })
         

@@ -48,15 +48,15 @@ package org.codehaus.groovy.interpreter;
 
 import groovy.lang.GroovyTestCase;
 
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.EmptyStatement;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.IfElse;
-import org.codehaus.groovy.ast.MethodCallExpression;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.EmptyStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 /**
  * 
@@ -88,7 +88,7 @@ public class IfElseTest extends GroovyTestCase {
     protected void assertIfElse(Object expected, boolean condition, Statement ifStatement, Statement elseStatement) {
         BooleanExpression expression = (condition) ? trueExpression : falseExpression;
         
-        IfElse block = new IfElse(expression, ifStatement, elseStatement);
+        IfStatement block = new IfStatement(expression, ifStatement, elseStatement);
         block.visit(visitor);
         
         assertEquals("bean buffer", expected, bean.getBuffer());
