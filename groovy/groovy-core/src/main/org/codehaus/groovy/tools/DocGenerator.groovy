@@ -104,11 +104,11 @@ class DocGenerator
 				listOfMethods = jdkEnhancedClasses[className]
 				listOfMethods.sort { it.name }
 				
-				writer2.println("<table>")
+				writer2.println("<table width='100%'>")
 				for (meth in listOfMethods) {
                     counter++
                     anchor = "meth${counter}"
-                    writer2.println("<tr><td>${getReturnType(meth)}</td> <td><a href='#${anchor}'>${meth.getName()}</a>(${getParametersDecl(meth)})</td></tr>")
+                    writer2.println("<tr><td width='30%'>${getReturnType(meth)}</td> <td width='70%'><a href='#${anchor}'>${meth.getName()}</a>(${getParametersDecl(meth)})</td></tr>")
 
                     sb.append("  <a name='${anchor}'></a>")
 				    sb.append("  <p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
