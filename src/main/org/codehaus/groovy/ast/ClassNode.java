@@ -148,20 +148,13 @@ public class ClassNode extends ASTNode implements Constants {
         }
 
         MethodNode getter =
-            new MethodNode(
-                getterName,
-                node.getModifiers(),
-                node.getType(),
-                Parameter.EMPTY_ARRAY,
-                getterBlock);
-                
+            new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+
         addMethod(getter);
 
         Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
-        MethodNode setter =
-            new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
+        MethodNode setter = new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
         addMethod(setter);
-
 
         properties.add(node);
     }
@@ -170,12 +163,26 @@ public class ClassNode extends ASTNode implements Constants {
         constructors.add(node);
     }
 
+    public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, Statement code) {
+        ConstructorNode node = new ConstructorNode(modifiers, parameters, code);
+        addConstructor(node);
+        return node;
+    }
+
     public void addMethod(MethodNode node) {
         methods.add(node);
     }
 
-    public void addField(String name, int modifiers, String type, Expression initialValue) {
-        addField(new FieldNode(name, modifiers, type, getName(), initialValue));
+    public MethodNode addMethod(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
+        MethodNode node = new MethodNode(name, modifiers, returnType, parameters, code);
+        addMethod(node);
+        return node;
+    }
+
+    public FieldNode addField(String name, int modifiers, String type, Expression initialValue) {
+        FieldNode node = new FieldNode(name, modifiers, type, getName(), initialValue);
+        addField(node);
+        return node;
     }
 
     public FieldNode getField(String name) {

@@ -85,6 +85,7 @@ import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -157,7 +158,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
-    
+
     // inner classes created while generating bytecode
     private LinkedList innerClasses = new LinkedList();
     private boolean definingParameters;
@@ -182,20 +183,18 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
         syntheticStaticFields.clear();
-        
+
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
-        
-        System.out.println("Visiting class: " + classNode.getName());
-        
+
         cw.visit(
             classNode.getModifiers(),
             internalClassName,
             internalBaseClassName,
             getClassInternalNames(classNode.getInterfaces()),
             sourceFile);
-        
+
         ensureClassNodeHasConstructor(classNode);
 
         // now lets visit the contents of the class
@@ -240,6 +239,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(ALOAD, 0);
         cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
 
+        Statement code = node.getCode();
+        if (code != null) {
+            code.visit(this);
+        }
+        
         cv.visitInsn(RETURN);
         cv.visitMaxs(0, 0);
     }
@@ -634,6 +638,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
         cv.visitVarInsn(ALOAD, 0);
+
+        // we may need to pass in some other constructors
+                
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + internalClassName + ";)V");
     }
 
@@ -951,9 +958,24 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
-        String name = classNode.getName() + "$" + (innerClasses.size() + 1);
+        String outerClassName = classNode.getName();
+        String name = outerClassName + "$" + (innerClasses.size() + 1);
+        Parameter[] parameters = expression.getParameters();
+
         ClassNode answer = new ClassNode(name, ACC_PUBLIC, "org/codehaus/groovy/lang/Closure");
-        answer.addMethod(new MethodNode("doCall", ACC_PUBLIC, "java/lang/Object", expression.getParameters(), expression.getCode()));
+        answer.addMethod("doCall", ACC_PUBLIC, "java/lang/Object", parameters, expression.getCode());
+        FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
+
+        // lets make the constructor
+        StatementBlock block = new StatementBlock();
+        block.addStatement(
+            new ExpressionStatement(
+                new BinaryExpression(
+                    new FieldExpression(field),
+                    Token.equal(-1, -1),
+                    new VariableExpression("__outerInstance"))));
+        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "__outerInstance", null) };
+        answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
 
@@ -1195,19 +1217,27 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * @return the ASM method type descriptor
      */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
-        Type returnType = getType(returnTypeName);
-        Type[] paramTypes = new Type[paramTypeNames.length];
+        // lets avoid class loading
+        StringBuffer buffer = new StringBuffer("(");
+        
         for (int i = 0; i < paramTypeNames.length; i++) {
-            paramTypes[i] = getType(paramTypeNames[i].getType());
+            buffer.append(getTypeDescription(paramTypeNames[i].getType()));
         }
-        return Type.getMethodDescriptor(returnType, paramTypes);
+        buffer.append(")");
+        buffer.append(getTypeDescription(returnTypeName));
+        return buffer.toString();
     }
 
     /**
      * @return the ASM type description
      */
     protected String getTypeDescription(String name) {
-        return getType(name).getDescriptor();
+        // lets avoid class loading
+        // return getType(name).getDescriptor();
+        if (name.equals("void")) {
+            return "V";
+        }
+        return "L" + name.replace('.', '/') + ";";
     }
 
     /**
@@ -1218,6 +1248,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return Type.VOID_TYPE;
         }
         return Type.getType(loadClass(className));
+        //return Type.getType(className);
     }
 
     /**

@@ -52,18 +52,33 @@ class ListTest extends GroovyTestCase {
     }
     
     void testEmptyList() {
-        x = [];
+        x = []
         
-        assert x.size() := 0;
+        assert x.size() := 0
         
-       	x.add("cheese");
+       	x.add("cheese")
        	
-       	assert x.get(0) := "cheese"; 
+       	assert x.get(0) := "cheese"
 
-        assert x.size() := 1;
+        assert x.size() := 1
 
         /** @todo parser
-       	assert x[0] := "cheese";
+       	assert x[0] := "cheese"
        	*/
+    }
+    
+    
+    void testClosure() {
+        l = [1, 2, 3, "abc"]
+        block = {i| System.out.println(i) }
+        l.each(block)
+        
+        /* @todo
+        l.each( {i| System.out.println(i) } );
+        */
+        
+        /* @todo parser
+        l.each {i| System.out.println(i) }
+        */
     }
 }
