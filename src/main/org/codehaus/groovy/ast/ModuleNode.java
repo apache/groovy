@@ -99,7 +99,7 @@ public class ModuleNode extends ASTNode implements Constants {
     public List getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty())) {
             ClassNode mainClass = createStatementsClass();
-            classes.add(mainClass);
+            classes.add(0, mainClass);
             mainClass.setModule(this);
             createClassForStatements = false;
         }
