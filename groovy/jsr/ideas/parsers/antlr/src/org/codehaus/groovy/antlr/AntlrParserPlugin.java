@@ -395,7 +395,6 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
     protected Statement forStatement(AST forNode) {
         AST inNode = forNode.getFirstChild();
-        dumpTree(forNode);
         AST variableNode = inNode.getFirstChild();
         AST collectionNode = variableNode.getNextSibling();
 
