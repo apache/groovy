@@ -50,9 +50,6 @@ Core Groovy Tasks
 	- File.grep(pattern) -> List
 	- File.grep(pattern) { closure } 
 		allow iteration through a file for each line matching a regex pattern
-	- Collection.grep(pattern)  -> List
-	- Collection.grep(pattern)  { closure }
-		where pattern = regexp (could maybe be other kinds of patterns like Range?)
 		
 	- List.first(), List.last(), pop()
 	- Collection.removeIf { x | x > 0 }
