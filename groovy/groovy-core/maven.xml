@@ -2,6 +2,17 @@
 
   <goal name="default" prereqs="clean, groovy:make-install"/>
   
+  <postGoal name="dist:prepare-bin-filesystem">
+  	<attainGoal name="groovy:make-install"/>
+  	
+  	<echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>
+  	<copy toDir="${maven.dist.bin.assembly.dir}">
+      <fileset dir="${groovy.install.staging.dest}">
+        <include name="**/*"/>
+      </fileset>
+  	</copy>
+  </postGoal>
+  
   <goal name="run" prereqs="test:compile"
 		description="Runs the given compiled Groovy class">
 

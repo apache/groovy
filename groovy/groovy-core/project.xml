@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-alpha-2</currentVersion>
+  <currentVersion>1.0-beta-1</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -26,13 +26,13 @@
   </packageGroups>
   
   
-  <shortDescription>groovy: a powerful high level language for the JVM</shortDescription>
+  <shortDescription>groovy: a powerful and dynamic scripting language for the JVM</shortDescription>
 <!--
   <logo>http://images.werken.com/werkflow.gif</logo>
 -->
 
   <description>
-    a high level language for the JVM.
+   	a powerful and dynamic scripting language for the JVM
   </description>
 
   <url>http://groovy.codehaus.org/</url>
@@ -46,8 +46,14 @@
     <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</developerConnection>
     <url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/</url>
   </repository>
-
-
+  <versions>
+    <version>
+      <id>b1</id>
+      <name>1.0-beta1</name>
+      <tag>MAVEN_1_0_BETA1</tag>
+    </version>
+  </versions>
+ 
   <mailingLists>
     <mailingList>
       <name>groovy dev</name>
@@ -144,6 +150,13 @@
     </developer>
   </developers>
 
+  <contributors>
+    <contributor>
+      <name></name>
+      <email></email>
+    </contributor>
+  </contributors>
+
   <dependencies>
 
     <dependency>
@@ -170,6 +183,7 @@
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
+	<!-- only used for command line tools -->
     <dependency>
       <id>classworlds</id>
       <version>1.0-rc2</version>
@@ -180,7 +194,7 @@
       <version>1.0</version>
     </dependency>
 
-  <!-- only used for maven plugin-->
+    <!-- only used for Ant tasks & scripting tools -->
     <dependency>
       <id>ant</id>
       <version>1.5.2</version>
@@ -209,7 +223,7 @@
   <!-- only used for JMX utilities -->
     <dependency>
       <id>mx4j</id>
-      <version>SNAPSHOT</version>
+      <version>2.0-beta-1</version>
       <properties>
           <bootstrap>true</bootstrap>
       </properties>
@@ -235,7 +249,7 @@
     </dependency>
     <dependency>
       <id>commons-collections</id>
-      <version>SNAPSHOT</version>
+      <version>3.0-dev2</version>
       <url>http://jakarta.apache.org/commons/collections</url>
     </dependency>
     <dependency>
