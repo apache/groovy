@@ -16,6 +16,24 @@ sql.queryEach("select * from FOOD where type=${foo}") {
 }
 {code}
 
+In the above example, you can refer to the various columns by name, using the property syntax on the row variable (e.g. it.name) 
+or you can refer to the columns by their index (e.g. it[1]) For example
+
+{code:groovysh}
+import groovy.sql.Sql
+import groovy.sql.TestHelper
+
+foo = 'cheese'
+sql = TestHelper.makeSql()
+
+answer = 0
+sql.queryEach("select count(*) from FOOD where type=${foo}") { row |
+	answer = row[1]
+}
+assert answer > 0
+{code}
+
+
 Or you can create a DataSet which allows you to query SQL using familar closure syntax 
 so that the same query could work easily on in memory objects or via SQL. e.g. 
 
