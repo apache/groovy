@@ -56,7 +56,6 @@ class HelloWorld extends GroovyTestCase {
 
         //FOO: println "Done"
     }
-
     String foo(a, b) {
         return a + b
     }
@@ -65,6 +64,14 @@ class HelloWorld extends GroovyTestCase {
     def foo2(a, b) {
         def answer = a + b
         return answer
+    }
+
+    void testClosure() {
+        def list = [1, 2, 3]
+
+        println "list is $list"
+
+        //list.each { e | println "List contains $e" }
     }
 
 }

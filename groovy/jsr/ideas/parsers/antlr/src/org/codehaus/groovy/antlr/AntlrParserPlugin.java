@@ -24,14 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.GStringExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
@@ -520,6 +513,11 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
             case IDENT:
                 return new VariableExpression(node.getText());
 
+            case LIST_CONSTRUCTOR:
+                return listExpression(node);
+
+            case MAP_CONSTRUCTOR:
+                return mapExpression(node);
 
                 // literals
 
@@ -617,6 +615,36 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                 onUnknownAST(node);
         }
         return null;
+    }
+
+    protected Expression listExpression(AST listNode) {
+        List expressions = new ArrayList();
+        AST elist = listNode.getFirstChild();
+        assertNodeType(ELIST, elist);
+
+        for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
+            expressions.add(expression(node));
+        }
+        return new ListExpression(expressions);
+    }
+
+    protected Expression mapExpression(AST mapNode) {
+        List expressions = new ArrayList();
+        AST elist = mapNode.getFirstChild();
+        assertNodeType(ELIST, elist);
+
+        for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
+            expressions.add(mapEntryExpression(node));
+        }
+        return new MapExpression(expressions);
+    }
+
+    protected MapEntryExpression mapEntryExpression(AST node) {
+        AST keyNode = node.getFirstChild();
+        Expression keyExpression = expression(keyNode);
+        AST valueNode = keyNode.getNextSibling();
+        Expression valueExpression = expression(valueNode);
+        return new MapEntryExpression(keyExpression, valueExpression);
     }
 
     protected Expression binaryExpression(int type, AST node) {
