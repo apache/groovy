@@ -1,23 +1,17 @@
 Things to Test
 ==============
 
-* UberJar for unix shell scripts?
-
 * test methods which return a specific type
 
 * why do the try/catch tests fail when run inside an IDE?
 
+* error messages for exceptions thrown in closures are not right
+
 * test print("foo " + valueThatsNull)
 
-* test script with args when run as main
-
-* run all the scripts as part of a unit test
-
 * test compiler errors when
-	- unknown variable
 	- unknown class
 		in new expression
-		in exception catching
 		in general class expression
 
 * tidy up javadoc
@@ -73,10 +67,6 @@ Core Groovy Tasks
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
 
-* add support for special variables
-	class
-	super (base class)
-		
 * BeanBuilder - builder which creates a tree of beans
 	builder.bean(class:SomeClass, x:123, b:'hello') {
 		nestedProperty(a:123)
@@ -113,8 +103,6 @@ Core Groovy Tasks
 	methods
 	
 * bug - x = methodName fails, but x = this.methodName works
-	- need to turn variableExpressions into property expressions
-	- if no local variable in scope
 
 * groovy thread...
 	foo = new GroovyThread(args) { closure }
