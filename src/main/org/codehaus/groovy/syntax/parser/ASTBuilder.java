@@ -661,10 +661,14 @@ public class ASTBuilder {
                     return prefixExpression(expressionRoot);
                 }
             case (Token.DOT_DOT) :
-                {
-                    return rangeExpression(expressionRoot);
-                }
-            case (Token.SINGLE_QUOTE_STRING) :
+            {
+            	return rangeExpression(expressionRoot);
+            }
+            case (Token.DOT_DOT_DOT) :
+            {
+            	return rangeExpression(expressionRoot);
+            }
+                       case (Token.SINGLE_QUOTE_STRING) :
             case (Token.INTEGER_NUMBER) :
             case (Token.FLOAT_NUMBER) :
             case (Token.KEYWORD_NULL) :
