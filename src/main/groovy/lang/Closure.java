@@ -174,7 +174,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         try {
             if (arguments instanceof Object[]) {
                 Object[] parameters = (Object[]) arguments;
-                if (parameters == null) {
+                if (parameters == null || parameters.length == 0) {
                     return this.doCallMethod.invoke(this, noParameters);
                 }
                 else {
