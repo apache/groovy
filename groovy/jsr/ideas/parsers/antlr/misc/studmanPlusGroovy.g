@@ -201,16 +201,14 @@ tokens {
 	POST_INC; POST_DEC; METHOD_CALL; EXPR;
 	IMPORT; UNARY_MINUS; UNARY_PLUS; CASE_GROUP; ELIST; FOR_INIT; FOR_CONDITION;
 	FOR_ITERATOR; EMPTY_STAT; FINAL="final"; ABSTRACT="abstract";
-    UNUSED_GOTO="goto"; UNUSED_CONST="const"; UNUSED_DO="do";
+UNUSED_GOTO="goto"; UNUSED_CONST="const"; UNUSED_DO="do";
 	STRICTFP="strictfp"; SUPER_CTOR_CALL; CTOR_CALL; CTOR_IDENT; VARIABLE_PARAMETER_DEF;
-
-    STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
-    CLOSED_BLOCK; IMPLICIT_PARAMETERS; DEF="def";
-    SELECT_SLOT; REFLECT_MEMBER; DYNAMIC_MEMBER;
-    LABELED_ARG; SPREAD_ARG; OPTIONAL_ARG; SCOPE_ESCAPE;
-    LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
-    FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
-
+STRING_CONSTRUCTOR; STRING_CTOR_MIDDLE;
+CLOSED_BLOCK; IMPLICIT_PARAMETERS; DEF="def";
+SELECT_SLOT; REFLECT_MEMBER; DYNAMIC_MEMBER;
+LABELED_ARG; SPREAD_ARG; OPTIONAL_ARG; SCOPE_ESCAPE;
+LIST_CONSTRUCTOR; MAP_CONSTRUCTOR;
+FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 	STATIC_IMPORT; ENUM_DEF; ENUM_CONSTANT_DEF; FOR_EACH_CLAUSE; ANNOTATION_DEF; ANNOTATIONS;
 	ANNOTATION; ANNOTATION_MEMBER_VALUE_PAIR; ANNOTATION_FIELD_DEF; ANNOTATION_ARRAY_INIT;
 	TYPE_ARGUMENTS; TYPE_ARGUMENT; TYPE_PARAMETERS; TYPE_PARAMETER; WILDCARD_TYPE;
@@ -370,7 +368,7 @@ protected typeDefinitionInternal[AST mods]
  */
 declaration!
     :       DEF! nls!
-        (m:modifiers)? (t:typeSpec[false])?  v:variableDefinitions[#m,#t]
+        (m:modifiers)? (t:typeSpec[false])? v:variableDefinitions[#m,#t]
         {#declaration = #v;}
     |   m2:modifiers   (t2:typeSpec[false])? v2:variableDefinitions[#m2,#t2]
         {#declaration = #v2;}
@@ -379,6 +377,11 @@ declaration!
     ;
 
 /** A declaration with one declarator and no initialization, like a parameterDeclaration. */
+
+/*TODO* Yes, and we must also audit the various occurrences of warning
+suppressions like "options { greedy = true; }".
+*/
+
 singleDeclarationNoInit!
     :       DEF! nls!
         (m:modifiers)? (t:typeSpec[false])?  v:singleVariable[#m,#t]
@@ -407,6 +410,14 @@ singleDeclaration
  *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
  *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
  *  between 'println' and 'String'.)
+ *  
+ *   *TODO* The declarationStart production needs to be strengthened to recognize
+ *  things like {List<String> foo}.
+ *  Right now it only knows how to skip square brackets after the type, not
+ *  angle brackets.
+ *  This probably turns out to be tricky because of >> vs. > >. ÊIf so,
+ *  just put a TO DO comment in.
+ *   
  */
 declarationStart!
     :   DEF
@@ -417,6 +428,21 @@ declarationStart!
     ;
 
 /** Used only as a lookahead predicate for nested type declarations. */
+
+/*TODO* The lookahead in typeDeclarationStart needs to skip annotations, not
+just stop at '@', because variable and method declarations can also be
+annotated.
+> typeDeclarationStart!
+> Ê Ê : Ê (modifier!)* ("class" | "interface" | "enum" | AT )
+S.B. something like
+> Ê Ê : Ê (modifier! | annotationTokens!)* ("class" | "interface" |
+> "enum" )
+(And maybe @interface, if Java 5 allows nested annotation types? ÊDon't
+know offhand.)
+Where annotationTokens can be a quick paren-skipper, as in other
+places: Ê'@' ident '(' balancedTokens ')'.
+*/
+
 typeDeclarationStart!
     :   (modifier!)* ("class" | "interface" | "enum" | AT )
     ;
@@ -433,7 +459,7 @@ upperCaseIdent
 // (which would make it an array type).
 // Set addImagNode true for types inside expressions, not declarations.
 typeSpec[boolean addImagNode]
-	:	classTypeSpec[addImagNode]
+	: classTypeSpec[addImagNode]
 	|	builtInTypeSpec[addImagNode]
 	;
 
@@ -619,7 +645,7 @@ modifiers
 			|
 			//Semantic check that we aren't matching @interface as this is not an annotation
 			//A nicer way to do this would be nice
-			{LA(1)==AT && !LT(2).getText().equals("interface")}? annotation
+			{LA(1)==AT && !LT(2).getText().equals("interface")}? annotation nls!
         )+
 
 		{#modifiers = #([MODIFIERS, "MODIFIERS"], #modifiers);}
@@ -647,7 +673,7 @@ annotation!
 	;
 
 annotations
-    :   (annotation)*
+    :   (annotation nls!)*
 		{#annotations = #([ANNOTATIONS, "ANNOTATIONS"], #annotations);}
     ;
 
@@ -666,7 +692,7 @@ annotationMemberValuePair!
 
 annotationMemberValueInitializer
 	:
-		conditionalExpression | annotation | annotationMemberArrayInitializer
+		conditionalExpression | annotation nls!| annotationMemberArrayInitializer
 	;
 
 // This is an initializer used to set up an annotation member array.
@@ -693,7 +719,7 @@ annotationMemberArrayInitializer
 // and an annotation (nested annotation array initialisers are not valid)
 annotationMemberArrayValueInitializer
 	:	conditionalExpression
-	|	annotation
+	|	annotation nls!
 	;
 
 superClassClause!
@@ -831,7 +857,6 @@ annotationField!
 				( "default" amvi:annotationMemberValueInitializer )?
 
 				SEMI
-			 // TODO - verify that 't' is useful/correct here, used to be 'rt'
 				{#annotationField =
 					#(#[ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF"],
 						 mods,
@@ -1161,7 +1186,7 @@ variableLengthParameterDeclaration!
 parameterModifier
 	//final can appear amongst annotations in any order - greedily consume any preceding
 	//annotations to shut nond-eterminism warnings off
-	:	(options{greedy=true;} : annotation)* (f:"final")? (annotation)*
+	:	(options{greedy=true;} : annotation nls!)* (f:"final")? (annotation nls!)*
 		{#parameterModifier = #(#[MODIFIERS,"MODIFIERS"], #parameterModifier);}
 	;
 
@@ -1339,7 +1364,7 @@ statement
 	// statements. Must backtrack to be sure. Could use a semantic
 	// predicate to test symbol table to see what the type was coming
 	// up, but that's pretty hard without a symbol table ;)
-	|	(declaration)=> 
+	|	(declarationStart)=> 
                 declaration
 
 	// An expression statement. This could be a method call,
@@ -1425,7 +1450,11 @@ forStatement
 	:	f:"for"^
 		LPAREN!
 			(	(forInit SEMI)=>traditionalForClause
-			|	(parameterDeclaration COLON)=> forEachClause
+			// *OBS* 
+			// There's no need at all for squeezing in the new Java 5 "for"
+  // syntax, since Groovy's is a suitable alternative.
+		 // |	(parameterDeclaration COLON)=> forEachClause
+	  // *OBS*
 			|       // the coast is clear; it's a modern Groovy for statement
 				forInClause
 			)
@@ -1440,11 +1469,13 @@ traditionalForClause
 		forIter			// updater
 	;
 
+/*OBS*
 forEachClause
 	:
 		p:parameterDeclaration COLON! expression
 		{#forEachClause = #(#[FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE"], #forEachClause);}
 	;
+*OBS*/
 
 forInClause
         :       (   (declarationStart)=>
@@ -1919,6 +1950,9 @@ methodCallArgs[AST callee]
  *  which is passed to the array element operator, which can make of it what it wants.
  *  The brackets may also be empty, as in T[].  This is how Groovy names array types.
  *  <p>Returned AST is [INDEX_OP, indexee, ELIST].
+ *
+ * *TODO* (The arrayOrTypeArgs thing in 1.4 groovy.g is a placeholder which
+ * anticipates the trouble of integrating Java 5 type arguments.)
  */
 arrayOrTypeArgs[AST indexee]
         {boolean zz; /*ignore*/ }
@@ -2374,7 +2408,6 @@ argumentLabel
 /** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
 argumentLabelStart!
         :   ( IDENT | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
-                COLON
         ;
 
 /*OBS*
@@ -2590,6 +2623,10 @@ options {
 
 // TO DO:  Regexp ops, range ops, Borneo-style ops.
 
+/* *TODO*
+DOT (with double and triple dot) is an ordinary operator
+token; it doesn't need to be commented out.
+*/
 
 // OPERATORS
 QUESTION		:	'?'		;
@@ -2601,7 +2638,7 @@ LCURLY			:	'{'		{pushParenLevel();};
 RCURLY			:	'}'		{popParenLevel(); if(stringCtorState!=0) restartStringCtor(true);};
 COLON			:	':'		;
 COMMA			:	','		;
-//DOT			:	'.'		;
+DOT			:	'.'		;
 ASSIGN			:	'='		;
 EQUAL			:	"=="	;
 LNOT			:	'!'		;
@@ -2946,7 +2983,7 @@ NUM_INT
 
 		// only check to see if it's a float if looks like decimal so far
 		|	{isDecimal}?
-			(	'.' ('0'..'9')* (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;} | g2:BIG_SUFFIX {t=g2;})?
+			(	'.' ('0'..'9')+ (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;} | g2:BIG_SUFFIX {t=g2;})?
 			|	EXPONENT (f3:FLOAT_SUFFIX {t=f3;} | g3:BIG_SUFFIX {t=g3;})?
 			|	f4:FLOAT_SUFFIX {t=f4;}
 			)
