@@ -50,6 +50,7 @@ import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
 import groovy.util.Node;
 
+import java.awt.HeadlessException;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -147,13 +148,18 @@ public class PropertyTest extends GroovyTestCase {
     }
 
     public void testListCoercionPropertyOnJFrame() throws Exception {
-        JFrame bean = new JFrame();
-        List list = new ArrayList();
-        list.add(new Integer(10));
-        list.add(new Integer(20));
-
-        InvokerHelper.setProperty(bean, "location", list);
-        assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
+        try {
+	        JFrame bean = new JFrame();
+	        List list = new ArrayList();
+	        list.add(new Integer(10));
+	        list.add(new Integer(20));
+	
+	        InvokerHelper.setProperty(bean, "location", list);
+	        assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
+        }
+        catch (HeadlessException e) {
+            // its fine to not run this test on headless environments
+        }
     }
 
     public void testListNavigationProperty() throws Exception {
