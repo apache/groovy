@@ -49,7 +49,7 @@ public class UberTestCase3 extends TestCase {
 
         suite.addTestSuite(org.codehaus.groovy.syntax.parser.CSTNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.parser.ParserTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.syntax.parser.ReturnTypeErrorTest.class);
+        suite.addTestSuite(org.codehaus.groovy.syntax.parser.ReturnTypeErrorTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.TokenTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.CompilerTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.FileSystemCompilerTest.class);
