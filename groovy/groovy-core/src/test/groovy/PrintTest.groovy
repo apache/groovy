@@ -1,7 +1,6 @@
 class PrintTest extends GroovyTestCase {
 
     void testPrint() {
-        /** @todo
         assertConsoleOutput("hello", "'hello'")
         
         assertConsoleOutput([], "[]")
@@ -10,8 +9,9 @@ class PrintTest extends GroovyTestCase {
         assertConsoleOutput([1:20, 2:40, 3:'cheese'], "[1:20, 2:40, 3:'cheese']")
         assertConsoleOutput([:], "[:]")
 
-        assertConsoleOutput([['bob':'drools', 'james':'geronimo']], "[['bob':'drools', 'james':'geronimo']]")
-        assertConsoleOutput([5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese'], "[5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese']")
+        assertConsoleOutput([['bob':'drools', 'james':'geronimo']], "[['james':'geronimo', 'bob':'drools']]")
+        assertConsoleOutput([5, ['bob', 'james'], ['bob':'drools', 'james':'geronimo'], 'cheese'], "[5, ['bob', 'james'], ['james':'geronimo', 'bob':'drools'], 'cheese']")
+        /** @todo
 		*/
 	}
 }

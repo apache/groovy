@@ -7,7 +7,7 @@ class NewExpressionTest extends GroovyTestCase {
         
         assert cheese != null
         
-        cheese.println()
+        println(cheese)
     }
 
     void testNewBeanNoArgs() {

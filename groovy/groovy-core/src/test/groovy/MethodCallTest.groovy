@@ -1,8 +1,8 @@
 class MethodCallTest extends GroovyTestCase {
 
     void testMethodCall() {
-        System.out.println("hello")
-        "world!".println()
+        System.out.print("hello")
+        println("world!")
 	}
 	
     void testObjectMethodCall() {

@@ -32,6 +32,6 @@ class TryCatchTest extends GroovyTestCase {
     void afterTryCatch() {
         assert exceptionCalled : "should have invoked the catch clause"        
         assert finallyCalled : "should have invoked the finally clause"
-        "After try/catch".println()
+        println("After try/catch")
     }
 }

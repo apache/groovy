@@ -45,12 +45,9 @@
  */
 package groovy.util;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import junit.framework.TestCase;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-
-import junit.framework.TestCase;
 
 /**
  * A default JUnit TestCase in Groovy. This provides a number of helper methods
@@ -143,12 +140,6 @@ public class GroovyTestCase extends TestCase {
      * @param expected the expected String representation
      */
     protected void assertConsoleOutput(Object value, String expected) {
-        StringWriter buffer = new StringWriter();
-        PrintWriter out = new PrintWriter(buffer);
-        InvokerHelper.invokeMethod(value, "print", out);
-        assertEquals("print() to a console output of: " + value, expected, buffer.toString());
-        
-        
         Object console = InvokerHelper.invokeMethod(value, "toConsoleOutput", null);
         assertEquals("toConsoleOutput() on value: " + value, expected, console);
     }

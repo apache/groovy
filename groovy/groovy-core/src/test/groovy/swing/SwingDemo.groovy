@@ -16,14 +16,14 @@ class SwingDemo {
             menuBar {
 		        menu(text:'File') {
                     menuItem() {
-                        action(name:'New', closure:{ "clicked on the new menu item!".println() })
+                        action(name:'New', closure:{ println("clicked on the new menu item!") })
                     }
                     menuItem() {
-                        action(name:'Open', closure:{ "clicked on the open menu item!".println() })
+                        action(name:'Open', closure:{ println("clicked on the open menu item!") })
                     }
                     separator()
                     menuItem() {
-                        action(name:'Save', enabled:false, closure:{ "clicked on the Save menu item!".println() })
+                        action(name:'Save', enabled:false, closure:{ println("clicked on the Save menu item!") })
                     }
 		        }
                 menu(text:'Demos') {
@@ -54,7 +54,7 @@ class SwingDemo {
                             label(text:'Location', constraints:BorderLayout.WEST, toolTipText:'This is the location field')
                             comboBox(items:['Atlanta', 'London', 'New York'], constraints:BorderLayout.CENTER, toolTipText:'Choose the location into this field')
                         }
-                        button(text:'Click Me', actionPerformed:{event | "closure fired!".println(); event.println() })
+                        button(text:'Click Me', actionPerformed:{event | println("closure fired with event: " + event) })
                     }
                     scrollPane(constraints:BorderLayout.CENTER, border:BorderFactory.createRaisedBevelBorder()) {
                     	textArea(text:'Some text goes here', toolTipText:'This is a large text area to type in text')

@@ -27,7 +27,7 @@ class GeneratorTest extends GroovyTestCase {
     void testEach() {
         x = this.sampleGenerator
  	    
-        value = x.each { item | item.println() }
+        value = x.each { println(it) }
     }
     
 	

@@ -12,7 +12,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [2, 4, 6].join('-') == '2-4-6'
         assert ['edam', 'cheddar', 'brie'].join(', ') == "'edam', 'cheddar', 'brie'"
         
-        ['abc', 5, 2.34].join(', ').println()
+        print( ['abc', 5, 2.34].join(', ') )
     }
     
     void testTimes() {

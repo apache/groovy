@@ -58,7 +58,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
@@ -131,45 +130,23 @@ public class DefaultGroovyMethods {
     /**
      * Print to a console in interactive format
      */
-    public static void print(Object self) {
-        /** @todo should re-enable this */
-        //InvokerHelper.invokeMethod(self, "print", new PrintWriter(System.out));
-        //System.out.println("### About to invoke InvokerHelper.toString()");
-        System.out.print(InvokerHelper.toString(self));
-    }
-
-    /**
-     * Print to a console in interactive format
-     */
     public static void print(Object self, Object value) {
-        print(value);
-    }
-
-    /**
-     * Print to a console in interactive format along with a newline
-     */
-    public static void println(Object self) {
-        /** @todo should re-enable this */
-        //InvokerHelper.invokeMethod(self, "println", new PrintWriter(System.out));
-        System.out.println(InvokerHelper.toString(self));
+        System.out.print(InvokerHelper.toString(value));
     }
 
     /**
      * Print to a console in interactive format along with a newline
      */
     public static void println(Object self, Object value) {
-        println(value);
+        System.out.println(InvokerHelper.toString(value));
     }
 
     /**
-     * @return the String that would be printend on the console if the print() 
-     * method were called
+     * @return the String that would be printend on the console if
+     * the object were displayed in interactive mode
      */
     public static String toConsoleOutput(Object self) {
-        StringWriter buffer = new StringWriter();
-        PrintWriter out = new PrintWriter(buffer);
-        InvokerHelper.invokeMethod(self, "print", out);
-        return buffer.toString();
+        return InvokerHelper.toString(self);
     }
 
     /**
