@@ -999,6 +999,27 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Looks up an item in a Map for the given key and returns the value - unless
+     * there is no entry for the given key in which case add the default value
+     * to the map and return that.
+     *
+     * @param map a Map
+     * @param key the key to lookup the value of
+     * @param defaultValue the value to return and add to the map for this key if 
+     * there is no entry for the given key
+     * @return the value of the given key or the default value, added to the map if the
+     * key did not exist
+     */
+    public static Object get(Map map, Object key, Object defaultValue) {
+        Object answer = map.get(key);
+        if (answer == null) {
+            answer = defaultValue;
+            map.put(key, answer);
+        }
+        return answer;
+    }
+
+    /**
      * Support the range subscript operator for an Array
      *
      * @param array an Array of Objects
