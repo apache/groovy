@@ -1,5 +1,3 @@
-package org.codehaus.groovy.syntax;
-
 /*
  $Id$
 
@@ -45,6 +43,7 @@ package org.codehaus.groovy.syntax;
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyException;
 
