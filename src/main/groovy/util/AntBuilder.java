@@ -299,7 +299,7 @@ public class AntBuilder extends BuilderSupport {
             Map.Entry entry = (Map.Entry) iter.next();
             String name = (String) entry.getKey();
             Object value = entry.getValue();
-            setBeanProperty(object, name, value);
+            setBeanProperty(object, name, ((value == null) ? null : value.toString()));
         }
     }
 
