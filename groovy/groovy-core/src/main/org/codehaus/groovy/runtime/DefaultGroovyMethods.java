@@ -392,13 +392,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Maps the values of an object (through an iterator) to new values using the closure as a filter.
-     *
+     * Iterates through this object transforming each object into a new value using the closure 
+     * as a transformer, returning a list of transformed values.
+     * 
      * @param self the values of the object to map
      * @param closure the closure used to map each element of the collection
      * @return a List of the mapped values
      */
-    public static List map(Object self, Closure closure) {
+    public static List collect(Object self, Closure closure) {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
@@ -407,13 +408,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Maps the values of a collection to new values using the closure as a filter.
+     * Iterates through this collection transforming each entry into a new value using the closure 
+     * as a transformer, returning a list of transformed values.
      *
      * @param self a collection
      * @param closure the closure used for mapping
      * @return a List of the mapped values
      */
-    public static List map(Collection self, Closure closure) {
+    public static List collect(Collection self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             answer.add(closure.call(iter.next()));
@@ -422,13 +424,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Maps the values of a Map to new values using the closure as a filter.
+     * Iterates through this Map transforming each entry into a new value using the closure 
+     * as a transformer, returning a list of transformed values.
      *
      * @param self a Map
      * @param closure the closure used for mapping
      * @return a List of the mapped values
      */
-    public static List map(Map self, Closure closure) {
+    public static List collect(Map self, Closure closure) {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             answer.add(closure.call(iter.next()));

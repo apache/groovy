@@ -217,7 +217,7 @@ class DocGenerator
 	 */
 	private String getParametersDecl(method)
 	{
-		parms = getParameters(method).map{ "${getObjectType(it.getType())} ${it.getName()}" }.join(", ")
+		parms = getParameters(method).collect{ "${getObjectType(it.getType())} ${it.getName()}" }.join(", ")
 	}
 
 	/**

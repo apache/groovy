@@ -55,12 +55,12 @@ iterate via a closure
 [1, 2, 3].each { item | print "${item}-" }
 {code}
 
-1.1.1 map
+1.1.1 collect
 
-convert values to new list using closure 
+collect the return value of calling a closure on each item in a collection
 
 {code:groovysh}
-value = [1, 2, 3].map { it * 2 }
+value = [1, 2, 3].collect { it * 2 }
 assert value == [2, 4, 6]
 {code}
 

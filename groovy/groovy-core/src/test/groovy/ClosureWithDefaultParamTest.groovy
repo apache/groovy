@@ -8,11 +8,9 @@ import java.io.File
  */
 class ClosureWithDefaultParamTest extends GroovyTestCase {
 
-	property count
-
-    void testListMap() {
+    void testListCollect() {
         list = [1, 2, 3, 4]
-        answer = list.map { it * 2 }
+        answer = list.collect { it * 2 }
 
         assert answer.size() == 4
         
@@ -20,9 +18,9 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert answer == expected
     }
 
-    void testMapMap() {
+    void testMapCollect() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.map { it.key + it.value }
+        answer = map.collect { it.key + it.value }
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -69,8 +67,8 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
 
         assert answer.size() == 2
         
-        keys = answer.map {it.key }
-        values = answer.map {it.value }
+        keys = answer.collect {it.key }
+        values = answer.collect {it.value }
 
         System.out.println("keys " + keys + " values " + values)
 		

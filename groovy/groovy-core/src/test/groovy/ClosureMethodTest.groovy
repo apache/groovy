@@ -8,9 +8,9 @@ import java.io.File
  */
 class ClosureMethodTest extends GroovyTestCase {
 
-    void testListMap() {
+    void testListCollect() {
         list = [1, 2, 3, 4]
-        answer = list.map( {item| return item * 2 } )
+        answer = list.collect( {item| return item * 2 } )
 
         assert answer.size() == 4
         
@@ -18,9 +18,9 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer == expected
     }
 
-    void testMapMap() {
+    void testMapCollect() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.map( {e| return e.key + e.value } )
+        answer = map.collect( {e| return e.key + e.value } )
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -67,8 +67,8 @@ class ClosureMethodTest extends GroovyTestCase {
 
         assert answer.size() == 2
         
-        keys = answer.map( {entry| return entry.key })
-        values = answer.map {entry| return entry.value }
+        keys = answer.collect( {entry| return entry.key })
+        values = answer.collect {entry| return entry.value }
 
         println("keys " + keys + " values " + values)
 		
