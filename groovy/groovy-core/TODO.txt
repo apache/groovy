@@ -93,10 +93,6 @@ Core Groovy Tasks
 			String! x = "hello"
 			x = null // error
 			
-* closures - handle passing in of variables from outer scope?	
-	use a Holder object for all local variables and pass holder
-	into the closure
-
 * new GroovyMethods	to be added
 	- Object.getMetaClass()
 	- Object.eachProperty
