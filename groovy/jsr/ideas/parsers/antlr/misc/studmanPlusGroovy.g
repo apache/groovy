@@ -1,22 +1,13 @@
 header {
 package org.codehaus.groovy.antlr;
+import java.util.ArrayList;
+	import java.io.InputStream;
+	import java.io.Reader;
+	import antlr.InputBuffer;
+	import antlr.LexerSharedInputState;
 }
  
 /** JSR-241 Groovy Recognizer
- *
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- *  HEALTH WARNING - PORTING IN PROGRESS
- *  WON'T COMPILE !!! WON'T GENERATE !!! WON'T WORK !!!
- *  I have taken java.g for Java1.5 from Michael Studman (1.22.4)
- *  and have begun applying the groovy.diff from java.g (1.22)
- *  back onto the new root (1.22.4)
- *
- *  for a map of the task see... 
- *     http://groovy.javanicus.com/java-g.png
- * 
- *  18 Jan 2005 - Initial port finished - some generation issues to resolve JRR
- *  10 Jan 2005 - Porting begun JRR
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  *
  * Run 'java Main [-showtree] directory-full-of-groovy-files'
  *
@@ -33,8 +24,8 @@ package org.codehaus.groovy.antlr;
  *		Allan Jacobs		Allan.Jacobs@eng.sun.com
  *		Steve Messick		messick@redhills.com
  *		John Pybus		john@pybus.org
- *      John Rose           rose00@mac.com
- *      Jeremy Rayner       groovy@ross-rayner.com
+ *		John Rose		rose00@mac.com
+ *		Jeremy Rayner		groovy@ross-rayner.com
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
@@ -182,6 +173,13 @@ package org.codehaus.groovy.antlr;
  *      constructor invocation, e.g. new Outer().<String>super()
  *    o Fixed bug in array declarations identified by Geoff Roy
  *
+ * Version 1.22.4.g.1
+ *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
+ *      and have applied the groovy.diff from java.g (1.22) by John Rose
+ *      back onto the new root (1.22.4) - Jeremy Rayner (Jan 2005)
+ *    o for a map of the task see... 
+ *      http://groovy.javanicus.com/java-g.png
+ *
  * This grammar is in the PUBLIC DOMAIN
  */
 
@@ -220,7 +218,73 @@ tokens {
 }
 
 {
-	/**
+	/** This factory is the correct way to wire together a Groovy parser and lexer. */
+	public static GroovyRecognizer make(GroovyLexer lexer) {
+		GroovyRecognizer parser = new GroovyRecognizer(lexer.plumb());
+		// TO DO: set up a common error-handling control block, to avoid excessive tangle between these guys
+		parser.lexer = lexer;
+		lexer.parser = parser;
+		return parser;
+	}
+	// Create a scanner that reads from the input stream passed to us...
+	public static GroovyRecognizer make(InputStream in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
+	public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
+
+	GroovyLexer lexer;
+	public GroovyLexer getLexer() { return lexer; }
+	public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
+
+	// stuff to adjust ANTLR's tracing machinery
+    public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceParser
+    public void traceIn(String rname) throws TokenStreamException {
+        if (!GroovyRecognizer.tracing)  return;
+        super.traceIn(rname);
+    }
+    public void traceOut(String rname) throws TokenStreamException {
+        if (!GroovyRecognizer.tracing)  return;
+        if (returnAST != null)  rname += returnAST.toStringList();
+        super.traceOut(rname);
+    }
+	
+	// Error handling.  This is a funnel through which parser errors go, when the parser can suggest a solution.
+	public void requireFailed(String problem, String solution) throws SemanticException {
+		// TO DO: Needs more work.
+		Token lt = null;
+		try { lt = LT(1); }
+		catch (TokenStreamException ee) { }
+		if (lt == null)  lt = Token.badToken;
+		throw new SemanticException(problem + ";\n   solution: " + solution,
+									getFilename(), lt.getLine(), lt.getColumn());
+	}
+	// Convenience method for checking of expected error syndromes.
+	private void require(boolean z, String problem, String solution) throws SemanticException {
+		if (!z)  requireFailed(problem, solution);
+	}
+
+	// Query a name token to see if it begins with a capital letter.
+	// This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
+	private boolean isUpperCase(Token x) {
+		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+		String xtext = x.getText();
+		return (xtext.length() > 0 && Character.isUpperCase(xtext.charAt(0)));
+	}
+
+	private AST currentClass = null;  // current enclosing class (for constructor recognition)
+	// Query a name token to see if it is identical with the current class name.
+	// This is used to distinguish constructors from other methods.
+	private boolean isConstructorIdent(Token x) {
+		if (currentClass == null)  return false;
+		if (currentClass.getType() != IDENT)  return false;  // cannot happen?
+		String cname = currentClass.getText();
+
+		if (x == null || x.getType() != IDENT)  return false;  // cannot happen?
+		return cname.equals(x.getText());
+	}
+
+
+/**
 	 * Counts the number of LT seen in the typeArguments production.
 	 * It is used in semantic predicates to ensure we have seen
 	 * enough closing '>' characters; which actually may have been
@@ -286,13 +350,13 @@ importStatement
 // Protected type definitions production for reuse in other productions
 protected typeDefinitionInternal[AST mods]
 	:	cd:classDefinition[#mods]		// inner class
-	  {#field = #cd;}
+	  {#typeDefinitionInternal = #cd;}
 	|	id:interfaceDefinition[#mods]	// inner interface
-	  {#field = #id;}
+	  {#typeDefinitionInternal = #id;}
 	|	ed:enumDefinition[#mods]		// inner enum
-	  {#field = #ed;}
+	  {#typeDefinitionInternal = #ed;}
 	|	ad:annotationDefinition[#mods]	// inner annotation
-	  {#field = #ad;}
+	  {#typeDefinitionInternal = #ad;}
 	;
 
 /** A declaration is the creation of a reference or primitive-type variable,
@@ -373,18 +437,18 @@ typeSpec[boolean addImagNode]
 	|	builtInTypeSpec[addImagNode]
 	;
 
-//TODO - URGENT - link to arrayOrTypeArgs instead of ARRAY_DECLARATOR
+//TODO - URGENT - check that 'arrayOrTypeArgs' is ok instead of 'ARRAY_DECLARATOR'
+// also check that 'classOrInterfaceType[false]' is a suitable substitution for 'identifier'
 
 // A class type specification is a class type with either:
 // - possible brackets afterwards
 //   (which would make it an array type).
 // - generic type arguments after
 classTypeSpec[boolean addImagNode]
-	:	classOrInterfaceType[false]
-		(options{greedy=true;}: // match as many as possible
-			lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
-		)*
+	:	t:classOrInterfaceType[false]
+		(   ata:arrayOrTypeArgs[#t]  )?
 		{
+			if (#ata != null)  #classTypeSpec = #ata;
 			if ( addImagNode ) {
 				#classTypeSpec = #(#[TYPE,"TYPE"], #classTypeSpec);
 			}
@@ -475,30 +539,27 @@ typeArgumentBounds
 		}
 	;
 
+//TODO - check that arrayOrTypeArgs is suitable here
 // A builtin type array specification is a builtin type with brackets afterwards
 builtInTypeArraySpec[boolean addImagNode]
-	:	builtInType
-		(options{greedy=true;}: // match as many as possible
-			lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
-		)+
-
+	:	t:builtInType
+		(   ata:arrayOrTypeArgs[#t]  )+
 		{
+			if (#ata != null)  #builtInTypeArraySpec = #ata;
 			if ( addImagNode ) {
 				#builtInTypeArraySpec = #(#[TYPE,"TYPE"], #builtInTypeArraySpec);
 			}
 		}
 	;
 
-// TODO - URGENT - decide if arrayOrTypeArgs is still needed due to above production...
-
+//TODO - check that arrayOrTypeArgs is suitable here
 // A builtin type specification is a builtin type with possible brackets
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
-	:	builtInType
-		(options{greedy=true;}: // match as many as possible
-			lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
-		)*
+	:	t:builtInType
+		(   ata:arrayOrTypeArgs[#t]  )*
 		{
+			if (#ata != null)  #builtInTypeSpec = #ata;
 			if ( addImagNode ) {
 				#builtInTypeSpec = #(#[TYPE,"TYPE"], #builtInTypeSpec);
 			}
@@ -770,11 +831,11 @@ annotationField!
 				( "default" amvi:annotationMemberValueInitializer )?
 
 				SEMI
-
+			 // TODO - verify that 't' is useful/correct here, used to be 'rt'
 				{#annotationField =
 					#(#[ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF"],
 						 mods,
-						 #(#[TYPE,"TYPE"],rt),
+						 #(#[TYPE,"TYPE"],t),
 						 i,amvi
 						 );}
 			|	v:variableDefinitions[#mods,#t] SEMI	// variable
@@ -829,10 +890,11 @@ enumConstantField!
 				(tc:throwsClause)?
 
 				( s2:compoundStatement | SEMI )
+			 // TODO - verify that 't' is useful/correct here, used to be 'rt'
 				{#enumConstantField = #(#[METHOD_DEF,"METHOD_DEF"],
 							 mods,
 							 tp,
-							 #(#[TYPE,"TYPE"],rt),
+							 #(#[TYPE,"TYPE"],t),
 							 IDENT,
 							 param,
 							 tc,
@@ -872,7 +934,7 @@ classField!
 	:	// method, constructor, or variable declaration
 		(declarationStart)=>
         d:declaration
-        {#field = #d;}
+        {#classField = #d;}
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
@@ -896,7 +958,7 @@ interfaceField!
 	:	// method, constructor, or variable declaration
         (declarationStart)=>
         d:declaration
-        {#field = #d;}
+        {#interfaceField = #d;}
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
@@ -1427,16 +1489,17 @@ branchExpression
         |       "throw"^ assignmentExpression!
 
 
-	/* TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
+	// TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
 	// asserts
 	// 1.4+ ...
-	|	"assert"^ expression ( COLON! expression )?
+	//      |	"assert"^ expression ( COLON! expression )?
+	
 	// groovy assertion...
         |       "assert"^ assignmentExpression
                 (   options {greedy=true;} :
                         COMMA! assignmentExpression
                 )?
-	*/
+	
 
         // Note:  The colon is too special in Groovy; we modify the FOR and ASSERT syntax to dispense with it.
         ;
@@ -2416,7 +2479,117 @@ options {
 	public void enableEnum(boolean shouldEnable) { enumEnabled = shouldEnable; }
 	/** Query the "enum" keyword state */
 	public boolean isEnumEnabled() { return enumEnabled; }
+
+
+/** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
+	protected int parenLevel = 0;
+	protected int suppressNewline = 0;  // be really mean to newlines inside strings
+	protected static final int SCS_TRIPLE = 1, SCS_VAL = 2, SCS_LIT = 4, SCS_LIMIT = 8;
+	protected int stringCtorState = 0;  // hack string constructor boundaries
+	/** Push parenLevel here and reset whenever inside '{x}'. */
+	protected ArrayList parenLevelStack = new ArrayList();
+	protected Token lastToken = Token.badToken;
+
+	protected void pushParenLevel() {
+		parenLevelStack.add(new Integer(parenLevel*8 + stringCtorState));
+		parenLevel = 0;
+		stringCtorState = 0;
+	}
+	protected void popParenLevel() {
+		int npl = parenLevelStack.size();
+		if (npl == 0)  return;
+		int i = ((Integer) parenLevelStack.remove(--npl)).intValue();
+		parenLevel      = i / SCS_LIMIT;
+		stringCtorState = i % SCS_LIMIT;
+	}
+	
+	protected void restartStringCtor(boolean expectLiteral) {
+		if (stringCtorState != 0) {
+			stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TRIPLE);
+		}
+	}
+
+	void newlineCheck() throws RecognitionException {
+		if (suppressNewline > 0) {
+			suppressNewline = 0;
+			require(suppressNewline == 0,
+				"end of line reached within a simple string 'x' or \"x\"",
+				"for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
+		}
+		newline();
+	}
+	
+	/** This is a bit of plumbing which resumes collection of string constructor bodies,
+	 *  after an embedded expression has been parsed.
+	 *  Usage:  new GroovyRecognizer(new GroovyLexer(in).plumb()).
+	 */
+	public TokenStream plumb() {
+		return new TokenStream() {
+			public Token nextToken() throws TokenStreamException {
+				if (stringCtorState >= SCS_LIT) {
+					// This goo is modeled upon the ANTLR code for nextToken:
+					boolean tripleQuote = (stringCtorState & SCS_TRIPLE) != 0;
+					stringCtorState = 0;  // get out of this mode, now
+					resetText();
+					try {
+						mSTRING_CTOR_END(true, /*fromStart:*/false, tripleQuote);
+						return lastToken = _returnToken;
+					} catch (RecognitionException e) {
+						throw new TokenStreamRecognitionException(e);
+					} catch (CharStreamException cse) {
+						if ( cse instanceof CharStreamIOException ) {
+							throw new TokenStreamIOException(((CharStreamIOException)cse).io);
+						}
+						else {
+							throw new TokenStreamException(cse.getMessage());
+						}
+					}
+				}
+				return lastToken = GroovyLexer.this.nextToken();
+			}
+		};
+	}
+
+	// stuff to adjust ANTLR's tracing machinery
+    public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceLexer
+    public void traceIn(String rname) throws CharStreamException {
+        if (!GroovyLexer.tracing)  return;
+        super.traceIn(rname);
+    }
+    public void traceOut(String rname) throws CharStreamException {
+        if (!GroovyLexer.tracing)  return;
+        if (_returnToken != null)  rname += tokenStringOf(_returnToken);
+        super.traceOut(rname);
+    }
+	private static java.util.HashMap ttypes;
+	private static String tokenStringOf(Token t) {
+		if (ttypes == null) {
+			java.util.HashMap map = new java.util.HashMap();
+			java.lang.reflect.Field[] fields = GroovyTokenTypes.class.getDeclaredFields();
+			for (int i = 0; i < fields.length; i++) {
+				if (fields[i].getType() != int.class)  continue;
+				try {
+					map.put(fields[i].get(null), fields[i].getName());
+				} catch (IllegalAccessException ee) {
+				}
+			}
+			ttypes = map;
+		}
+		Integer tt = new Integer(t.getType());
+		Object ttn = ttypes.get(tt);
+		if (ttn == null)  ttn = "<"+tt+">";
+		return "["+ttn+",\""+t.getText()+"\"]";
+	}
+
+	protected GroovyRecognizer parser;  // little-used link; TO DO: get rid of
+	private void require(boolean z, String problem, String solution) throws SemanticException {
+		// TO DO: Direct to a common error handler, rather than through the parser.
+		if (!z)  parser.requireFailed(problem, solution);
+	}
 }
+
+// TO DO:  Regexp ops, range ops, Borneo-style ops.
+
 
 // OPERATORS
 QUESTION		:	'?'		;
