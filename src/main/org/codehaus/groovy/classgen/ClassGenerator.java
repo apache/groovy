@@ -193,14 +193,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     private LinkedList innerClasses = new LinkedList();
     private boolean definingParameters;
     private Set syntheticStaticFields = new HashSet();
-    private Label breakLabel;
-    private Label continueLabel;
     private Set mutableVars = new HashSet();
     private boolean passingClosureParams;
 
     private ConstructorNode constructorNode;
     private MethodNode methodNode;
     //private PropertyNode propertyNode;
+    private BlockScope scope;
 
     public ClassGenerator(
         GeneratorContext context,
@@ -375,11 +374,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", false).getIndex();
 
-        Label label1 = new Label();
-        Label previousContinueLable = continueLabel;
-        continueLabel = label1;
+        pushBlockScope();
 
-        cv.visitJumpInsn(GOTO, label1);
+        Label continueLabel = scope.getContinueLabel();
+        cv.visitJumpInsn(GOTO, continueLabel);
         Label label2 = new Label();
         cv.visitLabel(label2);
 
@@ -391,14 +389,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         loop.getLoopBlock().visit(this);
 
-        cv.visitLabel(label1);
+        cv.visitLabel(continueLabel);
         cv.visitVarInsn(ALOAD, iteratorIdx);
 
         iteratorHasNextMethod.call(cv);
 
         cv.visitJumpInsn(IFNE, label2);
 
-        continueLabel = previousContinueLable;
+        cv.visitLabel(scope.getBreakLabel());
+        popScope();
     }
 
     public void visitWhileLoop(WhileStatement loop) {
@@ -409,34 +408,37 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
          * 0); }
          */
 
-        Label l0 = new Label();
-        Label previousContinueLable = continueLabel;
-        continueLabel = l0;
+        pushBlockScope();
 
-        cv.visitJumpInsn(GOTO, l0);
+        Label continueLabel = scope.getContinueLabel();
+
+        cv.visitJumpInsn(GOTO, continueLabel);
         Label l1 = new Label();
         cv.visitLabel(l1);
 
         loop.getLoopBlock().visit(this);
 
-        cv.visitLabel(l0);
+        cv.visitLabel(continueLabel);
         //cv.visitVarInsn(ALOAD, 0);
 
         loop.getBooleanExpression().visit(this);
 
         cv.visitJumpInsn(IFNE, l1);
 
-        continueLabel = previousContinueLable;
+        cv.visitLabel(scope.getBreakLabel());
+        popScope();
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
         onLineNumber(loop);
 
-        Label l0 = new Label();
-        cv.visitLabel(l0);
+        pushBlockScope();
+
+        Label breakLabel = scope.getBreakLabel();
+
+        Label continueLabel = scope.getContinueLabel();
+        cv.visitLabel(continueLabel);
         Label l1 = new Label();
-        Label previousContinueLable = continueLabel;
-        continueLabel = l1;
 
         loop.getLoopBlock().visit(this);
 
@@ -444,9 +446,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         loop.getBooleanExpression().visit(this);
 
-        cv.visitJumpInsn(IFNE, l0);
+        cv.visitJumpInsn(IFNE, continueLabel);
 
-        continueLabel = previousContinueLable;
+        cv.visitLabel(breakLabel);
+        popScope();
     }
 
     public void visitIfElse(IfStatement ifElse) {
@@ -681,13 +684,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         statement.getExpression().visit(this);
 
+        pushBlockScope();
+        
         int switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
         cv.visitVarInsn(ASTORE, switchVariableIndex);
 
-        Label lastBreakLabel = breakLabel;
-
-        breakLabel = new Label();
-
+        
         List caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
         Label[] labels = new Label[caseCount + 1];
@@ -703,10 +705,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         statement.getDefaultStatement().visit(this);
 
-        cv.visitLabel(breakLabel);
-
-        // lets restore the break label
-        breakLabel = lastBreakLabel;
+        cv.visitLabel(scope.getBreakLabel());
+        
+        popScope();
     }
 
     public void visitCaseStatement(CaseStatement statement) {
@@ -719,7 +720,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Label nextLabel) {
 
         onLineNumber(statement);
-
+        
         cv.visitVarInsn(ALOAD, switchVariableIndex);
         statement.getExpression().visit(this);
 
@@ -740,17 +741,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         cv.visitLabel(l0);
     }
+    
 
     public void visitBreakStatement(BreakStatement statement) {
         onLineNumber(statement);
 
-        cv.visitJumpInsn(GOTO, breakLabel);
+        cv.visitJumpInsn(GOTO, scope.getBreakLabel());
     }
 
     public void visitContinueStatement(ContinueStatement statement) {
         onLineNumber(statement);
 
-        cv.visitJumpInsn(GOTO, continueLabel);
+        cv.visitJumpInsn(GOTO, scope.getContinueLabel());
     }
 
     public void visitSynchronizedStatement(SynchronizedStatement statement) {
@@ -949,13 +951,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 evaluateBinaryExpressionWithAsignment("divide", expression);
                 break;
 
-               case Token.LEFT_SHIFT :
-                   evaluateBinaryExpression("leftShift", expression);
-                   break;
+            case Token.LEFT_SHIFT :
+                evaluateBinaryExpression("leftShift", expression);
+                break;
 
-                  case Token.RIGHT_SHIFT :
-                      evaluateBinaryExpression("rightShift", expression);
-                      break;
+            case Token.RIGHT_SHIFT :
+                evaluateBinaryExpression("rightShift", expression);
+                break;
 
             case Token.KEYWORD_INSTANCEOF :
                 evaluateInstanceof(expression);
@@ -1661,9 +1663,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         leftHandExpression = false;
         expression.getTo().visit(this);
-       
+
         pushConstant(expression.isInclusive());
-        
+
         createRangeMethod.call(cv);
     }
 
@@ -1912,10 +1914,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         BlockStatement block = new BlockStatement();
         block.addStatement(
             new ExpressionStatement(
-                new MethodCallExpression(
-                    new VariableExpression("super"),
-                    "<init>",
-                    new VariableExpression("values"))));
+                new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
         Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
@@ -1923,9 +1922,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected void doCast(String type) {
         if (!type.equals("java.lang.Object")) {
-            cv.visitTypeInsn(
-                CHECKCAST,
-                type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
         }
     }
 
@@ -1937,9 +1934,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 asTypeMethod.call(cv);
             }
 
-            cv.visitTypeInsn(
-                CHECKCAST,
-                type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
         }
     }
 
@@ -2063,9 +2058,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         leftBinExpr.getLeftExpression(),
                         "putAt",
                         new ArgumentListExpression(
-                            new Expression[] {
-                                leftBinExpr.getRightExpression(),
-                                expression.getRightExpression()})));
+                            new Expression[] { leftBinExpr.getRightExpression(), expression.getRightExpression()})));
                 cv.visitInsn(POP);
                 return;
             }
@@ -2325,8 +2318,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             cv.visitInsn(ICONST_0);
         }
     }
-    
-        protected void pushConstant(int value) {
+
+    protected void pushConstant(int value) {
         switch (value) {
             case 0 :
                 cv.visitInsn(ICONST_0);
@@ -2350,6 +2343,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 cv.visitIntInsn(BIPUSH, value);
                 break;
         }
+    }
+
+    protected void popScope() {
+        scope = scope.getParent();
+    }
+
+    protected void pushBlockScope() {
+        scope = new BlockScope(scope);
     }
 
     /**
