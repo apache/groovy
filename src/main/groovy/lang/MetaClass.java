@@ -224,9 +224,12 @@ public class MetaClass {
 
         // lets see if there's a new static method we've added in groovy-land to this class
         List newStaticInstanceMethods = getNewStaticInstanceMethods(methodName);
-        Object[] staticArguments = new Object[arguments.length + 1];
+        int size = (arguments != null) ? arguments.length : 0;
+        Object[] staticArguments = new Object[size + 1];
         staticArguments[0] = object;
-        System.arraycopy(arguments, 0, staticArguments, 1, arguments.length);
+        if (size > 0) {
+            System.arraycopy(arguments, 0, staticArguments, 1, size);
+        }
 
         Method method = null;
         if (!newStaticInstanceMethods.isEmpty()) {
@@ -622,6 +625,10 @@ public class MetaClass {
             if (registry.useAccessible()) {
                 method.setAccessible(true);
             }
+            if (argumentArray == null) {
+                argumentArray = EMPTY_ARRAY;
+            }
+            else 
             if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
                 argumentArray = ARRAY_WITH_NULL;
             }
