@@ -92,7 +92,7 @@ public class Sequence extends ArrayList implements GroovyObject {
     
     public boolean equals(Object that) {
         if (that instanceof Tuple) {
-            return equals((Tuple) that);
+            return equals(that);
         }
         return false;
     }

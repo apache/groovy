@@ -732,7 +732,7 @@ public class Lexer {
                         LITERAL_LOOP : while (true) {
                             c = la();
 
-                            int x = (int) c;
+                            int x = c;
 
                             LITERAL_SWITCH : switch (c) {
                                 case ('\\') :
