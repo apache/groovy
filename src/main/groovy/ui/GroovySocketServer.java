@@ -85,7 +85,8 @@ public class GroovySocketServer implements Runnable {
                 // as each connection is made to the server.
                 Script script;
                 if (isScriptFile) {
-                    script = groovy.parse(new FileInputStream(scriptFilenameOrText));
+                    GroovyMain gm = new GroovyMain();
+                    script = groovy.parse(new FileInputStream(gm.huntForTheScriptFile(scriptFilenameOrText)));
                 } else {
                     script = groovy.parse(scriptFilenameOrText);
                 }

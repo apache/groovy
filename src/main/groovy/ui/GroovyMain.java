@@ -261,7 +261,7 @@ public class GroovyMain {
         GroovyShell groovy = new GroovyShell(conf);
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            groovy.parse(new FileInputStream(script));
+            groovy.parse(new FileInputStream(huntForTheScriptFile(script)));
         } else {
             groovy.parse(script);
         }
@@ -278,7 +278,7 @@ public class GroovyMain {
      * - name.gy
      * - name.gsh
      */
-    private File huntForTheScriptFile(String scriptFileName) {
+    public File huntForTheScriptFile(String scriptFileName) {
         File scriptFile = new File(scriptFileName);
         String[] standardExtensions = {".groovy",".gvy",".gy",".gsh"};
         int i = 0;
