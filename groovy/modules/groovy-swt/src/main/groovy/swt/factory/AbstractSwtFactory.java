@@ -4,7 +4,6 @@
  */
 package groovy.swt.factory;
 
-import groovy.swt.SwtUtils;
 import groovy.swt.convertor.ColorConverter;
 import groovy.swt.convertor.PointConverter;
 
@@ -15,7 +14,6 @@ import java.util.Map;
 
 import org.codehaus.groovy.GroovyException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
@@ -68,10 +66,7 @@ public abstract class AbstractSwtFactory {
             Field field = null;
             try {
                 field = bean.getClass().getDeclaredField(property);
-                if (value instanceof String) {
-                    int style = SwtUtils.parseStyle(SWT.class, (String) value);
-                    field.setInt(bean, style);
-                } else if (value instanceof Boolean) {
+                if (value instanceof Boolean) {
                     field.setBoolean(bean, ((Boolean) value).booleanValue());
                 } else if (value instanceof Integer) {
                     field.setInt(bean, ((Integer) value).intValue());
