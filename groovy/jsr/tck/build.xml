@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<project name="tck" default="default">
+
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   compile settings                -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="build.debug" value="on"/>
+  
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   directories                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="src.dir" value="src"/>
+  <property name="build.dir" value="build"/>
+  <property name="build.classes.dir" value="${build.dir}/classes"/>
+  <property name="dist.dir" value="dist"/>
+  <property name="lib.dir" value="lib"/>
+  <property name="standalone.working.dir" value="temp"/>
+  <property name="standalone.dir" value="standalone"/>
+
+
+  <!-- javadoc properties -->
+  <property name="javadoc.dir" value="doc"/>
+  <property name="javadoc.packages" value="org.codehaus.groovy.*"/>
+
+  <!-- junit properties -->
+  <property name="testcase.src.dir" value="test"/>
+  <property name="generated.test.src.dir"	value="gentest"/>
+  <property name="test.lib.dir" value="testlib"/>
+  <property name="test.classes.dir" value="${build.dir}/test/classes"/>
+  <property name="test.reports.dir" value="reports"/>
+  
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                     datatypes                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <path id="compile.classpath">
+    <pathelement location="${build.classes.dir}"/>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+      <include name="**/*.zip" />
+    </fileset>
+  </path>
+  
+  <!-- intentionally doesn't include the compile classpath -->
+  <path id="test.classpath">
+    <pathelement location="${test.classes.dir}"/>
+    <fileset dir="${test.lib.dir}">
+      <include name="**/*.jar"/>
+    </fileset>  
+  </path>
+
+  <path id="my.classpath">
+    <fileset dir="${standalone.dir}">
+      <include name="**/*.jar" />
+    </fileset>
+  </path>
+
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="compile.classpath"/>
+
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                  targets                          -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <target name="default" 
+          depends="pretty-test" 
+          description="default: run the groovy test suite"
+  />
+  
+  <target name="all" 
+          depends="test,dist" 
+          description="build and test everything"
+  />
+
+  <target name="clean" description="remove all built files">
+    <delete dir="${javadoc.dir}" />
+    <delete dir="${build.dir}" />
+    <delete dir="${dist.dir}" />
+    <delete dir="${generated.test.src.dir}" />
+    <delete dir="${standalone.working.dir}" />
+    <delete dir="${test.reports.dir}" />
+  </target>
+
+  <target name="dist" 
+          depends="compile" 
+          description="create distributables (jars etc)">
+    <mkdir dir="${dist.dir}" />
+    <jar jarfile="${dist.dir}/tck.jar" 
+         manifest="${src.dir}/manifest.txt">
+      <fileset dir="${build.classes.dir}"/>
+    </jar>
+  </target>
+
+    <target name="standalone" depends="dist" description="merge all jars together">
+        <mkdir dir="${standalone.working.dir}"/>
+        <unzip dest="${standalone.working.dir}">
+            <fileset dir="${lib.dir}">
+                <include name="*.jar"/>
+            </fileset>
+            <fileset dir="${dist.dir}">
+                <include name="*.jar"/>
+            </fileset>
+        </unzip>
+        <mkdir dir="${standalone.dir}"/>
+        <jar jarfile="${standalone.dir}/tck.jar"
+            manifest="${src.dir}/manifest.txt">
+            <fileset dir="${standalone.working.dir}"/>
+        </jar>
+        <!--<delete dir="${standalone.working.dir}"/>-->
+
+    </target>
+
+  <target name="docs" depends="init" description="generate documentation">
+    <mkdir dir="${javadoc.dir}" />
+    <javadoc sourcepath="${src.dir}" 
+             destdir="${javadoc.dir}" 
+             packagenames="${javadoc.packages}"
+             use="true"
+             windowtitle="tck"
+             private="true"/>
+  </target>
+
+  <target name="run" depends="compile" description="compile and run">
+    <java classname="org.codehaus.groovy.tck.GenerateTestCases" 
+          fork="yes" 
+          classpathref="compile.classpath"/>
+  </target>
+
+  <target name="test"
+          depends="test-compile" 
+          description="run all test cases">
+    <junit haltonfailure="true" fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest>
+        <fileset dir="${test.classes.dir}">
+          <include name="**/*Test.class" />
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+        
+  <target name="pretty-test" 
+          depends="test-compile" 
+          description="HTML output of test cases">
+    <mkdir dir="${test.reports.dir}"/>
+    <junit haltonfailure="false" fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="xml" usefile="true"/>
+
+      <batchtest todir="${test.reports.dir}">
+        <fileset dir="${test.classes.dir}">
+          <include name="**/*Test.class" />
+        </fileset>
+      </batchtest>
+
+    </junit>
+
+    <junitreport todir="${test.reports.dir}">
+      <fileset dir="${test.reports.dir}">
+        <include name="TEST-*.xml"/>
+      </fileset>
+      <report format="frames" todir="${test.reports.dir}"/>
+    </junitreport>
+    <echo>
++-------------------------+
+| open reports/index.html |
++-------------------------+
+</echo>
+  </target>
+
+
+
+  <target name="compile" depends="init" description="compile java and groovy sources">
+    <mkdir dir="${build.classes.dir}" />
+    <groovyc destdir="${build.classes.dir}"
+             srcdir="${src.dir}"
+             listfiles="true">
+        <classpath refid="test.classpath"/>
+    </groovyc>
+    <javac srcdir="${src.dir}"
+           destdir="${build.classes.dir}"
+           classpathref="compile.classpath"
+           debug="${build.debug}"
+           deprecation="on"/>
+  </target>
+
+    <target name="generate" depends="standalone" description="generate test cases">
+      <mkdir dir="${generated.test.src.dir}" />
+      <taskdef name="gentests" classname="org.codehaus.groovy.tck.GenerateTestCases" classpathref="my.classpath"/>
+
+      <gentests destdir="${generated.test.src.dir}"
+                srcdir="${testcase.src.dir}"
+                listfiles="true"/>
+    </target>
+
+  <target name="test-compile" depends="generate" description="compile tests">
+    <mkdir dir="${test.classes.dir}" />
+    <javac srcdir="${generated.test.src.dir}"
+           destdir="${test.classes.dir}" 
+           classpathref="test.classpath" 
+           debug="${build.debug}" 
+           deprecation="on"/>
+  </target>
+
+  <target name="init">
+    <tstamp />
+    <mkdir dir="${lib.dir}"/>
+  </target>
+       
+</project>
