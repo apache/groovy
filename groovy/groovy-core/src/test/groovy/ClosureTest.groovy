@@ -18,7 +18,7 @@ class ClosureTest extends GroovyTestCase {
 /** @todo parser        
         block = {owner| owner.incrementCallCount(); }
         
-        block.call();
+        block.call(this);
         
         assert(callCount == 1);
     }
@@ -40,7 +40,7 @@ class ClosureTest extends GroovyTestCase {
 	
 	protected callBlock(count, block) {
 	    for i in range(0, count) {
-			block.call();	        
+			block.call(this);	        
 	    }
 	}
 }
