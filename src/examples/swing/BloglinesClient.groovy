@@ -21,122 +21,118 @@
  * Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
  */
 
-import groovy.swing.SwingBuilder;
-import java.awt.BorderLayout;
-import java.net.URL;
-import javax.swing.BorderFactory;
-import javax.swing.JOptionPane;
-import javax.swing.JSplitPane;
-import javax.swing.JTree;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeSelectionModel;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.methods.GetMethod;
+import groovy.swing.SwingBuilder
+import java.awt.BorderLayout
+import java.net.URL
+import javax.swing.BorderFactory
+import javax.swing.JOptionPane
+import javax.swing.JSplitPane
+import javax.swing.JTree
+import javax.swing.ListSelectionModel
+import javax.swing.SwingUtilities
+import javax.swing.WindowConstants
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.TreeSelectionModel
+import org.apache.commons.httpclient.HttpClient
+import org.apache.commons.httpclient.UsernamePasswordCredentials
+import org.apache.commons.httpclient.methods.GetMethod
 
 // Set up global variables and data types
-server   = 'rpc.bloglines.com';
-apiUrl   = { method | "http://${server}/${method}" };
+server   = 'rpc.bloglines.com'
+apiUrl   = { | method | "http://${server}/${method}" }
 class Feed { name; id; unread; String toString() { 
-    return (unread == "0" ? name : "${name} (${unread})");
+    return (unread == "0" ? name : "${name} (${unread})")
   } 
 }
-class Item { title; contents; String toString() { return title; } }
+class Item { title; contents; String toString() { return title } }
 
 // Ask the user for account information (using simple dialogs)
 email = 
   JOptionPane.showInputDialog(null, "Email address:", "Log in to Bloglines", 
-			      JOptionPane.QUESTION_MESSAGE);
+			      JOptionPane.QUESTION_MESSAGE)
 password = 
   JOptionPane.showInputDialog(null, "Password:", "Log in to Bloglines", 
-			      JOptionPane.QUESTION_MESSAGE);
+			      JOptionPane.QUESTION_MESSAGE)
 
 // Use HTTPClient for web requests since the server requires authentication
-client = new HttpClient();
-credentials = new UsernamePasswordCredentials(email, password);
-client.getState().setCredentials("Bloglines RPC", server, credentials);
+client = new HttpClient()
+credentials = new UsernamePasswordCredentials(email, password)
+client.state.setCredentials("Bloglines RPC", server, credentials)
 
 // Get the list of subscriptions and parse it into a GPath structure
-opml = new XmlParser().parseText(callBloglines(apiUrl('listsubs')));
+opml = new XmlParser().parseText(callBloglines(apiUrl('listsubs')))
 
 def callBloglines(url) {
   try {
-    get = new GetMethod(url);
-    get.setDoAuthentication(true);
-    client.executeMethod(get);
-    return get.getResponseBodyAsString();
+    get = new GetMethod(url)
+    get.doAuthentication = true
+    client.executeMethod(get)
+    return get.responseBodyAsString
   } catch (Exception e) {
-    println "Error retrieving <${url}>: ${e}";
-    return "";
+    println "Error retrieving <${url}>: ${e}"
+    return ""
   }
 }
 
 // Descend into the subscription outline, adding to the feed tree as we go
-treeTop = new DefaultMutableTreeNode("My Feeds");
-parseOutline(opml.body.outline.outline, treeTop);
+treeTop = new DefaultMutableTreeNode("My Feeds")
+parseOutline(opml.body.outline.outline, treeTop)
 
 def parseOutline(parsedXml, treeLevel) {
-  parsedXml.each() { outline |
+  parsedXml.each{ | outline |
     if (outline['@xmlUrl'] != null) {  // this is an individual feed
       feed = new Feed(name:outline['@title'], id:outline['@BloglinesSubId'], 
-		      unread:outline['@BloglinesUnread']);
-      treeLevel.add(new DefaultMutableTreeNode(feed));
+		      unread:outline['@BloglinesUnread'])
+      treeLevel.add(new DefaultMutableTreeNode(feed))
 
     } else {  // this is a folder of feeds
-      folder = new DefaultMutableTreeNode(outline['@title']);
-      parseOutline(outline.outline, folder);
-      treeLevel.add(folder);
+      folder = new DefaultMutableTreeNode(outline['@title'])
+      parseOutline(outline.outline, folder)
+      treeLevel.add(folder)
     }
   }
 }
 
 // Build the base user interface objects and configure them
-swing = new SwingBuilder();
-feedTree = new JTree(treeTop);
-itemList = swing.list();
-itemText = swing.textPane(contentType:'text/html', editable:false);
-model = feedTree.getSelectionModel();
-model.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-itemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+swing = new SwingBuilder()
+feedTree = new JTree(treeTop)
+itemList = swing.list()
+itemText = swing.textPane(contentType:'text/html', editable:false)
+model = feedTree.selectionModel
+model.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION
+itemList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
 // Set up the action closures that will react to user selections
-listItems = { feed |
-  rssText = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0");  
+listItems = { | feed |
+  rssText = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0")  
   if (rssText != null) {
     try {
-      rss = new XmlParser().parseText(rssText);
-      items = new Vector();
-      rss.channel.item.each() {
-	item = new Item(title:it.title[0].text(), 
-			contents:it.description[0].text());
-	items.add(item);
+      rss = new XmlParser().parseText(rssText)
+      itemList.listData =  rss.channel.item.collect(new Vector()) {
+		new Item(title:it.title[0].text(), contents:it.description[0].text())
       }
-      itemList.setListData(items);
-      feed.unread = "0";  // update the unread item count in the feed list
+      feed.unread = "0"  // update the unread item count in the feed list
     } catch (Exception e) {
-      println "Error during <${feed.name}> RSS parse: ${e}";
+      println "Error during <${feed.name}> RSS parse: ${e}"
     }
   }
 }
 
-feedTree.valueChanged = { event |
-  itemText.setText("");  // clear any old item text
-  node = (DefaultMutableTreeNode) feedTree.getLastSelectedPathComponent();
+feedTree.valueChanged = { | event |
+  itemText.text = ""  // clear any old item text
+  node = (DefaultMutableTreeNode) feedTree.getLastSelectedPathComponent()
   if (node != null) {
-    feed = node.getUserObject();
+    feed = node.userObject
     if (feed instanceof Feed && feed.unread != "0") {
-      listItems(feed);
+      listItems(feed)
     }
   }
 }
 
-itemList.valueChanged = { event |
-  item = event.getSource().getSelectedValue();
+itemList.valueChanged = { | event |
+  item = event.source.selectedValue
   if (item != null && item instanceof Item) {
-    itemText.setText("<html><body>${item.contents}</body></html>");
+    itemText.text = "<html><body>${item.contents}</body></html>"
   }
 }
 
@@ -147,21 +143,21 @@ gui =
 
     panel(layout:new BorderLayout()) {
       splitPane(orientation:JSplitPane.HORIZONTAL_SPLIT, dividerLocation:200) {
-        scrollPane() {
-	  widget(feedTree);
-	}
+        scrollPane {
+		  widget(feedTree)
+	    }
 
         splitPane(orientation:JSplitPane.VERTICAL_SPLIT, dividerLocation:150) {
           scrollPane(constraints:BorderLayout.CENTER) {
-	    widget(itemList);
-	  }
+	        widget(itemList)
+	      }
 
-	  scrollPane(constraints:BorderLayout.CENTER) {
-	    widget(itemText);
-	  }
+	      scrollPane(constraints:BorderLayout.CENTER) {
+	        widget(itemText)
+	      }
         }
       }
     }
   }
 
-gui.show();
+gui.show()
