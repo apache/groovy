@@ -44,7 +44,7 @@
    <attainGoal name="groovy:make-install"/>
   </goal>
   
-  <goal name="groovy:release" prereqs="clean, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
+  <goal name="groovy:release" prereqs="clean, groovy:release, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
     description="Performs a release of the source, binary and jar distros">
   </goal>
 
