@@ -10,20 +10,20 @@ class ForLoopTest extends GroovyTestCase {
         x = 0;
 
         for i in 0..10 {
-            x = i;
+            x = x + i;
         }
 
-        assert x := 9;
+        assert x := 45;
     }
 
     void testList() {
         x = 0;
 		
         for i in [0, 1, 2, 3, 4] {
-            x = i;
+            x = x + i;
         }
 
-        assert x := 4;
+        assert x := 10;
     }
 
 }
