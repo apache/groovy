@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.DoWhileLoop;
@@ -410,6 +411,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    public void visitClosureExpression(ClosureExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitConstantExpression(ConstantExpression expression) {

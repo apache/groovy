@@ -52,6 +52,7 @@ import java.util.List;
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
+import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.DoWhileLoop;
 import org.codehaus.groovy.ast.Expression;
@@ -234,6 +235,11 @@ public class Interpreter implements GroovyCodeVisitor {
             default :
                 throw new InterpreterException("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    public void visitClosureExpression(ClosureExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
