@@ -65,7 +65,7 @@ if not "%OS%" == "Windows_NT" goto win9xME_args
 if "%eval[2+2]" == "4" goto 4NT_args
 
 @rem Regular WinNT shell
-set CMD_LINE_ARGS=%*
+set CMD_LINE_ARGS=%1 %2 %3 %4 %5 %6 %7 %8 %9
 goto execute
 
 :win9xME_args
