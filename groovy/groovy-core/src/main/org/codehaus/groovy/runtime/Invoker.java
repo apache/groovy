@@ -58,6 +58,11 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.mockobjects.util.NotImplementedException;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -215,30 +220,34 @@ public class Invoker {
         if (value instanceof Iterator) {
             return (Iterator) value;
         }
+        else if (value instanceof Matcher) {
+        	final Matcher matcher = (Matcher) value;
+        	return new Iterator() {
+        		private boolean found = false;
+        		private boolean done = false;
+				public boolean hasNext() {
+					if (done) return false;
+					if (!found) {
+						found = matcher.find();
+						if (!found) done = true;
+					}
+					return found;
+				}
+				public Object next() {
+					if (!found) {
+						if (!hasNext()) {
+							throw new NoSuchElementException();
+						}
+					}
+					found = false;
+					return matcher.group();
+				}
+				public void remove() {
+					throw new NotImplementedException();
+				}
+        	};
+        }
         return asCollection(value).iterator();
-    }
-
-    /**
-     * Converts the given value to a boolean value for use in a branch
-     * statement or loop
-     * 
-     * @param value
-     * @return
-     */
-    public Boolean asBoolean(Object value) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
-        else if (value instanceof String) {
-            String s = (String) value;
-            if (s.equalsIgnoreCase("true")) {
-                return Boolean.TRUE;
-            }
-            else if (s.equalsIgnoreCase("false")) {
-                return Boolean.FALSE;
-            }
-        }
-        throw new InvokerException("Cannot convert value: " + value + " to a boolean");
     }
 
     /**
@@ -414,6 +423,43 @@ public class Invoker {
             }
             throw new InvokerException("Could not load type: " + type, e);
         }
+    }
+
+    /**
+     * Find the right hand regex within the left hand string and return a matcher.
+     * 
+     * @param left string to compare
+     * @param right regular expression to compare the string to
+     * @return
+     */
+    public Matcher objectFindRegex(Object left, Object right) {
+    	String stringToCompare;
+    	if (left instanceof String) {
+    		stringToCompare = (String) left;
+    	} else {
+    		stringToCompare = toString(left);
+    	}
+    	String regexToCompareTo;
+    	if (right instanceof String) {
+    		regexToCompareTo = (String) right;
+    	} else {
+    		regexToCompareTo = toString(right);
+    	}
+    	Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
+		return matcher;
+    }
+
+    /**
+     * Find the right hand regex within the left hand string and return a matcher.
+     * 
+     * @param left string to compare
+     * @param right regular expression to compare the string to
+     * @return
+     */
+    public boolean objectMatchRegex(Object left, Object right) {
+    	String stringToCompare = toString(left);
+    	String regexToCompareTo = toString(right);
+    	return Pattern.matches(regexToCompareTo, stringToCompare);
     }
 
 }

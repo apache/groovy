@@ -94,6 +94,12 @@ public class Token
 
     /** Token type for "=". */
     public static final int EQUAL = 100;
+    
+    /**	Token type for "~=". */
+    public static final int FIND_REGEX = 105;
+
+    /**	Token type for "~==". */
+    public static final int MATCH_REGEX = 106;
 
     /** Token type for "==". */
     public static final int COMPARE_IDENTICAL = 110;
@@ -728,12 +734,44 @@ public class Token
      *  @return The token.
      */
     public static Token compareNotEqual(int startLine,
-                                        int startColumn)
+										int startColumn)
     {
-        return newToken( COMPARE_NOT_EQUAL,
-                         "!=",
-                         startLine,
-                         startColumn );
+    	return newToken( COMPARE_NOT_EQUAL,
+    					 "!=",
+    					 startLine,
+						 startColumn );
+    }
+
+    /** Factory method for token for "~=".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token findRegex( int startLine,
+								   int startColumn)
+    {
+    	return newToken( FIND_REGEX,
+    			"~=",
+    			startLine,
+				startColumn );
+    }
+
+    /** Factory method for token for "~==".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token matchRegex( int startLine,
+								    int startColumn)
+    {
+    	return newToken( MATCH_REGEX,
+    			"~==",
+    			startLine,
+				startColumn );
     }
 
     /** Factory method for token for "=".
@@ -743,8 +781,8 @@ public class Token
      *
      *  @return The token.
      */
-    public static Token equal(int startLine,
-                                     int startColumn)
+    public static Token equal( int startLine,
+                               int startColumn)
     {
         return newToken( EQUAL,
                          "=",

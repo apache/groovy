@@ -82,7 +82,7 @@ public class PropertyTest extends TestSupport {
         Object bean = fooClass.newInstance();
         assertTrue("Managed to create bean", bean != null);
 
-        assertField(fooClass, "bar", Modifier.PRIVATE, "java.lang.String");
+        assertField(fooClass, "bar", 0, "java.lang.String");
 
         assertGetProperty(bean, "bar", null);
         assertSetProperty(bean, "bar", "newValue");
@@ -98,7 +98,7 @@ public class PropertyTest extends TestSupport {
         Object bean = fooClass.newInstance();
         assertTrue("Managed to create bean", bean != null);
 
-        assertField(fooClass, "bar", Modifier.PRIVATE, "java.lang.String");
+        assertField(fooClass, "bar", 0, "java.lang.String");
 
         assertGetProperty(bean, "name", "James");
         assertSetProperty(bean, "name", "Bob");

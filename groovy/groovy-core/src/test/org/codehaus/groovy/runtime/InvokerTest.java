@@ -132,9 +132,8 @@ public class InvokerTest extends GroovyTestCase {
      * Asserts the asBoolean method returns the given flag
      */
     protected void assertAsBoolean(boolean expected, Object value) {
-        Boolean answer = invoker.asBoolean(value);
-        assertNotNull(answer);
-        assertEquals("value: " + value + " asBoolean()", expected, answer.booleanValue());
+        boolean answer = InvokerHelper.asBool(value);
+        assertEquals("value: " + value + " asBoolean()", expected, answer);
     }
 
     /**

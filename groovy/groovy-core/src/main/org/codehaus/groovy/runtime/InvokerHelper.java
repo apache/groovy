@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
@@ -137,11 +138,20 @@ public class InvokerHelper {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
         }
+        else if (object instanceof Matcher) {
+        	Matcher matcher = (Matcher) object;
+        	return matcher.find();
+        }
+        else if (object instanceof Collection) {
+        	Collection collection = (Collection) object;
+        	return !collection.isEmpty();
+        }
         else if (object instanceof String) {
             String text = (String) object;
-            return text.equals("true");
+            return text.equalsIgnoreCase("true");
         }
-        return false;
+        throw new InvokerException(object.getClass().getName() +
+        						   "(" + object + ") cannot be converted to a boolean.");
     }
 
 	public static boolean notObject(Object object) {
@@ -158,6 +168,14 @@ public class InvokerHelper {
 
     public static boolean compareEqual(Object left, Object right) {
         return getInstance().objectsEqual(left, right);
+    }
+    
+    public static Matcher findRegex(Object left, Object right) {
+    	return getInstance().objectFindRegex(left, right);
+    }
+
+    public static boolean matchRegex(Object left, Object right) {
+    	return getInstance().objectMatchRegex(left, right);
     }
 
     public static boolean compareNotEqual(Object left, Object right) {

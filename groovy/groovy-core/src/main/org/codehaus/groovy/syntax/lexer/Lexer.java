@@ -300,6 +300,44 @@ public class Lexer
                     }
                     break ROOT_SWITCH;
                 }
+                case ( '~' ):
+                {
+                	mark();
+                	consume();
+                	
+                	c = la();
+                	
+                  MULTICHAR_SWITCH:
+                    switch ( c )
+                    {
+                    	case ( '=' ):
+                    	{
+                    		consume();
+                    		c = la();
+                    		switch ( c )
+                    		{
+                    			case ( '=' ):
+                    			{
+                    				consume();
+                    				token = Token.matchRegex( getStartLine(),
+                    										  getStartColumn());
+                    				break MULTICHAR_SWITCH;
+                    			}
+                    		}
+                    		token = Token.findRegex( getStartLine(),
+                    								 getStartColumn() );
+                    		break MULTICHAR_SWITCH;
+                    	}
+                    	default:
+                    	{
+                    		throw new UnexpectedCharacterException( getStartLine(),
+                    												getStartColumn()+1,
+                    												c,
+																	new char[] { '=' } );
+                    	}
+                    }
+                    break ROOT_SWITCH;
+                }
                 case ( '!' ):
                 {
                     mark();
