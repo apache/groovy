@@ -47,8 +47,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyTestCase;
 import groovy.lang.MetaClass;
+import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
 import java.util.List;

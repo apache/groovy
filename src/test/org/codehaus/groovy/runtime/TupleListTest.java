@@ -46,7 +46,7 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import java.util.Iterator;
 import java.util.Map;

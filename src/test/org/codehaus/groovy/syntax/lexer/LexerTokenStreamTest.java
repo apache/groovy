@@ -1,6 +1,6 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import org.codehaus.groovy.syntax.Token;
 

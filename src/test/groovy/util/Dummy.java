@@ -43,42 +43,52 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package groovy.util;
 
-package groovy.jmx;
+public class Dummy implements DummyMBean {
 
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.ObjectName;
+    private String name = "James";
+    private String location = "London";
+    private int size = 12;
 
-import groovy.lang.GroovyObject;
-
-import org.codehaus.groovy.classgen.TestSupport;
-
-/**
- * Tests using the GroovyObject API from Java to access MBeans via 
- * the normal properties API (to simulate normal Groovy property access)
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class MBeanTest extends TestSupport {
-
-    public void testGetProperty() throws Exception {
-        MBeanServer mbeanServer = MBeanServerFactory.createMBeanServer();
-        ObjectName name = new ObjectName("groovy.test:role=TestMBean,type=Dummy");
-        mbeanServer.registerMBean(new Dummy(), name);
-
-        assertEquals("JMX value of Name", "James", mbeanServer.getAttribute(name, "Name"));
-
-        GroovyObject object = new GroovyMBean(mbeanServer, name);
-        
-        Object value = object.getProperty("Name");
-        assertEquals("Name property", "James", value);
-
-        object.setProperty("Name", "Bob");
-        assertEquals("Name property", "Bob", object.getProperty("Name"));
-        
-        // now lets look up the name via JMX to checki
-        assertEquals("JMX value of Name", "Bob", mbeanServer.getAttribute(name, "Name"));
+    public Dummy() {
     }
+    
+    public Dummy(String name, String location) {
+        this.name = name;
+        this.location = location;
+    }
+    
+    public void start() {
+        System.out.println("Started!");
+    }
+    
+    public void stop() {
+        System.out.println("Stopped!");
+    }
+    
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
 }

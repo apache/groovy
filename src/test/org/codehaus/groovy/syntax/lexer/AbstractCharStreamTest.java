@@ -2,7 +2,7 @@ package org.codehaus.groovy.syntax.lexer;
 
 import org.codehaus.groovy.syntax.LookAheadExhaustionException;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import java.io.IOException;
 

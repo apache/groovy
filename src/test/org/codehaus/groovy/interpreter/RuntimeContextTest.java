@@ -46,7 +46,7 @@
 
 package org.codehaus.groovy.interpreter;
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 /**
  * 

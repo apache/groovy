@@ -47,6 +47,7 @@
 package groovy.lang;
 
 
+import groovy.util.GroovyTestCase;
 import groovy.util.Node;
 
 import java.util.ArrayList;

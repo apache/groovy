@@ -1,7 +1,7 @@
 package org.codehaus.groovy.syntax;
 
 
-import groovy.lang.GroovyTestCase;
+import groovy.util.GroovyTestCase;
 
 import java.util.Map;
 import java.util.Set;
