@@ -71,7 +71,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 					    					if (namespaces.containsKey parts[0]) {
 					    						key = parts[0] + ":" + parts[1]
 					    					} else {
-					    						throw new GroovyRuntimeException("bad attribute namespace tag in $key}")
+					    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
 					    					} 
 					    				}
 					    				
