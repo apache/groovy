@@ -57,6 +57,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 
 /**
  * A visitor which figures out which variables are in scope
@@ -102,6 +103,12 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
             leftExpression.visit(this);
         }
         expression.getRightExpression().visit(this);
+    }
+
+    public void visitForLoop(ForStatement forLoop) {
+        declareVariable(forLoop.getVariable());
+
+        super.visitForLoop(forLoop);
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
@@ -156,6 +163,10 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     protected void declareVariable(VariableExpression varExp) {
         String variable = varExp.getVariable();
+        declareVariable(variable);
+    }
+
+    protected void declareVariable(String variable) {
         /*
         if (!parameterSet.contains(variable)) {
             declaredVariables.add(variable);
