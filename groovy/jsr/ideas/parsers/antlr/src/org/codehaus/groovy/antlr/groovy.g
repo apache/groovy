@@ -498,7 +498,7 @@ typeSpec[boolean addImagNode]
 // - generic type arguments after
 classTypeSpec[boolean addImagNode]
 	:	t:classOrInterfaceType[false]
-	   ata:arrayOrTypeArgs[#t] 
+	   (ata:arrayOrTypeArgs[#t])? 
 		{
 // TODO - following line seems to cause stack overflow errors
 //      - need to figure out why INDEX_OP isn't being added to AST... 
@@ -597,7 +597,7 @@ typeArgumentBounds
 // A builtin type array specification is a builtin type with brackets afterwards
 builtInTypeArraySpec[boolean addImagNode]
 	:	t:builtInType
-		ata:arrayOrTypeArgs[#t]
+	(ata:arrayOrTypeArgs[#t])?
 		{
 			if (#ata != null)  #builtInTypeArraySpec = #ata;
 			if ( addImagNode ) {
@@ -611,7 +611,7 @@ builtInTypeArraySpec[boolean addImagNode]
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
 	:	t:builtInType
-		ata:arrayOrTypeArgs[#t] 
+		(ata:arrayOrTypeArgs[#t])?
 		{
 			if (#ata != null)  #builtInTypeSpec = #ata;
 			if ( addImagNode ) {
@@ -2064,7 +2064,7 @@ arrayOrTypeArgs[AST indexee]
                         lb:LBRACK^ {#lb.setType(INDEX_OP);}
                         zz=argList
                         RBRACK!
-                )*
+                )+
         ;
 
 // assignment expression (level 13)
