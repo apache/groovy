@@ -19,24 +19,22 @@ import org.eclipse.jface.viewers.StructuredViewer;
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
  */
-public class DoubleClickListenerFactory extends AbstractSwtFactory implements 
-SwtFactory, IDoubleClickListener, ClosureSupport {
+public class DoubleClickListenerFactory extends AbstractSwtFactory implements SwtFactory,
+        IDoubleClickListener, ClosureSupport {
     private Closure closure;
 
     /*
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-    throws GroovyException {
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
         if (parent instanceof StructuredViewer) {
             StructuredViewer viewer = (StructuredViewer) parent;
             viewer.addDoubleClickListener(this);
-        }
-        else {
+        } else {
             throw new InvalidParentException("structuredViewer");
         }
-        return parent;
+        return this;
     }
 
     /*
