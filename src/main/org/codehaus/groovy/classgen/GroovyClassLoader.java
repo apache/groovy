@@ -65,17 +65,8 @@ public class GroovyClassLoader extends ClassLoader {
     private Class generatedClass = null;
     private CompilerFacade compiler = new CompilerFacade(this) {
         protected void onClass(ClassWriter classWriter, ClassNode classNode) {
-            byte[] code = classWriter.toByteArray();
-
-            //System.out.println("About to load class: " + classNode.getName());
-
-            Class theClass = defineClass(classNode.getName(), code, 0, code.length);
-
-            if (generatedClass == null) {
-                generatedClass = theClass;
-            }
+            onClassNode(classWriter, classNode);
         }
-            
     };
 
     public GroovyClassLoader() {
@@ -119,4 +110,15 @@ public class GroovyClassLoader extends ClassLoader {
         return generatedClass;
     }
    
+    protected void onClassNode(ClassWriter classWriter, ClassNode classNode) {
+         byte[] code = classWriter.toByteArray();
+
+         //System.out.println("About to load class: " + classNode.getName());
+
+         Class theClass = defineClass(classNode.getName(), code, 0, code.length);
+
+         if (generatedClass == null) {
+             generatedClass = theClass;
+         }
+     }
 }
