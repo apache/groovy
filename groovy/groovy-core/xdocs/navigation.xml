@@ -17,6 +17,7 @@
     <menu name="Groovy">
       <item name="Index"               href="/index.html"/>
       <item name="Quick Start"         href="/quickStart.html"/>
+      <item name="Compiling"           href="/compiling.html"/>
       <item name="Markup"              href="/markup.html"/>
       <item name="More Markup"         href="http://wiki.codehaus.org/groovy/TreeBasedSyntax"/>
       <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
