@@ -598,8 +598,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // rest of code goes here...
 
-        final String exceptionTypeInternalName = (catchStatement != null) ? getTypeDescription(exceptionType) : null;
-
+        //final String exceptionTypeInternalName = (catchStatement != null) ? getTypeDescription(exceptionType) : null;
+        final String exceptionTypeInternalName = (catchStatement != null) ? getClassInternalName(exceptionType) : null;
+        
         exceptionBlocks.add(new Runnable() {
             public void run() {
                 cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
