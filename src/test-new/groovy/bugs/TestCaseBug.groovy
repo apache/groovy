@@ -12,4 +12,10 @@ class TestCaseBug extends TestCase {
     	void testDummy() {
     		println "worked!"
     	}
+
+    static void main(args) {
+        foo = new TestCaseBug("hey")
+        foo.testDummy()
+    }
+    
 }
