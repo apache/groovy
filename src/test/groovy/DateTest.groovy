@@ -16,4 +16,18 @@ class DateTest extends GroovyTestCase {
         
         println "have dates ${x} and ${y}"
 	}
+    
+    void testDateRange() {
+        
+        today = new Date()
+        later = today + 3
+        
+        expected = [today, today + 1, today + 2, today + 3]
+        
+        list = []
+        for (d in today..later) {
+            list << d
+        }
+        assert list == expected
+    }
 }
