@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.Reference;
+
 import org.codehaus.groovy.ast.expr.*;
 
 /**
@@ -63,6 +65,7 @@ public class Parameter {
     private String name;
     private boolean dynamicType;
     private Expression defaultValue;
+    private String realType;
 
     public Parameter(String name) {
         this("java.lang.Object", name);
@@ -109,4 +112,18 @@ public class Parameter {
     public Expression getDefaultValue() {
         return defaultValue;
     }
+
+    public void makeReference() {
+        realType = type;
+        type = Reference.class.getName();
+    }
+    
+    /**
+     * @return the real logical type if a dereference is being made 
+     * (e.g. to share variables across closure scopes)
+     */
+    public String getRealType() {
+        return realType;
+    }
+
 }

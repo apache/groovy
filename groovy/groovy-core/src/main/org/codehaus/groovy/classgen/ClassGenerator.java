@@ -1054,8 +1054,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         passingClosureParams = true;
-        Parameter[] localVariableParams = getClosureSharedVariables(expression);
-        for (int i = 0; i < localVariableParams.length; i++) {
+        List constructors = innerClass.getConstructors();
+        ConstructorNode node = (ConstructorNode) constructors.get(0);
+        Parameter[] localVariableParams = node.getParameters();
+        
+        //Parameter[] localVariableParams = getClosureSharedVariables(expression);
+        for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
@@ -1106,7 +1110,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         String prototype = "(L" + helper.getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
 
         // now lets load the various parameters we're passing
-        for (int i = 0; i < localVariableParams.length; i++) {
+        for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
 
@@ -1994,13 +1998,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             if (holder) {
                 initialValue = new VariableExpression(paramName);
                 type = Reference.class.getName();
+                param.makeReference();
             }
 
             FieldNode paramField = null;
             if (holder) {
                 paramField = answer.addField(paramName, ACC_PRIVATE, type, initialValue);
                 paramField.setHolder(true);
-                String realType = param.getType();
+                String realType = param.getRealType();
                 String methodName = Verifier.capitalize(paramName);
 
                 // lets add a getter & setter

@@ -11,6 +11,11 @@ class TestHelper extends GroovyTestCase {
         return foo.createSql()
     }
     
+    
+    protected createEmptySql() {
+        return newSql(getURI())
+    }
+    
     protected createSql() {
         sql = newSql(getURI())
         
