@@ -1,4 +1,4 @@
-class DefaultParamClosureTest extends GroovyTestCase {
+class DefaultParamTest extends GroovyTestCase {
 
     void testDefaultParameters() {
     
