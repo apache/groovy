@@ -3,11 +3,13 @@ class PostfixTest extends GroovyTestCase {
     void testIntegerPostfix() {
         x = 1
         
-        /** @todo
-        x++
+        y = x++
         
+        assert y == 1
         assert x == 2
-        */
+        
+        assert x++ == 2
+        assert x == 3
     }
     
     /*

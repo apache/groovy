@@ -730,7 +730,7 @@ public class ASTBuilder
             case ( Token.PLUS_PLUS ):
             case ( Token.MINUS_MINUS ):
             {
-                return prefixExpression( expressionRoot );
+                return postfixExpression( expressionRoot );
             }
             case ( Token.DOT_DOT ):
             {

@@ -1303,7 +1303,19 @@ public class Parser
             }
         }
 
-        return expr;
+      Token laToken = la();
+      if (laToken != null) 
+      {
+          switch ( laToken.getType() )
+          {
+              case ( Token.PLUS_PLUS ):
+              case ( Token.MINUS_MINUS ):
+              {
+                  expr = rootNode(lt(), expr);
+              }
+          }
+      }
+      return expr;
     }
 
     protected CSTNode sugaryMethodCallExpression(CSTNode expr,
