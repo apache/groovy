@@ -67,7 +67,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     // Method invocation tests
     //-------------------------------------------------------------------------
-    
+
     public void testInvokeMethodNoParams() throws Throwable {
         Object value = invoke(this, "mockCallWithNoParams", null);
         assertEquals("return value", "NoParams", value);
@@ -84,11 +84,11 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testInvokeMethodOneCollectionParameter() throws Throwable {
-        Object[] foo = {"a", "b", "c"};
-        
+        Object[] foo = { "a", "b", "c" };
+
         Object value = invoke(this, "mockCallWithOneCollectionParam", foo);
         assertEquals("return value", new Integer(3), value);
-        
+
         List list = new ArrayList();
         list.add("a");
         list.add("b");
@@ -128,23 +128,23 @@ public class InvokeMethodTest extends GroovyTestCase {
         list.add("foo");
         list.add("bar");
         assertMethodChooser("Object,Object", list);
-        
+
         Object[] blah = { "a", "b" };
         assertMethodChooser("Object,Object", blah);
-        
+
         assertMethodChooser("Object,Object", new Object[2]);
     }
 
     public void testCollectionMethods() throws Throwable {
-        Object list = InvokerHelper.createList(new Object[] {"a", "b"});
-        
+        Object list = InvokerHelper.createList(new Object[] { "a", "b" });
+
         Object value = invoke(list, "size", null);
         assertEquals("size of collection", new Integer(2), value);
-        
+
         value = invoke(list, "contains", "a");
         assertEquals("contains method", Boolean.TRUE, value);
     }
-    
+
     public void testNewMethods() throws Throwable {
         Object value = invoke("hello", "size", null);
         assertEquals("size of string", new Integer(5), value);
@@ -154,13 +154,13 @@ public class InvokeMethodTest extends GroovyTestCase {
         Object value = invoke(DummyBean.class, "dummyStaticMethod", "abc");
         assertEquals("size of string", "ABC", value);
     }
-    
+
     public void testBaseClassMethod() throws Throwable {
         Object object = new DummyBean();
         Object value = invoke(object, "toString", null);
         assertEquals("toString", object.toString(), value);
     }
-    
+
     public void testBaseFailMethod() throws Throwable {
         Object value;
         try {
@@ -170,7 +170,16 @@ public class InvokeMethodTest extends GroovyTestCase {
             // worked
         }
     }
-    
+
+    public void testClassMethod() throws Throwable {
+        Class c = String.class;
+        Object value = invoke(c, "getName", null);
+        assertEquals("Class.getName()", c.getName(), value);
+        c = getClass();
+        value = invoke(c, "getName", null);
+        assertEquals("Class.getName()", c.getName(), value);
+    }
+
     public void testInvokeUnknownMethod() throws Throwable {
         try {
             Object value = invoke(this, "unknownMethod", "abc");
@@ -180,13 +189,6 @@ public class InvokeMethodTest extends GroovyTestCase {
             // worked
         }
     }
-
-    public void testClassMethod() throws Throwable {
-        Class c = String.class;
-        Object value = invoke(c, "getName", null);
-        assertEquals("Class.getName()", c.getName(), value);
-    }
-   
 
     public void testInvokeMethodWithWrongNumberOfParameters() throws Throwable {
         try {
@@ -230,26 +232,26 @@ public class InvokeMethodTest extends GroovyTestCase {
         Collection coll = InvokerHelper.asCollection(collection);
         return new Integer(coll.size());
     }
-    
+
     public Object mockOverloadedMethod() {
         return "void";
     }
-    
+
     public Object mockOverloadedMethod(Object object) {
         return "Object";
     }
-    
+
     public Object mockOverloadedMethod(String object) {
         return "String";
     }
-    
+
     public Object mockOverloadedMethod(Object object, Object bar) {
         return "Object,Object";
     }
-    
+
     // Implementation methods
     //-------------------------------------------------------------------------
-    
+
     /**
      * Asserts that invoking the method chooser finds the right overloaded method implementation
      * 
@@ -258,7 +260,7 @@ public class InvokeMethodTest extends GroovyTestCase {
      */
     protected void assertMethodChooser(Object expected, Object arguments) throws Throwable {
         Object value = invoke(this, "mockOverloadedMethod", arguments);
-        
+
         assertEquals("Invoking overloaded method for arguments: " + InvokerHelper.toString(arguments), expected, value);
     }
 
