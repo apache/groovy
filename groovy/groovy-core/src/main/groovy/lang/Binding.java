@@ -43,37 +43,44 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.lang;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * An exception occurred if a dynamic method dispatch fails with an unknown method
+ * Represents the variable bindings of a script which can be altered
+ * from outside the script object or created outside of a script and passed
+ * into it.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NoSuchMethodException extends InvokerException {
-
-    private String method;
-    private Class type;
-
-    public NoSuchMethodException(String method, Class type) {
-        super("No such method: " + method + " for class: " + type.getName());
-        this.method = method;
-        this.type = type;
+public class Binding {
+    private Map variables = new HashMap();
+    
+    public Binding() {
     }
-
+    
     /**
-     * @return the name of the method that could not be found
-     */
-    public String getMethod() {
-        return method;
-    }
-
-    /**
+     * A helper constructor used in main(String[]) method calls
      * 
-     * @return The type on which the method was attempted to be called
+     * @param args are the command line arguments from a main()
      */
-    public Class getType() {
-        return type;
+    public Binding(String[] args) {
+        setVariable("args", args);
     }
+    
+    public Object getVariable(String name) {
+        return variables.get(name);
+    }
+    
+    public void setVariable(String name, Object value) {
+        variables.put(name, value);
+    }
+    
+    public Map getVariables() {
+        return variables;
+    }
+
 }

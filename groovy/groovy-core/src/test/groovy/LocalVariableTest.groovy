@@ -1,5 +1,3 @@
-import org.codehaus.groovy.runtime.NoSuchPropertyException
-
 class LocalVariableTest extends GroovyTestCase {
 
     void testAssert() {
@@ -18,7 +16,7 @@ class LocalVariableTest extends GroovyTestCase {
 	        y = x
 	        fail("x is undefined, should throw an exception")
         }
-        catch (NoSuchPropertyException e) {
+        catch (MissingPropertyException e) {
 			assert e.getProperty() == "x"            
             text = e.message
             assert text == "No such property: x for class: LocalVariableTest"

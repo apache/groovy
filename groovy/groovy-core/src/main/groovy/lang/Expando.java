@@ -48,7 +48,6 @@ package groovy.lang;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.InvokerException;
 
 /**
  * Represents a dynamically expandable bean.
@@ -81,7 +80,7 @@ public class Expando extends GroovyObjectSupport {
         try {
             return super.getProperty(property);
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             return getExpandoProperties().get(property);
         }
     }
@@ -90,7 +89,7 @@ public class Expando extends GroovyObjectSupport {
         try {
             super.setProperty(property, newValue);
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             getExpandoProperties().put(property, newValue);
         }
     }
@@ -99,7 +98,7 @@ public class Expando extends GroovyObjectSupport {
         try {
             return super.invokeMethod(name, args);
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             Object value = getExpandoProperties().get(name);
             if (value instanceof Closure) {
                 Closure closure = (Closure) value;

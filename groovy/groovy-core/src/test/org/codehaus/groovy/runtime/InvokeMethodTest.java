@@ -47,6 +47,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
@@ -217,7 +218,7 @@ public class InvokeMethodTest extends GroovyTestCase {
             invoke(this, "badOverload", new Object[] { "a", "b" });
             fail("Should fail as an unambiguous method is invoked");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             System.out.println("Caught: " + e);
         }
     }
@@ -288,7 +289,7 @@ public class InvokeMethodTest extends GroovyTestCase {
             Object value = invoke(this, "unknownMethod", "abc");
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             // worked
         }
     }
@@ -299,7 +300,7 @@ public class InvokeMethodTest extends GroovyTestCase {
             Object value = invoke(this, "unknownMethod", args);
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             // worked
         }
     }

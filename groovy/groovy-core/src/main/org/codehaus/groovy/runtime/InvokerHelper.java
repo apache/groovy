@@ -45,11 +45,12 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.*;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.ObjectRange;
 import groovy.lang.Script;
-import groovy.lang.ScriptContext;
+import groovy.lang.Binding;
 import groovy.lang.Tuple;
 
 import java.lang.reflect.Constructor;
@@ -180,7 +181,7 @@ public class InvokerHelper {
             String text = (String) object;
             return text.equalsIgnoreCase("true");
         }
-        throw new InvokerException(object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
+        throw new GroovyRuntimeException(object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
     }
 
     public static boolean notObject(Object object) {
@@ -277,21 +278,21 @@ public class InvokerHelper {
     }
 
     public static Object runScript(Class scriptClass, String[] args) {
-        ScriptContext context = new ScriptContext(args);
+        Binding context = new Binding(args);
         Script script = createScript(scriptClass, context);
         return invokeMethod(script, "run", EMPTY_ARGS);
     }
 
-    public static Script createScript(Class scriptClass, ScriptContext context) {
+    public static Script createScript(Class scriptClass, Binding context) {
         try {
             Constructor constructor = scriptClass.getConstructor(new Class[] {});
             Script script = (Script) constructor.newInstance(new Object[] {});
-            Method setBindings = script.getClass().getMethod("setBindings", new Class[] { ScriptContext.class });
+            Method setBindings = script.getClass().getMethod("setBindings", new Class[] { Binding.class });
             setBindings.invoke(script, new Object[] { context });
             return script;
         }
         catch (Exception e) {
-            throw new InvokerException(
+            throw new GroovyRuntimeException(
                 "Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
                 e);
         }

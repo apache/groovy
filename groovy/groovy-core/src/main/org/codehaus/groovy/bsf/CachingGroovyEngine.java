@@ -36,7 +36,7 @@ package org.codehaus.groovy.bsf;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
-import groovy.lang.ScriptContext;
+import groovy.lang.Binding;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
@@ -60,7 +60,7 @@ public class CachingGroovyEngine extends GroovyEngine {
 
     private Map evalScripts;
     private Map execScripts;
-    private ScriptContext context;
+    private Binding context;
     private ClassLoader parent;
     private GroovyClassLoader loader;
 

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.*;
+
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -53,7 +55,7 @@ import java.lang.reflect.InvocationTargetException;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class InvokerInvocationException extends InvokerException {
+public class InvokerInvocationException extends GroovyRuntimeException {
 
     public InvokerInvocationException(InvocationTargetException e) {
         super(e.getTargetException().getMessage(), e.getTargetException());

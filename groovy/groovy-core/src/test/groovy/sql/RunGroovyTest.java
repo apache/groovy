@@ -71,8 +71,8 @@ public class RunGroovyTest extends TestSupport {
     }
     
     protected void runGroovyTest(String name) throws Exception {
-        compile("src/test/groovy/gdo/Person.groovy");
-        GroovyObject object = compile("src/test/groovy/gdo/PersonTest.groovy");
+        compile("src/test/groovy/sql/Person.groovy");
+        GroovyObject object = compile("src/test/groovy/sql/PersonTest.groovy");
         object.invokeMethod(name, null);
     }
 }

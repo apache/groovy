@@ -45,7 +45,6 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -67,14 +66,14 @@ public abstract class Closure extends GroovyObjectSupport {
         try {
             return getMetaClass().invokeMethod(this, method, arguments);
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             Object delegate = getDelegate();
             if (delegate != this) {
                 try {
                     // lets try invoke method on delegate
                     return InvokerHelper.invokeMethod(delegate, method, arguments);
                 }
-                catch (InvokerException e2) {
+                catch (GroovyRuntimeException e2) {
                     // ignore, we'll throw e
                 }
             }
@@ -87,14 +86,14 @@ public abstract class Closure extends GroovyObjectSupport {
         try {
             return getMetaClass().getProperty(this, property);
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             Object delegate = getDelegate();
             if (delegate != this) {
                 try {
                     // lets try invoke method on delegate
                     return InvokerHelper.getProperty(delegate, property);
                 }
-                catch (InvokerException e2) {
+                catch (GroovyRuntimeException e2) {
                     // ignore, we'll throw e
                 }
             }
@@ -108,7 +107,7 @@ public abstract class Closure extends GroovyObjectSupport {
             getMetaClass().setProperty(this, property, newValue);
             return;
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             Object delegate = getDelegate();
             if (delegate != this) {
                 try {
@@ -116,7 +115,7 @@ public abstract class Closure extends GroovyObjectSupport {
                     InvokerHelper.setProperty(delegate, property, newValue);
                     return;
                 }
-                catch (InvokerException e2) {
+                catch (GroovyRuntimeException e2) {
                     // ignore, we'll throw e
                 }
             }

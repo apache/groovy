@@ -36,12 +36,12 @@
 package org.codehaus.groovy.syntax.parser;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.MissingClassException;
+import groovy.lang.MissingPropertyException;
 
 import java.io.ByteArrayInputStream;
 
 import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.runtime.NoSuchClassException;
-import org.codehaus.groovy.runtime.NoSuchPropertyException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -50,7 +50,7 @@ import org.codehaus.groovy.runtime.NoSuchPropertyException;
 public class CompilerErrorTest extends TestSupport {
 
     public void testUnknownClassCatch() throws Exception {
-        NoSuchClassException e =
+        MissingClassException e =
             assertCompileFailed(
                 "class UnknownClass {\n"
                     + "    main() {\n"
@@ -67,7 +67,7 @@ public class CompilerErrorTest extends TestSupport {
     }
 
     public void testUnknownClassInNew() throws Exception {
-        NoSuchClassException e =
+        MissingClassException e =
             assertCompileFailed(
                 "class UnknownClass {\n" + "    main() {\n" + "        x = new UnknownThingy()\n" + "    }\n" + "}\n");
         assertEquals("UnknownThingy", e.getType());
@@ -82,7 +82,7 @@ public class CompilerErrorTest extends TestSupport {
             object.invokeMethod("main", null);
             fail("Should have thrown exception due to unknown property");
         }
-        catch (NoSuchPropertyException e) {
+        catch (MissingPropertyException e) {
             assertEquals("UnknownThingy", e.getProperty());
         }
         /*
@@ -97,13 +97,13 @@ public class CompilerErrorTest extends TestSupport {
         return (GroovyObject) type.newInstance();
     }
 
-    protected NoSuchClassException assertCompileFailed(String code) throws Exception {
+    protected MissingClassException assertCompileFailed(String code) throws Exception {
         try {
             assertCompileWorks(code);
 
             fail("Should have thrown an exception");
         }
-        catch (NoSuchClassException e) {
+        catch (MissingClassException e) {
             System.out.println("Worked, threw: " + e);
             //e.printStackTrace();
             return e;

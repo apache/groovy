@@ -321,7 +321,7 @@ public class Wiki2Markup extends MatchingTask {
         String[] names = m.mapFileName(name);
         String outputName = names[0];
 
-        context.set("name", Verifier.capitalize(name));
+        context.set("name", name);
         
         String text = readFile(file);
         String result = engine.render(text, context);

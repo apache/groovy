@@ -53,13 +53,13 @@ package groovy.lang;
  * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
-    private ScriptContext bindings = new ScriptContext();
+    private Binding bindings = new Binding();
 
-    public ScriptContext getBindings() {
+    public Binding getBindings() {
         return bindings;
     }
     
-    public void setBindings(ScriptContext bindings) {
+    public void setBindings(Binding bindings) {
         this.bindings = bindings;
     }
 

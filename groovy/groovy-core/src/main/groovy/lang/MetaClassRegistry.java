@@ -51,7 +51,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerException;
 
 /**
  * A registery of MetaClass instances which caches introspection & 
@@ -89,7 +88,7 @@ public class MetaClassRegistry {
                 answer = new MetaClass(this, theClass);
             }
             catch (IntrospectionException e) {
-                throw new InvokerException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
+                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
             }
             metaClasses.put(theClass, answer);
         }

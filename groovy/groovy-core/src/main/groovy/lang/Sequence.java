@@ -51,7 +51,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.NoSuchMethodException;
 
 /**
  * Represents a sequence of objects which represents zero or many instances of
@@ -186,7 +185,7 @@ public class Sequence extends ArrayList implements GroovyObject {
         try {
         return getMetaClass().invokeMethod(this, name, args);
         }
-        catch (NoSuchMethodException e) {
+        catch (MissingMethodException e) {
             // lets apply the method to each item in the collection
             List answer = new ArrayList(size());
             for (Iterator iter = iterator(); iter.hasNext(); ) {

@@ -1,22 +1,7 @@
-Refactorings / Tidying things up
-=================================
-
-* refactor InvokerException & related exceptions to be groovy.lang
-	- better name for InvokerException?
-	- maybe root GroovyRuntimeException
-	
-* refactor MetaClass to GroovyClass?
-* maybe refactor ScriptContext into GroovyShell?
-* groovy.model -> groovy.mvc?
-* groovy.gdo -> groovy.sql?
-
-
 Things to Test
 ==============
 
 * home page tester
-
-* do wiki plugin to auto-test the examples
 
 * test synchronized statement
 
@@ -28,15 +13,6 @@ Things to Test
 	- duplicate methods test
 	- duplicate class in module
 	
-* duplicate class definition: ClosureMethodTest$4
-	<bob>	java.lang.LinkageError: duplicate class definition: ClosureMethodTest$4
-	<bob>	        at java.lang.ClassLoader.defineClass0(Native Method)
-	<bob>	        at java.lang.ClassLoader.defineClass(ClassLoader.java:502)
-	<bob>	        at java.lang.ClassLoader.defineClass(ClassLoader.java:431)
-	<bob>	        at groovy.lang.GroovyClassLoader.onClassNode(GroovyClassLoader.java:108)
-	<bob>	        at org.codehaus.groovy.classgen.TestSupport$1.onClassNode(TestSupport.java:96)
-
-
 * test date range using Range object
 
 * test max, min, sort with closure comparator

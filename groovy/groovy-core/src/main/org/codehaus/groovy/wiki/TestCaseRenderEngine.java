@@ -81,13 +81,15 @@ public class TestCaseRenderEngine implements RenderEngine {
         if (idx > 0) {
             name = name.substring(0, idx);
         }
+        name = name + "Test";
         
         // lets replace {code:groovy} with a unit test case method name
         StringBuffer buf = new StringBuffer();
 
         String[] parts = groovyCodePattern.split(content);
         
-        buf.append( "class " + name + " extends GroovyTestCase {\n\n");
+        buf.append( "package wiki\nclass " + name + " extends GroovyTestCase {\n\n");
+        buf.append("void testDummy() {\n// this is a dummy test case\n}\n\n");
         buf.append("/*\n");
         buf.append(parts[0]);
 

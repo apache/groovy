@@ -72,7 +72,7 @@ public class GroovyShellTest extends GroovyTestCase {
 	private String script2 = "test.prop = 2\nreturn test.prop";
 	
 	public void testExecuteScriptWithContext() {
-		ScriptContext context = new ScriptContext();
+		Binding context = new Binding();
 		context.setVariable("test", new PropertyHolder());
 		GroovyShell shell = new GroovyShell(context);
 		try {

@@ -1,5 +1,3 @@
-import org.codehaus.groovy.runtime.NoSuchMethodException
-
 /** 
  * Tests exception handling inside of a closure
  * 
@@ -16,7 +14,7 @@ class ExceptionInClosureTest extends GroovyTestCase {
 	        
 	        fail("Should have thrown an exception by now")
         }
-        catch (NoSuchMethodException e) {
+        catch (MissingMethodException e) {
    			System.out.println("Caught: " + e)    
    			
    			assert e.method == "foo"

@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.Script;
-import groovy.lang.ScriptContext;
+import groovy.lang.Binding;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -214,7 +214,7 @@ public class ModuleNode extends ASTNode implements Constants {
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, new BlockStatement());
         classNode.addConstructor(
             ACC_PUBLIC,
-            new Parameter[] { new Parameter(ScriptContext.class.getName(), "context")},
+            new Parameter[] { new Parameter(Binding.class.getName(), "context")},
         new ExpressionStatement(
             new MethodCallExpression(
                 new VariableExpression("super"),

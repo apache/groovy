@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.*;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
@@ -267,7 +268,7 @@ public class Invoker {
             return comparable.compareTo(right);
         }
         /** todo we might wanna do some type conversion here */
-        throw new InvokerException("Cannot compare values: " + left + " and " + " right");
+        throw new GroovyRuntimeException("Cannot compare values: " + left + " and " + " right");
     }
 
     /**
@@ -375,7 +376,7 @@ public class Invoker {
      */
     public void setProperty(Object object, String property, Object newValue) {
         if (object == null) {
-            throw new InvokerException("Cannot set property on null object");
+            throw new GroovyRuntimeException("Cannot set property on null object");
         }
         else if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
@@ -419,7 +420,7 @@ public class Invoker {
             Number n = (Number) value;
             return n.intValue();
         }
-        throw new InvokerException("Could not convert object: " + value + " into an int");
+        throw new GroovyRuntimeException("Could not convert object: " + value + " into an int");
     }
 
     /**
@@ -441,7 +442,7 @@ public class Invoker {
                 catch (ClassNotFoundException e3) {
                 }
             }
-            throw new InvokerException("Could not load type: " + type, e);
+            throw new GroovyRuntimeException("Could not load type: " + type, e);
         }
     }
 

@@ -43,28 +43,31 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.lang;
 
 import java.sql.SQLException;
 
 /**
- * An exception occurred if a dynamic property dispatch fails with an unknown property
+ * An exception occurred if a dynamic property dispatch fails with an unknown property.
+ * 
+ * Note that the Missing*Exception classes were named for consistency and
+ * to avoid conflicts with JDK exceptions of the same name.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NoSuchPropertyException extends InvokerException {
+public class MissingPropertyException extends GroovyRuntimeException {
 
     private String property;
     private Class type;
 
-    public NoSuchPropertyException(String property, Class type) {
+    public MissingPropertyException(String property, Class type) {
         super("No such property: " + property + " for class: " + type.getName());
         this.property = property;
         this.type = type;
     }
 
-    public NoSuchPropertyException(String property, Class type, SQLException e) {
+    public MissingPropertyException(String property, Class type, SQLException e) {
         super("No such property: " + property + " for class: " + type.getName() + ". Reason: " + e, e);
         this.property = property;
         this.type = type;
