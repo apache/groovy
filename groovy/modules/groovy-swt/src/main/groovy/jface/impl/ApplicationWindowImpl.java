@@ -1,5 +1,6 @@
 package groovy.jface.impl;
 
+import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
@@ -37,4 +38,12 @@ public class ApplicationWindowImpl extends ApplicationWindow {
 		return super.getContents();
 	}
 
+	/*
+	 * override to make public
+	 * 
+	 * @see org.eclipse.jface.window.ApplicationWindow#getStatusLineManager()
+	 */
+	public StatusLineManager getStatusLineManager() {
+		return super.getStatusLineManager();
+	}
 }

@@ -58,6 +58,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.FontDialog;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.List;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
@@ -199,6 +200,7 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("group", Group.class);
         registerBeanFactory("label", Label.class, SWT.HORIZONTAL | SWT.SHADOW_IN);
         registerBeanFactory("list", List.class);
+		registerBeanFactory("link", Link.class);
         registerBeanFactory("menu", Menu.class, SWT.DEFAULT);
         //        registerMenuTag("menuBar", SWT.BAR);
 

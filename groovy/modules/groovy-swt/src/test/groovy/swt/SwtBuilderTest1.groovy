@@ -20,6 +20,7 @@ class SwtBuilderTest1 {
         	group()
         	label()
         	list()
+        	link()
         	menu() {
 				menuSeparator()
 				menuItem()
