@@ -26,6 +26,12 @@
 
   <mailingLists>
     <mailingList>
+      <name>groovy dev</name>
+      <archive>http://lists.codehaus.org/pipermail/groovy-dev/</archive>
+      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-dev</subscribe>
+      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-dev</unsubscribe>
+    </mailingList>
+    <mailingList>
       <name>groovy users</name>
       <archive>http://lists.codehaus.org/pipermail/groovy-user/</archive>
       <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-user</subscribe>
@@ -36,12 +42,6 @@
       <archive>http://lists.codehaus.org/pipermail/groovy-scm/</archive>
       <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</subscribe>
       <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</unsubscribe>
-    </mailingList>
-    <mailingList>
-      <name>general workflow discussion</name>
-      <archive>http://lists.codehaus.org/pipermail/workflow-discuss/</archive>
-      <subscribe>http://lists.codehaus.org/mailman/listinfo/workflow-discuss</subscribe>
-      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/workflow-discuss</unsubscribe>
     </mailingList>
   </mailingLists>
 
