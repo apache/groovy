@@ -69,7 +69,6 @@ public class AllTests extends TestSuiteSupport {
 
         // TODO: AST bugs I think...
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
-        "PrimitiveTypeFieldTest.groovy",
 
         "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
         "ReturnTest.groovy",

@@ -1277,15 +1277,15 @@ closureParameters
 closureParametersStart!
         :   BOR
         |   LOR // for empty parameter declaration
-        |       parameterIdent! nls! (BOR | COMMA)
+        |   (typeSpec[false]!)? parameterIdent! nls! (BOR | COMMA)
         |   LPAREN balancedTokens! RPAREN nls! BOR
         ;
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
 closureParameter!
-        :   id:parameterIdent!
+        :   (t:typeSpec[false]!)? id:parameterIdent!
                 {#closureParameter = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-                                                                #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"]),
+                                                                #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"], t),
                                                                 id);}
         ;
 
