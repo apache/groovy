@@ -193,6 +193,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Chris Poirier</name>
+      <id>cpoirier</id>
+      <email>cpoirier@dreaming.org</email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
