@@ -103,7 +103,14 @@ public class SwtBuilder extends BuilderSupport {
     protected Object createNode(Object name) {
         return createNode(name, Collections.EMPTY_MAP);
     }
-
+    
+    /* 
+     * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map, java.lang.Object)
+     */
+    protected Object createNode(Object name, Map attributes, Object value) {
+        return createNode(name, attributes);
+    }
+    
     /*
      * @see groovy.util.BuilderSupport#createNode(java.lang.Object,
      *      java.util.Map)
@@ -331,4 +338,7 @@ public class SwtBuilder extends BuilderSupport {
     public Object getCurrent() {
         return super.getCurrent();
     }
+
+  
+
 }
