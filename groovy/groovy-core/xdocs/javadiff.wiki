@@ -1,0 +1,13 @@
+
+1 Differences from Java
+
+Groovy tries to be as natural as possible for Java developers. 
+We've tried to follow the principle of least surprise when designing Groovy, 
+particularly for developers learning Groovy who've come from a Java background.
+
+Here we list all the major and minor differences between Java and Groovy.
+
+
+{code:groovy}
+{code}
+

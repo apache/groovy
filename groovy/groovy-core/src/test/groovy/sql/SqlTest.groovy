@@ -54,7 +54,7 @@ class SqlTest extends GroovyTestCase {
     }
     
     protected createSql() {
-        dataSource = new AxionDataSource("jdbc:axiondb:foo" + getName())
+        dataSource = new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
         sql = new Sql(dataSource)
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
