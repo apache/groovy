@@ -225,6 +225,12 @@
       <version>1.0-M3-dev</version>
     </dependency>
   
+  <!-- only used for servlet / gsp -->
+    <dependency>
+      <id>servletapi</id>
+      <version>2.3</version>
+    </dependency>
+  
   </dependencies>
 
   <build>

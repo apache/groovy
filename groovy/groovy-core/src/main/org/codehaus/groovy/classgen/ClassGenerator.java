@@ -107,8 +107,6 @@ import org.objectweb.asm.Type;
  */
 public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Constants {
 
-    protected static final Log log = LogFactory.getLog(ClassGenerator.class);
-
     private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
@@ -1241,7 +1239,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             pushConstant(i);
             Expression elementExpression = expression.getExpression(i);
             if (elementExpression == null) {
-                log.warn("Null expression in: " + expression);
                 ConstantExpression.NULL.visit(this);
             }
             else {
