@@ -52,6 +52,8 @@ import groovy.lang.MetaClassRegistry;
 import groovy.lang.Range;
 import groovy.lang.Tuple;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -210,6 +212,14 @@ public class Invoker {
             IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
             method.call(adapter);
             return adapter.asList();
+        }
+        else if (value instanceof File) {
+            try {
+                return DefaultGroovyMethods.readLines((File) value);
+            }
+            catch (IOException e) {
+                throw new GroovyRuntimeException("Error reading file: " + value, e);
+            }
         }
         else {
             // lets assume its a collection of 1
