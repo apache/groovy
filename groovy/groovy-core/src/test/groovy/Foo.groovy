@@ -18,23 +18,21 @@ class Foo implements Serializable {
 	private invisible = "invisible"
 
  	// provide a getter method
-    /*
  	getCount() {
- 	    if (count == 0) {
+ 	    if (count == null) {
  	        count = 1
  	    }
  	    return count
  	}
- 	*/
      
 	getBlah() {
  	    return blah
  	}
 	
- 	/* @todo bug
+	/* @todo
 	String toString() {
 	    return super.toString() + " name: " + getName() + " location: " + getLocation()
-		// return super.toString() + " name: ${name} location: ${location}"
+		//return super.toString() + " name: ${name} location: ${location}"
 	}
 	*/
 }

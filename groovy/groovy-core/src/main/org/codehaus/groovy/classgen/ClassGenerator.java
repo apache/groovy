@@ -1315,14 +1315,26 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             visitClassExpression(new ClassExpression(className));
         }
         else {
+            Expression objectExpression = expression.getObjectExpression();
+            
+            if (isThisExpression(objectExpression)) {
+                // lets use the field expression if its available
+                String name = expression.getProperty();
+                FieldNode field = classNode.getField(name);
+                if (field != null) {
+                    visitFieldExpression(new FieldExpression(field));
+                    return;
+                }
+            }
+            
             boolean left = leftHandExpression;
             // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
             // rather than ALOAD
             leftHandExpression = false;
 
-            Expression objectExpression = expression.getObjectExpression();
             objectExpression.visit(this);
 
+            
             cv.visitLdcInsn(expression.getProperty());
 
             if (expression.isSafe()) {
@@ -2266,6 +2278,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         else if (expression instanceof FieldExpression) {
             FieldExpression fieldExp = (FieldExpression) expression;
             field = classNode.getField(fieldExp.getFieldName());
+        }
+        else if (expression instanceof PropertyExpression) {
+            PropertyExpression fieldExp = (PropertyExpression) expression;
+            field = classNode.getField(fieldExp.getProperty());
         }
         if (field != null) {
             return !field.isStatic();
