@@ -61,14 +61,7 @@ public class AllTests extends TestSuiteSupport {
         "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
 
-        "MapConstructionTest.groovy",           // TODO: map keys cannot be numeric literals
-        "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
-        "PrintTest.groovy",                     // TODO: map keys cannot be numeric literals
-        "ClosureMethodTest.groovy",             // TODO: map keys cannot be numeric literals
-        "ClosureWithDefaultParamTest.groovy",   // TODO: map keys cannot be numeric literals
-
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
-
 
         "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
 
@@ -79,6 +72,7 @@ public class AllTests extends TestSuiteSupport {
         "StreamingMarkupTest.groovy",           // TODO: can't parse foo.bar <<
         "BuilderSupportTest.groovy",            // TODO: can't parse foo.bar <<
         "bugs/ForAndSqlBug.groovy",             // TODO: can't parse foo.bar <<
+        "PrintTest.groovy",                     // TODO: can't parse foo.bar <<
 
         "RegularExpressionsTest.groovy",        // TODO: regex issue
 

@@ -1915,7 +1915,7 @@ namePart
 /** Allowed keywords after dot
 */
 keywordPropertyNames
-					: 	("class" | "in" | "def")
+					: 	("class" | "in" | "def" | builtInType)
 								{ #keywordPropertyNames.setType(IDENT); }
 								;
 						
@@ -2430,7 +2430,8 @@ argumentLabel
 
 /** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
 argumentLabelStart!
-        :   ( IDENT | keywordPropertyNames | STRING_LITERAL | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
+									// allow number and string literals as labels for maps
+        :   ( IDENT | keywordPropertyNames | constant | (LPAREN | STRING_CTOR_START)=> balancedBrackets ) COLON
         ;
 
 /*OBS*
