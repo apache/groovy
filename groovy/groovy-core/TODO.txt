@@ -1,13 +1,13 @@
 Core Groovy Tasks
 =================
 
+* sort out the packages & default imports
+
+* test use of constructors
+
 * closures need to be able to access fields of outer class
 
 * remove log4j dependency
-
-* test the use of closures for methods
-	foo = System.out.println;
-	foo.call("hello");
 
 * closures - handle passing in of variables from outer scope?
 
