@@ -154,7 +154,10 @@ public class DefaultGroovyMethods {
 	    buffer.append(Integer.toHexString(self.hashCode()));
 	    boolean groovyObject = self instanceof GroovyObject;
 		
-		//jes this should be rewritten to use the new allProperties() stuff
+		/*jes this may be rewritten to use the new allProperties() stuff
+		 * but the original pulls out private variables, whereas allProperties()
+		 * does not. What's the real use of dump() here?
+		 */
 	    while (klass != null) {
 	        Field[] fields = klass.getDeclaredFields();
 	        for (int i = 0; i < fields.length; i++) {
@@ -183,6 +186,32 @@ public class DefaultGroovyMethods {
 
 	        klass = klass.getSuperclass();
 	    }
+		
+		/* here is a different implementation that uses allProperties(). I have left
+		 * it commented out because it returns a slightly different list of properties; 
+		 * ie it does not return privates. I don't know what dump() really should be doing, 
+		 * although IMO showing private fields is a no-no
+		 */
+		/*
+		List props = allProperties(self);
+        for(Iterator itr = props.iterator(); itr.hasNext(); ) {
+            PropertyValue pv = (PropertyValue) itr.next();
+			
+			// the original skipped this, so I will too
+			if(pv.getName().equals("metaClass")) continue;
+			if(pv.getName().equals("class")) continue;
+			
+			buffer.append(" ");
+			buffer.append(pv.getName());
+			buffer.append("=");
+			try {
+				buffer.append(InvokerHelper.toString(pv.getValue()));
+			}
+			catch (Exception e) {
+				buffer.append(e);
+			}
+        }
+		*/
 
 	    buffer.append(">");
 	    return buffer.toString();
