@@ -1,32 +1,29 @@
 class PrimitiveArraysTest extends GroovyTestCase {
 
-    def c1Field = new char[0]
-    char[] c2Field = new char[0]
+    def c1Field = [] as char[]
+    char[] c2Field = [] as char[]
     
-    def i1Field = new int[0]
-    int[] i2Field = new int[0]
-    
+    def i1Field = [] as int[]
+    int[] i2Field = [] as int[]
 
-    def d1Field = new double[0]
-    double[] d2Field = new double[0]
+    def d1Field = [] as double[]
+    double[] d2Field = [] as double[]
 
-    def f1Field = new float[0]
-    float[] f2Field = new float[0]
+    def f1Field = [] as float[]
+    float[] f2Field = [] as float[]
     
-    def l1Field = new long[0]
-    long[] l2Field = new long[0]
+    def l1Field = [] as long[]
+    long[] l2Field = [] as long[]    
 
-
-    def b1Field = new byte[0]
-    byte[] b2Field = new byte[0]
+    def b1Field = [] as byte[]
+    byte[] b2Field = [] as byte[]
     
-    
-    def s1Field = new short[0]
-    short[] s2Field = new short[0]
+    def s1Field = [] as short[]
+    short[] s2Field = [] as short[]
     
     void testChar() {
         assert c1Field.class == c2Field.class
-        ca = ['l','l'] as char[]
+        def ca = ['l','l'] as char[]
         char[] cb = ['l','l']
         assert ca.class == cb.class
         assert c1Field.class == ca.class
@@ -39,7 +36,7 @@ class PrimitiveArraysTest extends GroovyTestCase {
 
     void testInt() {
         assert i1Field.class == i2Field.class
-        ia = [1, 1] as int[]
+        def ia = [1,1] as int[]
         int[] ib = [1,1]
         assert ia.class == ib.class
         assert i1Field.class == ia.class
@@ -52,8 +49,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
 
     void testLong() {
         assert l1Field.class == l2Field.class
-        la = [1, 1] as long[]
-        long[] lb = [1, 1]
+        def la = [1,1] as long[]
+        long[] lb = [1,1]
         assert la.class == lb.class
         assert l1Field.class == la.class
         assert la.class.name == "[J"
@@ -65,8 +62,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
 
     void testShort() {
         assert s1Field.class == s2Field.class
-        sa = [1, 1] as short[]
-        short[] sb = [1, 1]
+        def sa = [1,1] as short[]
+        short[] sb = [1,1]
         assert sa.class == sb.class
         assert s1Field.class == sa.class
         assert sa.class.name == "[S"
@@ -77,8 +74,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
 
     void testByte() {
         assert b1Field.class == b2Field.class
-        ba = [1, 1] as byte[]
-        byte[] bb = [1, 1]
+        def ba = [1,1] as byte[]
+        byte[] bb = [1,1]
         assert ba.class == bb.class
         assert b1Field.class == ba.class
         assert ba.class.name == "[B"
@@ -90,8 +87,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
     
     void testDouble() {
         assert d1Field.class == d2Field.class
-        da = [1, 1] as double[]
-        double[] db = [1, 1]
+        def da = [1,1] as double[]
+        double[] db = [1,1]
         assert da.class == db.class
         assert d1Field.class == da.class
         assert da.class.name == "[D"
@@ -102,8 +99,8 @@ class PrimitiveArraysTest extends GroovyTestCase {
 
     void testFloat() {
         assert f1Field.class == f2Field.class
-        fa = [1, 1] as float[]
-        float[] fb = [1, 1]
+        def fa = [1,1] as float[]
+        float[] fb = [1,1]
         assert fa.class == fb.class
         assert f1Field.class == fa.class
         assert fa.class.name == "[F"

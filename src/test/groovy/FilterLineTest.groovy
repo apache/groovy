@@ -15,7 +15,7 @@ class FilterLineTest extends GroovyTestCase {
 	def myOutput
 
 	void setUp() {
-	    myFile = new File("src/test-new/groovy/FilterLineTest.groovy")
+	    myFile = new File("src/test/groovy/FilterLineTest.groovy")
 		myInput = new FileInputStream(myFile)
 		myOutput = new CharArrayWriter()
 	}

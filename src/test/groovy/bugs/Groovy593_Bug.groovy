@@ -20,8 +20,8 @@ class Groovy593_Bug extends GroovyTestCase {
     StringWriter writer = new StringWriter()
     MarkupBuilder chars = new MarkupBuilder(writer)
     XmlParser parser = new XmlParser()
-    String expectedXML = """
-<chars>
+    String expectedXML = 
+"""<chars>
   <ampersand a='&amp;'>&amp;</ampersand>
   <quote>&quot;</quote>
   <lessthan attr='value'>chars: &amp; &lt; &gt; &quot;</lessthan>
