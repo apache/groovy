@@ -56,6 +56,48 @@ public class LexerTest
         assertEnd();
     }
 
+    public void testMultilineComment_MiddleOfLine()
+        throws Exception
+    {
+        newLexer( "cheese /* is */ toasty" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "toasty" );
+
+        assertEnd();
+    }
+
+    public void testMultilineComment_SpanningLines()
+        throws Exception
+    {
+        newLexer( "cheese /* is \n really */ toasty" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "toasty" );
+
+        assertEnd();
+    }
+
+    public void testMultilineComment_EmbeddedStarts()
+        throws Exception
+    {
+        newLexer( "cheese /* * * * / * / */ toasty" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "toasty" );
+
+        assertEnd();
+    }
+
     public void testIgnoredWhitespace()
         throws Exception
     {
