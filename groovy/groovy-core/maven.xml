@@ -82,6 +82,12 @@
         <exclude name="**/*.groovy"/>
       </fileset>
     </copy>
+    <chmod perm="ugo+x">
+      <fileset dir="${maven.dist.bin.assembly.dir}/bin">
+        <include name="*"/>
+        <include name="*.*"/>
+      </fileset>
+    </chmod>
   </postGoal>
   
   <goal name="run" prereqs="test:compile"
