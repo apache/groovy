@@ -49,6 +49,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
@@ -60,14 +62,16 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class GStringExpression extends Expression {
 
+    private static final Log log = LogFactory.getLog(GStringExpression.class);
+
     private String verbatimText;
     private List strings = new ArrayList();
     private List values = new ArrayList();
-    
+
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitGStringExpression(this);
     }
@@ -84,11 +88,13 @@ public class GStringExpression extends Expression {
         return values;
     }
 
-
-    public void addString(String text) {
+    public void addString(ConstantExpression text) {
+        if (text == null) {
+            throw new NullPointerException("Cannot add a null text expression");
+        }
         strings.add(text);
     }
-    
+
     public void addValue(Expression value) {
         values.add(value);
     }
@@ -103,8 +109,15 @@ public class GStringExpression extends Expression {
 
     public Expression asConstantString() {
         StringBuffer buffer = new StringBuffer();
-        for (Iterator iter = strings.iterator(); iter.hasNext(); ) {
-            buffer.append(iter.next());
+        for (Iterator iter = strings.iterator(); iter.hasNext();) {
+            ConstantExpression expression = (ConstantExpression) iter.next();
+            Object value = expression.getValue();
+            if (value != null) {
+                buffer.append(value);
+            }
+            else {
+                log.warn("null expression in GString", new Exception());
+            }
         }
         return new ConstantExpression(buffer.toString());
     }

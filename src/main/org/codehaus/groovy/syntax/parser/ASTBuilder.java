@@ -695,16 +695,10 @@ public class ASTBuilder
                           Token.SINGLE_QUOTE_STRING ) )
             {
                 ConstantExpression expression = constantExpression( children[ i ] );
-                String text = "";
-                if (expression != null)
+                if (expression != null) 
                 {    
-                    Object value = expression.getValue();
-                    if (value != null) 
-                    {    
-                        text = value.toString();
-                    }
+                    expr.addString( expression );
                 }
-                expr.addString( text );
             }
             else
             {

@@ -73,6 +73,13 @@ public class ArrayExpression extends Expression {
     public ArrayExpression(String type, List expressions) {
         this.type = type;
         this.expressions = expressions;
+        
+        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+            Object item = iter.next();
+            if (! (item instanceof Expression)) {
+                throw new ClassCastException("Item: " + item + " is not an Expression");
+            }
+        }
     }
     
     public ArrayExpression(Expression[] expressionArray) {
@@ -93,7 +100,8 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression getExpression(int i) {
-        return (Expression) expressions.get(i);
+        Object object = expressions.get(i);
+        return (Expression) object;
     }
 
     public String getType() {
