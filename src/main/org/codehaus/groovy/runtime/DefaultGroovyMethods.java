@@ -2918,6 +2918,25 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Invokes the closure for each file in the given directory and recursively.
+     * It is a depth-first exploration, directories are included in the search.
+     *
+     * @param self a File
+     * @param closure a closure
+     */
+    public static void eachFileRecurse(File self, Closure closure) {
+        File[] files = self.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isDirectory()) {
+                closure.call(files[i]);
+                eachFileRecurse(files[i], closure);
+            } else {
+                closure.call(files[i]);
+            }
+        }
+    }
+
+    /**
      * Helper method to create a buffered reader for a file
      *
      * @param file a File
