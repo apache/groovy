@@ -13,6 +13,8 @@ Refactorings / Tidying things up
 Things to Test
 ==============
 
+* home page tester
+
 * why Swing setters stopped working
 
 * do wiki plugin to auto-test the examples

@@ -11,6 +11,7 @@ class Console {
 	property swing
     property textArea
     property outputArea
+    property historyArea
     property shell
     property counter
     property scriptList
@@ -28,7 +29,7 @@ class Console {
 	    scriptList = []
         swing = new SwingBuilder()
 
-        frame = swing.frame(title:'GroovyConsole'/*, location:[100,100],  size:[800,400]*/) {
+        frame = swing.frame(title:'GroovyConsole'/** @todo, location:[100,100],  size:[800,400]*/) {
             menuBar {
                 menu(text:'File') {
                     menuItem() {
@@ -55,10 +56,15 @@ class Console {
             }
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
-                    owner.textArea = textArea()
+	                owner.historyArea = textArea(editable:false)
                 }
-                scrollPane {
-                    owner.outputArea = textArea(editable:false)
+                splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
+                    scrollPane {
+                        owner.textArea = textArea()
+                    }
+                    scrollPane {
+                        owner.outputArea = textArea(editable:false)
+                    }
                 }
             }
         }        
@@ -75,6 +81,8 @@ class Console {
     runScript() {
         text = textArea.getText()
         scriptList.add(text)
+        historyArea.setText( historyArea.getText() + "\n" + text )
+        
         if (shell == null) {
         	shell = new GroovyShell()
         }
