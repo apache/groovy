@@ -37,9 +37,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.control.CompilationFailedException;
-
 import junit.framework.TestCase;
+
+import org.codehaus.groovy.control.CompilationFailedException;
 
 
 
@@ -49,15 +49,24 @@ import junit.framework.TestCase;
 public class TemplateTest extends TestCase {
     
     public void testMixedTemplateText() throws CompilationFailedException, ClassNotFoundException, IOException {
-        Template template = new SimpleTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
-        assertEquals("test of expr and 1 script.", template.toString());;
+        Template template1 = new SimpleTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
+        assertEquals("test of expr and 1 script.", template1.toString());
+        
+        Template template2 = new GStringTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
+        assertEquals("test of expr and 1 script.", template2.toString());
+        
     }
     
     public void testBinding() throws CompilationFailedException, ClassNotFoundException, IOException {
         Map binding = new HashMap();
         binding.put("sam", "pullara");
-        Template template = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");
-        template.setBinding(binding);
-        assertEquals("pullarapullara", template.toString());
+        
+        Template template1 = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");
+        template1.setBinding(binding);
+        assertEquals("pullarapullara", template1.toString());
+        
+        Template template2 = new GStringTemplateEngine().createTemplate("<%= sam %><% out << sam %>");
+        template2.setBinding(binding);
+        assertEquals("pullarapullara", template2.toString());
     }
 }
