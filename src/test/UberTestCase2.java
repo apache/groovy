@@ -41,9 +41,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.lang.IntRangeTest.class);
         suite.addTestSuite(groovy.lang.MetaClassTest.class);
         suite.addTestSuite(groovy.lang.RangeTest.class);
-
-        // bad test - we need to change to whatever int divide is (method?)
-        //todo suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
+        suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
         suite.addTestSuite(groovy.lang.ScriptPrintTest.class);
         suite.addTestSuite(groovy.lang.ScriptTest.class);
         suite.addTestSuite(groovy.lang.SequenceTest.class);
