@@ -67,6 +67,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -629,7 +630,7 @@ public class CompilationUnit extends ProcessingUnit
             }
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName() );
-            ClassGenerator generator = new ClassGenerator( context, visitor, classLoader, sourceName );
+            ClassGenerator generator = new AsmClassGenerator( context, visitor, classLoader, sourceName );
              
              
             // 
