@@ -31,14 +31,15 @@
  * DAMAGE.
  *  
  */
- package groovy.text;
+package groovy.text;
 
 import groovy.lang.Binding;
 import groovy.lang.Writable;
 
 
 /**
- * A groovy template is a JSP-like page generator.  You can embed scripts with <% %> and GString expressions with <%= %>.
+ * Represents a generic template which can be generated from a binding of variable state
+ * to some output stream
  * 
  * @author sam
  */

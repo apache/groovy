@@ -48,6 +48,9 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 
 /**
+ * A groovy template engine which uses JSP-like syntax.  
+ * You can embed scripts with <% %> and GString expressions with <%= %>.
+ * 
  * @author sam
  *
  * To change the template for this generated type comment go to
