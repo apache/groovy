@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-beta-6</currentVersion>
+  <currentVersion>1.0-beta-7-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -37,7 +37,7 @@
   
   <siteAddress>beaver.codehaus.org</siteAddress>
   <siteDirectory>/home/projects/groovy/public_html</siteDirectory>
-  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
+  <issueTrackingUrl>http://jira.codehaus.org/browse/GROOVY</issueTrackingUrl>
 
   <distributionDirectory>/dist/</distributionDirectory>
   <distributionSite>beaver.codehaus.org</distributionSite>
