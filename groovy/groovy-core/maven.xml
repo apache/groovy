@@ -60,7 +60,12 @@
         name="junit"
         classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask"
       />
-      
+
+      <j:set var="testPlugin" value="${pom.getPluginContext('maven-test-plugin')}"/>
+      <j:set var="reportsDirectory">${testPlugin.findVariable('maven.test.reportsDirectory')}</j:set>
+
+      <mkdir dir="${reportsDirectory}"/>
+
       <junit printSummary="yes" 
              failureProperty="maven.test.failure"
              fork="${maven.junit.fork}"
@@ -82,7 +87,7 @@
           <pathelement location="${basedir}/target/test-classes"/>
           <pathelement path="${plugin.getDependencyPath('junit')}"/>
         </classpath>
-        <batchtest todir="${maven.test.reportsDirectory}">
+        <batchtest todir="${reportsDirectory}">
           <fileset dir="${basedir}/target/test-classes">
             <j:forEach var="pat" items="${pom.build.unitTest.includes}">
               <include name="${pat}"/>
