@@ -249,7 +249,7 @@ public class AbstractTokenStreamTest
             // expected and correct
 
             assertSame( tokens[0],
-                        e.getToken() );
+                        e.getUnexpectedToken() );
 
             assertEquals( Token.RIGHT_PARENTHESIS,
                           e.getExpectedType() );

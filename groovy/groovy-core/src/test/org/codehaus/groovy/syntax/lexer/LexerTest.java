@@ -679,7 +679,7 @@ public class LexerTest extends GroovyTestCase {
 
             assertEquals(line, e.getLine());
 
-            assertEquals(column, e.getColumn());
+            assertEquals(column, e.getStartColumn());
 
             return e.getExpected();
         }
