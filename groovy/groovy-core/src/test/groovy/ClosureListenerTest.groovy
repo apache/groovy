@@ -6,7 +6,7 @@ import java.util.Arrays
  */
 class ClosureListenerTest extends GroovyTestCase {
      
-    void testBug() {
+    void testAddingAndRemovingAClosureListener() {
         value = System.getProperty('java.awt.headless')
         println("Value of java.awt.headless = ${value}")
         
@@ -34,5 +34,11 @@ class ClosureListenerTest extends GroovyTestCase {
         
         size = b.actionListeners.size()
         assert size == 0
+    }
+    
+    void testGettingAListenerProperty() {
+    	b = new JButton("foo")
+    	foo = b.actionPerformed
+    	assert foo == null
     }
 }

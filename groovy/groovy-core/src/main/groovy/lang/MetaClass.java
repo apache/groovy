@@ -429,6 +429,12 @@ public class MetaClass {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
             }
 
+            MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
+            if (addListenerMethod != null) {
+                /* @todo one day we could try return the previously registered Closure listener for easy removal */
+                return null;
+            }
+            
             // lets try the getter method
             if (lastException == null) {
                 throw new MissingPropertyException(property, theClass);
