@@ -51,6 +51,7 @@
 
   <repository>
     <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>
+    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy</developerConnection>
     <url>http://cvs.groovy.codehaus.org/</url>
   </repository>
 
