@@ -44,30 +44,10 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -2869,6 +2849,52 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Reads the stream into a list of Strings for each line
+     *
+     * @param stream a stream
+     * @return a List of lines
+     * @throws IOException
+     */
+    public static List readLines(InputStream stream) throws IOException {
+        return readLines(new BufferedReader(new InputStreamReader(stream)));
+    }
+
+    /**
+     * Iterates through the given stream line by line
+     *
+     * @param stream a stream
+     * @param closure a closure
+     * @throws IOException
+     */
+    public static void eachLine(InputStream stream, Closure closure) throws IOException {
+        eachLine(new InputStreamReader(stream), closure);
+    }
+
+    /**
+     * Helper method to create a new BufferedReader for a stream and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param in a stream
+     * @throws FileNotFoundException
+     */
+    public static void withReader(InputStream in, Closure closure) throws IOException {
+        withReader(new InputStreamReader(in), closure);
+    }
+
+    /**
+     * Allows an output stream to be used, calling the closure with the output stream
+     * and then ensuring that the output stream is closed down again irrespective
+     * of whether exceptions occur or the
+     *
+     * @param stream the stream which is used and then closed
+     * @param closure the closure that the writer is passed into
+     * @throws IOException
+     */
+    public static void withWriter(OutputStream stream, Closure closure) throws IOException {
+        withWriter(new OutputStreamWriter(stream), closure);
+    }
+
+    /**
      * Allows a OutputStream to be used, calling the closure with the stream
      * and then ensuring that the stream is closed down again irrespective
      * of whether exceptions occur or the
@@ -2975,7 +3001,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err; 
-     * you can use process.in, process.out, process.err in a similar way 
+     * you can use process.in, process.out, process.err in a similar way
+     *
+     * @return an InputStream
      */
     public static InputStream getIn(Process self) {
         return self.getInputStream();
@@ -2983,7 +3011,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err; 
-     * you can use process.in, process.out, process.err in a similar way 
+     * you can use process.in, process.out, process.err in a similar way
+     *
+     * @return an InputStream
      */
     public static InputStream getErr(Process self) {
         return self.getErrorStream();
@@ -2991,7 +3021,9 @@ public class DefaultGroovyMethods {
 
     /**
      * An alias method so that a process appears similar to System.out, System.in, System.err; 
-     * you can use process.in, process.out, process.err in a similar way 
+     * you can use process.in, process.out, process.err in a similar way
+     *
+     * @return an OutputStream
      */
     public static OutputStream getOut(Process self) {
         return self.getOutputStream();
