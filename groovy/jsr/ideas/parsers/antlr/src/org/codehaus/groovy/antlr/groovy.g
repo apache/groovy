@@ -1586,8 +1586,7 @@ compatibleBodyStatement
 branchExpression
         :
         // Return an expression
-        // optionality of assignmentExpression is not needed as it implicitly can be an empty expression
-                "return"^ assignmentExpression
+                "return"^ (assignmentExpression)?
 
         // break:  get out of a loop, or switch, or method call
         // continue:  do next iteration of a loop, or leave a closure
@@ -1595,8 +1594,7 @@ branchExpression
                 (   options {greedy=true;} :
                     statementLabelPrefix
                 )?
-                // optionality of assignmentExpression is not needed as it implicitly can be an empty expression
-                assignmentExpression
+                (assignmentExpression)?
                 
         // throw an exception
         |       "throw"^ assignmentExpression
