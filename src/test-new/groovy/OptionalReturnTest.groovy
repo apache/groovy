@@ -59,41 +59,41 @@ class OptionalReturnTest extends GroovyTestCase {
         assert value == null
     }
 
-    foo() {
+    def foo() {
         'fooReturn'
     }	
 	
-    bar() {
+    def bar() {
         x = 'barReturn'
         x
     }
 	
-    foo2() {
+    def foo2() {
         x = 'cheese'
         x == 'cheese'
     }
 	
-    foo3() {
+    def foo3() {
         x = 'cheese'
         x == 'edam'
     }
 	
-    assign() {
+    def assign() {
         x = 'assignReturn'
     }
 	
-    assignField() {
+    def assignField() {
         y = 'assignFieldReturn'
     }
     
-    nullReturn() {
+    def nullReturn() {
     }
 
-    lastIsAssert() {
+    def lastIsAssert() {
         assert 1 == 1
     }
 
-    methodCall() {
+    def methodCall() {
         foo()
     }
     
