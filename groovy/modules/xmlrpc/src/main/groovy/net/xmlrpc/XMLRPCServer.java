@@ -59,6 +59,7 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,7 +133,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	private final int workerIdleLife;
 	private final int socketReadTimeout;
 	private final StringBuffer propertyPrefix = new StringBuffer();
-	private final Map registeredMethods = new HashMap();
+	private final Map registeredMethods = Collections.synchronizedMap(new HashMap());
 
 	/**
 	 * @param minWorkers
@@ -312,10 +313,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * The closure is called with two parameters - a String containing the method
 	 * name and an array of Object containing the parameters
 	 * 
-	 * @param defaultMethod The closure to be called
+	 * @param defaultMethod The closure to be called - if this is null the setting is not changed
 	 */
 	public void setupDefaultMethod(final Closure defaultMethod) {
-		this.defaultMethod = defaultMethod;
+		if (defaultMethod != null) this.defaultMethod = defaultMethod;
 	}
 	
 	/**
@@ -325,10 +326,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * The closure is called with two parameters - a String containing the method
 	 * name and an array of Object containing the parameters
 	 * 
-	 * @param preCallMethod The closure to be called
+	 * @param preCallMethod The closure to be called - if this is null the setting is not changed
 	 */
 	public void setupPreCallMethod(final Closure preCallMethod) {
-		this.preCallMethod = preCallMethod;
+		if (preCallMethod != null) this.preCallMethod = preCallMethod;
 	}
 	
 	/**
@@ -338,10 +339,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * The closure is called with two parameters - a String containing the method
 	 * name and an Object containing the result
 	 * 
-	 * @param postCallMethod The closure to be called
+	 * @param postCallMethod The closure to be called - if this is null the setting is not changed
 	 */
 	public void setupPostCallMethod(final Closure postCallMethod) {
-		this.postCallMethod = postCallMethod;
+		if (postCallMethod != null) this.postCallMethod = postCallMethod;
 	}
 	
 	/**
@@ -352,10 +353,10 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * The name of the method being called is not passed as the fault could have been 
 	 * generated before the method name was known.
 	 * 
-	 * @param exceptionMethod The closure to be called
+	 * @param exceptionMethod The closure to be called - if this is null the setting is not changed
 	 */
 	public void setupExceptionMethod(final Closure exceptionMethod) {
-		this.exceptionMethod = exceptionMethod;
+		if (exceptionMethod != null) this.exceptionMethod = exceptionMethod;
 	}
 	
 	/* (non-Javadoc)
