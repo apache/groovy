@@ -53,6 +53,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -137,6 +138,13 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         else {
             exp.visit(this);
         }
+    }
+
+    public void visitMethodCallExpression(MethodCallExpression call) {
+        if (call.isImplicitThis()) {
+            referencedVariables.add(call.getMethod());
+        }
+        super.visitMethodCallExpression(call);
     }
 
     protected void setParameters(Parameter[] parameters) {

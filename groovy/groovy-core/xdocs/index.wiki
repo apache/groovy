@@ -1,0 +1,88 @@
+Groovy language for the JVM 
+
+
+
+1 Introduction
+
+Groovy is a powerful new high level dynamic language for the JVM combining lots of great features from languages like Python, Ruby and Smalltalk 
+and making them available to the Java developers using a Java-like syntax. 
+
+Groovy is designed to help you get things done on the Java platform in a quicker, more concise and fun way - bringing the power
+of Python and Ruby inside the Java platform. 
+
+Groovy can be used as an alternative compiler to javac to generate standard Java bytecode to be used by any Java project
+or it can be used dynamically as an alternative language such as for writing scripts or unit test cases. 
+
+1.1 Features
+
+- {link:Closure support|closures.html} 
+- {link:Native syntax for Lists and Maps|http://wiki.codehaus.org/groovy/SyntaxForTuplesListsMaps} 
+- {link:Groovy Markup|markup.html} 
+- {link:Groovy Path expression language|http://wiki.codehaus.org/groovy/PathExpressionLanguage} 
+- {link:Groovlets|servlets.html} for implementing Servlets easily in simple Groovy scripts 
+- {link:Groovy SQL|sql.html} for making SQL more Groovy 
+- {link:Ant Scripting|ant.html} 
+- {link:Regex|regex.html} syntax for neater scripting with regular expressions 
+- {link:Groovy Beans|beans.html} for simpler syntax for working with beans 
+- {link:Operator Overloading|operators.html} to simplify working with datatypes Collections and Maps 
+- Polymorphic iteration and Autoboxing 
+- Compiles straight to Java bytecode & works cleanly with all existing Java objects & libraries 
+
+
+1.1 Examples
+
+Here's a simple example which demonstrates the basic syntax. Notice that Groovy is dynamically typed, has closure support and supports
+something similar to Python's tuple / sequence / dictionary support (List and Map in Java) 
+
+{code:groovysh}
+class Foo {
+  doSomething() {
+    data = ["name": "James", "location": "London"]
+    for (e in data) {
+      println("entry ${e.key} is ${e.value}")
+    }
+  }
+  
+  closureExample(collection) {
+    collection.each { println("value ${it}") }
+  }
+  
+  static void main(args) {
+    values = [1, 2, 3, "abc"]
+    foo = new Foo()
+    foo.closureExample(values)
+    foo.doSomething()
+  }
+}
+{code}
+
+For more examples please try the examples section or try {link:these sample scripts|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/script/} or {link:the unit test cases|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/} 
+
+1.1 Getting started
+
+Probably the best way to get started on Groovy is to install Maven, get a {link:CVS checkout|cvs-usage.html} of the source code and then 
+try running the unit tests & looking at them to see how Groovy works.
+e.g. 
+
+{code:groovysh}
+maven clean test
+{code}
+
+Groovy has a Swing interactive console that allows you to type in commmands and execute them
+rather like using an SQL query tool. History is available and such like so you can move forwards
+and backwards through commands etc. 
+
+To run the Swing console type... 
+
+{code:groovysh}
+maven console
+{code}
+
+Or to see a simple example of how Groovy can be used to script things like creating Swing user interfaces try... 
+
+{code:groovysh}
+maven swing:demo
+{code}
+
+
+

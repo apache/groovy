@@ -54,9 +54,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  *
  *  @version $Id$
  */
-public class LexerException
-    extends SyntaxException
-{
+public class LexerException extends SyntaxException {
     // ----------------------------------------------------------------------
     //     Instance members
     // ----------------------------------------------------------------------
@@ -71,16 +69,22 @@ public class LexerException
     //     Constructors
     // ----------------------------------------------------------------------
 
-    /** Construct.
-     *
+    /** 
      *  @param line Line upon which the error occurred.
      *  @param column Column upon which the error occurred.
      */
-    public LexerException(int line,
-                          int column)
-    {
-        this.line   = line;
+    public LexerException(String message, int line, int column) {
+        super(message + " at " + line + ":" + column);
+        this.line = line;
         this.column = column;
+    }
+
+    /** 
+     *  @param line Line upon which the error occurred.
+     *  @param column Column upon which the error occurred.
+     */
+    public LexerException(int line, int column) {
+        this("", line, column);
     }
 
     // ----------------------------------------------------------------------
@@ -91,8 +95,7 @@ public class LexerException
      *
      *  @return The line.
      */
-    public int getLine()
-    {
+    public int getLine() {
         return this.line;
     }
 
@@ -100,8 +103,7 @@ public class LexerException
      *
      *  @return The column.
      */
-    public int getColumn()
-    {
+    public int getColumn() {
         return this.column;
     }
 }

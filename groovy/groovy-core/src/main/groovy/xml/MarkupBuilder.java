@@ -56,12 +56,14 @@ import java.util.Map;
  * A helper class for creating XML or HTML markup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Stefan Matthias Aust
  * @version $Revision$
  */
 public class MarkupBuilder extends BuilderSupport {
 
     private IndentPrinter out;
-    private boolean newline;
+    private boolean nospace;
+    private int state;
 
     public MarkupBuilder() {
         this(new IndentPrinter());
@@ -78,61 +80,138 @@ public class MarkupBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
     }
 
+    public Object getProperty(String property) {
+        if (property.equals("_")) {
+            nospace = true;
+            return null;
+        } else {
+            Object node = createNode(property);
+            nodeCompleted(getCurrent(), node);
+            return node;
+        }
+    }
+
     protected Object createNode(Object name) {
-        out.printIndent();
-        out.print("<");
-        print(name);
-        out.println(">");
-        out.incrementIndent();
-        newline = true;
+        toState(1, name);
         return name;
     }
 
     protected Object createNode(Object name, Object value) {
-        out.printIndent();
-        out.print("<");
-        print(name);
+        toState(2, name);
         out.print(">");
         print(value);
-        newline = false;
         return name;
     }
 
     protected Object createNode(Object name, Map attributes) {
-        out.printIndent();
-        out.print("<");
-        out.print(name.toString());
+        toState(1, name);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             out.print(" ");
-            print(entry.getKey());
+            print(transformName(entry.getKey().toString()));
             out.print("='");
-            print(entry.getValue());
+            print(transformValue(entry.getValue().toString()));
             out.print("'");
         }
-        out.println(">");
-        out.incrementIndent();
-        newline = true;
         return name;
     }
 
     protected void nodeCompleted(Object parent, Object node) {
-        if (newline) {
-            out.decrementIndent();
-            out.printIndent();
-        }
-        out.print("</");
-        print(node);
-        out.println(">");
+        toState(3, node);
         out.flush();
     }
 
     protected void print(Object node) {
-        if (node != null) {
-            out.print(node.toString());
-        }
-        else {
-            out.print("null");
-        }
+        out.print(node == null ? "null" : node.toString());
     }
+
+    protected Object getName(String methodName) {
+		return super.getName(transformName(methodName));
+	}
+
+    protected String transformName(String name) {
+    	if (name.startsWith("_")) name = name.substring(1);
+    	return name.replace('_', '-');
+    }
+
+    protected String transformValue(String value) {
+        return value.replaceAll("\\'", "&quot;");
+    }
+
+    private void toState(int next, Object name) {
+        switch (state) {
+        case 0:
+            switch (next) {
+            case 1:
+            case 2:
+                out.print("<");
+                print(name);
+                break;
+            case 3:
+                throw new Error();
+            }
+            break;
+        case 1:
+            switch (next) {
+            case 1:
+            case 2:
+                out.print(">");
+                if (nospace) {
+                    nospace = false;
+                } else {
+                    out.println();
+                    out.incrementIndent();
+                    out.printIndent();
+                }
+                out.print("<");
+                print(name);
+                break;
+            case 3:
+                out.print("/>");
+                break;
+            }
+            break;
+        case 2:
+            switch (next) {
+            case 1:
+            case 2:
+                throw new Error();
+            case 3:
+                out.print("</");
+                print(name);
+                out.print(">");
+                break;
+            }
+            break;
+        case 3:
+            switch (next) {
+            case 1:
+            case 2:
+                if (nospace) {
+                    nospace = false;
+                } else {
+                    out.println();
+	                out.printIndent();
+                }
+                out.print("<");
+                print(name);
+                break;
+            case 3:
+                if (nospace) {
+                    nospace = false;
+                } else {
+                    out.println();
+                    out.decrementIndent();
+                    out.printIndent();
+                }
+                out.print("</");
+                print(name);
+                out.print(">");
+                break;
+            }
+            break;
+        }
+        state = next;
+    }
+
 }

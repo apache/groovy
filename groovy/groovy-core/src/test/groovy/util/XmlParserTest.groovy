@@ -44,4 +44,22 @@ EOF
         answer = node.character.find { it.attribute('id') == '1' }.likes.get(0).text()
         assert answer == "cheese"
     }
+    
+    void testMixedMarkup() {
+        text = <<<EOF
+<p>Please read the <a href="index.html">Home</a> page</p>
+EOF
+        
+        parser = new XmlParser()
+        node = parser.parse(new StringReader(text))
+        
+        new NodePrinter().print(node)
+        
+        assert node != null
+        children = node.children()
+        assert children.size() == 3 : "Children ${children}"
+        assert children[0] instanceof String
+        assert children[1] instanceof Node
+        assert children[2] instanceof String
+    }
 }

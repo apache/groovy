@@ -99,7 +99,7 @@ class Console extends ConsoleSupport {
         
         answer = evaluate(text)
 
-        output = "\n" + InvokerHelper.toString(answer)
+        output = "\n" + InvokerHelper.inspect(answer)
         
         doc.insertString(doc.getLength(), output, outputStyle)
         

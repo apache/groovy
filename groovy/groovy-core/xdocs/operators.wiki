@@ -17,8 +17,8 @@ a * b | a.multiply(b)
 a / b | a.divide(b)
 a++ or ++a | a.increment()
 a\-\- or \-\-a | a.decrement()
-a\[b\] | a.get(b)
-a\[b\] = c | a.put(b, c)
+a\[b\] | a.getAt(b)
+a\[b\] = c | a.putAt(b, c)
 {table}
 
 Note that all the following comparison operators handle nulls gracefully avoiding 
@@ -35,3 +35,30 @@ a >= b | a.compareTo(b) >= 0
 a < b | a.compareTo(b) < 0
 a <= b | a.compareTo(b) <= 0
 {table}
+
+1.1 Notes about operations
+
+Also in Groovy comparison operators handle nulls gracefully. So that a == b will never throw a 
+NullPointerException whether a or b or both are null.
+
+{code:groovy}
+a = null
+b = "foo"
+
+assert a != b
+assert b != a
+assert a == null
+{code}
+
+In addition when comparing numbers of different types then type coercion rules apply to convert
+numbers to the largest numeric type before the comparison. So the following is valid in Groovy
+
+{code:groovy}
+Byte a = 12
+Double b = 10
+
+assert a instanceof Byte
+assert b instanceof Double
+
+assert a > b
+{code}

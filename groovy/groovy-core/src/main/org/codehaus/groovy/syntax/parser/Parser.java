@@ -1355,6 +1355,9 @@ public class Parser {
 
             if (exprStart > 0) {
                 if (text.charAt(exprStart - 1) == '$') {
+                    StringBuffer buf = new StringBuffer(text);
+                    buf.replace(exprStart -1, exprStart, "");
+                    text = buf.toString();
                     cur = exprStart + 1;
                     continue;
                 }
@@ -1430,7 +1433,7 @@ public class Parser {
     }
 
     protected CSTNode parameterList(int endOfListDemarc) throws IOException, SyntaxException {
-        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.COLON) {
+        if ((lt_bare() == Token.IDENTIFIER || lt_bare() == Token.KEYWORD_CLASS) && lt_bare(2) == Token.COLON) {
             return namedParameterList(endOfListDemarc);
         }
 
@@ -1455,7 +1458,10 @@ public class Parser {
         CSTNode parameterList = new CSTNode(Token.syntheticList());
 
         while (lt() != endOfListDemarc) {
-            CSTNode name = rootNode(Token.IDENTIFIER);
+            if (lt_bare() != Token.IDENTIFIER && lt_bare() != Token.KEYWORD_CLASS) {
+                throwExpected(new int[] { Token.IDENTIFIER, Token.KEYWORD_CLASS });
+            }
+            CSTNode name = rootNode(lt_bare());
 
             CSTNode namedParam = rootNode_bare(Token.COLON, name);
 

@@ -254,4 +254,8 @@ public class ModuleNode extends ASTNode implements Constants {
         return answer;
     }
 
+    public boolean isEmpty() {
+        return classes.isEmpty() && statementBlock.getStatements().isEmpty();
+    }
+
 }

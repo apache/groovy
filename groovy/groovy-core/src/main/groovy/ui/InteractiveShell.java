@@ -98,7 +98,7 @@ public class InteractiveShell {
             }
             try {
                 Object answer = shell.evaluate(command, "CommandLine" + counter++ +".groovy");
-                System.out.println(InvokerHelper.toString(answer));
+                System.out.println(InvokerHelper.inspect(answer));
             }
             catch (Exception e) {
                 System.out.println("Caught: " + e);

@@ -1,0 +1,56 @@
+Unit Testing with Groovy 
+
+
+
+1 Unit Testing with Groovy
+
+By default Groovy unit test cases generate java bytecode and so are just the same
+as any other Java unit test cases. One thing to watch is often Ant / Maven look 
+for *.java files to find unit tests with pattern matching, rather than *.class files.
+There's an option in Maven to ensure you search for classes (and so find any Groovy 
+unit test cases) via this property 
+
+{code:groovysh}
+maven.test.search.classdir = true
+{code}
+
+Once you've got this enabled you can use Maven goals to run individual test cases like this 
+
+{code:groovysh}
+maven test:single -Dtestcase=foo.MyGroovyTest
+{code}
+
+1.1 Running GroovyUnitTests in IDEs
+
+Most IDEs support JUnit but maybe don't yet handle Groovy (shame!:).
+Firstly if you compile the groovy code to bytecode, then it'll just work in any JUnit IDE just fine. 
+
+Sometimes though you want to just hack the unit test script and run from in your IDE without
+doing a build. 
+If you're IDE doesn't automatically recompile Groovy for you then there's 
+a utility to help you run Groovy unit test cases inside any JUnit IDE without needing to 
+run your Ant / Maven build. 
+
+The {link:GroovyTestSuite|apidocs/groovy/util/GroovyTestSuite.html} class 
+is a JUnit TestSuite which will compile and run a GroovyUnit test case
+from a command line argument (when run as an application) or from the ~~~test~~~ system property
+when run as a JUnit test suite. 
+
+To run the GroovyUnitTest as an application, just do the equivalent of this in your IDE 
+
+{code:groovysh}
+java groovy.util.GroovyTestSuite src/test/Foo.groovy
+{code}
+
+Or to run the test suite inside your IDE, just run the GroovyTestSuite test 
+with this system property defined 
+
+{code:groovysh}
+-Dtest=src/test/Foo.groovy
+{code}
+
+Either of the above can really help improve the development experience of writing 
+Groovy unit test cases in IDEs that don't yet support Groovy natively. 
+
+
+

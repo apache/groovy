@@ -1,0 +1,16 @@
+Download Groovy 
+
+
+
+1 Download Groovy
+
+You can download a distribution of Groovy from {link:this site|http://dist.codehaus.org/groovy/distributions/} .
+Once you've download the distribution, please read the {link:installation instructions|install.html} . 
+
+If you want to grab just a jar of groovy to embed in your application then try using {link:Maven|http://maven.apache.org/} as your build tool and it'll download it for
+you or you can grab a jar from the {link:jar repository|http://dist.codehaus.org/groovy/jars/} . 
+
+If you're happy to work directly with {link:Maven|http://maven.apache.org/} then either download a {link:source distribution|http://dist.codehaus.org/groovy/distributions/} or {link:grab the code from CVS|cvs-usage.html} 
+
+
+

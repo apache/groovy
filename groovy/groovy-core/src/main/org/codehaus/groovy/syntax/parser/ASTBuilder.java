@@ -43,6 +43,9 @@ public class ASTBuilder {
             datatypeDeclaration(answer, packageName, children[i]);
         }
 
+        if (answer.isEmpty()) {
+            answer.addStatement(new BlockStatement());
+        }
         return answer;
     }
 
@@ -811,8 +814,10 @@ public class ASTBuilder {
         
         Expression objectExpression = null;
 
+        boolean implicitThis = false;
         if (objectExpressionRoot.getToken() == null) {
             objectExpression = VariableExpression.THIS_EXPRESSION;
+            implicitThis = true;
         }
         else {
             objectExpression = expression(expressionRoot.getChild(0));
@@ -823,7 +828,8 @@ public class ASTBuilder {
         Expression paramList = actualParameterList(expressionRoot.getChild(2));
 
         MethodCallExpression answer = new MethodCallExpression(objectExpression, methodName, paramList);
-
+        answer.setImplicitThis(implicitThis);
+        
         if (expressionRoot.getChildren().length > 3) {
             CSTNode notExpr = expressionRoot.getChild(3);
             if (notExpr != null && notExpr.getToken().getType() == Token.NAVIGATE) {

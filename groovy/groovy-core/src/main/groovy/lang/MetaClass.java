@@ -387,10 +387,10 @@ public class MetaClass {
                 return getStaticProperty((Class) object, property);
             }
             if (object instanceof Collection) {
-                return DefaultGroovyMethods.get((Collection) object, property);
+                return DefaultGroovyMethods.getAt((Collection) object, property);
             }
             if (object instanceof Object[]) {
-                return DefaultGroovyMethods.get(Arrays.asList((Object[]) object), property);
+                return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
             }
 
             // lets try the getter method
@@ -877,11 +877,11 @@ public class MetaClass {
             return null;
         }
         Object answer = null;
-        if (arguments.length == 1 && arguments[0] == null) {
-            answer = chooseMostGeneralMethodWith1Param(methods);
-        }
-        else if (arguments.length == 0) {
+        if (arguments == null || arguments.length == 0) {
             answer = chooseEmptyMethodParams(methods);
+        }
+        else if (arguments.length == 1 && arguments[0] == null) {
+            answer = chooseMostGeneralMethodWith1Param(methods);
         }
         else {
             List matchingMethods = new ArrayList();

@@ -182,7 +182,9 @@ public class DataSet extends Sql {
             if (where != null) {
                 MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
                 Statement statement = method.getCode();
-                statement.visit(visitor);
+                if (statement != null) {
+                    statement.visit(visitor);
+                }
             }
         }
         return visitor;

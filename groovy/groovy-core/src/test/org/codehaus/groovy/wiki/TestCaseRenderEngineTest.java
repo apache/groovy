@@ -60,7 +60,13 @@ public class TestCaseRenderEngineTest extends TestCase {
     public void testRender() {
         assertRender(
             "blah blah {code:groovy}x = 1; assert x == 1{code} whatnot",
-            "package wiki\nclass someFileTest extends GroovyTestCase {\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n/*\nblah blah */ \n\n  void testCase1() {\nx = 1; assert x == 1\n}\n\n /* whatnot\n*/\n\n}\n");
+            "package wiki\nclass someFileTest extends GroovyTestCase {\n\n/*\nblah blah */ \n\n  void testCase1() {\nx = 1; assert x == 1\n}\n\n /* whatnot\n*/\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n}\n");		
+    }
+
+    public void testRenderWithScript() {
+        assertRender(
+            "blah blah {code:groovysh}x = 1; println 'hello ${x}'{code} whatnot",
+             "package wiki\nclass someFileTest extends GroovyTestCase {\n\n/*\nblah blah */ \n\n  void testScript1() {\n    assertScript( <<<SCRIPT_EOF1\nx = 1; println 'hello $${x}'\nSCRIPT_EOF1 )\n}    \n\n /* whatnot\n*/\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n}\n");
     }
 
     protected void assertRender(String input, String expected) {
@@ -68,9 +74,12 @@ public class TestCaseRenderEngineTest extends TestCase {
         context.set("name", "someFile.wiki");
         String answer = test.render(input, context);
 
-//        System.out.println("Converted: " + input);
-//        System.out.println("Into: " + answer);
+        System.out.println("Converted: " + input);
+        System.out.println("Into: " + answer);
 
+        // lets convert the output to a String we can cut-n-paste
+        System.out.println(answer.replaceAll("\n", "\\\\n"));
+        
         assertEquals("Rendering", expected, answer);
     }
 

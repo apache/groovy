@@ -846,7 +846,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 cv.visitInsn(ARETURN);
             }
             else {
-                if (returnType != null && !returnType.equals("java.lang.Object") && !returnType.equals(c.getName())) {
+                if (isValidTypeForCast(returnType) && !returnType.equals(c.getName())) {
                     doCast(returnType);
                 }
                 cv.visitInsn(ARETURN);
@@ -963,10 +963,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             case Token.LEFT_SQUARE_BRACKET :
                 if (leftHandExpression) {
                     throw new RuntimeException("Should not be called");
-                    //evaluateBinaryExpression("put", expression);
+                    //evaluateBinaryExpression("putAt", expression);
                 }
                 else {
-                    evaluateBinaryExpression("get", expression);
+                    evaluateBinaryExpression("getAt", expression);
                 }
                 break;
 
@@ -1375,13 +1375,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             cv.visitVarInsn(ASTORE, valueIdx);
         }
 
-        // lets load an extra one just in case as we may be getting & putting a
-        // field
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
-
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
+
+        // lets load an extra one just in case as we may be getting & putting a
+        // field
+        if (!isStatic) {
+            cv.visitVarInsn(ALOAD, 0);
+            cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
+        }
 
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
         String ownerName = getClassInternalName(outerClassNode.getName());
@@ -1887,7 +1889,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected void doConvertAndCast(String type) {
         if (!type.equals("java.lang.Object")) {
             /** @todo should probably support array coercions */
-            if (!type.endsWith("[]")) {
+            if (!type.endsWith("[]") && isValidTypeForCast(type)) {
                 visitClassExpression(new ClassExpression(type));
                 asTypeMethod.call(cv);
             }
@@ -1958,7 +1960,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 // method call
                 // e.g. x[5] += 10
                 // -> (x, [], 5), =, x[5] + 10
-                // -> methodCall(x, "put", [5, methodCall(x[5], "plus", 10)])
+                // -> methodCall(x, "putAt", [5, methodCall(x[5], "plus", 10)])
 
                 MethodCallExpression methodCall =
                     new MethodCallExpression(
@@ -1971,7 +1973,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 visitMethodCallExpression(
                     new MethodCallExpression(
                         leftBinExpr.getLeftExpression(),
-                        "put",
+                        "putAt",
                         new ArgumentListExpression(new Expression[] { safeIndexExpr, methodCall })));
                 cv.visitInsn(POP);
                 return;
@@ -2010,11 +2012,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 // method call
                 // e.g. x[5] = 10
                 // -> (x, [], 5), =, 10
-                // -> methodCall(x, "set", [5, 10])
+                // -> methodCall(x, "putAt", [5, 10])
                 visitMethodCallExpression(
                     new MethodCallExpression(
                         leftBinExpr.getLeftExpression(),
-                        "put",
+                        "putAt",
                         new ArgumentListExpression(
                             new Expression[] { leftBinExpr.getRightExpression(), expression.getRightExpression()})));
                 cv.visitInsn(POP);
@@ -2031,6 +2033,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         String type = getLHSType(leftExpression);
         if (type != null) {
+            //System.out.println("### expression: " + leftExpression);
+            //System.out.println("### type: " + type);
             visitCastExpression(new CastExpression(type, rightExpression));
         }
         else {
@@ -2051,17 +2055,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (leftExpression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) leftExpression;
             String type = varExp.getType();
-            if (type != null && !type.equals("java.lang.Object")) {
+            if (isValidTypeForCast(type)) {
                 return type;
             }
             String variableName = varExp.getVariable();
             Variable variable = (Variable) variableStack.get(variableName);
             if (variable != null) {
-                if (variable.isHolder()) {
+                if (variable.isHolder() || variable.isProperty()) {
                     return null;
                 }
                 type = variable.getType();
-                if (type != null && !type.equals("java.lang.Object")) {
+                if (isValidTypeForCast(type)) {
                     return type;
                 }
             }
@@ -2072,13 +2076,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 }
                 if (field != null) {
                     type = field.getType();
-                    if (!field.isHolder() && type != null && !type.equals("java.lang.Object")) {
+                    if (!field.isHolder() && isValidTypeForCast(type)) {
                         return type;
                     }
                 }
             }
         }
         return null;
+    }
+
+    protected boolean isValidTypeForCast(String type) {
+        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference");
     }
 
     protected void visitAndAutobox(Expression expression) {
@@ -2228,7 +2236,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 return expression;
             }
         };
-        
+
         // could just be a postfix / prefix expression or nested inside some other expression
         return transformer.transform(expression.transformExpression(transformer));
     }
@@ -2293,50 +2301,50 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
      *         passed into a closure
      */
     protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
-        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
-        VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
-
-        if (methodNode != null) {
-            // we must be in a property
-            outerVisitor.setParameters(methodNode.getParameters());
-            methodNode.getCode().visit(outerVisitor);
-        }
-        else {
-            // propertyNode.getInitialValueExpression().visit(outerVisitor);
-        }
-        expression.getCode().visit(innerVisitor);
-
-        // now any variables declared in the outer context that are referred to
-        // in the inner context need to be copied
-        Set outerDecls = outerVisitor.getDeclaredVariables();
-        outerDecls.addAll(outerVisitor.getParameterSet());
-        Set outerRefs = outerVisitor.getReferencedVariables();
-        Set innerDecls = innerVisitor.getDeclaredVariables();
-        Set innerRefs = innerVisitor.getReferencedVariables();
-
         List vars = new ArrayList();
-        Set varSet = new HashSet();
-        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if (outerDecls.contains(var) && classNode.getField(var) == null) {
-                String type = getVariableType(var);
-                vars.add(new Parameter(type, var));
-                varSet.add(var);
-            }
-        }
-        for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if (innerDecls.contains(var) && classNode.getField(var) == null && !varSet.contains(var)) {
-                String type = getVariableType(var);
-                vars.add(new Parameter(type, var));
-            }
-        }
+        if (!isInScriptBody()) {
+            VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+            VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
 
-        //        if (!vars.isEmpty()) {
-        //            System.out.println(classNode.getName() + " - closure is copying
-        // variables from outer context: " + vars);
-        //        }
+            if (methodNode != null) {
+                // we must be in a property
+                outerVisitor.setParameters(methodNode.getParameters());
+                methodNode.getCode().visit(outerVisitor);
+            }
+            else {
+                // propertyNode.getInitialValueExpression().visit(outerVisitor);
+            }
+            expression.getCode().visit(innerVisitor);
 
+            // now any variables declared in the outer context that are referred to
+            // in the inner context need to be copied
+            Set outerDecls = outerVisitor.getDeclaredVariables();
+            outerDecls.addAll(outerVisitor.getParameterSet());
+            Set outerRefs = outerVisitor.getReferencedVariables();
+            Set innerDecls = innerVisitor.getDeclaredVariables();
+            Set innerRefs = innerVisitor.getReferencedVariables();
+
+            Set varSet = new HashSet();
+            for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
+                String var = (String) iter.next();
+                if (outerDecls.contains(var) && classNode.getField(var) == null) {
+                    String type = getVariableType(var);
+                    vars.add(new Parameter(type, var));
+                    varSet.add(var);
+                }
+            }
+            for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
+                String var = (String) iter.next();
+                if (innerDecls.contains(var) && classNode.getField(var) == null && !varSet.contains(var)) {
+                    String type = getVariableType(var);
+                    vars.add(new Parameter(type, var));
+                }
+            }
+
+            //            if (!vars.isEmpty()) {
+            //                System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);
+            //            }
+        }
         Parameter[] answer = new Parameter[vars.size()];
         vars.toArray(answer);
         return answer;
@@ -2350,13 +2358,22 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Set outerDecls = outerVisitor.getDeclaredVariables();
         Set outerRefs = outerVisitor.getReferencedVariables();
         Set innerDecls = innerVisitor.getDeclaredVariables();
-        //Set innerRefs = innerVisitor.getReferencedVariables();
+        Set innerRefs = innerVisitor.getReferencedVariables();
 
         mutableVars.clear();
 
         for (Iterator iter = innerDecls.iterator(); iter.hasNext();) {
             String var = (String) iter.next();
             if ((outerDecls.contains(var) || outerRefs.contains(var)) && classNode.getField(var) == null) {
+                mutableVars.add(var);
+            }
+        }
+
+        // we may call the closure twice and modify the variable in the outer scope
+        // so for now lets assume that all variables are mutable
+        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
+            String var = (String) iter.next();
+            if (outerDecls.contains(var) && classNode.getField(var) == null) {
                 mutableVars.add(var);
             }
         }

@@ -1,0 +1,37 @@
+Installing Groovy 
+
+
+
+1 Installing Groovy
+
+This document describes how to install a binary distribution of Groovy. 
+For those familiar with tools like {link:Ant|http://ant.apache.org/} or {link:Maven|http://maven.apache.org/} these steps will be very familiar. 
+
+- {link:download|download.html} a binary distribution of Groovy and unpack the
+distribution into some file on your local file system. 
+- set your ~~~GROOVY_HOME~~~ environment variable to the directory you unpacked
+the distribution 
+- add ~~~GROOVY_HOME/bin~~~ to your ~~~PATH~~~ environment variable. 
+- you should now have Groovy installed properly. You can test this by typing 
+the following in a command shell... 
+
+
+{code:groovysh}
+groovysh
+{code}
+
+Which should create an interactive groovy shell where you can type Groovy statements.
+Or to run the Swing interactive console type 
+
+{code:groovysh}
+groovyConsole
+{code}
+
+To run a specific groovy script type 
+
+{code:groovysh}
+groovysh SomeScript.groovy
+{code}
+
+
+

@@ -1,0 +1,59 @@
+
+1 Strings
+
+Groovy uses both " and ' for strings. Either can be used. Using either
+type of string allows you to use strings with quotations easily.
+
+{code:groovysh}
+println "he said 'cheese' once"
+println 'he said "cheese!" again'
+{code}
+
+Also strings support the \u001234 style mechanism for unicode.
+
+1.1 Multi-line strings
+
+Strings in Groovy can span multiple lines. This makes outputting a large block of text easy.
+
+{code:groovysh}
+foo = "hello
+ there 
+ how are things?"
+println(foo)
+{code}
+
+1.1 Here-docs
+
+If you have a block of text which you wish to use but don't want to have to encode it all
+(e.g. if its a block of HTML or something) then you can use here-docs.
+
+{code:groovysh}
+name = "James"
+text = <<<FOO
+hello there ${name}
+how are you today?
+FOO
+
+assert text != null
+println(text)
+{code}
+
+
+1.1 GStrings
+
+Strings can contain arbitrary expressions inside them as shown above using the 
+~~~${expression}~~~ syntax in a similar way to JSP EL, Velocity and Jexl. 
+Any valid Groovy expression can be enclosed in the ${...} including method calls etc
+
+What actually happens is a
+{link:GString|http://groovy.codehaus.org/apidocs/groovy/lang/GString.html} object is created
+which contains the text and values used inside the String. GString uses lazy evaluation so its not
+until the toString() method is invoked that the GString is evaluated. 
+
+This lazy evaluation is useful for things like logging
+as it allows the calculation of the string, the calls to toString() on the values and the concatenation of
+the different strings to be done laziy if at all.
+
+Another use case for GString is {link:GroovySql|sql.html} where parameters can be passed into SQL statements
+using this same mechanism which makes for a neat way to integrate Groovy with other languages like SQL. GroovySql then
+converts the expressions to ? and uses a JDBC PreparedStatement and passes the values in, preserving their types.

@@ -1,0 +1,111 @@
+GroovyMarkup 
+
+
+
+1 GroovyMarkup
+
+Groovy has native support for various markup languages from XML, HTML,
+SAX, W3C DOM, Ant tasks, Swing user interfaces and so forth. 
+This is all accomplished via the following syntax... {code:groovysh}
+someBuilder.people(kind:'folks', groovy:true) {
+  person(x:123,  name:'James', cheese:'edam') {
+    project(name:'groovy')
+    project(name:'geronimo')
+  }
+  person(x:234,  name:'bob', cheese:'cheddar') {
+    project(name:'groovy')
+    project(name:'drools')
+  }
+}
+{code}
+
+Whichever kind of builder object is used, the syntax is the same. What
+the above means is that the someBuilder object has a method called
+'people' invoked with 2 parameters... - a Map of arguments ['kind':'folks', 'groovy':true] 
+- a Closure object which when invoked will call 2 methods on the
+builder called 'person', each taking 2 parameters, a map of values and
+a closure... 
+
+
+So we can easily represent any arbitrary nested markup with ease using
+a simple concise syntax. No pointy brackets! :)
+
+Whats more is this is native Groovy syntax; so you can mix and match
+this markup syntax with any other Groovy features (iteration,
+branching, method calls, variables, expressions etc). e.g.
+
+// lets create a form with a label & text field for each property
+of a bean< {code:groovysh}
+widget = swing.frame(title:'My Frame') {
+    panel() {
+       for (entry in someBean) {
+          label(text:entry.key)
+          textField(text:entry.value)
+       }
+       button(text:'OK', actionPerformed:{ println("I've been clicked with event ${it}") })
+    }
+}
+widget.show()
+{code}
+
+1.1 Trees, DOMs, beans and event processing
+
+The really neat thing about GroovyMarkup is that its just a syntax
+which maps down to method calls. So it can easily support the building
+of any arbitary object structure - so it can build any DOMish model, a
+bean structure, JMX MBeans, PicoComponents, Swing front ends, Ant tasks
+etc. Whats more since its just normal method invocations it can
+naturally map to SAX event processing too.
+
+Out of the box Groovy comes with a few different markup builders you
+can use - NodeBuilder - creates a tree of Node instances which can be
+easily navigated in Groovy using an XPath-like syntax 
+- DOMBuilder - creates a W3C DOM document from the markup its given 
+- SAXBuilder - fires SAX events into a given SAX ContentHandler 
+- MarkupBuilder - outputs XML / HTML markup to some PrintWriter for
+things like implementing servlets or code generation 
+- AntBuilder - fires off Ant tasks using familiar markup for
+processing build tasks 
+- SwingBuilder - creates rich Swing user interfaces using a simple markup 
+
+
+1.1 Examples
+
+Here's a simple example which shows how you could iterate through some SQL result set
+and output a dynamic XML document containing the results in a custom format using GroovyMarkup 
+
+{code:groovysh}
+// lets output some XML builder (could be SAX / DOM / TrAX / text)
+xml = createXmlBuilder()
+xml.customers() {
+	loc = 'London'
+	sql.queryEach ("select * from customer where location = ${loc}) {
+
+		// lets process each row by emitting some markup
+		xml.customer(id:it.id, type:'Customer', foo:someVariable)) {
+			role(it.person_role) 
+			name(it.customer_name)
+			location(id:it.location_id, name:it.location_name)
+		}
+	}
+}
+{code}
+
+The interesting thing about the above is that the XML technology used at the other end 
+could be push-event based (SAX) or pull-event based (StAX) or a DOM-ish API (W3C, dom4j, JDOM, 
+EXML, XOM) or some JAXB-ish thing (XMLBeans, Castor) or just beans or just good old text files.
+e.g. a pull parser could literally pull the data out of the database - or the data could be pushed 
+into data some structure or piped straight to a file using IO or async NIO.
+The use of GroovyMarkup means developers can hide the XML plumbing and focus on tackling the real problems we're trying to solve. 
+
+To see more examples of using GroovyMarkup try looking at our unit test cases 
+
+- {link:XML unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/xml/} 
+- {link:Ant unit tests|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/ant/} 
+- {link:Swing demos|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/} 
+
+
+There is more {link:detail on markup here|http://wiki.codehaus.org/groovy/TreeBasedSyntax} . 
+
+
+

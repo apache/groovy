@@ -1,0 +1,68 @@
+GroovySql 
+
+
+
+1 GroovySql: Making SQL more Groovy
+
+Groovy supports a few neat ways to work with SQL more easily. 
+You can perform queries and SQL statements, passing in variables easily with proper handling
+of statements, connections and exception handling thanks to closures. 
+
+{code:groovysh}
+foo = 'cheese'
+sql.queryEach("select * from FOOD where type=${foo}") { 
+    println("Gromit likes ${it.name}") 
+}
+{code}
+
+Or you can create a DataSet which allows you to query SQL using familar closure syntax 
+so that the same query could work easily on in memory objects or via SQL. e.g. 
+
+{code:groovysh}
+food = sql.dataSet('FOOD')
+cheese = food.findAll { it.type == 'cheese' }
+cheese.each { println("Eat ${it.name}") }
+{code}
+
+1.1 Examples
+
+Here's an example of using Groovy SQL along with {link:GroovyMarkup|markup.html} . 
+
+{code:groovysh}
+# lets output some XML builder 
+# could be SAX / StAX / DOM / TrAX / text etc
+xml = createXmlBuilder()
+
+xml.customers() {
+    loc = 'London'
+    sql.queryEach ("select * from customer where location = ${loc}) {
+
+    æææ # lets process each row by emitting some markup
+        xml.customer(id:it.id, type:'Customer', foo:someVariable)) {
+            if (it.parter == 'Y') {
+                role("partner") 
+            }
+            name(it.customer_name)
+            location(id:it.location_id, name:it.location_name)
+        }
+    }
+}
+{code}
+
+This could generate, dynamically something like 
+
+{code:groovysh}
+<customers>
+  <customer id="123" type="Customer" foo="whatever">
+    <role>partner</role>
+    <name>James</name>
+    <location id="5" name="London"/>
+  </customer>
+  ...
+</customers>
+{code}
+
+There's an example {link:test case which demonstrates|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/sql/SqlCompleteTest.groovy?rev=HEAD&view=auto} all of these query mechanisms in action. 
+
+
+

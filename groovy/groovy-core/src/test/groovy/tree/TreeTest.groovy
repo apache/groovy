@@ -40,11 +40,11 @@ class TreeTest extends GroovyTestCase {
         
         print(root)
 
-		elem1 = root.elem1.get(0)
-        assert elem1.value() == 'hello1'
+		e1 = root.elem1.get(0)
+        assert e1.value() == 'hello1'
         
-        elem2 = root.elem2.get(0)
-        assert elem2.value() == 'hello2'
+        e2 = root.elem2.get(0)
+        assert e2.value() == 'hello2'
 
         assert root.elem1.get(0).value() == 'hello1'
         assert root.elem2.get(0).value() == 'hello2'

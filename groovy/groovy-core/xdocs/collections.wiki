@@ -1,0 +1,121 @@
+
+1 Collections
+
+Groovy has native language support for collections, lists, maps and arrays.
+
+1.1 Lists
+
+You can create lists as follows. Notice that [] is the empty list expression.
+
+{code:groovy}
+list = [5, 6, 7, 8]
+assert list.get(2) == 7
+assert list instanceof java.util.List
+
+emptyList = []
+assert emptyList.size() == 0
+emptyList.add(5)
+assert emptyList.size() == 1
+{code}
+
+Each list expression creates an implemenation of the {api:java.util.List}.
+
+1.1 Ranges
+
+Ranges allow you to create a list of sequential values. These can be used as Lists since
+{link:GString|http://groovy.codehaus.org/apidocs/groovy/lang/Range.html} extends {api:java.util.List}.
+
+{code:groovy}
+range = 5..8
+assert range.size() == 4
+assert range.get(2) == 7
+assert range instanceof java.util.List
+{code}
+
+Note that ranges are implemented efficiently, creating a lightweight Java object containing a from and to value.
+
+Ranges can be used to iterate using the for statement.
+
+{code:groovy}
+for (i in 1..10) {
+	println "Hello ${i}"
+}
+{code}
+
+1.1 Maps
+
+Maps can be created using the following syntax. Notice that [:] is the empty map expresion.
+
+{code:groovy}
+map = ["name":"Gromit", "likes":"cheese", "id":1234]
+assert map.get("name") == "Gromit"
+assert map.get("id") == 1234
+assert map instanceof java.util.Map
+
+emptyMap = [:]
+assert emptyMap.size() == 0
+emptyMap.put(5, "foo")
+assert emptyMap.size() == 1
+assert emptyMap.get(5) == "foo"
+{code}
+
+Maps also act like beans so you can use the property notation to get/set items inside the Map 
+provided that the keys are Strings which are valid Groovy identifiers.
+
+{code:groovy}
+map = ["name":"Gromit", "likes":"cheese", "id":1234]
+assert map.name == "Gromit"
+assert map.id == 1234
+
+emptyMap = [:]
+assert emptyMap.size() == 0
+emptyMap.foo = 5
+assert emptyMap.size() == 1
+assert emptyMap.foo == 5
+{code}
+
+
+1.1 Subscript operators
+
+You can index into Strings, Lists, arrays, Maps, regexs and such like using the subscript expression.
+
+{code:groovy}
+text = "nice cheese gromit!"
+x = text[2]
+
+assert x == "c"
+assert x.class == String
+
+sub = text[5..10]
+
+assert sub == 'cheese'
+{code}
+
+Notice that you can use ranges to extract part of a List/array/String/regex. You can also use a list of indexes too.
+
+{code:groovy}
+list = 100..200
+sub = list[1, 3, 20..25, 33]
+assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
+{code}
+
+You can update items using the subscript operator too
+
+{code:groovy}
+list = ["a", "b", "c"]
+list[2] = "d"
+list[0] = list[1]
+list[3] = 5
+assert list == ["b", "b", "d", 5]
+{code}
+
+You can use negative indices to count from the end of the List, array, String etc.
+
+{code:groovy}
+text = "nice cheese gromit!"
+x = text[-1]
+assert x == "!"
+
+name = text[-7..-2]
+assert name == "gromit"
+{code}

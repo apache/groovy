@@ -120,6 +120,28 @@
   <part id="developer">
     <title>Groovy Developers FAQ</title>
     
+    <faq id="build">
+      <question>
+        How do I build Groovy from the source code?
+      </question>
+      <answer>
+        <p>
+        We use <a href="">Maven</a> as the build tool for Groovy.
+        From a source distribution, or <a href="cvs-usage.html">CVS checkout</a>
+        you need to install Maven as per the instructions on Maven's website.
+        </p>
+        <p>
+        Basically this involves setting the JAVA_HOME and MAVEN_HOME environment
+        variables and adding JAVA_HOME/bin and MAVEN_HOME/bin to your path.
+        Once you have installed Maven you can build Groovy and run all the unit tests
+        by typing the following in a command line shell
+       </p>
+		<source>
+		maven
+		</source>
+      </answer>
+    </faq>   
+
     <faq id="quick-build">
       <question>
         All the unit test cases take a while to run. Can I do a quicker build?
@@ -134,7 +156,6 @@
       </answer>
     </faq>   
 
-    
     <faq id="some-tests">
       <question>
         All the unit test cases take a while to run. Can I run just some of the tests?

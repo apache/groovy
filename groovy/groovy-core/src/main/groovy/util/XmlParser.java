@@ -83,7 +83,6 @@ import org.xml.sax.XMLReader;
 public class XmlParser implements ContentHandler {
 
     private StringBuffer bodyText = new StringBuffer();
-    private List bodyTexts = new ArrayList();
     private List stack = new ArrayList();
     private Locator locator;
     private XMLReader reader;
@@ -103,6 +102,15 @@ public class XmlParser implements ContentHandler {
         reader = parser.getXMLReader();
     }
 
+    public XmlParser(XMLReader reader) {
+        this.reader = reader;
+    }
+
+    public XmlParser(SAXParser parser) throws SAXException {
+        reader = parser.getXMLReader();
+    }
+
+    
     /**
      * Parses the content of the given file as XML turning it into a tree
      * of Nodes
@@ -162,15 +170,13 @@ public class XmlParser implements ContentHandler {
     }
 
     public void endDocument() throws SAXException {
-        bodyTexts.clear();
         stack.clear();
     }
 
     public void startElement(String namespaceURI, String localName, String qName, Attributes list)
         throws SAXException {
-        bodyTexts.add(bodyText);
-        bodyText = new StringBuffer();
-
+        addTextToNode();
+        
         Object name = getElementName(namespaceURI, localName, qName);
 
         int size = list.getLength();
@@ -185,21 +191,14 @@ public class XmlParser implements ContentHandler {
     }
 
     public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
-        String text = bodyText.toString();
-        if (trimWhitespace) {
-            text = text.trim();
-        }
-        if (text.length() > 0) {
-            parent.children().add(text);
-        }
-
+        addTextToNode();
+        
         if (!stack.isEmpty()) {
             stack.remove(stack.size() - 1);
             if (!stack.isEmpty()) {
                 parent = (Node) stack.get(stack.size() - 1);
             }
         }
-        bodyText = (StringBuffer) bodyTexts.remove(bodyTexts.size() - 1);
     }
 
     public void characters(char buffer[], int start, int length) throws SAXException {
@@ -234,6 +233,17 @@ public class XmlParser implements ContentHandler {
     protected XMLReader getXMLReader() {
         reader.setContentHandler(this);
         return reader;
+    }
+
+    protected void addTextToNode() {
+        String text = bodyText.toString();
+        if (trimWhitespace) {
+            text = text.trim();
+        }
+        if (text.length() > 0) {
+            parent.children().add(text);
+        }
+        bodyText = new StringBuffer();
     }
 
     protected Object getElementName(String namespaceURI, String localName, String qName) throws SAXException {

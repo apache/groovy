@@ -31,14 +31,15 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         
         assert foo[10] == 123
         
-        /** @todo 
+        foo.putAt(12, 55)
+        assert foo[12] == 55
+        
         i = 20
+        foo[i] = 1
         foo[i++] += 5
         
         assert i == 21
-        assert foo[20] == 5
-        */
-        
+        assert foo[20] == 6
     }
     
     void testDoubleSubscript() {

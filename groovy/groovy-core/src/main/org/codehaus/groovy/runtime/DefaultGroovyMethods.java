@@ -51,7 +51,11 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -75,6 +79,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,6 +95,8 @@ import java.util.regex.Pattern;
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
+
+    private static Logger log = Logger.getLogger(DefaultGroovyMethods.class.getName());
 
     private static final Integer ONE = new Integer(1);
 
@@ -285,6 +292,19 @@ public class DefaultGroovyMethods {
             }
         }
         return false;
+    }
+
+    /**
+     * @return the number of occurrencies of the given value inside this collection
+     */
+    public static int count(Collection self, Object value) {
+        int answer = 0;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            if (InvokerHelper.compareEqual(iter.next(), value)) {
+                ++answer;
+            }
+        }
+        return answer;
     }
 
     /**
@@ -577,27 +597,26 @@ public class DefaultGroovyMethods {
      * @param text
      * @return the Character object at the given index
      */
-    public static CharSequence get(CharSequence text, int index) {
+    public static CharSequence getAt(CharSequence text, int index) {
         index = normaliseIndex(index, text.length());
         return text.subSequence(index, index + 1);
     }
-    
+
     /**
      * Support the subscript operator for String
      * 
      * @param text
      * @return the Character object at the given index
      */
-    public static String get(String text, int index) {
+    public static String getAt(String text, int index) {
         index = normaliseIndex(index, text.length());
         return text.substring(index, index + 1);
     }
-    
 
     /**
      * Support the range subscript operator for CharSequence
      */
-    public static CharSequence get(CharSequence text, Range range) {
+    public static CharSequence getAt(CharSequence text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
         int length = text.length();
@@ -615,7 +634,7 @@ public class DefaultGroovyMethods {
     /**
      * Support the range subscript operator for String
      */
-    public static String get(String text, Range range) {
+    public static String getAt(String text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
         int length = text.length();
@@ -635,7 +654,7 @@ public class DefaultGroovyMethods {
      * 
      * @returns the group at the given index
      */
-    public static String get(Matcher matcher, int idx) {
+    public static String getAt(Matcher matcher, int idx) {
         matcher.reset();
         idx = normaliseIndex(idx, matcher.groupCount());
 
@@ -661,7 +680,7 @@ public class DefaultGroovyMethods {
      * @returns a range of a list from the range's from index up to but not
      * including the ranges's to value
      */
-    public static List get(List list, Range range) {
+    public static List getAt(List list, Range range) {
         return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()) + 1);
     }
 
@@ -670,19 +689,19 @@ public class DefaultGroovyMethods {
      * 
      * @returns a new list of the values at the given indices
      */
-    public static List get(List self, Collection indices) {
+    public static List getAt(List self, Collection indices) {
         List answer = new ArrayList(indices.size());
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
-                answer.addAll(get(self, (Range) value));
+                answer.addAll(getAt(self, (Range) value));
             }
             else if (value instanceof List) {
-                answer.addAll(get(self, (List) value));
+                answer.addAll(getAt(self, (List) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
-                answer.add(self.get(idx));
+                answer.add(getAt(self, idx));
             }
         }
         return answer;
@@ -693,19 +712,19 @@ public class DefaultGroovyMethods {
      * 
      * @returns a new list of the values at the given indices
      */
-    public static List get(Object[] self, Collection indices) {
+    public static List getAt(Object[] self, Collection indices) {
         List answer = new ArrayList(indices.size());
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
-                answer.addAll(get(self, (Range) value));
+                answer.addAll(getAt(self, (Range) value));
             }
             else if (value instanceof Collection) {
-                answer.addAll(get(self, (Collection) value));
+                answer.addAll(getAt(self, (Collection) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
-                answer.add(get(self, idx));
+                answer.add(getAt(self, idx));
             }
         }
         return answer;
@@ -716,51 +735,51 @@ public class DefaultGroovyMethods {
      * 
      * @returns a String of the values at the given indices
      */
-    public static CharSequence get(CharSequence self, Collection indices) {
+    public static CharSequence getAt(CharSequence self, Collection indices) {
         StringBuffer answer = new StringBuffer();
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
-                answer.append(get(self, (Range) value));
+                answer.append(getAt(self, (Range) value));
             }
             else if (value instanceof Collection) {
-                answer.append(get(self, (Collection) value));
+                answer.append(getAt(self, (Collection) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
-                answer.append(get(self, idx));
+                answer.append(getAt(self, idx));
             }
         }
         return answer.toString();
     }
-    
+
     /**
      * Allows a List to be used as the indices to be used on a String
      * 
      * @returns a String of the values at the given indices
      */
-    public static String get(String self, Collection indices) {
-        return (String) get((CharSequence) self, indices);
+    public static String getAt(String self, Collection indices) {
+        return (String) getAt((CharSequence) self, indices);
     }
-        
+
     /**
      * Allows a List to be used as the indices to be used on a Matcher
      * 
      * @returns a String of the values at the given indices
      */
-    public static String get(Matcher self, Collection indices) {
+    public static String getAt(Matcher self, Collection indices) {
         StringBuffer answer = new StringBuffer();
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
-                answer.append(get(self, (Range) value));
+                answer.append(getAt(self, (Range) value));
             }
             else if (value instanceof Collection) {
-                answer.append(get(self, (Collection) value));
+                answer.append(getAt(self, (Collection) value));
             }
             else {
                 int idx = InvokerHelper.asInt(value);
-                answer.append(get(self, idx));
+                answer.append(getAt(self, idx));
             }
         }
         return answer.toString();
@@ -787,9 +806,9 @@ public class DefaultGroovyMethods {
      * @returns a range of a list from the range's from index up to but not
      * including the ranges's to value
      */
-    public static List get(Object[] array, Range range) {
+    public static List getAt(Object[] array, Range range) {
         List list = Arrays.asList(array);
-        return get(list, range);
+        return getAt(list, range);
     }
 
     /**
@@ -797,7 +816,7 @@ public class DefaultGroovyMethods {
      * 
      * @returns the value at the given index
      */
-    public static Object get(Object[] array, int idx) {
+    public static Object getAt(Object[] array, int idx) {
         return array[normaliseIndex(idx, array.length)];
     }
 
@@ -805,14 +824,44 @@ public class DefaultGroovyMethods {
      * Support the subscript operator for an Array
      *  
      */
-    public static void put(Object[] array, int idx, Object value) {
+    public static void putAt(Object[] array, int idx, Object value) {
         array[normaliseIndex(idx, array.length)] = value;
+    }
+
+    /**
+     * Allows conversion of arrays into a mutable List
+     * 
+     * @returns the array as a List
+     */
+    public static List toList(Object[] array) {
+        int size = array.length;
+        List list = new ArrayList(size);
+        for (int i = 0; i < size; i++) {
+            list.add(array[i]);
+        }
+        return list;
+    }
+
+    /**
+     * Support the subscript operator for a List
+     * 
+     * @returns the value at the given index
+     */
+    public static Object getAt(List self, int idx) {
+        int size = self.size();
+        int i = normaliseIndex(idx, size);
+        if (i < size) {
+            return self.get(i);
+        }
+        else {
+            return null;
+        }
     }
 
     /**
      * A helper method to allow lists to work with subscript operators
      */
-    public static void put(List self, int i, Object value) {
+    public static void putAt(List self, int i, Object value) {
         int size = self.size();
         i = normaliseIndex(i, size);
         if (i < size) {
@@ -824,6 +873,22 @@ public class DefaultGroovyMethods {
             }
             self.add(i, value);
         }
+    }
+
+    /**
+     * Support the subscript operator for a List
+     * 
+     * @returns the value at the given index
+     */
+    public static Object getAt(Map self, Object key) {
+        return self.get(key);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators
+     */
+    public static Object putAt(Map self, Object key, Object value) {
+        return self.put(key, value);
     }
 
     protected static int normaliseIndex(int i, int size) {
@@ -838,7 +903,7 @@ public class DefaultGroovyMethods {
      * 
      * @return
      */
-    public static List get(Collection coll, String property) {
+    public static List getAt(Collection coll, String property) {
         List answer = new ArrayList(coll.size());
         for (Iterator iter = coll.iterator(); iter.hasNext();) {
             Object item = iter.next();
@@ -1069,92 +1134,92 @@ public class DefaultGroovyMethods {
     // Primitive type array methods
     //-------------------------------------------------------------------------
 
-    public static Object get(byte[] array, int idx) {
+    public static Object getAt(byte[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(char[] array, int idx) {
+    public static Object getAt(char[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(short[] array, int idx) {
+    public static Object getAt(short[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(int[] array, int idx) {
+    public static Object getAt(int[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(long[] array, int idx) {
+    public static Object getAt(long[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(float[] array, int idx) {
+    public static Object getAt(float[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    public static Object get(double[] array, int idx) {
+    public static Object getAt(double[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
 
-    public static Object get(byte[] array, Range range) {
+    public static Object getAt(byte[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(char[] array, Range range) {
+    public static Object getAt(char[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(short[] array, Range range) {
+    public static Object getAt(short[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(int[] array, Range range) {
+    public static Object getAt(int[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(long[] array, Range range) {
+    public static Object getAt(long[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(float[] array, Range range) {
+    public static Object getAt(float[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    public static Object get(double[] array, Range range) {
+    public static Object getAt(double[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
-    public static Object get(byte[] array, Collection indices) {
+    public static Object getAt(byte[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(char[] array, Collection indices) {
+    public static Object getAt(char[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(short[] array, Collection indices) {
+    public static Object getAt(short[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(int[] array, Collection indices) {
+    public static Object getAt(int[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(long[] array, Collection indices) {
+    public static Object getAt(long[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(float[] array, Collection indices) {
+    public static Object getAt(float[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    public static Object get(double[] array, Collection indices) {
+    public static Object getAt(double[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
-    public static void put(byte[] array, int idx, Object newValue) {
+    public static void putAt(byte[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
 
-    public static void put(char[] array, int idx, Object newValue) {
+    public static void putAt(char[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    public static void put(short[] array, int idx, Object newValue) {
+    public static void putAt(short[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    public static void put(int[] array, int idx, Object newValue) {
+    public static void putAt(int[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    public static void put(long[] array, int idx, Object newValue) {
+    public static void putAt(long[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    public static void put(float[] array, int idx, Object newValue) {
+    public static void putAt(float[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    public static void put(double[] array, int idx, Object newValue) {
+    public static void putAt(double[] array, int idx, Object newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
 
@@ -1180,15 +1245,37 @@ public class DefaultGroovyMethods {
         return Array.getLength(array);
     }
 
+    public static List toList(byte[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(char[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(short[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(int[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(long[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(float[] array) {
+        return primitiveArrayToList(array);
+    }
+    public static List toList(double[] array) {
+        return primitiveArrayToList(array);
+    }
+
     /**
-     * Implements the get(int) method for primitve type arrays
+     * Implements the getAt(int) method for primitve type arrays
      */
     protected static Object primitiveArrayGet(Object array, int idx) {
         return Array.get(array, normaliseIndex(idx, Array.getLength(array)));
     }
 
     /**
-     * Implements the get(Range) method for primitve type arrays
+     * Implements the getAt(Range) method for primitve type arrays
      */
     protected static List primitiveArrayGet(Object array, Range range) {
         List answer = new ArrayList();
@@ -1200,7 +1287,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Implements the get(Collection) method for primitve type arrays
+     * Implements the getAt(Collection) method for primitve type arrays
      */
     protected static List primitiveArrayGet(Object self, Collection indices) {
         List answer = new ArrayList();
@@ -1227,6 +1314,20 @@ public class DefaultGroovyMethods {
         Array.set(array, normaliseIndex(idx, Array.getLength(array)), newValue);
     }
 
+    /**
+     * Allows conversion of arrays into a mutable List
+     * 
+     * @returns the array as a List
+     */
+    protected static List primitiveArrayToList(Object array) {
+        int size = Array.getLength(array);
+        List list = new ArrayList(size);
+        for (int i = 0; i < size; i++) {
+            list.add(Array.get(array, i));
+        }
+        return list;
+    }
+
     // String methods
     //-------------------------------------------------------------------------
     public static Object tokenize(String self, String token) {
@@ -1238,13 +1339,41 @@ public class DefaultGroovyMethods {
     }
 
     public static String plus(String left, Object value) {
-        return left + value;
-        //return left + toString(value);
+        //return left + value;
+        return left + toString(value);
     }
 
     public static String minus(String left, Object value) {
         String text = toString(value);
         return left.replaceFirst(text, "");
+    }
+
+    /**
+     * Provide an implementation of contains() like Collection to make Strings more polymorphic
+     * This method is not required on JDK 1.5 onwards
+     * 
+     * @return true if this string contains the given text
+     */
+    public static boolean contains(String self, String text) {
+        int idx = self.indexOf(text);
+        return idx >= 0;
+    }
+
+    /**
+     * @return the number of occurrencies of the given string inside this String
+     */
+    public static int count(String self, String text) {
+        int answer = 0;
+        for (int idx = 0; true; idx++) {
+            idx = self.indexOf(text, idx);
+            if (idx >= 0) {
+                ++answer;
+            }
+            else {
+                break;
+            }
+        }
+        return answer;
     }
 
     public static String multiply(String self, Number factor) {
@@ -1284,6 +1413,37 @@ public class DefaultGroovyMethods {
         }
         else {
             return new Integer(left.intValue() + right.intValue());
+        }
+    }
+
+    public static int compareTo(Number left, Number right) {
+        /** @todo maybe a double dispatch thing to handle new large numbers? */
+        if (isFloatingPoint(left) || isFloatingPoint(right)) {
+            double diff = left.doubleValue() - right.doubleValue();
+            if (diff == 0) {
+                return 0;
+            }
+            else {
+                return (diff > 0) ? 1 : -1;
+            }
+        }
+        else if (isLong(left) || isLong(right)) {
+            long diff = left.longValue() - right.longValue();
+            if (diff == 0) {
+                return 0;
+            }
+            else {
+                return (diff > 0) ? 1 : -1;
+            }
+        }
+        else {
+            int diff = left.intValue() - right.intValue();
+            if (diff == 0) {
+                return 0;
+            }
+            else {
+                return (diff > 0) ? 1 : -1;
+            }
         }
     }
 
@@ -1464,6 +1624,19 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Helper method to create a new OutputStream for a file and then 
+     * passes it into the closure and ensures its closed again afterwords
+     * 
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static void eachOutputStream(File file, Closure closure) throws IOException {
+        useStream(newOutputStream(file), closure);
+    }
+
+    
+    /**
      * Helper method to create a buffered writer for a file
      * 
      * @param file
@@ -1474,6 +1647,164 @@ public class DefaultGroovyMethods {
         return new BufferedWriter(new FileWriter(file));
     }
 
+    /**
+     * Helper method to create a new BufferedWriter for a file and then 
+     * passes it into the closure and ensures its closed again afterwords
+     * 
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static void eachWriter(File file, Closure closure) throws IOException {
+        useWriter(newWriter(file), closure);
+    }
+    /**
+     * Helper method to create a new PrintWriter for a file
+     * 
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static PrintWriter newPrintWriter(File file) throws IOException {
+        return new PrintWriter(newWriter(file));
+    }
+
+    /**
+     * Helper method to create a new PrintWriter for a file and then 
+     * passes it into the closure and ensures its closed again afterwords
+     * 
+     * @param file
+     * @return @throws
+     *         FileNotFoundException
+     */
+    public static void eachPrintWriter(File file, Closure closure) throws IOException {
+        useWriter(newPrintWriter(file), closure);
+    }
+
+    /**
+     * Allows a writer to be used, calling the closure with the writer
+     * and then ensuring that the writer is closed down again irrespective
+     * of whether exceptions occur or the 
+     * 
+     * @param writer the writer which is used and then closed
+     * @param closure the closure that the writer is passed into 
+     * @throws IOException
+     */
+    public static void useWriter(Writer writer, Closure closure) throws IOException {
+        try {
+            closure.call(writer);
+            
+            // lets try close the writer & throw the exception if it fails
+            // but not try to reclose it in the finally block
+            Writer temp = writer;
+            writer = null;
+            temp.close();
+        }
+        finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                }
+                catch (IOException e) {
+                    log.warning("Caught exception closing writer: " + e);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Allows a Reader to be used, calling the closure with the writer
+     * and then ensuring that the writer is closed down again irrespective
+     * of whether exceptions occur or the 
+     * 
+     * @param writer the writer which is used and then closed
+     * @param closure the closure that the writer is passed into 
+     * @throws IOException
+     */
+    public static void useReader(Reader writer, Closure closure) throws IOException {
+        try {
+            closure.call(writer);
+            
+            // lets try close the writer & throw the exception if it fails
+            // but not try to reclose it in the finally block
+            Reader temp = writer;
+            writer = null;
+            temp.close();
+        }
+        finally {
+            if (writer != null) {
+                try {
+                    writer.close();
+                }
+                catch (IOException e) {
+                    log.warning("Caught exception closing writer: " + e);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Allows a InputStream to be used, calling the closure with the stream
+     * and then ensuring that the stream is closed down again irrespective
+     * of whether exceptions occur or the 
+     * 
+     * @param stream the stream which is used and then closed
+     * @param closure the closure that the stream is passed into 
+     * @throws IOException
+     */
+    public static void useStream(InputStream stream, Closure closure) throws IOException {
+        try {
+            closure.call(stream);
+            
+            // lets try close the stream & throw the exception if it fails
+            // but not try to reclose it in the finally block
+            InputStream temp = stream;
+            stream = null;
+            temp.close();
+        }
+        finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                }
+                catch (IOException e) {
+                    log.warning("Caught exception closing stream: " + e);
+                }
+            }
+        }
+    }
+    
+    /**
+     * Allows a OutputStream to be used, calling the closure with the stream
+     * and then ensuring that the stream is closed down again irrespective
+     * of whether exceptions occur or the 
+     * 
+     * @param stream the stream which is used and then closed
+     * @param closure the closure that the stream is passed into 
+     * @throws IOException
+     */
+    public static void useStream(OutputStream stream, Closure closure) throws IOException {
+        try {
+            closure.call(stream);
+            
+            // lets try close the stream & throw the exception if it fails
+            // but not try to reclose it in the finally block
+            OutputStream temp = stream;
+            stream = null;
+            temp.close();
+        }
+        finally {
+            if (stream != null) {
+                try {
+                    stream.close();
+                }
+                catch (IOException e) {
+                    log.warning("Caught exception closing stream: " + e);
+                }
+            }
+        }
+    }
+    
     /**
      * Helper method to create a buffered input stream for a file
      *
