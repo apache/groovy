@@ -49,6 +49,8 @@ import groovy.lang.GroovyObjectSupport;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.codehaus.groovy.runtime.NoSuchPropertyException;
 
@@ -87,6 +89,9 @@ public class GroovyResultSet extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Iterates to the next row
+     */
     public boolean next() throws SQLException {
         if (updated) {
             resultSet.updateRow();
@@ -95,4 +100,16 @@ public class GroovyResultSet extends GroovyObjectSupport {
         return resultSet.next();
     }
 
+    /**
+     * Adds a new row to this result set
+     * @param values
+     */
+    public void add(Map values) throws SQLException {
+        resultSet.moveToInsertRow(); 
+        for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            resultSet.updateObject(entry.getKey().toString(), entry.getValue());
+        }
+        resultSet.insertRow();
+    }
 }
