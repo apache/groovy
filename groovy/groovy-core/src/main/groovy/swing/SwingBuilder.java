@@ -164,11 +164,20 @@ public class SwingBuilder extends BuilderSupport {
     private Map factories = new HashMap();
     private Object constraints;
     private Map passThroughNodes = new HashMap();
+    private Map widgets = new HashMap();
     // tracks all containing windows, for auto-owned dialogs
     private LinkedList containingWindows = new LinkedList();
 
     public SwingBuilder() {
         registerWidgets();
+    }
+
+    public Object getProperty(String name) {
+        Object widget = widgets.get(name);
+        if (widget == null) {
+            return super.getProperty(name);
+        }
+        return widget;
     }
 
     protected void setParent(Object parent, Object child) {
@@ -347,6 +356,13 @@ public class SwingBuilder extends BuilderSupport {
     }
     
     protected Object createNode(Object name, Map attributes) {
+        String widgetName = (String) attributes.remove("name");
+        if (widgetName == null) {
+            Object text = attributes.get("text");
+            if (text != null) {
+                widgetName = text.toString();
+            }
+        }
         constraints = attributes.remove("constraints");
         Object widget = null;
         if (passThroughNodes.containsKey(name)) {
@@ -367,6 +383,9 @@ public class SwingBuilder extends BuilderSupport {
             if (factory != null) {
                 try {
                     widget = factory.newInstance(attributes);
+                    if (widgetName != null) {
+                        widgets.put(widgetName, widget);
+                    }
                     if (widget == null) {
                         log.log(Level.WARNING, "Factory for name: " + name + " returned null");
                     }
