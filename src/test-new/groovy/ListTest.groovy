@@ -119,7 +119,7 @@ class ListTest extends GroovyTestCase {
         l2 = "erererer"
         assert l1 + l2 == [6, 4, 5, 1, 7, 2, "erererer"]            
     }
-    
+
     void testListAppend() {
         list = [1, 2]
         
@@ -131,7 +131,7 @@ class ListTest extends GroovyTestCase {
         
         assert x == ['a', 'hello', [2, 3], 5]
     }
-    
+
     void testTimes() {
         l = [4,7,8]
         assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]

@@ -103,8 +103,7 @@ class GStringTest extends GroovyTestCase {
         arg = "test"
         content = "${arg} ="
 
-        if (arg != "something")
-        {
+        if (arg != "something") {
             content += "?"
         }
 
