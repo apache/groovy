@@ -50,6 +50,7 @@ import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -59,6 +60,7 @@ import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.management.MBeanServerConnection;
 
 
 /**
@@ -73,12 +75,12 @@ import javax.management.ObjectName;
  */
 public class GroovyMBean extends GroovyObjectSupport {
 
-    private MBeanServer server;
+    private MBeanServerConnection server;
     private ObjectName name;
     private MBeanInfo beanInfo;
     private Map operations = new HashMap();
 
-    public GroovyMBean(MBeanServer server, ObjectName name) throws JMException {
+    public GroovyMBean(MBeanServerConnection server, ObjectName name) throws JMException, IOException {
         this.server = server;
         this.name = name;
         this.beanInfo = server.getMBeanInfo(name);
@@ -90,7 +92,7 @@ public class GroovyMBean extends GroovyObjectSupport {
         }
     }
 
-    public MBeanServer server() {
+    public MBeanServerConnection server() {
         return server;
     }
     
