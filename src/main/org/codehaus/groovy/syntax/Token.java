@@ -172,8 +172,11 @@ public class Token
     /** Token type for identifier. */
     public static final int IDENTIFIER = 340;
 
-    /** Token type for number. */
-    public static final int NUMBER = 350;
+    /** Token type for integral number. */
+    public static final int INTEGER_NUMBER = 350;
+
+    /** Token type for floating-point number. */
+    public static final int FLOAT_NUMBER = 351;
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -455,7 +458,9 @@ public class Token
                              "<string literal>" );
         addTokenDescription( IDENTIFIER,
                              "<identifier>" );
-        addTokenDescription( NUMBER,
+        addTokenDescription( INTEGER_NUMBER,
+                             "<number>" );
+        addTokenDescription( FLOAT_NUMBER,
                              "<number>" );
     }
 
@@ -1148,11 +1153,21 @@ public class Token
         return null;
     }
 
-    public static Token number(int startLine,
-                               int startColumn,
-                               String text)
+    public static Token integerNumber(int startLine,
+                                      int startColumn,
+                                      String text)
     {
-        return newToken( NUMBER,
+        return newToken( INTEGER_NUMBER,
+                         text,
+                         startLine,
+                         startColumn );
+    }
+
+    public static Token floatNumber(int startLine,
+                                    int startColumn,
+                                    String text)
+    {
+        return newToken( FLOAT_NUMBER,
                          text,
                          startLine,
                          startColumn );

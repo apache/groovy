@@ -772,9 +772,18 @@ public class Lexer
 
                     }
 
-                    token = Token.number( getStartLine(),
-                                          getStartColumn(),
-                                          numericLiteral.toString() );
+                    if ( isFloat )
+                    {
+                        token = Token.floatNumber( getStartLine(),
+                                                   getStartColumn(),
+                                                   numericLiteral.toString() );
+                    }
+                    else
+                    {
+                        token = Token.integerNumber( getStartLine(),
+                                                     getStartColumn(),
+                                                     numericLiteral.toString() );
+                    }
                     break ROOT_SWITCH;
                 }
                 default:
