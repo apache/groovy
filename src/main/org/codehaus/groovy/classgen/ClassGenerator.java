@@ -454,7 +454,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-        //cv.visitVarInsn(ALOAD, 0);
         ifElse.getIfBlock().visit(this);
 
         Label l1 = new Label();
@@ -1347,8 +1346,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         // lets load an extra one just in case as we may be getting & putting a
         // field
-        // @todo this is not ideal; need a better way of doing this
-        //cv.visitVarInsn(ALOAD, 0);
         cv.visitVarInsn(ALOAD, 0);
         cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
 
@@ -1910,10 +1907,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        //        if (isNonStaticField(leftExpression)) {
-        //            cv.visitVarInsn(ALOAD, 0);
-        //        }
-        //
         leftHandExpression = false;
         leftExpression.visit(this);
         cv.visitLdcInsn(method);
@@ -1934,9 +1927,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
+        /*
         if (isNonStaticField(leftExpression)) {
             cv.visitVarInsn(ALOAD, 0);
         }
+        */
 
         leftHandExpression = false;
         leftExpression.visit(this);
