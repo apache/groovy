@@ -442,6 +442,9 @@ public class Invoker {
     	String regexToCompareTo;
     	if (right instanceof String) {
     		regexToCompareTo = (String) right;
+    	} else if (right instanceof Pattern) {
+    		Pattern pattern = (Pattern) right;
+    		return pattern.matcher(stringToCompare);
     	} else {
     		regexToCompareTo = toString(right);
     	}
@@ -457,9 +460,24 @@ public class Invoker {
      * @return
      */
     public boolean objectMatchRegex(Object left, Object right) {
+    	Pattern pattern;
+    	if (right instanceof Pattern) {
+    		pattern = (Pattern) right; 
+    	} else {
+    		pattern = Pattern.compile(toString(right));
+    	}
     	String stringToCompare = toString(left);
-    	String regexToCompareTo = toString(right);
-    	return Pattern.matches(regexToCompareTo, stringToCompare);
+    	return pattern.matcher(stringToCompare).matches();
     }
+
+	/**
+	 * Compile a regular expression from a string.
+	 * 
+	 * @param regex
+	 * @return
+	 */
+	public Pattern regexPattern(String regex) {
+		return Pattern.compile(regex);
+	}
 
 }

@@ -688,6 +688,12 @@ public class ASTBuilder
                 }
                 return gstring;
             }
+            case ( Token.PATTERN_REGEX ):
+            {
+            	Expression string = expression(expressionRoot.getChild(0));
+            	RegexExpression regex = new RegexExpression(string);
+            	return regex;
+            }
             case ( Token.IDENTIFIER ):
             {
                 return  variableOrClassExpression( expressionRoot );
