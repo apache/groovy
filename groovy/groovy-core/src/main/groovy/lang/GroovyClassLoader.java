@@ -34,6 +34,7 @@
  */
 package groovy.lang;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -83,13 +84,24 @@ public class GroovyClassLoader extends ClassLoader {
     }
 
     /**
-	 * Parses the given file name into a Java class capable of being run
-	 * 
-	 * @param charStream
-	 * @return the main class defined in the given script
-	 */
+     * Parses the given file name into a Java class capable of being run
+     * 
+     * @param file the file name to parse
+     * @return the main class defined in the given script
+     */
     public Class parseClass(String file) throws SyntaxException, IOException {
         return parseClass(new FileInputStream(file), file);
+    }
+
+    /**
+     * Parses the given text into a Java class capable of being run
+     * 
+     * @param text the text of the script/class to parse
+     * @param file the file name to use as the name of the class
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(String text, String file) throws SyntaxException, IOException {
+        return parseClass(new ByteArrayInputStream(text.getBytes()), file);
     }
 
     /**
