@@ -5,44 +5,63 @@ import java.sql.Types
 public class TypeMap {
     property nameToCode
     property codeToName
-    
+    property decimalTypes
+    property textTypes
+    property otherTypes
+              
     public TypeMap() {
         nameToCode = [:]
         codeToName = [:]
                   
-        map("bit",Types.BIT)
-        map("tinyint",Types.TINYINT)
-        map("smallint",Types.SMALLINT)
-        map("integer",Types.INTEGER)
-        map("bigint",Types.BIGINT)
-        map("float",Types.FLOAT)
-        map("real",Types.REAL)
-        map("double",Types.DOUBLE)
-        map("numeric",Types.NUMERIC)
-        map("decimal",Types.DECIMAL)
-        map("char",Types.CHAR)
-        map("varchar",Types.VARCHAR)
-        map("longvarchar",Types.LONGVARCHAR)
-        map("date",Types.DATE)
-        map("time",Types.TIME)
-        map("timestamp",Types.TIMESTAMP)
-        map("binary",Types.BINARY)
-        map("varbinary",Types.VARBINARY)
-        map("longvarbinary",Types.LONGVARBINARY)
-        map("null",Types.NULL)
-        map("other",Types.OTHER)
-        map("java_object",Types.JAVA_OBJECT)
-        map("distinct",Types.DISTINCT)
-        map("struct",Types.STRUCT)
-        map("array",Types.ARRAY)
-        map("blob",Types.BLOB)
-        map("clob",Types.CLOB)
-        map("ref",Types.REF)
-        map("datalink",Types.DATALINK)
-        map("boolean",Types.BOOLEAN)
+        decimalTypes = [
+            "numeric" : Types.NUMERIC,
+            "decimal" : Types.DECIMAL,
+            "float" : Types.FLOAT,
+            "real" : Types.REAL,
+            "double" : Types.DOUBLE
+        ]
+        textTypes = [
+            "char" : Types.CHAR,
+            "varchar" : Types.VARCHAR,
+            "longvarchar" : Types.LONGVARCHAR,
+            "clob" : Types.CLOB,
+            "date" : Types.DATE,
+            "time" : Types.TIME,
+            "timestamp" : Types.TIMESTAMP
+        ]
+        otherTypes = [
+            "bit" : Types.BIT,
+            "tinyint" : Types.TINYINT,
+            "smallint" : Types.SMALLINT,
+            "integer" : Types.INTEGER,
+            "bigint" : Types.BIGINT,
+            "binary" : Types.BINARY,
+            "varbinary" : Types.VARBINARY,
+            "longvarbinary" : Types.LONGVARBINARY,
+            "null" : Types.NULL,
+            "other" : Types.OTHER,
+            "java_object" : Types.JAVA_OBJECT,
+            "distinct" : Types.DISTINCT,
+            "struct" : Types.STRUCT,
+            "array" : Types.ARRAY,
+            "blob" : Types.BLOB,
+            "ref" : Types.REF,
+            "datalink" : Types.DATALINK,
+            "boolean" : Types.BOOLEAN
+        ]
+        for (entries in decimalTypes.entrySet()) {
+            crossRef(entries.key,entries.value)          
+        }          
+        for (entries in textTypes.entrySet()) {
+            crossRef(entries.key,entries.value)          
+        }          
+        for (entries in otherTypes.entrySet()) {
+            crossRef(entries.key,entries.value)          
+        }          
+  
     }
     
-    private map(name,code) {
+    private crossRef(name,code) {
         nameToCode.put(name,code)
         codeToName.put(code,name)
     }
@@ -54,4 +73,25 @@ public class TypeMap {
     public String getJdbcTypeName(int code) {
         return codeToName.get(code,"unknown")
     }
+    
+    /**
+      * Returns true if values for the type need have size and scale measurements
+      *
+      * @param type The type to check.
+      */
+    public boolean isDecimalType(int type) {
+        return isDecimalType(getJdbcTypeName(type));
+    }
+    
+    /**
+      * Returns true if values for the type need have size and scale measurements
+      *
+      * @param type The type to check.
+      */
+    public boolean isDecimalType(String type) {
+        return decimalTypes.keySet().any {
+            type.equalsIgnoreCase(it)
+        }
+    }
+    
 }

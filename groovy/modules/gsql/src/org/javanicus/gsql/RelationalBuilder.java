@@ -21,6 +21,8 @@ public class RelationalBuilder extends BuilderSupport {
         factories.put("database",new DatabaseFactory());
         factories.put("table",new TableFactory());
         factories.put("column",new ColumnFactory());
+        factories.put("foreignKey",new ForeignKeyFactory());
+        factories.put("reference",new ReferenceFactory());
     }
     
     private Map passThroughNodes = new HashMap();
@@ -28,10 +30,22 @@ public class RelationalBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
 //        System.out.println("setParent(" + parent + "," + child + ")");
         
+        if (child instanceof Reference) {
+            if (parent instanceof ForeignKey) {
+                ForeignKey foreignKey = (ForeignKey)parent;
+                foreignKey.getReferences().add(child);
+            }
+        }
         if (child instanceof Column) {
             if (parent instanceof Table) {
                 Table table = (Table)parent;
                 table.getColumns().add(child);
+            }
+        }
+        if (child instanceof ForeignKey) {
+            if (parent instanceof Table) {
+                Table table = (Table)parent;
+                table.getForeignKeys().add(child);
             }
         }
         if (child instanceof Table) {
@@ -110,5 +124,18 @@ public class RelationalBuilder extends BuilderSupport {
             return column;
         }
     }
-
+    private class ForeignKeyFactory implements Factory {
+        public Object make(String nodeName, Map attributes, Object value) {
+            ForeignKey foreignKey = new ForeignKey();
+            setAttributes(foreignKey,attributes);
+            return foreignKey;
+        }
+    }
+    private class ReferenceFactory implements Factory {
+        public Object make(String nodeName, Map attributes, Object value) {
+            Reference reference = new Reference();
+            setAttributes(reference,attributes);
+            return reference;
+        }
+    }
 }
