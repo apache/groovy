@@ -2,6 +2,9 @@ package groovy.ui
 
 import groovy.swing.SwingBuilder
 
+import java.awt.Toolkit
+import java.awt.event.KeyEvent
+
 import javax.swing.KeyStroke
 import javax.swing.JSplitPane
 import javax.swing.text.StyleContext
@@ -38,17 +41,19 @@ class Console extends ConsoleSupport {
                     menuItem() {
                         action(name:'Save', enabled:false, closure:{ println("clicked on the Save menu item!") })
                     }
+                    separator()
+                    menuItem() {
+                        action(name:'Exit', closure:{ exit() })
+                    }
                 }
                 menu(text:'Actions') {
                     menuItem() {
-                        action(name:'Run', closure:{ owner.runScript() }, 
-                        keyStroke:'ctrl enter',
-                        acceleratorKey:KeyStroke.getKeyStroke("meta R")
-                        /*, 
-,
-                        mnemonicKey:"alt R"
-                        actionCommandKey:'F2'                        actionCommandKey:KeyStroke.getKeyStroke("F3")
-                        */
+                        menuModifier = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()
+                        action(
+                            name:'Run', 
+                            closure:{ owner.runScript() }, 
+	                        keyStroke:'ctrl enter',
+    	                    acceleratorKey:KeyStroke.getKeyStroke(KeyEvent.VK_R, menuModifier)
                         )
                     }
                 }
@@ -69,6 +74,11 @@ class Console extends ConsoleSupport {
             }
         }        
         frame.setSize(500,400)
+        
+        // add window listeners
+        frame.windowClosed = { exit() }
+        frame.windowClosing = { it.window.dispose() }
+        
         frame.show()
     }
     
@@ -108,5 +118,9 @@ class Console extends ConsoleSupport {
         pane = swing.optionPane(message:'Error: ' + e.getMessage() + '\nafter compiling: ' + text)
         dialog = pane.createDialog(frame, 'Compile error')
         dialog.show()
+    }
+
+    exit() {
+        System.exit(0)
     }
 }
