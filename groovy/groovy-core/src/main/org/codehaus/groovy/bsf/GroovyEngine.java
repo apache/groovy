@@ -98,7 +98,6 @@ public class GroovyEngine extends BSFEngineImpl {
      * Call the named method of the given object.
      */
     public Object call(Object object, String method, Object[] args) throws BSFException {
-
         return InvokerHelper.invokeMethod(object, method, args);
     }
 
@@ -115,7 +114,7 @@ public class GroovyEngine extends BSFEngineImpl {
      */
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
-            Object result = shell.evaluate(script.toString(), source);
+            Object result = getEvalShell().evaluate(script.toString(), source);
             return result;
         }
         catch (Exception e) {
@@ -130,8 +129,8 @@ public class GroovyEngine extends BSFEngineImpl {
     public void exec(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             // use evaluate to pass in the BSF variables
-            shell.evaluate(script.toString(), source);
-            //shell.run(script.toString(), source, EMPTY_ARGS);
+            getEvalShell().evaluate(script.toString(), source);
+            //getEvalShell().run(script.toString(), source, EMPTY_ARGS);
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -162,5 +161,12 @@ public class GroovyEngine extends BSFEngineImpl {
      */
     public void undeclareBean(BSFDeclaredBean bean) throws BSFException {
         shell.setVariable(bean.name, null);
+    }
+
+    /**
+     * @return a newly created GroovyShell using the same variable scope but a new class loader
+     */
+    protected GroovyShell getEvalShell() {
+        return new GroovyShell(shell);
     }
 }
