@@ -175,6 +175,10 @@
       <name>James Birchfield</name>
       <email></email>
     </contributor>
+    <contributor>
+      <name>Guillaume Laforge</name>
+      <email></email>
+    </contributor>
   </contributors>
 
   <dependencies>
