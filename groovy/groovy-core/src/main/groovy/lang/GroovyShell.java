@@ -60,6 +60,7 @@ import java.lang.reflect.InvocationTargetException;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.ui.GroovyMain;
 
 /**
  * Represents a groovy shell capable of running arbitrary groovy scripts
@@ -75,6 +76,10 @@ public class GroovyShell extends GroovyObjectSupport {
     private GroovyClassLoader loader;
     private Binding context;
     private int counter;
+
+    public static void main(String[] args) {
+        GroovyMain.main(args);
+    }
 
     public GroovyShell() {
         this(null, new Binding());
