@@ -287,7 +287,12 @@ public class Verifier implements GroovyClassVisitor, Constants {
         String name = node.getName();
         FieldNode field = node.getField();
 
-        String getterName = "get" + capitalize(name);
+        
+        String getterPrefix = "get";
+        if ("boolean".equals(node.getType())) {
+            getterPrefix = "is";
+        }
+        String getterName = getterPrefix + capitalize(name);
         String setterName = "set" + capitalize(name);
 
         Statement getterBlock = node.getGetterBlock();

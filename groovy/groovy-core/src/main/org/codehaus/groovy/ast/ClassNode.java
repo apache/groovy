@@ -524,47 +524,7 @@ public class ClassNode extends MetadataNode implements Constants {
         return new Parameter(parameterType.getName(), "param" + idx);
     }
 
-    /**
-     * Tries to create a Class node for the given type name
-     * 
-     * @param type
-     * @return
-     */
-    /*
-    public ClassNode resolveClass(String type) {
-        if (type != null) {
-            if (getNameWithoutPackage().equals(type)) {
-                return this;
-            }
-            for (int i = 0; i < 2; i++) {
-                CompileUnit compileUnit = getCompileUnit();
-                if (compileUnit != null) {
-                    ClassNode classNode = compileUnit.getClass(type);
-                    if (classNode != null) {
-                        return classNode;
-                    }
-    
-                    try {
-                        Class theClass = compileUnit.loadClass(type);
-                        return createClassNode(theClass);
-                    }
-                    catch (Throwable e) {
-                        // fall through
-                    }
-                }
-    
-                // lets try class in same package
-                String packageName = getPackageName();
-                if (packageName == null || packageName.length() <= 0) {
-                    break;
-                }
-                type = packageName + "." + type;
-            }
-        }
-        return null;
-    }
-    */
-
+  
     public String resolveClassName(String type) {
         String answer = null;
         if (type != null) {
