@@ -9,7 +9,7 @@
   
   <goal name="dc" prereqs="clean, test, site"/>
 -->
-  <goal name="dc" prereqs="clean, test"/>
+  <goal name="dc" prereqs="clean, test, jar:deploy-snapshot"/>
 
   <preGoal name="site:deploy">
     <attainGoal name="javadoc"/>
