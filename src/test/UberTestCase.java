@@ -70,6 +70,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(CompareToTest.class);
         suite.addTestSuite(CompilerErrorTest.class);
         suite.addTestSuite(ConstructorBug.class);
+        suite.addTestSuite(CurlyBracketLayoutTest.class);
         suite.addTestSuite(DateTest.class);
         suite.addTestSuite(DefVariableBug.class);
         suite.addTestSuite(DefaultParamClosureTest.class);
@@ -88,6 +89,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(ForLoopTest.class);
         suite.addTestSuite(ForLoopWithLocalVariablesTest.class);
         suite.addTestSuite(FullyQualifiedClassBug.class);
+        suite.addTestSuite(FullyQualifiedVariableTypeBug.class);
         suite.addTestSuite(GPathTest.class);
         suite.addTestSuite(GStringTest.class);
 

@@ -490,15 +490,7 @@ declarationStart!
     |   AT IDENT  // IDENT != "interface"
     |   (   upperCaseIdent
         |   builtInType
-        // cannot use fully qualified type names in declarations 
-        // as it is ambiguous with method calls
-        //
-        // e.g. 
-        // java.lang.String x
-        // System.out.println x
-        // foo.println x
-        // 
-        // |		 qualifiedTypeName
+        |   qualifiedTypeName
         ) (LBRACK balancedTokens RBRACK)* IDENT
     ;
 
@@ -506,7 +498,7 @@ declarationStart!
  */
 qualifiedTypeName!
 				 :
-				 			 IDENT (DOT IDENT)+
+				 			 IDENT (DOT IDENT)* DOT upperCaseIdent
 				 ;
 	
 /** Used to look ahead for a constructor 
