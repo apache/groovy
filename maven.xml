@@ -342,17 +342,8 @@
         <exclude name="**/LoopBreakTest.groovy"/>
 
 
-        <!-- should we support -> safe navigation token? -->
-        <exclude name="**/SafeNavigationTest.groovy"/>
-
-
         <!-- TODO - string literal stuff  -->
         <exclude name="**/Groovy675_Bug.groovy"/>
-
-        <!-- TODO other stuff -->
-        <!--
-        <exclude name="**/*Demo.groovy"/>
-        -->
 
       </fileset>
     </copy>
