@@ -47,6 +47,7 @@ package groovy.util;
 
 
 
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.List;
@@ -63,6 +64,10 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class NodePrinter {
 
     private IndentPrinter out;
+
+    public NodePrinter() {
+        this(new IndentPrinter(new PrintWriter(new OutputStreamWriter(System.out))));
+    }
 
     public NodePrinter(PrintWriter out) {
         this(new IndentPrinter(out));

@@ -46,7 +46,6 @@
 package groovy.util;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -63,21 +62,6 @@ public class NodeBuilder extends BuilderSupport {
     }
 
     protected void setParent(Object parent, Object child) {
-        Node current = (Node) parent;
-        Node node = (Node) child;
-
-        // lets add it to the parents children
-        Object parentValue = current.value();
-        List parentList = null;
-        if (parentValue instanceof List) {
-            parentList = (List) parentValue;
-        }
-        else {
-            parentList = new ArrayList();
-            parentList.add(parentValue);
-            current.setValue(parentList);
-        }
-        parentList.add(node);
     }
 
     protected Object createNode(Object name) {
