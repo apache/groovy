@@ -2,7 +2,7 @@ package groovy;
 
 import java.util.ArrayList;
 
-import org.codehaus.groovy.GroovyTestCase;
+
 
 /** 
  * Tests iterating using Groovy

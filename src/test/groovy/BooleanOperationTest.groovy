@@ -1,6 +1,6 @@
 package groovy;
 
-import org.codehaus.groovy.GroovyTestCase;
+
 
 class BooleanOperationTest extends GroovyTestCase {
 

@@ -1,6 +1,6 @@
 package groovy;
 
-import org.codehaus.groovy.GroovyTestCase;
+
 
 /** 
  * Tests creating Maps in Groovy

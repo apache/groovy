@@ -1,6 +1,6 @@
 package groovy;
 
-import org.codehaus.groovy.GroovyTestCase;
+
 
 /** 
  * Tests the various Closure methods in Groovy

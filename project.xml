@@ -123,6 +123,12 @@
       <version>1.5.2</version>
     </dependency>
 
+	<!-- only used for testing helper classes -->
+    <dependency>
+      <id>junit</id>
+      <version>3.8.1</version>
+    </dependency>
+
 	<!-- only used for testing-->
     <dependency>
       <id>asm+util</id>
