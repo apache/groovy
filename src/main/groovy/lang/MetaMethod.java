@@ -53,6 +53,7 @@ public class MetaMethod implements Cloneable {
     
     private String name;
     private Class declaringClass;
+    private Class interfaceClass;
     private Class[] parameterTypes;
     private Class returnType;
     private int modifiers;
@@ -193,4 +194,13 @@ public class MetaMethod implements Cloneable {
         int mask = Modifier.PRIVATE | Modifier.PROTECTED | Modifier.PUBLIC | Modifier.STATIC;
         return (modifiersA & mask) == (modifiersB & mask);
     }
+    
+    public Class getInterfaceClass() {
+        return interfaceClass;
+    }
+
+    public void setInterfaceClass(Class interfaceClass) {
+        this.interfaceClass = interfaceClass;
+    }
+
 }

@@ -82,27 +82,22 @@ public class ReflectorGenerator implements Constants {
         fileName += ".java";
 
         classInternalName = helper.getClassInternalName(className);
-        cw.visit(
-            ACC_PUBLIC + ACC_SUPER,
-            classInternalName,
-            "org/codehaus/groovy/runtime/Reflector",
-            null,
-            fileName);
+        cw.visit(ACC_PUBLIC + ACC_SUPER, classInternalName, "org/codehaus/groovy/runtime/Reflector", null, fileName);
 
         cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         cv.visitVarInsn(ALOAD, 0);
         cv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/Reflector", "<init>", "()V");
         cv.visitInsn(RETURN);
         cv.visitMaxs(1, 1);
-        
+
         generateInvokeMethod();
-        
+
         cw.visitEnd();
     }
 
     protected void generateInvokeMethod() {
         int methodCount = methods.size();
-        
+
         cv =
             cw.visitMethod(
                 ACC_PUBLIC,
@@ -119,21 +114,20 @@ public class ReflectorGenerator implements Constants {
         int[] indices = new int[methodCount];
         for (int i = 0; i < methodCount; i++) {
             labels[i] = new Label();
-            
+
             MetaMethod method = (MetaMethod) methods.get(i);
             method.setMethodIndex(i + 1);
             indices[i] = method.getMethodIndex();
-            
+
             //System.out.println("Index: " + method.getMethodIndex() + " for: " + method);
         }
 
-        
         cv.visitLookupSwitchInsn(defaultLabel, indices, labels);
         //cv.visitTableSwitchInsn(minMethodIndex, maxMethodIndex, defaultLabel, labels);
 
         for (int i = 0; i < methodCount; i++) {
             cv.visitLabel(labels[i]);
-            
+
             MetaMethod method = (MetaMethod) methods.get(i);
             invokeMethod(method);
             if (method.getReturnType() == void.class) {
@@ -161,19 +155,27 @@ public class ReflectorGenerator implements Constants {
         cv.visitVarInsn(ALOAD, 2);
         cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
         */
-        String type = helper.getClassInternalName(method.getDeclaringClass().getName());
+        Class ownerClass = method.getInterfaceClass();
+        if (ownerClass == null) {
+            ownerClass = method.getDeclaringClass();
+        }
+        else {
+            System.out.println("#### Using the interface on which this method is defined!");
+            System.out.println("For method: " + method);
+        }
+        String type = helper.getClassInternalName(ownerClass.getName());
         String descriptor = helper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
 
-//        System.out.println("Method: " + method);
-//        System.out.println("Descriptor: " + descriptor);
-        
+        //        System.out.println("Method: " + method);
+        //        System.out.println("Descriptor: " + descriptor);
+
         if (method.isStatic()) {
             loadParameters(method, 3);
             cv.visitMethodInsn(INVOKESTATIC, type, method.getName(), descriptor);
         }
         else {
             cv.visitVarInsn(ALOAD, 2);
-            helper.doCast(method.getDeclaringClass());
+            helper.doCast(ownerClass);
             loadParameters(method, 3);
             cv.visitMethodInsn(INVOKEVIRTUAL, type, method.getName(), descriptor);
         }
@@ -188,7 +190,7 @@ public class ReflectorGenerator implements Constants {
             cv.visitVarInsn(ALOAD, argumentIndex);
             helper.pushConstant(i);
             cv.visitInsn(AALOAD);
-            
+
             // we should cast to something
             Class type = parameters[i];
             if (type.isPrimitive()) {
