@@ -17,6 +17,12 @@ class SpreadOperatorTest extends GroovyTestCase {
         assert [*y] == y
     }
 
+    void testSpreadingRange() {
+        r = 1..10
+        assert [*r] == r
+        assert [*1..10] == r
+    }
+
     void testSpreadingInMethodParameters() {
         // println sum(1, *[2, 3], 4)
         // println sum(*[10, 20, 30, 40])
