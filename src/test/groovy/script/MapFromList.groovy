@@ -10,10 +10,10 @@ class MapFromList {
 	    talk(it)
 	    /** @todo fixme
 	    l.put(it,i++)
-	    */
 	    l.put(it,i)
-	    i = i + 1
-	   }
+	     */
+   	    i = i + 1
+	    }
         l.each {
            println(it)
         }
