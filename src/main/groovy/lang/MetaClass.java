@@ -764,6 +764,7 @@ public class MetaClass {
                 return method;
             }
         }
+        log.warning("Creating reflection based dispatcher for: " + aMethod);
         return new ReflectionMetaMethod(aMethod);
     }
 
@@ -797,7 +798,7 @@ public class MetaClass {
         try {
             Method method = type.getMethod(name, EMPTY_TYPE_ARRAY);
             if ((method.getModifiers() & Modifier.STATIC) != 0) {
-                return new ReflectionMetaMethod(method);
+                return findMethod(method);
             }
             else {
                 return null;
@@ -1310,6 +1311,7 @@ public class MetaClass {
             method.setAccessible(true);
         }
         if (useReflection) {
+            //log.warning("Creating reflection based dispatcher for: " + method);
             return new ReflectionMetaMethod(method);
         }
         MetaMethod answer = new MetaMethod(method);
@@ -1318,6 +1320,7 @@ public class MetaClass {
             answer.setMethodIndex(allMethods.size());
         }
         else {
+            //log.warning("Creating reflection based dispatcher for: " + method);
             answer = new ReflectionMetaMethod(method);
         }
         return answer;
