@@ -45,8 +45,6 @@
  */
 package groovy.lang;
 
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Represents the configuration details of the compiler.
