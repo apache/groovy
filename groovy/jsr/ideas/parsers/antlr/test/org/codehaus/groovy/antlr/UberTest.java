@@ -44,13 +44,20 @@ public class UberTest implements Test {
         "IfTest.groovy",
         "ImportTest.groovy",
         "InstanceofTest.groovy",
-        // "ListTest.groovy",       TODO enable when assert can take ': message'
+        // "ListTest.groovy",                   TODO enable when assert can take ': message'
         "LogicTest.groovy",
         "MethodCallTest.groovy",
         "MultilineStringTest.groovy",
+        "MultiplyDivideEqualsTest.groovy",
         "NegationTests.groovy",
         // "PrimitiveTypeFieldTest.groovy",     TODO when parser can do closure arguments
         "PrimitiveTypesTest.groovy",
+        // "ReturnTest.groovy",                 TODO parser bug
+        "StringOperationTest.groovy",
+        // "SubscriptTest.groovy",              TODO array initialisers
+        "ThrowTest.groovy",
+        //"UnaryMinusTest.groovy",              TODO needs classpath stuff
+        //"WhileLoopTest.groovy",               TODO parser bug
     };
 
     static String[] tckTests = {
@@ -89,6 +96,7 @@ public class UberTest implements Test {
     }
 
     public void run(TestResult testResult) {
+        System.out.println("Running test: " + fullName);
         GroovyMain.main(new String[] { fullName } );
     }
 }
