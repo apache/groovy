@@ -26,4 +26,17 @@ class GroovyMethodsTest extends GroovyTestCase {
         
         assert count == 10
     }
+    
+    void testArraySubscript() {
+        list = [1, 2, 3, 4]
+        array = list.toArray()
+        
+        value = array[2]
+        
+        assert value == 3
+        
+        array[0] = 9
+        
+       	assert array[0] == 9
+    }
 }
