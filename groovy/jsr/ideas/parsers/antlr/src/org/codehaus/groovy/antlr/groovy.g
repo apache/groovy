@@ -1877,7 +1877,7 @@ namePart
                 )?
 
             (   IDENT
-                |   sl:STRING_LITERAL {#sl.setType(IDENT);}
+            				|   sl:STRING_LITERAL {#sl.setType(IDENT);}
                         // foo.'bar' is in all ways same as foo.bar, except that bar can have an arbitrary spelling
                 |   dn:dynamicMemberName!
                         {   #namePart = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dn);  }
@@ -1887,6 +1887,11 @@ namePart
                         // PROPOSAL, DECIDE:  Is this inline form of the 'with' statement useful?
                         // Definition:  a.{foo} === {with(a) {foo}}
                         // May cover some path expression use-cases previously handled by dynamic scoping (closure delegates).
+                
+                								// lets allow common keywords as property names
+                | 						keywordPropertyNames
+                							
+/* lets allow some common keywords for properties like 'in', 'class', 'def' etc                        
                 // Recover with a good diagnostic from a common error:
                 |   "in"  // poster child; the lexer makes all keywords after dot look like "in"
                         {   String kwd = LT(1).getText();
@@ -1896,11 +1901,19 @@ namePart
                                 // This helps the user recover from ruined Java identifiers, as in System.'in'.
                                 // DECIDE: Shall we just define foo.in to DTRT automagically, or do we want the syntax check?
                         }
+*/                        
                 )
 
                 // (No, x.&@y is not needed; just say x.&y as Slot or some such.)
         ;
 
+/** Allowed keywords after dot
+*/
+keywordPropertyNames
+					: 	("class" | "in" | "def")
+								{ #keywordPropertyNames.setType(IDENT); }
+								;
+						
 /** If a dot is followed by a parenthesized or quoted expression, the member is computed dynamically,
  *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
  */

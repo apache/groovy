@@ -56,6 +56,7 @@ public class AllTests extends TestSuiteSupport {
         "PropertyTest.groovy",                  // TODO: arrays
         "SubscriptTest.groovy",                 // TODO: arrays
         "GroovyMethodsTest.groovy",             // TODO: arrays
+        "ConstructorBug.groovy",                // TODO: arrays
 
         "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
@@ -67,17 +68,10 @@ public class AllTests extends TestSuiteSupport {
 
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
-        "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
-        "ConstructorBug.groovy",                // TODO: foo.class bug in parser
-        "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
-        "bugs/PrimitivePropertyBug.groovy",     // TODO: foo.class bug in parser
-        "CastTest.groovy",                      // TODO: foo.class bug in parser
-        "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
-        "ClassTest.groovy",                     // TODO: foo.class bug in parser
-        "SerializeTest.groovy",                 // TODO: foo.class bug in parser
         "dom/DOMTest.groovy",                   // TODO: markup(class:foo) bug in parser
-
+        "ClassInNamedParamsBug.groovy",         // TODO: class in named param bug
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
+
 
         "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
 
@@ -137,6 +131,7 @@ public class AllTests extends TestSuiteSupport {
         "SqlCompleteWithoutDataSourceTest.groovy",  // not easy to run from in IDE...
         "SqlWithBuilderTest.groovy",                // not easy to run from in IDE...
         "SqlWithTypedResultsTest.groovy",           // not easy to run from in IDE...
+        "SerializeTest.groovy",                     // not easy to run from in IDE...
 
 
     };
