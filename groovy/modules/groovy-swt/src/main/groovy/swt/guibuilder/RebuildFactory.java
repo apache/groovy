@@ -45,9 +45,9 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
         SwtUtils.disposeChildren(parentComposite);
         Object obj = closure.call(parentComposite);
         if (obj instanceof Composite) {
-            ((Composite) obj).pack();
+            ((Composite) obj).layout();
         }
-        parentComposite.pack();
+        parentComposite.layout();
         return parent;
     }
 }
