@@ -1331,6 +1331,16 @@ public class ParserTest
         CSTNode root = parser.expression();
     }
 
+    public void testLogicalAndExpression()
+        throws Exception
+    {
+        Parser parser = newParser( "x > 1 && y < 2" );
+
+        CSTNode root = parser.expression();
+        
+        System.out.println("Got: " + root);
+    }
+
     public void testStatement_CharacterizeMePlease()
         throws Exception
     {
