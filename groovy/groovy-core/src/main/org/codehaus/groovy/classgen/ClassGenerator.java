@@ -1,47 +1,35 @@
 /*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
-
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
-
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * $Id$
+ * 
+ * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+ * 
+ * Redistribution and use of this software and associated documentation
+ * ("Software"), with or without modification, are permitted provided that the
+ * following conditions are met: 1. Redistributions of source code must retain
+ * copyright statements and notices. Redistributions must also contain a copy
+ * of this document. 2. Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer in
+ * the documentation and/or other materials provided with the distribution. 3.
+ * The name "groovy" must not be used to endorse or promote products derived
+ * from this Software without prior written permission of The Codehaus. For
+ * written permission, please contact info@codehaus.org. 4. Products derived
+ * from this Software may not be called "groovy" nor may "groovy" appear in
+ * their names without prior written permission of The Codehaus. "groovy" is a
+ * registered trademark of The Codehaus. 5. Due credit should be given to The
+ * Codehaus - http://groovy.codehaus.org/
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *  
  */
 package org.codehaus.groovy.classgen;
 
@@ -71,11 +59,11 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
@@ -87,6 +75,7 @@ import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -94,7 +83,6 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -119,6 +107,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     private ClassVisitor cw;
     private ClassLoader classLoader;
     private CodeVisitor cv;
+    private GeneratorContext context;
+
     private String sourceFile;
 
     // current class details
@@ -170,7 +160,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // inner classes created while generating bytecode
     private LinkedList innerClasses = new LinkedList();
-    private GeneratorContext context;
     private boolean definingParameters;
 
     private Set syntheticStaticFields = new HashSet();
@@ -249,7 +238,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitMethod(MethodNode node) {
-        //System.out.println("Visiting method: " + node.getName() + " with return type: " + node.getReturnType());
+        //System.out.println("Visiting method: " + node.getName() + " with
+        // return type: " + node.getReturnType());
 
         String methodType = getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null);
@@ -277,7 +267,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode);
 
-        //System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
+        //System.out.println("Visiting field: " + fieldNode.getName() + " on
+        // class: " + classNode.getName());
 
         Object fieldValue = null;
         Expression expression = fieldNode.getInitialValueExpression();
@@ -296,8 +287,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * Creates a getter, setter and field
-     */
+	 * Creates a getter, setter and field
+	 */
     public void visitProperty(PropertyNode statement) {
         onLineNumber(statement);
     }
@@ -664,7 +655,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitClosureExpression(ClosureExpression expression) {
         ClassNode innerClass = createClosureClass(expression);
-        innerClasses.add(innerClass);
+        addInnerClass(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
         ClassNode owner = innerClass.getOuterClass();
@@ -839,7 +830,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitPropertyExpression(PropertyExpression expression) {
         boolean left = leftHandExpression;
-        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE rather than ALOAD
+        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
+        // rather than ALOAD
         leftHandExpression = false;
         int i = idx + 1;
 
@@ -882,7 +874,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(type));
 
-        // lets push this back on the stack 
+        // lets push this back on the stack
         //        if (! isStatic && leftHandExpression) {
         //            cv.visitVarInsn(ALOAD, 0);
         //        }
@@ -913,17 +905,23 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitVariableExpression(VariableExpression expression) {
         // lets see if the variable is a field
-        FieldNode field = classNode.getField(expression.getVariable());
+        String variableName = expression.getVariable();
+        String className = classNode.getClassNameForExpression(variableName);
+        if (className != null) {
+            visitClassExpression(new ClassExpression(className));
+            return;
+        }
+        FieldNode field = classNode.getField(variableName);
         if (field != null) {
             visitFieldExpression(new FieldExpression(field));
         }
         else {
-            field = classNode.getOuterField(expression.getVariable());
+            field = classNode.getOuterField(variableName);
             if (field != null) {
                 visitOuterFieldExpression(new FieldExpression(field));
             }
             else {
-                String name = expression.getVariable();
+                String name = variableName;
                 Variable variable = defineVariable(name, "java.lang.Object");
                 String type = variable.getType();
                 int index = variable.getIndex();
@@ -1139,7 +1137,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitVarInsn(ASTORE, paramIdx);
 
         ClassNode innerClass = createGStringClass(expression);
-        innerClasses.add(innerClass);
+        addInnerClass(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
@@ -1151,6 +1149,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     // Implementation methods
     //-------------------------------------------------------------------------
+    protected boolean addInnerClass(ClassNode innerClass) {
+        innerClass.setModule(classNode.getModule());
+        return innerClasses.add(innerClass);
+    }
 
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = classNode;
@@ -1162,7 +1164,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Parameter[] parameters = expression.getParameters();
         if (parameters == null || parameters.length == 0) {
             // lets create a default 'it' parameter
-            parameters = new Parameter[] { new Parameter("it") };
+            parameters = new Parameter[] { new Parameter("it")};
         }
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
@@ -1286,17 +1288,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return true if the given argument expression requires the
-     * stack, in which case the arguments are evaluated first, stored 
-     * in the variable stack and then reloaded to make a method call
-     */
+	 * @return true if the given argument expression requires the stack, in
+	 *         which case the arguments are evaluated first, stored in the
+	 *         variable stack and then reloaded to make a method call
+	 */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     }
 
     /**
-     * @return true if the given expression represents a non-static field
-     */
+	 * @return true if the given expression represents a non-static field
+	 */
     protected boolean isNonStaticField(Expression expression) {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
@@ -1385,8 +1387,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return the last ID used by the stack
-     */
+	 * @return the last ID used by the stack
+	 */
     protected int getLastStackId() {
         return variableStack.size();
     }
@@ -1408,8 +1410,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
+	 * Defines the given variable in scope and assigns it to the stack
+	 */
     protected Variable defineVariable(String name, String type) {
         return defineVariable(name, type, true);
     }
@@ -1444,9 +1446,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return if the type of the expression can be determined at compile time then 
-     * this method returns the type - otherwise java.lang.Object is returned.
-     */
+	 * @return if the type of the expression can be determined at compile time
+	 *         then this method returns the type - otherwise java.lang.Object
+	 *         is returned.
+	 */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
             return Boolean.class;
@@ -1456,8 +1459,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return true if the value is an Integer, a Float, a Long, a Double or a String .
-     */
+	 * @return true if the value is an Integer, a Float, a Long, a Double or a
+	 *         String .
+	 */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
@@ -1467,8 +1471,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return an array of ASM internal names of the type
-     */
+	 * @return an array of ASM internal names of the type
+	 */
     private String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
@@ -1479,8 +1483,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return the ASM internal name of the type
-     */
+	 * @return the ASM internal name of the type
+	 */
     protected String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
@@ -1493,8 +1497,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return the ASM method type descriptor
-     */
+	 * @return the ASM method type descriptor
+	 */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
@@ -1508,8 +1512,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return the ASM type description
-     */
+	 * @return the ASM type description
+	 */
     protected String getTypeDescription(String name) {
         // lets avoid class loading
         // return getType(name).getDescriptor();
@@ -1528,8 +1532,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-     * @return the ASM type for the given class name
-     */
+	 * @return the ASM type for the given class name
+	 */
     protected Type getType(String className) {
         if (className.equals("void")) {
             return Type.VOID_TYPE;
@@ -1539,8 +1543,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     /**
-      * @return loads the given type name
-      */
+	 * @return loads the given type name
+	 */
     protected Class loadClass(String name) {
         try {
             return getClassLoader().loadClass(name);

@@ -1,47 +1,36 @@
 /*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
-
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
-
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * $Id$
+ * 
+ * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+ * 
+ * Redistribution and use of this software and associated documentation
+ * ("Software"), with or without modification, are permitted provided that the
+ * following conditions are met:
+ *  1. Redistributions of source code must retain copyright statements and
+ * notices. Redistributions must also contain a copy of this document.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *  3. The name "groovy" must not be used to endorse or promote products
+ * derived from this Software without prior written permission of The Codehaus.
+ * For written permission, please contact info@codehaus.org.
+ *  4. Products derived from this Software may not be called "groovy" nor may
+ * "groovy" appear in their names without prior written permission of The
+ * Codehaus. "groovy" is a registered trademark of The Codehaus.
+ *  5. Due credit should be given to The Codehaus - http://groovy.codehaus.org/
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *  
  */
 package org.codehaus.groovy.ast;
 
@@ -80,21 +69,32 @@ public class ClassNode extends MetadataNode implements Constants {
     private List fields = new ArrayList();
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
+    private ModuleNode module;
 
     /**
-     * @param name is the full name of the class
-     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
-     */
+	 * @param name
+	 *            is the full name of the class
+	 * @param modifiers
+	 *            the modifiers,
+	 * @see org.objectweb.asm.Constants
+	 * @param superClass
+	 *            the base class name - use "java.lang.Object" if no direct
+	 *            base class
+	 */
     public ClassNode(String name, int modifiers, String superClass) {
         this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
-     * @param name is the full name of the class
-     * @param modifiers the modifiers, @see org.objectweb.asm.Constants
-     * @param superClass the base class name - use "java.lang.Object" if no direct base class
-     */
+	 * @param name
+	 *            is the full name of the class
+	 * @param modifiers
+	 *            the modifiers,
+	 * @see org.objectweb.asm.Constants
+	 * @param superClass
+	 *            the base class name - use "java.lang.Object" if no direct
+	 *            base class
+	 */
     public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
         this.name = name;
         this.modifiers = modifiers;
@@ -137,6 +137,14 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public List getConstructors() {
         return constructors;
+    }
+
+    public ModuleNode getModule() {
+        return module;
+    }
+
+    public void setModule(ModuleNode module) {
+        this.module = module;
     }
 
     public void addField(FieldNode node) {
@@ -255,23 +263,25 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     /**
-     * @return the field node on the outer class or null if this is not an inner class
-     */
+	 * @return the field node on the outer class or null if this is not an
+	 *         inner class
+	 */
     public FieldNode getOuterField(String name) {
         return null;
     }
 
     /**
-     * Helper method to avoid casting to inner class
-     * @return
-     */
+	 * Helper method to avoid casting to inner class
+	 * 
+	 * @return
+	 */
     public ClassNode getOuterClass() {
         return null;
     }
 
     /**
-     * Capitalizes the start of the given bean property name
-     */
+	 * Capitalizes the start of the given bean property name
+	 */
     public static String capitalize(String name) {
         return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
     }
@@ -289,7 +299,8 @@ public class ClassNode extends MetadataNode implements Constants {
     public void addStaticInitializerStatements(List staticStatements) {
         MethodNode method = getMethod("<clinit>");
         if (method == null) {
-            method = addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+            method =
+                addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
         }
         BlockStatement block = null;
         Statement statement = method.getCode();
@@ -307,11 +318,57 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public MethodNode getMethod(String name) {
-        for (Iterator iter = methods.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (name.equals(method.getName())) {
                 return method;
             }
+        }
+        return null;
+    }
+
+    /**
+     * @return the name of the class for the given identifier if it is a class
+     * otherwise return null
+     */
+    public String getClassNameForExpression(String identifier) {
+        // lets see if it really is a class name
+        String className = null;
+        if (module != null) {
+            className = module.getImport(identifier);
+            if (className == null) {
+                if (module.getUnit().getClass(identifier) != null) {
+                    className = identifier;
+                }
+                else {
+                    // lets prepend the package name to see if its in our
+					// package
+                    String packageName = getPackageName();
+                    if (packageName != null) {
+                        String guessName = packageName + "." + identifier;
+                        if (module.getUnit().getClass(guessName) != null) {
+                            className = guessName;
+                        }
+                        else if (guessName.equals(name)) {
+                            className = name;
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            System.out.println("No module for class: " + getName());
+        }
+        return className;
+    }
+
+    /**
+	 * @return the package name of this class
+	 */
+    public String getPackageName() {
+        int idx = name.lastIndexOf('.');
+        if (idx > 0) {
+            return name.substring(0, idx);
         }
         return null;
     }
@@ -321,15 +378,15 @@ public class ClassNode extends MetadataNode implements Constants {
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
             visitor.visitProperty((PropertyNode) iter.next());
         }
-    
+
         for (Iterator iter = getFields().iterator(); iter.hasNext();) {
             visitor.visitField((FieldNode) iter.next());
         }
-    
+
         for (Iterator iter = getConstructors().iterator(); iter.hasNext();) {
             visitor.visitConstructor((ConstructorNode) iter.next());
         }
-    
+
         for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
             visitor.visitMethod((MethodNode) iter.next());
         }

@@ -1,15 +1,12 @@
 Things to Test
 ==============
 
-* add parser bugs to JIRA...
-
-	referrring to your own class name - ClassExpressionTest
-	referrring to the classname of another Groovy class which is compiled in the same compile run
-	(and so isn't necessary available on the classpath at the time of building)	
-	
-* classloader bug when clean build of PersonTest
-
-* write a simple JUnit TestSuite which parsers a Groovy test case & runs all the test methods
+* test compiler errors when
+	- unknown class
+		in new expression
+		in exception catching
+		in general class expression
+	- unknown variable
 
 * tidy up javadoc
 
@@ -34,14 +31,6 @@ Things to Test
 
 * remove dependency on asm-util on the compiler
 
-* test compiler errors when
-	- unknown class
-		in new expression
-		in exception catching
-		in general class expression
-	- unknown variable
-
-* fix PrintTest
 	
 Core Groovy Tasks
 =================

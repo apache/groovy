@@ -73,4 +73,11 @@ public class ClassNodeTest extends TestCase implements Constants {
         assertNull(classNode.getOuterField("field"));
         assertNotNull(innerClassNode.getOuterField("field"));
     }
+    
+    public void testPackageName() {
+        assertEquals("Package", null, classNode.getPackageName());
+        
+        ClassNode packageNode = new ClassNode("com.acme.Foo", ACC_PUBLIC, "java.lang.Object");
+        assertEquals("Package", "com.acme", packageNode.getPackageName());
+    }
 }

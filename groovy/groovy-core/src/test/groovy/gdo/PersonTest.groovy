@@ -43,15 +43,8 @@ class PersonTest extends GroovyTestCase {
     }
     
     protected createDataSet() {
-        /** @todo parser & code gen bug 
         type = Person
-        */
-        // this is a total hack for now to run in IDEs and in Maven
-    	name = "groovy.gdo.Person"
-        type = getClass().getClassLoader().loadClass(name)
-    	if (type == null) {
-    	    type = Thread.currentThread().getContextClassLoader().loadClass(name)
-    	}
+
         assert type != null : "failed to load Person class"
     
 	    return new DataSet(type)

@@ -274,6 +274,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 node.setCode(new BlockStatement(list));
             }
         }
+        
     }
 
     public void visitField(FieldNode node) {
