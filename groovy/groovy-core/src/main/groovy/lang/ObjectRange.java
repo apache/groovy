@@ -220,7 +220,7 @@ public class ObjectRange extends AbstractList implements Range {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
         if (--toIndex >= size) {
-            return new ObjectRange((Comparable) get(fromIndex), (Comparable) getTo(), reverse);
+            return new ObjectRange((Comparable) get(fromIndex), getTo(), reverse);
         }
         else {
             return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex), reverse);
