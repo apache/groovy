@@ -48,12 +48,12 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
@@ -67,13 +67,13 @@ public class ForTest extends TestSupport {
     public void testLoop() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
         Parameter[] parameters = { new Parameter("coll")};
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
-        ForLoop statement = new ForLoop("i", new VariableExpression("coll"), loopStatement);
+        ForStatement statement = new ForStatement("i", new VariableExpression("coll"), loopStatement);
         classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, "void", parameters, statement));
 
         Class fooClass = loadClass(classNode);

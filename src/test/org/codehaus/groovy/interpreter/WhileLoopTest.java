@@ -48,15 +48,15 @@ package org.codehaus.groovy.interpreter;
 
 import groovy.lang.GroovyTestCase;
 
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.DoWhileLoop;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.MethodCallExpression;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.ast.WhileLoop;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.DoWhileStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.WhileStatement;
 
 /**
  * 
@@ -74,7 +74,7 @@ public class WhileLoopTest extends GroovyTestCase {
         Statement statement = new ExpressionStatement( new MethodCallExpression(new VariableExpression("bean"), "foo", new VariableExpression("x")));
         BooleanExpression expression = new BooleanExpression(new MethodCallExpression(new VariableExpression("counter"), "isCounting", ConstantExpression.NULL));
         
-        WhileLoop loop = new WhileLoop(expression, statement);
+        WhileStatement loop = new WhileStatement(expression, statement);
         loop.visit(visitor);
         
         assertEquals("invocations count", "AAAAA", bean.getBuffer());
@@ -84,7 +84,7 @@ public class WhileLoopTest extends GroovyTestCase {
         Statement statement = new ExpressionStatement( new MethodCallExpression(new VariableExpression("bean"), "foo", new VariableExpression("x")));
         BooleanExpression expression = new BooleanExpression(new MethodCallExpression(new VariableExpression("counter"), "isCounting", ConstantExpression.NULL));
         
-        DoWhileLoop loop = new DoWhileLoop(expression, statement);
+        DoWhileStatement loop = new DoWhileStatement(expression, statement);
         loop.visit(visitor);
         
         assertEquals("invocations count", "AAAAAA", bean.getBuffer());

@@ -48,6 +48,8 @@ package org.codehaus.groovy.ast;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.codehaus.groovy.ast.stmt.*;
+
 /**
  * Represents a method declaration
  * 
@@ -82,8 +84,8 @@ public class MethodNode extends ASTNode {
      * Ensures that the method body includes a return null at the end.
      */
     public static Statement ensureStatementEndsWithReturn(Statement code) {
-        if (code instanceof StatementBlock) {
-            StatementBlock block = (StatementBlock) code;
+        if (code instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) code;
             List statements = block.getStatements();
             boolean shouldAdd = statements.isEmpty();
             if (!shouldAdd) {
@@ -96,14 +98,14 @@ public class MethodNode extends ASTNode {
                 List newList = new ArrayList(statements.size() + 1);
                 newList.addAll(statements);
                 newList.add(ReturnStatement.RETURN_NULL);
-                return new StatementBlock(newList);
+                return new BlockStatement(newList);
             }
         }
         else if (!(code instanceof ReturnStatement)) {
             List newList = new ArrayList(2);
             newList.add(code);
             newList.add(ReturnStatement.RETURN_NULL);
-            return new StatementBlock(newList);
+            return new BlockStatement(newList);
         }
         return code;
     }

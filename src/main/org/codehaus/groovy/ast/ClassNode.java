@@ -50,6 +50,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
@@ -130,8 +132,7 @@ public class ClassNode extends ASTNode implements Constants {
     }
 
     public void addProperty(PropertyNode node) {
-        FieldNode field =
-            new FieldNode(node.getName(), ACC_PRIVATE, node.getType(), getName(), node.getInitialValueExpression());
+        FieldNode field = node.getField();
         addField(field);
 
         String name = node.getName();
@@ -159,14 +160,17 @@ public class ClassNode extends ASTNode implements Constants {
         properties.add(node);
     }
 
-    public void addProperty(
+    public PropertyNode addProperty(
         String name,
         int modifiers,
         String type,
         Expression initialValueExpression,
         Statement getterBlock,
         Statement setterBlock) {
-        addProperty(new PropertyNode(name, modifiers, type, initialValueExpression, getterBlock, setterBlock));
+        PropertyNode node =
+            new PropertyNode(name, modifiers, type, getName(), initialValueExpression, getterBlock, setterBlock);
+        addProperty(node);
+        return node;
     }
 
     public void addConstructor(ConstructorNode node) {

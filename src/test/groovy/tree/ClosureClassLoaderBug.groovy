@@ -7,7 +7,7 @@ class ClosureClassLoaderBug extends GroovyTestCase {
     void testTree() {
         b = NodeBuilder.newInstance()
         
-        root = b.root1( { i |
+        root = b.root1( {|
             b.elem1('hello1')
         })
         

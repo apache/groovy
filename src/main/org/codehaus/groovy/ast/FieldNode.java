@@ -47,6 +47,8 @@ package org.codehaus.groovy.ast;
 
 import java.lang.reflect.Field;
 
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 import org.objectweb.asm.Constants;
 
 

@@ -74,7 +74,7 @@ public class PropertyTest extends TestSupport {
 
     public void testProperties() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, "java.lang.Object");
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -90,7 +90,7 @@ public class PropertyTest extends TestSupport {
 
     public void testInheritedProperties() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, "org.codehaus.groovy.runtime.DummyBean");
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

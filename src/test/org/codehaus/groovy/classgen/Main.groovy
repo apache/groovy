@@ -1,4 +1,4 @@
-package foo
+package org.codehaus.groovy.classgen
 
 class Main {
     

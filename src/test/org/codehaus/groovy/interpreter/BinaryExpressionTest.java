@@ -48,15 +48,15 @@ package org.codehaus.groovy.interpreter;
 
 import groovy.lang.GroovyTestCase;
 
-import org.codehaus.groovy.ast.BinaryExpression;
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.IfElse;
-import org.codehaus.groovy.ast.MethodCallExpression;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.syntax.Token;
 
@@ -165,7 +165,7 @@ public class BinaryExpressionTest extends GroovyTestCase {
     protected void assertBinaryExpression(boolean condition, Object left, int token, Object right) {
         BooleanExpression expression = new BooleanExpression( new BinaryExpression(new ConstantExpression(left), Token.newToken(token, 0, 0), new ConstantExpression(right)));
          
-        IfElse block = new IfElse(expression, statement1, statement2);
+        IfStatement block = new IfStatement(expression, statement1, statement2);
         block.visit(visitor);
   
         Object expected = (condition) ? "abcd" : "xyz";

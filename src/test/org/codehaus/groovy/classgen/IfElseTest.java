@@ -46,19 +46,19 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.BinaryExpression;
-import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.FieldExpression;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.IfElse;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 
@@ -72,9 +72,9 @@ public class IfElseTest extends TestSupport {
     public void testLoop() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
-        classNode.addProperty(new PropertyNode("result", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("result", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
         BooleanExpression expression =
             new BooleanExpression(
@@ -94,7 +94,7 @@ public class IfElseTest extends TestSupport {
 
         Statement falseStatement = createPrintlnStatement(new ConstantExpression("false"));
 
-        IfElse statement = new IfElse(expression, trueStatement, falseStatement);
+        IfStatement statement = new IfStatement(expression, trueStatement, falseStatement);
         classNode.addMethod(new MethodNode("ifDemo", ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, statement));
 
         Class fooClass = loadClass(classNode);

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.stmt.*;
+
 
 /**
  * Represents a constructor declaration

@@ -49,13 +49,13 @@ package org.codehaus.groovy.classgen;
 import java.util.Collections;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.StatementBlock;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -71,7 +71,7 @@ public class MethodTest extends TestSupport {
 
         Statement statementA = new ReturnStatement(new ConstantExpression("calledA"));
         Statement statementB = new ReturnStatement(new ConstantExpression("calledB"));
-        Statement emptyStatement = new StatementBlock();
+        Statement emptyStatement = new BlockStatement();
 
         classNode.addMethod(new MethodNode("a", ACC_PUBLIC, "java.lang.Object", Parameter.EMPTY_ARRAY, statementA));
         classNode.addMethod(new MethodNode("b", ACC_PUBLIC, null, Parameter.EMPTY_ARRAY, statementB));

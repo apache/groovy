@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
+
 /**
  * An implementation of the visitor pattern for working with ASTNodes
  * 
@@ -55,14 +58,14 @@ public interface GroovyCodeVisitor {
 
     // statements
     //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
+    public void visitForLoop(ForStatement forLoop);
+    public void visitWhileLoop(WhileStatement loop);
+    public void visitDoWhileLoop(DoWhileStatement loop);
+    public void visitIfElse(IfStatement ifElse);
     public void visitExpressionStatement(ExpressionStatement statement);
     public void visitReturnStatement(ReturnStatement statement);
     public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
+    public void visitTryCatchFinally(TryCatchStatement finally1);
 
     // expressions
     //-------------------------------------------------------------------------

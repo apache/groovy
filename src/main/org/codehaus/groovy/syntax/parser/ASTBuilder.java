@@ -3,36 +3,10 @@ package org.codehaus.groovy.syntax.parser;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AssertStatement;
-import org.codehaus.groovy.ast.BinaryExpression;
-import org.codehaus.groovy.ast.BooleanExpression;
-import org.codehaus.groovy.ast.CatchStatement;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.MethodCallExpression;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ClassExpression;
-import org.codehaus.groovy.ast.ClosureExpression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.ForLoop;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyExpression;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.RangeExpression;
-import org.codehaus.groovy.ast.MapExpression;
-import org.codehaus.groovy.ast.MapEntryExpression;
-import org.codehaus.groovy.ast.ListExpression;
-import org.codehaus.groovy.ast.TupleExpression;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.IfElse;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.EmptyStatement;
-import org.codehaus.groovy.ast.StatementBlock;
-import org.codehaus.groovy.ast.TryCatchFinally;
-import org.codehaus.groovy.ast.VariableExpression;
-import org.codehaus.groovy.ast.ConstructorCallExpression;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
+
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
@@ -349,7 +323,7 @@ public class ASTBuilder
             if ( matches( bodyRoots[i],
                           Token.KEYWORD_PROPERTY ) )
             {
-                classNode.addProperty( propertyDeclaration( bodyRoots[i] ) );
+                addPropertyDeclaration( classNode, bodyRoots[i] );
             }
         }
 
@@ -365,7 +339,7 @@ public class ASTBuilder
         return classNode;
     }
 
-    protected PropertyNode propertyDeclaration(CSTNode propertyRoot)
+    protected PropertyNode addPropertyDeclaration(ClassNode classNode, CSTNode propertyRoot)
     {
         int modifiers = modifiers( propertyRoot.getChild( 0 ) );
 
@@ -373,7 +347,7 @@ public class ASTBuilder
 
         String typeName = resolvedQualifiedName( propertyRoot.getChild( 2 ) );
 
-        PropertyNode propertyNode = new PropertyNode( identifier,
+        PropertyNode propertyNode = classNode.addProperty( identifier,
                                                       modifiers,
                                                       typeName,
                                                       null,
@@ -425,9 +399,9 @@ public class ASTBuilder
         return null;
     }
 
-    protected StatementBlock statementBlock(CSTNode blockRoot)
+    protected BlockStatement statementBlock(CSTNode blockRoot)
     {
-        StatementBlock statementBlock = new StatementBlock();
+        BlockStatement statementBlock = new BlockStatement();
 
         CSTNode[] statementRoots = blockRoot.getChildren();
 
@@ -484,12 +458,12 @@ public class ASTBuilder
         return statement;
     }
 
-    protected IfElse ifStatement(CSTNode statementRoot)
+    protected IfStatement ifStatement(CSTNode statementRoot)
     {
         CSTNode[]         children   = statementRoot.getChildren();
 
         BooleanExpression expression = new BooleanExpression( expression( children[ 0 ] ) );
-        StatementBlock    ifBlock    = statementBlock( children[ 1 ] );
+        BlockStatement    ifBlock    = statementBlock( children[ 1 ] );
 
         Statement elseBlock = null;
 
@@ -509,14 +483,14 @@ public class ASTBuilder
             elseBlock = EmptyStatement.INSTANCE;
         }
 
-        return new IfElse( expression,
+        return new IfStatement( expression,
                            ifBlock,
                            elseBlock );
     }
 
-    protected TryCatchFinally tryStatement(CSTNode statementRoot)
+    protected TryCatchStatement tryStatement(CSTNode statementRoot)
     {
-        TryCatchFinally tcf = new TryCatchFinally( statementBlock( statementRoot.getChild( 0 ) ),
+        TryCatchStatement tcf = new TryCatchStatement( statementBlock( statementRoot.getChild( 0 ) ),
                                                    statementBlock( statementRoot.getChild( 1 ) ) );
 
         CSTNode[] catchRoots = statementRoot.getChild( 2 ).getChildren();
@@ -540,15 +514,15 @@ public class ASTBuilder
         return new ReturnStatement( expression( statementRoot.getChild( 0 ) ) );
     }
 
-    protected ForLoop forStatement(CSTNode statementRoot)
+    protected ForStatement forStatement(CSTNode statementRoot)
     {
         String variable = statementRoot.getChild( 0 ).getToken().getText();
 
         Expression collectionExpr = expression( statementRoot.getChild( 1 ) );
 
-        StatementBlock bodyBlock = statementBlock( statementRoot.getChild( 2 ) );
+        BlockStatement bodyBlock = statementBlock( statementRoot.getChild( 2 ) );
 
-        return new ForLoop( variable,
+        return new ForStatement( variable,
                             collectionExpr,
                             bodyBlock );
     }

@@ -36,4 +36,9 @@ public class MethodClosure extends Closure {
     public MetaClass getMetaClass() {
         return metaClass;
     }
+    
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
 }

@@ -222,8 +222,10 @@ public class DumpClass {
             }
 
             public MetaClass getMetaClass() {
-                // TODO Auto-generated method stub
                 return null;
+            }
+
+            public void setMetaClass(MetaClass metaClass) {
             }
         };
     }

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.*;
+
 /**
  * Represents a parameter on a constructor or method call. The type name is
  * optional - it should be defaulted to java.lang.Object if unknown.

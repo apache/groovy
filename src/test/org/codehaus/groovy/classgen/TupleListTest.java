@@ -46,22 +46,22 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.ForLoop;
-import org.codehaus.groovy.ast.ListExpression;
-import org.codehaus.groovy.ast.MapExpression;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.StatementBlock;
-import org.codehaus.groovy.ast.TupleExpression;
-import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.syntax.Token;
@@ -103,13 +103,13 @@ public class TupleListTest extends TestSupport {
     protected void assertIterate(String methodName, Expression listExpression) throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
-        StatementBlock block = new StatementBlock();
+        BlockStatement block = new BlockStatement();
         block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newToken(Token.EQUAL, 0, 0), listExpression)));
-        block.addStatement(new ForLoop("i", new VariableExpression("list"), loopStatement));
+        block.addStatement(new ForStatement("i", new VariableExpression("list"), loopStatement));
         classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);

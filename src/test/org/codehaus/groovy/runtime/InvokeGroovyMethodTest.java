@@ -82,8 +82,10 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
             }
 
             public MetaClass getMetaClass() {
-                // TODO Auto-generated method stub
                 return null;
+            }
+
+            public void setMetaClass(MetaClass metaClass) {
             }
         });
         

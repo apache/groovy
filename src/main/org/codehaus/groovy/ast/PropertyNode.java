@@ -45,8 +45,9 @@
  */
 package org.codehaus.groovy.ast;
 
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 import org.objectweb.asm.Constants;
-
 
 /**
  * Represents a property (member variable, a getter and setter)
@@ -56,38 +57,35 @@ import org.objectweb.asm.Constants;
  */
 public class PropertyNode extends Statement implements Constants {
 
-    private String name;
-    private int modifiers;
-    private String type;
-    private Expression initialValueExpression;
+    private FieldNode field;
     private Statement getterBlock;
     private Statement setterBlock;
-    private boolean dynamicType;
-    
-    public PropertyNode(String name,
-                        int modifiers,
-                        String type,
-                        Expression initialValueExpression,
-                        Statement getterBlock,
-                        Statement setterBlock) {
-        this.name = name;
+    private int modifiers;
+
+    public PropertyNode(
+        String name,
+        int modifiers,
+        String type,
+        String owner,
+        Expression initialValueExpression,
+        Statement getterBlock,
+        Statement setterBlock) {
+        this(new FieldNode(name, ACC_PRIVATE, type, owner, initialValueExpression), modifiers, getterBlock, setterBlock);
+    }
+
+    public PropertyNode(FieldNode field, int modifiers, Statement getterBlock, Statement setterBlock) {
+        this.field = field;
         this.modifiers = modifiers;
-        this.type = type;
-        this.initialValueExpression = initialValueExpression;
         this.getterBlock = getterBlock;
         this.setterBlock = setterBlock;
-        if (type == null) {
-            this.type = "java.lang.Object";
-            this.dynamicType = true;
-        }
     }
-    
+
     public Statement getGetterBlock() {
         return getterBlock;
     }
 
     public Expression getInitialValueExpression() {
-        return initialValueExpression;
+        return field.getInitialValueExpression();
     }
 
     public int getModifiers() {
@@ -95,7 +93,7 @@ public class PropertyNode extends Statement implements Constants {
     }
 
     public String getName() {
-        return name;
+        return field.getName();
     }
 
     public Statement getSetterBlock() {
@@ -103,10 +101,15 @@ public class PropertyNode extends Statement implements Constants {
     }
 
     public String getType() {
-        return type;
+        return field.getType();
     }
 
     public boolean isDynamicType() {
-        return dynamicType;
+        return field.isDynamicType();
     }
+    
+    public FieldNode getField() {
+        return field;
+    }
+
 }

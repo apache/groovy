@@ -51,6 +51,8 @@ import groovy.lang.GroovyTestCase;
 import java.util.ArrayList;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 
 /**
  * 
@@ -83,7 +85,7 @@ public class ForLoopTest extends GroovyTestCase {
     
         Statement statement = new ExpressionStatement( new MethodCallExpression(new VariableExpression("bean"), "foo", new VariableExpression("i")));
         Expression expression = new VariableExpression("fooCollection");
-        ForLoop loop = new ForLoop("i", expression, statement);
+        ForStatement loop = new ForStatement("i", expression, statement);
         loop.visit(visitor);
         
         assertEquals("invocations count", "ABC", bean.getBuffer());

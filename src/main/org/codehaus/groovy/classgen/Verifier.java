@@ -52,25 +52,25 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.ast.ArgumentListExpression;
-import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.Expression;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.FieldExpression;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.Statement;
-import org.codehaus.groovy.ast.StatementBlock;
-import org.codehaus.groovy.ast.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
@@ -88,16 +88,16 @@ public class Verifier implements GroovyClassVisitor, Constants {
         node.addInterface(GroovyObject.class.getName());
 
         // lets add a new field for the metaclass
-        FieldNode metaClassField =
-            node.addField(
+        PropertyNode metaClassProperty =
+            node.addProperty(
                 "metaClass",
-                ACC_PUBLIC | ACC_FINAL,
+                ACC_PUBLIC,
                 MetaClass.class.getName(),
                 new StaticMethodCallExpression(
                     InvokerHelper.class.getName(),
                     "getMetaClass",
-                    new VariableExpression("this")));
-
+                    new VariableExpression("this")), null, null);
+        FieldNode metaClassField = metaClassProperty.getField();
         // lets add the invokeMethod implementation
         boolean addDelegateObject = node instanceof InnerClassNode && node.getSuperClass().equals("groovy/lang/Closure");
         if (addDelegateObject) {
@@ -126,13 +126,6 @@ public class Verifier implements GroovyClassVisitor, Constants {
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
 
-        node.addMethod(
-            "getMetaClass",
-            ACC_PUBLIC,
-            MetaClass.class.getName(),
-            Parameter.EMPTY_ARRAY,
-            new ReturnStatement(new FieldExpression(metaClassField)));
-
         addFieldInitialization(node);
     }
 
@@ -154,8 +147,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
         if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
             List otherStatements = new ArrayList();
-            if (code instanceof StatementBlock) {
-                StatementBlock block = (StatementBlock) code;
+            if (code instanceof BlockStatement) {
+                BlockStatement block = (BlockStatement) code;
                 otherStatements.addAll(block.getStatements());
             }
             else if (code != null) {
@@ -169,7 +162,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
                 }
                 statements.addAll(otherStatements);
             }
-            constructorNode.setCode(new StatementBlock(statements));
+            constructorNode.setCode(new BlockStatement(statements));
         }
     }
 
