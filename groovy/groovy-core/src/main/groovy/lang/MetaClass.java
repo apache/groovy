@@ -321,7 +321,7 @@ public class MetaClass {
             // if no method was found, try to find a closure defined as a field of the class and run it
             try {
                 Object value = this.getProperty(object, methodName);
-                if (value instanceof Closure) {
+                if (value instanceof Closure && object!=this) {
                     Closure closure = (Closure) value;
                     closure.setDelegate(this);
                     return closure.call(arguments);
