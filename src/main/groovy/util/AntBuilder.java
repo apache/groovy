@@ -249,7 +249,7 @@ public class AntBuilder extends BuilderSupport {
                 }
             }
             else {
-                log.log(Level.WARNING, "Could not convert tag: " + tagName + " into an Ant task, data type or property");
+                log.log(Level.WARNING, "Could not convert tag: " + tagName + " into an Ant task, data type or property. Maybe the task is not on the classpath?");
             }
         }
 
