@@ -7,7 +7,7 @@ import groovy.xml.MarkupBuilder
 class Groovy249_Bug extends GroovyTestCase {
 
     void testBug() {
-		t = new Bean()
+		t = new Bean249()
 		t.b = "hello"
 		println t.b
 		println "test: ${t.b}"
@@ -58,6 +58,6 @@ EOF
    
 }
 
-class Bean {
+class Bean249 {
 	String b
 }
