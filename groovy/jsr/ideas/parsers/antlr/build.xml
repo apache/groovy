@@ -94,6 +94,9 @@
 
 
 <!-- todo             packagenames="${javadoc.packages}" -->
+    <copy todir="${generated.src.dir}">
+      <fileset dir="${src.dir}"/>
+    </copy>
 
     <javadoc sourcepath="${generated.src.dir}" 
              destdir="${javadoc.dir}" 
@@ -179,13 +182,13 @@
         </fileset>
       </classpath>
     </antlr>
-    <copy todir="${generated.src.dir}">
-      <fileset dir="${src.dir}"/>
-    </copy>
   </target>
   
   <target name="compile" depends="generate" description="compile java">
     <mkdir dir="${build.classes.dir}" />
+    <copy todir="${generated.src.dir}">
+      <fileset dir="${src.dir}"/>
+    </copy>
     <javac srcdir="${generated.src.dir}" 
            destdir="${build.classes.dir}" 
            classpathref="compile.classpath" 
