@@ -69,7 +69,7 @@ public class BSFTest extends TestCase {
     }
 
     public void testExec() throws Exception {
-        manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
+        manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec'); assert bsf != null : 'should have a bsf variable'");
     }
 
     public void testEval() throws Exception {
