@@ -1268,6 +1268,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (leftHandExpression) {
             cv.visitVarInsn(ASTORE, valueIdx);
         }
+        
+        // lets load an extra one just in case as we may be getting & putting a field
+        // @todo this is not ideal; need a better way of doing this
+        cv.visitVarInsn(ALOAD, 0);
         cv.visitVarInsn(ALOAD, 0);
         cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
 
