@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -78,6 +79,9 @@ import org.objectweb.asm.ClassWriter;
  */
 public class MetaClass {
 
+    private static final Logger log = Logger.getLogger(MetaClass.class.getName());
+    
+    
     protected static final Object[] EMPTY_ARRAY = {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
@@ -96,6 +100,7 @@ public class MetaClass {
     private MetaMethod genericSetMethod;
     private List constructors;
     private List allMethods = new ArrayList();
+    private List interfaceMethods;
     private Reflector reflector;
     private boolean initialised;
 
@@ -731,7 +736,7 @@ public class MetaClass {
      */
     protected MetaMethod findGetter(Object object, String name) {
         checkInitialised();
-        
+
         for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
             if (!method.isStatic() && method.getName().equals(name) && method.getParameterTypes().length == 0) {
@@ -746,7 +751,7 @@ public class MetaClass {
      */
     protected MetaMethod findStaticGetter(Class type, String name) {
         checkInitialised();
-        
+
         /** @todo optimise me! */
         for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
@@ -754,7 +759,7 @@ public class MetaClass {
                 return method;
             }
         }
-        
+
         /** @todo dirty hack - don't understand why this code is necessary - all methods should be in the allMethods list! */
         try {
             Method method = type.getMethod(name, EMPTY_TYPE_ARRAY);
@@ -1386,9 +1391,23 @@ public class MetaClass {
             return false;
         }
         Class declaringClass = method.getDeclaringClass();
+        if (!Modifier.isPublic(declaringClass.getModifiers())) {
+            // lets see if this method is implemented on an interface
+            List list = getInterfaceMethods();
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
+                MetaMethod aMethod = (MetaMethod) iter.next();
+                if (method.isSame(aMethod)) {
+                    return true;
+                }
+            }
+            log.warning("Cannot invoke method on protected/private class so must use reflection instead: " + method);
+            return false;
+        }
+        /*
         if (! Modifier.isPublic(declaringClass.getModifiers())) {
             return ! declaringClass.getName().startsWith("java.");
         }
+        */
         return true;
     }
 
@@ -1462,4 +1481,31 @@ public class MetaClass {
     public List getMethods() {
         return allMethods;
     }
+
+    protected List getInterfaceMethods() {
+        if (interfaceMethods == null) {
+            //System.out.println("#### Creating interface methods for: " + theClass);
+            interfaceMethods = new ArrayList();
+            Class type = theClass;
+            while (type != null) {
+                Class[] interfaces = type.getInterfaces();
+                for (int i = 0; i < interfaces.length; i++) {
+                    Class iface = interfaces[i];
+                    //System.out.println("## For interface: " + iface);
+                    Method[] methods = iface.getMethods();
+                    addInterfaceMethods(interfaceMethods, methods);
+                }
+                type = type.getSuperclass();
+            }
+        }
+        return interfaceMethods;
+    }
+
+    private void addInterfaceMethods(List list, Method[] methods) {
+        for (int i = 0; i < methods.length; i++) {
+            //System.out.println("adding method: " + methods[i]);
+            list.add(new MetaMethod(methods[i]));
+        }
+    }
+
 }
