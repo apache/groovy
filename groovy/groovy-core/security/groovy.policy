@@ -24,6 +24,13 @@ keystore "file:${user.dir}/security/groovykeys";
  * by adding a signedBy clause to the grant.
  */
  
+//spg:  Looks like james switched the output destination to bin from target/classes
+//in his 7/13/04 update to the eclipse .classpath.  This permission allows the 
+//Security tests to run properly in eclipse (they were unaffected when running from maven)
+grant codeBase "file:${user.dir}/bin/-" {
+	permission java.security.AllPermission;
+};
+
 grant codeBase "file:${user.dir}/target/classes/-" {
 	permission java.security.AllPermission;
 };
