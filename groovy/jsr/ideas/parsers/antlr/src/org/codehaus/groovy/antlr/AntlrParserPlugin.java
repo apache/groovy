@@ -109,10 +109,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     classDef(node);
                     break;
 
-                default: {
-                    Statement statement = statement(node);
-                    output.addStatement(statement);
-                }
+                default:
+                    {
+                        Statement statement = statement(node);
+                        output.addStatement(statement);
+                    }
             }
             node = node.getNextSibling();
         }
@@ -169,7 +170,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String superClass = null;
         if (isType(EXTENDS_CLAUSE, node)) {
-            superClass = resolveTypeName(getFirstChildText(node));
+            superClass = typeName(node);
             node = node.getNextSibling();
         }
         if (superClass == null) {
@@ -230,7 +231,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String returnType = null;
 
         if (isType(TYPE, node)) {
-            returnType = resolveTypeName(getFirstChildText(node));
+            returnType = typeName(node);
             node = node.getNextSibling();
         }
 
@@ -261,7 +262,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String type = null;
         if (isType(TYPE, node)) {
-            type = resolveTypeName(getFirstChildText(node));
+            type = typeName(node);
             node = node.getNextSibling();
         }
 
@@ -346,7 +347,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
         assertNodeType(TYPE, node);
-        String type = resolveTypeName(getFirstChildText(node));
+        String type = typeName(node);
 
         node = node.getNextSibling();
 
@@ -641,7 +642,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = variableDef.getFirstChild();
         String type = null;
         if (isType(TYPE, node)) {
-            type = resolveTypeName(getFirstChildText(node));
+            type = typeName(node);
             node = node.getNextSibling();
         }
 
@@ -1001,7 +1002,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // on the left hand side of an expression or before a dot?
         String newText = resolveTypeName(text);
         if (text.equals(newText)) {
-        return new VariableExpression(text);
+            return new VariableExpression(text);
         }
         else {
             return new ClassExpression(newText);
@@ -1311,6 +1312,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             buffer.append(qualifiedName(node));
         }
         return buffer.toString();
+    }
+
+    protected String typeName(AST typeNode) {
+        String answer = null;
+        AST node = typeNode.getFirstChild();
+        if (node != null) {
+            answer = resolveTypeName(node.getText());
+            node = node.getNextSibling();
+            if (isType(INDEX_OP, node)) {
+                return answer + "[]";
+            }
+        }
+        return answer;
     }
 
     /**

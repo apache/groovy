@@ -41,20 +41,6 @@ public class TestSuiteSupport implements Test, Protectable {
     public void run(TestResult result) {
         result.startTest(this);
         result.runProtected(this, this);
-
-        /*
-        result.startTest(this);
-        try {
-            protect();
-        }
-        catch (AssertionFailedError e) {
-            result.addFailure(this, e);
-        }
-        catch (Throwable t) {
-            result.addError(this, t);
-        }
-        result.endTest(this);
-        */
         result.endTest(this);
     }
 
@@ -99,7 +85,7 @@ public class TestSuiteSupport implements Test, Protectable {
     }
 
     protected static void addTest(TestSuite suite, String fullName) {
-        suite.addTest(new GroovyMainTest(fullName));
+        suite.addTest(new GroovyMainTestSupport(fullName));
         /*
         TestSuiteSupport childTest = new TestSuiteSupport();
         childTest.fullName = fullName;

@@ -23,10 +23,15 @@ import groovy.ui.GroovyMain;
 /**
  * @version $Revision$
  */
-public class GroovyMainTest extends TestCase {
-    public GroovyMainTest(String name) {
+public class GroovyMainTestSupport extends TestCase {
+    public GroovyMainTestSupport(String name) {
         super(name);
     }
+
+    public int countTestCases() {
+        return 1;
+    }
+
 
     protected void runTest() throws Throwable {
         String fullName = getName();

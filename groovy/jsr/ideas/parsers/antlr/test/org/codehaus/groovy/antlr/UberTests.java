@@ -27,7 +27,7 @@ import junit.framework.TestSuite;
  *
  * @version $Revision$
  */
-public class UberTest extends TestSuiteSupport {
+public class UberTests extends TestSuiteSupport {
 
     static String[] classicTests = {
         // "AmbiguousInvocationTest.groovy",  - requires classpath stuff
