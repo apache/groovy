@@ -2228,9 +2228,9 @@ public class AsmClassGenerator2 extends ClassGenerator {
                             }
                         }
                     } catch (Exception e) {
-                        System.out.println(this.classNode.getName() + ":" + this.methodNode.getName());
+//                        System.out.println(this.classNode.getName() + ":" + this.methodNode.getName());
                         //e.printStackTrace(); //System.out.println(e.getMessage());
-                        log.info("ignore: attempt early binding: " + e.getMessage());
+//                        log.info("ignore: attempt early binding: " + e.getMessage());
                         break;// fall through
                     }
                 }
@@ -2391,6 +2391,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
                             }
                             else if (setter != null) {
                                 helper.quickUnboxIfNecessary(setter.getParameterTypes()[0]);
+                                cast(setter.getParameterTypes()[0]);
                                 helper.invoke(setter);
                             }
                             else {
@@ -2444,6 +2445,13 @@ public class AsmClassGenerator2 extends ClassGenerator {
                                 );
                             }
                             else if (setter != null) {
+                                Method m = setter;
+                                Class[] paramTypes = m.getParameterTypes();
+                                if (paramTypes.length != 1) {
+                                    throw new RuntimeException("setter should take a single parameter");
+                                }
+                                Class paramType = paramTypes[0];
+                                cast(paramType);
                                 helper.invoke(setter);
                             }
                             else {
