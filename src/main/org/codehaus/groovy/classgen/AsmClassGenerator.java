@@ -294,11 +294,16 @@ public class AsmClassGenerator extends ClassGenerator {
                 ClassNode innerClass = (ClassNode) iter.next();
                 String innerClassName = innerClass.getName();
                 String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
+                {
+                    int index = innerClassName.lastIndexOf('$');
+                    if (index>=0) innerClassName = innerClassName.substring(index+1);
+                }
                 String outerClassName = internalClassName; // default for inner classes
                 MethodNode enclosingMethod = innerClass.getEnclosingMethod();
                 if (enclosingMethod != null) {
                     // local inner classes do not specify the outer class name
                     outerClassName = null;
+                    innerClassName = null;
                 }
                 cw.visitInnerClass(
                     innerClassInternalName,
