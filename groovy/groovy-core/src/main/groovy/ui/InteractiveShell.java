@@ -225,7 +225,7 @@ public class InteractiveShell {
 
             try { pending = reader.readLine(); } catch( IOException e ) { }
 
-            if( pending == null || pending.equals("exit") ) {
+            if( pending == null || (COMMAND_MAPPINGS.containsKey(pending) && ((Integer)COMMAND_MAPPINGS.get(pending)).intValue() == COMMAND_ID_EXIT) ) {
                 return null;                                  // <<<< FLOW CONTROL <<<<<<<<
             }
 
@@ -462,17 +462,22 @@ public class InteractiveShell {
         for( int i = 0; i <= LAST_COMMAND_ID; i++ ) {
             COMMAND_MAPPINGS.put( COMMANDS[i], new Integer(i) );
         }
+
+        // A few synonyms
+
+        COMMAND_MAPPINGS.put( "quit", new Integer(COMMAND_ID_EXIT) );
+        COMMAND_MAPPINGS.put( "go"  , new Integer(COMMAND_ID_EXECUTE) );
     }
 
     private static final Map COMMAND_HELP = new HashMap();
 
     static {
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXIT   ], "exit    - terminates processing"          );
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_HELP   ], "help    - displays this help text"        );
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISCARD], "discard - discards the current statement" );
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISPLAY], "display - displays the current statement" );
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXPLAIN], "explain - explains the parsing of the current statement" );
-        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXECUTE], "execute - temporary command to cause statement execution" );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXIT   ], "exit/quit  - terminates processing"          );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_HELP   ], "help       - displays this help text"        );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISCARD], "discard    - discards the current statement" );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_DISPLAY], "display    - displays the current statement" );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXPLAIN], "explain    - explains the parsing of the current statement" );
+        COMMAND_HELP.put( COMMANDS[COMMAND_ID_EXECUTE], "execute/go - temporary command to cause statement execution" );
     }
 
 
