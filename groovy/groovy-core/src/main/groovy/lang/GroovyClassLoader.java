@@ -34,7 +34,9 @@
  */
 package groovy.lang;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -54,6 +56,7 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends ClassLoader {
 
     private Class generatedClass = null;
+	private String outputDir;
 
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
@@ -61,6 +64,7 @@ public class GroovyClassLoader extends ClassLoader {
 
     public GroovyClassLoader(ClassLoader loader) {
         super(loader);
+		outputDir = System.getProperty("groovy.output.dir");
     }
 
     /**
@@ -104,7 +108,7 @@ public class GroovyClassLoader extends ClassLoader {
     protected void onClassNode(ClassWriter classWriter, ClassNode classNode) {
         byte[] code = classWriter.toByteArray();
 
-        //System.out.println("About to load class: " + classNode.getName());
+		debugWriteClassfile(classNode, code);
 
         Class theClass = defineClass(classNode.getName(), code, 0, code.length);
 
@@ -113,11 +117,37 @@ public class GroovyClassLoader extends ClassLoader {
         }
     }
 
-    protected CompilerFacade createCompiler(CompileUnit unit) {
+    private void debugWriteClassfile(ClassNode classNode, byte[] code) {
+		if (outputDir != null) {
+			String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
+			System.err.println("Writing: " + filename);
+			int index = filename.lastIndexOf(File.separator);
+			String dirname;
+			if (index != -1) {
+				dirname = filename.substring(0, index);
+			} else {
+				dirname = "";
+			}
+			File outputFile = new File(new File(outputDir), filename);
+			System.err.println("Writing: " + outputFile);
+			try {
+				new File(new File(outputDir), dirname).mkdirs();
+				FileOutputStream fos = new FileOutputStream(outputFile);
+				fos.write(code, 0, code.length);
+				fos.close();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+		}
+	}
+
+	protected CompilerFacade createCompiler(CompileUnit unit) {
         return new CompilerFacade(this, unit) {
             protected void onClass(ClassWriter classWriter, ClassNode classNode) {
                 onClassNode(classWriter, classNode);
             }
         };
     }
+
+
 }

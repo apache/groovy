@@ -91,4 +91,5 @@ public interface GroovyCodeVisitor {
     public void visitRegexExpression(RegexExpression expression);
     public void visitGStringExpression(GStringExpression expression);
     public void visitArrayExpression(ArrayExpression expression);
+	public void visitNotExpression(NotExpression expression);
 }

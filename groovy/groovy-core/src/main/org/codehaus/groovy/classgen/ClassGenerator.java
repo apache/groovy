@@ -69,6 +69,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
@@ -134,6 +135,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
+	MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
+	MethodCaller notObject = MethodCaller.newStatic(InvokerHelper.class, "notObject");
 
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
@@ -836,12 +839,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
     }
 
+    public void visitNotExpression(NotExpression expression) {
+		Expression subExpression = expression.getExpression();
+		subExpression.visit(this);
+
+		// This is not the best way to do this.  Javac does it by reversing the underlying expressions but that proved
+		// fairly complicated for not much gain.  Instead we'll just use a utility function for now.
+		if (comparisonExpression(expression.getExpression())) {
+			notBoolean.call(cv);
+		} else {
+			notObject.call(cv);
+		}
+	}
+    
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
 
-        if (!comparisonExpression(expression.getExpression())) {
-            asBool.call(cv);
-        }
+		if (!comparisonExpression(expression.getExpression())) {
+			asBool.call(cv);
+		}
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {

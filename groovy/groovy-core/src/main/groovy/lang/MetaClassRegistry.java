@@ -46,14 +46,12 @@
 package groovy.lang;
 
 import java.beans.IntrospectionException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerException;
-import org.codehaus.groovy.runtime.MethodHelper;
 
 /**
  * A registery of MetaClass instances which caches introspection & 

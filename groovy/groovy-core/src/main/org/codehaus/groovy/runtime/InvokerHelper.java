@@ -132,6 +132,14 @@ public class InvokerHelper {
         return false;
     }
 
+	public static boolean notObject(Object object) {
+		return !asBool(object);
+	}
+
+	public static boolean notBoolean(boolean bool) {
+		return !bool;
+	}
+	
     public static boolean compareIdentical(Object left, Object right) {
         return left == right;
     }
