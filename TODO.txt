@@ -1,6 +1,8 @@
 Core Groovy Tasks
 =================
 
+* test try / catch
+
 * line numbering for exceptions
 
 * should we implement + and - for collections and maps?
@@ -8,8 +10,6 @@ Core Groovy Tasks
 	l = [1, 2] + [3, 4];
 	assert l := [1, 2, 3, 4];
 	
-* test try / catch
-
 * fix LocalPropertyTest
 
 * should we implement get(String) on collection to implement nested property fetching?

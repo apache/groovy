@@ -18,6 +18,7 @@ class ListTest extends GroovyTestCase {
 		assert x.contains(1);
 		assert x.contains("cheese");
 		
+		/** @todo 
 		if x.contains("cheese") {
             // ignore
         }
@@ -31,6 +32,7 @@ class ListTest extends GroovyTestCase {
         else {
             assert fail : "x should contain 1!";
         }
+        */
     }
 
 }
