@@ -469,88 +469,91 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     // Statements
     //-------------------------------------------------------------------------
 
-    protected Statement statement(AST code) {
-        BlockStatement block = new BlockStatement();
+    protected Statement statement(AST node) {
+        Statement statement = null;
+        int type = node.getType();
+        switch (type) {
+            case SLIST:
+            case LITERAL_finally:
+                statement = statementList(node);
+                break;
 
-        for (AST node = code.getFirstChild(); node != null; node = node.getNextSibling()) {
-            Statement statement = null;
-            int type = node.getType();
-            switch (type) {
-                case METHOD_CALL:
-                case IDENT:
-                    statement = methodCall(node);
-                    break;
+            case METHOD_CALL:
+            case IDENT:
+                statement = methodCall(node);
+                break;
 
-                case VARIABLE_DEF:
-                    statement = variableDef(node);
-                    break;
+            case VARIABLE_DEF:
+                statement = variableDef(node);
+                break;
 
-                case SLIST:
-                    statement = statement(node);
-                    break;
 
-                case LABELED_STAT:
-                    statement = labelledStatement(node);
-                    break;
+            case LABELED_STAT:
+                statement = labelledStatement(node);
+                break;
 
-                case LITERAL_assert:
-                    statement = assertStatement(node);
-                    break;
+            case LITERAL_assert:
+                statement = assertStatement(node);
+                break;
 
-                case LITERAL_break:
-                    statement = breakStatement(node);
-                    break;
+            case LITERAL_break:
+                statement = breakStatement(node);
+                break;
 
-                case LITERAL_continue:
-                    statement = continueStatement(node);
-                    break;
+            case LITERAL_continue:
+                statement = continueStatement(node);
+                break;
 
-                case LITERAL_if:
-                    statement = ifStatement(node);
-                    break;
+            case LITERAL_if:
+                statement = ifStatement(node);
+                break;
 
-                case LITERAL_for:
-                    statement = forStatement(node);
-                    break;
+            case LITERAL_for:
+                statement = forStatement(node);
+                break;
 
-                case LITERAL_return:
-                    statement = returnStatement(node);
-                    break;
+            case LITERAL_return:
+                statement = returnStatement(node);
+                break;
 
-                case LITERAL_synchronized:
-                    statement = synchronizedStatement(node);
-                    break;
+            case LITERAL_synchronized:
+                statement = synchronizedStatement(node);
+                break;
 
-                case LITERAL_switch:
-                    statement = switchStatement(node);
-                    break;
+            case LITERAL_switch:
+                statement = switchStatement(node);
+                break;
 
-                case LITERAL_with:
-                    statement = withStatement(node);
-                    break;
+            case LITERAL_with:
+                statement = withStatement(node);
+                break;
 
-                case LITERAL_try:
-                    statement = tryStatement(node);
-                    break;
+            case LITERAL_try:
+                statement = tryStatement(node);
+                break;
 
-                case LITERAL_throw:
-                    statement = throwStatement(node);
-                    break;
+            case LITERAL_throw:
+                statement = throwStatement(node);
+                break;
 
-                case LITERAL_while:
-                    statement = whileStatement(node);
-                    break;
+            case LITERAL_while:
+                statement = whileStatement(node);
+                break;
 
-                default:
-                    statement = new ExpressionStatement(expression(node));
-            }
-            if (statement != null) {
-                configureAST(statement, node);
-                block.addStatement(statement);
-            }
+            default:
+                statement = new ExpressionStatement(expression(node));
         }
+        if (statement != null) {
+            configureAST(statement, node);
+        }
+        return statement;
+    }
 
-        // TODO check for dumb expression rule here???
+    protected Statement statementList(AST code) {
+        BlockStatement block = new BlockStatement();
+        for (AST node = code.getFirstChild(); node != null; node = node.getNextSibling()) {
+            block.addStatement(statement(node));
+        }
         return block;
     }
 
@@ -609,7 +612,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Statement elseBlock = EmptyStatement.INSTANCE;
         node = node.getNextSibling();
-        if (isType(SLIST, node)) {
+        if (node != null) {
             elseBlock = statement(node);
         }
         return new IfStatement(booleanExpression, ifBlock, elseBlock);
@@ -966,7 +969,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SR:
                 return binaryExpression(Types.RIGHT_SHIFT, node);
 
-                
+
             case RANGE_INCLUSIVE:
                 return rangeExpression(node, true);
 
