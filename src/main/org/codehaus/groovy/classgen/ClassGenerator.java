@@ -1365,7 +1365,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             Expression argExp = argListExp.getExpression(i);
             Parameter param = parameters[i];
             visitAndAutobox(argExp);
-            doConvertAndCast(param.getType(), argExp);
+            
+            String type = param.getType();
+            if (helper.isPrimitiveType(type)) {
+                helper.unbox(type);
+            }
+            doConvertAndCast(type, argExp);
         }
     }
 
