@@ -15,6 +15,9 @@ public class BigIntegerMath extends NumberMath {
 		return toBigInteger(number).abs();
 	}
 	
+	protected Number addImpl(Number left, Number right) {
+		return toBigInteger(left).add(toBigInteger(right));
+	}
 	protected Number subtractImpl(Number left, Number right) {
 		return toBigInteger(left).subtract(toBigInteger(right));
 	}
