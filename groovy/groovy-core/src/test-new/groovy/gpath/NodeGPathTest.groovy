@@ -25,7 +25,7 @@ class NodeGPathTest extends GroovyTestCase {
         assert coll == ['James', 'Bob']
     }
     
-    protected createTree() {       
+    protected def createTree() {       
         builder = NodeBuilder.newInstance()
         
         root = builder.people() {

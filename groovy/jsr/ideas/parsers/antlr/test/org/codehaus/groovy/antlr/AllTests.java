@@ -61,6 +61,8 @@ public class AllTests extends TestSuiteSupport {
         "ClosureReturnWithoutReturnStatementTest.groovy",             // TODO: closure params
         "ClosureSugarTest.groovy",              // TODO: closure params
         "ClosureTest.groovy",                   // TODO: closure params
+        "ExpandoPropertyTest.groovy",           // TODO: closure params
+        "GeneratorTest.groovy",                 // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -75,6 +77,7 @@ public class AllTests extends TestSuiteSupport {
         "TestDerived.groovy",                   // TODO: constructor bug
 
         "ClosureCloneTest.groovy",              // TODO: use of * with dot
+        "DoubleOperationTest.groovy",           // TODO: use of * with dot
         "ClosureMethodTest.groovy",             // TODO: use of *
         "ClosureWithDefaultParamTest.groovy",   // TODO: use of *
 
@@ -85,6 +88,9 @@ public class AllTests extends TestSuiteSupport {
 
         "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
 
+        "DefaultParamTest.groovy",              // TODO: can't parse default parameter values
+
+        "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug

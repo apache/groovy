@@ -3167,7 +3167,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         int i = 0;
         for (Iterator iter = entries.iterator(); iter.hasNext();) {
-            MapEntryExpression entry = (MapEntryExpression) iter.next();
+            Object object = iter.next();
+            MapEntryExpression entry = (MapEntryExpression) object;
 
             cv.visitInsn(DUP);
             helper.pushConstant(i++);
