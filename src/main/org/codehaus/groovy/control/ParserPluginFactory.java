@@ -24,9 +24,7 @@ package org.codehaus.groovy.control;
  * @version $Revision$
  */
 public abstract class ParserPluginFactory {
-    protected static final boolean useNewParser = true;
-
-    public static ParserPluginFactory newInstance() {
+    public static ParserPluginFactory newInstance(boolean useNewParser) {
         if (useNewParser) {
             Class type = null;
             String name = "org.codehaus.groovy.antlr.AntlrParserPluginFactory";
