@@ -34,7 +34,8 @@ public class IteratorClosureAdapter extends Closure {
         return list;
     }
 
-    protected void doCall(Object argument) {
+    protected Object doCall(Object argument) {
         list.add(argument);
+        return null;
     }
 }
