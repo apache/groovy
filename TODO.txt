@@ -111,8 +111,6 @@ Core Groovy Tasks
 	use a Holder object for all local variables and pass holder
 	into the closure
 
-* GroovyServlet - serves up *.groovy files
-
 * new GroovyMethods	to be added
 	- Object.getMetaClass()
 	- Object.eachProperty
@@ -136,6 +134,16 @@ Core Groovy Tasks
 		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
+	- Map.get(key, defaultValue)
+	- Map.setDefault(key, defaultValue) for things like
+	 map.setDefault(key, []).add(newValue)
+	
+	- list.sortBy { [it.name, it.location] }
+	- list.sort { a, b | a.name <=> b.name }
+	
+	to ensure the map has a list of things
+
+	
 
 		maybe add the various readonly List APIs to Object[] and *[] types
 		if we ever support the DTD / Xed style type*, type+ then we can do the same
@@ -154,7 +162,8 @@ Core Groovy Tasks
 	bean.property - listener
 	
 * .@ support on W3C DOM trees...
-
+	though we might wanna use @ to refer to attributes?
+	
 * BeanBuilder - builder which creates a tree of beans
 	builder.bean(class:SomeClass, x:123, b:'hello') {
 		nestedProperty(a:123)
@@ -251,14 +260,6 @@ sql.table("users") {
 			...
 		}
 
-* interative shell for entering commands
-	groovy> x = [1, 2, 3]
-	groovy> print(x)
-	[1, 2, 3]
-	
-* allow constructors to have optional trailing closure...
-	new JFrame() { text = 'hello'; size = [1, 2] }
-			
 * looks like a bug on generated methods, should use param name over any field name
 	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
 	methods
@@ -268,15 +269,13 @@ sql.table("users") {
 * groovy thread...
 	foo = new GroovyThread(args) { closure }
 	
-* article
-	- basics of groovy
-	- groovy swing
-
 * doc to write
 	- using beans + listeners
 	- expression language
 
-* closure on construction of beans?
+* allow constructors to have optional trailing closure...
+	new JFrame() { text = 'hello'; size = [1, 2] }
+  closure on construction of beans?
 	new JTable() {....}
 		invokes the closure with the new object as delegate for setting properties etc
 
@@ -295,12 +294,6 @@ sql.table("users") {
 
 * support for property converters, based on type
 
-* Map.get(key, defaultValue)
-* Map.setDefault(key, defaultValue) for things like
-	map.setDefault(key, []).add(newValue)
-	
-	to ensure the map has a list of things
-
 * maybe add python's * and ** for any number of args or maps in method decl
 
 * use *args in method invocation to expand a list as argument values	
@@ -318,8 +311,6 @@ sql.table("users") {
 * MetaClass.deriveMetaClass()
 	MetaClass.addMixin(mixin)
 
-* why does using the GroovyClassLoader cause the illegal access violation?
-
 * constructors with map / tuple expressions, named parameter calling
  
 * default values for parameters
@@ -333,8 +324,6 @@ sql.table("users") {
 	l = [1, 2] + [3, 4];
 	assert l := [1, 2, 3, 4];
 	
-* should we implement get(String) on collection to implement nested property fetching?
-
 * test use of overloaded setter methods & use of property notation
   so that the use of properties within a class should use setteres / getters.
 

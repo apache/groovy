@@ -129,6 +129,11 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == [4, 3, 2, 1]
     }
     
+    void testListInject() {
+        value = [1, 2, 3].inject('counting: ') { str, item | str + item }
+        assert value == "counting: 123"
+    }
+    
     void testInspect() {
         text = inspect()
         println(text)
