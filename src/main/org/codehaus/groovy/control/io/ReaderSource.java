@@ -43,49 +43,59 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+
+package org.codehaus.groovy.control.io;
+
+import java.io.IOException;
+import java.io.Reader;
+
+import org.codehaus.groovy.control.HasCleanup;
+import org.codehaus.groovy.control.Janitor;
 
 
 /**
- * Represents the configuration details of the compiler.
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  An interface for things that can supply (and resupply) a Reader
+ *  on a source stream.
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
-public class CompilerConfig  {
-    private String outputDir;
-    private String scriptBaseClass;
+
+public interface ReaderSource extends HasCleanup
+{
+   
+   /**
+    *  Returns a new Reader on the underlying source object.  Returns
+    *  null if the source can't be reopened.
+    */
     
-    public CompilerConfig() {
-        try {
-            outputDir = System.getProperty("groovy.output.dir");
-        }
-        catch (RuntimeException e) {
-            // ignore - probably a security exception
-        }
-    }
+    Reader getReader() throws IOException;
     
-    /** 
-     * @return the output directory used to write bytecode to (for debugging purposes)
-     */
-    public String getOutputDir() {
-        return outputDir;
-    }
-
-    public void setOutputDir(String outputDir) {
-        this.outputDir = outputDir;
-    }
-
-    /**
-     * @return allows the base class of scripts to be specified. The base class must extend from
-     * @link Script. This feature allows custom methods and properties to be made available to a script.
-     */
-    public String getScriptBaseClass() {
-        return scriptBaseClass;
-    }
-
-    public void setScriptBaseClass(String scriptBaseClass) {
-        this.scriptBaseClass = scriptBaseClass;
-    }
-
+    
+    
+   /**
+    *  Returns true if the source can be restarted (ie. if getReader()
+    *  will return non-null on subsequent calls.
+    */
+    
+    boolean canReopenSource();
+    
+    
+    
+   /**
+    *  Returns a line from the source, or null, if unavailable.  If
+    *  you supply a Janitor, resources will be cached.
+    */
+    
+    String getLine( int lineNumber, Janitor janitor );
+    
+    
+    
+   /**
+    *  Cleans up any cached resources used by getLine().
+    */
+    
+    void cleanup();
+    
 }

@@ -51,8 +51,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * @author sam
@@ -231,7 +231,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 									}
 									try {
 										return parseClass(dependentScriptConn.getInputStream(), filename);
-									} catch (SyntaxException e2) {
+									} catch (CompilationFailedException e2) {
 										throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
 									} catch (IOException e2) {
 										throw new ClassNotFoundException("Problem reading " + className + ": " + e2);

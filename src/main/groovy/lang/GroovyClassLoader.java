@@ -61,10 +61,11 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.classgen.CompilerFacade;
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -79,7 +80,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
     private class PARSING {};
-    private CompilerConfig config;
+    private CompilerConfiguration config;
     private String[] paths;
 
     public GroovyClassLoader() {
@@ -87,14 +88,14 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     public GroovyClassLoader(ClassLoader loader) {
-        this(loader, new CompilerConfig());
+        this(loader, new CompilerConfiguration());
     }
 
     public GroovyClassLoader(GroovyClassLoader parent) {
         this(parent, parent.config);
     }
 
-    public GroovyClassLoader(ClassLoader loader, CompilerConfig config) {
+    public GroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
         super(loader);
         this.config = config;
     }
@@ -122,10 +123,26 @@ public class GroovyClassLoader extends SecureClassLoader {
     	} catch (MalformedURLException e) {
     		//swallow
     	}
-        CompileUnit unit = new CompileUnit(getParent(), codeSource, config);
-        ClassCollector compiler = createCollector(unit);
-        compiler.generateClass(new GeneratorContext(unit), classNode, file);
-        return compiler.generatedClass;
+
+        
+        //
+        // BUG: Why is this passing getParent() as the ClassLoader???
+        
+        CompilationUnit unit = new CompilationUnit(config, codeSource, getParent() );
+        try
+        {
+            ClassCollector collector = createCollector( unit );
+            
+            unit.addClassNode( classNode );
+            unit.setClassgenCallback( collector );
+            unit.compile( Phases.CLASS_GENERATION );
+            
+            return collector.generatedClass;
+        }
+        catch( CompilationFailedException e )
+        {
+            throw new RuntimeException( e );
+        }
     }
 
     /**
@@ -134,7 +151,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param file the file name to parse
      * @return the main class defined in the given script
      */
-    public Class parseClass(File file) throws SyntaxException, IOException {
+    public Class parseClass(File file) throws CompilationFailedException, IOException {
     	return parseClass(new GroovyCodeSource(file));
     }
 
@@ -145,7 +162,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param fileName the file name to use as the name of the class
      * @return the main class defined in the given script
      */
-    public Class parseClass(String text, String fileName) throws SyntaxException, IOException {
+    public Class parseClass(String text, String fileName) throws CompilationFailedException, IOException {
         return parseClass(new ByteArrayInputStream(text.getBytes()), fileName);
     }
 
@@ -155,7 +172,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param text the text of the script/class to parse
      * @return the main class defined in the given script
      */
-    public Class parseClass(String text) throws SyntaxException, IOException {
+    public Class parseClass(String text) throws CompilationFailedException, IOException {
         return parseClass(new ByteArrayInputStream(text.getBytes()), "script" + System.currentTimeMillis() + ".groovy");
     }
 
@@ -165,11 +182,11 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param in an InputStream
      * @return the main class defined in the given script
      */
-    public Class parseClass(InputStream in) throws SyntaxException, IOException {
+    public Class parseClass(InputStream in) throws CompilationFailedException, IOException {
         return parseClass(in, "script" + System.currentTimeMillis() + ".groovy");
     }
 
-    public Class parseClass(final InputStream in, final String fileName) throws SyntaxException, IOException {
+    public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException, IOException {
     	//For generic input streams, provide a catch-all codebase of GroovyScript
     	//Security for these classes can be administered via policy grants with a codebase
     	//of file:groovy.script
@@ -188,7 +205,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 	 * @param fileName the file name to use as the name of the class
 	 * @return the main class defined in the given script
 	 */
-	public Class parseClass(GroovyCodeSource codeSource) throws SyntaxException, IOException {
+	public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
 		String name = codeSource.getName();
 		Class answer = null;
 		//ASTBuilder.resolveName can call this recursively -- for example when resolving a Constructor
@@ -203,10 +220,19 @@ public class GroovyClassLoader extends SecureClassLoader {
 		}
 		//Was neither already loaded nor compiling, so compile and add to cache.
 	   	try {
-	   		CompileUnit unit = new CompileUnit(this, codeSource.getCodeSource(), config);
-	   		ClassCollector compiler = createCollector(unit);
-	   		compiler.parseClass(codeSource.getInputStream(), name);
-	   		answer = compiler.generatedClass;
+            CompilationUnit unit = new CompilationUnit(config, codeSource.getCodeSource(), this );
+            // try {
+                ClassCollector collector = createCollector( unit );
+                
+                unit.addSource( name, codeSource.getInputStream() );
+                unit.setClassgenCallback( collector );
+                unit.compile( Phases.CLASS_GENERATION );
+                
+                answer = collector.generatedClass;
+            // }
+            // catch( CompilationFailedException e ) {
+            //     throw new RuntimeException( e );
+            // }
 	   	} finally {
 	   		synchronized (cache) {
 	   			if (answer == null) {
@@ -259,7 +285,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                     if (file.exists()) {
                         try {
                             return parseClass(file);
-                        } catch (SyntaxException e) {
+                        } catch (CompilationFailedException e) {
                             e.printStackTrace();
                             throw new ClassNotFoundException(
                                     "Syntax error in groovy file: " + filename,
@@ -279,7 +305,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                             Certificate[] certs = entry.getCertificates();
                             try {
                                 return parseClass(new GroovyCodeSource(new ByteArrayInputStream(bytes), filename, path, certs));
-                            } catch (SyntaxException e1) {
+                            } catch (CompilationFailedException e1) {
                                 e1.printStackTrace();
                                 throw new ClassNotFoundException(
                                         "Syntax error in groovy file: " + filename,
@@ -377,27 +403,31 @@ public class GroovyClassLoader extends SecureClassLoader {
         return defineClass(name, bytecode, 0, bytecode.length, domain);
     }
     
-    protected ClassCollector createCollector(CompileUnit unit) {
+    protected ClassCollector createCollector(CompilationUnit unit) {
         return new ClassCollector(this, unit);
     }
 
     
-    protected static class ClassCollector extends CompilerFacade {
+    public static class ClassCollector extends CompilationUnit.ClassgenCallback {
         private Class generatedClass;
         private GroovyClassLoader cl;
+        private CompilationUnit unit;
 
 
-        protected ClassCollector(GroovyClassLoader cl, CompileUnit unit) {
-            super(cl, unit);
-            this.cl = cl;
+        protected ClassCollector(GroovyClassLoader cl, CompilationUnit unit) {
+            this.cl   = cl;
+            this.unit = unit;
         }
 
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
-            cl.debugWriteClassfile(classNode, code);
-
-            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, getCompileUnit().getCodeSource());
+            //
+            // BUG: Why is this not conditional?
+            
+            // cl.debugWriteClassfile(classNode, code);
+            
+            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
 
             if (generatedClass == null) {
                 generatedClass = theClass;
@@ -406,14 +436,17 @@ public class GroovyClassLoader extends SecureClassLoader {
             return theClass;
         }
 
-        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
-            onClassNode(classWriter, classNode);
+        public void call( ClassVisitor classWriter, ClassNode classNode ) {
+            onClassNode( (ClassWriter)classWriter, classNode );
         }
     }
 
+    //
+    // BUG: Should this be replaced with CompilationUnit.output()?
+    
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
-        String outputDir = config.getOutputDir();
-        if (outputDir != null) {
+        File targetDir = config.getTargetDirectory();
+        if (targetDir != null) {
             String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
             int index = filename.lastIndexOf(File.separator);
             String dirname;
@@ -423,10 +456,10 @@ public class GroovyClassLoader extends SecureClassLoader {
             else {
                 dirname = "";
             }
-            File outputFile = new File(new File(outputDir), filename);
+            File outputFile = new File(targetDir, filename);
             System.err.println("Writing: " + outputFile);
             try {
-                new File(new File(outputDir), dirname).mkdirs();
+                new File(targetDir, dirname).mkdirs();
                 FileOutputStream fos = new FileOutputStream(outputFile);
                 fos.write(code, 0, code.length);
                 fos.close();

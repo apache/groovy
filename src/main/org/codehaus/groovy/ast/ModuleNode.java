@@ -63,6 +63,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Constants;
 
@@ -86,8 +87,11 @@ public class ModuleNode extends ASTNode implements Constants {
     private String packageName;
     private String description;
     private boolean createClassForStatements = true;
+    private SourceUnit context;
+    
 
-    public ModuleNode() {
+    public ModuleNode( SourceUnit context ) {
+        this.context = context;
     }
 
     public ModuleNode(CompileUnit unit) {
@@ -172,15 +176,27 @@ public class ModuleNode extends ASTNode implements Constants {
     public void setPackageName(String packageName) {
         this.packageName = packageName;
     }
+    
+    public SourceUnit getContext() {
+        return context;
+    }
 
     /**
      * @return the underlying character stream description
      */
     public String getDescription() {
-        return description;
+        if( context != null )
+        {
+            return context.getName();
+        }
+        else
+        {
+            return this.description;
+        }
     }
 
     public void setDescription(String description) {
+        // DEPRECATED -- context.getName() is now sufficient
         this.description = description;
     }
 
@@ -201,7 +217,7 @@ public class ModuleNode extends ASTNode implements Constants {
             name = name + ".";
         }
         // now lets use the file name to determine the class name
-        if (description == null) {
+        if (getDescription() == null) {
             throw new RuntimeException("Cannot generate main(String[]) class for statements when we have no file description");
         }
         name += extractClassFromFileDescription();
@@ -261,7 +277,7 @@ public class ModuleNode extends ASTNode implements Constants {
 
     protected String extractClassFromFileDescription() {
         // lets strip off everything after the last .
-        String answer = description;
+        String answer = getDescription();
         int idx = answer.lastIndexOf('.');
         if (idx > 0) {
             answer = answer.substring(0, idx);

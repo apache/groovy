@@ -43,292 +43,107 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+
 package org.codehaus.groovy.tools;
 
-import groovy.lang.CompilerConfig;
-
 import java.io.File;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.StringTokenizer;
 
-import org.codehaus.groovy.GroovyException;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.classgen.ClassGenerator;
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.syntax.lexer.CharStream;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.util.DumpClassVisitor;
-import org.codehaus.groovy.syntax.parser.Parser;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.SourceUnit;
+
+
+
 
 /**
- *  Controls the compilation process, from source to class generation.
+ *  A convenience front end for getting standard compilations done.
+ *  All compile() routines generate classes to the filesystem.
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
 
-public class Compiler {
-    private static final Exception[] EMPTY_EXCEPTION_ARRAY = new Exception[0];
-
-    private Verifier verifier; // Verifies and completes ASTs before byte code generation
-    private CompilerClassLoader classLoader; // Our class loader
-    private CompilerConfig config = new CompilerConfig(); // compiler configuration
-    private boolean verbose = false; // If set, extra output is generated
-    private boolean debug = false; // If set, debugging output is generated
-
-    private int maximumParseFailuresPerFile = 10; // Limits the number of parse errors before giving up
-    private int maximumFailuresPerCompile = 15; // Limits the number of total errors before giving up
-
-    //---------------------------------------------------------------------------
-    // CONSTRUCTORS AND SETTINGS
-
-    /**
-     *  Initializes the compiler.
-     */
-
-    public Compiler() {
-        this.verifier = new Verifier();
-        this.classLoader = new CompilerClassLoader();
-    }
-
-    /**
-     *  Returns the compiler's class loader.
-     */
-
-    protected CompilerClassLoader getClassLoader() {
-        return this.classLoader;
-    }
-
-    /**
-     *  Controls the output verbosity.
-     */
-
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
-    /**
-     *  Controls the presence of debugging output.
-     */
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-
-    /**
-     *  Adds additional paths to the class loader's search path.
-     */
-
-    public void setClasspath(String classpath) throws Exception {
-        StringTokenizer paths = new StringTokenizer(classpath, File.pathSeparator);
-
-        while (paths.hasMoreTokens()) {
-            getClassLoader().addPath(paths.nextToken());
-        }
-    }
-
-    public CompilerConfig getConfig() {
-        return config;
-    }
-
-    public void setConfig(CompilerConfig config) {
-        this.config = config;
-    }
-
-    //---------------------------------------------------------------------------
-    // COMPILATION
-
-    /**
-     *  Compiles a single source.  Collects exceptions during processing and throws
-     *  a <code>{@link CompilationFailuresException}</code> on error.  Other 
-     *  exceptions are bugs that need to be caught and encapsulated.
-     */
-
-    public GroovyClass[] compile(CharStream source) throws CompilationFailuresException, CompilerBugException {
-        return compile(new CharStream[] { source });
-    }
-
-    /**
-     *  Compiles a set of <code>{@link CharStream}</code> sources.  Collects exceptions
-     *  during processing and throws a <code>{@link CompilationFailuresException}</code>
-     *  on error.  Other exceptions are bugs that need to be caught and encapsulated.
-     */
-
-    public GroovyClass[] compile(CharStream[] sources) throws CompilationFailuresException, CompilerBugException {
-        CompilationFailuresException failures = new CompilationFailuresException();
-
-        //
-        // First up, get at list of source files for error reporting
-        // purposes.
-
-        String[] descriptors = new String[sources.length];
-
-        for (int i = 0; i < sources.length; ++i) {
-            descriptors[i] = sources[i].getDescription();
-            if (descriptors[i] == null) {
-                descriptors[i] = "unknown" + i;
-            }
-        }
-
-        //
-        // Next, parse the sources to ASTs.
-
-        CompileUnit unit = new CompileUnit( getClassLoader(), config );
-
-        for (int i = 0; i < sources.length; ++i) {
-            try {
-
-                if( verbose ) {
-                    System.out.println("building source [" + descriptors[i] + "]");
-                }
-                
-                ModuleNode ast = parse( sources[i], descriptors[i] );
-                unit.addModule(ast);
-            }
-            catch (ExceptionCollector e) {
-                if (!e.isEmpty()) {
-                    failures.add(descriptors[i], e);
-                }
-
-                if (failures.total() > maximumFailuresPerCompile) {
-                    throw failures;
-                }
-            }
-            catch( Exception e ) {
-                throw new CompilerBugException( descriptors[i], "parse", e );
-            }
-            finally {
-                try {
-                    sources[i].close();
-                }
-                catch (Exception e) {
-                }
-            }
-        }
-
-        //
-        // If there were parse errors, bail out.
-
-        if (!failures.isEmpty()) {
-            throw failures;
-        }
-
-        //
-        // Next, compile the ASTs to classes.
-
-        ArrayList classes = new ArrayList();
-
-        for (Iterator iter = unit.getModules().iterator(); iter.hasNext();) {
-            ModuleNode module = (ModuleNode) iter.next();
-            try {
-                Iterator classNodes = module.getClasses().iterator();
-                while (classNodes.hasNext()) {
-                    ClassNode classNode = (ClassNode) classNodes.next();
-
-                    if (verbose) {
-                        System.out.println("Generating class: " + classNode.getName());
-                    }
-
-                    classes.addAll(generateClasses(new GeneratorContext(unit), classNode, module.getDescription()));
-                }
-            }
-            catch (ExceptionCollector e) {
-                if (!e.isEmpty()) {
-                    failures.add(module.getDescription(), e);
-                }
-            }
-            catch( Exception e ) {
-                throw new CompilerBugException( module.getDescription(), "class generation", e );
-            }
-        }
-
-        if (!failures.isEmpty()) {
-            throw failures;
-        }
-
-        return (GroovyClass[]) classes.toArray(GroovyClass.EMPTY_ARRAY);
-    }
-
-
-
+public class Compiler
+{
+    public static Compiler DEFAULT = new Compiler();
+    
+    private CompilerConfiguration configuration = null;  // Optional configuration data
+    
    /**
-    *  Parses a <code>CharStream</code> source, producing a Concrete
-    *  Syntax Tree (CST).  Lexing and parsing errors will be collected in 
-    *  an <code>ExceptionCollector</code>.
+    *  Initializes the Compiler with default configuration.
     */
-
-    protected ModuleNode parse( CharStream charStream, String descriptor ) throws ExceptionCollector, Exception {
-        ModuleNode ast = null;
-
-        if (verbose) {
-            System.out.println("Parsing: " + descriptor);
-        }
-
-        ExceptionCollector collector = new ExceptionCollector(maximumParseFailuresPerFile);
-
-        try {
-            Parser parser = Parser.create( charStream, collector );
-
-            collector.throwUnlessEmpty();
-            ast = parser.parse( getClassLoader(), descriptor );
-        }
-        catch (ExceptionCollector e) {
-            collector.merge(e, false);
-        }
-        catch (GroovyException e) {
-            collector.add(e, false);
-        }
-
-        collector.throwUnlessEmpty();
-
-        return ast;
+    
+    public Compiler()
+    {
+        configuration = null;
     }
-
-
-
+    
+    
    /**
-    *  Generates a class from an AST.
+    *  Initializes the Compiler with the specified configuration.
     */
-
-    protected ArrayList generateClasses(GeneratorContext context, ClassNode classNode, String descriptor)
-        throws Exception {
-        ArrayList results = new ArrayList();
-        ClassGenerator classGenerator = null;
-        //        ExceptionCollector collector
-
-        //
-        // First, ensure the AST is in proper shape.
-
-        verifier.visitClass(classNode);
-
-        if (debug) {
-            DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-
-            classGenerator = new ClassGenerator(context, dumpVisitor, getClassLoader(), descriptor);
-            classGenerator.visitClass(classNode);
-        }
-        else {
-            ClassWriter classWriter = new ClassWriter(true);
-
-            classGenerator = new ClassGenerator(context, classWriter, getClassLoader(), descriptor);
-            classGenerator.visitClass(classNode);
-
-            byte[] bytes = classWriter.toByteArray();
-
-            results.add(new GroovyClass(classNode.getName(), bytes));
-        }
-
-        LinkedList innerClasses = classGenerator.getInnerClasses();
-
-        while (!innerClasses.isEmpty()) {
-            results.addAll(generateClasses(context, (ClassNode) innerClasses.removeFirst(), descriptor));
-        }
-
-        return results;
-        // return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
+    
+    public Compiler( CompilerConfiguration configuration )
+    {
+        this.configuration = configuration;
     }
+
+    
+   
+   /**
+    *  Compiles a single File.
+    */
+   
+    public void compile( File file ) throws CompilationFailedException
+    {
+        CompilationUnit unit = new CompilationUnit( configuration );
+        unit.addSource( file );
+        unit.compile();
+    }
+    
+    
+    
+   /**
+    *  Compiles a series of Files.
+    */
+    
+    public void compile( File[] files ) throws CompilationFailedException
+    {
+        CompilationUnit unit = new CompilationUnit( configuration );
+        unit.addSources( files );
+        unit.compile();
+    }
+
+    
+    
+   /**
+    *  Compiles a series of Files from file names.
+    */
+    
+    public void compile( String[] files ) throws CompilationFailedException
+    {
+        CompilationUnit unit = new CompilationUnit( configuration );
+        unit.addSources( files );
+        unit.compile();
+    }
+
+    
+    
+   /**
+    *  Compiles a string of code.
+    */
+    
+    public void compile( String name, String code ) throws CompilationFailedException
+    {
+        CompilationUnit unit = new CompilationUnit( configuration );
+        unit.addSource( new SourceUnit(name, code, configuration, unit.getClassLoader()) );
+        unit.compile();
+    }
+
 }
+
+
+
+

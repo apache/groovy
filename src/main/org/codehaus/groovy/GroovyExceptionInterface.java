@@ -43,25 +43,16 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
-package groovy.bugs;
-
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+package org.codehaus.groovy;
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  An interface for use by all Groovy compiler exceptions.
  */
-public class IanMaceysBug extends TestSupport {
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
-        }
-        catch (CompilationFailedException e) {
-            System.out.println("Worked. Caught: " + e);
-        }
-    }
+public interface GroovyExceptionInterface {
+
+    public boolean isFatal();
+
+    public void setFatal( boolean fatal );
+    
 }

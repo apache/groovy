@@ -45,8 +45,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map;
 
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 
 /**
@@ -60,7 +60,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
     /* (non-Javadoc)
      * @see groovy.util.TemplateEngine#createTemplate(java.io.Reader)
      */
-    public Template createTemplate(Reader reader) throws SyntaxException, ClassNotFoundException, IOException {
+    public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
         SimpleTemplate template = new SimpleTemplate();
         GroovyShell shell = new GroovyShell();
         String script = template.parse(reader);

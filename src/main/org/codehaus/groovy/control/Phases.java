@@ -44,24 +44,58 @@
 
  */
 
-package groovy.bugs;
+package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+
+
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  Compilation phase identifiers.  
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
-public class IanMaceysBug extends TestSupport {
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
-        }
-        catch (CompilationFailedException e) {
-            System.out.println("Worked. Caught: " + e);
-        }
+public class Phases
+{
+    public static final int INITIALIZATION        = 1;   // Opening of files and such
+    public static final int PARSING               = 2;   // Lexing, parsing, and AST building
+    public static final int CONVERSION            = 3;   // CST to AST conversion
+    public static final int SEMANTIC_ANALYSIS     = 4;   // AST semantic analysis and elucidation
+    public static final int CANONICALIZATION      = 5;   // AST completion
+    public static final int INSTRUCTION_SELECTION = 6;   // Class generation, phase 1
+    public static final int CLASS_GENERATION      = 7;   // Class generation, phase 2
+    public static final int OUTPUT                = 8;   // Output of class to disk
+    public static final int FINALIZATION          = 9;   // Cleanup
+    public static final int ALL                   = 9;   // Synonym for full compilation
+    
+    public static String[] descriptions = {
+          "startup"
+        , "initialization"
+        , "parsing"
+        , "conversion"
+        , "semantic analysis"
+        , "canonicalization"
+        , "instruction selection"
+        , "class generation"
+        , "output"
+        , "cleanup"
+    };
+    
+    
+    
+   /**
+    *  Returns a description of the specified phase.
+    */
+    
+    public static String getDescription( int phase )
+    {
+        return descriptions[phase];
     }
+    
 }
+
+
+
+

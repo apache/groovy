@@ -42,6 +42,7 @@ import groovy.lang.MissingPropertyException;
 import java.io.ByteArrayInputStream;
 
 import org.codehaus.groovy.classgen.TestSupport;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -103,10 +104,14 @@ public class CompilerErrorTest extends TestSupport {
 
             fail("Should have thrown an exception");
         }
-        catch (MissingClassException e) {
-            System.out.println("Worked, threw: " + e);
-            //e.printStackTrace();
-            return e;
+        catch( CompilationFailedException e ) {
+            Exception cause = e.getUnit().getException(0);
+            if( cause instanceof MissingClassException ) {
+                System.out.println("Worked, threw: " + cause);
+                //e.printStackTrace();
+                return (MissingClassException)cause;
+            }
+            throw e;
         }
         return null;
     }

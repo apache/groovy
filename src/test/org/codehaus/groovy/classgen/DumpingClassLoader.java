@@ -46,7 +46,6 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.CompilerConfig;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.OutputStreamWriter;
@@ -55,7 +54,9 @@ import java.io.StringWriter;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
-import org.objectweb.asm.ClassWriter;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;
@@ -76,13 +77,14 @@ public class DumpingClassLoader extends GroovyClassLoader implements Constants {
         super(parentLoader);
     }
     
+    
     protected class DebugCollector extends ClassCollector {
 
-        DebugCollector(GroovyClassLoader cl, CompileUnit unit) {
+        DebugCollector(GroovyClassLoader cl, CompilationUnit unit) {
             super(cl, unit);
         }
         
-        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
+        public void call(ClassVisitor classWriter, ClassNode classNode) {
             // lets test out the class verifier
             if (DUMP_CLASS) {
                 dumper.visitClass(classNode);
@@ -91,17 +93,18 @@ public class DumpingClassLoader extends GroovyClassLoader implements Constants {
             if (CHECK_CLASS) {
                 checker.visitClass(classNode);
             }
-            super.onClass(classWriter, classNode);
+            
+            super.call(classWriter, classNode);
         }
     }
-    protected ClassCollector createCollector(CompileUnit unit) {
+    
+    protected ClassCollector createCollector(CompilationUnit unit) {
         return new DebugCollector(this, unit);
-
     }
 
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
-    protected CompileUnit unit = new CompileUnit(this, new CompilerConfig());;
+    protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
         new ClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
     protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(unit), dumpVisitor, this, null);

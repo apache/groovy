@@ -47,18 +47,11 @@
 
 package org.codehaus.groovy.tools;
 
-import org.codehaus.groovy.GroovyException;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.tools.ExceptionCollector;
-import org.codehaus.groovy.tools.CompilationFailuresException;
-
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.FileReader;
-import java.io.StringReader;
-import java.io.BufferedReader;
-import java.util.Iterator;
-import java.util.Map;
+
+import org.codehaus.groovy.GroovyExceptionInterface;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 
 
@@ -74,10 +67,7 @@ public class ErrorReporter
 {
     private Throwable   base     = null;    // The exception on which to report
     private boolean     debug    = false;   // If true, stack traces are always output
-    private Source      source   = null;    // If set, a Source object representing the current source
-                                            //  - use setSource() to set!
 
-    private Map         sources  = null;    // If set, a map of String sources, keyed on description
     private Object      output   = null;    // The stream/writer to which to output
 
 
@@ -109,19 +99,6 @@ public class ErrorReporter
 
 
    /**
-    *  Allows you to supply a map of String sources, if sources aren't files.
-    *  The key must be the description that would have been used by the
-    *  <code>Compiler</code> when storing an <code>ExceptionCollector</code>
-    *  in the <code>CompilationFailuresException</code>.
-    */
-
-    public void setSources( Map sources )
-    {
-        this.sources = sources;
-    }
-
-
-   /**
     *  Writes the error to the specified <code>PrintStream</code>.
     */
 
@@ -129,7 +106,6 @@ public class ErrorReporter
     {
         this.output = stream;
         dispatch( base, false );
-        cleanup();
         stream.flush();
     }
 
@@ -142,7 +118,6 @@ public class ErrorReporter
     {
         this.output = writer;
         dispatch( base, false );
-        cleanup();
         writer.flush();
     }
 
@@ -153,21 +128,13 @@ public class ErrorReporter
 
     protected void dispatch( Throwable object, boolean child )
     {
-        if( object instanceof CompilationFailuresException )
+        if( object instanceof CompilationFailedException )
         {
-            report( (CompilationFailuresException)object, child );
+            report( (CompilationFailedException)object, child );
         }
-        else if( object instanceof ExceptionCollector )
+        else if( object instanceof GroovyExceptionInterface )
         {
-            report( (ExceptionCollector)object, child );
-        }
-        else if( object instanceof CompilerBugException )
-        {
-            report( (CompilerBugException)object, child );
-        }
-        else if( object instanceof SyntaxException )
-        {
-            report( (SyntaxException)object, child );
+            report( (GroovyExceptionInterface)object, child );
         }
         else if( object instanceof Exception )
         {
@@ -187,80 +154,13 @@ public class ErrorReporter
 
 
    /**
-    *  For CompilationFailuresException.
+    *  For CompilationFailedException.
     */
 
-    protected void report( CompilationFailuresException e, boolean child )
+    protected void report( CompilationFailedException e, boolean child )
     {
-        Iterator sources = e.iterator();
-        while( sources.hasNext() )
-        {
-            String             source     = (String)sources.next();
-            ExceptionCollector collection = e.get( source );
-
-            setSource( source );
-
-            report( collection, true );
-        }
-    }
-
-
-   /**
-    *  For ExceptionCollector.
-    */
-
-    protected void report( ExceptionCollector e, boolean child )
-    {
-        Iterator iterator = e.iterator();
-        while( iterator.hasNext() )
-        {
-            GroovyException error = (GroovyException)iterator.next();
-            dispatch( error, true );
-            println( "" );
-        }
-    }
-
-
-   /**
-    *  For SyntaxException.
-    */
-
-    protected void report( SyntaxException e, boolean child )
-    {
-        if( source == null && e.getSourceLocator() != null )
-        {
-            setSource( e.getSourceLocator() );
-        }
-
-        if( source != null )
-        {
-            String description = source.getDescriptor() + ":" + e.getLine() + ": " + e.getMessage();
-            println( description );
-
-            String sample = source.getSample( e.getLine(), e.getEndColumn() - 1 );
-            if( sample != null )
-            {
-                println( sample );
-            }
-        }
-        else
-        {
-           println( ":" + e.getLine() + ": " + e.getMessage() );
-        }
-
+        println( e.toString() );
         stacktrace( e, false );
-    }
-
-
-
-   /**
-    *  For CompilerBugException.
-    */
-
-    protected void report( CompilerBugException e, boolean child )
-    {
-        println( ">>> caught a bug:\n>>> " + e.getMessage() );
-        stacktrace( e.getUnderlyingException(), true );
     }
 
 
@@ -269,10 +169,10 @@ public class ErrorReporter
     *  For GroovyException.
     */
 
-    protected void report( GroovyException e, boolean child )
+    protected void report( GroovyExceptionInterface e, boolean child )
     {
-        println( e.getMessage() );
-        stacktrace( e, false );
+        println( ((Exception)e).getMessage() );
+        stacktrace( (Exception)e, false );
     }
 
 
@@ -356,235 +256,5 @@ public class ErrorReporter
     }
 
 
-   /**
-    *  Returns a string made up of repetitions of the specified string.
-    */
-
-    protected String repeatString( String pattern, int repeats )
-    {
-        StringBuffer buffer = new StringBuffer( pattern.length() * repeats );
-        for( int i = 0; i < repeats; i++ )
-        {
-            buffer.append( pattern );
-        }
-
-        return new String( buffer );
-    }
-
-
-   /**
-    *  Returns the end-of-line marker.
-    */
-
-    protected String eol()
-    {
-        return System.getProperty( "line.separator", "\n" );
-    }
-
-
-   /**
-    *  Sets the source, closing any old source.
-    */
-
-    protected void setSource( String path )
-    {
-       if( source != null )
-       {
-           source.close();
-       }
-
-       source = new Source( path, sources == null );
-    }
-
-
-   /**
-    *  Cleans up any state information after a <code>write()</code> operation.
-    */
-
-    protected void cleanup()
-    {
-        if( source != null )
-        { 
-            source.close();
-            source = null;
-        }
-    }
-
-
-
-
-  //---------------------------------------------------------------------------
-  // SOURCE ACCESS
-
-    private class Source
-    {
-        private String         path   = null;    // The path to the source file 
-        private boolean        isFile = false;   // If true, path is a file path to the source
-
-        private BufferedReader file   = null;    // If set, a reader on the current source file
-        private String         line   = null;    // The last line read from the current source file
-        private int            number = 0;       // The last line number read 
-
-
-       /**
-        *  Initializes the <code>SourceFile</code> to the specified path.
-        *  Doesn't do unnecessary work.
-        */
-
-        public Source( String descriptor, boolean isFile )
-        {
-            this.path   = descriptor;
-            this.isFile = isFile;
-        }
-
-
-       /**
-        *  Returns the descriptor specified on construction.
-        */
-
-        public String getDescriptor()
-        {
-            return this.path;
-        }
-
-
-       /**
-        *  Returns a mark-up sample of a source line for error reporting.
-        */
-
-        public String getSample( int lineNumber, int column )
-        {
-            String sample = null;
-    
-            if( getLine(lineNumber) != null )
-            {
-                if( column > 0 )
-                {
-                    String marker = repeatString(" ", column-1) + "^";
-    
-                    if( column > 40 )
-                    {
-                        int start = column - 30 - 1;
-                        int end   = (column + 10 > line.length() ? line.length() : column + 10 - 1);
-                        sample = "   " + line.substring( start, end ) + eol() + "   " + marker.substring( start, marker.length() );
-                    }
-                    else
-                    {
-                        sample = "   " + line + eol() + "   " + marker;
-                    }
-                }
-                else
-                {
-                    sample = line;
-                }
-            }
-
-            return sample;
-        }
-
-
-       /**
-        *  Retrieves the specified line from the specified source file, if possible.
-        *  Returns null if the line cannot be retrieved.
-        */
-
-        public String getLine( int lineNumber )
-        {
-            //
-            // If the file is already past the requisite line, reopen the file
-
-            if( open() && lineNumber < number )
-            {
-                reopen();
-            }
-    
-
-            //
-            // Read in the appropriate line, store it, and return it
-
-            if( file != null )
-            {
-                boolean done = (lineNumber < 0);
-                while( number < lineNumber && !done )
-                {
-                    try
-                    {
-                        line = file.readLine();
-                        number++;
-                    }
-                    catch( Exception e )
-                    {
-                        close();
-                        done = true;
-                    }
-                }
-            }
-
-            return line;
-        }
-
-
-       /**
-        *  Opens the source file for access, if possible.  Won't re-open the file
-        *  if already open.  Returns true if the specified file is open and ready 
-        *  for use.
-        */
-
-        public boolean open( )
-        {
-            if( file == null )
-            {
-                try
-                {
-                    if( isFile )
-                    {
-                        file = new BufferedReader( new FileReader(path) ); 
-                    }
-                    else
-                    {
-                        if( sources.containsKey(path) )
-                        {
-                            file = new BufferedReader( new StringReader((String)sources.get(path)) );
-                        }
-                    }
-                        
-                } 
-                catch( Exception e ) 
-                { 
-                   file = null;
-                }
-            }
-
-            return file != null;
-        }
-
-
-       /**
-        *  Closes the source file, if open.
-        */
-
-        public void close()
-        {
-            if( file != null )
-            {
-                try{ file.close(); } catch( Exception e ) {}
-            }
-    
-            file   = null;
-            line   = null;
-            number = 0;
-        }
-
-
-       /**
-        *  Reopens the source file.
-        */
-
-        protected boolean reopen()
-        {
-            close();
-            return open();
-        }
-    }
 
 }

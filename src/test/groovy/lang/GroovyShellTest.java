@@ -40,6 +40,8 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
@@ -100,7 +102,7 @@ public class GroovyShellTest extends GroovyTestCase {
     
     public void testScriptWithDerivedBaseClass() throws Exception {
         Binding context = new Binding();
-        CompilerConfig config = new CompilerConfig();
+        CompilerConfiguration config = new CompilerConfiguration();
         config.setScriptBaseClass(DerivedScript.class.getName());
         GroovyShell shell = new GroovyShell(context, config);
         Object result = shell.evaluate("x = 'abc'; doSomething(cheese)");

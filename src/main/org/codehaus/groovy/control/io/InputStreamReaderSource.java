@@ -44,24 +44,76 @@
 
  */
 
-package groovy.bugs;
+package org.codehaus.groovy.control.io;
 
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  A ReaderSource for source strings.
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
-public class IanMaceysBug extends TestSupport {
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
-        }
-        catch (CompilationFailedException e) {
-            System.out.println("Worked. Caught: " + e);
-        }
+public class InputStreamReaderSource extends AbstractReaderSource
+{
+    
+  //---------------------------------------------------------------------------
+  // CONSTRUCTION AND SUCH
+      
+    private InputStream stream;  // The InputStream from which we produce a Reader.
+    
+    
+   /**
+    *  Creates the ReaderSource from a File descriptor.
+    */
+    
+    public InputStreamReaderSource( InputStream stream, CompilerConfiguration configuration )
+    {
+        super( configuration );
+        this.stream = stream;
     }
+    
+    
+    
+   /**
+    *  Returns a new Reader on the underlying source object.  
+    */
+    
+    public Reader getReader() throws IOException
+    {
+        if( stream != null )
+        {
+            Reader reader = new InputStreamReader( stream );
+            stream = null;
+            
+            return reader;
+        }
+        
+        return null;
+    }
+
+    
+
+   /**
+    *  Returns true if the source can be restarted (ie. if getReader()
+    *  will return non-null on subsequent calls.
+    */
+    
+    public boolean canReopenSource()
+    {
+        return false;
+    }
+    
+    
+    
+
+    
 }

@@ -37,9 +37,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.codehaus.groovy.control.CompilationFailedException;
+
 import junit.framework.TestCase;
 
-import org.codehaus.groovy.syntax.SyntaxException;
 
 
 /**
@@ -47,12 +48,12 @@ import org.codehaus.groovy.syntax.SyntaxException;
  */
 public class TemplateTest extends TestCase {
     
-    public void testMixedTemplateText() throws SyntaxException, ClassNotFoundException, IOException {
+    public void testMixedTemplateText() throws CompilationFailedException, ClassNotFoundException, IOException {
         Template template = new SimpleTemplateEngine().createTemplate("<%= \"test\" %> of expr and <% test = 1 %>${test} script.");
         assertEquals("test of expr and 1 script.", template.toString());;
     }
     
-    public void testBinding() throws SyntaxException, ClassNotFoundException, IOException {
+    public void testBinding() throws CompilationFailedException, ClassNotFoundException, IOException {
         Map binding = new HashMap();
         binding.put("sam", "pullara");
         Template template = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");

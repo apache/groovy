@@ -34,14 +34,14 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.CompilerConfig;
-
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * Represents the entire contents of a compilation step which consists of one
@@ -54,7 +54,7 @@ public class CompileUnit {
 
     private List modules = new ArrayList();
     private Map classes = new HashMap();
-    private CompilerConfig config;
+    private CompilerConfiguration config;
     private ClassLoader classLoader;
     private CodeSource codeSource;
     private Map cachedClasses = new HashMap();
@@ -62,11 +62,11 @@ public class CompileUnit {
     public static final Object NO_CLASS = new Object();
     
 
-    public CompileUnit(ClassLoader classLoader, CompilerConfig config) {
+    public CompileUnit(ClassLoader classLoader, CompilerConfiguration config) {
     	this(classLoader, null, config);
     }
     
-    public CompileUnit(ClassLoader classLoader, CodeSource codeSource, CompilerConfig config) {
+    public CompileUnit(ClassLoader classLoader, CodeSource codeSource, CompilerConfiguration config) {
         this.classLoader = classLoader;
         this.config = config;
         this.codeSource = codeSource;
@@ -103,7 +103,7 @@ public class CompileUnit {
         return answer;
     }
 
-    public CompilerConfig getConfig() {
+    public CompilerConfiguration getConfig() {
         return config;
     }
 
@@ -190,7 +190,10 @@ public class CompileUnit {
         }
     }
     
-    void addClass(ClassNode node) {
+    /**
+     *  Adds a class to the unit.
+     */
+    public void addClass(ClassNode node) {
         String name = node.getName();
         if (classes.containsKey(name)) {
             throw new RuntimeException(

@@ -49,8 +49,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * This object represents a Groovy script
@@ -150,7 +150,7 @@ public abstract class Script extends GroovyObjectSupport {
      * 
      * @param expression is the Groovy script expression to evaluate
      */
-    public Object evaluate(String expression) throws SyntaxException, IOException {
+    public Object evaluate(String expression) throws CompilationFailedException, IOException {
         GroovyShell shell = new GroovyShell(binding);
         return shell.evaluate(expression);
     }
@@ -161,7 +161,7 @@ public abstract class Script extends GroovyObjectSupport {
      * 
      * @param file is the Groovy script to evaluate
      */
-    public Object evaluate(File file) throws SyntaxException, IOException {
+    public Object evaluate(File file) throws CompilationFailedException, IOException {
         GroovyShell shell = new GroovyShell(binding);
         return shell.evaluate(file);
     }
@@ -169,7 +169,7 @@ public abstract class Script extends GroovyObjectSupport {
     /**
      * A helper method to allow scripts to be run taking command line arguments
      */
-    public void run(File file, String[] arguments) throws SyntaxException, IOException {
+    public void run(File file, String[] arguments) throws CompilationFailedException, IOException {
         GroovyShell shell = new GroovyShell(binding);
         shell.run(file, arguments);
     }

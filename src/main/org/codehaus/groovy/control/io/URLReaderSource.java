@@ -44,24 +44,54 @@
 
  */
 
-package groovy.bugs;
+package org.codehaus.groovy.control.io;
 
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
+
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  A ReaderSource for source files.
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
-public class IanMaceysBug extends TestSupport {
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
-        }
-        catch (CompilationFailedException e) {
-            System.out.println("Worked. Caught: " + e);
-        }
+public class URLReaderSource extends AbstractReaderSource
+{
+  //---------------------------------------------------------------------------
+  // CONSTRUCTION AND SUCH
+      
+    private URL url;  // The URL from which we produce Readers.
+    
+    
+   /**
+    *  Creates the ReaderSource from a File descriptor.
+    */
+    
+    public URLReaderSource( URL url, CompilerConfiguration configuration )
+    {
+        super( configuration );
+        this.url = url;
     }
+    
+    
+    
+   /**
+    *  Returns a new Reader on the underlying source object.  
+    */
+    
+    public Reader getReader() throws IOException
+    {
+        return new InputStreamReader( url.openStream(), configuration.getSourceEncoding() );
+    }
+    
+    
+    
+ 
 }
