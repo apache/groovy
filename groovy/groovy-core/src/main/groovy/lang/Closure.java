@@ -174,7 +174,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         try {
             if (arguments instanceof Object[]) {
                 Object[] parameters = (Object[]) arguments;
-                if (parameters == null || parameters.length == 0) {
+                if (parameters == null) {
                     return this.doCallMethod.invoke(this, noParameters);
                 }
                 else {
@@ -212,10 +212,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     public void setDelegate(Object delegate) {
         this.delegate = delegate;
     }
-
+    
     /**
-     * Allows access to the 
+     * @return the parameter types of this closure
      */
+    public Class[] getParameterTypes() {
+        return doCallMethod.getParameterTypes();
+    }
+    
     /**
      * Allows the closure to be cloned
      */
