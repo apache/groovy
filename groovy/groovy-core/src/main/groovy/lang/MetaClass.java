@@ -1065,7 +1065,6 @@ public class MetaClass {
                 e);
         }
         catch (IllegalArgumentException e) {
-            e.printStackTrace();
             if (coerceGStrings(argumentArray)) {
                 try {
                     return doMethodInvoke(object, method, argumentArray);
