@@ -511,7 +511,7 @@ public class DefaultGroovyMethods {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (comparator.compare(value, answer) > 0) {
+            if (answer == null || comparator.compare(value, answer) > 0) {
                 answer = value;
             }
         }
@@ -541,7 +541,7 @@ public class DefaultGroovyMethods {
         Object answer = null;
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (comparator.compare(value, answer) < 0) {
+            if (answer == null || comparator.compare(value, answer) < 0) {
                 answer = value;
 
             }
