@@ -188,6 +188,10 @@ public class XMLRPCMessageProcessor extends MinML {
 	}
 	
 	public static StringBuffer emit(final StringBuffer buffer, final Object param) throws SAXException {
+		if (param == null) {
+			throw new SAXException("an XML-RPC data value cannot be null");
+		}
+		
 		final Emitter emitter = (Emitter)elements.get(param.getClass());
 		
 		if (emitter == null) {
@@ -209,8 +213,13 @@ public class XMLRPCMessageProcessor extends MinML {
 				
 				while (iterator.hasNext()) {
 				final Map.Entry entry = (Map.Entry)iterator.next();
+				final Object name = entry.getKey();
+				
+					if (name == null) {
+						throw new SAXException("the name of a struct element cannot be null");
+					}
 					
-					emit(encodeString(buffer.append("<member><name>"), entry.getKey().toString()).append("</name>"), entry.getValue()).append("</member>");
+					emit(encodeString(buffer.append("<member><name>"), name.toString()).append("</name>"), entry.getValue()).append("</member>");
 				}
 				
 				buffer.append("</struct></value>");
