@@ -44,18 +44,15 @@ class GStringTest extends GroovyTestCase {
         a = "dog" 
         b = "a ${a}"
         
-		//c = b + " cat"
-		c = b.plus(" cat")
+		c = b + " cat"
 
         println("Created ${c}")
         
         assert c.toString() == "a dog cat" : c
         
-        /*
         b += " cat"
         
         assert b.toString() == "a dog cat" : b
-        */
     }
     
     void testAppendGString() {
@@ -66,5 +63,15 @@ class GStringTest extends GroovyTestCase {
         assert b.toString() == "a dog catdog" : b
         
         println("Created ${b}")
+    }
+    
+    void testReturnString() {
+        value = dummyMethod()
+        assert value == "Hello Gromit!"
+    }
+    
+    String dummyMethod() {
+        name = "Gromit"
+        return "Hello ${name}!"
     }
 }
