@@ -69,9 +69,9 @@ class HelloWorld extends GroovyTestCase {
     void testClosure() {
         def list = [1, 2, 3]
 
-        println "list is $list"
+        //println "list is $list"
 
-        //list.each { e | println "List contains $e" }
+        list.each {(e)| println("List contains $e") }
     }
 
 }

@@ -689,6 +689,8 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         else {
             assertNodeType(IDENT, node);
             name = node.getText();
+        }
+        if (elist == null) {
             elist = node.getNextSibling();
         }
 
@@ -707,6 +709,10 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     expressionList.add(expression(node));
                     break;
 
+                case CLOSED_BLOCK:
+                    expressionList.add(closureExpression(node));
+                    break;
+
                 default:
                     onUnknownAST(node);
             }
@@ -715,6 +721,14 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
 
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, new ArgumentListExpression(expressionList));
         return expression;
+    }
+
+    protected Object closureExpression(AST node) {
+        AST paramNode = node.getFirstChild();
+        Parameter[] parameters = parameters(paramNode);
+        AST codeNode = paramNode.getNextSibling();
+        Statement code = statement(codeNode);
+        return new ClosureExpression(parameters, code);
     }
 
     protected Expression gstring(AST expression) {
