@@ -42,7 +42,7 @@ class MapConstructionTest extends GroovyTestCase {
         
         result = 0
         text = ""
-        for e in m {
+        for ( e in m ) {
             result = result + e.key
             text = text + e.value
         }
