@@ -15,32 +15,32 @@ class SqlTest extends GroovyTestCase {
     }
     
     void testQueryUsingColumnIndex() {
-    	sql = createSql()
-    	
-    	answer = null
-    	
-    	sql.eachRow("select count(*) from PERSON") { answer = it[0] }
-    	
-    	println "Found the count of ${answer}"
-    	
-    	assert answer == 3
-    }
+	    	sql = createSql()
+	    	
+	    	answer = null
+	    	
+	    	sql.eachRow("select count(*) from PERSON") { answer = it[0] }
+	    	
+	    	println "Found the count of ${answer}"
+	    	
+	    	assert answer == 3
+	    }
     
     void testQueryUsingNegativeColumnIndex() {
-    	sql = createSql()
+	    	sql = createSql()
 
 		first = null
 		last = null
 		    	
-    	sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
-    		first = row[-2]
-    		last = row[-1]
-    	}
+	    	sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row |
+	    		first = row[-2]
+	    		last = row[-1]
+	    	}
+	    	
+	    	println "Found name ${first} ${last}"
     	
-    	println "Found name ${first} ${last}"
-    	
-    	assert first == "James"
-    	assert last == "Strachan"
+	    	assert first == "James"
+	    	assert last == "Strachan"
     }
     
     void testSqlQueryWithWhereClause() {
@@ -56,6 +56,14 @@ class SqlTest extends GroovyTestCase {
         foo = "cheese"
         bar = "edam"
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
+    }
+    
+    void testSqlQueryWithIncorrectlyQuotedDynamicExpressions() {
+        sql = createSql()     
+        
+        foo = "cheese"
+        bar = "edam"
+        sql.eachRow("select * from FOOD where type='${foo}' and name != '${bar}'") { println("Found cheese ${it.name}") }
     }
     
     void testDataSet() {
@@ -79,7 +87,7 @@ class SqlTest extends GroovyTestCase {
         nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
         if(nRows == 0){
             sql.executeUpdate("insert into FOOD (type,name) values (${foo},${bar})");
-    	}
+    		}
     }
     
     protected createSql() {
