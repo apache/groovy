@@ -9,10 +9,10 @@ class GroovyMethodsTest extends GroovyTestCase {
 	property count
 	
     void testJoin() {
-        assert [2, 4, 6].join('-') == '2-4-6'
-        assert ['edam', 'cheddar', 'brie'].join(', ') == "'edam', 'cheddar', 'brie'"
+        assert [2, 4, 6].join("-") == "2-4-6"
+        assert ["edam", "cheddar", "brie"].join(", ") == '"edam", "cheddar", "brie"'
         
-        print( ['abc', 5, 2.34].join(', ') )
+        print( ["abc", 5, 2.34].join(", ") )
     }
     
     void testTimes() {
