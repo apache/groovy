@@ -147,3 +147,12 @@ assert x == "!"
 name = text[-7..-2]
 assert name == "gromit"
 {code}
+
+Also if you use a backwards range (the starting index is greater than the end index) then the answer is reversed.
+
+
+{code:groovy}
+text = "nice cheese gromit!"
+name = text[3..1]
+assert name == "eci"
+{code}
