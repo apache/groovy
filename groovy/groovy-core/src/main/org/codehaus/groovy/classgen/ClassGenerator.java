@@ -138,6 +138,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
 	MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
 	MethodCaller notObject = MethodCaller.newStatic(InvokerHelper.class, "notObject");
+	MethodCaller regexPattern = MethodCaller.newStatic(InvokerHelper.class, "regexPattern");
 
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
@@ -811,8 +812,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitRegexExpression(RegexExpression expression) {
-        // TODO Auto-generated method stub
-
+    	expression.getRegex().visit(this);
+        regexPattern.call(cv);
     }
 
     public void visitConstantExpression(ConstantExpression expression) {
