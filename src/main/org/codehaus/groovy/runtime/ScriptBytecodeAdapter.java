@@ -59,7 +59,7 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class SriptBytecodeAdapter {
+public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {
     };
 /*

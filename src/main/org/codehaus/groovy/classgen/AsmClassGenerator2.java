@@ -104,7 +104,7 @@ import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.RegexSupport;
-import org.codehaus.groovy.runtime.SriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
@@ -147,53 +147,53 @@ public class AsmClassGenerator2 extends ClassGenerator {
     private boolean leftHandExpression;
 
     // cached values
-    MethodCaller invokeMethodMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeMethod");
-    MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeMethodSafe");
-    MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeStaticMethod");
-    MethodCaller invokeConstructorMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeConstructor");
-    MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeConstructorOf");
-    MethodCaller invokeNoArgumentsConstructorOf = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeNoArgumentsConstructorOf");
-    MethodCaller invokeClosureMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeClosure");
-    MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeSuperMethod");
-    MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeNoArgumentsMethod");
-    MethodCaller invokeStaticNoArgumentsMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "invokeStaticNoArgumentsMethod");
+    MethodCaller invokeMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethod");
+    MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSafe");
+    MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod");
+    MethodCaller invokeConstructorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructor");
+    MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructorOf");
+    MethodCaller invokeNoArgumentsConstructorOf = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsConstructorOf");
+    MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
+    MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeSuperMethod");
+    MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsMethod");
+    MethodCaller invokeStaticNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticNoArgumentsMethod");
 
-    MethodCaller asIntMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "asInt");
-    MethodCaller asTypeMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "asType");
-    MethodCaller getPropertyMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "getProperty");
-    MethodCaller getPropertySafeMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "getPropertySafe");
-    MethodCaller setPropertyMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "setProperty");
-    MethodCaller setPropertyMethod2 = MethodCaller.newStatic(SriptBytecodeAdapter.class, "setProperty2");
-    MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(SriptBytecodeAdapter.class, "setPropertySafe2");
-    MethodCaller getGroovyObjectPropertyMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "getGroovyObjectProperty");
-    MethodCaller setGroovyObjectPropertyMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "setGroovyObjectProperty");
-    MethodCaller asIteratorMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "asIterator");
-    MethodCaller asBool = MethodCaller.newStatic(SriptBytecodeAdapter.class, "asBool");
-    MethodCaller notBoolean = MethodCaller.newStatic(SriptBytecodeAdapter.class, "notBoolean");
-    MethodCaller notObject = MethodCaller.newStatic(SriptBytecodeAdapter.class, "notObject");
-    MethodCaller regexPattern = MethodCaller.newStatic(SriptBytecodeAdapter.class, "regexPattern");
-    MethodCaller negation = MethodCaller.newStatic(SriptBytecodeAdapter.class, "negate");
-    MethodCaller convertPrimitiveArray = MethodCaller.newStatic(SriptBytecodeAdapter.class, "convertPrimitiveArray");
-    MethodCaller convertToPrimitiveArray = MethodCaller.newStatic(SriptBytecodeAdapter.class, "convertToPrimitiveArray");
+    MethodCaller asIntMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asInt");
+    MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+    MethodCaller getPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getProperty");
+    MethodCaller getPropertySafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getPropertySafe");
+    MethodCaller setPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty");
+    MethodCaller setPropertyMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty2");
+    MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setPropertySafe2");
+    MethodCaller getGroovyObjectPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectProperty");
+    MethodCaller setGroovyObjectPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectProperty");
+    MethodCaller asIteratorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asIterator");
+    MethodCaller asBool = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asBool");
+    MethodCaller notBoolean = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notBoolean");
+    MethodCaller notObject = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notObject");
+    MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
+    MethodCaller negation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "negate");
+    MethodCaller convertPrimitiveArray = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "convertPrimitiveArray");
+    MethodCaller convertToPrimitiveArray = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "convertToPrimitiveArray");
 
-    MethodCaller compareIdenticalMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareIdentical");
-    MethodCaller compareEqualMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareEqual");
-    MethodCaller compareNotEqualMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareNotEqual");
-    MethodCaller compareToMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareTo");
-    MethodCaller findRegexMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "findRegex");
-    MethodCaller matchRegexMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "matchRegex");
-    MethodCaller compareLessThanMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareLessThan");
-    MethodCaller compareLessThanEqualMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareLessThanEqual");
-    MethodCaller compareGreaterThanMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareGreaterThan");
-    MethodCaller compareGreaterThanEqualMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "compareGreaterThanEqual");
-    MethodCaller isCaseMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "isCase");
+    MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
+    MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
+    MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
+    MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
+    MethodCaller findRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "findRegex");
+    MethodCaller matchRegexMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "matchRegex");
+    MethodCaller compareLessThanMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareLessThan");
+    MethodCaller compareLessThanEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareLessThanEqual");
+    MethodCaller compareGreaterThanMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareGreaterThan");
+    MethodCaller compareGreaterThanEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareGreaterThanEqual");
+    MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
 
-    MethodCaller createListMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "createList");
-    MethodCaller createTupleMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "createTuple");
-    MethodCaller createMapMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "createMap");
-    MethodCaller createRangeMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "createRange");
+    MethodCaller createListMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createList");
+    MethodCaller createTupleMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createTuple");
+    MethodCaller createMapMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createMap");
+    MethodCaller createRangeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "createRange");
 
-    MethodCaller assertFailedMethod = MethodCaller.newStatic(SriptBytecodeAdapter.class, "assertFailed");
+    MethodCaller assertFailedMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "assertFailed");
 
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
@@ -464,7 +464,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
                 Class type = null;
                 try {
                     type = loadClass(fieldNode.getType());
-                    fieldValue = /*SriptBytecodeAdapter.*/asType(value, type);
+                    fieldValue = /*ScriptBytecodeAdapter.*/asType(value, type);
                 }
                 catch (Exception e) {
                     log.warning("Caught unexpected: " + e);
@@ -3596,7 +3596,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
 
     /**
      * note: leave the primitive boolean on staock for comparison expressions. All the result types need to match the
-     * utility methods in the SriptBytecodeAdapter.
+     * utility methods in the ScriptBytecodeAdapter.
      * @param compareMethod
      * @param expression
      */
@@ -4905,7 +4905,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
         }
 
 
-        //MetaMethod mmethod = SriptBytecodeAdapter.getInstance().getMetaRegistry().getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
+        //MetaMethod mmethod = ScriptBytecodeAdapter.getInstance().getMetaRegistry().getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
         // todo is this thread safe?
         MetaMethod mmethod = MetaClassRegistry.getIntance(MetaClassRegistry.DONT_LOAD_DEFAULT).getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
         if (mmethod!= null) {
@@ -5450,7 +5450,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
         }
 
 
-        //MetaMethod mmethod = SriptBytecodeAdapter.getInstance().getMetaRegistry().getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
+        //MetaMethod mmethod = ScriptBytecodeAdapter.getInstance().getMetaRegistry().getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
         // todo is this thread safe?
         MetaMethod mmethod = MetaClassRegistry.getIntance(MetaClassRegistry.DONT_LOAD_DEFAULT).getDefinedMethod(ownerClass, meth, argsArray, isStaticCall);
         if (mmethod!= null) {

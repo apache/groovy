@@ -80,7 +80,7 @@ import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.SriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
@@ -122,7 +122,7 @@ public class Verifier implements GroovyClassVisitor, Constants {
             // lets add a new field for the metaclass
             StaticMethodCallExpression initMetaClassCall =
                 new StaticMethodCallExpression(
-                    SriptBytecodeAdapter.class.getName(),
+                    ScriptBytecodeAdapter.class.getName(),
                     "getMetaClass",
                     VariableExpression.THIS_EXPRESSION);
 
