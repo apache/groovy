@@ -23,6 +23,7 @@
   <property name="javadoc.packages" value="org.codehaus.groovy.*"/>
 
   <!-- junit properties -->
+  <property name="junit.style.dir" value="styles"/>
   <property name="testcase.src.dir" value="test"/>
   <property name="generated.test.src.dir"	value="gentest"/>
   <property name="test.lib.dir" value="testlib"/>
@@ -158,7 +159,7 @@
       <fileset dir="${test.reports.dir}">
         <include name="TEST-*.xml"/>
       </fileset>
-      <report format="frames" todir="${test.reports.dir}"/>
+      <report format="frames" styledir="${junit.style.dir}" todir="${test.reports.dir}"/>
     </junitreport>
     <echo>
 +-------------------------+
