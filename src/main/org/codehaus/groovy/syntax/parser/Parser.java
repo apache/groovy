@@ -927,10 +927,6 @@ public class Parser
                                  expr );
                 break;
             }
-            case ( Token.LEFT_SQUARE_BRACKET ):
-            {
-                break;
-            }
         }
 
         return expr;
