@@ -92,7 +92,7 @@ public class InvokerHelper {
         return getInstance().invokeConstructor(type, arguments);
     }
 
-    public static Object invokeConstructor(Class type, Object arguments) {
+    public static Object invokeConstructorOf(Class type, Object arguments) {
         return getInstance().invokeConstructorOf(type, arguments);
     }
 

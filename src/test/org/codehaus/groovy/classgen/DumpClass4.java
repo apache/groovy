@@ -61,7 +61,7 @@ public class DumpClass4 {
     }
     
     public static void main(String[] args) {
-        Object foo = InvokerHelper.invokeConstructor(DumpClass4.class, null);
+        Object foo = InvokerHelper.invokeConstructorOf(DumpClass4.class, null);
     }
    
     public void run() {
