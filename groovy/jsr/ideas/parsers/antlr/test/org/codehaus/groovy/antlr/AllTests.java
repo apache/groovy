@@ -59,8 +59,6 @@ public class AllTests extends TestSuiteSupport {
         // TODO: Parser decisions to make
         "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
         "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
-        "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
-        "NumberMathTest.groovy",                // TODO: literal numbers in new parser... 
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
 

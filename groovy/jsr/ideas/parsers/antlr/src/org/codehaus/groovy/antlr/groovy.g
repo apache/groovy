@@ -3093,6 +3093,7 @@ NUM_INT
 		|	('1'..'9') ('0'..'9')*  {isDecimal=true;}		// non-zero decimal
 		)
 		(	('l'|'L') { _ttype = NUM_LONG; }
+		|	('i'|'I') { _ttype = NUM_INT; }
 		|	BIG_SUFFIX { _ttype = NUM_BIG_INT; }
 
 		// only check to see if it's a float if looks like decimal so far

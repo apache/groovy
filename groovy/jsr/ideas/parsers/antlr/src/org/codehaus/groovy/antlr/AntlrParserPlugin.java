@@ -942,7 +942,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return new NotExpression(expression(node.getFirstChild()));
 
             case UNARY_MINUS:
-                return new NegationExpression(expression(node.getFirstChild()));
+                return negateExpression(node);
 
             case BNOT:
                 return new BitwiseNegExpression(expression(node.getFirstChild()));
@@ -1414,6 +1414,28 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         Statement code = statementListNoChild(codeNode);
         return new ClosureExpression(parameters, code);
+    }
+
+    protected Expression negateExpression(AST negateExpr) {
+        AST node = negateExpr.getFirstChild();
+
+        // if we are a number literal then lets just parse it
+        // as the negation operator on MIN_INT causes rounding to a long
+        String text = node.getText();
+        switch (node.getType()) {
+            case NUM_DOUBLE:
+            case NUM_FLOAT:
+            case NUM_BIG_DECIMAL:
+                return new ConstantExpression(Numbers.parseDecimal("-" + text));
+
+            case NUM_BIG_INT:
+            case NUM_INT:
+            case NUM_LONG:
+                return new ConstantExpression(Numbers.parseInteger("-" + text));
+
+            default:
+                return new NegationExpression(expression(node));
+        }
     }
 
     protected ConstantExpression decimalExpression(AST node) {
