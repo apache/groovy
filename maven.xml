@@ -97,13 +97,14 @@
 
     <!-- Create a tar.gz file -->
     <tar longfile="gnu" tarfile="${maven.dist.dir}/${maven.final.name}.tar">
-      <tarfileset dir="${maven.dist.bin.archive.dir}" mode="755">
-        <include name="${maven.dist.bin.archive.dir}/bin/*"/>
+      <tarfileset dir="${maven.dist.bin.archive.dir}" >
+        <exclude name="groovy-${pom.currentVersion}/bin/**" />
       </tarfileset>
-      <tarfileset dir="${maven.dist.bin.archive.dir}">
-        <exclude name="${maven.dist.bin.archive.dir}/bin/*"/>
+      <tarfileset dir="${maven.dist.bin.archive.dir}" mode ="0755">
+        <include name="groovy-${pom.currentVersion}/bin/**"  />
       </tarfileset>
     </tar>
+
 
     <gzip
       zipfile="${maven.dist.dir}/${maven.final.name}.tar.gz"
