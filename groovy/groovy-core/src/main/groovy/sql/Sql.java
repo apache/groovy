@@ -38,6 +38,7 @@ import groovy.lang.GString;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,6 +67,82 @@ public class Sql {
     private DataSource dataSource;
     private Connection useConnection;
 
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * 
+     * @param url
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url) throws SQLException {
+        Connection connection = DriverManager.getConnection(url);
+        return new Sql(connection);
+    }
+
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * 
+     * @param url
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url, Properties properties) throws SQLException {
+        Connection connection = DriverManager.getConnection(url, properties);
+        return new Sql(connection);
+    }
+
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * and driver class name
+     * 
+     * @param url
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url, Properties properties, String driverClassName) throws SQLException, ClassNotFoundException {
+        loadDriver(driverClassName);
+        return newInstance(url, properties);
+    }
+
+    /**
+     * A helper method which creates a new Sql instance from a JDBC connection URL
+     * and driver class name
+     * 
+     * @param url
+     * @param driverClassName the class name of the driver
+     * @return a new Sql instance with a connection
+     */
+    public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
+        loadDriver(driverClassName);
+        return newInstance(url);
+    }
+    
+
+    /**
+     * Attempts to load the JDBC driver on the thread, current or system class loaders
+     * 
+     * @param driverClassName
+     * @throws ClassNotFoundException
+     */
+    public static void loadDriver(String driverClassName) throws ClassNotFoundException {
+        // lets try the thread context class loader first
+        try {
+            Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
+        }
+        catch (ClassNotFoundException e) {
+            // now lets try the classloader which loaded us
+            try {
+                Sql.class.getClassLoader().loadClass(driverClassName);
+            }
+            catch (ClassNotFoundException e2) {
+                // lets make one final attempt to use the system class loader
+                try {
+                    Class.forName(driverClassName);
+                }
+                catch (ClassNotFoundException e3) {
+                    throw e;
+                }
+            }
+        }
+    }
+    
     /**
      * Constructs an SQL instance using the given DataSource. 
      * Each operation will use a Connection
@@ -394,7 +472,7 @@ public class Sql {
         StringBuffer buffer = new StringBuffer();
         for (int i = 0; i < strings.length; i++) {
             buffer.append(strings[i]);
-            if(i<values.length){
+            if (i < values.length) {
                 buffer.append("?");
             }
         }
@@ -472,5 +550,4 @@ public class Sql {
             }
         }
     }
-
 }
