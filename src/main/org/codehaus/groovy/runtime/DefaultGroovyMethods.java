@@ -1652,6 +1652,18 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
+     * Converts the given string into a Character object
+     * using the first character in the string
+     *
+     * @param self a String
+     * @return the first Character
+     */
+    public static Character toCharacter(String self) {
+        /** @todo use cache? */
+        return new Character(self.charAt(0));
+    }
+
+    /**
      * Tokenize a String
      *
      * @param self a String
@@ -1850,12 +1862,13 @@ public class DefaultGroovyMethods {
         return answer.toString();
     }
 
-    // Number based methods
-    //-------------------------------------------------------------------------
     protected static String toString(Object value) {
         return (value == null) ? "null" : value.toString();
     }
 
+    // Number based methods
+    //-------------------------------------------------------------------------
+    
     /**
      * Increment a Character by one
      *
