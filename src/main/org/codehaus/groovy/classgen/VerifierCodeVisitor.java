@@ -45,8 +45,11 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
 /**
@@ -61,6 +64,12 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
 
     VerifierCodeVisitor(Verifier verifier) {
         this.verifier = verifier;
+    }
+
+    public void visitMethodCallExpression(MethodCallExpression call) {
+        String method = call.getMethod();
+        assertValidIdentifier(method, call);
+        super.visitMethodCallExpression(call);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
@@ -80,5 +89,23 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
         }
         */
         super.visitBinaryExpression(expression);
-    }    
+    }
+
+    public static void assertValidIdentifier(String name, ASTNode node) {
+        int size = name.length();
+        if (size <= 0) {
+            throw new RuntimeParserException("An empty string is not a valid method identifier", node);
+        }
+        char firstCh = name.charAt(0);
+        if (!Character.isJavaIdentifierStart(firstCh) || firstCh == '$') {
+            throw new RuntimeParserException("Invalid method name. Must start with a letter but was: " + name, node);
+        }
+
+        for (int i = 1; i < size; i++) {
+            char ch = name.charAt(i);
+            if (!Character.isJavaIdentifierPart(ch)) {
+                throw new RuntimeParserException("Invalid method name. Invalid character at position: " + (i + 1) + " of value:  " + ch + " in name: " + name, node);
+            }
+        }
+    }
 }
