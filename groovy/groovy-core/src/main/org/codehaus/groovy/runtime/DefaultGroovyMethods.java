@@ -250,6 +250,19 @@ PropertyValue pv = (PropertyValue) itr.next();
         System.out.println(InvokerHelper.toString(value));
     }
 
+  /**
+   *  Printf to a console.  Only works with JDK1.5.
+   *
+   *  @author Russel Winder
+   */
+  public static void printf(Object self, String format, Object[] values) {
+    if ( System.getProperty("java.version").charAt(2) == '5' ) {
+      System.out.printf(format, values) ;
+    } else {
+      throw new RuntimeException ("printf requires JDK1.5.") ;
+    }
+  }
+
     /**
      * @return a String that matches what would be typed into a terminal to
      *         create this object. e.g. [1, 'hello'].inspect() -> [1, "hello"]

@@ -55,7 +55,7 @@ import java.math.BigInteger;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.SriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.Label;
@@ -86,7 +86,7 @@ public class BytecodeHelper implements Constants {
     public void box(Class type) {
         if (type.isPrimitive() && type != void.class) {
             String returnString = "(" + getTypeDescription(type.getName()) + ")Ljava/lang/Object;";
-            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(SriptBytecodeAdapter.class.getName()), "box", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
         }
     }
 
@@ -105,7 +105,7 @@ public class BytecodeHelper implements Constants {
             if (cls == Integer.TYPE) {
                 cv.visitMethodInsn(
                         INVOKESTATIC,
-                        getClassInternalName(SriptBytecodeAdapter.class.getName()),
+                        getClassInternalName(ScriptBytecodeAdapter.class.getName()),
                         "integerValue",
                         "(I)Ljava/lang/Integer;"
                 );
@@ -155,7 +155,7 @@ public class BytecodeHelper implements Constants {
     public void box(String type) {
         if (isPrimitiveType(type) && !type.equals("void")) {
             String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
-            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(SriptBytecodeAdapter.class.getName()), "box", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
             // todo optimize this
         }
     }
@@ -168,7 +168,7 @@ public class BytecodeHelper implements Constants {
             String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type.getName());
             cv.visitMethodInsn(
                 INVOKESTATIC,
-                getClassInternalName(SriptBytecodeAdapter.class.getName()),
+                getClassInternalName(ScriptBytecodeAdapter.class.getName()),
                 type.getName() + "Unbox",
                 returnString);
         }
@@ -180,7 +180,7 @@ public class BytecodeHelper implements Constants {
     public void unbox(String type) {
         if (isPrimitiveType(type) && !type.equals("void")) {
             String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
-            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(SriptBytecodeAdapter.class.getName()), type + "Unbox", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), type + "Unbox", returnString);
         }
     }
 
