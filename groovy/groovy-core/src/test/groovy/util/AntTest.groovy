@@ -43,7 +43,7 @@ class AntTest extends GroovyTestCase {
         
         // now lets iterate over 
         found = false
-        for (f in scanner.iterator()) {
+        for (f in scanner) {
             println("Found file ${f}")
             
             found = true
@@ -60,6 +60,21 @@ class AntTest extends GroovyTestCase {
         ant.junit {
         	test(name:'groovy.util.AntTest')
         }
+    }
+    
+    void testPathBuilding() {
+    	ant = new AntBuilder()
+        
+        value = ant.path {
+    		fileset(dir:"xdocs") {
+    			include(name:"*.wiki")
+    		}
+    	}
+    	
+    	assert value != null
+    	
+    	println "Found path of type ${value.class.name}"
+    	println value
     }
     
 }
