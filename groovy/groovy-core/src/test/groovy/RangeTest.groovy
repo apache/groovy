@@ -5,7 +5,7 @@ class RangeTest extends GroovyTestCase {
 	void testRange() {
 	    x = 0
 
-	    for ( i in 0..10 ) {
+	    for ( i in 0..9 ) {
 	        x = x + i
 	    }
 
@@ -15,7 +15,7 @@ class RangeTest extends GroovyTestCase {
 	void testRangeEach() {
 	    x = 0
 
-	    (0..10).each {
+	    (0..9).each {
 	        x = x + it
 	    }
 
@@ -25,7 +25,7 @@ class RangeTest extends GroovyTestCase {
 	void testRangeStepEach() {
 	    x = 0
 
-	    (0..10).step(3) {
+	    (0..9).step(3) {
 	        x = x + it
 	    }
 
@@ -35,7 +35,7 @@ class RangeTest extends GroovyTestCase {
 	void testRangeStepFor() {
 	    x = 0
 
-	    for (it in (0..10).step(3)) {
+	    for (it in (0..9).step(3)) {
 	        x = x + it
 	    }
 

@@ -93,7 +93,7 @@ EOS
  	    
  	    assert value == "eeee"
  	    
- 	    value = b[0, 1..3]
+ 	    value = b[0, 1..2]
  	    
  	    assert value == "eeeee"
  	}

@@ -4,7 +4,7 @@ class SubscriptTest extends GroovyTestCase {
         list = ['a', 'b', 'c', 'd', 'e']
 		
 		sub = list[2..4]
-		assert sub == ['c', 'd']
+		assert sub == ['c', 'd', 'e']
     }
     
     void testStringSubscript() {
@@ -15,7 +15,7 @@ class SubscriptTest extends GroovyTestCase {
         assert x == "c"
         assert x.class == String
         
-        sub = text[5..11]
+        sub = text[5..10]
         
         assert sub == 'cheese'
     }
@@ -42,19 +42,19 @@ class SubscriptTest extends GroovyTestCase {
 	    list = 100..200
 	    
 	    sub = list[1, 3, 20..25, 33]
-	    assert sub == [101, 103, 120, 121, 122, 123, 124, 133]
+	    assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
 	    
 	    // now lets try it on an array
 	    array = list.toArray()
 	    
 	    sub = array[1, 3, 20..25, 33]
-	    assert sub == [101, 103, 120, 121, 122, 123, 124, 133]
+	    assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
 	}
 	
     void testStringWithSubscriptList() {
         text = "nice cheese gromit!"
         
-        sub = text[1, 2, 3, 5..11]
+        sub = text[1, 2, 3, 5..10]
         
         assert sub == "icecheese"
     }
@@ -77,6 +77,6 @@ class SubscriptTest extends GroovyTestCase {
         assert list.size() == 6
         sublist = list[3]
         assert sublist == 4..10
-        assert sublist == [4, 5, 6, 7, 8, 9]
+        assert sublist == [4, 5, 6, 7, 8, 9, 10]
     }
 }

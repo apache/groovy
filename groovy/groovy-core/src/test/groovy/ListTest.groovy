@@ -69,10 +69,6 @@ class ListTest extends GroovyTestCase {
         
         assert x.size() == 4
         
-        /** @todo parser bug
-
-        index = -1
-        
         x[-1] = 'nice'
         
         assert x[3] == 'nice'
@@ -80,7 +76,6 @@ class ListTest extends GroovyTestCase {
         x[-2] = 'cheese'
         
         assert x[2] == 'cheese'
-        */
     }
     
     void testClosure() {
@@ -155,7 +150,7 @@ class ListTest extends GroovyTestCase {
     
     void testFlattenWithRanges() {
         flat = [1, 3, 20..24, 33].flatten()
-        assert flat == [1, 3, 20, 21, 22, 23, 33]
+        assert flat == [1, 3, 20, 21, 22, 23, 24, 33]
     }
     
     void testRemove() {
