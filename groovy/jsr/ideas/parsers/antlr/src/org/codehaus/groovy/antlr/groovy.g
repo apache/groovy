@@ -1428,7 +1428,7 @@ statement
         |   importStatement
 
 	// switch/case statement
-	|	"switch"^ LPAREN! expression RPAREN! LCURLY!
+	|	"switch"^ LPAREN! expression RPAREN! LCURLY! nls!
 			( casesGroup )*
 		RCURLY!
 

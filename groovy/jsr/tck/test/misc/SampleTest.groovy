@@ -171,6 +171,28 @@ class SampleTest extends GroovyTestCase {
         // TODO parser doesn't return the thrown expression
         throw new Exception("Test exception")
     }
+    
+    void testSwitch() {
+        x = 12
+        switch (x) {
+            case 1:
+                fail "not 1"
+                break
+
+            case  12:
+                println "Worked! Is 12!"
+                break
+
+            case "text":
+                fail "not text"
+                break
+
+            default:
+                fail "Not defailt"
+                break
+        }
+    }
+
 
 
     void testFor() {
@@ -295,29 +317,6 @@ class SampleTest extends GroovyTestCase {
     void testRange() {
         def range = [1..3]
         assert range == [1, 2, 3]
-    }
-
-
-
-    void testSwitch() {
-        x = 12
-        switch (x) {  // TODO the parser doesn't like newline here
-            case 1:
-                fail "not 1"
-                break
-
-            case  12:
-                println "Worked! Is 12!"
-                break
-
-            case "text":
-                fail "not text"
-                break
-
-            default:
-                fail "Not defailt"
-                break
-        }
     }
 
 
