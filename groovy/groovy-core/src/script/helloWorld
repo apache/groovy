@@ -2,6 +2,6 @@
 
 println("Hello world")
 
-for (a in this.args) {
+for (a in args) {
 	println("Argument: " + a)
 }	
