@@ -45,37 +45,44 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * Represents a try { ... } catch () finally {} statement in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyCodeVisitor {
+public class TryCatchFinally extends Statement {
 
-    // statements
-    //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
-    public void visitExpressionStatement(ExpressionStatement statement);
-    public void visitReturnStatement(ReturnStatement statement);
-    public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
+    private Statement tryStatement;
+    private List catchStatements = new ArrayList();
+    private Statement finallyStatement;
+    
 
-    // expressions
-    //-------------------------------------------------------------------------
-    public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitConstantExpression(ConstantExpression expression);
-    public void visitBinaryExpression(BinaryExpression expression);
-    public void visitBooleanExpression(BooleanExpression expression);
-    public void visitTupleExpression(TupleExpression expression);
-    public void visitMapExpression(MapExpression expression);
-    public void visitMapEntryExpression(MapEntryExpression expression);
-    public void visitListExpression(ListExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitRangeExpression(RangeExpression expression);
+    public TryCatchFinally(Statement tryStatement, Statement finallyStatement) {
+        this.tryStatement = tryStatement;
+        this.finallyStatement = finallyStatement;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitTryCatchFinally(this);
+    }
+    
+    public List getCatchStatements() {
+        return catchStatements;
+    }
+
+    public Statement getFinallyStatement() {
+        return finallyStatement;
+    }
+
+    public Statement getTryStatement() {
+        return tryStatement;
+    }
+
+    public void addCatch(CatchStatement catchStatement) {
+        catchStatements.add(catchStatement);
+    }
 }

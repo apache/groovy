@@ -68,6 +68,7 @@ import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
+import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.WhileLoop;
@@ -183,6 +184,11 @@ public class Interpreter implements GroovyCodeVisitor {
     }
 
     public void visitAssertStatement(AssertStatement statement) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitTryCatchFinally(TryCatchFinally finally1) {
         // TODO Auto-generated method stub
 
     }
