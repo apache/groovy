@@ -55,20 +55,18 @@ import groovy.util.GroovyTestCase;
  */
 public class BytecodeHelperTest extends GroovyTestCase {
 
-    BytecodeHelper helper = new BytecodeHelper(null);
-
     public void testTypeName() {
-        assertEquals("[C", helper.getTypeDescription("char[]"));
+        assertEquals("[C", BytecodeHelper.getTypeDescription("char[]"));
     }
 
     public void testMethodDescriptor() {
-        String answer = helper.getMethodDescriptor(char[].class, new Class[0]);
+        String answer = BytecodeHelper.getMethodDescriptor(char[].class, new Class[0]);
         assertEquals("()[C", answer);
 
-        answer = helper.getMethodDescriptor(int.class, new Class[] { long.class });
+        answer = BytecodeHelper.getMethodDescriptor(int.class, new Class[] { long.class });
         assertEquals("(J)I", answer);
 
-        answer = helper.getMethodDescriptor(String[].class, new Class[] { String.class, int.class });
+        answer = BytecodeHelper.getMethodDescriptor(String[].class, new Class[] { String.class, int.class });
         assertEquals("(Ljava/lang/String;I)[Ljava/lang/String;", answer);
        }
 }
