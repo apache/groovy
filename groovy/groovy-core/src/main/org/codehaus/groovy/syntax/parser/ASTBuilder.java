@@ -436,11 +436,16 @@ public class ASTBuilder {
                     statement = forStatement(statementRoot);
                     break;
                 }
-            case (Token.KEYWORD_WHILE) :
-                {
-                    statement = whileStatement(statementRoot);
-                    break;
-                }
+           case (Token.KEYWORD_WHILE) :
+           {
+               statement = whileStatement(statementRoot);
+               break;
+           }
+          case (Token.KEYWORD_DO) :
+          {
+              statement = doWhileStatement(statementRoot);
+              break;
+          }
             case (Token.KEYWORD_TRY) :
                 {
                     statement = tryStatement(statementRoot);
@@ -496,6 +501,13 @@ public class ASTBuilder {
         BlockStatement statementBlock = statementOrStatementBlock(statementRoot.getChild(1));
 
         return new WhileStatement(new BooleanExpression(expr), statementBlock);
+    }
+
+    protected DoWhileStatement doWhileStatement(CSTNode statementRoot) throws ParserException {
+        Expression expr = expression(statementRoot.getChild(1));
+        BlockStatement statementBlock = statementOrStatementBlock(statementRoot.getChild(0));
+
+        return new DoWhileStatement(new BooleanExpression(expr), statementBlock);
     }
 
     protected IfStatement ifStatement(CSTNode statementRoot) throws ParserException {

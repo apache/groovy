@@ -11,15 +11,15 @@ class LoopBreakTest extends GroovyTestCase {
             assert x < 10 : "Should never get here"
         }
         
-        println "worked: value ${x}"
+        println "worked: while completed with value ${x}"
 	}
     
     
-    /* @todo parser
-     
     void testDoWhileWithBreak() {
         x = 0
         do {
+            //println "in do-while loop and x = ${x}"
+            
             if (x == 5) {
                 break
             }
@@ -29,9 +29,8 @@ class LoopBreakTest extends GroovyTestCase {
         }
     	while (true)
         
-        println "worked: value ${x}"
+        println "worked: do-while completed with value ${x}"
     }
-     */
 
     void testForWithBreak() {
         /** @todo commenting out the x = 0 causes bytecode gen error */
@@ -43,6 +42,6 @@ class LoopBreakTest extends GroovyTestCase {
             assert x < 10 : "Should never get here"
         }
         
-        println "worked: value ${x}"
+        println "worked: for loop completed with value ${x}"
     }
  }
