@@ -49,6 +49,7 @@ import groovy.util.BuilderSupport;
 import groovy.util.IndentPrinter;
 
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -71,6 +72,10 @@ public class MarkupBuilder extends BuilderSupport {
 
     public MarkupBuilder(PrintWriter writer) {
         this(new IndentPrinter(writer));
+    }
+
+    public MarkupBuilder(Writer writer) {
+        this(new IndentPrinter(new PrintWriter(writer)));
     }
 
     public MarkupBuilder(IndentPrinter out) {
