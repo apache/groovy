@@ -119,16 +119,16 @@ public class Parser {
 
         if (lt() == Token.KEYWORD_DEF) {
             consume(lt());
-            
+
             while (isModifier(lt())) {
                 consume(modifiers, lt());
             }
             CSTNode type = methodReturnType();
             CSTNode identifier = methodIdentifier();
-            
+
             return methodDeclaration(modifiers, type, identifier);
         }
-        
+
         while (isModifier(lt())) {
             consume(modifiers, lt());
         }
@@ -144,7 +144,7 @@ public class Parser {
                     declaration = interfaceDeclaration(modifiers);
                     break;
                 }
-          default :
+            default :
                 {
                     declaration = statement();
                     /*                
@@ -1328,6 +1328,7 @@ public class Parser {
             case Token.SINGLE_QUOTE_STRING :
             case Token.FLOAT_NUMBER :
             case Token.INTEGER_NUMBER :
+            case Token.KEYWORD_NEW :
                 // lets try parse a method call
                 getTokenStream().checkpoint();
                 try {
