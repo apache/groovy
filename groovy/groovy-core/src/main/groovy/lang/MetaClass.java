@@ -399,16 +399,23 @@ public class MetaClass {
      * @return the given property's value on the object
      */
     public Object getProperty(final Object object, final String property) {
+        MetaMethod metaMethod = null;
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
         if (descriptor != null) {
             Method method = descriptor.getReadMethod();
             if (method == null) {
                 throw new GroovyRuntimeException("Cannot read property: " + property);
             }
-            MetaMethod metaMethod = findMethod(method);
+            metaMethod = findMethod(method);
+            if (metaMethod == null) {
+                // lets try invoke a static getter method
+                metaMethod = findGetter(object, "get" + capitalize(property));
+            }
+        }
+        if (metaMethod != null) {
             return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
         }
-
+        
         if (genericGetMethod != null) {
             Object[] arguments = { property };
             Object answer = doMethodInvoke(object, genericGetMethod, arguments);
