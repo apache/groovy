@@ -7,6 +7,9 @@ import java.util.Arrays
 class ClosureListenerTest extends GroovyTestCase {
      
     void testBug() {
+        value = System.getProperty('java.awt.headless')
+        println("Value of java.awt.headless = ${value}")
+        
         b = new JButton("foo")
         b.actionPerformed = { println("Found ${it}") }
 
