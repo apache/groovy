@@ -1442,6 +1442,9 @@ statement
 	|	s:SEMI {#s.setType(EMPTY_STAT);}
 	*OBS*/
 
+        /// Patch for x = []; x << 5 
+        | conditionalExpression
+	
 	// NOTE: some alternations have been moved to 'branchExpression'
 	;
 
