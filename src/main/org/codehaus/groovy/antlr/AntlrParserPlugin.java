@@ -706,7 +706,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Statement elseBlock = EmptyStatement.INSTANCE;
         node = node.getNextSibling();
         if (node != null) {
-            elseBlock = statement(node);
+			elseBlock = statement(node);
         }
         IfStatement ifStatement = new IfStatement(booleanExpression, ifBlock, elseBlock);
         configureAST(ifStatement, ifNode);
@@ -763,9 +763,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Statement returnStatement(AST node) {
         AST exprNode = node.getFirstChild();
-        if (exprNode == null) {
-            exprNode = node.getNextSibling();
-        }
+
+        // This will pick up incorrect sibling node if 'node' is a plain 'return'
+		//
+		//if (exprNode == null) {
+        //    exprNode = node.getNextSibling();
+        //}
         if (exprNode != null) {
             Expression expression = expression(exprNode);
             if (expression instanceof ConstantExpression) {
