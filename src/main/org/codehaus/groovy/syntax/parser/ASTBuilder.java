@@ -14,6 +14,7 @@ import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.AssertStatement;
+import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.syntax.Token;
 
@@ -379,6 +380,11 @@ public class ASTBuilder
                 statement = forStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_RETURN ):
+            {
+                statement = returnStatement( statementRoot );
+                break;
+            }
             default:
             {
                 statement = expressionStatement( statementRoot );
@@ -386,6 +392,11 @@ public class ASTBuilder
         }
 
         return statement;
+    }
+
+    protected ReturnStatement returnStatement(CSTNode statementRoot)
+    {
+        return new ReturnStatement( expression( statementRoot.getChild( 0 ) ) );
     }
 
     protected ForLoop forStatement(CSTNode statementRoot)

@@ -558,6 +558,8 @@ public class Parser
             }
             case ( Token.KEYWORD_RETURN ):
             {
+                statement = returnStatement();
+                consume( Token.SEMICOLON );
                 break;
             }
             case ( Token.KEYWORD_ASSERT ):
@@ -572,6 +574,16 @@ public class Parser
                 consume( Token.SEMICOLON );
             }
         }
+
+        return statement;
+    }
+
+    protected CSTNode returnStatement()
+        throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_RETURN );
+
+        statement.addChild( expression() );
 
         return statement;
     }
