@@ -1,4 +1,4 @@
-// $ANTLR 2.7.5 (20050128): "groovy.g" -> "GroovyLexer.java"$
+// $ANTLR 2.7.2: "groovy.g" -> "GroovyLexer.java"$
 
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
