@@ -934,7 +934,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case QUESTION:
                 return ternaryExpression(node);
 
-            case OPTIONAL_ARG:
+            case OPTIONAL_DOT:
+            case SPREAD_DOT:
             case DOT:
                 return dotExpression(node);
 
@@ -961,7 +962,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SPREAD_ARG:
                 return spreadExpression(node);
 
-            case METHOD_POINTER:
+            case MEMBER_POINTER:
                 return methodPointerExpression(node);
 
             case INDEX_OP:
@@ -1250,27 +1251,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST elist = listNode.getFirstChild();
         assertNodeType(ELIST, elist);
 
-        AST node = elist.getFirstChild();
-        if (isType(LABELED_ARG, node)) {
-            do {
-                expressions.add(mapEntryExpression(node));
-                node = node.getNextSibling();
+        for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
+            // check for stray labeled arguments:
+            switch (node.getType()) {
+            case LABELED_ARG:       assertNodeType(COMMA, node);       break;  // helpful error?
+            case SPREAD_MAP_ARG:    assertNodeType(SPREAD_ARG, node);  break;  // helpful error
             }
-            while (isType(LABELED_ARG, node));
-
-            MapExpression mapExpression = new MapExpression(expressions);
-            configureAST(mapExpression, listNode);
-            return mapExpression;
+            expressions.add(expression(node));
         }
-        else {
-            while (node != null) {
-                expressions.add(expression(node));
-                node = node.getNextSibling();
-            }
-            ListExpression listExpression = new ListExpression(expressions);
-            configureAST(listExpression, listNode);
-            return listExpression;
-        }
+        ListExpression listExpression = new ListExpression(expressions);
+        configureAST(listExpression, listNode);
+        return listExpression;
     }
 
     /**
@@ -1279,10 +1270,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression mapExpression(AST mapNode) {
         List expressions = new ArrayList();
         AST elist = mapNode.getFirstChild();
-        assertNodeType(ELIST, elist);
-
-        for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
-            expressions.add(mapEntryExpression(node));
+        if (elist != null) {  // totally empty in the case of [:]
+            assertNodeType(ELIST, elist);
+            for (AST node = elist.getFirstChild(); node != null; node = node.getNextSibling()) {
+                switch (node.getType()) {
+                case LABELED_ARG:
+                case SPREAD_MAP_ARG:
+                    break;  // legal cases
+                case SPREAD_ARG:
+                    assertNodeType(SPREAD_MAP_ARG, node);  break;  // helpful error
+                default:
+                    assertNodeType(LABELED_ARG, node);  break;  // helpful error
+                }
+                expressions.add(mapEntryExpression(node));
+            }
         }
         MapExpression mapExpression = new MapExpression(expressions);
         configureAST(mapExpression, mapNode);
@@ -1410,7 +1411,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     return attributeExpression;
                 }
                 String property = identifier(identifierNode);
-                PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() == OPTIONAL_ARG);
+                PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() != DOT);
                 configureAST(propertyExpression, node);
                 return propertyExpression;
             }
@@ -1440,7 +1441,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
         AST elist = null;
-        boolean safe = isType(OPTIONAL_ARG, node);
+        boolean safe = isType(OPTIONAL_DOT, node);
         if (isType(DOT, node) || safe) {
             AST objectNode = node.getFirstChild();
             elist = node.getNextSibling();
@@ -1511,6 +1512,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression arguments(AST elist) {
         List expressionList = new ArrayList();
+        // FIXME: all labeled arguments should follow any unlabeled arguments
         boolean namedArguments = false;
         for (AST node = elist; node != null; node = node.getNextSibling()) {
             if (isType(ELIST, node)) {
@@ -1764,7 +1766,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getFirstChild();
         }
         String answer = null;
-        if (isType(DOT, node) || isType(OPTIONAL_ARG, node)) {
+        if (isType(DOT, node) || isType(OPTIONAL_DOT, node)) {
             answer = qualifiedName(node);
         }
         else if (isPrimitiveTypeLiteral(node)) {
