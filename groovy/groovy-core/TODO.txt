@@ -1,6 +1,14 @@
 Things to Test
 ==============
 
+* UberJar for unix shell scripts?
+
+* test methods which return a specific type
+
+* why do the try/catch tests fail when run inside an IDE?
+
+* test print("foo " + valueThatsNull)
+
 * test script with args when run as main
 
 * run all the scripts as part of a unit test
@@ -13,12 +21,6 @@ Things to Test
 		in general class expression
 
 * tidy up javadoc
-
-* test methods which return a specific type
-
-* expression "foo" if there's no variable should call getProperty
-
-* test print("foo " + valueThatsNull)
 
 * test date range using Range object
 

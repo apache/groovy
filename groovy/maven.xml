@@ -1,6 +1,6 @@
 <project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" >
 
-  <goal name="default" prereqs="clean, jar:jar"/>
+  <goal name="default" prereqs="clean, groovy:make-install"/>
   
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
