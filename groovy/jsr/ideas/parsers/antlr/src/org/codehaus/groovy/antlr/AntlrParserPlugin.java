@@ -819,6 +819,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case MAP_CONSTRUCTOR:
                 return mapExpression(node);
 
+            case LABELED_ARG:
+                return mapEntryExpression(node);
+
             case INDEX_OP:
                 return indexExpression(node);
 
@@ -1172,8 +1175,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             elist = node.getNextSibling();
         }
 
-        ArgumentListExpression arguments = arguments(elist);
-
+        Expression arguments = arguments(elist);
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
         configureAST(expression, methodCallNode);
         return expression;
@@ -1188,26 +1190,37 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String name = resolvedName(node);
         AST elist = node.getNextSibling();
 
-        ArgumentListExpression arguments = arguments(elist);
+        Expression arguments = arguments(elist);
         ConstructorCallExpression expression = new ConstructorCallExpression(name, arguments);
         configureAST(expression, constructorCallNode);
         return expression;
     }
 
-    protected ArgumentListExpression arguments(AST elist) {
+    protected Expression arguments(AST elist) {
         List expressionList = new ArrayList();
+        boolean namedArguments = false;
         for (AST node = elist; node != null; node = node.getNextSibling()) {
             if (isType(ELIST, node)) {
                 for (AST child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-                    expressionList.add(expression(child));
+                    namedArguments |= addArgumentExpression(child, expressionList);
                 }
             }
             else {
-                expressionList.add(expression(node));
+                namedArguments |= addArgumentExpression(node, expressionList);
             }
         }
-        ArgumentListExpression arguments = new ArgumentListExpression(expressionList);
-        return arguments;
+        if (namedArguments) {
+            return new NamedArgumentListExpression(expressionList);
+        }
+        else {
+            return new ArgumentListExpression(expressionList);
+        }
+    }
+
+    protected boolean addArgumentExpression(AST node, List expressionList) {
+        Expression expression = expression(node);
+        expressionList.add(expression);
+        return expression instanceof MapEntryExpression;
     }
 
     protected Expression expressionList(AST node) {
