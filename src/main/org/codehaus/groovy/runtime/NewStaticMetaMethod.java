@@ -36,8 +36,6 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.MetaMethod;
 
-import java.lang.reflect.Modifier;
-
 /**
  * A MetaMethod implementation where the underlying method is really a static
  * helper method on some class.
