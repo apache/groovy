@@ -105,7 +105,9 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 											  "\t\t\t<struct>\n" +
 											  "\t\t\t\t<member>\n" +
 											  "\t\t\t\t\t<name>faultCode</name>\n" +
-											  "\t\t\t\t\t<value><int>0</int></value>\n" +
+											  "\t\t\t\t\t<value><int>").getBytes();
+	
+	private static final byte[] middleError = ("</int></value>\n" +
 											  "\t\t\t\t</member>\n" +
 											  "\t\t\t\t<member>\n" +
 											  "\t\t\t\t\t<name>faultString</name>\n" +
@@ -225,14 +227,27 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							out.write(endResponse);
 						}
 						catch (final Throwable e) {
-//						e.printStackTrace();
-						final String message = e.getMessage();
-						final byte[] error = ((message == null) ? endError.getClass().getName() : e.getMessage()).getBytes();
+						e.printStackTrace();
+						final String message;
+						final int codeValue;
 							
-							out.write(String.valueOf(startError.length + error.length + endError.length).getBytes());
+							if (e instanceof XMLRPCFailException) {
+								message = ((XMLRPCFailException)e).getFaultString();
+								codeValue = ((XMLRPCFailException)e).getFaultCode();
+							} else {
+								message = e.getMessage();
+								codeValue = 0;
+							}
+							
+							final byte[] error = ((message == null) ? e.getClass().getName() : message).getBytes();
+							final byte[] code = String.valueOf(codeValue).getBytes();
+							
+							out.write(String.valueOf(startError.length + code.length + middleError.length + error.length + endError.length).getBytes());
 							out.write(endOfLine);
 							out.write(endOfLine);
 							out.write(startError);
+							out.write(code);
+							out.write(middleError);
 							out.write(error);
 							out.write(endError);
 						}
@@ -255,8 +270,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	}
 	
 	public void returnFault(String msg, int code) {
-		// TODO: implement this
-		throw new RuntimeException(msg);
+		throw new XMLRPCFailException(msg, code);
 	}
 	
 	public void setupDefaultMethod(final Closure defaultMethod) {
