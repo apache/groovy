@@ -5,6 +5,8 @@
   <body>
     <links>
       <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
+      <item name="IRC"				   href="http://irc.codehaus.org/channels/groovy/"/>
+      
       <!--
       <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=XXX"/>
       -->
