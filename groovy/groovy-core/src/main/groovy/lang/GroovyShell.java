@@ -113,6 +113,10 @@ public class GroovyShell extends GroovyObjectSupport {
         this(parent, binding, null);
     }
 
+    public GroovyShell(ClassLoader parent) {
+        this(parent, new Binding(), null);
+    }
+
     public GroovyShell(final ClassLoader parent, Binding binding, final CompilerConfiguration config) {
         this.loader = 
             	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {

@@ -175,7 +175,7 @@ public class GroovyEngine extends BSFEngineImpl {
         super.initialize(mgr, lang, declaredBeans);
 
         // create a shell
-        shell = new GroovyShell();
+        shell = new GroovyShell(mgr.getClassLoader());
 
         // register the mgr with object name "bsf"
         shell.setVariable("bsf", new BSFFunctions(mgr, this));

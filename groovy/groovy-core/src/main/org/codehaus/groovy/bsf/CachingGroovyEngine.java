@@ -50,6 +50,7 @@ import org.apache.bsf.BSFException;
 import org.apache.bsf.BSFManager;
 import org.apache.bsf.util.BSFFunctions;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * A Caching implementation of the GroovyEngine
@@ -118,16 +119,18 @@ public class CachingGroovyEngine extends GroovyEngine {
     /**
      * Initialize the engine.
      */
-    public void initialize(BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
+    public void initialize(final BSFManager mgr, String lang, Vector declaredBeans) throws BSFException {
         super.initialize(mgr, lang, declaredBeans);
-        parent = Thread.currentThread().getContextClassLoader();
+        parent = mgr.getClassLoader();
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
         final ClassLoader finalParent = parent;
         this.loader = 
         	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
         		public Object run() {
-    				return new GroovyClassLoader(finalParent); 
+                    CompilerConfiguration configuration = new CompilerConfiguration();
+                    configuration.setClasspath(mgr.getClassPath());
+                    return new GroovyClassLoader(finalParent, configuration);
         		}
         	});
         execScripts = new HashMap();
