@@ -240,6 +240,10 @@ tokens {
 
     List warningList;
     public List getWarningList() { return warningList; }
+    
+    boolean compatibilityMode = true;  // for now
+    public boolean isCompatibilityMode() { return compatibilityMode; }
+    public void setCompatibilityMode(boolean z) { compatibilityMode = z; }
 
     GroovyLexer lexer;
     public GroovyLexer getLexer() { return lexer; }
@@ -568,13 +572,13 @@ typeArguments
 {int currentLtLevel = 0;}
     :
         {currentLtLevel = ltCounter;}
-        LT! {ltCounter++;}
+        LT! {ltCounter++;} nls!
         typeArgument
         (   options{greedy=true;}: // match as many as possible
             {inputState.guessing !=0 || ltCounter == currentLtLevel + 1}?
             COMMA! nls! typeArgument
         )*
-
+        nls!
         (   // turn warning off since Antlr generates the right code,
             // plus we have our semantic predicate below
             options{generateAmbigWarnings=false;}:
@@ -591,16 +595,16 @@ typeArguments
 // this gobbles up *some* amount of '>' characters, and counts how many
 // it gobbled.
 protected typeArgumentsOrParametersEnd
-    :   GT! {ltCounter-=1;}
-    |   SR! {ltCounter-=2;}
-    |   BSR! {ltCounter-=3;}
+    :   GT! {ltCounter-=1;} nls!
+    |   SR! {ltCounter-=2;} nls!
+    |   BSR! {ltCounter-=3;} nls!
     ;
 
 // Restriction on wildcard types based on super class or derrived class
 typeArgumentBounds
     {boolean isUpperBounds = false;}
     :
-        ( "extends"! {isUpperBounds=true;} | "super"! ) classOrInterfaceType[false]
+        ( "extends"! {isUpperBounds=true;} | "super"! ) nls! classOrInterfaceType[false] nls!
         {
             if (isUpperBounds)
             {
@@ -690,7 +694,7 @@ modifiersInternal
 
             // 'def' is an empty modifier, for disambiguating declarations
             {seenDef++ == 0}?       // do not allow multiple "def" tokens
-            "def"!
+            "def"! nls!
         |
             // Note: Duplication of modifiers is detected when walking the AST.
             modifier nls!
@@ -752,7 +756,7 @@ anntotationMemberValuePairs
     ;
 
 annotationMemberValuePair!
-    :   i:IDENT ASSIGN! v:annotationMemberValueInitializer
+    :   i:IDENT ASSIGN! nls! v:annotationMemberValueInitializer
             {#annotationMemberValuePair = #(#[ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR"], i, v);}
     ;
 
@@ -790,7 +794,7 @@ annotationMemberArrayValueInitializer
     ;
 
 superClassClause!
-    :   ( "extends" c:classOrInterfaceType[false] )?
+    :   ( "extends" nls! c:classOrInterfaceType[false] nls! )?
         {#superClassClause = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],c);}
     ;
 
@@ -849,8 +853,9 @@ typeParameters
 {int currentLtLevel = 0;}
     :
         {currentLtLevel = ltCounter;}
-        LT! {ltCounter++;}
+        LT! {ltCounter++;} nls!
         typeParameter (COMMA! nls! typeParameter)*
+        nls!
         (typeArgumentsOrParametersEnd)?
 
         // make sure we have gobbled up enough '>' characters
@@ -869,8 +874,8 @@ typeParameter
 
 typeParameterBounds
     :
-        "extends"! classOrInterfaceType[false]
-        (BAND! classOrInterfaceType[false])*
+        "extends"! nls! classOrInterfaceType[false]
+        (BAND! nls! classOrInterfaceType[false])*
         {#typeParameterBounds = #(#[TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS"], #typeParameterBounds);}
     ;
 
@@ -1045,7 +1050,8 @@ interfaceExtends
 // A class can implement several interfaces...
 implementsClause
     :   (
-            i:"implements"! nls! classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
+            i:"implements"! nls!
+            classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
         )?
         {#implementsClause = #(#[IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE"],
                                #implementsClause);}
@@ -1379,7 +1385,7 @@ parameterModifiersOpt
 closureParametersOpt[boolean addImplicit]
     :   (parameterDeclarationList nls CLOSURE_OP)=>
         parameterDeclarationList nls! CLOSURE_OP! nls!
-    |   (oldClosureParametersStart)=>
+    |   {compatibilityMode}? (oldClosureParametersStart)=>
         oldClosureParameters
     |   {addImplicit}?
         implicitParameters
@@ -1387,20 +1393,13 @@ closureParametersOpt[boolean addImplicit]
         /* else do not parse any parameters at all */
     ;
 
-/** Lookahead to check whether a block begins with explicit closure arguments.
- *  There is a semantic predicate here to ensure that the closureParametersOpt is not empty.
- */
+/** Lookahead to check whether a block begins with explicit closure arguments. */
 closureParametersStart!
-    :   //(
-        // The oldClosureParametersStart cannot be used in this lookahead
-        // as the non-determinism arising could incorrectly identify
-        // a closure expression as an isolated open block, because it
-        // may not identify the opening closure arguments. 
-        //options { generateAmbigWarnings=false; }
-        //:
-        //oldClosureParametersStart|
+    :
+        {compatibilityMode}? (oldClosureParametersStart)=>
+        oldClosureParametersStart
+    |
         parameterDeclarationList nls CLOSURE_OP
-        //)
     ;
 
 /** Provisional definition of old-style closure params based on BOR '|'.
@@ -1940,15 +1939,17 @@ assignmentOp
 //                      (10)  ^
 //                      ( 9)  &
 //                      ( 8)  == != <=>
-//                      ( 7)  < <= > >=
-//                      ( 6)  << >>
+//                      ( 7)  < <= > >= instanceof as
+//                      ( 6)  << >> .. ...
 //                      ( 5)  +(binary) -(binary)
 //                      ( 4)  * / %
-//                      ( 3)  ++ -- +(unary) -(unary)
+//                      ( 3)  ++(pre/post) --(pre/post) +(unary) -(unary)
 //                      ( 2)  **(power)
-//                      ( 1)  ~  !  (type)
-//                                []   () (method call)  . (dot -- identifier qualification)
-//                                new   ()  (explicit parenthesis)
+//                      ( 1)  ~  ! $ (type)
+//                            . ?. *. (dot -- identifier qualification)
+//                            []   () (method call)  {} (closure)  [] (list/map)
+//                            new  () (explicit parenthesis)
+//                            $x (scope escape)
 //
 // the last two are not usually on a precedence chart; I put them in
 // to point out that new has a higher precedence than '.', so you
@@ -2336,15 +2337,8 @@ unaryExpression
     |   DEC^ nls! unaryExpression
     |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression
     |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression
-    |   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} nls! unaryExpression
     |   unaryExpressionNotPlusMinus
     ;
-
-// The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
-// If not within a "with" block, it pops the operand out of the static global scope,
-// into whatever dynamic (unchecked) global scope is available when the script is run,
-// regardless of package and imports.
-// Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
 
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus
@@ -2403,6 +2397,7 @@ primaryExpression
     |   "super"
     |   parenthesizedExpression             // (general stuff..,.)
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
+    |   scopeEscapeExpression               // $x
     /*OBS*  //class names work fine as expressions
             // look for int.class and int[].class
     |   builtInType
@@ -2414,6 +2409,15 @@ primaryExpression
 parenthesizedExpression
     :   lp:LPAREN^ strictContextExpression RPAREN!
         { #lp.setType(EXPR); }
+    ;
+
+scopeEscapeExpression
+    :   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} (IDENT | scopeEscapeExpression)
+        // PROPOSE: The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
+        // If not within a "with" block, it pops the operand out of the static global scope,
+        // into whatever dynamic (unchecked) global scope is available when the script is run,
+        // regardless of package and imports.
+        // Example of SCOPE_ESCAPE:  def x=1; with ([x:2,y:-1]) { def y=3; println [$x, x, y] }  =>  "[1, 2, 3]"
     ;
 
 /** Things that can show up as expressions, but only in strict
@@ -2792,6 +2796,8 @@ options {
     private boolean assertEnabled = true;
     /** flag for enabling the "enum" keyword */
     private boolean enumEnabled = true;
+    /** flag for including whitespace tokens (for IDE preparsing) */
+    private boolean whitespaceIncluded = false;
 
     /** Enable the "assert" keyword */
     public void enableAssert(boolean shouldEnable) { assertEnabled = shouldEnable; }
@@ -2802,6 +2808,15 @@ options {
     /** Query the "enum" keyword state */
     public boolean isEnumEnabled() { return enumEnabled; }
 
+    /** Include whitespace tokens.  Note that this breaks the parser.   */
+    public void setWhitespaceIncluded(boolean z) { whitespaceIncluded = z; }
+    /** Are whitespace tokens included? */
+    public boolean isWhitespaceIncluded() { return whitespaceIncluded; }
+    
+    {
+        // Initialization actions performed on construction.
+        setTabSize(1);  // get rid of special tab interpretation, for IDEs and general clarity
+    }
 
 /** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
     protected int parenLevel = 0;
@@ -2974,10 +2989,7 @@ REGEX_FIND              :   "=~"            ;
 REGEX_MATCH             :   "==~"           ;
 STAR_STAR               :   "**"            ;
 STAR_STAR_ASSIGN        :   "**="           ;
-
-CLOSURE_OP
-    :   "->" | "=>" | "::"
-    ;
+CLOSURE_OP              :   "::"            ;
 
 // Whitespace -- ignored
 WS
@@ -2988,7 +3000,7 @@ WS
         |   '\t'
         |   '\f'
         )+
-        { _ttype = Token.SKIP; }
+        { if (!whitespaceIncluded)  _ttype = Token.SKIP; }
     ;
 
 protected
@@ -3007,15 +3019,20 @@ ONE_NL! :   // handle newlines, which are significant in Groovy
 // Group any number of newlines (with comments and whitespace) into a single token.
 // This reduces the amount of parser lookahead required to parse around newlines.
 // It is an invariant that the parser never sees NLS tokens back-to-back.
-NLS :
-        (   ONE_NL
-            (WS | SL_COMMENT | ML_COMMENT)*
+NLS
+    :   ONE_NL
+        (   {!whitespaceIncluded}?
+            (ONE_NL | WS | SL_COMMENT | ML_COMMENT)+
             // (gobble, gobble)*
-        )+
+        )?
         // Inside (...) and [...] but not {...}, ignore newlines.
-        {   if (parenLevel != 0) {
+        {   if (whitespaceIncluded) {
+                // keep the token as-is
+            } else if (parenLevel != 0) {
+                // when directly inside parens, all newlines are ignored here
                 $setType(Token.SKIP);
             } else {
+                // inside {...}, newlines must be explicitly matched as 'nls!'
                 $setText("<newline>");
             }
         }
@@ -3030,7 +3047,7 @@ SL_COMMENT
             // This will fix the issue GROOVY-766 (infinite loop).
             ~('\n'|'\r'|'\uffff')
         )*
-        {$setType(Token.SKIP);}
+        { if (!whitespaceIncluded)  $setType(Token.SKIP); }
         //This might be significant, so don't swallow it inside the comment:
         //ONE_NL
     ;
@@ -3061,7 +3078,7 @@ ML_COMMENT
         |   ~('*'|'\n'|'\r')
         )*
         "*/"
-        {$setType(Token.SKIP);}
+        { if (!whitespaceIncluded)  $setType(Token.SKIP); }
     ;
 
 

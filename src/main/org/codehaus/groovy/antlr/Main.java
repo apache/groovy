@@ -10,6 +10,8 @@ import java.awt.event.*;
 
 class Main {
 
+    static boolean whitespaceIncluded = false;
+
 	static boolean showTree = false;
     //static boolean xml = false;
 	static boolean verbose = false;
@@ -41,7 +43,10 @@ class Main {
 					else if ( args[i].equals("-traceLexer") ) {
 						GroovyLexer.tracing = true;
 					}
-					else {
+                                        else if ( args[i].equals("-whitespaceIncluded") ) {
+                                            whitespaceIncluded = true;
+                                        }
+                                        else {
 						doFile(new File(args[i])); // parse it
 					}
 				} }
@@ -82,6 +87,17 @@ class Main {
 			// Create a parser that reads from the scanner
 			GroovyRecognizer parser = GroovyRecognizer.make(r);
 			parser.setFilename(f);
+                        
+                        if (whitespaceIncluded) {
+                            GroovyLexer lexer = parser.getLexer();
+                            lexer.setWhitespaceIncluded(true);
+                            while (true) {
+                                Token t = lexer.nextToken();
+                                System.out.println(t);
+                                if (t == null || t.getType() == Token.EOF_TYPE)  break;
+                            }
+                            return;
+                        }
 
 			// start parsing at the compilationUnit rule
 			parser.compilationUnit();

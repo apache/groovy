@@ -194,9 +194,9 @@ public interface GroovyTokenTypes {
 	int DIV = 184;
 	int MOD = 185;
 	int STAR_STAR = 186;
-	int DOLLAR = 187;
-	int BNOT = 188;
-	int LNOT = 189;
+	int BNOT = 187;
+	int LNOT = 188;
+	int DOLLAR = 189;
 	int STRING_CTOR_START = 190;
 	int STRING_CTOR_END = 191;
 	int LITERAL_new = 192;
