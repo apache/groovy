@@ -162,6 +162,8 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
+        if(file.exists() == false)
+            file = new File("Bar.groovy")
         
         println("Contents of file: " + file)
         
@@ -172,6 +174,8 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testForEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
+        if(file.exists() == false)
+            file = new File("Bar.groovy")
         
         println("For loop to display contents of file: " + file)
         
@@ -182,6 +186,8 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testReadLines() {
         file = new File("src/test/groovy/Bar.groovy")
+        if(file.exists() == false)
+            file = new File("Bar.groovy")
 
 		lines = file.readLines()
 		
@@ -193,6 +199,8 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testEachFile() {
         file = new File("src/test/groovy")
+        if(!file.exists())
+            file = new File(".")
         
         println("Closure loop to display contents of dir: " + file)
         
