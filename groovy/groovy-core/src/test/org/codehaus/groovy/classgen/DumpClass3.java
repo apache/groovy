@@ -63,4 +63,12 @@ public class DumpClass3 extends DumpClass2 {
         super(foo);
         this.blah = (String) foo;
     }
+    
+    public void foo() {
+        Object x = new Integer(12);
+        
+        if (x instanceof DumpClass2) {
+            System.out.println("Hello");
+        }
+    }
 }

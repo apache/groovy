@@ -113,6 +113,9 @@ public class Token
     /** Token type for ">=". */
     public static final int COMPARE_GREATER_THAN_EQUAL = 150;
 
+    /** Token type for "<=>". */
+    public static final int COMPARE_TO = 155;
+
     /** Token type for "||". */
     public static final int LOGICAL_OR = 160;
 
@@ -168,9 +171,6 @@ public class Token
 
     /** Token type for "|". */
     public static final int PIPE = 315;
-
-    /** Token type for "#". */
-    public static final int HASH = 316;
 
     /** Token type for double-quoted string literal. */
     public static final int DOUBLE_QUOTE_STRING = 320;
@@ -479,8 +479,6 @@ public class Token
                              "?" );
         addTokenDescription( PIPE,
                              "|" );
-        addTokenDescription( HASH,
-                             "#" );
         addTokenDescription( DOUBLE_QUOTE_STRING,
                              "<string literal>" );
         addTokenDescription( SINGLE_QUOTE_STRING,
@@ -849,6 +847,23 @@ public class Token
                          startColumn );
     }
 
+    /** Factory method for token for "<=>".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token compareTo(int startLine,
+                                  int startColumn)
+    {
+        return newToken( COMPARE_TO,
+                         "<=>",
+                         startLine,
+                         startColumn );
+    }
+
+ 
     /** Factory method for token for "||".
      *
      *  @param startLine Line upon which the token starts.
@@ -1142,22 +1157,6 @@ public class Token
     {
         return newToken( PIPE,
                          "|",
-                         startLine,
-                         startColumn );
-    }
-
-    /** Factory method for token for "#".
-     *
-     *  @param startLine Line upon which the token starts.
-     *  @param startColumn Column upon which the token starts.
-     *
-     *  @return The token.
-     */
-    public static Token hash(int startLine,
-                             int startColumn)
-    {
-        return newToken( HASH,
-                         "#",
                          startLine,
                          startColumn );
     }

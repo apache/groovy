@@ -1,6 +1,10 @@
 Things to Test
 ==============
 
+* throw statement
+* synchronized statement
+* switch statement
+
 * maybe refactor ScriptContext into GroovyShell?
 
 * test methods which return a specific type
@@ -15,6 +19,7 @@ Things to Test
 	- unknown class
 		in new expression
 		in general class expression
+	- duplicate methods test
 
 * tidy up javadoc
 

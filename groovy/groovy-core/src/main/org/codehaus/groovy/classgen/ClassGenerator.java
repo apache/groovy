@@ -653,6 +653,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression("divide", expression);
                 break;
 
+            case Token.KEYWORD_INSTANCEOF :
+                evaluateInstanceof(expression);
+                break;
+
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
@@ -1333,6 +1337,23 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftExpression.visit(this);
         leftHandExpression = false;
     }
+    
+    protected void evaluateInstanceof(BinaryExpression expression) {
+        expression.getLeftExpression().visit(this);
+        
+        Expression rightExp = expression.getRightExpression();
+        String className = null;
+        if (rightExp instanceof ClassExpression) {
+            ClassExpression classExp = (ClassExpression) rightExp;
+            className = classExp.getType();
+        }
+        else {
+            throw new RuntimeException("Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
+        }
+        String classInternalName = getClassInternalName(className);
+        
+        cv.visitTypeInsn(INSTANCEOF, classInternalName);
+    }
 
     /**
      * @return true if the given argument expression requires the stack, in
@@ -1391,6 +1412,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 case Token.COMPARE_LESS_THAN_EQUAL :
                 case Token.COMPARE_IDENTICAL :
                 case Token.COMPARE_NOT_EQUAL :
+                case Token.KEYWORD_INSTANCEOF :
                     return true;
             }
         }

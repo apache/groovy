@@ -609,6 +609,7 @@ public class Parser
             }
             case ( Token.KEYWORD_SWITCH ):
             {
+                statement = switchStatement();
                 break;                
             }
             case ( Token.KEYWORD_RETURN ):
@@ -633,6 +634,21 @@ public class Parser
             }
         }
 
+        return statement;
+    }
+
+    protected CSTNode switchStatement() 
+        throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_SWITCH );
+        consume( Token.LEFT_PARENTHESIS );
+
+        statement.addChild( expression() );
+
+        consume( Token.RIGHT_PARENTHESIS );
+
+        statement.addChild( statementBlock() );
+        
         return statement;
     }
 
