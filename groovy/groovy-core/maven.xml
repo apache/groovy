@@ -619,6 +619,7 @@
   	<mkdir dir="${groovy.embeddable.working.dir}"/>
 	<unzip dest="${groovy.embeddable.working.dir}">
 		<fileset dir="${groovy.install.staging.dest}/lib">
+			<include name="antlr*.jar"/>
 			<include name="asm*.jar"/>
 			<exclude name="asm-attr*.jar"/>
 			<exclude name="asm-util*.jar"/>
@@ -632,10 +633,13 @@
 		</fileset>
 	</copy>
 	<mkdir dir="${groovy.install.staging.dest}/embeddable"/>
-	<jar jarfile="${groovy.install.staging.dest}/embeddable/groovy-all-${pom.currentVersion}.jar" 
+	<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${groovy.install.staging.dest}/lib/jarjar-0.2.jar"/>
+	<jarjar jarfile="${groovy.install.staging.dest}/embeddable/groovy-all-${pom.currentVersion}.jar" 
                                                         manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
 		<fileset dir="${groovy.embeddable.working.dir}"/>
-	</jar>
+		<rule pattern="antlr.**"         result="groovyjarjarantlr.@1"/>
+		<rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
+	</jarjar>
 <!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
   </goal>
 
