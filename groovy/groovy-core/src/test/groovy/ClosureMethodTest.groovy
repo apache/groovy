@@ -10,7 +10,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testListCollect() {
         list = [1, 2, 3, 4]
-        answer = list.collect( { item | return item * 2 } )
+        answer = list.collect( {| item | return item * 2 } )
 
         assert answer.size() := 4
         
@@ -20,7 +20,7 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testMapCollect() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.collect( { e | return e.key + e.value } )
+        answer = map.collect( {| e | return e.key + e.value } )
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -35,27 +35,27 @@ class ClosureMethodTest extends GroovyTestCase {
 
     void testListFind() {
         list = ["a", "b", "c"]
-        answer = list.find( { item | return item := "b" })
+        answer = list.find( {| item | return item := "b" })
         assert answer := "b"
         
-        answer = list.find( { item | return item := "z" })
+        answer = list.find( {| item | return item := "z" })
         assert answer == null
     }
     
     void testMapFind() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.find( { entry | return entry.value := 6 })
+        answer = map.find( {| entry | return entry.value := 6 })
         assert answer != null
         assert answer.key := 3
         assert answer.value := 6
         
-        answer = map.find( { entry | return entry.value := 0 })
+        answer = map.find( {| entry | return entry.value := 0 })
         assert answer == null
     }
 
     void testListSelect() {
         list = [20, 5, 40, 2]
-        answer = list.select( { item | return item < 10 } )
+        answer = list.select( {| item | return item < 10 } )
 
         assert answer.size() := 2
         assert answer := [5, 2]
@@ -63,12 +63,12 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testMapSelect() {
         map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.select( { entry | return entry.value > 5 })
+        answer = map.select( {| entry | return entry.value > 5 })
 
         assert answer.size() := 2
         
-        keys = answer.collect( { entry | return entry.key })
-        values = answer.collect( { entry | return entry.value })
+        keys = answer.collect( {| entry | return entry.key })
+        values = answer.collect( {| entry | return entry.value })
         
         // maps are in hash order so lets sort the results            
         assert keys.sort() := [3, 4]
@@ -79,7 +79,7 @@ class ClosureMethodTest extends GroovyTestCase {
         count = 0
 
         list = [1, 2, 3, 4]
-        list.each({ item | count = count + item })
+        list.each({| item | count = count + item })
 		
         assert count := 10
     }
@@ -88,12 +88,12 @@ class ClosureMethodTest extends GroovyTestCase {
         count = 0
 
         map = [1:2, 2:4, 3:6, 4:8]
-        map.each({ e | count = count + e.value })
+        map.each({| e | count = count + e.value })
 
         assert count := 20
         
         /** @todo parser
-        map.each({ e | count = count + e.value + e.key })
+        map.each({| e | count = count + e.value + e.key })
 		
         assert count := 30
         */

@@ -42,6 +42,9 @@
     <mkdir dir="${basedir}/target/groovy"/>
     <copy todir="${basedir}/target/groovy">
       <fileset dir="${basedir}/src/test">
+<!--
+        <include name="**/groovy/Closure*.groovy"/>
+-->
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
       </fileset>
