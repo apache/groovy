@@ -844,7 +844,7 @@ public class Parser {
 
         return statement;
     }
-    
+
     protected CSTNode forStatement() throws IOException, SyntaxException {
         CSTNode statement = rootNode(Token.KEYWORD_FOR);
 
@@ -1435,14 +1435,12 @@ public class Parser {
                 }
             }
 
-            if (exprStart != textStart) {
-                expr.addChild(
-                    new CSTNode(
-                        Token.singleQuoteString(
-                            token.getStartLine(),
-                            token.getStartColumn() + cur + 1,
-                            text.substring(textStart, exprStart))));
-            }
+            expr.addChild(
+                new CSTNode(
+                    Token.singleQuoteString(
+                        token.getStartLine(),
+                        token.getStartColumn() + cur + 1,
+                        text.substring(textStart, exprStart))));
 
             int exprEnd = text.indexOf("}", exprStart);
 
