@@ -130,6 +130,7 @@ public class GroovyShell extends GroovyObjectSupport {
         run(scriptFile.toString(), args);
     }
 
+    
     /**
      * Runs the given script file name with the given command line arguments
      * 
@@ -137,6 +138,10 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args the command line arguments to pass in
      */
     public void run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+        Thread thread = Thread.currentThread();
+        ClassLoader currentClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader(loader);
+        
         Class scriptClass = loader.parseClass(scriptFile);
         InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
     }
