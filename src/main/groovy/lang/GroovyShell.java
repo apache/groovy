@@ -138,12 +138,18 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args the command line arguments to pass in
      */
     public void run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    	// Get the current context classloader and save it on the stack
         Thread thread = Thread.currentThread();
         ClassLoader currentClassLoader = thread.getContextClassLoader();
         thread.setContextClassLoader(loader);
         
+        // Parse the script, generate the class, and invoke the main method.  This is a little looser than
+        // if you are compiling the script because the JVM isn't executing the main method.
         Class scriptClass = loader.parseClass(scriptFile);
         InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        
+        // Set the context classloader back to what it was.
+        thread.setContextClassLoader(currentClassLoader);
     }
 
     /**
