@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.ast;
 
+
 /**
  * A simple statement such as a method call where the return value is ignored
  * 
@@ -56,6 +57,9 @@ public class ExpressionStatement extends Statement {
     private Expression expression;
     
     public ExpressionStatement(Expression expression) {
+        if (expression == null) {
+            throw new IllegalArgumentException("expression cannot be null");
+        }
         this.expression = expression;
     }
     
