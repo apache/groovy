@@ -5,9 +5,10 @@
  * @version
  */
  
- import java.util.regex.Pattern
- 
- class RegularExpressionsTest extends GroovyTestCase {
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
+class RegularExpressionsTest extends GroovyTestCase {
  	
  	void testFindRegex() {
  	
@@ -19,6 +20,9 @@
  		
  		i = 0
  		m = "cheesecheese" =~ "cheese"
+ 		
+ 		assert m instanceof Matcher
+ 		
  		while(m) { i = i + 1 }
  		assert i == 2
  		
@@ -46,7 +50,11 @@
  	
  	void testRegexEach() {
  		i = 0
- 		("cheesecheese" =~ "cheese").each({value | println(value) i = i + 1});
+ 		("cheesecheese" =~ "cheese").each {value | println(value); i = i + 1}
+ 		assert i == 2
+
+ 		i = 0
+ 		("cheesecheese" =~ "ee+").each { println(it); i = i + 1}
  		assert i == 2
  	}
  	
@@ -63,5 +71,14 @@ EOS
  		assert !pattern.matcher("bar").matches()
  		
  		assert "foofoofoo" =~ ~"foo"
+ 	}
+ 	
+ 	void testMatcher() {
+ 	    matcher = "cheese-cheese" =~ "cheese"
+ 	    answer = matcher.replaceAll("edam")
+ 	    assert answer == 'edam-edam'
+ 	    
+ 	    cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
+ 	    assert cheese == "nice cheese!"
  	}
  }

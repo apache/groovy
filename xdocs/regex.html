@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><title>Regular Expressions in Groovy</title></head>
+<body>
+
+<h1>Regular Expressions in Groovy</h1>
+
+<p>
+Groovy supports regular expressions natively using the <i>~"..."</i> expression. Plus
+Groovy supports the =~ (create Matcher) and ==~ (matches regex) operators. e.g.
+</p>
+
+<source>
+assert "cheesecheese" =~ "cheese"
+
+// lets create a regex Pattern
+pattern = ~"foo"
+assert pattern instanceof Pattern
+assert pattern.matcher("foo").matches()
+
+// lets create a Matcher
+matcher = "cheesecheese" =~ "cheese"
+assert matcher instanceof Matcher
+answer = matcher.replaceAll("edam")
+
+// lets do some replacement
+cheese = ("cheesecheese" =~ "cheese").replaceFirst("nice")
+assert cheese == "nicecheese"
+</source>
+
+</body>
+</html>
