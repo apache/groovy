@@ -944,6 +944,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case UNARY_MINUS:
                 return new NegationExpression(expression(node.getFirstChild()));
 
+            case BNOT:
+                return new BitwiseNegExpression(expression(node.getFirstChild()));
+
             case UNARY_PLUS:
                 return expression(node.getFirstChild());
 
@@ -1010,8 +1013,20 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case BAND:
                 return binaryExpression(Types.BITWISE_AND, node);
 
+            case BAND_ASSIGN:
+                return binaryExpression(Types.BITWISE_AND_EQUAL, node);
+
             case BOR:
-                return binaryExpression(Types.PIPE, node);
+                return binaryExpression(Types.BITWISE_OR, node);
+
+            case BOR_ASSIGN:
+                return binaryExpression(Types.BITWISE_OR_EQUAL, node);
+
+            case BXOR:
+                return binaryExpression(Types.BITWISE_XOR, node);
+
+            case BXOR_ASSIGN:
+                return binaryExpression(Types.BITWISE_XOR_EQUAL, node);
 
 
             case PLUS:
@@ -1070,9 +1085,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case REGEX_MATCH:
                 return binaryExpression(Types.MATCH_REGEX, node);
 
-            case BNOT:
-                return binaryNotExpression(node);
-
 
                 // Ranges
             case RANGE_INCLUSIVE:
@@ -1108,21 +1120,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else {
             return new ClassExpression(newText);
         }
-    }
-
-    protected Expression binaryNotExpression(AST node) {
-        Expression expression = expression(node.getFirstChild());
-        if (expression instanceof ConstantExpression) {
-            ConstantExpression constantExpr = (ConstantExpression) expression;
-            if (expression.getType().equals("java.lang.String")) {
-                // TODO we should maybe use operator overloading to implement
-                // binary not on a String expression
-                // so we could do
-                // ~methodThatReturnsAString() to create a regex
-                return new RegexExpression(expression(node.getFirstChild()));
-            }
-        }
-        return new NegationExpression(expression);
     }
 
     protected Expression rangeExpression(AST rangeNode, boolean inclusive) {
