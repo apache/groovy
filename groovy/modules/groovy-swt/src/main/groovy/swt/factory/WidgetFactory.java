@@ -14,6 +14,8 @@ import org.codehaus.groovy.GroovyException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
 
 /**
@@ -123,9 +125,15 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
         } else if (parent instanceof TabItem) {
             TabItem tabItem = (TabItem) parent;
             tabItem.setControl((Control) bean);
+        } else if (bean instanceof Menu && parent instanceof Shell) {
+            Menu menu = (Menu) bean;
+            Shell shell = (Shell) parent;
+            if (style == SWT.BAR) {
+                shell.setMenuBar(menu);
+            } else if (style == SWT.POP_UP) {
+                shell.setMenu(menu);
+            }
         }
     }
-
-  
 
 }
