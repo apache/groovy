@@ -2,18 +2,7 @@ class ArrayCoerceTest extends GroovyTestCase {
 
     Object[] field
 
-    void testFoo2() {
-        // TODO parser does not recognise the []
-        def x = [1, 2, 3] as Object[]
-        dump(x)
-        assert x instanceof Object[]
-        def c = x.getClass()
-        def et = c.componentType
-        assert et == Object.class
-    }
-
     /*
-
       TODO parser bug - cannot parse!
 
     void testStaticallyTypedPrimitiveTypeArrays() {
@@ -22,7 +11,17 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert a.length == 3
         dump(a)
     }
+
     */
+
+    void testFoo2() {
+        def x = [1, 2, 3] as Object[]
+        dump(x)
+        assert x instanceof Object[]
+        def c = x.getClass()
+        def et = c.componentType
+        assert et == Object.class
+    }
 
     void testFoo() {
         Object[] foo = [1, 2, 3]
@@ -91,9 +90,6 @@ class ArrayCoerceTest extends GroovyTestCase {
     }
 
 
-/*
-
-      TODO parser bug: cannot parse!
 
     void testAsObjectArray() {
         def x = [1, 2, 3] as Object[]
@@ -177,11 +173,6 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x instanceof Double[]
         dump(x)
     }
-
-*/
-
-
-
 
     void dump(array) {
         println "Array is of type ${array.class} which has element type ${array.class.componentType}"

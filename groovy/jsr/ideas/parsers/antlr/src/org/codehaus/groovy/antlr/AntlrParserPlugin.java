@@ -1183,7 +1183,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression leftExpression = expression(leftNode);
 
         AST rightNode = leftNode.getNextSibling();
-        Expression rightExpression = classExpression(rightNode);
+        String typeName = resolvedName(rightNode);
+        Expression rightExpression = new ClassExpression(typeName);
 
         return new BinaryExpression(leftExpression, makeToken(Types.KEYWORD_INSTANCEOF, node), rightExpression);
     }
@@ -1498,11 +1499,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new GStringExpression(buffer.toString(), strings, values);
     }
 
-    protected ClassExpression classExpression(AST node) {
-        String typeName = resolvedName(node);
-        return new ClassExpression(typeName);
-    }
-
     protected Type type(AST typeNode) {
         // TODO intern types?
         return new Type(resolvedName(typeNode.getFirstChild()));
@@ -1582,7 +1578,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         else if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
             AST child = node.getFirstChild();
-            return resolvedName(child);
+            String text = resolvedName(child);
+            // TODO sometimes we have ARRAY_DECLARATOR->typeName
+            // and sometimes we have typeName->ARRAY_DECLARATOR
+            // so here's a little fudge while we be more consistent in the Antlr
+            if (text.endsWith("[]")) {
+                return text;
+            }
+            return text + "[]";
         }
         else {
             String identifier = identifier(node);
