@@ -560,13 +560,13 @@ public class Lexer {
                                         consume();
                                         // The marker consists of everything from the end of the <<< to the end of the line.
                                         StringBuffer marker = new StringBuffer();
-                                        while ((c = la()) != '\n' && c != '\r') {
+                                        while ((c = la()) != '\n' && c !='\r') {
                                             marker.append(c);
                                             consume();
                                         }
                                         consume(); // consume the nextline
                                         if (c == '\r' && la() == '\n')
-                                            consume(); // consume \r\n
+                                        	consume(); // consume \r\n
                                         eol(); // next line
                                         mark(); // this is the start of the string
 
@@ -576,26 +576,25 @@ public class Lexer {
                                             c = la();
 
                                             LITERAL_SWITCH : switch (c) {
-                                                case ('\r') :
-                                                case ('\n') :
-                                                    {
+                                            case ('\n') :
+                                            case ('\r') :
+                                            {
                                                         eol(); // bump the line number
                                                         StringBuffer markerBuffer = new StringBuffer();
-                                                        markerBuffer.append(consume());
+                                                        consume();
+                                                        markerBuffer.append('\n');
                                                         if (c == '\r' && la() == '\n')
-                                                            markerBuffer.append(consume());
+                                                        	consume();
                                                         for (int i = 0; i < marker.length(); i++) {
                                                             if (la() != marker.charAt(i)) {
                                                                 stringLiteral.append(markerBuffer);
                                                                 continue LITERAL_LOOP;
                                                             }
                                                             c = consume();
-
                                                             markerBuffer.append(c);
                                                         }
                                                         break LITERAL_LOOP;
                                                     }
-
                                                 case (CharStream.EOS) :
                                                     {
                                                         throw new UnterminatedStringLiteralException(
