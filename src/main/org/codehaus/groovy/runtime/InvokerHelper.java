@@ -45,36 +45,20 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyObject;
-import groovy.lang.GroovyRuntimeException;
-import groovy.lang.IntRange;
-import groovy.lang.MetaClass;
-import groovy.lang.ObjectRange;
-import groovy.lang.Script;
-import groovy.lang.Tuple;
-import groovy.lang.Writable;
+import groovy.lang.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Writer;
+import java.beans.Introspector;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -82,7 +66,7 @@ public class InvokerHelper {
     public static final Object[] EMPTY_ARGS = {
     };
 
-    private static final Object[] EMPTY_MAIN_ARGS = new Object[] { new String[0] };
+    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
     private static final Invoker singleton = new Invoker();
 
@@ -92,6 +76,11 @@ public class InvokerHelper {
 
     public static MetaClass getMetaClass(Object object) {
         return getInstance().getMetaClass(object);
+    }
+
+    public static void removeClass(Class clazz) {
+        getInstance().removeMetaClass(clazz);
+        Introspector.flushFromCaches(clazz);
     }
 
     public static Invoker getInstance() {
@@ -196,12 +185,12 @@ public class InvokerHelper {
     public static void setGroovyObjectProperty(Object newValue, GroovyObject object, String property) {
         object.setProperty(property, newValue);
     }
-    
+
     public static Object getGroovyObjectProperty(GroovyObject object, String property) {
         return object.getProperty(property);
     }
-    
-    
+
+
     /**
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
@@ -214,7 +203,8 @@ public class InvokerHelper {
 
     /**
      * Provides a hook for type coercion of the given object to the required type
-     * @param type of object to convert the given object to
+     *
+     * @param type   of object to convert the given object to
      * @param object the object to be converted
      * @return the original object or a new converted value
      */
@@ -238,33 +228,26 @@ public class InvokerHelper {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return integerValue(-number.intValue());
-        }
-        else if (value instanceof Long) {
+        } else if (value instanceof Long) {
             Long number = (Long) value;
             return new Long(-number.longValue());
-        }
-        else if (value instanceof BigInteger) {
-            return ((BigInteger)value).negate();
-        }
-        else if (value instanceof BigDecimal) {
-            return ((BigDecimal)value).negate();
-        }
-        else if (value instanceof Double) {
+        } else if (value instanceof BigInteger) {
+            return ((BigInteger) value).negate();
+        } else if (value instanceof BigDecimal) {
+            return ((BigDecimal) value).negate();
+        } else if (value instanceof Double) {
             Double number = (Double) value;
             return new Double(-number.doubleValue());
-        }
-        else if (value instanceof Float) {
+        } else if (value instanceof Float) {
             Float number = (Float) value;
             return new Float(-number.floatValue());
-        }
-        else {
-            throw new GroovyRuntimeException(
-                    "Cannot negate type " + value.getClass().getName() + ", value "+value);
+        } else {
+            throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
         }
     }
 
     public static boolean isCase(Object switchValue, Object caseExpression) {
-        return asBool(invokeMethod(caseExpression, "isCase", new Object[] { switchValue }));
+        return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
     }
 
     public static boolean compareIdentical(Object left, Object right) {
@@ -311,8 +294,7 @@ public class InvokerHelper {
         int answer = getInstance().compareTo(left, right);
         if (answer == 0) {
             return ZERO;
-        }
-        else {
+        } else {
             return answer > 0 ? ONE : MINUS_ONE;
         }
     }
@@ -342,15 +324,13 @@ public class InvokerHelper {
         if (!inclusive) {
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod(to, "next", EMPTY_ARGS);
-            }
-            else {
+            } else {
                 to = invokeMethod(to, "previous", EMPTY_ARGS);
             }
         }
         if (from instanceof Integer && to instanceof Integer) {
             return new IntRange(asInt(from), asInt(to));
-        }
-        else {
+        } else {
             return new ObjectRange((Comparable) from, (Comparable) to);
         }
     }
@@ -362,8 +342,7 @@ public class InvokerHelper {
     public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
-        }
-        else {
+        } else {
             throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
@@ -380,8 +359,7 @@ public class InvokerHelper {
             Script script = null;
             if (object instanceof Script) {
                 script = (Script) object;
-            }
-            else {
+            } else {
                 // it could just be a class, so lets wrap it in a Script wrapper
                 // though the bindings will be ignored
                 script = new Script() {
@@ -394,17 +372,15 @@ public class InvokerHelper {
             }
             script.setBinding(context);
             return script;
-        }
-        catch (Exception e) {
-            throw new GroovyRuntimeException(
-                "Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
-                e);
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
+                    e);
         }
     }
 
     /**
      * Sets the properties on the given object
-     * 
+     *
      * @param object
      * @param map
      */
@@ -426,7 +402,7 @@ public class InvokerHelper {
 
     /**
      * Allows conversion of arrays into a mutable List
-     * 
+     *
      * @return the array as a List
      */
     protected static List primitiveArrayToList(Object array) {
@@ -444,16 +420,14 @@ public class InvokerHelper {
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
             out.write((String) object);
-        }
-        else if (object instanceof Writable) {
+        } else if (object instanceof Writable) {
             Writable writable = (Writable) object;
             writable.writeTo(out);
-        }
-        else if (object instanceof InputStream || object instanceof Reader) {
+        } else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
             Reader reader;
             if (object instanceof InputStream) {
-                reader = new InputStreamReader((InputStream)object);
+                reader = new InputStreamReader((InputStream) object);
             } else {
                 reader = (Reader) object;
             }
@@ -463,8 +437,7 @@ public class InvokerHelper {
                 out.write(chars, 0, i);
             }
             reader.close();
-        }
-        else {
+        } else {
             out.write(toString(object));
         }
     }
@@ -480,70 +453,69 @@ public class InvokerHelper {
     public static Object box(char value) {
         return new Character(value);
     }
-    
+
     public static Object box(short value) {
         return new Short(value);
     }
-    
+
     public static Object box(int value) {
         return integerValue(value);
     }
-    
+
     public static Object box(long value) {
         return new Long(value);
     }
-    
+
     public static Object box(float value) {
         return new Float(value);
     }
-    
+
     public static Object box(double value) {
         return new Double(value);
     }
-    
+
     public static byte byteUnbox(Object value) {
         Number n = (Number) asType(value, Byte.class);
         return n.byteValue();
     }
-    
+
     public static char charUnbox(Object value) {
         Character n = (Character) asType(value, Character.class);
         return n.charValue();
     }
-    
+
     public static short shortUnbox(Object value) {
         Number n = (Number) asType(value, Short.class);
         return n.shortValue();
     }
-    
+
     public static int intUnbox(Object value) {
         Number n = (Number) asType(value, Integer.class);
         return n.intValue();
     }
-    
+
     public static boolean booleanUnbox(Object value) {
         Boolean n = (Boolean) asType(value, Boolean.class);
         return n.booleanValue();
     }
-    
+
     public static long longUnbox(Object value) {
         Number n = (Number) asType(value, Long.class);
         return n.longValue();
     }
-    
+
     public static float floatUnbox(Object value) {
         Number n = (Number) asType(value, Float.class);
         return n.floatValue();
     }
-    
+
     public static double doubleUnbox(Object value) {
         Number n = (Number) asType(value, Double.class);
         return n.doubleValue();
     }
 
     /**
-     *
-     * @param a array of primitives
+     * @param a    array of primitives
      * @param type component type of the array
      * @return
      */
@@ -554,101 +526,86 @@ public class InvokerHelper {
         if (elemType.equals("int")) {
             // conservative coding
             if (a.getClass().getName().equals("[Ljava.lang.Integer;")) {
-                ans = (Integer[])a;
-            }
-            else {
-                int[] ia = (int[])a;
+                ans = (Integer[]) a;
+            } else {
+                int[] ia = (int[]) a;
                 ans = new Integer[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     int e = ia[i];
                     ans[i] = integerValue(e);
                 }
             }
-        }
-        else if(elemType.equals("char")) {
+        } else if (elemType.equals("char")) {
             if (a.getClass().getName().equals("[Ljava.lang.Character;")) {
-                ans = (Character[])a;
-            }
-            else {
-                char[] ia = (char[])a;
+                ans = (Character[]) a;
+            } else {
+                char[] ia = (char[]) a;
                 ans = new Character[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     char e = ia[i];
                     ans[i] = new Character(e);
                 }
             }
-        }
-        else if(elemType.equals("boolean")) {
+        } else if (elemType.equals("boolean")) {
             if (a.getClass().getName().equals("[Ljava.lang.Boolean;")) {
-                ans = (Boolean[])a;
-            }
-            else {
-                boolean[] ia = (boolean[])a;
+                ans = (Boolean[]) a;
+            } else {
+                boolean[] ia = (boolean[]) a;
                 ans = new Boolean[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     boolean e = ia[i];
                     ans[i] = new Boolean(e);
                 }
             }
-        }
-        else if(elemType.equals("byte")) {
+        } else if (elemType.equals("byte")) {
             if (a.getClass().getName().equals("[Ljava.lang.Byte;")) {
-                ans = (Byte[])a;
-            }
-            else {
-                byte[] ia = (byte[])a;
+                ans = (Byte[]) a;
+            } else {
+                byte[] ia = (byte[]) a;
                 ans = new Byte[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     byte e = ia[i];
                     ans[i] = new Byte(e);
                 }
             }
-        }
-        else if(elemType.equals("short")) {
+        } else if (elemType.equals("short")) {
             if (a.getClass().getName().equals("[Ljava.lang.Short;")) {
-                ans = (Short[])a;
-            }
-            else {
-                short[] ia = (short[])a;
+                ans = (Short[]) a;
+            } else {
+                short[] ia = (short[]) a;
                 ans = new Short[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     short e = ia[i];
                     ans[i] = new Short(e);
                 }
             }
-        }
-        else if(elemType.equals("float")) {
+        } else if (elemType.equals("float")) {
             if (a.getClass().getName().equals("[Ljava.lang.Float;")) {
-                ans = (Float[])a;
-            }
-            else {
-                float[] ia = (float[])a;
+                ans = (Float[]) a;
+            } else {
+                float[] ia = (float[]) a;
                 ans = new Float[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     float e = ia[i];
                     ans[i] = new Float(e);
                 }
             }
-        }
-        else if(elemType.equals("long")) {
+        } else if (elemType.equals("long")) {
             if (a.getClass().getName().equals("[Ljava.lang.Long;")) {
-                ans = (Long[])a;
-            }
-            else {
-                long[] ia = (long[])a;
+                ans = (Long[]) a;
+            } else {
+                long[] ia = (long[]) a;
                 ans = new Long[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     long e = ia[i];
                     ans[i] = new Long(e);
                 }
             }
-        }
-        else if(elemType.equals("double")) {
+        } else if (elemType.equals("double")) {
             if (a.getClass().getName().equals("[Ljava.lang.Double;")) {
-                ans = (Double[])a;
-            }
-            else {
-                double[] ia = (double[])a;
+                ans = (Double[]) a;
+            } else {
+                double[] ia = (double[]) a;
                 ans = new Double[ia.length];
                 for (int i = 0; i < ia.length; i++) {
                     double e = ia[i];
@@ -659,135 +616,129 @@ public class InvokerHelper {
         return ans;
     }
 
-    public static int[] convertToIntArray(Object a){
+    public static int[] convertToIntArray(Object a) {
         int[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[I")) {
-            ans = (int[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (int[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new int[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).intValue();
+                ans[i] = ((Number) ia[i]).intValue();
             }
         }
         return ans;
     }
 
-    public static boolean[] convertToBooleanArray(Object a){
+    public static boolean[] convertToBooleanArray(Object a) {
         boolean[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[Z")) {
-            ans = (boolean[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (boolean[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Boolean)ia[i]).booleanValue();
+                ans[i] = ((Boolean) ia[i]).booleanValue();
             }
         }
         return ans;
     }
-    public static byte[] convertToByteArray(Object a){
+
+    public static byte[] convertToByteArray(Object a) {
         byte[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[B")) {
-            ans = (byte[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (byte[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new byte[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).byteValue();
+                ans[i] = ((Number) ia[i]).byteValue();
             }
         }
         return ans;
     }
-    public static short[] convertToShortArray(Object a){
+
+    public static short[] convertToShortArray(Object a) {
         short[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[S")) {
-            ans = (short[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (short[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new short[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).shortValue();
+                ans[i] = ((Number) ia[i]).shortValue();
             }
         }
         return ans;
     }
 
-    public static char[] convertToCharArray(Object a){
+    public static char[] convertToCharArray(Object a) {
         char[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[C")) {
-            ans = (char[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (char[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new char[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Character)ia[i]).charValue();
+                ans[i] = ((Character) ia[i]).charValue();
             }
         }
         return ans;
     }
 
-    public static long[] convertToLongArray(Object a){
+    public static long[] convertToLongArray(Object a) {
         long[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[J")) {
-            ans = (long[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (long[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new long[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).longValue();
+                ans[i] = ((Number) ia[i]).longValue();
             }
         }
         return ans;
     }
 
-    public static float[] convertToFloatArray(Object a){
+    public static float[] convertToFloatArray(Object a) {
         float[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[F")) {
-            ans = (float[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (float[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new float[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).floatValue();
+                ans[i] = ((Number) ia[i]).floatValue();
             }
         }
         return ans;
     }
 
-    public static double[] convertToDoubleArray(Object a){
+    public static double[] convertToDoubleArray(Object a) {
         double[] ans = null;
 
         // conservative coding
         if (a.getClass().getName().equals("[D")) {
-            ans = (double[])a;
-        }
-        else {
-            Object[] ia = (Object[])a;
+            ans = (double[]) a;
+        } else {
+            Object[] ia = (Object[]) a;
             ans = new double[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = ((Number)ia[i]).doubleValue();
+                ans[i] = ((Number) ia[i]).doubleValue();
             }
         }
         return ans;
@@ -816,21 +767,22 @@ public class InvokerHelper {
 
     /**
      * get the Integer object from an int. Cached version is used for small ints.
+     *
      * @param v
      * @return
      */
     public static Integer integerValue(int v) {
         int index = v + INT_CACHE_OFFSET;
-        if (index >= 0 && index < INT_CACHE_LEN ) {
+        if (index >= 0 && index < INT_CACHE_LEN) {
             return SMALL_INTEGERS[index];
-        }
-        else {
+        } else {
             return new Integer(v);
         }
     }
 
     private static Integer[] SMALL_INTEGERS;
     private static int INT_CACHE_OFFSET = 128, INT_CACHE_LEN = 256;
+
     static {
         SMALL_INTEGERS = new Integer[INT_CACHE_LEN];
         for (int i = 0; i < SMALL_INTEGERS.length; i++) {
