@@ -5,7 +5,7 @@ Groovy has native language support for collections, lists, maps and arrays.
 
 1.1 Lists
 
-You can create lists as follows. Notice that [] is the empty list expression.
+You can create lists as follows. Notice that \[] is the empty list expression.
 
 {code:groovy}
 list = [5, 6, 7, 8]
@@ -23,9 +23,9 @@ Each list expression creates an implemenation of the {api:java.util.List}.
 1.1 Ranges
 
 Ranges allow you to create a list of sequential values. These can be used as Lists since
-{link:GString|http://groovy.codehaus.org/apidocs/groovy/lang/Range.html} extends {api:java.util.List}.
+{link:Range|http://groovy.codehaus.org/apidocs/groovy/lang/Range.html} extends {api:java.util.List}.
 Ranges defined with the ~~..~~ notation are inclusive (that is the list contains the from and to value).
-Ranges defined with the ~~...~~~ notation are exclusive, they include the first value but not the second.
+Ranges defined with the ~~...~~ notation are exclusive, they include the first value but not the last value.
 
 {code:groovy}
 // an inclusive range
@@ -47,11 +47,26 @@ assert ! range.contains(8)
 
 Note that ranges are implemented efficiently, creating a lightweight Java object containing a from and to value.
 
+Ranges can be used for any Java object which implements {api:java.lang.Comparable} and implements the increment() and decrement()
+methods. e.g. you can use Strings in a range
+ 
+
+{code:groovy}
+// an inclusive range
+range = 'a'..'d'
+assert range.size() == 4
+assert range.get(2) == 'c'
+assert range instanceof java.util.List
+assert range.contains('a')
+assert range.contains('d')
+assert ! range.contains('e')
+{code}
+
 Ranges can be used to iterate using the for statement.
 
 {code:groovy}
 for (i in 1..10) {
-	println "Hello ${i}"
+  println "Hello ${i}"
 }
 {code}
 
