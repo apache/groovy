@@ -1354,6 +1354,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression arguments = arguments(elist);
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
+        boolean implicitThis = (objectExpression == VariableExpression.THIS_EXPRESSION);
+        implicitThis = implicitThis || (objectExpression == VariableExpression.SUPER_EXPRESSION);
+        expression.setImplicitThis(implicitThis);
         configureAST(expression, methodCallNode);
         return expression;
     }
