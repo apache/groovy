@@ -254,11 +254,11 @@ public class GroovyMain {
      */
     private void processSockets() throws CompilationFailedException, IOException {
         GroovyShell groovy = new GroovyShell(conf);
-        Script s;
+        //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            s = groovy.parse(new File(script));
+            groovy.parse(new FileInputStream(script));
         } else {
-            s = groovy.parse(script, "main");
+            groovy.parse(script);
         }
         new GroovySocketServer(groovy, isScriptFile, script, autoOutput, port);
     }
