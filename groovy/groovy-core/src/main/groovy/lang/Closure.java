@@ -159,4 +159,11 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         this.delegate = delegate;
     }
     
+    /**
+     * Allows the closure to be cloned
+     */
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
+
 }
