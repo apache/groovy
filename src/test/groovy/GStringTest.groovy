@@ -99,7 +99,7 @@ class GStringTest extends GroovyTestCase {
         assert value != null
     }
     
-    testGroovy441() {
+    void testGroovy441() {
 		arg = "test" 
 		content = "${arg} =" 
 
@@ -112,4 +112,23 @@ class GStringTest extends GroovyTestCase {
 
 		assert content == "test =?= test."
     }
-}
+
+    void testTwoStringsInMiddle() {
+        a = "---"
+        b = "${a} :"
+        b += "<<"
+        b += ">>"
+        b += ": ${a}"
+        assert b == "--- :<<>>: ---"
+    }
+
+    void testAlternatingGStrings() {
+        a = "---"
+        b = "${a} :"
+        b += "<<"
+        b += " [[${a}]] "
+        b += ">>"
+        b += ": ${a}"
+        assert b == "--- :<< [[---]] >>: ---"
+    }
+ }
