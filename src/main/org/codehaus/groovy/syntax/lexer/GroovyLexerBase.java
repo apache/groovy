@@ -677,7 +677,6 @@ public class GroovyLexerBase extends LexerBase
                         {
                             c = la();
                             if( c == '>' )
-                            if( la() == '>' )
                             {
                                 consume();
                                 c = la();
