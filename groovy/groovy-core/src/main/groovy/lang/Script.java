@@ -165,4 +165,12 @@ public abstract class Script extends GroovyObjectSupport {
         GroovyShell shell = new GroovyShell(binding);
         return shell.evaluate(file);
     }
+    
+    /**
+     * A helper method to allow scripts to be run taking command line arguments
+     */
+    public void run(File file, String[] arguments) throws SyntaxException, IOException {
+        GroovyShell shell = new GroovyShell(binding);
+        shell.run(file, arguments);
+    }
 }
