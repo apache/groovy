@@ -5,6 +5,6 @@ class MethodCallWithoutParensInStaticMethodBug extends GroovyTestCase {
     }
     
     static void staticMethod() {
-        println "hello"[1]
+        println 'hello'[1]
     }
 }

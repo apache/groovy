@@ -1299,6 +1299,7 @@ public class Parser {
         switch (lt_bare()) {
             case Token.IDENTIFIER :
             case Token.DOUBLE_QUOTE_STRING :
+            case Token.SINGLE_QUOTE_STRING :
             case Token.FLOAT_NUMBER :
             case Token.INTEGER_NUMBER :
                 // lets try parse a method call
