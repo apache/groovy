@@ -304,37 +304,9 @@ public class Lexer
                 {
                 	mark();
                 	consume();
-                	
-                	c = la();
-                	
-                  MULTICHAR_SWITCH:
-                    switch ( c )
-                    {
-                    	case ( '=' ):
-                    	{
-                    		consume();
-                    		c = la();
-                    		switch ( c )
-                    		{
-                    			case ( '=' ):
-                    			{
-                    				consume();
-                    				token = Token.matchRegex( getStartLine(),
-                    										  getStartColumn());
-                    				break MULTICHAR_SWITCH;
-                    			}
-                    		}
-                    		token = Token.findRegex( getStartLine(),
-                    								 getStartColumn() );
-                    		break MULTICHAR_SWITCH;
-                    	}
-                    	default:
-                    	{
-                    		// Support ~<double quoted string>
-                    		token = Token.patternRegex( getStartLine(),
-                    									getStartColumn() );
-                    	}
-                    }
+                 	// Support ~<double quoted string>
+                    token = Token.patternRegex( getStartLine(),
+                    							getStartColumn() );
                     break ROOT_SWITCH;
                 }
                 case ( '!' ):
@@ -378,19 +350,35 @@ public class Lexer
                             consume();
                             c = la();
 
-                            if ( c == '=' )
-                            {
-                                consume();
-                                token = Token.compareIdentical( getStartLine(),
+                            switch ( c ) {
+                            	case '=':
+                            	{
+                            		consume();
+                           			token = Token.compareIdentical( getStartLine(),
+                           											getStartColumn() );
+                            		break;
+                                }
+                            	case '~':
+                            	{
+                            		consume();
+                            		token = Token.matchRegex( getStartLine(),
+                            								  getStartColumn());
+                            		break;
+                            	}
+                            	default:
+                                {
+                                    token = Token.compareEqual( getStartLine(),
                                                                 getStartColumn() );
-                            }
-                            else
-                            {
-                                token = Token.compareEqual( getStartLine(),
-                                                            getStartColumn() );
-                                                                         
+                            	}
                             }
                             break MULTICHAR_SWITCH;
+                        }
+                        case '~':
+                        {
+                        	consume();
+                        	token = Token.findRegex( getStartLine(),
+                        			getStartColumn() );
+                        	break;
                         }
                         default:
                         {
