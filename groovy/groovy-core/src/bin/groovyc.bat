@@ -13,7 +13,7 @@
 if "%OS%"=="Windows_NT" setlocal
 
 @rem The version of classworlds to boot with
-set CLASSWORLDS_VERSION=1.0-rc2
+set CLASSWORLDS_VERSION=1.0
 
 :begin
 @rem Determine what directory it is in.
