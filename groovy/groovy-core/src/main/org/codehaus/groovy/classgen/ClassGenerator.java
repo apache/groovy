@@ -936,8 +936,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // lets check that the type exists
         String type = checkValidType(call.getType(), call, "in constructor call");
 
-        visitClassExpression(new ClassExpression(type));
-        //cv.visitLdcInsn(type);
+        //visitClassExpression(new ClassExpression(type));
+        cv.visitLdcInsn(type);
 
         arguments.visit(this);
 

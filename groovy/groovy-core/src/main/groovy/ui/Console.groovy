@@ -1,8 +1,11 @@
 package groovy.ui
 
 import groovy.swing.SwingBuilder
+
 import javax.swing.KeyStroke
 import javax.swing.JSplitPane
+import javax.swing.text.StyleContext
+
 import org.codehaus.groovy.runtime.InvokerHelper
 
 class Console {
@@ -14,7 +17,10 @@ class Console {
     property shell
     property counter
     property scriptList
-
+    property promptStyle
+    property commandStyle
+    property outputStyle
+    
 	static void main(args) {
         console = new Console()
         console.run()
@@ -51,7 +57,8 @@ class Console {
             }
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
-                    owner.outputArea = textArea(editable:false)
+                    owner.outputArea = textPane(editable:false)
+                    owner.addStylesToDocument()
                 }
                 scrollPane {
                     owner.textArea = textArea()
@@ -68,36 +75,60 @@ class Console {
         dialog.show()
     }
     
+    addStylesToDocument() {
+        doc = outputArea.getStyledDocument();
+        
+        def = StyleContext.getDefaultStyleContext().
+                          getStyle(StyleContext.DEFAULT_STYLE);
+
+        Style regular = doc.addStyle("regular", def);
+        StyleConstants.setFontFamily(def, "SansSerif");
+
+        promptStyle = doc.addStyle("prompt", regular);
+        StyleConstants.setForeground(promptStyle, Color.BLUE);
+        
+        commandStyle = doc.addStyle("command", regular);
+        StyleConstants.setForeground(commandStyle, Color.MAGENTA);
+
+        outputStyle = doc.addStyle("output", regular);
+        StyleConstants.setBold(outputStyle, true);
+    }
+    
     runScript() {
         text = textArea.getText()
         scriptList.add(text)
-        output = outputArea.getText() + "\ngroovy:>" + text.replaceAll("\n", "\ngroovy:>") + "\n";
-        outputArea.setText(output)
         
-        if (shell == null) {
-        	shell = new GroovyShell()
-        }
-        if (counter == null) {
-            counter = 1
-        }
-        else {
-        	counter = counter + 1
-        }
-        name = "Script" + counter
+        //try {
+            doc = outputArea.getStyledDocument();
+            
+            for (line in text.tokenize("\n")) {
+                doc.insertString(doc.getLength(), "\ngroovy> ", promptStyle)
+                doc.insertString(doc.getLength(), line, commandStyle)
+            }
+
+            if (shell == null) {
+            	shell = new GroovyShell()
+            }
+            if (counter == null) {
+                counter = 1
+            }
+            else {
+            	counter = counter + 1
+            }
         
-        answer = null
-        answer = shell.evaluate(text, name)
-        /*
-        try {
-	        answer = shell.evaluate(text, name)
+            name = "Script" + counter
+            answer = shell.evaluate(text, name)
+        /*    
         } 
         catch (Exception e) {
             answer = e
         }
         */
-        output = output + InvokerHelper.toString(answer)
+        output = "\n" + InvokerHelper.toString(answer)
         
-        outputArea.setText(output)
+	    println("adding output")
+
+        doc.insertString(doc.getLength(), output, outputStyle)
         
         println("Variables: " + shell.context.variables)
         
