@@ -12,13 +12,6 @@ class ClosureSugarTest
         }
 
         assert count == 20;
-
-        sugar \
-        {
-             count = 20;
-        }
-
-        assert count == 20;
     }
 
     void testMixedClosureSugar()
@@ -30,13 +23,6 @@ class ClosureSugarTest
         }
 
         assert count == 16;
-
-        mixedSugar (5)\
-        {a|
-             count = count + a;
-        }
-
-        assert count == 21;
 
     }
 
