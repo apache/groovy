@@ -55,6 +55,8 @@ public class JFaceBuilder extends SwtBuilder {
         // Window
         registerFactory("applicationWindow", new WindowFactory(
                 ApplicationWindowImpl.class));
+//        registerFactory("window", new WindowFactory(
+//                WindowImpl.class));
 
         // ContributionManager
         registerFactory("menuManager", new MenuManagerFactory());

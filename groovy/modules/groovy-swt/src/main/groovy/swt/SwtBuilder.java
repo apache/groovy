@@ -6,6 +6,7 @@ package groovy.swt;
 
 import groovy.lang.Closure;
 import groovy.swt.factory.AwtSwtFactory;
+import groovy.swt.factory.Fontfactory;
 import groovy.swt.factory.FormFactory;
 import groovy.swt.factory.FormLayoutDataFactory;
 import groovy.swt.factory.ImageFactory;
@@ -189,6 +190,7 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("coolBar", CoolBar.class, SWT.VERTICAL);
         registerBeanFactory("coolItem", CoolItem.class);
         registerBeanFactory("decorations", Decorations.class);
+        registerFactory("font", new Fontfactory());
         registerBeanFactory("group", Group.class);
         registerBeanFactory("label", Label.class, SWT.HORIZONTAL
                 | SWT.SHADOW_IN);

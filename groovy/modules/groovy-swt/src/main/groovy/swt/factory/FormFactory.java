@@ -13,6 +13,10 @@ import org.codehaus.groovy.GroovyException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.FormColors;
+import org.eclipse.ui.forms.HyperlinkSettings;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -48,7 +52,8 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
         Composite parentComposite = (Composite) SwtUtils
                 .getParentWidget(parent);
         if (toolkit == null) {
-            toolkit = new FormToolkit(parentComposite.getDisplay());
+            FormColors formColors = new FormColors(Display.getCurrent());
+            toolkit = new FormToolkit(formColors);
             toolkit.setBorderStyle(SWT.BORDER);
         }
         String styleProperty = (String) properties.remove("style");
@@ -65,6 +70,17 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             Object formWidget = getFormWidget(parentComposite, properties,
                     style, text);
             setBeanProperties(formWidget, properties);
+
+            // if (formWidget instanceof Control) {
+            //  	Control control = (Control) parent;
+            //      control.setData(FormToolkit.KEY_DRAW_BORDER, FormToolkit.TEXT_BORDER);
+            // }
+
+            // if (parent instanceof Composite) {
+            //  Composite parentComp = (Composite) parent;
+            //  toolkit.paintBordersFor(parentComp);
+            // }
+
             return formWidget;
         } else {
             throw new InvalidParentException("composite instance");
@@ -99,8 +115,11 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 .createCompositeSeparator(parentComposite); }
         if ("formExpandableComposite".equals(type)) { return toolkit
                 .createExpandableComposite(parentComposite, style); }
-        if ("formText".equals(type)) { return toolkit.createText(
-                parentComposite, text, style); }
+        if ("formText".equals(type)) {
+            Text text2 = toolkit.createText(parentComposite, text, style);
+            toolkit.paintBordersFor(parentComposite);
+            return text2;
+        }
         if ("formHyperlink".equals(type)) { return toolkit.createHyperlink(
                 parentComposite, text, style); }
         if ("formImageHyperlink".equals(type)) { return toolkit
@@ -154,8 +173,17 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 expandURLs = ((Boolean) properties.remove("expandURLs"))
                         .booleanValue();
             }
+            
             FormText formText = toolkit.createFormText(parentComposite, true);
+            HyperlinkSettings hyperlinkSettings = new HyperlinkSettings(Display.getCurrent());
+            hyperlinkSettings.setBackground(toolkit.getColors().getBackground());
+            hyperlinkSettings.setActiveBackground(toolkit.getColors().getBackground());
+            hyperlinkSettings.setForeground(toolkit.getColors().getForeground());
+            hyperlinkSettings.setActiveForeground(toolkit.getColors().getBackground());
+            formText.setHyperlinkSettings(hyperlinkSettings);
+            
             formText.setText(text, parseTags, expandURLs);
+
             return formText;
         }
         if ("formTree".equals(type)) { return toolkit.createTree(
