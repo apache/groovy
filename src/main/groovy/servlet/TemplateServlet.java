@@ -117,15 +117,15 @@ public class TemplateServlet extends HttpServlet {
     public void init(ServletConfig config) {
 
         /*
+         * Save the context.
+         */
+        this.servletContext = config.getServletContext();
+
+        /*
          * BEGIN
          */
         String className = getClass().getName();
         servletContext.log("Initializing on " + className + "...");
-
-        /*
-         * Save the context.
-         */
-        this.servletContext = config.getServletContext();
 
         /*
          * Configure from servlet config.
@@ -166,10 +166,9 @@ public class TemplateServlet extends HttpServlet {
     /**
      * Creates the template engine.
      * 
-     * Called by {@link #init(ServletConfig)}and returns just <code>
-     * new SimpleTemplateEngine()</code>.
-     * Override this method to alter this behaviour and return an engine which
-     * serves your needs better.
+     * Called by {@link #init(ServletConfig)} and returns just <code>
+     * SimpleTemplateEngine()</code> if the init parameter <code>templateEngine</code>
+     * is not set.
      * 
      * @return The underlying template engine.
      * @param config
@@ -177,7 +176,20 @@ public class TemplateServlet extends HttpServlet {
      * @see #createTemplateEngine()
      */
     protected TemplateEngine createTemplateEngine(ServletConfig config) {
-        return new SimpleTemplateEngine();
+        String templateEngineClassName = config.getInitParameter("templateEngine");
+        if (templateEngineClassName == null) {
+            return new SimpleTemplateEngine();
+        }
+        try {
+            return (TemplateEngine) Class.forName(templateEngineClassName).newInstance();
+        } catch (InstantiationException e) {
+            servletContext.log("Could not instantiate template engine: " + templateEngineClassName, e);
+        } catch (IllegalAccessException e) {
+            servletContext.log("Could not access template engine class: " + templateEngineClassName, e);
+        } catch (ClassNotFoundException e) {
+            servletContext.log("Could not find template engine class: " + templateEngineClassName, e);
+       }
+        return null;
     }
 
     /**
@@ -358,14 +370,15 @@ public class TemplateServlet extends HttpServlet {
      *            The application context.
      * @throws Exception
      */
-    protected Template handleRequest(HttpServletRequest request, HttpServletResponse response, Binding binding)
-            throws Exception {
-
+    protected Template handleRequest(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Binding binding)
+    throws Exception {
         /*
          * Delegate to getTemplate(String).
          */
         return getTemplate(request);
-
     }
 
     /**
