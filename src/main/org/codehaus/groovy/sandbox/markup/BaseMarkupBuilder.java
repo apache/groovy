@@ -51,12 +51,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BaseMarkupBuilder extends Builder {
-	public BaseMarkupBuilder(final Closure defaultGenerator) {
-		super(defaultGenerator);
+	public BaseMarkupBuilder(final Closure defaultGenerator, final Closure tagGenerator) {
+		super(defaultGenerator, tagGenerator);
 	}
 	
-	public BaseMarkupBuilder(final Closure defaultGenerator, final Map methodMap, final Map namespaceMethodMap) {
-		super(defaultGenerator, methodMap, namespaceMethodMap);
+	public BaseMarkupBuilder(final Closure defaultGenerator, final Closure tagGenerator, final Map methodMap, final Map namespaceMethodMap) {
+		super(defaultGenerator, tagGenerator, methodMap, namespaceMethodMap);
 	}
 	
 	public Object bind(final Closure root) {
