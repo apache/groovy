@@ -1,7 +1,7 @@
 class Base64Test extends GroovyTestCase {
 
     void testCodec() {
-   	    testString ="§1234567890-=±!@£\$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'\\ASDFGHJKL:\"|`zxcvbnm,./~ZXCVBNM<>?\u0000\u00ff\u00f0\u000f"
+   	    testString ="§1234567890-=±!@£\$%^&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'\\ASDFGHJKL:\"|`zxcvbnm,./~ZXCVBNM<>?\u0003\u00ff\u00f0\u000f"
 
         // get a byte array using the least significant eigth bits of each caharacter
            testBytes = testString.getBytes("ISO-8859-1")

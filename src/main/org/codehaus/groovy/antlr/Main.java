@@ -76,16 +76,19 @@ class Main {
 		else if (f.getName().endsWith(".groovy")) {
 			System.err.println(" --- "+f.getAbsolutePath());
 			// parseFile(f.getName(), new FileInputStream(f));
-			parseFile(f.getName(), new BufferedReader(new FileReader(f)));
+            UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new FileReader(f));
+            GroovyLexer lexer = new GroovyLexer(unicodeReader);
+            unicodeReader.setLexer(lexer);
+			parseFile(f.getName(),lexer);
 		}
 	}
 
 	// Here's where we do the real work...
-	public static void parseFile(String f, Reader r)
+	public static void parseFile(String f, GroovyLexer l)
 								 throws Exception {
 		try {
 			// Create a parser that reads from the scanner
-			GroovyRecognizer parser = GroovyRecognizer.make(r);
+			GroovyRecognizer parser = GroovyRecognizer.make(l);
 			parser.setFilename(f);
                         
                         if (whitespaceIncluded) {

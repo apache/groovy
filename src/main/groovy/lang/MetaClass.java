@@ -1456,14 +1456,16 @@ public class MetaClass {
                     // allow fall through
                 }
             }
-
             throw new GroovyRuntimeException(
                     "failed to invoke method: "
                     + method
                     + " on: "
                     + object
                     + " with arguments: "
-                    + InvokerHelper.toString(argumentArray));
+                    + InvokerHelper.toString(argumentArray)
+                    + "reason: "
+                    + e
+            );
         }
         catch (RuntimeException e) {
             throw e;

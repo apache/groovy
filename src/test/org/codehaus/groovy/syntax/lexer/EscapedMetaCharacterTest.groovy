@@ -1,15 +1,15 @@
 class EscapedMetaCharacterTest extends GroovyTestCase {
 
-  newline = "\\"+"n"
-  tab = "\\"+"t"  
-  backslash = "\\"
-  doublebackslash = "\\"+"\\"
-  creturn = "\\"+"r"
-  singlequote = "\\"+"'"
-  doublequote = "\\"+'"'
-  dollar= "\\"+"$"
+  def newline = "\\"+"n"
+  def tab = "\\"+"t"
+  def backslash = "\\"
+  def doublebackslash = "\\"+"\\"
+  def creturn = "\\"+"r"
+  def singlequote = "\\"+"'"
+  def doublequote = "\\"+'"'
+  def dollar= "\\"+"\$"
   
-  all = newline+tab+creturn
+  def all = newline+tab+creturn
 
 
   void testNewLine() {

@@ -19,12 +19,10 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.Groovy278_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy303_Bug.class);
 
-        // TODO
-        //suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy308_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy558_616_Bug.class);
 
-        // TODO
-        //suite.addTestSuite(groovy.bugs.Groovy593_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy593_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy666_Bug.class);
 
         // TODO
@@ -32,8 +30,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
 
-        // TODO
-        //suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
+        //todo suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
         suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
         suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
         suite.addTestSuite(groovy.bugs.PrimitivePropertyBug.class);
@@ -76,8 +73,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.util.XmlParserTest.class);
         //todo suite.addTestSuite(groovy.util.BuilderSupportTest.class);
 
-        // TODO
-        //suite.addTestSuite(groovy.xml.dom.DOMTest.class);
+        //todo suite.addTestSuite(groovy.xml.dom.DOMTest.class);
         suite.addTestSuite(groovy.xml.DOMTest.class);
         suite.addTestSuite(groovy.xml.MarkupTest.class);
         suite.addTestSuite(groovy.xml.MarkupWithWriterTest.class);
