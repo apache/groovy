@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GString;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
@@ -209,7 +210,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
         value = (Object[]) invoke(object, "toArray", new Object[0]);
         assertArrayEquals(object.toArray(), value);
-       }
+    }
 
     public void testInvalidOverloading() throws Throwable {
         try {
@@ -225,6 +226,16 @@ public class InvokeMethodTest extends GroovyTestCase {
         String param = "called with: ";
         Object value = invoke(param, "plus", new Object[] { null });
         assertEquals("called with null", param + null, value);
+    }
+
+    public void testCoerceGStringToString() throws Throwable {
+        GString param = new GString(new Object[] { "James" }) {
+            public String[] getStrings() {
+                return new String[] { "Hello " };
+            }
+        };
+        Object value = invoke(this, "methodTakesString", new Object[] { param });
+        assertEquals("converted GString to string", param.toString(), value);
     }
 
     public void testClassMethod() throws Throwable {
@@ -340,6 +351,10 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     public Object badOverload(Object a, String b) {
         return "Object, String";
+    }
+
+    public Object methodTakesString(String x) {
+        return x;
     }
 
     // Implementation methods

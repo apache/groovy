@@ -250,16 +250,17 @@ public class MetaClass {
             return invokeStaticMethod(object, methodName, arguments);
         }
         catch (NoSuchMethodException e) {
-            if (size == 1 && arguments[0] instanceof List) {
-                // lets coerce the list arguments into an array of arguments
-                // e.g. calling JFrame.setLocation( [100, 100] )
+            if (size == 1) {
+                Object firstArgument = arguments[0];
+                if (firstArgument instanceof List) {
+                    // lets coerce the list arguments into an array of arguments
+                    // e.g. calling JFrame.setLocation( [100, 100] )
 
-                List list = (List) arguments[0];
-                return invokeMethod(object, methodName, list.toArray());
+                    List list = (List) firstArgument;
+                    return invokeMethod(object, methodName, list.toArray());
+                }
             }
-            else {
-                throw e;
-            }
+            throw e;
         }
     }
 
@@ -270,7 +271,7 @@ public class MetaClass {
         System.out.println("Argument type: " + type);
         System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
         */
-        
+
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
@@ -678,6 +679,24 @@ public class MetaClass {
                     + " reason: "
                     + e,
                 e);
+        }
+        catch (IllegalArgumentException e) {
+            if (argumentArray.length == 1 && argumentArray[0] instanceof GString) {
+                argumentArray[0] = argumentArray[0].toString();
+                return doMethodInvoke(object, method, argumentArray);
+            }
+            else {
+                throw new InvokerException(
+                    "failed to invoke method: "
+                        + method
+                        + " on: "
+                        + object
+                        + " with arguments: "
+                        + InvokerHelper.toString(argumentArray)
+                        + " reason: "
+                        + e,
+                    e);
+            }
         }
         catch (Exception e) {
             throw new InvokerException(
