@@ -1155,7 +1155,7 @@ public class ASTBuilder
         VariableExpression answer = new VariableExpression( expressionRoot.getToken().getText() );
         if (expressionRoot.getChildren().length > 0) 
         {
-            answer.setType(expressionRoot.getChild(0).getToken().getText());
+            answer.setType(resolveName(expressionRoot.getChild(0).getToken().getText()));
         }
         return answer;
     }
