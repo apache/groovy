@@ -1262,6 +1262,7 @@ closureParameters
         :   BOR! nls! 
         							(parameterDeclarationList | (LPAREN! nls! parameterDeclarationList nls! RPAREN!))
         							nls! BOR!
+        |   LPAREN! nls! parameterDeclarationList nls! RPAREN!	nls! BOR!
                 // Yes, you can have a full parameter declaration list.
                 // they can be wrapped in parens to allow complex expressions
                 
