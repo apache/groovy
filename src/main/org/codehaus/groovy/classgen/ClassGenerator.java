@@ -75,6 +75,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
+import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
@@ -414,6 +415,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
+        // TODO Auto-generated method stub
+
+    }
+    
+    public void visitRegexExpression(RegexExpression expression) {
         // TODO Auto-generated method stub
 
     }

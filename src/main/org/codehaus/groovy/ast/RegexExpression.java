@@ -46,38 +46,28 @@
 package org.codehaus.groovy.ast;
 
 /**
- * An implementation of the visitor pattern for working with ASTNodes
+ * Represents a regular expression of the form /regex/ which creates
+ * a regular expression. In the source code the regular expression does
+ * not need to escape the use of backslash \ which makes it easier to work
+ * with regex's in Groovy.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyCodeVisitor {
+public class RegexExpression extends Expression {
+    
+    private String regex;
+    
+    public RegexExpression(String regex) {
+        this.regex = regex;
+    }
+    
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitRegexExpression(this);
+    }
 
-    // statements
-    //-------------------------------------------------------------------------
-    public void visitForLoop(ForLoop forLoop);
-    public void visitWhileLoop(WhileLoop loop);
-    public void visitDoWhileLoop(DoWhileLoop loop);
-    public void visitIfElse(IfElse ifElse);
-    public void visitExpressionStatement(ExpressionStatement statement);
-    public void visitReturnStatement(ReturnStatement statement);
-    public void visitAssertStatement(AssertStatement statement);
-    public void visitTryCatchFinally(TryCatchFinally finally1);
+    public String getRegex() {
+        return regex;
+    }
 
-    // expressions
-    //-------------------------------------------------------------------------
-    public void visitMethodCallExpression(MethodCallExpression call);
-    public void visitVariableExpression(VariableExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
-    public void visitConstantExpression(ConstantExpression expression);
-    public void visitBinaryExpression(BinaryExpression expression);
-    public void visitBooleanExpression(BooleanExpression expression);
-    public void visitTupleExpression(TupleExpression expression);
-    public void visitMapExpression(MapExpression expression);
-    public void visitMapEntryExpression(MapEntryExpression expression);
-    public void visitListExpression(ListExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitRangeExpression(RangeExpression expression);
-    public void visitClosureExpression(ClosureExpression expression);
-    public void visitRegexExpression(RegexExpression expression);
 }
