@@ -437,6 +437,12 @@
       <version>1.5.2</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
+    <dependency>
+      <groupId>asm</groupId>
+      <artifactId>asm-analysis</artifactId>    
+      <version>1.5.2</version>
+      <url>http://asm.objectweb.org/</url>
+    </dependency>
 
     <!-- only used for BSF adapter-->
     <dependency>
