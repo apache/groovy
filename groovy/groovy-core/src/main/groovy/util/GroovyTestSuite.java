@@ -35,9 +35,11 @@
 package groovy.util;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.Script;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
+import org.codehaus.groovy.runtime.ScriptTestAdapter;
 
 import java.io.File;
 
@@ -45,38 +47,38 @@ import java.io.File;
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
  * either as a unit test case or as an application.
- * 
+ * <p/>
  * You can specify the GroovyUnitTest to run by running this class as an appplication
- * and specifying the script to run on the command line. 
- * 
+ * and specifying the script to run on the command line.
+ * <p/>
  * <code>
  * java groovy.util.GroovyTestSuite src/test/Foo.groovy
  * </code>
- * 
+ * <p/>
  * Or to run the test suite as a unit test suite in an IDE you can use
  * the 'test' system property to define the test script to run.
  * e.g. pass this into the JVM when the unit test plugin runs...
- * 
+ * <p/>
  * <code>
  * -Dtest=src/test/Foo.groovy
  * </code>
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class GroovyTestSuite extends TestSuite {
-    
+
     protected static String file = null;
-    
+
     protected GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
 
     public static void main(String[] args) {
         if (args.length > 0) {
             file = args[0];
         }
-        TestRunner.run( suite() );
+        TestRunner.run(suite());
     }
-    
+
     public static Test suite() {
         GroovyTestSuite suite = new GroovyTestSuite();
         try {
@@ -96,9 +98,16 @@ public class GroovyTestSuite extends TestSuite {
         }
         System.out.println("Compiling: " + fileName);
         Class type = compile(fileName);
-        addTestSuite(type);
+        String[] args = {};
+        if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
+            // lets treat the script as a Test
+            addTest(new ScriptTestAdapter(type, args));
+        }
+        else {
+            addTestSuite(type);
+        }
     }
-    
+
     public Class compile(String fileName) throws Exception {
         return loader.parseClass(new File(fileName));
     }
