@@ -49,8 +49,6 @@ package org.codehaus.groovy.syntax;
 import java.math.BigInteger;
 import java.math.BigDecimal;
 
-import org.codehaus.groovy.syntax.parser.ParserException;
-
 /**
  *  Helper class for processing Groovy numeric literals.
  *
@@ -320,7 +318,7 @@ public class Numbers
 
             case 'g':
             default:
-                return new BigDecimal( text );
+                return value;
         }
     }
 

@@ -56,10 +56,11 @@ class LiteralTypesTest extends GroovyTestCase {
 
         x = 2147483647;           // max integer value
         assert x instanceof Integer;
+        assert x == new Integer("2147483647");
 
         x = -2147483648;          // min integer constant
         assert x instanceof Integer;
-        assert x == new Long("-2147483648");
+        assert x == new Integer("-2147483648");
 
         x = -2147483649;          // min integer value - 1
         assert x == new Long("-2147483649");
@@ -70,6 +71,7 @@ class LiteralTypesTest extends GroovyTestCase {
         assert x instanceof Long;
 
         x = 9223372036854775807;  // max long value
+        assert x == new Long("9223372036854775807");
         assert x instanceof Long;
 
         x = -9223372036854775808; // min long value
