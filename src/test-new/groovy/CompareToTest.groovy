@@ -16,7 +16,7 @@ class CompareToTest extends GroovyTestCase {
         assert result > 0
         
         assert (a <=> b) < 0
-        assert (a <=> 12) == 0
+        assert a <=> 12 == 0
         assert (c <=> b) > 0
     }
 
