@@ -47,7 +47,7 @@
 
   <siteAddress>groovy.codehaus.org</siteAddress>
   <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
-  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10010&amp;report=roadmap</issueTrackingUrl>
+  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
 
   <repository>
     <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>

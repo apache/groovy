@@ -43,41 +43,34 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.ast;
 
-package org.codehaus.groovy.tools;
+import org.objectweb.asm.Constants;
 
-import java.io.File;
+import junit.framework.TestCase;
 
-import org.codehaus.groovy.GroovyTestCase;
 /**
- * Tests the compiling & running of GroovyTestCases
+ * Tests the ClassNode
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompilerTest extends GroovyTestCase {
+public class ClassNodeTest extends TestCase implements Constants {
 
-    Compiler compiler = new Compiler();
-    boolean dumpClass = true;
-
-    public void testMethodCall() throws Exception {
-        runTest("ClosureMethodTest.groovy");
-    }
-
-    protected void runTest(String name) throws Exception {
-        File file = new File("src/test/groovy/" + name);
-        
-        assertTrue("Could not find source file: " + file, file.exists());
-
-        compiler.compile(new File[] { file });
-    }
+    ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
+    ClassNode innerClassNode = new InnerClassNode(classNode, "Foo$1", ACC_PUBLIC, "java.lang.Object");
 
     protected void setUp() throws Exception {
-        File dir = new File("target/test-generated-classes");
-        dir.mkdirs();
-        compiler.setOutputDir(dir);
-
-        compiler.setDebug(dumpClass);
+        classNode.addField("field", ACC_PUBLIC, "java.lang.String", null);
     }
 
+    public void testOuterClass() {
+        assertNull(classNode.getOuterClass());
+        assertNotNull(innerClassNode.getOuterClass());
+    }
+
+    public void testOuterField() {
+        assertNull(classNode.getOuterField("field"));
+        assertNotNull(innerClassNode.getOuterField("field"));
+    }
 }

@@ -190,6 +190,21 @@ public class ClassNode extends ASTNode implements Constants {
     }
 
     /**
+     * @return the field node on the outer class or null if this is not an inner class
+     */
+    public FieldNode getOuterField(String name) {
+        return null;
+    }
+
+    /**
+     * Helper method to avoid casting to inner class
+     * @return
+     */
+    public ClassNode getOuterClass() {
+        return null;
+    }
+
+    /**
      * Capitalizes the start of the given bean property name
      */
     public static String capitalize(String name) {

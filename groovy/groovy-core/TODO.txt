@@ -5,7 +5,7 @@ Core Groovy Tasks
 
 * test use of constructors
 
-* closures need to be able to access fields of outer class
+* closures need to be able to access fields, properties and methods of outer class
 
 * remove log4j dependency
 

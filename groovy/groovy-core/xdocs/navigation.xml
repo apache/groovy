@@ -5,11 +5,11 @@
   <body>
     <links>
       <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
-      <item name="IRC"				   href="http://irc.codehaus.org/channels/groovy/"/>
+      <item name="IRC"				   href="irc://irc.codehaus.org/groovy"/>
+      <item name="IRC Log"			   href="http://irc.codehaus.org/channels/groovy/"/>
       <item name="Stats"			   href="http://stats.groovy.codehaus.org/"/>
-      <!--
-      <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=XXX"/>
-      -->
+      <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=compversions"/>
+      <item name="Roadmap"       	   href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap"/>
     </links>
 
     <menu name="Groovy">
@@ -17,6 +17,7 @@
       <item name="Overview"            href="http://wiki.codehaus.org/groovy/"/>
       <item name="Syntax"              href="http://wiki.codehaus.org/groovy/CoreSyntax"/>
       <item name="Wish List"           href="http://wiki.codehaus.org/groovy/WishList"/>
+      <item name="Examples"			   href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/"/>
       <!--
       <item name="License"             href="/license.html"/>
       <item name="Download"            href="/download.html"/>
