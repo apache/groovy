@@ -104,7 +104,7 @@ assert emptyMap.foo == 5
 {code}
 
 
-1.1 Subscript operators
+1.1 Slicing with the subscript operator
 
 You can index into Strings, Lists, arrays, Maps, regexs and such like using the subscript expression.
 
@@ -126,7 +126,9 @@ answer = list[2]
 assert answer == 12
 {code}
 
-Notice that you can use ranges to extract part of a List/array/String/regex. You can also use a list of indexes too.
+Notice that you can use ranges to extract part of a List/array/String/regex. 
+This is often referred to as ~~slicing~~ in scripting languages like Python.
+You can also use a list of indexes too.
 
 {code:groovy}
 list = 100..200
