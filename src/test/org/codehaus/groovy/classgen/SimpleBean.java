@@ -46,21 +46,22 @@
 
 package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.GroovyTestCase;
 
 /**
+ * A simple bean
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassGeneratorTest extends GroovyTestCase {
+public class SimpleBean {
 
-    public void testCapitalize() {
-        assertEquals("Foo", ClassGenerator.capitalize("foo"));
-        assertEquals("Foo", ClassGenerator.capitalize("Foo"));
-        assertEquals("FOo", ClassGenerator.capitalize("fOo"));
-        assertEquals("FOO", ClassGenerator.capitalize("fOO"));
-        assertEquals("F", ClassGenerator.capitalize("f"));
+    private String bar;
+
+    public String getBar() {
+        return bar;
     }
 
+    public void setBar(String value) {
+        this.bar = value;
+    }
 }
