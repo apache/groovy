@@ -719,7 +719,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Statement methodCall(AST code) {
         Expression expression = methodCallExpression(code);
         ExpressionStatement expressionStatement = new ExpressionStatement(expression);
-        configureAST(classNode, code);
+        configureAST(expressionStatement, code);
         return expressionStatement;
     }
 
