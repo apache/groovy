@@ -76,6 +76,7 @@ import java.util.logging.Logger;
 
 import javax.swing.Action;
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -325,6 +326,12 @@ public class SwingBuilder extends BuilderSupport {
 
     protected void registerWidgets() {
         registerBeanFactory("action", DefaultAction.class);
+        registerFactory("boxLayout", new Factory() {
+            public Object newInstance(Map properties)
+                throws InstantiationException, InstantiationException, IllegalAccessException {
+                return createBoxLayout(properties);
+            }
+        });
         registerBeanFactory("button", JButton.class);
         registerBeanFactory("buttonGroup", ButtonGroup.class);
         registerBeanFactory("checkBox", JCheckBox.class);
@@ -496,6 +503,26 @@ public class SwingBuilder extends BuilderSupport {
                 }
             }
         });
+    }
+
+    protected Object createBoxLayout(Map properties) {
+        Object parent = getCurrent();
+        if (parent instanceof Container) {
+            Object axisObject = properties.remove("axis");
+            int axis = 0;
+            if (axisObject != null) {
+                Integer i = (Integer) axisObject;
+                axis = i.intValue();
+            }
+            BoxLayout answer = new BoxLayout((Container) parent, axis);
+            
+            // now lets try set the layout property
+            InvokerHelper.setProperty(parent, "layout", answer);
+            return answer;
+        }
+        else {
+            throw new RuntimeException("Must be nested inside a Container");
+        }
     }
 
     protected Object createDialog(Map properties) {
