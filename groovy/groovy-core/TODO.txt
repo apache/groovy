@@ -1,11 +1,7 @@
 Things to Test
 ==============
 
-* home page tester
-
 * test synchronized statement
-
-* export script variables when using the console
 
 * test do while
 
@@ -13,16 +9,12 @@ Things to Test
 	- duplicate methods testno 
 	- duplicate class in module
 	
-* test date range using Range object
-
 * test max, min, sort with closure comparator
 	- min/max/sort to allow closures for comparators
 		foo.max { a, b | a.length <=> b.length }
 	- ClosureComparator
 			
 * test Button(actionPerformed:{event| event.println() }
-
-* remove dependency on asm-util on the compiler
 
 	
 Core Groovy Tasks
@@ -32,6 +24,8 @@ Core Groovy Tasks
 	{name:'James', address:'London'}
 	
 	only issue is the identifiers could conflict.
+	
+	Could use a helper method?
 
 * handling sequences (0-n, 1-n)
 	they are Lists & behave like lists, any methods on the items will
@@ -93,7 +87,6 @@ Core Groovy Tasks
 	- eval("....")
 	- gets
 	- load(...)
-	- File.eachByte
 	- configure method on beans?
 		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
@@ -105,9 +98,6 @@ Core Groovy Tasks
 
 * add doesNotUnderstand() method for catching & handling unknown methods	
 		
-* << for list append and for output to streams
-	maybe other optional IO methods like gets?
-
 * is there a better way to add listeners in Groovy. e.g. how to remove added listeners
 
 	listener = bean.property + { some closure }
@@ -221,12 +211,6 @@ sql.table("users") {
 * groovy thread...
 	foo = new GroovyThread(args) { closure }
 	
-* doc to write
-	- using beans + listeners
-	- expression language
-
-* support -ve indices on subscript operator
-
 * MetaClass -> add getPropertyDescriptor which has methods
 	- get(), set(), type(), cardinality() etc
 	
@@ -261,9 +245,7 @@ sql.table("users") {
 
 * test try / catch with multiple exception types
 
-* test [] on lists & maps?
-
-* support static newInstance() method for constructors
+* * support static newInstance() method for constructors
 
 * maybe split up ClassGenerator - do code gen & class gen separately
 
@@ -338,8 +320,6 @@ STUFF TO PONDER
 
 * maybe use syntax #[1, 2] to create arrays which behave just like immutable lists?
 		
-* maybe use * to represent fields if we need to differentiate properties & fields?	
-
 * using macros to avoid dependencies on logging stuff (say)
 
 	class GroovyLog {
