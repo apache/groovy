@@ -408,15 +408,27 @@ public class TokenTest
                      "<identifier>" );
     }
 
-    public void testNumber()
+    public void testIntegerNumber()
     {
-        Token token = Token.number( LINE,
-                                    COLUMN,
-                                    "42" );
+        Token token = Token.integerNumber( LINE,
+                                           COLUMN,
+                                           "42" );
 
         assertToken( token,
-                     Token.NUMBER,
+                     Token.INTEGER_NUMBER,
                      "42",
+                     "<number>" );
+    }
+
+    public void testFloatNumber()
+    {
+        Token token = Token.floatNumber( LINE,
+                                         COLUMN,
+                                         "42.84" );
+
+        assertToken( token,
+                     Token.FLOAT_NUMBER,
+                     "42.84",
                      "<number>" );
     }
 

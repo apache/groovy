@@ -899,6 +899,14 @@ public class Parser
                 expr = cur;
                 break;
             }
+            case ( Token.INTEGER_NUMBER ):
+            case ( Token.FLOAT_NUMBER ):
+            case ( Token.DOUBLE_QUOTE_STRING ):
+            case ( Token.SINGLE_QUOTE_STRING ):
+            {
+                expr = rootNode( lt() );
+                break;
+            }
             default:
             {
                 throwExpected( new int[] { } );

@@ -586,14 +586,14 @@ public class LexerTest
         throws Exception
     {
         assertSimple( "42",
-                      Token.NUMBER );
+                      Token.INTEGER_NUMBER );
     }
 
     public void testNumber_FloatingPoint()
         throws Exception
     {
         assertSimple( "42.84",
-                      Token.NUMBER );
+                      Token.FLOAT_NUMBER );
     }
 
     public void testNumber_UnexpectedCharacter()

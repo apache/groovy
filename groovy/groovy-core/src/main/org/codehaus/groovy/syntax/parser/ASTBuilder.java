@@ -447,9 +447,44 @@ public class ASTBuilder
                 expression = binaryExpression( expressionRoot );
                 break;
             }
+            case ( Token.SINGLE_QUOTE_STRING ):
+            case ( Token.DOUBLE_QUOTE_STRING ):
+            case ( Token.INTEGER_NUMBER ):
+            case ( Token.FLOAT_NUMBER ):
+            {
+                expression = constantExpression( expressionRoot );
+                break;
+            }
         }
 
         return expression;
+    }
+
+    protected ConstantExpression constantExpression(CSTNode expressionRoot)
+    {
+        Object value = null;
+
+        switch ( expressionRoot.getToken().getType() )
+        {
+            case ( Token.SINGLE_QUOTE_STRING ):
+            case ( Token.DOUBLE_QUOTE_STRING ):
+            {
+                value = expressionRoot.getToken().getText();
+                break;
+            }
+            case ( Token.INTEGER_NUMBER ):
+            {
+                value = new Long( expressionRoot.getToken().getText() );
+                break;
+            }
+            case ( Token.FLOAT_NUMBER ):
+            {
+                value = new Double( expressionRoot.getToken().getText() );
+                break;
+            }
+        }
+
+        return new ConstantExpression( value );
     }
 
     protected BinaryExpression binaryExpression(CSTNode expressionRoot)
