@@ -48,17 +48,9 @@ package org.codehaus.groovy.classgen;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.LinkedList;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.lexer.CharStream;
-import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
-import org.codehaus.groovy.syntax.lexer.Lexer;
-import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
-import org.codehaus.groovy.syntax.parser.ASTBuilder;
-import org.codehaus.groovy.syntax.parser.CSTNode;
-import org.codehaus.groovy.syntax.parser.Parser;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -70,6 +62,21 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends ClassLoader {
 
     private Verifier verifier = new Verifier();
+    private Class generatedClass = null;
+    private CompilerFacade compiler = new CompilerFacade(this) {
+        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
+            byte[] code = classWriter.toByteArray();
+
+            //System.out.println("About to load class: " + classNode.getName());
+
+            Class theClass = defineClass(classNode.getName(), code, 0, code.length);
+
+            if (generatedClass == null) {
+                generatedClass = theClass;
+            }
+        }
+            
+    };
 
     public GroovyClassLoader() {
     }
@@ -85,7 +92,9 @@ public class GroovyClassLoader extends ClassLoader {
      * @return
      */
     public Class defineClass(ClassNode classNode, String file) {
-        return defineClass(new GeneratorContext(), classNode, file);
+        generatedClass = null;
+        compiler.generateClass(new GeneratorContext(), classNode, file);
+        return generatedClass;
     }
 
     /**
@@ -105,69 +114,9 @@ public class GroovyClassLoader extends ClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(InputStream in, String file) throws SyntaxException, IOException {
-        Class answer = null;
-        try {
-            answer = parseClass(new InputStreamCharStream(in), file);
-        }
-        catch (SyntaxException e) {
-            try {
-                in.close();
-            }
-            catch (Exception hide) {
-                // ignore
-            }
-            throw e;
-        }
-        catch (IOException e) {
-            try {
-                in.close();
-            }
-            catch (Exception hide) {
-                // ignore
-            }
-            throw e;
-        }
-        in.close();
-        return answer;
+        generatedClass = null;
+        compiler.parseClass(in, file);
+        return generatedClass;
     }
-
-    protected Class parseClass(CharStream charStream, String file) throws SyntaxException, IOException {
-        Lexer lexer = new Lexer(charStream);
-        Parser parser = new Parser(new LexerTokenStream(lexer));
-        CSTNode compilationUnit = parser.compilationUnit();
-
-        ASTBuilder astBuilder = new ASTBuilder(this);
-        ClassNode[] classNodes = astBuilder.build(compilationUnit);
-
-        GeneratorContext context = new GeneratorContext();
-        Class answer = null;
-        for (int i = 0; i < classNodes.length; ++i) {
-            Class aClass = defineClass(context, classNodes[i], file);
-            if (i == 0) {
-                answer = aClass;
-            }
-        }
-        return answer;
-    }
-
-    protected Class defineClass(GeneratorContext context, ClassNode classNode, String file) {
-        verifier.visitClass(classNode);
-
-        ClassWriter classWriter = new ClassWriter(true);
-        ClassGenerator generator = new ClassGenerator(context, classWriter, this, file);
-        generator.visitClass(classNode);
-
-        byte[] code = classWriter.toByteArray();
-
-        //System.out.println("About to load class: " + classNode.getName());
-
-        Class answer = defineClass(classNode.getName(), code, 0, code.length);
-
-        // now lets do inner classes
-        LinkedList innerClasses = generator.getInnerClasses();
-        while (!innerClasses.isEmpty()) {
-            defineClass(context, (ClassNode) innerClasses.removeFirst(), file);
-        }
-        return answer;
-    }
+   
 }

@@ -39,8 +39,8 @@
   		description="Compiles the Groovy unit test cases">
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
     <!-- lets copy and touch all the groovy files to ensure they all recompile -->
-    <mkdir dir="${basedir}/target/groovy"/>
-    <copy todir="${basedir}/target/groovy">
+    <mkdir dir="${basedir}/target/test-classes"/>
+    <copy todir="${basedir}/target/test-classes">
       <fileset dir="${basedir}/src/test">
 <!--
         <include name="**/groovy/Closure*.groovy"/>
@@ -50,9 +50,9 @@
       </fileset>
     </copy>
     <touch>
-    	<fileset dir="${basedir}/target/groovy" includes="**/*.groovy"/> 
+    	<fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/> 
     </touch>
-    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/groovy" listfiles="false">
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="false">
       <classpath refid="test.classpath"/>
     </groovyc>
   </goal>
