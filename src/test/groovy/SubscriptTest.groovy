@@ -70,4 +70,13 @@ class SubscriptTest extends GroovyTestCase {
         assert sub['b'] == 456
         assert ! sub.containsKey('c')
     }
+    
+    void testListWithinAListSyntax() {
+        list = [1, 2, 3, 4..10, 5, 6]
+        
+        assert list.size() == 6
+        sublist = list[3]
+        assert sublist == 4..10
+        assert sublist == [4, 5, 6, 7, 8, 9]
+    }
 }
