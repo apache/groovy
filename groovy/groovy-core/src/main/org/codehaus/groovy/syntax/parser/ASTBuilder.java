@@ -694,15 +694,16 @@ public class ASTBuilder
             if ( matches( children[ 0 ],
                           Token.SINGLE_QUOTE_STRING ) )
             {
-                ConstantExpression expression = constantExpression( children[ i ] );
-                if (expression != null) 
+                ConstantExpression constantExpression = constantExpression( children[ i ] );
+                if (constantExpression != null) 
                 {    
-                    expr.addString( expression );
+                    expr.addString( constantExpression );
                 }
             }
             else
             {
-                expr.addValue( expression( children[ i ] ) );
+                Expression expression = expression( children[ i ] );
+                expr.addValue( expression );
             }
         }
 
