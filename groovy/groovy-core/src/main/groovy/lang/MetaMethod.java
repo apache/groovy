@@ -84,18 +84,27 @@ public class MetaMethod implements Cloneable {
         this(metaMethod.method);
     }
 
+    /**
+     * Checks that the given parameters are valid to call this method
+     * 
+     * @param arguments
+     * @throws IllegalArgumentException if the parameters are not valid
+     */
+    public void checkParameters(Object[] arguments) {
+        // lets check that the argument types are valid
+        if (!MetaClass.isValidMethod(getParameterTypes(), arguments, false)) {
+            throw new IllegalArgumentException(
+                    "Parameters to method: "
+                    + getName()
+                    + " do not match types: "
+                    + InvokerHelper.toString(getParameterTypes())
+                    + " for arguments: "
+                    + InvokerHelper.toString(arguments));
+        }
+    }
+    
     public Object invoke(Object object, Object[] arguments) throws Exception {
         if (reflector != null) {
-            // lets check that the argument types are valid
-            if (!MetaClass.isValidMethod(getParameterTypes(), arguments, false)) {
-                throw new IllegalArgumentException(
-                    "Parameters to method: "
-                        + getName()
-                        + " do not match types: "
-                        + InvokerHelper.toString(getParameterTypes())
-                        + " for arguments: "
-                        + InvokerHelper.toString(arguments));
-            }
             return reflector.invoke(this, object, arguments);
         }
         else {
