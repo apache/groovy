@@ -274,12 +274,8 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 		this.propertyPrefix.setLength(0);
 	
 		if (method instanceof Closure) {
-			try {
-				closure = (Closure)(((Closure)method).clone());
-				closure.setDelegate(this);
-			} catch (CloneNotSupportedException e) {
-				throw new GroovyRuntimeException("groovy.lang.Closure doesn't implement Clonable");
-			}
+			closure = (Closure)(((Closure)method).clone());
+			closure.setDelegate(this);
 		} else if (method instanceof Class) {
 			closure = null;
 		} else {
