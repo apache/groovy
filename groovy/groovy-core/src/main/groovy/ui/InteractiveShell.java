@@ -499,7 +499,8 @@ public class InteractiveShell {
     }
     
     private void resetLoadedClasses() {
-        shell.resetLoadedClasses();
+        // GroovyShell.resetLoadedClasses() is not implemented yet.
+        // shell.resetLoadedClasses();
         out.println("all former unbound class definitions are discarded");
     }
 }
