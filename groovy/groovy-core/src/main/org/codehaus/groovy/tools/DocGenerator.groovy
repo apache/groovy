@@ -226,9 +226,12 @@ class DocGenerator
 	 * @param method a method
 	 * @return a list of parameters without the first one
 	 */
-	protected getParameters(method)
+	private getParameters(method)
 	{
-		return method.getParameters().toList()[1..-1]
+	    if (method.getParameters().size() > 1)
+		    return method.getParameters().toList()[1..-1]
+		else
+		    return []
 	}
 
 	/**
