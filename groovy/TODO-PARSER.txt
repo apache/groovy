@@ -44,6 +44,18 @@ PARSER CHANGES REQUIRED
 	
 * make ; optional
 
+* support for sequences...
+
+	sequence Foo { int x, String y, Bar b };
+	foo = new Foo(12, "hello", new Bar());
+	assert foo[0] == 12;
+	assert foo.x == 12;
+	foo.y = "hey";
+	
+	they are kinda like simple classes where the data
+	is stored as a tuple but they can have optional type restrictions
+	and also possible namedd values.
+	
 * add yield keyword...
 
 	"yield" expression.
