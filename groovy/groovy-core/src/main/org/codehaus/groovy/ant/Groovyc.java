@@ -46,8 +46,8 @@
 package org.codehaus.groovy.ant;
 
 import java.io.File;
-import java.io.StringWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -57,8 +57,10 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
-import org.codehaus.groovy.tools.FileSystemCompiler;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
+
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -81,7 +83,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
  */
 public class Groovyc extends MatchingTask {
 
-    private FileSystemCompiler compiler = new FileSystemCompiler();
+    private CompilerConfiguration configuration = new CompilerConfiguration();
     private Path src;
     private File destDir;
     private Path compileClasspath;
@@ -152,7 +154,7 @@ public class Groovyc extends MatchingTask {
      * @param verbose
      */
     public void setVerbose(boolean verbose) {
-        compiler.setVerbose(verbose);
+        configuration.setVerbose( verbose );
     }
 
     /**
@@ -385,10 +387,13 @@ public class Groovyc extends MatchingTask {
             try {
                 Path classpath = getClasspath();
                 if (classpath != null) {
-                    compiler.setClasspath(classpath.toString());
+                    configuration.setClasspath(classpath.toString());
                 }
-                compiler.setOutputDir(destDir);
-                compiler.compile(compileList);
+                configuration.setTargetDirectory(destDir);
+                
+                CompilationUnit unit = new CompilationUnit( configuration );
+                unit.addSources( compileList );
+                unit.compile( );
             }
             catch (Exception e) {
 

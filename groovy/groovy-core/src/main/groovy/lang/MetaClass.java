@@ -50,7 +50,6 @@ import java.beans.EventSetDescriptor;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -76,9 +75,9 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.classgen.CompilerFacade;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -92,6 +91,7 @@ import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -715,26 +715,26 @@ public class MetaClass {
             }
             if (url != null) {
                 try {
-                    InputStream in = url.openStream();
 
                     /**
                      * @todo there is no CompileUnit in scope so class name
                      * checking won't work but that mostly affects the bytecode
                      * generation rather than viewing the AST
                      */
-                    CompilerFacade compiler =
-                        new CompilerFacade(
-                            theClass.getClassLoader(),
-                            new CompileUnit(getClass().getClassLoader(), new CompilerConfig())) {
-                        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
-                            if (classNode.getName().equals(theClass.getName())) {
-                                //System.out.println("Found: " +
-                                // classNode.getName());
-                                MetaClass.this.classNode = classNode;
+
+                    CompilationUnit.ClassgenCallback search = new CompilationUnit.ClassgenCallback() {
+                        public void call( ClassVisitor writer, ClassNode node ) {
+                            if( node.getName().equals(theClass.getName()) ) {
+                                MetaClass.this.classNode = node;
                             }
                         }
                     };
-                    compiler.parseClass(in, groovyFile);
+                    
+                    
+                    CompilationUnit unit = new CompilationUnit( getClass().getClassLoader() );
+                    unit.setClassgenCallback( search );
+                    unit.addSource( url );
+                    unit.compile( Phases.CLASS_GENERATION );
                 }
                 catch (Exception e) {
                     throw new GroovyRuntimeException("Exception thrown parsing: " + groovyFile + ". Reason: " + e, e);

@@ -49,13 +49,14 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.lexer.UnexpectedCharacterException;
-import org.codehaus.groovy.tools.ExceptionCollector;
 
 /**
  * Test case for the AST builder
@@ -142,6 +143,7 @@ public class ASTBuilderTest extends TestParserSupport {
 
         ForStatement stmt = (ForStatement) statement.getStatements().get(0);
         assertEquals("x", stmt.getVariable());
+        System.out.println( stmt.getVariableType().getName() );
         assertEquals("java.lang.Integer", stmt.getVariableType().getName());
         assertFalse(stmt.getVariableType().isDynamic());
         System.out.println(stmt);
@@ -492,8 +494,9 @@ public class ASTBuilderTest extends TestParserSupport {
     private void ensureOutOfRange(String script) throws Exception {
         try {
             ModuleNode module = parse(script, "Dummy.groovy");
-        } catch (ExceptionCollector e) {
-            if (e.get(0) instanceof ParserException && e.get(0).getMessage().indexOf("out of range") >= 0) {
+        } catch (CompilationFailedException e) {
+            SyntaxException cause = e.getUnit().getSyntaxError(0);
+            if( cause != null && cause instanceof ParserException && cause.getMessage().indexOf("out of range") >= 0) {
                 return;
             }
             fail (script+" should fail with a ParserException: "+e.getMessage());
@@ -540,8 +543,9 @@ public class ASTBuilderTest extends TestParserSupport {
     public void testLiteralIntegerBadSuffix() throws Exception {
         try {
             ModuleNode module = parse("x = 2147483648J;", "Dummy.groovy");
-        } catch (ExceptionCollector e) {
-            if (e.get(0) instanceof UnexpectedCharacterException) {
+        } catch (CompilationFailedException e) {
+            SyntaxException cause = e.getUnit().getSyntaxError(0);
+            if (cause instanceof UnexpectedCharacterException) {
                 return;
             }
             fail ("x = 2147483648J should fail with an UnexpectedCharacterException");
@@ -552,8 +556,9 @@ public class ASTBuilderTest extends TestParserSupport {
     public void testLiteralBadExponent() throws Exception {
         try {
             ModuleNode module = parse("x = 2.3e;", "Dummy.groovy");
-        } catch (ExceptionCollector e) {
-            if (e.get(0) instanceof UnexpectedCharacterException) {
+        } catch (CompilationFailedException e) {
+            SyntaxException cause = e.getUnit().getSyntaxError(0);
+            if (cause instanceof UnexpectedCharacterException) {
                 return;
             }
             fail ("x = 2.3e should fail with an UnexpectedCharacterException");

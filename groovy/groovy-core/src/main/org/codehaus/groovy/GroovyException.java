@@ -45,7 +45,7 @@
  */
 package org.codehaus.groovy;
 
-public class GroovyException extends Exception {
+public class GroovyException extends Exception implements GroovyExceptionInterface {
     private boolean fatal = true;  
 
     public GroovyException() {

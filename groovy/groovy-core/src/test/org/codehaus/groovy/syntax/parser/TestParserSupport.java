@@ -36,11 +36,9 @@ package org.codehaus.groovy.syntax.parser;
 import groovy.util.GroovyTestCase;
 
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.syntax.TokenStream;
-import org.codehaus.groovy.syntax.lexer.CharStream;
-import org.codehaus.groovy.syntax.lexer.Lexer;
-import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
-import org.codehaus.groovy.syntax.lexer.StringCharStream;
+import org.codehaus.groovy.control.SourceUnit;
+
+
 
 /**
  * An abstract base class useful for AST parser related test cases
@@ -51,9 +49,10 @@ import org.codehaus.groovy.syntax.lexer.StringCharStream;
 public abstract class TestParserSupport extends GroovyTestCase {
     
     public ModuleNode parse(String text, String description) throws Exception {
-        Parser     parser = Parser.create( text, 1 );
-        ModuleNode module = parser.parse( getClass().getClassLoader(), description );
-
-        return module;
+        SourceUnit unit = SourceUnit.create( description, text );
+        unit.parse();
+        unit.convert();
+        
+        return unit.getAST();
     }
 }

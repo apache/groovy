@@ -48,6 +48,7 @@ package org.codehaus.groovy.syntax.parser;
 
 import java.util.ArrayList;
 
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.syntax.*;
 import org.codehaus.groovy.GroovyBugError;
 
@@ -233,7 +234,7 @@ public class ExpressionStack
     *  of the stack.  They are pushed in order.
     */
 
-    void shift( int count ) throws ReadException, SyntaxException
+    void shift( int count ) throws SyntaxException, CompilationFailedException
     {
         for( int i = 0; i < count; i++ )
         {
@@ -247,7 +248,7 @@ public class ExpressionStack
     *  Shifts a token from the stream to the top of the stack.
     */
 
-    void shift() throws ReadException, SyntaxException
+    void shift() throws SyntaxException, CompilationFailedException
     {
         push( parser.consume() );
     }
@@ -370,7 +371,7 @@ public class ExpressionStack
     *  Shifts if the specified flag is true, reports an error otherwise.
     */
 
-    void shiftIf( boolean flag, String error ) throws ReadException, SyntaxException
+    void shiftIf( boolean flag, String error ) throws SyntaxException, CompilationFailedException
     {
         if( flag )
         {
@@ -388,7 +389,7 @@ public class ExpressionStack
     *  Shifts unless the specified flag is true, reports an error otherwise.
     */
 
-    void shiftUnless( boolean flag, String error ) throws ReadException, SyntaxException
+    void shiftUnless( boolean flag, String error ) throws SyntaxException, CompilationFailedException
     {
         if( flag )
         {
@@ -407,7 +408,7 @@ public class ExpressionStack
     *  otherwise.
     */
 
-    void shiftIfTopIsAnExpression( String error ) throws ReadException, SyntaxException
+    void shiftIfTopIsAnExpression( String error ) throws SyntaxException, CompilationFailedException
     {
         shiftIf( ExpressionSupport.isAnExpression(top(), false), error );
     }
@@ -419,7 +420,7 @@ public class ExpressionStack
     *  error otherwise.
     */
 
-    void shiftIfTopIsAnOperator( String error ) throws ReadException, SyntaxException
+    void shiftIfTopIsAnOperator( String error ) throws SyntaxException, CompilationFailedException
     {
         shiftIf( ExpressionSupport.isAnOperator(top(), false), error );
     }
@@ -431,7 +432,7 @@ public class ExpressionStack
     *  error otherwise.
     */
 
-    void shiftUnlessTopIsAnExpression( String error ) throws ReadException, SyntaxException
+    void shiftUnlessTopIsAnExpression( String error ) throws SyntaxException, CompilationFailedException
     {
         shiftUnless( ExpressionSupport.isAnExpression(top(), false), error );
     }
@@ -443,7 +444,7 @@ public class ExpressionStack
     *  error otherwise.
     */
 
-    void shiftUnlessTopIsAnOperator( String error ) throws ReadException, SyntaxException
+    void shiftUnlessTopIsAnOperator( String error ) throws SyntaxException, CompilationFailedException
     {
         shiftUnless( ExpressionSupport.isAnOperator(top(), false), error );
     }

@@ -50,6 +50,8 @@ import groovy.util.GroovyTestCase;
 
 import java.io.File;
 
+import org.codehaus.groovy.control.CompilerConfiguration;
+
 /**
  * Tests the compiling & running of GroovyTestCases
  * 
@@ -58,7 +60,7 @@ import java.io.File;
  */
 public class FileSystemCompilerTest extends GroovyTestCase {
 
-    FileSystemCompiler compiler = new FileSystemCompiler();
+    FileSystemCompiler compiler = null;
     boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
@@ -80,8 +82,12 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     protected void setUp() throws Exception {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
-        compiler.setOutputDir(dir);
-        compiler.setVerbose(dumpClass);
+        
+        CompilerConfiguration configuration = new CompilerConfiguration();
+        configuration.setTargetDirectory(dir);
+        configuration.setVerbose(dumpClass);
+        
+        compiler = new FileSystemCompiler( configuration );
     }
 
 }

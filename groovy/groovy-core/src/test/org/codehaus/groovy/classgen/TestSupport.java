@@ -47,7 +47,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.Binding;
-import groovy.lang.CompilerConfig;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyObject;
@@ -72,6 +71,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Constants;
 
@@ -95,7 +95,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
 					: new GroovyClassLoader(parentLoader); 
     		}
     	});
-    CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfig());
+    CompileUnit unit = new CompileUnit(parentLoader, new CompilerConfiguration());
     ModuleNode module = new ModuleNode(unit);
     
     protected Class loadClass(ClassNode classNode) {

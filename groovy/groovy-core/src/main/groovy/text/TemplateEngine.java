@@ -42,7 +42,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 
-import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
  * Represents an API to any template engine which is basically a factory of Template instances from a given text input.
@@ -50,17 +50,17 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author sam
  */
 public abstract class TemplateEngine {
-    public abstract Template createTemplate(Reader reader) throws SyntaxException, ClassNotFoundException, IOException;
+    public abstract Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException;
     
-    public Template createTemplate(String templateText) throws SyntaxException, FileNotFoundException, ClassNotFoundException, IOException {
+    public Template createTemplate(String templateText) throws CompilationFailedException, FileNotFoundException, ClassNotFoundException, IOException {
         return createTemplate(new StringReader(templateText));
     }
     
-    public Template createTemplate(File file) throws SyntaxException, FileNotFoundException, ClassNotFoundException, IOException {
+    public Template createTemplate(File file) throws CompilationFailedException, FileNotFoundException, ClassNotFoundException, IOException {
         return createTemplate(new FileReader(file));
     }
 
-    public Template createTemplate(URL url) throws SyntaxException, ClassNotFoundException, IOException {
+    public Template createTemplate(URL url) throws CompilationFailedException, ClassNotFoundException, IOException {
         return createTemplate(new InputStreamReader(url.openStream()));
     }
 }

@@ -98,6 +98,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -131,6 +132,7 @@ public class ASTBuilder
   // INITIALIZATION AND MEMBER ACCESS
 
 
+    private SourceUnit  controller;    // The SourceUnit controlling us
     private ClassLoader classLoader;   // Our ClassLoader, which provides information on external types
     private Map         imports;       // Our imports, simple name => fully qualified name
     private String      packageName;   // The package name in which the module sits
@@ -140,10 +142,11 @@ public class ASTBuilder
     *  Initializes the <code>ASTBuilder</code>.
     */
 
-    public ASTBuilder(ClassLoader classLoader)
+    public ASTBuilder( SourceUnit sourceUnit, ClassLoader classLoader )
     {
+        this.controller  = sourceUnit;
         this.classLoader = classLoader;
-        this.imports = new HashMap();
+        this.imports     = new HashMap();
         this.packageName = null;
     }
 
@@ -171,7 +174,7 @@ public class ASTBuilder
 
     public ModuleNode build( CSTNode input ) throws ParserException
     {
-        ModuleNode output = new ModuleNode();
+        ModuleNode output = new ModuleNode( controller );
         resolutions.clear();
 
         //

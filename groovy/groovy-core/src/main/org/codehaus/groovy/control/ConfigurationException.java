@@ -43,26 +43,81 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.tools;
 
-import org.codehaus.groovy.GroovyException;
+package org.codehaus.groovy.control;
 
-public class CompilerBugException extends GroovyException {
+import org.codehaus.groovy.GroovyExceptionInterface;
 
-    private String    source;
-    private String    phase;
-    private Throwable caught;
 
-    public CompilerBugException( String source, String phase, Throwable caught ) {
-        super( "uncaught exception during " + phase + " phase on [" + source + "]: " + caught.toString() );
 
-        this.source = source;
-        this.phase  = phase;
-        this.caught = caught;
+
+/**
+ *  Thrown when configuration data is invalid.
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
+ */
+
+public class ConfigurationException extends RuntimeException implements GroovyExceptionInterface
+{
+    
+  //---------------------------------------------------------------------------
+  // CONSTRUCTION AND SUCH
+
+    protected Exception cause;   // The phase in which the failures occurred
+
+    
+   /**
+    *  Initializes the exception from a cause exception.
+    */
+    
+    public ConfigurationException( Exception cause ) 
+    {
+        super( cause.getMessage() );
+        this.cause = cause;
+    }
+    
+    
+   /**
+    *  Initializes the exception with just a message.
+    */
+    
+    public ConfigurationException( String message )
+    {
+        super( message );
     }
 
-    public Throwable getUnderlyingException() {
-        return this.caught;
+    
+    
+   /**
+    *  Returns the causing exception, if available.
+    */
+    
+    public Throwable getCause()
+    {
+        return cause;
     }
-
+    
+    
+   /**
+    *  Its always fatal.
+    */
+    
+    public boolean isFatal()
+    {
+        return true;
+    }
+    
+    
+    
+   /**
+    *  Set fatal is just ignored.
+    */
+    
+    public void setFatal( boolean fatal )
+    {
+    }
+    
 }
+

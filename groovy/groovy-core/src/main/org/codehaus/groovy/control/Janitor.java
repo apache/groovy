@@ -44,24 +44,46 @@
 
  */
 
-package groovy.bugs;
+package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
+import java.util.HashSet;
+import java.util.Iterator;
+
+
+
 
 /**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ *  An agent that can be used to defer cleanup operations to 
+ *  a later time.  Users much implement the HasCleanup interface.  
+ *
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+ *
+ *  @version $Id$
  */
-public class IanMaceysBug extends TestSupport {
 
-    public void testBug() throws Exception {
-        try {
-            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
-            fail("Should throw a syntax exception");
+public class Janitor implements HasCleanup
+{
+    private HashSet pending = new HashSet();   // All objects pending cleanup
+    
+    public void register( HasCleanup object )
+    {
+        pending.add( object );
+    }
+    
+    public void cleanup()
+    {
+        Iterator iterator = pending.iterator();
+        while( iterator.hasNext() )
+        {
+            HasCleanup object = (HasCleanup)iterator.next();
+            
+            try { object.cleanup(); } catch( Exception e ) {}
         }
-        catch (CompilationFailedException e) {
-            System.out.println("Worked. Caught: " + e);
-        }
+        
+        pending.clear();
     }
 }
+
+
+
+

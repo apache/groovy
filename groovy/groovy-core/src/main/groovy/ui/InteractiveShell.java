@@ -50,17 +50,15 @@ import groovy.lang.GroovyShell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.syntax.CSTNode;
-import org.codehaus.groovy.syntax.parser.Parser;
+import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.tools.ErrorReporter;
-import org.codehaus.groovy.tools.ExceptionCollector;
 
 
 /**
@@ -169,7 +167,7 @@ public class InteractiveShell {
 
     private boolean      stale    = false;               // Set to force clear of accepted
 
-    private Parser       parser   = null;                // A Parser used to check the statement
+    private SourceUnit   parser   = null;                // A SourceUnit used to check the statement
     private TokenStream  stream   = null;                // The TokenStream that backs the Parser
     private Exception    error    = null;                // Any actual syntax error caught during parsing
     private CSTNode      tree     = null;                // The top-level statement when parsed
@@ -292,7 +290,7 @@ public class InteractiveShell {
                 accept();
             }
             else {
-                report( code );
+                report( );
             }
 
         }
@@ -380,35 +378,27 @@ public class InteractiveShell {
         // Create the parser and attempt to parse the text as a top-level statement.
 
         try {
-            parser = Parser.create( code, tolerance );
-            stream = parser.getTokenStream();
-            tree   = parser.module();
+            
+            parser = SourceUnit.create( "groovysh script", code, tolerance );
+            parser.parse();
+            tree = parser.getCST();
 
-            /* see note on read(): tree   = parser.topLevelStatement(); */
-
-            if( stream.atEnd() ) {
-                parsed = true;
-            }
+            /* see note on read(): 
+             * tree = parser.topLevelStatement();
+             *
+             * if( stream.atEnd() ) {
+             *     parsed = true;
+             * }
+             */
+            
+            parsed = true;
         }
 
         //
-        // If we catch an exception from the parser or lexer, and the token stream
-        // is empty, it means we aren't yet complete.  Otherwise, the exception
-        // is real, and we report it. 
+        // We report errors other than unexpected EOF to the user.
 
-        catch( ExceptionCollector e ) {
-            if( !stream.atEnd() ) {
-                if( tolerance == 1 ) {
-                    error = (Exception)e.get(0);
-                }
-                else {
-                    error = e;
-                }
-            }
-        }
-
-        catch( SyntaxException e ) {
-            if( !stream.atEnd() ) {
+        catch( CompilationFailedException e ) {
+            if( parser.getErrorCount() > 1 || !parser.failedWithUnexpectedEOF() ) {
                 error = e;
             }
         }
@@ -426,16 +416,9 @@ public class InteractiveShell {
     *  Reports the last parsing error to the user.
     */
 
-    private void report( String code ) {
-
-        if( error instanceof SyntaxException ) {
-            ((SyntaxException)error).setSourceLocator("line");
-        }
-
-        System.err.print( "discarding " );
-        ErrorReporter reporter = new ErrorReporter( error, false );
-        reporter.setSources( Collections.singletonMap("line", code) );
-        reporter.write( System.err );
+    private void report() {
+        System.err.println( "discarding invalid text:" );
+        new ErrorReporter( error, false ).write( System.err );
     }
 
 

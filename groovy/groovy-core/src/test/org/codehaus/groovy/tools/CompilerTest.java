@@ -49,9 +49,8 @@ package org.codehaus.groovy.tools;
 import groovy.util.GroovyTestCase;
 
 import java.io.File;
-import java.io.FileInputStream;
 
-import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * A handy unit test case for dumping the output of the compiler
@@ -61,8 +60,8 @@ import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
  */
 public class CompilerTest extends GroovyTestCase {
 
-    Compiler compiler = new Compiler();
-    boolean dumpClass = true;
+    Compiler compiler  = null;
+    boolean  dumpClass = true;
 
     public void testMethodCall() throws Exception {
         //runTest("ClosureMethodTest.groovy");
@@ -77,14 +76,17 @@ public class CompilerTest extends GroovyTestCase {
         
         assertTrue("Could not find source file: " + file, file.exists());
 
-        compiler.compile(new InputStreamCharStream(new FileInputStream(file)));
+        compiler.compile(file);
     }
 
     protected void setUp() throws Exception {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
-        //compiler.setOutputDir(dir);
-        compiler.setDebug(dumpClass); 
+        
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setDebug( dumpClass );
+        
+        compiler = new Compiler( config );
     }
 
 }
