@@ -679,12 +679,22 @@ public class ASTBuilder
             {
                 return newExpression( expressionRoot );
             }
+            case ( Token.NOT ):
+            {
+            	return notExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
     }
 
-    protected GStringExpression compositeStringExpression(CSTNode expressionRoot)
+	protected Expression notExpression(CSTNode expressionRoot) throws ParserException {
+		Expression notExpression = new NotExpression( expression( expressionRoot.getChild( 0 ) ));
+		
+		return notExpression;
+	}
+
+	protected GStringExpression compositeStringExpression(CSTNode expressionRoot)
         throws ParserException
     {
         GStringExpression expr = new GStringExpression( expressionRoot.getToken().getText() );

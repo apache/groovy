@@ -1016,6 +1016,7 @@ public class Parser
 
         switch ( lt() )
         {
+			case ( Token.NOT ):
             case ( Token.PLUS_PLUS ):
             case ( Token.PLUS ):
             case ( Token.MINUS_MINUS ):

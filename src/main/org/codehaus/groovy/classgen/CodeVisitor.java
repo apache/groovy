@@ -15,6 +15,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
@@ -85,9 +86,13 @@ public class CodeVisitor implements GroovyCodeVisitor {
         right.visit(this);
     }
 
-    public void visitBooleanExpression(BooleanExpression expression) {
-        expression.getExpression().visit(this);
-    }
+	public void visitBooleanExpression(BooleanExpression expression) {
+		expression.getExpression().visit(this);
+	}
+
+	public void visitNotExpression(NotExpression expression) {
+		expression.getExpression().visit(this);
+	}
 
     public void visitClosureExpression(ClosureExpression expression) {
     }

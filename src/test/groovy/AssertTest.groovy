@@ -16,9 +16,11 @@ class AssertTest extends GroovyTestCase {
         
         assert x.equals("abc")
         
-        /** @todo parser
         assert !x.equals("def")
-        */
+        assert !false
+        assert !(1==2)
+        assert !(1>3)
+        assert !(1!=1)
 	}
 	
 	void testAssertFail() {
