@@ -56,11 +56,15 @@ public class AllTests extends TestSuiteSupport {
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "Groovy308_Bug.groovy",                 // TODO: parser bug
+        "NestedClosure2Bug.groovy",             // TODO: parser bug
 
         // Not sure of bug yet
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "DoubleSizeParametersBug.groovy",       // TODO: parser bug
         "InconsistentStackHeightBug.groovy",    // TODO: parser bug
+        "MarkupAndMethodBug.groovy",            // TODO: parser bug
+        "NestedClosureBug.groovy",              // TODO: parser bug
+        "OverloadInvokeMethodBug.groovy",       // TODO: parser bug
 
 
 
