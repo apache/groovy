@@ -104,6 +104,23 @@
        </p>
       </answer>
     </faq>   
+    
+    <faq id="classpath">
+      <question>
+        How can I add stuff to the classpath when running things in groovysh or groovy?
+      </question>
+      <answer>
+        <p>
+          You can add things to your $CLASSPATH environment variable. Another popular option
+          is to create a .groovy/lib directory in your home directory and add whatever jars you
+          want to be available by default.
+        </p>
+        <p>
+          e.g. if you wish to connect to your favourite JDBC database and do some scripting with it
+          then add your JDBC driver to ~/.groovy/lib.
+       </p>
+      </answer>
+    </faq>   
   </part>
 
 

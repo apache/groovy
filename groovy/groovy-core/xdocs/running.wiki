@@ -2,7 +2,7 @@
 
 Groovy scripts are a number of statements and class declarations in a text file.
 Groovy scripts can be used similarly to other scripting languages.
-There are various ways of running Groovy scripts... 
+There are various ways of running Groovy scripts
 
 1.1 Using the interactive console
 
@@ -28,6 +28,9 @@ To run the Swing Groovy console from a source distribution type...
 {code:shell}
 maven console
 {code}
+
+To see how to add things to the classpath see below
+
 
 1.1 Running Groovy scripts from your IDE
 
@@ -61,6 +64,9 @@ You'll then have a full binary distribution made for you in groovy/target/instal
 You can then add groovy/target/install/bin to your path and you can then run groovy scripts
 easily from the command line. 
 
+To see how to add things to the classpath see below
+
+
 1.1 Creating Unix scripts with Groovy
 
 You can write unix scripts with Groovy and execute them directly on the command line as 
@@ -86,4 +92,11 @@ chmod +x helloWorld
 {code}
 
 
+1.1 Adding things to the classpath
 
+When running command line scripts or interactive shells you might want to add things to your classpath 
+such as JDBC drivers or JMS implementations etc. Do do this you have a few choices
+
+* create a __~/.groovy/lib__ directory and add whatever jars you like there
+* add things to your CLASSPATH environment variable
+* pass -classpath (or -cp) into the command you used to create the shell or run the script
