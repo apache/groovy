@@ -1,10 +1,6 @@
 Core Groovy Tasks
 =================
 
-* write a Node pretty printer
-
-* test print()
-
 * closure methods on Node
 	
 * more tests of field and property initialisers
@@ -13,8 +9,6 @@ Core Groovy Tasks
     foo = { someMethod() }
     foo2 = {| someMethod() }
     foo.call()
-
-* test tree builder - calling of nested methods
 
 * refactor the MetaClass to use an Object[] rather than Object for arguments?
 
@@ -64,8 +58,6 @@ Core Groovy Tasks
  
 * default values for parameters
 
-* allow protected methods to be called
-
 * test try / catch with multiple exception types
 
 * change to use == for equals?
@@ -94,19 +86,15 @@ Core Groovy Tasks
 
 * while / do - while statements
 
-* test use of field & property initializers
- 
 * test use of overloaded setter methods & use of property notation
   so that the use of properties within a class should use setteres / getters.
 
 * test the use of PropertyExpression
 	a.b = c.d
 	
-* test use of invokeMethod(methodName, arguments) to test dynamic proxy features
-
 * support static new() method for constructors
 
-* finish expresssion support in classgen
+* finish expression support in classgen
 
 * support metadata (like JDK 1.5) as well as tree based metadata...
 
@@ -123,8 +111,6 @@ Core Groovy Tasks
 * refactor ast into expression, statement packages
 
 * maybe split up ClassGenerator - do code gen & class gen separately
-
-* create static groovyMetaClass field in all groovy classes (& bytecode weave?)
 
 * create MetaClass for JMX - so we can treat JMX objects as if they're normal objects
 
@@ -178,149 +164,16 @@ then generate bytecode
 
 foo.invokeMethod(method, args);
 
-* for all Groovy classes we can autogenerate a _groovyMetaClass
-static field which can be used to invoke methods & get properties.
-
-class SomeGroovyClass {
-	public static final MetaClass _groovyMetaClass = new MetaClass(thisClass);
-}
-
-someMethod() {
-	foo = new SomeGroovyClass();
-	foo.bar();
-}
-
-would translate to
-
-
-someMethod() {
-	foo = new SomeGroovyClass();
-	SomeGroovyClass._groovyMetaClass.invokeMethod(foo, "bar", null);
-}
-
 * could code generate the MetaClass with very efficient dynamic dispatch
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
 
 
-LOGGING?
-========
-
-class Foo {
-
-  private log;
-  
-  Foo(log = new GroovyLogger(thisClass)) {
-    this.log = log;
-  }
-  
-  foo(file) {
-    log.aboutToOpenFile("opening file ${file});
-
-    ..
-    
-    log.closedFile("closed down file ${file}");
-  }
-}
-
-The above could call GroovyLogger.new(Class owner) which 
-could then then have CommonsLogger(thisClass) implementation 
-that can be switched in via registration or system property etc
-
-
+L
 MARKUP
 ======
 
 Have Groovy -> SAX thingy for others to use as XML language?
-
-A Groovy file could look like this & we could implement a Groovy SAX / DOM parser...
-
-foo {
-  bar {
-    x(a:1, b:2) {
-      c("hello");
-      d(x:1, b:2);
-    }
-  }
-}
-
-For mixed text we could do
-
-html {
-  body {
-    h1("this is title");
-    
-    p("blob of text");
-    
-    // mixed text
-    p {
-      xml.append("the ");
-      b("quick");
-      xml.append(" brown fox");
-    }
-    
-    // element with attributes and text
-    a(href:'http://blah', title:"foo") {
-      xml.append("the text");
-    }
-    
-    // though it'd be nicer like this
-    a(href:'http://blah', title:"foo").append("the text");
-  }
-}  
-
-Or even use lists....
-
-    a(href:'http://blah', title:"foo") [
-      "the text"
-    ]
-    
-    p [
-      "some text", b("this is bold"), "more text"
-    ]
-    
-could also use nested expressions
-
-	p("some text ${b('this is bold')} some text");
-
-    
-
-For something heavily namespaced we could do...
-
-xsl = xmlns.namespace("http://foo");
-xsl.template {
-  xsl.element (match:"*") {
-     foo = xmlns.namespace("whatnot");
-     
-     // lets use some namespaced attributes
-     foo.bar(a:"123", b:5, xmlns:[foo.x:"abc", xsl.y:"abc"]) {
-     	// i.e. for namespace prefixed attributes we use a map expression
-     	// so that we can refer to namespace variables
-     }
-  }
-}
-
-If we supported named parameter calling...
-
-class Foo extends MarkupBuilder {
-
-  foo() {
-    return html {
-      tr(a : "hello");
-      td(valign : "centre") {
-  	    b("some text);
-	    a(href : "http://blah", title : "whatnot") {
-	      p("hello there")
-	    }
-      }
-      for i in [1, 2, 3] {
-        td(valign: "right") {
-          p("hello there ${i});
-        }
-      }
-    }
-  }
-}
 
 
 THINGS TO PONDER

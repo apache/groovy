@@ -58,7 +58,8 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class NodePrinterTest extends TestSupport {
 
     public void testTree() throws Exception {
-        GroovyObject object = compile("src/test/groovy/tree/VerboseTreeTest.groovy");
+        // GroovyObject object = compile("src/test/groovy/tree/VerboseTreeTest.groovy");
+        GroovyObject object = compile("src/test/groovy/tree/SmallVerboseTreeTest.groovy");
         object.invokeMethod("testTree", null);
     }
 }
