@@ -65,6 +65,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -226,26 +227,6 @@ public class DefaultGroovyMethods {
 
     // Collection based methods
     //-------------------------------------------------------------------------
-
-    /**
-     * A helper method to allow lists to work with subscript operators
-     */
-    public static void put(List self, Number n, Object value) {
-        int i = n.intValue();
-        int size = self.size();
-        while (i < 0) {
-            i += size;
-        }
-        if (i < size) { 
-            self.set(i, value);
-        }
-        else {
-            while (size < i) {
-                self.add(size++, null);
-            }
-            self.add(i, value);
-        }
-    }
     
     /**
      * Allows objects to be iterated through using a closure
@@ -601,6 +582,61 @@ public class DefaultGroovyMethods {
     }
     
     
+    /**
+     * Support the range subscript operator for an Array
+     * 
+     * @returns a range of a list from the range's from index up to
+     * but not including the ranges's to value
+     */
+    public static Object get(Object[] array, Range range) {
+        List list = Arrays.asList(array);
+        return get(list, range);
+    }
+    
+    
+    /**
+     * Support the subscript operator for an Array
+     * 
+     * @returns the value at the given index
+     */
+    public static Object get(Object[] array, int idx) {
+        return array[normaliseIndex(idx, array.length)];
+    }
+    
+    /**
+     * Support the subscript operator for an Array
+     * 
+     */
+    public static void put(Object[] array, int idx, Object value) {
+        array[normaliseIndex(idx, array.length)] = value;
+    }
+    
+    
+    /**
+     * A helper method to allow lists to work with subscript operators
+     */
+    public static void put(List self, Number n, Object value) {
+        int i = n.intValue();
+        int size = self.size();
+        i = normaliseIndex(i, size);
+        if (i < size) { 
+            self.set(i, value);
+        }
+        else {
+            while (size < i) {
+                self.add(size++, null);
+            }
+            self.add(i, value);
+        }
+    }
+    
+    protected static int normaliseIndex(int i, int size) {
+        while (i < 0) {
+            i += size;
+        }
+        return i;
+    }
+
     /**
      * Support the subscript operator for List
      * 
