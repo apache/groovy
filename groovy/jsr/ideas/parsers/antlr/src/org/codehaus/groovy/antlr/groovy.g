@@ -1,6 +1,6 @@
 header {
 package org.codehaus.groovy.antlr;
-import java.util.ArrayList;
+import java.util.*;
 	import java.io.InputStream;
 	import java.io.Reader;
 	import antlr.InputBuffer;
@@ -225,6 +225,7 @@ FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 		parser.lexer = lexer;
 		lexer.parser = parser;
 		parser.setASTNodeClass("org.codehaus.groovy.antlr.GroovySourceAST");
+	 parser.warningList = new ArrayList();
 		return parser;
 	}
 	// Create a scanner that reads from the input stream passed to us...
@@ -233,8 +234,11 @@ FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 	public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
 	public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
 
+	List warningList;
+	public List getWarningList() { return warningList; }
+
 	GroovyLexer lexer;
-	public GroovyLexer getLexer() { return lexer; }
+public GroovyLexer getLexer() { return lexer; }
 	public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
 
 	// stuff to adjust ANTLR's tracing machinery
@@ -259,11 +263,29 @@ FOR_IN_ITERABLE; RANGE_EXCLUSIVE;
 		throw new SemanticException(problem + ";\n   solution: " + solution,
 									getFilename(), lt.getLine(), lt.getColumn());
 	}
+	
+	public void addWarning(String warning, String solution) {
+		Token lt = null;
+		try { lt = LT(1); }
+		catch (TokenStreamException ee) { }
+		if (lt == null)  lt = Token.badToken;
+	
+		Map row = new HashMap();
+		row.put("warning" ,warning);
+		row.put("solution",solution);
+		row.put("filename",getFilename());
+		row.put("line"    ,new Integer(lt.getLine()));
+		row.put("column"  ,new Integer(lt.getColumn()));
+	// System.out.println(row);
+		warningList.add(row);
+	}
+	
 	// Convenience method for checking of expected error syndromes.
 	private void require(boolean z, String problem, String solution) throws SemanticException {
 		if (!z)  requireFailed(problem, solution);
 	}
 
+	
 	// Query a name token to see if it begins with a capital letter.
 	// This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
 	private boolean isUpperCase(Token x) {
@@ -1083,7 +1105,7 @@ variableDefinitions[AST mods, AST t]
 
                 // get the list of exceptions that this method is
                 // declared to throw
-        (       tc:throwsClause!  )?
+        (       tc:throwsClause!  )? nlsWarn!
 
                 // the method body is an open block
                 // but, it may have an optional constructor call (for constructors only)
@@ -1114,7 +1136,7 @@ constructorDefinition[AST mods]
 
                 // get the list of exceptions that this method is
                 // declared to throw
-        (       tc:throwsClause!  )?
+        (       tc:throwsClause!  )? nlsWarn!
 
                 // the method body is an open block
                 // but, it may have an optional constructor call (for constructors only)
@@ -1463,7 +1485,8 @@ statement
         // space as a method call statement like "iflikemethod (args) { body }".  By restricting
         // newlines in both constructs in similar ways, we make Groovy internally consistent,
         // at a minor cost to compatibility with Java.
-        |       "if"^ LPAREN! expression RPAREN! compatibleBodyStatement
+        // However we will allow newlines to not stop the parse, we just raise a warning instead.
+        |       "if"^ LPAREN! expression RPAREN! nlsWarn! compatibleBodyStatement
                 (
                         // CONFLICT: the old "dangling-else" problem...
                         //           ANTLR generates proper code matching
@@ -1474,14 +1497,14 @@ statement
                 : // lookahead to check if we're entering an 'else' clause
                   ( (sep!)? "else"! )=>
                         (sep!)?  // allow SEMI here for compatibility with Java
-                        "else"! nls! compatibleBodyStatement
+                        "else"! nlsWarn! compatibleBodyStatement
                 )?
 
 	// For statement
 	|	forStatement
 
 	// While statement
-	|	"while"^ LPAREN! expression RPAREN! compatibleBodyStatement
+	|	"while"^ LPAREN! expression RPAREN! nlsWarn! compatibleBodyStatement
 
 	/*OBS* no do-while statement in Groovy (too ambiguous)
 	// do-while statement
@@ -1489,7 +1512,7 @@ statement
 	*OBS*/
 	// With statement
         // (This is the Groovy scope-shift mechanism, used for builders.)
-        |       "with"^ LPAREN! expression RPAREN! compoundStatement
+        |       "with"^ LPAREN! expression RPAREN! nlsWarn! compoundStatement
         
         // Splice statement, meaningful only inside a "with" expression.
         // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
@@ -1502,7 +1525,7 @@ statement
         |   importStatement
 
 	// switch/case statement
-	|	"switch"^ LPAREN! expression RPAREN! LCURLY! nls!
+	|	"switch"^ LPAREN! expression RPAREN! nlsWarn! LCURLY! nls!
 			( casesGroup )*
 		RCURLY!
 
@@ -1510,7 +1533,7 @@ statement
 	|	tryBlock
 
 	// synchronize a statement
-	|	"synchronized"^ LPAREN! expression RPAREN! compoundStatement
+	|	"synchronized"^ LPAREN! expression RPAREN! nlsWarn! compoundStatement
 
 
 	/*OBS*
@@ -1538,7 +1561,7 @@ forStatement
 			|       // the coast is clear; it's a modern Groovy for statement
 				forInClause
 			)
-		RPAREN!
+		RPAREN! nlsWarn!
 		compatibleBodyStatement					 // statement to loop over
 	;
 
@@ -1697,18 +1720,18 @@ forIter
 
 // an exception handler try/catch block
 tryBlock
-        :       "try"^ compoundStatement
+        :       "try"^ nlsWarn! compoundStatement
                 ( options {greedy=true;} :  nls! handler)*
                 ( options {greedy=true;} :  nls! finallyClause)?
         ;
 
 finallyClause
-	:	"finally"^ compoundStatement
+	:	"finally"^ nlsWarn! compoundStatement
 	;
 
 // an exception handler
 handler
-	:	"catch"^ LPAREN! parameterDeclaration RPAREN! compoundStatement
+	:	"catch"^ LPAREN! parameterDeclaration RPAREN! nlsWarn! compoundStatement
 	;
 
 
@@ -2571,6 +2594,17 @@ sep!
 /** Zero or more insignificant newlines, all gobbled up and thrown away. */
 nls!    :
                 (options { greedy=true; }: NLS!)?
+        ;
+
+/** Zero or more insignificant newlines, all gobbled up and thrown away,
+  * but a warning message is left for the user.
+  */
+nlsWarn!    :
+                (options { greedy=true; }: NLS!)?
+	                { addWarning(
+                	  "A newline at this point does not follow the Groovy Coding Conventions.",
+	                	  "Keep this statement on one line, or use curly braces to break across multiple lines."
+	                	); }
         ;
 
 
