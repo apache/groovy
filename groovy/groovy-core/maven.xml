@@ -4,6 +4,10 @@
 
   <goal name="dc" prereqs="clean, test, site:deploy"/>
 
+  <preGoal name="site:deploy">
+  	<attainGoal name="javadoc"/>
+  </preGoal>
+  
   <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
    <j:set var="maven.test.skip" value="true"/>
    <echo>Rebuilding the binary distro of Groovy without running the unit test cases</echo>
