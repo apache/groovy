@@ -78,6 +78,9 @@ public class ExpressionStatement extends Statement {
         this.expression = expression;
     }
 
+    public String getText() {
+    	return this.toString();
+    }
     public String toString() {
         return super.toString() + "[expression:" + expression + "]";
     }
