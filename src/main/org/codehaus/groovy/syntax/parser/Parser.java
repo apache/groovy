@@ -2969,10 +2969,7 @@ public class Parser
                     }
 
 
-                    if( checkAgain )
-                    {
-                        continue;                             // <<< LOOP CONTROL <<<<<<<<<
-                    }
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
                 }
 
 
@@ -3414,7 +3411,7 @@ public class Parser
 
             if( lt() == Types.LEFT_CURLY_BRACE )
             {
-                if( lt(2) == Types.PIPE )
+                if( lt(2) == Types.PIPE || lt(2) == Types.DOUBLE_PIPE )
                 {
                     parameters.add( closureExpression() );
                 }
