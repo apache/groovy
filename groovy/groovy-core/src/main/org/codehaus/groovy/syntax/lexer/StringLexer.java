@@ -248,8 +248,8 @@ public class StringLexer extends TextLexerBase
                                     lookahead = 1;
                                     return c;
 
-                                case 'f':
-                                    c = '\f';
+                                case 'n':
+                                    c = '\n';
                                     width = 2;
                                     break ESCAPE_SWITCH;
 
@@ -263,8 +263,13 @@ public class StringLexer extends TextLexerBase
                                     width = 2;
                                     break ESCAPE_SWITCH;
 
-                                case 'n':
-                                    c = '\n';
+                                case 'b':
+                                    c = '\b';
+                                    width = 2;
+                                    break ESCAPE_SWITCH;
+
+                                case 'f':
+                                    c = '\f';
                                     width = 2;
                                     break ESCAPE_SWITCH;
 
