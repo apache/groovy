@@ -310,7 +310,10 @@ public class BytecodeHelper implements Constants {
     }
 
     public String getObjectTypeForPrimitive(String type) {
-        if (type.equals("byte")) {
+        if (type.equals("boolean")) {  
+            return Boolean.class.getName(); 
+        }
+        else if (type.equals("byte")) {
             return Byte.class.getName();
         }
         else if (type.equals("char")) {

@@ -9,8 +9,6 @@
      TestDerived(String aFoo) {
          super(aFoo)
      }
-     /** @todo fix bug
-     */
      
      doSomething() {
      	"TestDerived" + super.doSomething()
