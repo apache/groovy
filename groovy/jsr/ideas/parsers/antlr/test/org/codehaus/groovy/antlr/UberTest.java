@@ -39,10 +39,15 @@ public class UberTest implements Test {
         "AssertTest.groovy",
         "Bar.groovy",
         "BindingTest.groovy",
+        "BooleanOperationTest.groovy",
+        //"CastTest.groovy",                    TODO parser bug: ${foo.class} in GStrings
         "ChainedAssignment.groovy",
+        "ClassLoaderBug.groovy",
+        //"ClosureCloneTest.groovy",            TODO parser bug: doesn't like 'it * foo' expressions
         "ClosureInClosureTest.groovy",
         "Foo.groovy",
         //"ForLoopTest.groovy",                 TODO - fixme - AST gen bug
+        "ForLoopWithLocalVariablesTest.groovy",
          "GStringTest.groovy",
         "HeredocsTest.groovy",
         "IfElseCompactTest.groovy",
@@ -59,6 +64,7 @@ public class UberTest implements Test {
         // "PrimitiveTypeFieldTest.groovy",     TODO when parser can do closure arguments
         "PrimitiveTypesTest.groovy",
         // "ReturnTest.groovy",                 TODO parser bug
+        "RangeTest.groovy",
         "StringOperationTest.groovy",
         //"SubscriptTest.groovy",               TODO array initialisers
         "ThrowTest.groovy",
