@@ -453,12 +453,14 @@ public class ASTBuilder
                 return constantExpression( expressionRoot );
             }
             case ( Token.IDENTIFIER ):
+            case ( Token.KEYWORD_THIS ):
+            case ( Token.KEYWORD_SUPER ):
             {
                 return variableExpression( expressionRoot );
             }
         }
 
-        throw new RuntimeException("Cannot create expression for node: " + expressionRoot);
+        throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
     }
 
     protected VariableExpression variableExpression(CSTNode expressionRoot)
