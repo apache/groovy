@@ -21,7 +21,10 @@
   <property name="lib.dir" value="lib"/>
   <property name="standalone.dir" value="standalone"/>
   <property name="standalone.working.dir" value="temp"/>
-  		
+
+  <!-- TODO limit exposure to groovy classic -->
+  <property name="groovy.classic.classes.dir" value="../../../../groovy-core/target/classes"/>
+
   <!-- javadoc properties -->
   <property name="javadoc.dir" value="doc"/>
   <property name="javadoc.packages" value="org.*"/>
@@ -35,7 +38,9 @@
   <!--                     datatypes                     -->
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <path id="compile.classpath">
-    <pathelement location="${build.classes.dir}"/>
+      <!-- TODO limit exposure to groovy classic -->
+      <pathelement location="${groovy.classic.classes.dir}"/>
+      <pathelement location="${build.classes.dir}"/>
     <fileset dir="${lib.dir}">
       <include name="**/*.jar" />
       <include name="**/*.zip" />

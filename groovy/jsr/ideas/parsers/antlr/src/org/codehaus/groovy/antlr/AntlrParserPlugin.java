@@ -35,9 +35,11 @@ import java.io.Reader;
  */
 public class AntlrParserPlugin extends ParserPlugin {
     private GroovyRecognizer parser;
+    private GroovyLexer lexer;
 
     public Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
-        parser = GroovyRecognizer.make(reader);
+        lexer = new GroovyLexer(reader);
+        parser = GroovyRecognizer.make(lexer);
         parser.setFilename(sourceUnit.getName());
 
         return new Reduction(null);

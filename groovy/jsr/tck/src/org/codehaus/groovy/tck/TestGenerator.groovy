@@ -6,6 +6,8 @@ package org.codehaus.groovy.tck
 import java.io.*;
 class TestGenerator{
     public String generate(realOutputPath, targetDir, srcName,srcText) {
+        System.out.println('single \\\\')
+        System.out.println("double \\\\")
         srcText = srcText.replaceAll('\\\\','\\\\\\\\') // need to escape a slash with slash slash
 
         resultWriter = new StringWriter()
@@ -108,7 +110,7 @@ class TestGenerator{
         m = java.util.regex.Pattern.compile("//(.*?//\\s*" + tag + "\\S*)\\s").matcher(srcText)
         while (m.find()) {
             foundText = m.group(1)
-            uncommentedSrcText = (srcText.substring(0,m.start()) + srcText.substring(m.start() + 2))
+            uncommentedSrcText = (srcText.substring(0,m.start()) + "  " + srcText.substring(m.start() + 2))
             alternatives << [uncommentedSrcText, foundText]
         }
         return alternatives
