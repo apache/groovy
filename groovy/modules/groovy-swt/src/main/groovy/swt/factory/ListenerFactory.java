@@ -21,8 +21,8 @@ import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.browser.StatusTextListener;
 import org.eclipse.swt.widgets.Widget;
-import org.eclipse.ui.forms.events.ExpansionListener;
-import org.eclipse.ui.forms.events.HyperlinkListener;
+import org.eclipse.ui.forms.events.IExpansionListener;
+import org.eclipse.ui.forms.events.IHyperlinkListener;
 import org.eclipse.ui.forms.widgets.AbstractHyperlink;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 
@@ -67,13 +67,13 @@ public class ListenerFactory extends AbstractSwtFactory implements SwtFactory {
             }
         } else if (parent instanceof AbstractHyperlink) {
             AbstractHyperlink hyperlink = (AbstractHyperlink) parent;
-            HyperlinkListener hyperLinkListenerImpl = new HyperLinkListenerImpl(
+            IHyperlinkListener hyperLinkListenerImpl = new HyperLinkListenerImpl(
                     type);
             hyperlink.addHyperlinkListener(hyperLinkListenerImpl);
             return hyperLinkListenerImpl;
         } else if (parent instanceof ExpandableComposite) {
             ExpandableComposite expandableComposite = (ExpandableComposite) parent;
-            ExpansionListener expansionListener = new ExpansionListenerImpl(
+            IExpansionListener expansionListener = new ExpansionListenerImpl(
                     type);
             expandableComposite.addExpansionListener(expansionListener);
             return expansionListener;

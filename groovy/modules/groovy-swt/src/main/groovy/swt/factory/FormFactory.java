@@ -48,6 +48,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 .getParentWidget(parent);
         if (toolkit == null) {
             toolkit = new FormToolkit(parentComposite.getDisplay());
+            toolkit.setBorderStyle(SWT.BORDER);
         }
         String styleProperty = (String) properties.remove("style");
         String text = (String) properties.remove("text");
@@ -86,6 +87,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 .createScrolledForm(parentComposite); }
         if ("formButton".equals(type)) { return toolkit.createButton(
                 parentComposite, text, style); }
+        if ("formColors".equals(type)) { return toolkit.getColors(); }
         if ("formComposite".equals(type)) { return toolkit.createComposite(
                 parentComposite, style); }
         if ("formCompositeSeparator".equals(type)) { return toolkit
@@ -93,13 +95,13 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
         if ("formExpandableComposite".equals(type)) { return toolkit
                 .createExpandableComposite(parentComposite, style); }
         if ("formText".equals(type)) { return toolkit.createText(
-                parentComposite, text); }
+                parentComposite, text, style); }
         if ("formHyperlink".equals(type)) { return toolkit.createHyperlink(
                 parentComposite, text, style); }
         if ("formImageHyperlink".equals(type)) { return toolkit
                 .createImageHyperlink(parentComposite, style); }
         if ("formLabel".equals(type)) { return toolkit.createLabel(
-                parentComposite, text); }
+                parentComposite, text, style); }
         if ("formPageBook".equals(type)) { return toolkit.createPageBook(
                 parentComposite, style); }
         if ("formPageBookPage".equals(type)) {
@@ -135,6 +137,7 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                 parentComposite, style); }
         if ("formTable".equals(type)) { return toolkit.createTable(
                 parentComposite, style); }
+        if ("formToolkit".equals(type)) { return toolkit; }        
         if ("formFormattedText".equals(type)) {
             boolean parseTags = false;
             boolean expandURLs = false;

@@ -8,13 +8,13 @@ import groovy.lang.Closure;
 import groovy.swt.ClosureSupport;
 
 import org.eclipse.ui.forms.events.ExpansionEvent;
-import org.eclipse.ui.forms.events.ExpansionListener;
+import org.eclipse.ui.forms.events.IExpansionListener;
 
 /**
  * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
  */
-public class ExpansionListenerImpl implements ExpansionListener, ClosureSupport{
+public class ExpansionListenerImpl implements IExpansionListener, ClosureSupport{
     private String type;
     private Closure closure;
 

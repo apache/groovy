@@ -8,14 +8,14 @@ import groovy.lang.Closure;
 import groovy.swt.ClosureSupport;
 
 import org.eclipse.ui.forms.events.HyperlinkEvent;
-import org.eclipse.ui.forms.events.HyperlinkListener;
+import org.eclipse.ui.forms.events.IHyperlinkListener;
 
 
 /**
  * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
  */
-public class HyperLinkListenerImpl implements HyperlinkListener, ClosureSupport {
+public class HyperLinkListenerImpl implements IHyperlinkListener, ClosureSupport {
     private String type;
     private Closure closure;
 

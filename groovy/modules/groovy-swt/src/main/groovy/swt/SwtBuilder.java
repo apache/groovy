@@ -76,8 +76,8 @@ import org.eclipse.swt.widgets.Tracker;
 import org.eclipse.swt.widgets.TrayItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
-import org.eclipse.ui.forms.events.ExpansionListener;
-import org.eclipse.ui.forms.events.HyperlinkListener;
+import org.eclipse.ui.forms.events.IExpansionListener;
+import org.eclipse.ui.forms.events.IHyperlinkListener;
 import org.eclipse.ui.forms.widgets.ColumnLayout;
 import org.eclipse.ui.forms.widgets.ColumnLayoutData;
 import org.eclipse.ui.forms.widgets.TableWrapData;
@@ -256,6 +256,7 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory("form", new FormFactory("form"));
         registerFactory("scrolledForm", new FormFactory("scrolledForm"));
         registerFactory("formButton", new FormFactory("formButton"));
+        registerFactory("formColors", new FormFactory("formColors"));
         registerFactory("formComposite", new FormFactory("formComposite"));
         registerFactory("formCompositeSeparator", new FormFactory(
                 "formCompositeSeparator"));
@@ -271,6 +272,7 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory("formSection", new FormFactory("formSection"));
         registerFactory("formSeparator", new FormFactory("formSeparator"));
         registerFactory("formTable", new FormFactory("formTable"));
+        registerFactory("formToolkit", new FormFactory("formToolkit"));
         registerFactory("formFormattedText", new FormFactory(
                 "formFormattedText"));
         registerFactory("formTree", new FormFactory("formTree"));
@@ -287,9 +289,9 @@ public class SwtBuilder extends BuilderSupport {
 
         // forms listeners
         registerFactory("hyperlinkListener", new ListenerFactory(
-                HyperlinkListener.class));
+                IHyperlinkListener.class));
         registerFactory("expansionListener", new ListenerFactory(
-                ExpansionListener.class));
+                IExpansionListener.class));
 
         // none eclipse widgets
         // registerBeanFactory("tDateText", TDateText.class);

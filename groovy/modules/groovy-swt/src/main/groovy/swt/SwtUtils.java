@@ -101,6 +101,7 @@ public class SwtUtils  {
             Control control = children[i];
             control.dispose();
         }
+        System.out.println();
     }
 
     /**

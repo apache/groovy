@@ -15,8 +15,7 @@ import java.util.logging.Logger;
  * 
  * This will be the main guibuilder
  * 
- * TODO provide entry point for pull tools (e.g. i18n, security) TODO check
- * rebuild command
+ * TODO provide entry point for pull tools (e.g. i18n, security) 
  * 
  * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
