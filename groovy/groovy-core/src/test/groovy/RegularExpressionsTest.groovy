@@ -11,19 +11,19 @@
  	
  	void testFindRegex() {
  	
- 		assert "cheese" ~= "cheese"
+ 		assert "cheese" =~ "cheese"
  		
  		regex = "cheese"
  		string = "cheese"
- 		assert string ~= regex
+ 		assert string =~ regex
  		
  		i = 0
- 		m = "cheesecheese" ~= "cheese"
+ 		m = "cheesecheese" =~ "cheese"
  		while(m) { i = i + 1 }
  		assert i == 2
  		
  		i = 0
- 		m = "cheesecheese" ~= "e+"
+ 		m = "cheesecheese" =~ "e+"
  		while(m) { i = i + 1 }
  		assert i == 4
  		
@@ -36,9 +36,9 @@
  	
  	void testMatchRegex() {
  	
- 		assert "cheese" ~== "cheese"
+ 		assert "cheese" ==~ "cheese"
  		
- 		assert !("cheesecheese" ~== "cheese")
+ 		assert !("cheesecheese" ==~ "cheese")
  		
  	}
  	
@@ -46,7 +46,7 @@
  	
  	void testRegexEach() {
  		i = 0
- 		("cheesecheese" ~= "cheese").each({value | println(value) i = i + 1});
+ 		("cheesecheese" =~ "cheese").each({value | println(value) i = i + 1});
  		assert i == 2
  	}
  	
@@ -62,6 +62,6 @@ EOS
  		assert pattern.matcher("foo").matches()
  		assert !pattern.matcher("bar").matches()
  		
- 		assert "foofoofoo" ~= ~"foo"
+ 		assert "foofoofoo" =~ ~"foo"
  	}
  }
