@@ -33,7 +33,7 @@ class MapTest extends GroovyTestCase {
 
     
     protected assertMap(m) {
-        assert(m instanceof Map);
+        assert m instanceof Map;
         
         result = 0;
         text = "";
