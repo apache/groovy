@@ -136,4 +136,10 @@ public class MethodNode extends MetadataNode implements Constants {
     public void setReturnType(String returnType) {
         this.returnType = returnType;
     }
+	/**
+	 * @param declaringClass The declaringClass to set.
+	 */
+	public void setDeclaringClass(ClassNode declaringClass) {
+		this.declaringClass = declaringClass;
+	}
 }
