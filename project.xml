@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-beta-9</currentVersion>
+  <currentVersion>1.0-beta-10-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -86,6 +86,11 @@
     </version>
     <version>
       <id>b8</id>
+      <name>1.0-beta8</name>
+      <tag>GROOVY_1_0_BETA_8</tag>
+    </version>
+    <version>
+      <id>b9</id>
       <name>1.0-beta8</name>
       <tag>GROOVY_1_0_BETA_8</tag>
     </version>
@@ -640,8 +645,10 @@
     <report>maven-javadoc-plugin</report>
     <report>maven-junit-report-plugin</report>
     <report>maven-faq-plugin</report>
+    <!--
     <report>maven-clover-plugin</report>
+    -->
     <report>maven-changes-plugin</report>
   </reports>
-  
+
 </project>
