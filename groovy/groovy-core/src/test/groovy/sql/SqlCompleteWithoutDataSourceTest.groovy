@@ -4,7 +4,7 @@ import org.axiondb.jdbc.AxionDriver
 import java.sql.DriverManager
 
 /** @todo bug - should not need this line */
-import groovy.sql.SqlCompleteTest
+import groovy.sql.TestHelper
 
 /**
  * Tests the use of the Sql class using just a Connection 
