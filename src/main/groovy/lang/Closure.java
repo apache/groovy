@@ -286,8 +286,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         }
 
         if (params.length == 0) {
-            // pass a single null parameter if no parameters specified
-            return doCall(null);
+            return doCall();
         } else if (params.length == 1) {
             return doCall(params[0]);
         } else if (params.length == 2) {
@@ -317,6 +316,18 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     protected Object doCall(final Object p1) {
         return callViaReflection(new Object[]{p1});
     }
+    
+    /**
+     * An attempt to optimise calling closures with no parameter
+     * This method only calls doCall(Object) and will be called by call(Object)
+     * if the parameter given to call is an empty Object array
+     *
+     * @return the result of calling the closure
+     */
+    protected Object doCall() {
+        return doCall((Object)null);
+    }
+    
 
     /**
      * An attempt to optimise calling closures with two parameters
