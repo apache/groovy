@@ -445,8 +445,9 @@ public class Invoker {
 		}
 	    StringBuffer argBuf = new StringBuffer();
 	    for (int i = 0; i < arguments.length; i++) {
-	    	if (i>0)argBuf.append(", ");
-			argBuf.append(arguments[i].getClass().getName());
+	    	if (i>0)
+                argBuf.append(", ");
+			argBuf.append(arguments[i] != null ? arguments[i].getClass().getName() : "null");
 		}
 	    return argBuf.toString();
 	}
