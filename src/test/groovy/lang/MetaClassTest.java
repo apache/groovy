@@ -34,9 +34,11 @@
 
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-
 import groovy.util.GroovyTestCase;
+
+import java.util.ArrayList;
+
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -102,6 +104,63 @@ public class MetaClassTest extends GroovyTestCase {
         assertEquals(dymmyClass.y, "newvalue");
     }
     
+    public void testSetPropertyWithInt() {
+        DymmyClass dymmyClass = new DymmyClass();
+        MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
+        metaClass.setProperty(dymmyClass, "anInt", new Integer(10));
+    }
+
+    public void testSetPropertyWithDoubleArray() {
+        DymmyClass dymmyClass = new DymmyClass();
+        MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
+        Double[][] matrix2 =
+        {
+                {
+                        new Double(35), new Double(50), new Double(120)
+                }, 
+                {
+                        new Double(75), new Double(80), new Double(150)
+                }
+        };
+        metaClass.setProperty(dymmyClass, "matrix", matrix2);
+        metaClass.setProperty(dymmyClass, "matrix2", matrix2);
+    }
+
+    public void testSetPropertyWithArray() {
+        DymmyClass dymmyClass = new DymmyClass();
+        MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
+
+        // test int[]
+        int[] ints = new int[]{
+                0, 1, 2, 3
+        };
+        metaClass.setProperty(dymmyClass, "ints", ints);
+        assertEquals(ints, metaClass.getProperty(dymmyClass, "ints"));
+
+        // test Integer[]
+        Integer[] integers = new Integer[]{
+                new Integer(0), new Integer(1), new Integer(2), new Integer(3)
+        };
+        metaClass.setProperty(dymmyClass, "integers", integers);
+        assertEquals(integers, metaClass.getProperty(dymmyClass, "integers"));
+    }
+
+    public void testSetPropertyWithList() {
+        DymmyClass dymmyClass = new DymmyClass();
+        MetaClass metaClass = InvokerHelper.getMetaClass(dymmyClass);
+
+        // test list
+        ArrayList list = new ArrayList();
+        list.add(new Integer(120));
+        list.add(new Integer(150));
+
+        // test int[]
+        metaClass.setProperty(dymmyClass, "ints", list);
+
+        // test Integer[]
+        metaClass.setProperty(dymmyClass, "integers", list);
+    }
+    
     public void doSomething() {
         System.out.println("Called doSomething()");
     }
@@ -111,5 +170,44 @@ public class MetaClassTest extends GroovyTestCase {
 class DymmyClass {
     public int x = 0;
     public String y = "none";
+    
+    private int anInt;
+    private int[] ints;
+    private Integer[] integers;
+    double[][] matrix2;
+    Double[][] matrix;
+
+    public Integer[] getIntegers() {
+        return integers;
+    }
+
+    public void setIntegers(Integer[] integers) {
+        this.integers = integers;
+    }
+
+    public int[] getInts() {
+        return ints;
+    }
+
+    public void setInts(int[] ints) {
+        this.ints = ints;
+    }
+
+    public int getAnInt() {
+        return anInt;
+    }
+
+    public void setAnInt(int anInt) {
+        this.anInt = anInt;
+    }
+
+    public void setMatrix(Double[][] matrix) {
+        this.matrix = matrix;
+    }
+
+    public void setMatrix2(double[][] matrixReloaded) {
+        this.matrix2 = matrixReloaded;
+    }
+
 }
 

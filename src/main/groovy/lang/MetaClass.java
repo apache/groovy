@@ -51,6 +51,7 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
@@ -81,11 +82,11 @@ import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
 import org.codehaus.groovy.runtime.MethodKey;
 import org.codehaus.groovy.runtime.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.TemporaryMethodKey;
 import org.codehaus.groovy.runtime.TransformMetaMethod;
-import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -556,7 +557,38 @@ public class MetaClass {
                             return;
                         }
                     }
+                    
+                    // if value is an array  
+                    Class parameterType = method.getParameterTypes()[0];
+                    if (parameterType.isArray()) {
+                        Object objArray = asPrimitiveArray(list, parameterType);
+                        doMethodInvoke(object, metaMethod, new Object[]{
+                            objArray
+                        });
+                        return;
+                    }
                 }
+                
+                // if value is an multidimensional array  
+                if (newValue.getClass().isArray()) {
+                    List list = Arrays.asList((Object[])newValue);
+                    
+                    Class parameterType = method.getParameterTypes()[0];
+                    Class arrayType = parameterType.getComponentType();
+                    Object objArray = Array.newInstance(arrayType, list.size());
+                    
+                    for (int i = 0; i < list.size(); i++) {
+                        List list2 =Arrays.asList((Object[]) list.get(i));
+                        Object objArray2 = asPrimitiveArray(list2, arrayType);
+                        Array.set(objArray, i, objArray2);
+                    }
+
+                    doMethodInvoke(object, metaMethod, new Object[]{
+                        objArray
+                    });
+                    return;
+                }
+                
                 throw new MissingPropertyException(property, theClass, e);
             }
             return;
@@ -602,6 +634,50 @@ public class MetaClass {
         }
     }
 
+    /**
+     * @param list
+     * @param params
+     * @param parameterType
+     * @return
+     */
+    private Object asPrimitiveArray(List list, Class parameterType) {
+        Class arrayType = parameterType.getComponentType();
+        Object objArray = Array.newInstance(arrayType, list.size());
+        for (int i = 0; i < list.size(); i++) {
+            Object obj = list.get(i);
+            if (arrayType.isPrimitive()) {
+                if (obj instanceof Integer) {
+                    Array.setInt(objArray, i, ((Integer) obj).intValue());
+                }
+                else if (obj instanceof Double) {
+                    Array.setDouble(objArray, i, ((Double) obj).doubleValue());
+                }
+                else if (obj instanceof Boolean) {
+                    Array.setBoolean(objArray, i, ((Boolean) obj).booleanValue());
+                }
+                else if (obj instanceof Long) {
+                    Array.setLong(objArray, i, ((Long) obj).longValue());
+                }
+                else if (obj instanceof Float) {
+                    Array.setFloat(objArray, i, ((Float) obj).floatValue());
+                }
+                else if (obj instanceof Character) {
+                    Array.setChar(objArray, i, ((Character) obj).charValue());
+                }
+                else if (obj instanceof Byte) {
+                    Array.setByte(objArray, i, ((Byte) obj).byteValue());
+                }
+                else if (obj instanceof Short) {
+                    Array.setShort(objArray, i, ((Short) obj).shortValue());
+                }
+            }
+            else {
+                Array.set(objArray, i, obj);
+            }
+        }
+        return objArray;
+    }
+    
     public ClassNode getClassNode() {
         if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
             // lets try load it from the classpath
