@@ -55,8 +55,8 @@ public class TemplateTest extends TestCase {
     public void testBinding() throws SyntaxException, ClassNotFoundException, IOException {
         Map binding = new HashMap();
         binding.put("sam", "pullara");
-        Template template = new SimpleTemplateEngine().createTemplate("<%= sam %>");
+        Template template = new SimpleTemplateEngine().createTemplate("<%= sam %><% print sam %>");
         template.setBinding(binding);
-        assertEquals("pullara", template.toString());
+        assertEquals("pullarapullara", template.toString());
     }
 }
