@@ -454,10 +454,8 @@ public class ASTBuilder
         return null;
     }
 
-    protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException
+    protected BlockStatement statementOrStatementBlock(CSTNode blockRoot) throws ParserException
     {
-        return statementBlock(blockRoot, 0);
-         /*
         if (blockRoot.getToken() == null || blockRoot.getToken().getType() == Token.LEFT_CURLY_BRACE) 
         {    
             return statementBlock(blockRoot, 0);
@@ -472,8 +470,12 @@ public class ASTBuilder
             
             return statementBlock;
         }
-        */
     }
+
+    protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException
+    {
+        return statementBlock(blockRoot, 0);
+     }
 
     protected BlockStatement statementBlock(CSTNode blockRoot, int startIndex) throws ParserException
     {
@@ -566,7 +568,7 @@ public class ASTBuilder
     protected WhileStatement whileStatement(CSTNode statementRoot) throws ParserException
     {
         Expression expr = expression( statementRoot.getChild( 0 ) );
-        BlockStatement statementBlock = statementBlock( statementRoot.getChild( 1 ) );
+        BlockStatement statementBlock = statementOrStatementBlock( statementRoot.getChild( 1 ) );
 
         return new WhileStatement( new BooleanExpression( expr ),
                                    statementBlock );
@@ -577,7 +579,7 @@ public class ASTBuilder
         CSTNode[]         children   = statementRoot.getChildren();
 
         BooleanExpression expression = new BooleanExpression( expression( children[ 0 ] ) );
-        BlockStatement    ifBlock    = statementBlock( children[ 1 ] );
+        BlockStatement    ifBlock    = statementOrStatementBlock( children[ 1 ] );
 
         Statement elseBlock = null;
 
@@ -590,7 +592,7 @@ public class ASTBuilder
         }
         else if ( children.length == 3 )
            {
-            elseBlock = statementBlock( children[ 2 ].getChild( 0 ) );
+            elseBlock = statementOrStatementBlock( children[ 2 ].getChild( 0 ) );
         }
         else
            {
@@ -700,7 +702,7 @@ public class ASTBuilder
 
         Expression collectionExpr = expression( statementRoot.getChild( 1 ) );
 
-        BlockStatement bodyBlock = statementBlock( statementRoot.getChild( 2 ) );
+        BlockStatement bodyBlock = statementOrStatementBlock( statementRoot.getChild( 2 ) );
 
         return new ForStatement( variable,
                             collectionExpr,
