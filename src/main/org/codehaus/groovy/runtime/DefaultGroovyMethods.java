@@ -1168,6 +1168,15 @@ public class DefaultGroovyMethods {
      * @param value an Object to put at the given index
      */
     public static void putAt(Object[] array, int idx, Object value) {
+        if(value instanceof Number) {
+            Class arrayComponentClass = array.getClass().getComponentType();
+            
+            if(!arrayComponentClass.equals(value.getClass())) {
+                Object newVal = InvokerHelper.asType(value, arrayComponentClass);
+                array[normaliseIndex(idx, array.length)] = newVal;
+                return; 
+            }
+        }
         array[normaliseIndex(idx, array.length)] = value;
     }
 

@@ -104,7 +104,7 @@ public class BytecodeHelper implements Constants {
         }
     }
 
-    public boolean isPrimitiveType(String type) {
+    public static boolean isPrimitiveType(String type) {
         return type != null
             && (type.equals("boolean")
                 || type.equals("byte")
@@ -332,7 +332,7 @@ public class BytecodeHelper implements Constants {
         }
     }
 
-    public String getObjectTypeForPrimitive(String type) {
+    public static String getObjectTypeForPrimitive(String type) {
         if (type.equals("boolean")) {  
             return Boolean.class.getName(); 
         }

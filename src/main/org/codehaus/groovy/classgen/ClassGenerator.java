@@ -1496,7 +1496,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             visitAndAutobox(argExp);
 
             String type = param.getType();
-            if (helper.isPrimitiveType(type)) {
+            if (BytecodeHelper.isPrimitiveType(type)) {
                 helper.unbox(type);
             }
             doConvertAndCast(type, argExp);
@@ -1772,7 +1772,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
             }else {
                 cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
-                if (helper.isPrimitiveType(type)) {
+                if (BytecodeHelper.isPrimitiveType(type)) {
                     helper.box(type);
                 }
             }
@@ -2110,8 +2110,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         //type = checkValidType(type, expression, "Must be a valid type name for a constructor call");
 
 
-        if (helper.isPrimitiveType(type)) {
-            String objectType = helper.getObjectTypeForPrimitive(type);
+        if (BytecodeHelper.isPrimitiveType(type)) {
+            String objectType = BytecodeHelper.getObjectTypeForPrimitive(type);
             cv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
         }
         else {
@@ -2191,21 +2191,22 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
-        String typeName = BytecodeHelper.getClassInternalName(expression.getType());
+        String type = expression.getType();
+        String typeName = BytecodeHelper.getClassInternalName(type);
         Expression sizeExpression = expression.getSizeExpression();
         if (sizeExpression != null) {
             // lets convert to an int
             visitAndAutobox(sizeExpression);
             asIntMethod.call(cv);
-
+            
             cv.visitTypeInsn(ANEWARRAY, typeName);
         }
         else {
             int size = expression.getExpressions().size();
             helper.pushConstant(size);
-
+            
             cv.visitTypeInsn(ANEWARRAY, typeName);
-
+            
             for (int i = 0; i < size; i++) {
                 cv.visitInsn(DUP);
                 helper.pushConstant(i);
@@ -2214,7 +2215,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     ConstantExpression.NULL.visit(this);
                 }
                 else {
-                    visitAndAutobox(elementExpression);
+                    
+                    if(!type.equals(elementExpression.getClass().getName())) {
+                        visitCastExpression(new CastExpression(type, elementExpression));
+                    }
+                    else {
+                        visitAndAutobox(elementExpression);
+                    }
                 }
                 cv.visitInsn(AASTORE);
             }
@@ -2601,7 +2608,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             //System.out.println("### type: " + type);
 
             // lets not cast for primitive types as we handle these in field setting etc
-            if (helper.isPrimitiveType(type)) {
+            if (BytecodeHelper.isPrimitiveType(type)) {
                 rightExpression.visit(this);
             }
             else {
@@ -2657,7 +2664,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected boolean isValidTypeForCast(String type) {
-        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference") && !helper.isPrimitiveType(type);
+        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference") && !BytecodeHelper.isPrimitiveType(type);
     }
 
     protected void visitAndAutobox(Expression expression) {
@@ -3052,7 +3059,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             Parameter parameter = parameters[i];
             String type = parameter.getType();
             int idx = defineVariable(parameter.getName(), type).getIndex();
-            if (helper.isPrimitiveType(type)) {
+            if (BytecodeHelper.isPrimitiveType(type)) {
                 helper.load(type, idx);
                 helper.box(type);
                 cv.visitVarInsn(ASTORE, idx);
@@ -3173,7 +3180,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             String prefix = type.substring(0, idx);
             return checkValidType(prefix, node, message) + postfix;
         }
-        if (helper.isPrimitiveType(type) || "void".equals(type)) {
+        if (BytecodeHelper.isPrimitiveType(type) || "void".equals(type)) {
             return type;
         }
         String original = type;
