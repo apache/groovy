@@ -109,8 +109,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     classDef(node);
                     break;
 
-                default:
-                    unknownAST(node);
+                default: {
+                    Statement statement = statement(node);
+                    output.addStatement(statement);
+                }
             }
             node = node.getNextSibling();
         }

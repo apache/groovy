@@ -238,7 +238,9 @@ public class GroovyTestCase extends TestCase {
         // the file is also used to determine the CodeSource if running with a security manager
         String testClassName = getTestClassName();
 
-        File file = new File("target/test-classes/" + testClassName);
+        File dir = new File("target/test-script/");
+        dir.mkdirs();
+        File file = new File(dir, testClassName);
 
         log.info("Creating file " + file);
 

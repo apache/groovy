@@ -62,7 +62,7 @@ public class UberTest implements Test {
         "StringOperationTest.groovy",
         //"SubscriptTest.groovy",               TODO array initialisers
         "ThrowTest.groovy",
-        //"UnaryMinusTest.groovy",              TODO needs classpath stuff
+        "UnaryMinusTest.groovy",     
         //"WhileLoopTest.groovy",               TODO parser bug
     };
 
