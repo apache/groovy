@@ -113,7 +113,7 @@ class DocGenerator
                     sb.append("  <a name='${anchor}'></a>")
 				    sb.append("  <p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
 					sb.append("  <ul>${getComment(meth)}")
-					sb.append("  ${getParametersReturnAndEx(meth)}</ul></p>")
+					sb.append("  ${getParametersReturnAndEx(meth)}</ul>")
 				}
 				writer2.println("</table>")
 			}
