@@ -23,6 +23,17 @@
   </description>
 
   <url>http://groovy.codehaus.org/</url>
+  
+  <siteAddress>groovy.codehaus.org</siteAddress>
+  <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
+  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
+
+  <repository>
+    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>
+    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy</developerConnection>
+    <url>http://cvs.groovy.codehaus.org/</url>
+  </repository>
+
 
   <mailingLists>
     <mailingList>
@@ -44,16 +55,6 @@
       <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</unsubscribe>
     </mailingList>
   </mailingLists>
-
-  <siteAddress>groovy.codehaus.org</siteAddress>
-  <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
-  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
-
-  <repository>
-    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/</url>
-  </repository>
 
   <developers>
     <developer>
