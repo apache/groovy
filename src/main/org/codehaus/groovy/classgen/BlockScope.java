@@ -58,6 +58,7 @@ public class BlockScope {
     private Label breakLabel = new Label();
     private Label continueLabel = new Label();
     private BlockScope parent;
+    private int lastVariableIndex;
     
     public BlockScope(BlockScope parent) {
         this.parent = parent;
@@ -77,6 +78,14 @@ public class BlockScope {
 
     public BlockScope getParent() {
         return parent;
+    }
+
+    public int getLastVariableIndex() {
+        return lastVariableIndex;
+    }
+
+    public void setLastVariableIndex(int lastVariableIndex) {
+        this.lastVariableIndex = lastVariableIndex;
     }
 
 }

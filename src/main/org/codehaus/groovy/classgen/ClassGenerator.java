@@ -216,7 +216,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     private VariableScope variableScope;
 
-
     public ClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
@@ -283,7 +282,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.constructorNode = node;
         this.methodNode = null;
         this.variableScope = null;
-
+        this.scope = null;
+        pushBlockScope();
+        
         String methodType = helper.getMethodDescriptor("void", node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
         helper = new BytecodeHelper(cv);
@@ -311,6 +312,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         this.constructorNode = null;
         this.methodNode = node;
         this.variableScope = null;
+        this.scope = null;
+        pushBlockScope();
 
         String methodType = helper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
@@ -2547,14 +2550,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
     }
 
-    protected void popScope() {
-        scope = scope.getParent();
-    }
-
-    protected void pushBlockScope() {
-        scope = new BlockScope(scope);
-    }
-
     protected VariableScope getVariableScope() {
         if (variableScope == null) {
             if (methodNode != null) {
@@ -2731,6 +2726,36 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         definingParameters = false;
     }
 
+    protected void popScope() {
+        int lastID = scope.getLastVariableIndex();
+        
+        List removeKeys = new ArrayList();
+        for (Iterator iter = variableStack.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            String name = (String) entry.getKey();
+            Variable value = (Variable) entry.getValue();
+            if (value.getIndex() >= lastID) {
+                removeKeys.add(name);
+            }
+        }
+        for (Iterator iter = removeKeys.iterator(); iter.hasNext();) {
+            variableStack.remove(iter.next());
+        }
+        scope = scope.getParent();
+    }
+
+    protected void pushBlockScope() {
+        scope = new BlockScope(scope);
+        scope.setLastVariableIndex(getNextVariableID());
+    }
+
+    /**
+     * Defines the given variable in scope and assigns it to the stack
+     */
+    protected Variable defineVariable(String name, String type) {
+        return defineVariable(name, type, true);
+    }
+
     protected Variable defineVariable(String name, String type, boolean define) {
         return defineVariable(name, new Type(type), define);
     }
@@ -2738,7 +2763,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     private Variable defineVariable(String name, Type type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
-            idx = Math.max(idx, variableStack.size());
+            idx = getNextVariableID();
             answer = new Variable(idx, type, name);
             if (mutableVars.contains(name)) {
                 answer.setHolder(true);
@@ -2779,16 +2804,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return answer;
     }
 
+    private int getNextVariableID() {
+        return Math.max(idx, variableStack.size());
+    }
+
     /** @return true if the given name is a local variable or a field */
     protected boolean isFieldOrVariable(String name) {
         return variableStack.containsKey(name) || classNode.getField(name) != null;
-    }
-
-    /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
-    protected Variable defineVariable(String name, String type) {
-        return defineVariable(name, type, true);
     }
 
     protected Type checkValidType(Type type, ASTNode node, String message) {
