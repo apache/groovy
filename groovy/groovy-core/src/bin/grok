@@ -16,7 +16,7 @@ DIRNAME=`dirname "$0"`
 MAX_FD="maximum"
 
 # The version of classworlds to boot with
-CLASSWORLDS_VERSION="1.0-rc2"
+CLASSWORLDS_VERSION="1.0"
 
 warn() {
     echo "${PROGNAME}: $*"
