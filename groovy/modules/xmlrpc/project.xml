@@ -41,7 +41,7 @@
     <dependency>
       <groupId>groovy</groupId>
       <artifactId>groovy</artifactId>
-      <version>1.0-beta-5</version>
+      <version>1.0-beta-6</version>
       <type>jar</type>
       <properties/>
     </dependency>
