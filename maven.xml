@@ -105,7 +105,7 @@
   	<attainGoal name="groovy:xdoc-stuff"/>
   </preGoal>
   	
-  <goal name="xdoc:jelly-transform" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
+  <goal name="groovy:xdoc-stuff" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
     <mkdir dir="${maven.html2xdoc.dir}"/>
   	<!--
     <copy toDir="${maven.html2xdoc.dir}">
