@@ -130,9 +130,12 @@ public class SimpleTemplateEngine extends TemplateEngine {
             int c;
             while((c = reader.read()) != -1) {
                 if (c == '<') {
+                    reader.mark(1);
                     c = reader.read();
                     if (c != '%') {
                         sw.write('<');
+                        reader.reset();
+                        continue;
                     } else {
                         reader.mark(1);
                         c = reader.read();
