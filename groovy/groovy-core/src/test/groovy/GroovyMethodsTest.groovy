@@ -55,4 +55,12 @@ class GroovyMethodsTest extends GroovyTestCase {
 
         assert answer == ["Bob"]
     }
+
+    void testCollectionToList() {
+        c = [1, 2, 3, 4, 5] // but it's a list
+        l = c.toList()
+
+        assert l.containsAll(c)
+        assert c.size() == l.size()
+    }
 }
