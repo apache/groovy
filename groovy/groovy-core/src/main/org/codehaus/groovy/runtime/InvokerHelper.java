@@ -79,7 +79,6 @@ public class InvokerHelper {
 
     private static final Object[] EMPTY_MAIN_ARGS = new Object[] { new String[0] };
 
-    
     private static final Invoker singleton = new Invoker();
 
     public static MetaClass getMetaClass(Object object) {
@@ -140,7 +139,7 @@ public class InvokerHelper {
     public static String inspect(Object self) {
         return getInstance().inspect(self);
     }
-    
+
     public static Object getProperty(Object object, String property) {
         return getInstance().getProperty(object, property);
     }
@@ -183,7 +182,7 @@ public class InvokerHelper {
     public static Object asType(Object object, Class type) {
         return getInstance().asType(object, type);
     }
-        
+
     public static boolean asBool(Object object) {
         return getInstance().asBool(object);
     }
@@ -197,19 +196,19 @@ public class InvokerHelper {
     }
 
     public static Object negate(Object value) {
-    	if (value instanceof Double) {
-    	    Double number = (Double) value;
-    		return new Double(-number.doubleValue());
-    	}
-    	else if (value instanceof Number) {
-    	    Number number = (Number) value;
-    	    return new Integer(-number.intValue());
-    	}
-    	else {
-    	    return value;
-    	}
+        if (value instanceof Double) {
+            Double number = (Double) value;
+            return new Double(-number.doubleValue());
+        }
+        else if (value instanceof Number) {
+            Number number = (Number) value;
+            return new Integer(-number.intValue());
+        }
+        else {
+            return value;
+        }
     }
-    
+
     public static boolean isCase(Object switchValue, Object caseExpression) {
         return asBool(invokeMethod(caseExpression, "isCase", new Object[] { switchValue }));
     }
@@ -276,7 +275,7 @@ public class InvokerHelper {
     }
 
     public static List createRange(Object from, Object to, boolean inclusive) {
-        if (! inclusive) {
+        if (!inclusive) {
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod(to, "increment", EMPTY_ARGS);
             }
@@ -325,7 +324,8 @@ public class InvokerHelper {
                     public Object run() {
                         object.invokeMethod("main", EMPTY_MAIN_ARGS);
                         return null;
-                    } };
+                    }
+                };
                 setProperties(object, context.getVariables());
             }
             script.setBinding(context);
@@ -337,7 +337,7 @@ public class InvokerHelper {
                 e);
         }
     }
-    
+
     /**
      * Sets the properties on the given object
      * 
@@ -388,5 +388,77 @@ public class InvokerHelper {
         else {
             out.write(toString(object));
         }
+    }
+
+    public static Object toObject(boolean value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return value ? Boolean.TRUE : Boolean.FALSE;
+    }
+
+    public static Object toObject(byte value) {
+        /** @todo 
+        if (value >= 0 && value < 100) {
+            return integerCache[i];
+        }
+        */
+        return new Byte(value);
+    }
+
+    public static Object toObject(char value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Character(value);
+    }
+    
+    public static Object toObject(short value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Short(value);
+    }
+    
+    public static Object toObject(int value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Integer(value);
+    }
+    
+    public static Object toObject(long value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Long(value);
+    }
+    
+    public static Object toObject(float value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Float(value);
+    }
+    
+    public static Object toObject(double value) {
+        /** @todo 
+         if (value >= 0 && value < 100) {
+         return integerCache[i];
+         }
+         */
+        return new Double(value);
     }
 }

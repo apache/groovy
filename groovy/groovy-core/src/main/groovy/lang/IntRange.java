@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -146,6 +147,39 @@ public class IntRange extends AbstractList implements Range {
 
     public int hashCode() {
         return from ^ to + (reverse ? 1 : 0);
+    }
+
+    public Iterator iterator() {
+        return new Iterator() {
+            int index = 0;
+            int size = size();
+            int value = (reverse) ? to : from;
+
+            public boolean hasNext() {
+                return index < size;
+            }
+
+            public Object next() {
+                if (index++ > 0) {
+                    if (index > size) {
+                        return null;
+                    }
+                    else {
+                        if (reverse) {
+                            --value;
+                        }
+                        else {
+                            ++value;
+                        }
+                    }
+                }
+                return new Integer(value);
+            }
+
+            public void remove() {
+                IntRange.this.remove(index);
+            }
+        };
     }
 
     public List subList(int fromIndex, int toIndex) {

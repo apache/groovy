@@ -122,6 +122,13 @@ public class GroovyClassLoader extends ClassLoader {
         return answer;
     }
 
+    /**
+     * A helper method to allow bytecode to be loaded
+     */
+    protected Class loadClass(String name, byte[] bytecode) {
+        return defineClass(name, bytecode, 0, bytecode.length);
+    }
+    
     protected ClassCollector createCollector(CompileUnit unit) {
         return new ClassCollector(this, unit);
     }

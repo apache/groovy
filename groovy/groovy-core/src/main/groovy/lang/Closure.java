@@ -190,10 +190,20 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
             throw new IncorrectClosureArgumentsException(this, arguments, doCallMethod.getParameterTypes());
         }
         catch (IllegalAccessException e) {
-            throw (RuntimeException) e.getCause();
+            return throwRuntimeException(e.getCause());
         }
         catch (InvocationTargetException e) {
-            throw (RuntimeException) e.getCause();
+            return throwRuntimeException(e.getCause());
+        }
+    }
+
+    protected Object throwRuntimeException(Throwable throwable) {
+        if (throwable instanceof RuntimeException) {
+            RuntimeException re = (RuntimeException) throwable;
+            throw re;
+        }
+        else {
+            throw new GroovyRuntimeException(throwable.getMessage(), throwable);
         }
     }
 

@@ -59,12 +59,14 @@ import java.util.Map;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.classgen.CompilerFacade;
+import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.Reflector;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -92,6 +94,8 @@ public class MetaClass {
     private Method genericGetMethod;
     private Method genericSetMethod;
     private List constructors;
+    private Reflector reflector;
+    private boolean initialised;
 
     public MetaClass(MetaClassRegistry registry, Class theClass) throws IntrospectionException {
         this.registry = registry;
@@ -137,7 +141,6 @@ public class MetaClass {
             addNewStaticMethodsFrom(c);
             addMethods(c);
         }
-
     }
 
     /**
@@ -193,6 +196,8 @@ public class MetaClass {
      *  
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
+        checkInitialised();
+
         /*
          * Class type = arguments == null ? null : arguments.getClass(); System
          * .out .println( "MetaClass(Object[]) Invoking method on object: " +
@@ -1204,5 +1209,70 @@ public class MetaClass {
 
     protected String capitalize(String property) {
         return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
+    }
+
+    protected void checkInitialised() {
+        if (!initialised) {
+            initialised = true;
+            generateReflector();
+        }
+    }
+
+    protected void generateReflector() {
+        List methods = new ArrayList();
+        methods.addAll(methodIndex.values());
+        methods.addAll(staticMethodIndex.values());
+        methods = DefaultGroovyMethods.flatten(methods);
+
+        /** @todo this will be unnecessary when we ditch reflection altogether */
+        for (int i = 0, size = methods.size(); i < size; i++) {
+            MetaMethod metaMethod = new MetaMethod((Method) methods.get(i));
+            methods.set(i, metaMethod);
+        }
+
+        reflector = loadReflector(methods);
+
+        //System.out.println("Created reflector: " + reflector);
+
+        // lets set the reflector on all the methods
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MetaMethod metaMethod = (MetaMethod) iter.next();
+            metaMethod.setReflector(reflector);
+        }
+    }
+
+    protected Reflector loadReflector(List methods) {
+        ReflectorGenerator generator = new ReflectorGenerator(methods);
+        String className = theClass.getName();
+        String name = "gjdk.reflector." + className;
+        if (theClass.isArray()) {
+            name = "gjdk.reflector." + theClass.getComponentType().getName() + "Array";
+        }
+        byte[] bytecode = generator.generate(name);
+        /*
+        if (name.endsWith("[]")) {
+            name = "[L" + name.substring(0, name.length() - 2) + ";";
+        }
+        */
+        //System.out.println("About to load: " + name);
+        try {
+            Class type = registry.loadClass(name, bytecode);
+            return (Reflector) type.newInstance();
+        }
+        catch (LinkageError e) {
+            // we've already loaded this class
+            try {
+                Class type = registry.loadClass(name);
+                return (Reflector) type.newInstance();
+            }
+            catch (Exception e2) {
+                throw new GroovyRuntimeException(
+                    "Could not load the reflector for class: " + name + ". Reason: " + e2,
+                    e2);
+            }
+        }
+        catch (Exception e) {
+            throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
+        }
     }
 }
