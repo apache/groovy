@@ -29,6 +29,9 @@ import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationListener;
 import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.browser.StatusTextListener;
+import org.eclipse.swt.custom.CBanner;
+import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
@@ -223,6 +226,9 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("treeItem", TreeItem.class);
 
         // custom widgets
+        registerBeanFactory("cbanner", CBanner.class);
+        registerBeanFactory("ccombo", CCombo.class);
+        registerBeanFactory("clabel", CLabel.class);
         registerBeanFactory("cTabFolder", CTabFolder.class);
         registerBeanFactory("cTabItem", CTabItem.class);
         registerBeanFactory("sashForm", SashForm.class);

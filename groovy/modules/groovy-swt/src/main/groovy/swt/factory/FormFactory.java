@@ -14,6 +14,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.FormColors;
 import org.eclipse.ui.forms.HyperlinkSettings;
@@ -134,7 +135,9 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             return getToolkit().createImageHyperlink(parentComposite, style);
         }
         if ("formLabel".equals(type)) {
-            return getToolkit().createLabel(parentComposite, text, style);
+            Label label= getToolkit().createLabel(parentComposite, text, style);
+            getToolkit().paintBordersFor(parentComposite);
+            return label;
         }
         if ("formPageBook".equals(type)) {
             return getToolkit().createPageBook(parentComposite, style);

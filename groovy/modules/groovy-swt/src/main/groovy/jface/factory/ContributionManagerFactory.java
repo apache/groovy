@@ -14,8 +14,7 @@ import org.eclipse.jface.action.IContributionManager;
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
  * @version $Revision$
  */
-public class ContributionManagerFactory extends WidgetFactory implements
-        SwtFactory {
+public class ContributionManagerFactory extends WidgetFactory implements SwtFactory {
 
     public ContributionManagerFactory(Class beanClass) {
         super(beanClass);
@@ -25,8 +24,7 @@ public class ContributionManagerFactory extends WidgetFactory implements
      * @see groovy.swt.impl.SwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-            throws GroovyException {
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
 
         Object bean = createWidget(parent);
 
@@ -34,13 +32,13 @@ public class ContributionManagerFactory extends WidgetFactory implements
 
         if (parent instanceof IContributionManager) {
             IContributionManager contributionManager = (IContributionManager) parent;
-            
+
             if (bean instanceof IAction) {
-                contributionManager.add((IAction)bean);
+                contributionManager.add((IAction) bean);
             }
-            
+
             if (bean instanceof IContributionItem) {
-                contributionManager.add((IContributionItem)bean);
+                contributionManager.add((IContributionItem) bean);
             }
         }
         return bean;
