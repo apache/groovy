@@ -572,15 +572,15 @@ public class DefaultGroovyMethods {
      * @param text
      * @return the Character object at the given index
      */
-    public static Object get(String text, int index) {
+    public static Object get(CharSequence text, int index) {
         index = normaliseIndex(index, text.length());
-        return text.substring(index, index + 1);
+        return text.subSequence(index, index + 1);
     }
 
     /**
      * Support the range subscript operator for String
      */
-    public static Object get(String text, Range range) {
+    public static Object get(CharSequence text, Range range) {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
         int length = text.length();
@@ -592,7 +592,7 @@ public class DefaultGroovyMethods {
             to = tmp;
         }
 
-        return text.substring(from, to + 1);
+        return text.subSequence(from, to + 1);
     }
 
     /**
