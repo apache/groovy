@@ -39,6 +39,8 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingClassException;
 import groovy.lang.Reference;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1185,6 +1187,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         regexPattern.call(cv);
     }
 
+    /**
+     * Generate byte code for constants
+     * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
+     */
     public void visitConstantExpression(ConstantExpression expression) {
         Object value = expression.getValue();
         if (value == null) {
@@ -1199,14 +1205,39 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             String className = BytecodeHelper.getClassInternalName(value.getClass().getName());
             cv.visitTypeInsn(NEW, className);
             cv.visitInsn(DUP);
-            String methodType = "(I)V";
+            String methodType;
             if (n instanceof Double) {
-                methodType = "(D)V";
+            	cv.visitLdcInsn(n);
+            	methodType = "(D)V";
             }
             else if (n instanceof Float) {
-                methodType = "(F)V";
+            	cv.visitLdcInsn(n);
+            	methodType = "(F)V";
             }
-            cv.visitLdcInsn(n);
+            else if (value instanceof Long) {
+            	cv.visitLdcInsn(n);
+            	methodType = "(J)V";
+            }
+            else if (value instanceof BigDecimal) {
+            	cv.visitLdcInsn(n.toString());
+            	methodType = "(Ljava/lang/String;)V";
+            }
+            else if (value instanceof BigInteger) {
+            	cv.visitLdcInsn(n.toString());
+            	methodType = "(Ljava/lang/String;)V";
+            }
+            else if (value instanceof Integer){
+            	cv.visitLdcInsn(n);
+            	methodType = "(I)V";
+        	}
+            else
+            {
+        		throw new ClassGeneratorException(
+        				"Cannot generate bytecode for constant: " + value
+        				+ " of type: " + value.getClass().getName()
+        				+".  Numeric constant type not supported.");	
+        	}
+             
             cv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
         }
         else if (value instanceof Boolean) {
