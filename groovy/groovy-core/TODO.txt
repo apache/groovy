@@ -73,6 +73,14 @@ Core Groovy Tasks
 	- List.reverseEach { ... }
 	- Collection.count(foo) -> returns number of objects that equal foo
 	- Collection.countIf { it > 5 } -> returns number of objects that match closure predicate
+
+	- Map.get(key, defaultValue)
+	- Map.setDefault(key, defaultValue) for things like
+  		 map.setDefault(key, []).add(newValue)
+	- list.sortBy { [it.name, it.location] }
+	- list.sort { a, b | a.name <=> b.name }
+	
+		to ensure the map has a list of things
 	
 	- Object.getMetaClass()
 	- Object.eachProperty
@@ -90,15 +98,7 @@ Core Groovy Tasks
 		bean.setProperties(name:'James', location:'London')
 	- some kind of Regexp iterator of strings like Ruby's scan
 	- maybe support Pythons' zip and reduce functions?
-	- Map.get(key, defaultValue)
-	- Map.setDefault(key, defaultValue) for things like
-	 map.setDefault(key, []).add(newValue)
 	
-	- list.sortBy { [it.name, it.location] }
-	- list.sort { a, b | a.name <=> b.name }
-	
-	to ensure the map has a list of things
-
 		maybe add the various readonly List APIs to Object[] and *[] types
 		if we ever support the DTD / Xed style type*, type+ then we can do the same
 		there too
