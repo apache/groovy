@@ -133,7 +133,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     
     void testInspect() {
         text = inspect()
-        text.println()
+        println(text)
         assert text != null && text.startsWith("<")
     }
 
@@ -142,9 +142,9 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         
         System.out.println("Contents of file: " + file)
         
-        file.eachLine { it.println() }
+        file.eachLine { println(it) }
         
-        "".println()
+        println("")
     }
     
     void testReadLines() {
@@ -163,8 +163,8 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         
         System.out.println("Contents of dir: " + file)
         
-        file.eachFile { it.getName().println() }
+        file.eachFile { println(it.getName()) }
         
-        "".println()
+        println("")
     }
 }

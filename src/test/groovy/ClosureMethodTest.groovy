@@ -73,9 +73,9 @@ class ClosureMethodTest extends GroovyTestCase {
         values = answer.map {entry| return entry.value }
 
 		/** @todo parser        
-        System.out.println("keys " + keys + " values " + values)
-        System.out.println("keys " + keys)
-        System.out.println("values " + values)
+        println("keys " + keys + " values " + values)
+        println("keys " + keys)
+        println("values " + values)
         "keys " + keys + " values " + values.println()
         text = "keys " + keys + " values " + values
         */
@@ -139,18 +139,18 @@ class ClosureMethodTest extends GroovyTestCase {
     
     void testInspect() {
         text = inspect()
-        text.println()
+        println(text)
         assert text != null && text.startsWith("<")
     }
 
     void testEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
         
-        System.out.println("Contents of file: " + file)
+        println("Contents of file: " + file)
         
-        file.eachLine { line | line.println() }
+        file.eachLine { line | println(line) }
         
-        "".println()
+        println("")
     }
     
     void testReadLines() {
@@ -162,18 +162,18 @@ class ClosureMethodTest extends GroovyTestCase {
 		assert lines.size() > 0
 
 		/** @todo parser		        
-        System.out.println("File has: " + lines.size() + " lines")
+        println("File has: " + lines.size() + " lines")
         */
-        System.out.println("File has number of lines: " + lines.size())
+        println("File has number of lines: " + lines.size())
     }
     
     void testEachFile() {
         file = new File("src/test/groovy")
         
-        System.out.println("Contents of dir: " + file)
+        println("Contents of dir: " + file)
         
-        file.eachFile { f | f.getName().println() }
+        file.eachFile { f | println(f.getName()) }
         
-        "".println()
+        println("")
     }
 }

@@ -9,11 +9,11 @@ class MapConstructionTest extends GroovyTestCase {
     void testMap() {
         m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
 
-        m.println()
+        println(m)
 
         mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ]
 
-        mtoo.println()
+        println(mtoo)
 
         assertMap(m)
     }

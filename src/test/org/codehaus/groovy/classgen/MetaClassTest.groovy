@@ -4,19 +4,19 @@ class MetaClassTest extends GroovyTestCase {
     
     void testMetaClass() {
         test(this)
-        test {i| i.print() }
+        test { print(it) }
     }
     
     protected test(object) {
         metaClass = object.metaClass
         assert metaClass != null
         
-        metaClass.println()
+        println(metaClass)
         
         classNode = metaClass.getClassNode()
         assert classNode != null
 
-        classNode.println()
+        println(classNode)
         
         name = object.getClass().getName()
         assert classNode.name == name

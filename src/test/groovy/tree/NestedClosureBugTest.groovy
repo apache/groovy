@@ -16,6 +16,6 @@ class NestedClosureBugTest extends GroovyTestCase {
             })
         })
 
-		root.println()
+		println(root)
     }
 }

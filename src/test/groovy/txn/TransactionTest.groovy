@@ -6,13 +6,13 @@ class TransactionTest extends GroovyTestCase {
 		builder = new TransactionBuilder()
 		builder.transaction {
 		    run {
-		        System.out.println("run code!")
+		        println("run code!")
 		    }
 		    onError {
-                System.out.println("on error!")
+                println("on error!")
 		    }
 		    onSuccess {
-                System.out.println("on success!")
+                println("on success!")
 		    }
 		}
     }

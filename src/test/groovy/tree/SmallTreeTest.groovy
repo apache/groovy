@@ -11,6 +11,6 @@ class SmallTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        println(root)
     }
 }

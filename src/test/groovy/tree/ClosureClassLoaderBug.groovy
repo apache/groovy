@@ -11,6 +11,6 @@ class ClosureClassLoaderBug extends GroovyTestCase {
             b.elem1('hello1')
         })
         
-        root.print()
+        print(root)
     }
 }

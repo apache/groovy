@@ -43,36 +43,17 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package groovy.util;
 
-package groovy.gdo;
-
-import groovy.lang.GroovyObject;
-
-import org.codehaus.groovy.classgen.TestSupport;
+import junit.framework.TestSuite;
 
 /**
- * Tests dynamically compiling and runGroovyTestning a new class
+ * A TestSuite which will run a Groovy unit test case inside any Java IDE.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class RunGroovyTest extends TestSupport {
+public class GroovyTestSuite extends TestSuite {
 
-    public void testFoo() throws Exception {
-        runGroovyTest("testFoo");
-    }
 
-    public void testWhereWithAndClause() throws Exception {
-        runGroovyTest("testWhereWithAndClause");
-    }
-
-    public void testWhereClosureWithAnd() throws Exception {
-        runGroovyTest("testWhereClosureWithAnd");
-    }
-    
-    protected void runGroovyTest(String name) throws Exception {
-        compile("src/test/groovy/gdo/Person.groovy");
-        GroovyObject object = compile("src/test/groovy/gdo/PersonTest.groovy");
-        object.invokeMethod(name, null);
-    }
 }

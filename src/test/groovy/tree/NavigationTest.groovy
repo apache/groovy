@@ -8,10 +8,10 @@ class NavigationTest extends GroovyTestCase {
     void testDepthFirst() {
         tree = createTree()
         
-        tree.depthFirst().println()
+        System.out.println(tree.depthFirst())
         
         /** @todo
-        names = tree.depthFirst().collect { n | n.print(); return n.name }
+        names = tree.depthFirst().collect { n | print(n); return n.name }
         
         assert names == ['b1', 'b2', 'c1', 'c2', 'b3', 'b4', 'c3', 'c4', 'b5']
         */
@@ -20,10 +20,10 @@ class NavigationTest extends GroovyTestCase {
     void testBredthFirst() {
         tree = createTree()
         
-        tree.bredthFirst().println()
+        System.out.println(tree.bredthFirst())
         
         /** @todo
-        names = tree.bredthFirst().collect { n | n.print(); return n.name }
+        names = tree.bredthFirst().collect { n | print(n); return n.name }
         
         assert names == ['b1', 'b2', 'b3', 'b4', 'b5', 'c1', 'c2', 'c3', 'c4']
         */
@@ -48,7 +48,7 @@ class NavigationTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        println(root)
         
         return root
     }

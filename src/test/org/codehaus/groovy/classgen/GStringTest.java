@@ -51,6 +51,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
@@ -91,7 +92,7 @@ public class GStringTest extends TestSupport {
                 new BinaryExpression(new VariableExpression("str"), Token.equal(-1, -1), compositeStringExpr)));
         block.addStatement(
             new ExpressionStatement(
-                new MethodCallExpression(new VariableExpression("str"), "println", ConstantExpression.NULL)));
+                new MethodCallExpression(new VariableExpression("this"), "println", new VariableExpression("str"))));
 
         block.addStatement(
             new ExpressionStatement(

@@ -16,7 +16,7 @@ class TreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        print(root)
     }
     
     void testTree() {
@@ -38,7 +38,7 @@ class TreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print()
+        print(root)
 
 		elem1 = root.elem1
         assert elem1.value() == 'hello1'

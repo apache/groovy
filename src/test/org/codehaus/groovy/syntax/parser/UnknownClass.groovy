@@ -4,10 +4,10 @@ class UnknownClass {
     
     main() {
         try {
-        	"Hello World!".println()
+        	println("Hello World!")
         }
         catch (UnknownException e) {
-            "This will never happen".println()
+            println("This will never happen")
         }
     }
 }
