@@ -66,8 +66,8 @@ public class IntRangeTest extends TestCase {
 
     public void testProperties() {
         IntRange r = createRange(0, 10);
-        assertEquals("from", 0, r.getFrom());
-        assertEquals("to", 10, r.getTo());
+        assertEquals("from", 0, r.getFromInt());
+        assertEquals("to", 10, r.getToInt());
     }
 
     public void testGet() {
@@ -119,8 +119,8 @@ public class IntRangeTest extends TestCase {
 
         IntRange sr = (IntRange) s;
 
-        assertEquals("from", 12, sr.getFrom());
-        assertEquals("to", 14, sr.getTo());
+        assertEquals("from", 12, sr.getFromInt());
+        assertEquals("to", 14, sr.getToInt());
         assertEquals("size", 2, sr.size());
     }
 

@@ -47,7 +47,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
-import groovy.lang.Range;
+import groovy.lang.ObjectRange;
 import groovy.lang.Script;
 import groovy.lang.ScriptContext;
 import groovy.lang.Tuple;
@@ -259,7 +259,7 @@ public class InvokerHelper {
         if (from instanceof Integer && to instanceof Integer) {
             return new IntRange(asInt(from), asInt(to));
         }
-        return new Range((Comparable) from, (Comparable) to);
+        return new ObjectRange((Comparable) from, (Comparable) to);
     }
 
     public static int asInt(Object value) {

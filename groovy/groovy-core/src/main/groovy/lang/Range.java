@@ -45,139 +45,25 @@
  */
 package groovy.lang;
 
-import java.util.AbstractList;
 import java.util.List;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.IteratorClosureAdapter;
-
 /**
- * Represents a list of objects from a value to a value using
- * comparators
+ * Represents the interface of a Range implementation
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Range extends AbstractList {
+public interface Range extends List {
 
-    private Comparable from;
-    private Comparable to;
-    private int size = -1;
-
-    public Range(Comparable from, Comparable to) {
-        this.from = from;
-        this.to = to;
-    }
-
-    public int hashCode() {
-        /** @todo should code this the Josh Bloch way */
-        return from.hashCode() ^ to.hashCode();
-    }
-
-    public boolean equals(Object that) {
-        if (that instanceof Range) {
-            return equals((Range) that);
-        }
-        return false;
-    }
-
-    public boolean equals(Range that) {
-        return InvokerHelper.compareEqual(this.from, that.from) && InvokerHelper.compareEqual(this.to, that.to);
-    }
-
-    public Comparable getFrom() {
-        return from;
-    }
-
-    public Comparable getTo() {
-        return to;
-    }
-
-    public Object get(int index) {
-        if (index < 0) {
-            throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
-        }
-        Object value = from;
-        for (int i = 0; i < index; i++) {
-            value = increment(value);
-        }
-        if (index >= size()) {
-            throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
-        }
-        return value;
-    }
-
-    public int size() {
-        if (size == -1) {
-            // lets lazily calculate the size
-            size = 0;
-            Object value = from;
-            while (to.compareTo(value) > 0) {
-                value = increment(value);
-                size++;
-            }
-        }
-        return size;
-    }
-
-    public List subList(int fromIndex, int toIndex) {
-        if (fromIndex < 0) {
-            throw new IndexOutOfBoundsException("fromIndex = " + fromIndex);
-        }
-        if (toIndex > size()) {
-            throw new IndexOutOfBoundsException("toIndex = " + toIndex);
-        }
-        if (fromIndex > toIndex) {
-            throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
-        }
-        return new Range((Comparable) get(fromIndex), (Comparable) get(toIndex));
-    }
-
-    public String toString() {
-        return "" + from + ":" + to;
-    }
-
-    public boolean contains(Comparable value) {
-        int result = from.compareTo(value);
-        if (result == 0) {
-            return true;
-        }
-        return result < 0 && to.compareTo(value) > 0;
-    }
-
-    public void step(int step, Closure closure) {
-        if (step >= 0) {
-            Comparable value = from;
-            while (value.compareTo(to) <= 0) {
-                closure.call(value);
-                for (int i = 0; i < step; i++) {
-                    value = (Comparable) increment(value);
-                }
-            }
-        }
-        else {
-            step = -step;
-            Comparable value = to;
-            while (value.compareTo(from) >= 0) {
-                closure.call(value);
-                for (int i = 0; i < step; i++) {
-                    value = (Comparable) decrement(value);
-                }
-            }
-        }
-    }
     
-    public List step(int step) {
-        IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
-        step(step, adapter);
-        return adapter.asList();
-    }
-    
-    protected Object increment(Object value) {
-        return InvokerHelper.invokeMethod(value, "increment", null);
-    }
+    /**
+     * @return the lower value in the range
+     */
+    public Comparable getFrom();
 
-    protected Object decrement(Object value) {
-        return InvokerHelper.invokeMethod(value, "decrement", null);
-    }
-   }
+    /**
+     * @return the upper value in the range
+     */
+    public Comparable getTo();
+
+}
