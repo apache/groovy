@@ -60,6 +60,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
+import java.security.AccessControlException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,7 +130,7 @@ public class MetaClass {
     private Reflector reflector;
     private boolean initialised;
 
-    public MetaClass(MetaClassRegistry registry, Class theClass) throws IntrospectionException {
+    public MetaClass(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
         this.registry = registry;
         this.theClass = theClass;
 
@@ -133,7 +138,21 @@ public class MetaClass {
         addMethods(theClass);
 
         // introspect
-        BeanInfo info = Introspector.getBeanInfo(theClass);
+        BeanInfo info = null;
+        try {
+        	info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+        		public Object run() throws IntrospectionException {
+        			return Introspector.getBeanInfo(theClass);
+        		}
+        	});
+        } catch (PrivilegedActionException pae) {
+        	if (pae.getException() instanceof IntrospectionException) {
+        		throw (IntrospectionException) pae.getException();
+        	} else {
+        		throw new RuntimeException(pae.getException());
+        	}
+        }
+
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
         for (int i = 0; i < descriptors.length; i++) {
             PropertyDescriptor descriptor = descriptors[i];
@@ -1487,25 +1506,30 @@ public class MetaClass {
         }
     }
 
-    protected MetaMethod createMetaMethod(Method method) {
-        if (registry.useAccessible()) {
-            method.setAccessible(true);
-        }
-        if (useReflection) {
-            //log.warning("Creating reflection based dispatcher for: " + method);
-            return new ReflectionMetaMethod(method);
-        }
-        MetaMethod answer = new MetaMethod(method);
-        if (isValidReflectorMethod(answer)) {
-            allMethods.add(answer);
-            answer.setMethodIndex(allMethods.size());
-        }
-        else {
-            //log.warning("Creating reflection based dispatcher for: " + method);
-            answer = new ReflectionMetaMethod(method);
-        }
-        return answer;
-    }
+    protected MetaMethod createMetaMethod(final Method method) {
+	    if (registry.useAccessible()) {
+	    	AccessController.doPrivileged(new PrivilegedAction() {
+	    		public Object run() {
+	                method.setAccessible(true);
+	                return null;
+	    		}
+	    	});
+	    }
+	    if (useReflection) {
+	        //log.warning("Creating reflection based dispatcher for: " + method);
+	        return new ReflectionMetaMethod(method);
+	    }
+	    MetaMethod answer = new MetaMethod(method);
+	    if (isValidReflectorMethod(answer)) {
+	        allMethods.add(answer);
+	        answer.setMethodIndex(allMethods.size());
+	    }
+	    else {
+	        //log.warning("Creating reflection based dispatcher for: " + method);
+	        answer = new ReflectionMetaMethod(method);
+	    }
+	    return answer;
+	}
 
     protected boolean isValidReflectorMethod(MetaMethod method) {
         if (method.isPrivate() || method.isProtected()) {
@@ -1531,7 +1555,6 @@ public class MetaClass {
 
     protected void generateReflector() {
         reflector = loadReflector(allMethods);
-
         if (reflector == null) {
             throw new RuntimeException("Should have a reflector!");
         }
@@ -1567,6 +1590,10 @@ public class MetaClass {
             Class type = loadReflectorClass(name);
             return (Reflector) type.newInstance();
         }
+        catch (AccessControlException ace) {
+        	//Don't ignore this exception type
+        	throw ace;
+        } 
         catch (Exception e) {
             // lets ignore, lets generate it && load it
         }
@@ -1585,11 +1612,15 @@ public class MetaClass {
         }
     }
 
-    protected Class loadReflectorClass(String name, byte[] bytecode) throws ClassNotFoundException {
+    protected Class loadReflectorClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
         ClassLoader loader = theClass.getClassLoader();
         if (loader instanceof GroovyClassLoader) {
-            GroovyClassLoader gloader = (GroovyClassLoader) loader;
-            return gloader.loadClass(name, bytecode);
+            final GroovyClassLoader gloader = (GroovyClassLoader) loader;
+        	return (Class) AccessController.doPrivileged(new PrivilegedAction() {
+        		public Object run() {
+        			return gloader.defineClass(name, bytecode, getClass().getProtectionDomain());
+        		}
+        	});
         }
         return registry.loadClass(name, bytecode);
     }

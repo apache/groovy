@@ -46,6 +46,8 @@
 package groovy.lang;
 
 import java.beans.IntrospectionException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +69,12 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 public class MetaClassRegistry {
     private Map metaClasses = Collections.synchronizedMap(new HashMap());
     private boolean useAccessible;
-    private GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+    private GroovyClassLoader loader =  
+    	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return new GroovyClassLoader(getClass().getClassLoader()); 
+    		}
+    	});
 
     public MetaClassRegistry() {
         this(true);
@@ -120,8 +127,12 @@ public class MetaClassRegistry {
     /**
      * A helper class to load meta class bytecode into the class loader
      */
-    public Class loadClass(String name, byte[] bytecode) throws ClassNotFoundException {
-        return loader.loadClass(name, bytecode);
+    public Class loadClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
+    	return (Class) AccessController.doPrivileged(new PrivilegedAction() {
+    		public Object run() {
+    			return loader.defineClass(name, bytecode, getClass().getProtectionDomain());
+    		}
+    	});
     }
 
     public Class loadClass(String name) throws ClassNotFoundException {

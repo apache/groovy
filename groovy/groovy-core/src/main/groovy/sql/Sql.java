@@ -36,6 +36,9 @@ package groovy.sql;
 import groovy.lang.Closure;
 import groovy.lang.GString;
 
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -654,8 +657,24 @@ public class Sql {
     }
 
     protected Connection createConnection() throws SQLException {
-        if (dataSource != null) {
-            return dataSource.getConnection();
+    	if (dataSource != null) {
+    		//Use a doPrivileged here as many different properties need to be read, and the policy
+    		//shouldn't have to list them all.
+        	Connection con = null;
+        	try {
+        		con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+        			public Object run() throws SQLException {return dataSource.getConnection(); } 
+        		});
+        	} catch(PrivilegedActionException pae) {
+        		Exception e = pae.getException();
+        		if (e instanceof SQLException) {
+        			throw (SQLException) e;
+        		}
+        		else {
+        			throw (RuntimeException) e;
+        		}
+        	}
+        	return con;
         }
         else {
             //System.out.println("createConnection returning: " + useConnection);

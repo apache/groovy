@@ -40,6 +40,10 @@ import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+import junit.textui.TestRunner;
+
 /**
  * @author sam
  * 
@@ -49,6 +53,14 @@ import java.util.Map;
 public class GroovyShellTest extends GroovyTestCase {
 
     private String script1 = "test = 1";
+
+    public static void main(String[] args) {
+        TestRunner.run(suite());
+    }
+    
+    public static Test suite() {
+        return new TestSuite(GroovyShellTest.class);
+    }
 
     public void testExecuteScript() {
         GroovyShell shell = new GroovyShell();

@@ -39,6 +39,8 @@ import groovy.lang.Script;
 import groovy.lang.Binding;
 
 import java.io.ByteArrayInputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -121,7 +123,13 @@ public class CachingGroovyEngine extends GroovyEngine {
         parent = Thread.currentThread().getContextClassLoader();
         if (parent == null)
             parent = GroovyShell.class.getClassLoader();
-        this.loader = new GroovyClassLoader(parent);
+        final ClassLoader finalParent = parent;
+        this.loader = 
+        	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+        		public Object run() {
+    				return new GroovyClassLoader(finalParent); 
+        		}
+        	});
         execScripts = new HashMap();
         evalScripts = new HashMap();
         context = shell.getContext();

@@ -36,6 +36,8 @@ package groovy.lang;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -110,7 +112,12 @@ public class MetaMethod implements Cloneable {
         else {
             log.warning("No reflector available for method so must use reflection: " + method);
             //throw new RuntimeException("Can't invoke method: " + method + " for index: " + methodIndex);
-            method.setAccessible(true);
+	    	AccessController.doPrivileged(new PrivilegedAction() {
+	    		public Object run() {
+	    			method.setAccessible(true);
+	                return null;
+	    		}
+	    	});
             return method.invoke(object, arguments);
         }
     }

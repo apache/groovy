@@ -53,6 +53,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +98,21 @@ public class XmlParser implements ContentHandler {
     }
 
     public XmlParser(boolean validating, boolean namespaceAware) throws ParserConfigurationException, SAXException {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParserFactory factory = null;
+    	try {
+			factory = (SAXParserFactory) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+				public Object run() throws ParserConfigurationException {
+					return SAXParserFactory.newInstance();
+				}
+			});
+    	} catch (PrivilegedActionException pae) {
+    		Exception e = pae.getException();
+    		if (e instanceof ParserConfigurationException) {
+    			throw (ParserConfigurationException) e;
+    		} else {
+    			throw new RuntimeException(e);
+    		}
+    	}
         factory.setNamespaceAware(namespaceAware);
         factory.setValidating(validating);
 
