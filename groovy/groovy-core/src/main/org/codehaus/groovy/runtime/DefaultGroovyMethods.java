@@ -648,7 +648,25 @@ public class DefaultGroovyMethods {
             to = tmp;
         }
 
-        return text.substring(from, to + 1);
+        String answer = text.substring(from, to + 1);
+        if (range.isReverse()) {
+            answer = reverse(answer);
+        }
+        return answer;
+    }
+
+    /**
+     * Creates a new string which is the reverse (backwards) of this string
+     * 
+     * @return a new string with all the characters reversed.
+     */
+    public static String reverse(String self) {
+        int size = self.length();
+        StringBuffer buffer = new StringBuffer(size);
+        for (int i = size -1 ; i >= 0; i--) {
+            buffer.append(self.charAt(i));
+        }
+        return buffer.toString();
     }
 
     /**
@@ -685,11 +703,23 @@ public class DefaultGroovyMethods {
     public static List getAt(List self, Range range) {
         int size = self.size();
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
-        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()) + 1, size);
-        if (to > size) {
+        int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
+        boolean reverse = range.isReverse();
+        //System.out.println("Evaluting range: " + range + " with from: " + from + " to: " + to + " reverse: " + reverse);
+        if (from > to) {
+            int tmp = to;
+            to = from;
+            from = tmp;
+            //reverse = !reverse;
+        }
+        if (++to > size) {
             to = size;
         }
-        return self.subList(from, to);
+        List answer = self.subList(from, to);
+        if (reverse) {
+            answer = reverse(answer);
+        }
+        return answer;
     }
 
     /**
@@ -1108,7 +1138,7 @@ public class DefaultGroovyMethods {
         }
         return addTo;
     }
-    
+
     /**
      * Overloads the left shift operator to provide an append mechanism to add things
      * to a list
@@ -1416,7 +1446,7 @@ public class DefaultGroovyMethods {
     public static String increment(String self) {
         StringBuffer buffer = new StringBuffer(self);
         char firstCh = firstCharacter();
-        for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
+        for (int idx = buffer.length() - 1; idx >= 0; idx--) {
             char ch = increment(buffer.charAt(idx));
             int value = ch;
             if (ch != ZERO_CHAR) {
@@ -1435,7 +1465,7 @@ public class DefaultGroovyMethods {
         }
         return buffer.toString();
     }
-    
+
     /**
      * Decrements the last digit in the given string, resetting
      * it and moving onto the next digit if increasing the digit
@@ -1446,7 +1476,7 @@ public class DefaultGroovyMethods {
     public static String decrement(String self) {
         StringBuffer buffer = new StringBuffer(self);
         char lastCh = lastCharacter();
-        for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
+        for (int idx = buffer.length() - 1; idx >= 0; idx--) {
             char ch = decrement(buffer.charAt(idx));
             if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
@@ -1457,14 +1487,14 @@ public class DefaultGroovyMethods {
                     return null;
                 }
                 else {
-	                // lets find the first char
-	                buffer.setCharAt(idx, lastCh);
+                    // lets find the first char
+                    buffer.setCharAt(idx, lastCh);
                 }
             }
         }
         return buffer.toString();
     }
-    
+
     private static char increment(char ch) {
         if (Character.isLetterOrDigit(++ch)) {
             return ch;
@@ -1473,7 +1503,7 @@ public class DefaultGroovyMethods {
             return ZERO_CHAR;
         }
     }
-    
+
     private static char decrement(char ch) {
         if (Character.isLetterOrDigit(--ch)) {
             return ch;
@@ -1482,13 +1512,13 @@ public class DefaultGroovyMethods {
             return ZERO_CHAR;
         }
     }
-    
+
     /**
      * @return the first character used when a letter rolls over when incrementing
      */
     private static char firstCharacter() {
         char ch = ZERO_CHAR;
-        while (! Character.isLetterOrDigit(ch)) {
+        while (!Character.isLetterOrDigit(ch)) {
             ch++;
         }
         return ch;
@@ -1750,7 +1780,7 @@ public class DefaultGroovyMethods {
     public static void withReader(File file, Closure closure) throws IOException {
         withReader(newReader(file), closure);
     }
-    
+
     /**
      * Helper method to create a buffered output stream for a file
      *
@@ -1774,7 +1804,6 @@ public class DefaultGroovyMethods {
         withStream(newOutputStream(file), closure);
     }
 
-    
     /**
      * Helper method to create a buffered writer for a file
      * 
@@ -1797,7 +1826,7 @@ public class DefaultGroovyMethods {
     public static void withWriter(File file, Closure closure) throws IOException {
         withWriter(newWriter(file), closure);
     }
-    
+
     /**
      * Helper method to create a new PrintWriter for a file
      * 
@@ -1833,7 +1862,7 @@ public class DefaultGroovyMethods {
     public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
-            
+
             // lets try close the writer & throw the exception if it fails
             // but not try to reclose it in the finally block
             Writer temp = writer;
@@ -1851,7 +1880,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-    
+
     /**
      * Allows a Reader to be used, calling the closure with the writer
      * and then ensuring that the writer is closed down again irrespective
@@ -1864,7 +1893,7 @@ public class DefaultGroovyMethods {
     public static void withReader(Reader writer, Closure closure) throws IOException {
         try {
             closure.call(writer);
-            
+
             // lets try close the writer & throw the exception if it fails
             // but not try to reclose it in the finally block
             Reader temp = writer;
@@ -1882,7 +1911,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-    
+
     /**
      * Allows a InputStream to be used, calling the closure with the stream
      * and then ensuring that the stream is closed down again irrespective
@@ -1895,7 +1924,7 @@ public class DefaultGroovyMethods {
     public static void withStream(InputStream stream, Closure closure) throws IOException {
         try {
             closure.call(stream);
-            
+
             // lets try close the stream & throw the exception if it fails
             // but not try to reclose it in the finally block
             InputStream temp = stream;
@@ -1913,7 +1942,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-    
+
     /**
      * Allows a OutputStream to be used, calling the closure with the stream
      * and then ensuring that the stream is closed down again irrespective
@@ -1926,7 +1955,7 @@ public class DefaultGroovyMethods {
     public static void withStream(OutputStream stream, Closure closure) throws IOException {
         try {
             closure.call(stream);
-            
+
             // lets try close the stream & throw the exception if it fails
             // but not try to reclose it in the finally block
             OutputStream temp = stream;
@@ -1944,7 +1973,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-    
+
     /**
      * Helper method to create a buffered input stream for a file
      *
@@ -2058,8 +2087,8 @@ public class DefaultGroovyMethods {
     public static List toList(String self) {
         int size = self.length();
         List answer = new ArrayList(size);
-        for (int i = 0; i < size; i++ ) {
-            answer.add(self.substring(i, i+1));
+        for (int i = 0; i < size; i++) {
+            answer.add(self.substring(i, i + 1));
         }
         return answer;
     }

@@ -3,8 +3,11 @@ class SubscriptTest extends GroovyTestCase {
     void testListRange() {
         list = ['a', 'b', 'c', 'd', 'e']
 		
-		sub = list[2..4]
-		assert sub == ['c', 'd', 'e']
+        sub = list[2..4]
+        assert sub == ['c', 'd', 'e']
+        
+        sub = list[2...5]
+        assert sub == ['c', 'd', 'e']
         
         value = list[-1]
         assert value == 'e'
@@ -12,6 +15,15 @@ class SubscriptTest extends GroovyTestCase {
         sub = list[-4..-2]
         assert sub == ['b', 'c', 'd']
         
+        // backwards ranges
+        sub = list[-1..-3]
+        assert sub == ['e', 'd', 'c']
+        
+        sub = list[-3..-1]
+        assert sub == ['c', 'd', 'e']
+        
+        sub = list[3..1]
+        assert sub == ['d', 'c', 'b']
     }
     
     void testObjectRangeRange() {
@@ -25,32 +37,13 @@ class SubscriptTest extends GroovyTestCase {
         
         sub = list[-4..-2]
         assert sub == ['b', 'c', 'd']
-    }
-    
-    void testIntRangeRange() {
-        list = 10..15
         
-        sub = list[2..4]
-        assert sub == [12, 13, 14]
+        // backwards ranges
+        sub = list[-1..-3]
+        assert sub == ['e', 'd', 'c']
         
-        value = list[-1]
-        assert value == 15
-        
-        sub = list[-4..-2]
-        assert sub == [12, 13, 14]
-    }
-    
-    void testIntArrayRange() {
-        list = new Integer[] { 10, 11, 12, 13, 14, 15 }
-        
-        sub = list[2..4]
-        assert sub == [12, 13, 14]
-        
-        value = list[-1]
-        assert value == 15
-        
-        sub = list[-4..-2]
-        assert sub == [12, 13, 14]
+        sub = list[3..1]
+        assert sub == ['d', 'c', 'b']
     }
     
     void testStringArrayRange() {
@@ -65,6 +58,52 @@ class SubscriptTest extends GroovyTestCase {
         sub = list[-4..-2]
         assert sub == ['b', 'c', 'd']
         
+        // backwards ranges
+        sub = list[-1..-3]
+        assert sub == ['e', 'd', 'c']
+        
+        sub = list[3..1]
+        assert sub == ['d', 'c', 'b']
+    }
+    
+    void testIntRangeRange() {
+        list = 10..15
+        
+        sub = list[2..4]
+        assert sub == [12, 13, 14]
+        
+        value = list[-1]
+        assert value == 15
+        
+        sub = list[-4..-2]
+        assert sub == [12, 13, 14]
+        
+        // backwards ranges
+        sub = list[-1..-3]
+        assert sub == [15, 14, 13]
+        
+        sub = list[3..1]
+        assert sub == [13, 12, 11]
+    }
+    
+    void testIntArrayRange() {
+        list = new Integer[] { 10, 11, 12, 13, 14, 15 }
+        
+        sub = list[2..4]
+        assert sub == [12, 13, 14]
+        
+        value = list[-1]
+        assert value == 15
+        
+        sub = list[-4..-2]
+        assert sub == [12, 13, 14]
+        
+        // backwards ranges
+        sub = list[-1..-3]
+        assert sub == [15, 14, 13]
+        
+        sub = list[3..1]
+        assert sub == [13, 12, 11]
     }
     
     void testStringSubscript() {
@@ -76,10 +115,14 @@ class SubscriptTest extends GroovyTestCase {
         assert x.class == String
         
         sub = text[5..10]
-        
         assert sub == 'cheese'
+        
+        sub = text[10..5]
+        assert sub == 'eseehc'
+        
+        sub = text[-2..-7]
+        assert sub == 'timorg'
     }
-    
     
     void testListSubscriptWithList() {
         list = ['a', 'b', 'c', 'd', 'e']
