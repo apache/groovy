@@ -2577,18 +2577,13 @@ public class AsmClassGenerator2 extends ClassGenerator {
      */
     protected String checkForQualifiedClass(PropertyExpression expression) {
         String text = expression.getText();
+        if (text != null && text.endsWith(".class")) {
+            text = text.substring(0, text.length() - 6);
+        }
         try {
             return resolveClassName(text);
         }
         catch (Exception e) {
-            if (text.endsWith(".class")) {
-                text = text.substring(0, text.length() - 6);
-                try {
-                    return resolveClassName(text);
-                }
-                catch (Exception e2) {
-                }
-            }
             return null;
         }
     }
