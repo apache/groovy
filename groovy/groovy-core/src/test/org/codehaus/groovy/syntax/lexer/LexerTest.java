@@ -23,6 +23,39 @@ public class LexerTest
         assertEnd();
     }
 
+    public void testSingleLineComment_Newline()
+        throws Exception
+    {
+        newLexer( "// I like cheese\ncheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertEnd();
+    }
+
+    public void testSingleLineComment_CarriageReturn()
+        throws Exception
+    {
+        newLexer( "// I like cheese\rcheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertEnd();
+    }
+
+    public void testSingleLineComment_CarriageReturn_Newline()
+        throws Exception
+    {
+        newLexer( "// I like cheese\r\ncheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertEnd();
+    }
+
     public void testIgnoredWhitespace()
         throws Exception
     {
