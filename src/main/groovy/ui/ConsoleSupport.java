@@ -75,7 +75,7 @@ public abstract class ConsoleSupport {
         Style def = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
 
         Style regular = doc.addStyle("regular", def);
-        StyleConstants.setFontFamily(def, "SansSerif");
+        StyleConstants.setFontFamily(def, "Monospaced");
 
         promptStyle = doc.addStyle("prompt", regular);
         StyleConstants.setForeground(promptStyle, Color.BLUE);
