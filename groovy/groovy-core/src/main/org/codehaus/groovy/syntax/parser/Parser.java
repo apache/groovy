@@ -1580,12 +1580,32 @@ public class Parser
 
         expr.addChild( datatype() );
 
+        /*
         consume( Token.LEFT_PARENTHESIS );
 
         expr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
 
         consume( Token.RIGHT_PARENTHESIS );
+        */
 
+        CSTNode paramList  = null;
+        
+        if ( lt_bare() == Token.LEFT_PARENTHESIS )
+        {
+            consume( Token.LEFT_PARENTHESIS );
+
+            expr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
+
+            consume( Token.RIGHT_PARENTHESIS );
+        }
+        else
+        if ( lt_bare() == Token.LEFT_CURLY_BRACE )
+        {
+                paramList = parameterList( Token.LEFT_CURLY_BRACE );
+                expr.addChild( paramList );
+                expr.addChild( closureExpression() );
+        }
+    
         return expr;
     }
 

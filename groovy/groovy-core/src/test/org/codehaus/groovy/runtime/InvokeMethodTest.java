@@ -1,56 +1,47 @@
 /*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
-
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
-
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * $Id$
+ * 
+ * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
+ * 
+ * Redistribution and use of this software and associated documentation
+ * ("Software"), with or without modification, are permitted provided that the
+ * following conditions are met:
+ *  1. Redistributions of source code must retain copyright statements and
+ * notices. Redistributions must also contain a copy of this document.
+ *  2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ *  3. The name "groovy" must not be used to endorse or promote products
+ * derived from this Software without prior written permission of The Codehaus.
+ * For written permission, please contact info@codehaus.org.
+ *  4. Products derived from this Software may not be called "groovy" nor may
+ * "groovy" appear in their names without prior written permission of The
+ * Codehaus. "groovy" is a registered trademark of The Codehaus.
+ *  5. Due credit should be given to The Codehaus - http://groovy.codehaus.org/
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
+ * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
+ * DAMAGE.
+ *  
  */
 
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.IntRange;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -89,6 +80,11 @@ public class InvokeMethodTest extends GroovyTestCase {
 
         value = invoke(this, "mockCallWithOneNullParam", null);
         assertEquals("return value", "OneParamWithNull", value);
+    }
+
+    public void testInvokeOverloadedMethodWithOneParamWhichIsNull() throws Throwable {
+        Object value = invoke(this, "mockOverloadedMethod", new Object[] { null });
+        assertEquals("return value", "Object", value);
     }
 
     public void testInvokeMethodOneCollectionParameter() throws Throwable {
@@ -230,7 +226,7 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     public void testCallIntMethodWithInteger() throws Throwable {
-        Object value = invoke(this, "overloadedRemove", new Object[] { new Integer(5) });
+        Object value = invoke(this, "overloadedRemove", new Object[] { new Integer(5)});
         assertEquals("called with integer", "int5", value);
     }
 
@@ -238,9 +234,9 @@ public class InvokeMethodTest extends GroovyTestCase {
         List list = new ArrayList();
         list.add("foo");
         list.add("bar");
-        
-        Object value = invoke(list, "remove", new Object[] { new Integer(0) });
-        
+
+        Object value = invoke(list, "remove", new Object[] { new Integer(0)});
+
         assertEquals("Should have just 1 item left: " + list, 1, list.size());
     }
 
@@ -282,6 +278,15 @@ public class InvokeMethodTest extends GroovyTestCase {
 
         value = invoke(object, "substring", new Object[] { new Integer(1), new Integer(3)});
         assertEquals("substring(1,3)", object.substring(1, 3), value);
+    }
+
+    public void testListGetWithRange() throws Throwable {
+        List list = Arrays.asList(new Object[] { "a", "b", "c" });
+        Object range = new IntRange(1, 3);
+        Object value = invoke(list, "get", range);
+        assertTrue("Returned List: " + value, value instanceof List);
+        List retList = (List) value;
+        assertEquals("List size", 2, retList.size());
     }
 
     public void testInvokeUnknownMethod() throws Throwable {
@@ -381,7 +386,6 @@ public class InvokeMethodTest extends GroovyTestCase {
         return "Object" + value;
     }
 
-    
     // Implementation methods
     //-------------------------------------------------------------------------
 
@@ -399,11 +403,14 @@ public class InvokeMethodTest extends GroovyTestCase {
     }
 
     /**
-     * Asserts that invoking the method chooser finds the right overloaded method implementation
-     * 
-     * @param expected is the expected value of the method
-     * @param arguments the argument(s) to the method invocation
-     */
+	 * Asserts that invoking the method chooser finds the right overloaded
+	 * method implementation
+	 * 
+	 * @param expected
+	 *            is the expected value of the method
+	 * @param arguments
+	 *            the argument(s) to the method invocation
+	 */
     protected void assertMethodChooser(Object expected, Object arguments) throws Throwable {
         Object value = invoke(this, "mockOverloadedMethod", arguments);
 

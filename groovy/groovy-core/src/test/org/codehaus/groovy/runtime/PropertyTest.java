@@ -56,7 +56,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 /**
  * Test the property access of the Invoker class
@@ -202,6 +204,16 @@ public class PropertyTest extends GroovyTestCase {
         return "cheddar";
     }
 
+    public void testComponentParent() {
+        JPanel panel = new JPanel();
+        JButton bean = new JButton();
+        
+        panel.add(bean);
+        
+        Object value = InvokerHelper.getProperty(bean, "parent");
+        assertTrue(value != null);
+    }
+    
     // Implementation methods
     //-------------------------------------------------------------------------
 

@@ -76,4 +76,12 @@ class PropertyTest extends GroovyTestCase {
 	    shouldFail { foo.getQ() }
 	}
 
+    void testConstructorWithNamedProperties() {
+        foo = new Foo(name:'Gromit', location:'Moon')
+        
+        assert foo.name == 'Gromit'
+        assert foo.location == 'Moon'
+        
+        println("created bean ${foo.inspect()}")
+    }
 }

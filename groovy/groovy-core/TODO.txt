@@ -217,15 +217,7 @@ sql.table("users") {
 	- using beans + listeners
 	- expression language
 
-* allow constructors to have optional trailing closure...
-	new JFrame() { text = 'hello'; size = [1, 2] }
-  closure on construction of beans?
-	new JTable() {....}
-		invokes the closure with the new object as delegate for setting properties etc
-
 * support -ve indices on subscript operator
-
-* foo[1, 2] versus foo[1..2] etc
 
 * MetaClass -> add getPropertyDescriptor which has methods
 	- get(), set(), type(), cardinality() etc

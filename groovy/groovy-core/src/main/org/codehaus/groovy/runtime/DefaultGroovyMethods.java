@@ -58,6 +58,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
@@ -555,6 +556,16 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Makes an Array look like a Collection by adding support for the size() method
+     * 
+     * @param text
+     * @return
+     */
+    public static int size(Object[] self) {
+        return self.length;
+    }
+
+    /**
      * Support the subscript operator for String
      * 
      * @param text
@@ -602,7 +613,7 @@ public class DefaultGroovyMethods {
     public static Object get(Object[] array, int idx) {
         return array[normaliseIndex(idx, array.length)];
     }
-    
+
     /**
      * Support the subscript operator for an Array
      * 
@@ -637,6 +648,9 @@ public class DefaultGroovyMethods {
         return i;
     }
 
+    
+
+    
     /**
      * Support the subscript operator for List
      * 
@@ -870,6 +884,125 @@ public class DefaultGroovyMethods {
         return true;
     }
 
+    // Primitive type array methods
+    //-------------------------------------------------------------------------
+    
+    public static Object get(byte[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(char[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(short[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(int[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(long[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(float[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    public static Object get(double[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
+    
+    public static Object get(byte[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(char[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(short[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(int[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(long[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(float[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    public static Object get(double[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    
+    public static void put(byte[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    
+    public static void put(char[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    public static void put(short[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    public static void put(int[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    public static void put(long[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    public static void put(float[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    public static void put(double[] array, int idx, Object newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    
+    public static int size(byte[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(char[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(short[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(int[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(long[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(float[] array) {
+        return Array.getLength(array);
+    }
+    public static int size(double[] array) {
+        return Array.getLength(array);
+    }
+    
+    /**
+     * Implements the get(int idx) method for primitve type arrays
+     */
+    protected static Object primitiveArrayGet(Object array, int idx) {
+        return Array.get(array, normaliseIndex(idx, Array.getLength(array)));
+    }
+    
+    /**
+     * Implements the get(int idx) method for primitve type arrays
+     */
+    protected static Object primitiveArrayGet(Object array, Range range) {
+        List answer = new ArrayList();
+        for (Iterator iter = range.iterator(); iter.hasNext(); ) {
+            int idx = InvokerHelper.asInt(iter.next());
+            answer.add(primitiveArrayGet(array, idx));
+        }
+        return answer;
+    }
+    
+    /**
+     * Implements the set(int idx) method for primitve type arrays
+     */
+    protected static void primitiveArrayPut(Object array, int idx, Object newValue) {
+        Array.set(array, normaliseIndex(idx, Array.getLength(array)), newValue);
+    }
+    
+    
     // String methods
     //-------------------------------------------------------------------------
     public static Object tokenize(String self, String token) {

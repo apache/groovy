@@ -904,8 +904,9 @@ public class ASTBuilder
     {
         String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
 
-        TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
-
+        //TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
+        Expression args = actualParameterList( expressionRoot.getChild( 1 ) );
+        
         return new ConstructorCallExpression( datatype,
                                               args );
     }
