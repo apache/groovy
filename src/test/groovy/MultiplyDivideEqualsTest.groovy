@@ -38,6 +38,11 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         x *= y
         
         assert x == "bbcbbc"
+
+        x = "Guillaume"
+        y = 0
+        x *= y
+        assert x == ""
     }
     
     
