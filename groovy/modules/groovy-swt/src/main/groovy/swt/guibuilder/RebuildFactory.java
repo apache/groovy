@@ -27,7 +27,10 @@ public class RebuildFactory extends AbstractSwtFactory implements SwtFactory {
      */
     public Object newInstance(Map properties, Object parent) throws GroovyException {
         // get parent
-        Composite parentComposite = (Composite) properties.remove("parent");
+        if(parent == null) {
+            parent = properties.remove("parent");
+        }
+        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
         if (parentComposite == null) {
             throw new MissingPropertyException("parent", RebuildFactory.class);
         }
