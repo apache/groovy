@@ -5,8 +5,7 @@
 class GuillamesBug extends GroovyTestCase {
     
     void testBug() {
-        /* @todo creates a parser exception
-        if (true) println("true")
-        */
+        if (true) 
+            println("true")
     }
 }

@@ -565,8 +565,21 @@ public class Parser
         return datatype;
     }
 
+    protected CSTNode statementOrStatementBlock()
+    throws IOException, SyntaxException
+    {
+        if (la().getType() == Token.LEFT_CURLY_BRACE) 
+        {
+            return statementBlock();
+        }
+        else 
+        {
+            return statement();
+        }
+    }
+
     protected CSTNode statementBlock()
-        throws IOException, SyntaxException
+    throws IOException, SyntaxException
     {
         CSTNode statementBlock = rootNode( Token.LEFT_CURLY_BRACE );
 
@@ -797,7 +810,7 @@ public class Parser
 
         consume( Token.RIGHT_PARENTHESIS );
 
-        statement.addChild( statementBlock() );
+        statement.addChild( statementOrStatementBlock() );
 
         CSTNode cur = statement;
 
@@ -814,7 +827,7 @@ public class Parser
         if ( lt() == Token.KEYWORD_ELSE )
         {
             CSTNode next = rootNode( Token.KEYWORD_ELSE );
-            next.addChild( statementBlock() );
+            next.addChild( statementOrStatementBlock() );
             cur.addChild( next );
         }
 
@@ -885,7 +898,7 @@ public class Parser
 
         consume( Token.RIGHT_PARENTHESIS );
 
-        statement.addChild( statementBlock() );
+        statement.addChild( statementOrStatementBlock() );
 
         return statement;
     }
@@ -914,7 +927,7 @@ public class Parser
 
         consume( Token.RIGHT_PARENTHESIS );
 
-        statement.addChild( statementBlock() );
+        statement.addChild( statementOrStatementBlock() );
 
         return statement;
     }
