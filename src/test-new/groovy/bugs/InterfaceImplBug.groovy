@@ -10,7 +10,7 @@ import org.codehaus.groovy.dummy.FooHandler
 class InterfaceImplBug extends GroovyTestCase implements FooHandler {
 
     void testMethodCall() {
-		handle(null)        
+        handle(null)
     }
     
     void handle(Reader reader){

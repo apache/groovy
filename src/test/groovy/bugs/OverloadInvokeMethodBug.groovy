@@ -15,7 +15,7 @@ class OverloadInvokeMethodBug extends GroovyTestCase {
 }
 
 class OverloadA {
-        invokeMethod(String name, Object args) {
+        def invokeMethod(String name, Object args) {
                 try {
                         metaClass.invokeMethod(this, name, args)
                 } catch(MissingMethodException e) {
