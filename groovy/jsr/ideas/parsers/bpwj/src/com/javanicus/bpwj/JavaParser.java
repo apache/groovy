@@ -51,20 +51,22 @@ class JavaParser {
      */
     public Parser identifier() {
         //@todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     /** QualifiedIdentifier:
      *      Identifier {. Identifier }
      */
     public Parser qualifiedIdentifier() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(new Repetition(
+        Sequence s = new TrackSequence();
+        s.add(identifier());
+        s.add(new Repetition(
                     new TrackSequence()
                         .add(new Symbol('.'))
                         .add(identifier())
             ));
+        return s;
     }
 
     /** Literal:
@@ -76,26 +78,28 @@ class JavaParser {
      *      NullLiteral
      */
     public Parser literal() {
-        return new Alternation()
-            .add(integerLiteral())
-            .add(floatingPointLiteral())
-            .add(characterLiteral())
-            .add(stringLiteral())
-            .add(booleanLiteral())
-            .add(nullLiteral());
+        Alternation a = new Alternation();
+        a.add(integerLiteral());
+        a.add(floatingPointLiteral());
+        a.add(characterLiteral());
+        a.add(stringLiteral());
+        a.add(booleanLiteral());
+        a.add(nullLiteral());
+        return a;
     }
 
     /** Expression:
      *      Expression1 [AssignmentOperator Expression1]
      */
     public Parser expression() {
-        return new TrackSequence()
-            .add(expression1())
-            .add(zeroOrOne(
+        Sequence s = new TrackSequence();
+        s.add(expression1());
+        s.add(zeroOrOne(
                 new TrackSequence()
                     .add(assignmentOperator())
                     .add(expression1())
             ));
+        return s;
     }
 
 
@@ -114,20 +118,20 @@ class JavaParser {
      *      >>>=
      */
     public Parser assignmentOperator() {
-        return new Alternation()
-            .add(new Symbol("="))
-            .add(new Symbol("+="))
-            .add(new Symbol("-="))
-            .add(new Symbol("*="))
-            .add(new Symbol("/="))
-            .add(new Symbol("&="))
-            .add(new Symbol("|="))
-            .add(new Symbol("^="))
-            .add(new Symbol("%="))
-            .add(new Symbol("<<="))
-            .add(new Symbol(">>="))
-            .add(new Symbol(">>>="))
-            ;
+        Alternation a = new Alternation();
+        a.add(new Symbol("="));
+        a.add(new Symbol("+="));
+        a.add(new Symbol("-="));
+        a.add(new Symbol("*="));
+        a.add(new Symbol("/="));
+        a.add(new Symbol("&="));
+        a.add(new Symbol("|="));
+        a.add(new Symbol("^="));
+        a.add(new Symbol("%="));
+        a.add(new Symbol("<<="));
+        a.add(new Symbol(">>="));
+        a.add(new Symbol(">>>="));
+        return a;
     }
 
     /** Type:
@@ -135,8 +139,8 @@ class JavaParser {
      *      BasicType
      */
     public Parser type() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+        a.add(new TrackSequence()
                 .add(identifier())
                 .add(zeroOrOne(typeArguments()))
                 .add(new Repetition(
@@ -146,23 +150,24 @@ class JavaParser {
                         .add(zeroOrOne(typeArguments()))
                 ))
                 .add(bracketsOpt())
-            )
-            .add(basicType())
-            ;
+            );
+        a.add(basicType());
+        return a;
     }
 
     /** TypeArguments:
      *      < TypeArgument {, TypeArgument}>
      */
     public Parser typeArguments() {
-        return new TrackSequence()
-            .add(new Symbol("<"))
-            .add(typeArgument())
-            .add(new Repetition(
+        Sequence s = new TrackSequence();
+        s.add(new Symbol("<"));
+        s.add(typeArgument());
+        s.add(new Repetition(
                 new TrackSequence()
                     .add(new Symbol(","))
                     .add(typeArgument())
             ));
+        return s;
     }
 
     /** TypeArgument:
@@ -170,9 +175,9 @@ class JavaParser {
      *      ? [(extends |super ) Type]
      */
     private Parser typeArgument() {
-        return new Alternation()
-            .add(type())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+        a.add(type());
+        a.add(new TrackSequence()
                 .add(new Symbol("?"))
                 .add(zeroOrOne(
                     new TrackSequence()
@@ -184,65 +189,72 @@ class JavaParser {
                 ))
             )
         ;
+        return a;
     }
 
     /** RawType:
      *      Identifier { .   Identifier } BracketsOpt
      */
     public Parser rawType() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(new Repetition(
+        Sequence s = new TrackSequence();
+        s.add(identifier());
+        s.add(new Repetition(
                 new TrackSequence()
                     .add(new Symbol("."))
                     .add(identifier())
-            ))
-            .add(bracketsOpt());
+            ));
+        s.add(bracketsOpt());
+        return s;
     }
 
     /** StatementExpression:
      *      Expression
      */
     public Parser statementExpression() {
-        return expression();
+        Parser p = expression();
+        return p;
     }
 
     /** ConstantExpression:
      *      Expression
      */
     public Parser constantExpression() {
-        return expression();
+        Parser p = expression();
+        return p;
     }
 
     /** Expression1:
      *      Expression2 [Expression1Rest]
      */
     public Parser expression1() {
-        return new TrackSequence()
-            .add(expression2())
-            .add(zeroOrOne(expression1Rest()));
+        Sequence s = new TrackSequence();
+        s.add(expression2());
+        s.add(zeroOrOne(expression1Rest()));
+        return s;
     }
 
     /** Expression1Rest:
      *      [ ?   Expression :   Expression1]
      */
     public Parser expression1Rest() {
-        return zeroOrOne(
+        Parser p = zeroOrOne(
             new TrackSequence()
                 .add(new Symbol("?"))
                 .add(expression())
                 .add(new Symbol(":"))
                 .add(expression1())
         );
+        return p;
     }
 
     /** Expression2 :
      *      Expression3 [Expression2Rest]
      */
     public Parser expression2() {
-        return new TrackSequence()
-            .add(expression3())
-            .add(zeroOrOne(expression2Rest()));
+        Sequence s = new TrackSequence();
+        s.add(expression3());
+        s.add(zeroOrOne(expression2Rest()));
+        return s;
     }
 
     /** Expression2Rest:
@@ -250,17 +262,18 @@ class JavaParser {
      *      Expression3 instanceof Type
      */
     public Parser expression2Rest() {
-        return new Alternation()
-            .add(new Repetition(
+        Alternation a = new Alternation();
+        a.add(new Repetition(
                 new TrackSequence()
                     .add(infixOp())
                     .add(expression3())
-            ))
-            .add(new TrackSequence()
+            ));
+        a.add(new TrackSequence()
                 .add(expression3())
                 .add(new Literal("instanceof"))
                 .add(type())
             );
+        return a;
     }
 
     /** Infixop:
@@ -284,26 +297,26 @@ class JavaParser {
      *      %
      */
     public Parser infixOp() {
-        return new Alternation()
-            .add(new Symbol("||"))
-            .add(new Symbol("&&"))
-            .add(new Symbol("|"))
-            .add(new Symbol("^"))
-            .add(new Symbol("&"))
-            .add(new Symbol("=="))
-            .add(new Symbol("!="))
-            .add(new Symbol("<"))
-            .add(new Symbol(">"))
-            .add(new Symbol("<="))
-            .add(new Symbol(">="))
-            .add(new Symbol("<<"))
-            .add(new Symbol(">>"))
-            .add(new Symbol(">>>"))
-            .add(new Symbol("+"))
-            .add(new Symbol("*"))
-            .add(new Symbol("/"))
-            .add(new Symbol("%"))
-            ;
+        Alternation a = new Alternation();
+        a.add(new Symbol("||"));
+        a.add(new Symbol("&&"));
+        a.add(new Symbol("|"));
+        a.add(new Symbol("^"));
+        a.add(new Symbol("&"));
+        a.add(new Symbol("=="));
+        a.add(new Symbol("!="));
+        a.add(new Symbol("<"));
+        a.add(new Symbol(">"));
+        a.add(new Symbol("<="));
+        a.add(new Symbol(">="));
+        a.add(new Symbol("<<"));
+        a.add(new Symbol(">>"));
+        a.add(new Symbol(">>>"));
+        a.add(new Symbol("+"));
+        a.add(new Symbol("*"));
+        a.add(new Symbol("/"));
+        a.add(new Symbol("%"));
+        return a;
     }
 
     /** Expression3:
@@ -312,12 +325,12 @@ class JavaParser {
      *      Primary {Selector} {PostfixOp}
      */
     public Parser expression3() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+        a.add(new TrackSequence()
                 .add(prefixOp())
                 .add(expression3())
-            )
-            .add(new TrackSequence()
+            );
+        a.add(new TrackSequence()
                 .add(new Symbol("("))
                 .add(new Alternation()
                     .add(expr())
@@ -325,13 +338,13 @@ class JavaParser {
                 )
                 .add(new Symbol(")"))
                 .add(expression3())
-            )
-            .add(new TrackSequence()
+            );
+        a.add(new TrackSequence()
                 .add(primary())
                 .add(new Repetition(selector()))
                 .add(new Repetition(postfixOp()))
-            )
-            ;
+            );
+        return a;
     }
 
     /** Primary:
@@ -346,61 +359,61 @@ class JavaParser {
      *      void.class
      */
     public Parser primary() {
-        return new Alternation()
+        Alternation a = new Alternation();
             // ( Expression)
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Symbol("("))
                 .add(expression())
                 .add(new Symbol(")"))
-            )
+            );
             // NonWildcardTypeArguments (ExplicitGenericInvocationSuffix |this Arguments)
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(nonWildcardTypeArguments())
                 .add(new Alternation()
                     .add(explicitGenericInvocationSuffix())
                     .add(new Literal("this"))
                 )
-            )
+            );
             // this [Arguments]
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("this"))
                 .add(zeroOrOne(arguments()))
-            )
+            );
             // super SuperSuffix
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("this"))
                 .add(superSuffix())
-            )
+            );
             // Literal
-            .add(literal())
+            a.add(literal());
             // new Creator
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("new"))
                 .add(creator())
-            )
+            );
             // Identifier {. Identifier }[ IdentifierSuffix]
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(identifier())
                 .add(new Repetition(new TrackSequence()
                     .add(new Symbol('.'))
                     .add(identifier())
                 ))
                 .add(zeroOrOne(identifierSuffix()))
-            )
+            );
             // BasicType BracketsOpt.class
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(basicType())
                 .add(bracketsOpt())
                 .add(new Symbol('.'))
                 .add(new Literal("class"))
-            )
+            );
             // void.class
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("void"))
                 .add(new Symbol("."))
                 .add(new Literal("class"))
-            )
-            ;
+            );
+        return a;
     }
 
     /** IdentifierSuffix:
@@ -409,10 +422,10 @@ class JavaParser {
      *      .   (class | ExplicitGenericInvocation |this |super Arguments |new [NonWildcardTypeArguments] InnerCreator )
      */
     public Parser identifierSuffix() {
-        return new Alternation()
+        Alternation a = new Alternation();
 
                 // [ (] BracketsOpt   . class | Expression])
-                .add(new TrackSequence()
+                a.add(new TrackSequence()
                         .add(new Symbol('['))
                         .add(new Alternation()
                             .add(new TrackSequence()
@@ -426,13 +439,13 @@ class JavaParser {
                                 .add(new Symbol(']'))
                             )
                         )
-                )
+                );
 
                 // Arguments
-                .add(arguments())
+                a.add(arguments());
 
                 // .   (class | ExplicitGenericInvocation |this |super Arguments |new [NonWildcardTypeArguments] InnerCreator )
-                .add(new TrackSequence()
+                a.add(new TrackSequence()
                     .add(new Symbol('.'))
                     .add(new Alternation()
                         .add(new Literal("class"))
@@ -448,29 +461,29 @@ class JavaParser {
                             .add(innerCreator())
                         )
                     )
-                )
-        ;
+                );
+        return a;
     }
 
     /** ExplicitGenericInvocation:
      *      NonWildcardTypeArguments ExplicitGenericInvocationSuffix
      */
     public Parser explicitGenericInvocation() {
-        return new TrackSequence()
-            .add(nonWildcardTypeArguments())
-            .add(explicitGenericInvocationSuffix())
-        ;
+        Sequence s = new TrackSequence();
+        s.add(nonWildcardTypeArguments());
+        s.add(explicitGenericInvocationSuffix());
+        return s;
     }
 
     /** NonWildcardTypeArguments:
      *      < TypeList>
      */
     public Parser nonWildcardTypeArguments() {
-        return new TrackSequence()
-            .add(new Symbol("<"))
-            .add(typeList())
-            .add(new Symbol(">"))
-        ;
+        Sequence s = new TrackSequence();
+        s.add(new Symbol("<"));
+        s.add(typeList());
+        s.add(new Symbol(">"));
+        return s;
     }
 
     /** ExplicitGenericInvocationSuffix:
@@ -478,14 +491,15 @@ class JavaParser {
      *      Identifier Arguments
      */
     public Parser explicitGenericInvocationSuffix() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(new Literal("super"))
-                .add(superSuffix()))
-            .add(new TrackSequence()
+                .add(superSuffix()));
+            a.add(new TrackSequence()
                 .add(identifier())
                 .add(arguments())
             );
+        return a;
     }
 
     /** PrefixOp:
@@ -497,14 +511,14 @@ class JavaParser {
      *      -
      */
     public Parser prefixOp() {
-        return new Alternation()
-            .add(new Symbol("++"))
-            .add(new Symbol("--"))
-            .add(new Symbol('!'))
-            .add(new Symbol('~'))
-            .add(new Symbol('+'))
-            .add(new Symbol('-'))
-        ;
+        Alternation a = new Alternation();
+        a.add(new Symbol("++"));
+        a.add(new Symbol("--"));
+        a.add(new Symbol('!'));
+        a.add(new Symbol('~'));
+        a.add(new Symbol('+'));
+        a.add(new Symbol('-'));
+        return a;
     }
 
     /** PostfixOp:
@@ -512,10 +526,10 @@ class JavaParser {
      *      --
      */
     public Parser postfixOp() {
-        return new Alternation()
-            .add(new Symbol("++"))
-            .add(new Symbol("--"))
-        ;
+        Alternation a = new Alternation();
+        a.add(new Symbol("++"));
+        a.add(new Symbol("--"));
+        return a;
     }
 
     /** Selector:
@@ -527,37 +541,37 @@ class JavaParser {
      *      [ Expression]
      */
     public Parser selector() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(arguments()))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(explicitGenericInvocation())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(new Literal("this"))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(new Literal("super"))
                 .add(superSuffix())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(new Literal("new"))
                 .add(zeroOrOne(nonWildcardTypeArguments()))
                 .add(innerCreator())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol('['))
                 .add(expression())
                 .add(new Symbol(']'))
-            )
-            ;
+            );
+        return a;
     }
 
     /** SuperSuffix:
@@ -565,13 +579,14 @@ class JavaParser {
      *      . Identifier [Arguments]
      */
     public Parser superSuffix() {
-        return new Alternation()
-            .add(arguments())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(arguments());
+            a.add(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(arguments()))
             );
+        return a;
     }
 
     /** BasicType:
@@ -585,96 +600,100 @@ class JavaParser {
      *      boolean
      */
     public Parser basicType() {
-        return new Alternation()
-            .add(new Literal("byte"))
-            .add(new Literal("short"))
-            .add(new Literal("char"))
-            .add(new Literal("int"))
-            .add(new Literal("long"))
-            .add(new Literal("float"))
-            .add(new Literal("double"))
-            .add(new Literal("boolean"))
-        ;
+        Alternation a = new Alternation();
+            a.add(new Literal("byte"));
+            a.add(new Literal("short"));
+            a.add(new Literal("char"));
+            a.add(new Literal("int"));
+            a.add(new Literal("long"));
+            a.add(new Literal("float"));
+            a.add(new Literal("double"));
+            a.add(new Literal("boolean"));
+        return a;
     }
 
     /** ArgumentsOpt:
      *      [ Arguments ]
      */
     public Parser argumentsOpt() {
-        return zeroOrOne(arguments());
+        Parser p = zeroOrOne(arguments());
+        return p;
     }
 
     /** Arguments:
      *      ( [Expression {, Expression }])
      */
     public Parser arguments() {
-        return new TrackSequence()
-            .add(new Symbol('('))
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('('));
+            s.add(zeroOrOne(new TrackSequence()
                 .add(expression())
                 .add(new Repetition(new TrackSequence()
                     .add(new Symbol(','))
                     .add(expression())
                 ))
-            ))
-            .add(new Symbol(')'))
-        ;
+            ));
+            s.add(new Symbol(')'));
+        return s;
     }
 
     /** BracketsOpt:
      *      {[]}
      */
     public Parser bracketsOpt() {
-        return new Repetition(new TrackSequence()
+        Repetition r = new Repetition(new TrackSequence()
             .add(new Symbol('['))
             .add(new Symbol(']'))
         );
+        return r;
     }
 
     /** Creator:
      *      [NonWildcardTypeArguments] CreatedName ( ArrayCreatorRest  | ClassCreatorRest )
      */
     public Parser creator() {
-        return new TrackSequence()
-            .add(zeroOrOne(nonWildcardTypeArguments()))
-            .add(createdName())
-            .add(new Alternation()
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(nonWildcardTypeArguments()));
+            s.add(createdName());
+            s.add(new Alternation()
                 .add(arrayCreatorRest())
                 .add(classCreatorRest())
             );
+        return s;
     }
 
     /** CreatedName:
      *      Identifier [NonWildcardTypeArguments] {. Identifier [NonWildcardTypeArguments]}
      */
     public Parser createdName() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(zeroOrOne(nonWildcardTypeArguments()))
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(zeroOrOne(nonWildcardTypeArguments()));
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(identifier())
                 .add(zeroOrOne(nonWildcardTypeArguments()))
             ));
+        return s;
     }
 
     /** InnerCreator:
      *      Identifier ClassCreatorRest
      */
     public Parser innerCreator() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(classCreatorRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(classCreatorRest());
+        return s;
     }
 
     /** ArrayCreatorRest:
      *      [ (] BracketsOpt ArrayInitializer | Expression] {[ Expression]} BracketsOpt )
      */
     public Parser arrayCreatorRest() {
-        return new TrackSequence()
-            .add(new Symbol('['))
-            .add(new Alternation()
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('['));
+            s.add(new Alternation()
                 .add(new TrackSequence()
                     .add(new Symbol(']'))
                     .add(bracketsOpt())
@@ -691,34 +710,35 @@ class JavaParser {
                     .add(bracketsOpt())
                 )
             );
+        return s;
     }
 
     /** ClassCreatorRest:
      *      Arguments [ClassBody]
      */
     public Parser classCreatorRest() {
-        return new TrackSequence()
-            .add(arguments())
-            .add(zeroOrOne(classBody()))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(arguments());
+            s.add(zeroOrOne(classBody()));
+        return s;
     }
 
     /** ArrayInitializer:
      *      { [VariableInitializer {, VariableInitializer} [,]]}
      */
     public Parser arrayInitializer() {
-        return new TrackSequence()
-            .add(new Symbol("{"))
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Symbol("{"));
+            s.add(zeroOrOne(new TrackSequence()
                 .add(variableInitializer())
                 .add(new Repetition(new TrackSequence()
                     .add(new Symbol(","))
                     .add(variableInitializer())
                 ))
                 .add(zeroOrOne(new Symbol(',')))
-            ))
-            .add(new Symbol("}"))
-        ;
+            ));
+            s.add(new Symbol("}"));
+        return s;
     }
 
     /** VariableInitializer:
@@ -726,39 +746,40 @@ class JavaParser {
      *      Expression
      */
     public Parser variableInitializer() {
-        return new Alternation()
-            .add(arrayInitializer())
-            .add(expression())
-        ;
+        Alternation a = new Alternation();
+            a.add(arrayInitializer());
+            a.add(expression());
+        return a;
     }
 
     /** ParExpression:
      *      ( Expression)
      */
     public Parser parExpression() {
-        return new TrackSequence()
-            .add(new Symbol('('))
-            .add(expression())
-            .add(new Symbol(')'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('('));
+            s.add(expression());
+            s.add(new Symbol(')'));
+        return s;
     }
 
     /** Block:
      *      { BlockStatements}
      */
     public Parser block() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(blockStatements())
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(blockStatements());
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** BlockStatements:
      *      { BlockStatement }
      */
     public Parser blockStatements() {
-        return new Repetition(blockStatement());
+        Repetition r = new Repetition(blockStatement());
+        return r;
     }
 
     /** BlockStatement:
@@ -767,28 +788,29 @@ class JavaParser {
      *      [Identifier:] Statement
      */
     public Parser blockStatement() {
-        return new Alternation()
-            .add(localVariableDeclarationStatement())
-            .add(classOrInterfaceDeclaration())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(localVariableDeclarationStatement());
+            a.add(classOrInterfaceDeclaration());
+            a.add(new TrackSequence()
                 .add(zeroOrOne(new TrackSequence()
                     .add(identifier())
                     .add(new Symbol(":"))
                 ))
                 .add(statement())
             );
+        return a;
     }
 
     /** LocalVariableDeclarationStatement:
      *      [final] Type VariableDeclarators;
      */
     public Parser localVariableDeclarationStatement() {
-        return new TrackSequence()
-            .add(zeroOrOne(new Literal("final")))
-            .add(type())
-            .add(variableDeclarators())
-            .add(new Literal(";"))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(new Literal("final")));
+            s.add(type());
+            s.add(variableDeclarators());
+            s.add(new Literal(";"));
+        return s;
     }
 
     /** Statement:
@@ -810,11 +832,11 @@ class JavaParser {
      *      Identifier :   Statement
      */
     public Parser statement() {
-        return new Alternation()
+        Alternation a = new Alternation();
             //Block
-             .add(block())
+             a.add(block());
             //assert Expression [: Expression];
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("assert"))
                 .add(expression())
                 .add(zeroOrOne(
@@ -823,9 +845,9 @@ class JavaParser {
                         .add(expression())
                 ))
                 .add(new Symbol(';'))
-            )
+            );
             //if ParExpression Statement [else Statement]
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("if"))
                 .add(parExpression())
                 .add(statement())
@@ -834,31 +856,31 @@ class JavaParser {
                         .add(new Literal("else"))
                         .add(statement())
                 ))
-            )
+            );
             //for (ForControl) Statement
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("for"))
                 .add(new Symbol('('))
                 .add(forControl())
                 .add(new Symbol(')'))
                 .add(statement())
-            )
+            );
             //while ParExpression Statement
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("while"))
                 .add(parExpression())
                 .add(statement())
-            )
+            );
             //do Statement while ParExpression ;
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("do"))
                 .add(statement())
                 .add(new Literal("while"))
                 .add(parExpression())
                 .add(new Symbol(';'))
-            )
+            );
             //try Block ( Catches | [Catches] finally Block )
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("try"))
                 .add(block())
                 .add(new Alternation()
@@ -869,94 +891,95 @@ class JavaParser {
                         .add(block())
                     )
                 )
-            )
+            );
             //switch ParExpression{ SwitchBlockStatementGroups}
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("switch"))
                 .add(parExpression())
                 .add(new Symbol('{'))
                 .add(switchBlockStatementGroups())
                 .add(new Symbol('}'))
-            )
+            );
             //synchronized ParExpression Block
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("synchronized"))
                 .add(parExpression())
                 .add(block())
-            )
+            );
             //return [Expression];
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("return"))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
-            )
+            );
             //throw Expression ;
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("throw"))
                 .add(expression())
                 .add(new Symbol(';'))
-            )
+            );
             //break [Identifier]
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("break"))
                 .add(zeroOrOne(identifier()))
-            )
+            );
             //continue [Identifier]
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(new Literal("continue"))
                 .add(zeroOrOne(identifier()))
-            )
+            );
             //;
-            .add(new Symbol(';'))
+            a.add(new Symbol(';'));
             //ExpressionStatement
-            .add(expressionStatement())
+            a.add(expressionStatement());
             //Identifier :   Statement
-            .add(new TrackSequence()
+            a.add(new TrackSequence()
                 .add(identifier())
                 .add(new Symbol(':'))
                 .add(statement())
-            )
-        ;
+            );
+        return a;
     }
 
     /** Catches:
      *      CatchClause {CatchClause}
      */
     public Parser catches() {
-        return new TrackSequence()
-            .add(catchClause())
-            .add(new Repetition(catchClause()))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(catchClause());
+            s.add(new Repetition(catchClause()));
+        return s;
     }
 
     /** CatchClause:
      *      catch( FormalParameter) Block
      */
     public Parser catchClause() {
-        return new TrackSequence()
-            .add(new Literal("catch"))
-            .add(new Symbol('('))
-            .add(formalParameter())
-            .add(new Symbol(')'))
-            .add(block())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Literal("catch"));
+            s.add(new Symbol('('));
+            s.add(formalParameter());
+            s.add(new Symbol(')'));
+            s.add(block());
+        return s;
     }
 
     /** SwitchBlockStatementGroups:
      *      { SwitchBlockStatementGroup }
      */
     public Parser switchBlockStatementGroups() {
-        return new Repetition(switchBlockStatementGroup());
+        Repetition r = new Repetition(switchBlockStatementGroup());
+        return r;
     }
 
     /** SwitchBlockStatementGroup:
      *      SwitchLabel BlockStatements
      */
     public Parser switchBlockStatementGroup() {
-        return new TrackSequence()
-            .add(switchLabel())
-            .add(blockStatements())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(switchLabel());
+            s.add(blockStatements());
+        return s;
     }
 
     /** SwitchLabel:
@@ -964,25 +987,26 @@ class JavaParser {
      *      default:
      */
     public Parser switchLabel() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(new Literal("case"))
                 .add(constantExpression())
                 .add(new Symbol(":"))
-            )
-            .add(new Literal("default"))
-            .add(new Symbol(":"))
-        ;
+            );
+            a.add(new Literal("default"));
+            a.add(new Symbol(":"));
+        return a;
     }
 
     /** MoreStatementExpressions:
      *      {, StatementExpression }
      */
     public Parser moreStatementExpressions() {
-        return new Repetition(new TrackSequence()
+        Repetition r = new Repetition(new TrackSequence()
             .add(new Symbol(','))
             .add(statementExpression())
         );
+        return r;
     }
 
     /** ForControl:
@@ -991,29 +1015,29 @@ class JavaParser {
      *      [final] [Annotations] Type Identifier ForControlRest
      */
     public Parser forControl() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(new Symbol(";"))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(";"))
                 .add(zeroOrOne(forUpdate()))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(statementExpression())
                 .add(moreStatementExpressions())
                 .add(new Symbol(';'))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
                 .add(zeroOrOne(forUpdate()))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(zeroOrOne(new Literal("final")))
                 .add(zeroOrOne(annotations()))
                 .add(type())
                 .add(identifier())
                 .add(forControlRest())
-            )
-        ;
+            );
+        return a;
     }
 
     /** ForControlRest:
@@ -1021,29 +1045,29 @@ class JavaParser {
      *      : Expression
      */
     public Parser forControlRest() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(variableDeclaratorsRest())
                 .add(new Symbol(';'))
                 .add(zeroOrOne(expression()))
                 .add(new Symbol(';'))
                 .add(zeroOrOne(forUpdate()))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol(':'))
                 .add(expression())
-            )
-        ;
+            );
+        return a;
     }
 
     /** ForUpdate:
      *      StatementExpression MoreStatementExpressions
      */
     public Parser forUpdate() {
-        return new TrackSequence()
-            .add(statementExpression())
-            .add(moreStatementExpressions())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(statementExpression());
+            s.add(moreStatementExpressions());
+        return s;
     }
 
 
@@ -1051,7 +1075,8 @@ class JavaParser {
      *      { Modifier }
      */
     public Parser modifiersOpt() {
-        return new Repetition(modifier());
+        Repetition r = new Repetition(modifier());
+        return r;
     }
 
     /** Modifier:
@@ -1069,147 +1094,147 @@ class JavaParser {
      *      strictfp
      */
     public Parser modifier() {
-        return new Alternation()
-            .add(annotation())
-            .add(new Literal("public"))
-            .add(new Literal("protected"))
-            .add(new Literal("private"))
-            .add(new Literal("static"))
-            .add(new Literal("abstract"))
-            .add(new Literal("final"))
-            .add(new Literal("native"))
-            .add(new Literal("synchronized"))
-            .add(new Literal("transient"))
-            .add(new Literal("volatile"))
-            .add(new Literal("strictfp"))
-        ;
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new Literal("public"));
+            a.add(new Literal("protected"));
+            a.add(new Literal("private"));
+            a.add(new Literal("static"));
+            a.add(new Literal("abstract"));
+            a.add(new Literal("final"));
+            a.add(new Literal("native"));
+            a.add(new Literal("synchronized"));
+            a.add(new Literal("transient"));
+            a.add(new Literal("volatile"));
+            a.add(new Literal("strictfp"));
+        return a;
     }
 
     /** VariableDeclarators:
      *      VariableDeclarator {,   VariableDeclarator }
      */
     public Parser variableDeclarators() {
-        return new TrackSequence()
-            .add(variableDeclarators())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(variableDeclarators());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(variableDeclarator())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** VariableDeclaratorsRest:
      *      VariableDeclaratorRest {,   VariableDeclarator }
      */
     public Parser variableDeclaratorsRest() {
-        return new TrackSequence()
-            .add(variableDeclaratorsRest())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(variableDeclaratorsRest());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(variableDeclarator())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** ConstantDeclaratorsRest:
      *      ConstantDeclaratorRest {,   ConstantDeclarator }
      */
     public Parser constantDeclaratorsRest() {
-        return new TrackSequence()
-            .add(constantDeclaratorsRest())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(constantDeclaratorsRest());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(constantDeclarator())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** VariableDeclarator:
      *      Identifier VariableDeclaratorRest
      */
     public Parser variableDeclarator() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(variableDeclaratorsRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(variableDeclaratorsRest());
+        return s;
     }
 
     /** ConstantDeclarator:
      *      Identifier ConstantDeclaratorRest
      */
     public Parser constantDeclarator() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(constantDeclaratorsRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(constantDeclaratorsRest());
+        return s;
     }
 
     /** VariableDeclaratorRest:
      *      BracketsOpt [ =   VariableInitializer]
      */
     public Parser variableDeclaratorRest() {
-        return new TrackSequence()
-            .add(bracketsOpt())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(bracketsOpt());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Symbol('='))
                 .add(variableInitializer())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** ConstantDeclaratorRest:
      *      BracketsOpt =   VariableInitializer
      */
     public Parser constantDeclaratorRest() {
-        return new TrackSequence()
-            .add(bracketsOpt())
-            .add(new Symbol('='))
-            .add(variableInitializer())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(bracketsOpt());
+            s.add(new Symbol('='));
+            s.add(variableInitializer());
+        return s;
     }
 
     /** VariableDeclaratorId:
      *      Identifier BracketsOpt
      */
     public Parser variableDeclaratorId() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(bracketsOpt())
-        ;
+        Sequence s =  new TrackSequence();
+            s.add(identifier());
+            s.add(bracketsOpt());
+        return s;
     }
 
     /** CompilationUnit:
      *      [Annotations opt package QualifiedIdentifier ;  ] {ImportDeclaration} {TypeDeclaration}
      */
     public Parser compilationUnit() {
-        return new TrackSequence()
-            .add(zeroOrOne(
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(
                 new TrackSequence()
                     .add(zeroOrOne(annotations()))
                     .add(new Literal("package"))
                     .add(qualifiedIdentifier())
                     .add(new Symbol(';'))
-            ))
-            .add(new Repetition(importDeclaration()))
-            .add(new Repetition(typeDeclaration()))
-        ;
+            ));
+            s.add(new Repetition(importDeclaration()));
+            s.add(new Repetition(typeDeclaration()));
+        return s;
     }
 
     /** ImportDeclaration:
      *      import [static] Identifier { .   Identifier } [  .*   ];
      */
     public Parser importDeclaration() {
-        return new TrackSequence()
-            .add(new Literal("import"))
-            .add(zeroOrOne(new Literal("static")))
-            .add(identifier())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Literal("import"));
+            s.add(zeroOrOne(new Literal("static")));
+            s.add(identifier());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol('.'))
                 .add(identifier())
-            ))
-            .add(zeroOrOne(new Symbol(".*")))
-            .add(new Symbol(';'))
-        ;
+            ));
+            s.add(zeroOrOne(new Symbol(".*")));
+            s.add(new Symbol(';'));
+        return s;
     }
 
     /** TypeDeclaration:
@@ -1217,23 +1242,23 @@ class JavaParser {
      *      ;
      */
     public Parser typeDeclaration() {
-        return new Alternation()
-            .add(classOrInterfaceDeclaration())
-            .add(new Symbol(';'))
-        ;
+        Alternation a = new Alternation();
+            a.add(classOrInterfaceDeclaration());
+            a.add(new Symbol(';'));
+        return a;
     }
 
     /** ClassOrInterfaceDeclaration:
      *      ModifiersOpt (ClassDeclaration | InterfaceDeclaration)
      */
     public Parser classOrInterfaceDeclaration() {
-        return new TrackSequence()
-            .add(modifiersOpt())
-            .add(new Alternation()
+        Sequence s = new TrackSequence();
+            s.add(modifiersOpt());
+            s.add(new Alternation()
                 .add(classDeclaration())
                 .add(interfaceDeclaration())
-            )
-        ;
+            );
+        return s;
     }
 
     /** ClassDeclaration:
@@ -1241,100 +1266,100 @@ class JavaParser {
      *      EnumDeclaration
      */
     public Parser classDeclaration() {
-        return new Alternation()
-            .add(normalClassDeclaration())
-            .add(enumDeclaration())
-        ;
+        Alternation a = new Alternation();
+            a.add(normalClassDeclaration());
+            a.add(enumDeclaration());
+        return a;
     }
 
     /** NormalClassDeclaration:
      *      class Identifier TypeParameters opt [extends Type] [implements TypeList] ClassBody
      */
     public Parser normalClassDeclaration() {
-        return new TrackSequence()
-            .add(new Literal("class"))
-            .add(identifier())
-            .add(zeroOrOne(typeParameters()))
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Literal("class"));
+            s.add(identifier());
+            s.add(zeroOrOne(typeParameters()));
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("extends"))
                 .add(type())
-            ))
-            .add(zeroOrOne(new TrackSequence()
+            ));
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("implements"))
                 .add(typeList())
-            ))
-            .add(classBody())
-        ;
+            ));
+            s.add(classBody());
+        return s;
     }
 
     /** TypeParameters:
      *      < TypeParameter {, TypeParameter}>
      */
     public Parser typeParameters() {
-        return new TrackSequence()
-            .add(new Symbol('<'))
-            .add(typeParameter())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('<'));
+            s.add(typeParameter());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(typeParameter())
-            ))
-            .add(new Symbol('>'))
-        ;
+            ));
+            s.add(new Symbol('>'));
+        return s;
     }
 
     /** TypeParameter:
      *      Identifier [extendsBound]
      */
     public Parser typeParameter() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("extends"))
                 .add(bound())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** Bound:
      *      Type {&Type}
      */
     public Parser bound() {
-        return new TrackSequence()
-            .add(type())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(type());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol('&'))
                 .add(type())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** EnumDeclaration:
      *      ClassModifiers opt enum Identifier[implements TypeList] EnumBody
      */
     public Parser enumDeclaration() {
-        return new TrackSequence()
-            .add(zeroOrOne(classModifiers()))
-            .add(new Literal("enum"))
-            .add(identifier())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(classModifiers()));
+            s.add(new Literal("enum"));
+            s.add(identifier());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("implements"))
                 .add(typeList())
-            ))
-            .add(enumBody())
-        ;
+            ));
+            s.add(enumBody());
+        return s;
     }
 
     /** EnumBody:
      *      { EnumConstants opt ,opt EnumBodyDeclarations opt }
      */
     public Parser enumBody() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(zeroOrOne(enumConstants()))
-            .add(zeroOrOne(new Symbol(',')))
-            .add(zeroOrOne(enumBodyDeclarations()))
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(zeroOrOne(enumConstants()));
+            s.add(zeroOrOne(new Symbol(',')));
+            s.add(zeroOrOne(enumBodyDeclarations()));
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** EnumConstants:
@@ -1342,14 +1367,14 @@ class JavaParser {
      *      EnumConstants , EnumConstant
      */
     public Parser enumConstants() {
-        return new Alternation()
-            .add(enumConstant())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(enumConstant());
+            a.add(new TrackSequence()
                 .add(enumConstants())
                 .add(new Symbol(','))
                 .add(enumConstant())
-            )
-        ;
+            );
+        return a;
     }
 
     /** EnumConstant:
@@ -1358,12 +1383,12 @@ class JavaParser {
      * N.B. JRR changed to EnumArguments - check with JLSv3 spec revisions (bug reported in grammar)
      */
     public Parser enumConstant() {
-        return new TrackSequence()
-            .add(annotations())
-            .add(identifier())
-            .add(zeroOrOne(enumArguments()))
-            .add(zeroOrOne(classBody()))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(annotations());
+            s.add(identifier());
+            s.add(zeroOrOne(enumArguments()));
+            s.add(zeroOrOne(classBody()));
+        return s;
     }
 
     /** EnumArguments:
@@ -1372,11 +1397,11 @@ class JavaParser {
      * N.B. JRR changed to EnumArguments - check with JLSv3 spec revisions (bug reported in grammar)
      */
     public Parser enumArguments() {
-        return new TrackSequence()
-            .add(new Symbol('('))
-            .add(zeroOrOne(argumentList()))
-            .add(new Symbol(')'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('('));
+            s.add(zeroOrOne(argumentList()));
+            s.add(new Symbol(')'));
+        return s;
     }
 
     /** EnumBodyDeclarations:
@@ -1385,10 +1410,10 @@ class JavaParser {
      * todo that semicolon looks a bit dodgy... jez
      */
     public Parser enumBodyDeclarations() {
-        return new TrackSequence()
-            .add(new Symbol(';'))
-            .add(zeroOrOne(classBodyDeclarations()))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol(';'));
+            s.add(zeroOrOne(classBodyDeclarations()));
+        return s;
     }
 
     /** InterfaceDeclaration:
@@ -1396,63 +1421,63 @@ class JavaParser {
      *      AnnotationTypeDeclaration
      */
     public Parser interfaceDeclaration() {
-        return new Alternation()
-            .add(normalInterfaceDeclaration())
-            .add(annotationTypeDeclaration())
-        ;
+        Alternation a = new Alternation();
+            a.add(normalInterfaceDeclaration());
+            a.add(annotationTypeDeclaration());
+        return a;
     }
 
     /** NormalInterfaceDeclaration:
      *      interface Identifier TypeParameters opt[extends TypeList] InterfaceBody
      */
     public Parser normalInterfaceDeclaration() {
-        return new TrackSequence()
-            .add(new Literal("interface"))
-            .add(identifier())
-            .add(zeroOrOne(typeParameters()))
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(new Literal("interface"));
+            s.add(identifier());
+            s.add(zeroOrOne(typeParameters()));
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("extends"))
                 .add(typeList())
-            ))
-            .add(interfaceBody())
-        ;
+            ));
+            s.add(interfaceBody());
+        return s;
     }
 
     /** TypeList:
      *      Type { ,   Type}
      */
     public Parser typeList() {
-        return new TrackSequence()
-            .add(type())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(type());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(type())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** AnnotationTypeDeclaration:
      *      InterfaceModifiers opt @ interface Identifier AnnotationTypeBody
      */
     public Parser annotationTypeDeclaration() {
-        return new TrackSequence()
-            .add(zeroOrOne(interfaceModifiers()))
-            .add(new Symbol('@'))
-            .add(new Literal("interface")) // @todo is this correct?
-            .add(identifier())
-            .add(annotationTypeBody())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(interfaceModifiers()));
+            s.add(new Symbol('@'));
+            s.add(new Literal("interface")); // @todo is this correct?
+            s.add(identifier());
+            s.add(annotationTypeBody());
+        return s;
     }
 
     /** AnnotationTypeBody:
      *      { AnnotationTypeElementDeclarations }
      */
     public Parser annotationTypeBody() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(annotationTypeElementDeclarations())
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(annotationTypeElementDeclarations());
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** AnnotationTypeElementDeclarations:
@@ -1460,13 +1485,13 @@ class JavaParser {
      *      AnnotationTypeElementDeclarations AnnotationTypeElementDeclaration
      */
     public Parser annotationTypeElementDeclarations() {
-        return new Alternation()
-            .add(annotationTypeElementDeclaration())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(annotationTypeElementDeclaration());
+            a.add(new TrackSequence()
                 .add(annotationTypeElementDeclarations())
                 .add(annotationTypeElementDeclaration())
-            )
-        ;
+            );
+        return a;
     }
 
     /** AnnotationTypeElementDeclaration:
@@ -1479,8 +1504,8 @@ class JavaParser {
      *      ;
      */
     public Parser annotationTypeElementDeclaration() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(zeroOrOne(abstractMethodModifiers()))
                 .add(type())
                 .add(identifier())
@@ -1488,46 +1513,46 @@ class JavaParser {
                 .add(new Symbol(')'))
                 .add(zeroOrOne(defaultValue()))
                 .add(new Symbol(';'))
-            )
-            .add(constantDeclaration())
-            .add(classDeclaration())
-            .add(interfaceDeclaration())
-            .add(enumDeclaration())
-            .add(annotationTypeDeclaration())
-            .add(new Symbol(';'))
-        ;
+            );
+            a.add(constantDeclaration());
+            a.add(classDeclaration());
+            a.add(interfaceDeclaration());
+            a.add(enumDeclaration());
+            a.add(annotationTypeDeclaration());
+            a.add(new Symbol(';'));
+        return a;
     }
 
     /** DefaultValue:
      *      default ElementValue
      */
     public Parser defaultValue() {
-        return new TrackSequence()
-            .add(new Literal("default"))
-            .add(elementValue())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Literal("default"));
+            s.add(elementValue());
+        return s;
     }
 
     /** ClassBody:
      *      { {ClassBodyDeclaration}}
      */
     public Parser classBody() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(new Repetition(classBodyDeclaration()))
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(new Repetition(classBodyDeclaration()));
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** InterfaceBody:
      *      { {InterfaceBodyDeclaration}}
      */
     public Parser interfaceBody() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(new Repetition(interfaceBodyDeclaration()))
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(new Repetition(interfaceBodyDeclaration()));
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** ClassBodyDeclaration:
@@ -1536,17 +1561,17 @@ class JavaParser {
      *      ModifiersOpt MemberDecl
      */
     public Parser classBodyDeclaration() {
-        return new Alternation()
-            .add(new Symbol(';'))
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new Symbol(';'));
+            a.add(new TrackSequence()
                 .add(zeroOrOne(new Literal("static")))
                 .add(block())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(modifiersOpt())
                 .add(memberDecl())
-            )
-        ;
+            );
+        return a;
     }
 
     /** MemberDecl:
@@ -1557,30 +1582,30 @@ class JavaParser {
      *      ClassOrInterfaceDeclaration
      */
     public Parser memberDecl() {
-        return new Alternation()
-            .add(genericMethodOrConstructorDecl())
-            .add(methodOrFieldDecl())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(genericMethodOrConstructorDecl());
+            a.add(methodOrFieldDecl());
+            a.add(new TrackSequence()
                 .add(new Literal("void"))
                 .add(identifier())
                 .add(methodDeclaratorRest())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(identifier())
                 .add(constructorDeclaratorRest())
-            )
-            .add(classOrInterfaceDeclaration())
-        ;
+            );
+            a.add(classOrInterfaceDeclaration());
+        return a;
     }
 
     /** GenericMethodOrConstructorDecl:
      *      TypeParameters GenericMethodOrConstructorRest
      */
     public Parser genericMethodOrConstructorDecl() {
-        return new TrackSequence()
-            .add(typeParameters())
-            .add(genericMethodOrConstructorRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(typeParameters());
+            s.add(genericMethodOrConstructorRest());
+        return s;
     }
 
     /** GenericMethodOrConstructorRest:
@@ -1588,28 +1613,28 @@ class JavaParser {
      *      Identifier ConstructorDeclaratorRest
      */
     public Parser genericMethodOrConstructorRest() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(type())
                 .add(identifier())
                 .add(methodDeclaratorRest())
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(identifier())
                 .add(constructorDeclaratorRest())
-            )
-        ;
+            );
+        return a;
     }
 
     /** MethodOrFieldDecl:
      *      Type Identifier MethodOrFieldRest
      */
     public Parser methodOrFieldDecl() {
-        return new TrackSequence()
-            .add(type())
-            .add(identifier())
-            .add(methodOrFieldRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(type());
+            s.add(identifier());
+            s.add(methodOrFieldRest());
+        return s;
     }
 
     /** MethodOrFieldRest:
@@ -1617,10 +1642,10 @@ class JavaParser {
      *      MethodDeclaratorRest
      */
     public Parser methodOrFieldRest() {
-        return new Alternation()
-            .add(variableDeclaratorRest())
-            .add(methodDeclaratorRest())
-        ;
+        Alternation a = new Alternation();
+            a.add(variableDeclaratorRest());
+            a.add(methodDeclaratorRest());
+        return a;
     }
 
     /** InterfaceBodyDeclaration:
@@ -1628,13 +1653,13 @@ class JavaParser {
      *      ModifiersOpt InterfaceMemberDecl
      */
     public Parser interfaceBodyDeclaration() {
-        return new Alternation()
-            .add(new Symbol(';'))
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new Symbol(';'));
+            a.add(new TrackSequence()
                 .add(modifiersOpt())
                 .add(interfaceMemberDecl())
-            )
-        ;
+            );
+        return a;
     }
 
     /** InterfaceMemberDecl:
@@ -1644,27 +1669,27 @@ class JavaParser {
      *      ClassOrInterfaceDeclaration
      */
     public Parser interfaceMemberDecl() {
-        return new Alternation()
-            .add(interfaceMethodOrFieldDecl())
-            .add(interfaceGenericMethodDecl())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(interfaceMethodOrFieldDecl());
+            a.add(interfaceGenericMethodDecl());
+            a.add(new TrackSequence()
                 .add(new Literal("void"))
                 .add(identifier())
                 .add(voidInterfaceMethodDeclaratorRest())
-            )
-            .add(classOrInterfaceDeclaration())
-        ;
+            );
+            a.add(classOrInterfaceDeclaration());
+        return a;
     }
 
     /** InterfaceMethodOrFieldDecl:
      *      Type Identifier InterfaceMethodOrFieldRest
      */
     public Parser interfaceMethodOrFieldDecl() {
-        return new TrackSequence()
-            .add(type())
-            .add(identifier())
-            .add(interfaceMethodOrFieldRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(type());
+            s.add(identifier());
+            s.add(interfaceMethodOrFieldRest());
+        return s;
     }
 
     /** InterfaceMethodOrFieldRest:
@@ -1672,125 +1697,126 @@ class JavaParser {
      *      InterfaceMethodDeclaratorRest
      */
     public Parser interfaceMethodOrFieldRest() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(constantDeclaratorsRest())
                 .add(new Symbol(';'))
-            )
-            .add(interfaceMethodDeclaratorRest())
-        ;
+            );
+            a.add(interfaceMethodDeclaratorRest());
+        return a;
     }
 
     /** MethodDeclaratorRest:
      *      FormalParameters BracketsOpt[throwsQualifiedIdentifierList]( MethodBody |;  )
      */
     public Parser methodDeclaratorRest() {
-        return new TrackSequence()
-            .add(formalParameters())
-            .add(bracketsOpt())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(formalParameters());
+            s.add(bracketsOpt());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
-            ))
-            .add(new Alternation()
+            ));
+            s.add(new Alternation()
                 .add(methodBody())
                 .add(new Symbol(';'))
-            )
-        ;
+            );
+        return s;
     }
 
     /** VoidMethodDeclaratorRest:
      *      FormalParameters [throws QualifiedIdentifierList] ( MethodBody |;  )
      */
     public Parser voidMethodDeclaratorRest() {
-        return new TrackSequence()
-            .add(formalParameters())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(formalParameters());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
-            ))
-            .add(new Alternation()
+            ));
+            s.add(new Alternation()
                 .add(methodBody())
                 .add(new Symbol(';'))
-            )
-        ;
+            );
+        return s;
     }
 
     /** InterfaceMethodDeclaratorRest:
      *      FormalParameters BracketsOpt [throws QualifiedIdentifierList];
      */
     public Parser interfaceMethodDeclaratorRest() {
-        return new TrackSequence()
-            .add(formalParameters())
-            .add(bracketsOpt())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(formalParameters());
+            s.add(bracketsOpt());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
-            ))
-        ;
+            ));
+        return s;
     }
 
     /** InterfaceGenericMethodDecl:
      *      TypeParameters Type Identifier InterfaceMethodDeclaratorRest
      */
     public Parser interfaceGenericMethodDecl() {
-        return new TrackSequence()
-            .add(typeParameters())
-            .add(type())
-            .add(identifier())
-            .add(interfaceMethodDeclaratorRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(typeParameters());
+            s.add(type());
+            s.add(identifier());
+            s.add(interfaceMethodDeclaratorRest());
+        return s;
     }
 
     /** VoidInterfaceMethodDeclaratorRest:
      *      FormalParameters [throws QualifiedIdentifierList];
      */
     public Parser voidInterfaceMethodDeclaratorRest() {
-        return new TrackSequence()
-            .add(formalParameters())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(formalParameters());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
-            ))
-            .add(new Symbol(';'))
-        ;
+            ));
+            s.add(new Symbol(';'));
+        return s;
     }
 
     /** ConstructorDeclaratorRest:
      *      FormalParameters [throws QualifiedIdentifierList] MethodBody
      */
     public Parser constructorDeclaratorRest() {
-        return new TrackSequence()
-            .add(formalParameters())
-            .add(zeroOrOne(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(formalParameters());
+            s.add(zeroOrOne(new TrackSequence()
                 .add(new Literal("throws"))
                 .add(qualifiedIdentifierList())
-            ))
-            .add(methodBody())
-        ;
+            ));
+            s.add(methodBody());
+        return s;
     }
 
     /** QualifiedIdentifierList:
      *      QualifiedIdentifier { ,   QualifiedIdentifier}
      */
     public Parser qualifiedIdentifierList() {
-        return new TrackSequence()
-            .add(qualifiedIdentifier())
-            .add(new Repetition(new TrackSequence()
+        Sequence s = new TrackSequence();
+            s.add(qualifiedIdentifier());
+            s.add(new Repetition(new TrackSequence()
                 .add(new Symbol(','))
                 .add(qualifiedIdentifier())
             ));
+        return s;
     }
 
     /** FormalParameters:
      *      ( [FormalParameterDecls])
      */
     public Parser formalParameters() {
-        return new TrackSequence()
-            .add(new Symbol('('))
-            .add(zeroOrOne(formalParameterDecls()))
-            .add(new Symbol(')'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('('));
+            s.add(zeroOrOne(formalParameterDecls()));
+            s.add(new Symbol(')'));
+        return s;
     }
 
     /** FormalParameterDecls:
@@ -1798,12 +1824,12 @@ class JavaParser {
      * todo - is last parameter optional!!!????
      */
     public Parser formalParameterDecls() {
-        return new TrackSequence()
-            .add(zeroOrOne(new Literal("final")))
-            .add(zeroOrOne(annotations()))
-            .add(type())
-            .add(formalParameterDeclsRest())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(new Literal("final")));
+            s.add(zeroOrOne(annotations()));
+            s.add(type());
+            s.add(formalParameterDeclsRest());
+        return s;
     }
 
     /** FormalParameterDeclsRest:
@@ -1811,27 +1837,31 @@ class JavaParser {
      *      ... VariableDeclaratorId
      */
     public Parser formalParameterDeclsRest() {
-        return new Alternation()
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(new TrackSequence()
                 .add(variableDeclaratorId())
                 .add(zeroOrOne(new TrackSequence()
                     .add(new Symbol(','))
                     .add(formalParameterDecls())
                 ))
-            )
-            .add(new TrackSequence()
+            );
+            a.add(new TrackSequence()
                 .add(new Symbol("..."))  //todo - this doesn't seem right :-)
                 .add(variableDeclaratorId())
-            )
-        ;
+            );
+        return a;
     }
 
     /** MethodBody:
      *      Block
      */
     public Parser methodBody() {
-        return block();
+        Parser p = block();
+        return p;
     }
+
+
+    // -=-=-=-=-=-=-=-=-=- END OF JLS CHAPTER 18 -=-=-=-=-=-=-=-=-
 
 
 
@@ -1844,29 +1874,29 @@ class JavaParser {
      *      ClassModifiers ClassModifier
      */
     public Parser classModifiers() {
-        return new Alternation()
-            .add(classModifier())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(classModifier());
+            a.add(new TrackSequence()
                 .add(classModifiers())
                 .add(classModifier())
-            )
-        ;
+            );
+        return a;
     }
     /** ClassModifier: one of
      *      Annotation public protected private
      *      abstract static final strictfp
      */
     public Parser classModifier() {
-        return new Alternation()
-            .add(annotation())
-            .add(new Literal("public"))
-            .add(new Literal("protected"))
-            .add(new Literal("private"))
-            .add(new Literal("abstract"))
-            .add(new Literal("static"))
-            .add(new Literal("final"))
-            .add(new Literal("strictfp"))
-        ;
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new Literal("public"));
+            a.add(new Literal("protected"));
+            a.add(new Literal("private"));
+            a.add(new Literal("abstract"));
+            a.add(new Literal("static"));
+            a.add(new Literal("final"));
+            a.add(new Literal("strictfp"));
+        return a;
     }
 
     // ------ JLSv3¤8.1.6 ------
@@ -1875,13 +1905,13 @@ class JavaParser {
      *      ClassBodyDeclarations ClassBodyDeclaration
      */
     public Parser classBodyDeclarations() {
-        return new Alternation()
-            .add(classBodyDeclaration())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(classBodyDeclaration());
+            a.add(new TrackSequence()
                 .add(classBodyDeclarations())
                 .add(classBodyDeclaration())
-            )
-        ;
+            );
+        return a;
     }
 
     // ------ JLSv3¤8.4.1 ------
@@ -1889,11 +1919,11 @@ class JavaParser {
      *      VariableModifiers Type VariableDeclaratorId
      */
     public Parser formalParameter() {
-        return new TrackSequence()
-            .add(variableModifiers())
-            .add(type())
-            .add(variableDeclaratorId())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(variableModifiers());
+            s.add(type());
+            s.add(variableDeclaratorId());
+        return s;
     }
 
     /** VariableModifiers:
@@ -1901,23 +1931,23 @@ class JavaParser {
      *      VariableModifiers VariableModifier
      */
     public Parser variableModifiers() {
-        return new Alternation()
-            .add(variableModifier())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(variableModifier());
+            a.add(new TrackSequence()
                 .add(variableModifiers())
                 .add(variableModifier())
-            )
-        ;
+            );
+        return a;
     }
 
     /** VariableModifier: one of
      *      final Annotation
      */
     public Parser variableModifier() {
-        return new Alternation()
-            .add(new Literal("final"))
-            .add(annotation())
-        ;
+        Alternation a = new Alternation();
+            a.add(new Literal("final"));
+            a.add(annotation());
+        return a;
     }
 
     // ---------- JLSv3¤9.1.1 -------------
@@ -1926,13 +1956,13 @@ class JavaParser {
      *      InterfaceModifiers InterfaceModifier
      */
     public Parser interfaceModifiers() {
-        return new Alternation()
-            .add(interfaceModifier())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(interfaceModifier());
+            a.add(new TrackSequence()
                 .add(interfaceModifiers())
                 .add(interfaceModifier())
-            )
-        ;
+            );
+        return a;
     }
 
     /** InterfaceModifier: one of
@@ -1940,15 +1970,15 @@ class JavaParser {
      *      abstract static strictfp
      */
     public Parser interfaceModifier() {
-        return new Alternation()
-            .add(annotation())
-            .add(new Literal("public"))
-            .add(new Literal("protected"))
-            .add(new Literal("private"))
-            .add(new Literal("abstract"))
-            .add(new Literal("static"))
-            .add(new Literal("strictfp"))
-        ;
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new Literal("public"));
+            a.add(new Literal("protected"));
+            a.add(new Literal("private"));
+            a.add(new Literal("abstract"));
+            a.add(new Literal("static"));
+            a.add(new Literal("strictfp"));
+        return a;
     }
 
     // ---------- JLSv3¤9.3 ---------------
@@ -1956,12 +1986,12 @@ class JavaParser {
      *      ConstantModifiers opt Type VariableDeclarators ;
      */
     public Parser constantDeclaration() {
-        return new TrackSequence()
-            .add(zeroOrOne(constantModifiers()))
-            .add(type())
-            .add(variableDeclarators())
-            .add(new Symbol(';'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(zeroOrOne(constantModifiers()));
+            s.add(type());
+            s.add(variableDeclarators());
+            s.add(new Symbol(';'));
+        return s;
     }
 
     /** ConstantModifiers:
@@ -1969,25 +1999,25 @@ class JavaParser {
      *      ConstantModifier ConstantModifers
      */
     public Parser constantModifiers() {
-        return new Alternation()
-            .add(constantModifier())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(constantModifier());
+            a.add(new TrackSequence()
                 .add(constantModifier())
                 .add(constantModifiers())
-            )
-        ;
+            );
+        return a;
     }
 
     /** ConstantModifier: one of
      *      Annotation public static final
      */
     public Parser constantModifier() {
-        return new Alternation()
-            .add(annotation())
-            .add(new Literal("public"))
-            .add(new Literal("static"))
-            .add(new Literal("final"))
-        ;
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new Literal("public"));
+            a.add(new Literal("static"));
+            a.add(new Literal("final"));
+        return a;
     }
 
     // ---------- JLSv3¤9.4 ---------------
@@ -1996,24 +2026,24 @@ class JavaParser {
      *      AbstractMethodModifiers AbstractMethodModifier
      */
     public Parser abstractMethodModifiers() {
-        return new Alternation()
-            .add(abstractMethodModifier())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(abstractMethodModifier());
+            a.add(new TrackSequence()
                 .add(abstractMethodModifiers())
                 .add(abstractMethodModifier())
-            )
-        ;
+            );
+        return a;
     }
 
     /** AbstractMethodModifier: one of
      *      Annotation public abstract
      */
     public Parser abstractMethodModifier() {
-        return new Alternation()
-            .add(annotation())
-            .add(new Literal("public"))
-            .add(new Literal("abstract"))
-        ;
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new Literal("public"));
+            a.add(new Literal("abstract"));
+        return a;
     }
 
     // ---------- JLSv3¤9.7 ---------------
@@ -2022,13 +2052,13 @@ class JavaParser {
      *      Annotations Annotation
      */
     public Parser annotations() {
-        return new Alternation()
-            .add(annotation())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(annotation());
+            a.add(new TrackSequence()
                 .add(annotations())
                 .add(annotation())
-            )
-        ;
+            );
+        return a;
     }
 
     /** Annotation:
@@ -2037,24 +2067,24 @@ class JavaParser {
      *      SingleElementAnnotation
      */
     public Parser annotation() {
-        return new Alternation()
-            .add(normalAnnotation())
-            .add(markerAnnotation())
-            .add(singleElementAnnotation())
-        ;
+        Alternation a = new Alternation();
+            a.add(normalAnnotation());
+            a.add(markerAnnotation());
+            a.add(singleElementAnnotation());
+        return a;
     }
 
     /** NormalAnnotation:
      *      @ TypeName ( ElementValuePairs opt )
      */
     public Parser normalAnnotation() {
-        return new TrackSequence()
-            .add(new Symbol('@'))
-            .add(typeName())
-            .add(new Symbol('('))
-            .add(zeroOrOne(elementValuePairs()))
-            .add(new Symbol(')'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('@'));
+            s.add(typeName());
+            s.add(new Symbol('('));
+            s.add(zeroOrOne(elementValuePairs()));
+            s.add(new Symbol(')'));
+        return s;
     }
 
     /** ElementValuePairs:
@@ -2062,25 +2092,25 @@ class JavaParser {
      *      ElementValuePairs , ElementValuePair
      */
     public Parser elementValuePairs() {
-        return new Alternation()
-            .add(elementValuePair())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(elementValuePair());
+            a.add(new TrackSequence()
                 .add(elementValuePairs())
                 .add(new Symbol(','))
                 .add(elementValuePair())
-            )
-        ;
+            );
+        return a;
     }
 
     /** ElementValuePair:
      *      Identifier = ElementValue
      */
     public Parser elementValuePair() {
-        return new TrackSequence()
-            .add(identifier())
-            .add(new Symbol('='))
-            .add(elementValue())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(identifier());
+            s.add(new Symbol('='));
+            s.add(elementValue());
+        return s;
     }
 
     /** ElementValue:
@@ -2089,23 +2119,23 @@ class JavaParser {
      *      ElementValueArrayInitializer
      */
     public Parser elementValue() {
-        return new Alternation()
-            .add(conditionalExpression())
-            .add(annotation())
-            .add(elementValueArrayInitializer())
-        ;
+        Alternation a = new Alternation();
+            a.add(conditionalExpression());
+            a.add(annotation());
+            a.add(elementValueArrayInitializer());
+        return a;
     }
 
     /** ElementValueArrayInitializer:
      *      { ElementValuesopt ,opt }
      */
     public Parser elementValueArrayInitializer() {
-        return new TrackSequence()
-            .add(new Symbol('{'))
-            .add(zeroOrOne(elementValues()))
-            .add(zeroOrOne(new Symbol(',')))
-            .add(new Symbol('}'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('{'));
+            s.add(zeroOrOne(elementValues()));
+            s.add(zeroOrOne(new Symbol(',')));
+            s.add(new Symbol('}'));
+        return s;
     }
 
     /** ElementValues:
@@ -2113,37 +2143,37 @@ class JavaParser {
      *      ElementValues , ElementValue
      */
     public Parser elementValues() {
-        return new Alternation()
-            .add(elementValue())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(elementValue());
+            a.add(new TrackSequence()
                 .add(elementValues())
                 .add(new Symbol(','))
                 .add(elementValue())
-            )
-        ;
+            );
+        return a;
     }
 
     /** MarkerAnnotation:
      *      @ TypeName
      */
     public Parser markerAnnotation() {
-        return new TrackSequence()
-            .add(new Symbol('@'))
-            .add(typeName())
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('@'));
+            s.add(typeName());
+        return s;
     }
 
     /** SingleElementAnnotation:
      *      @ TypeName ( ElementValue )
      */
     public Parser singleElementAnnotation() {
-        return new TrackSequence()
-            .add(new Symbol('@'))
-            .add(typeName())
-            .add(new Symbol('('))
-            .add(elementValue())
-            .add(new Symbol(')'))
-        ;
+        Sequence s = new TrackSequence();
+            s.add(new Symbol('@'));
+            s.add(typeName());
+            s.add(new Symbol('('));
+            s.add(elementValue());
+            s.add(new Symbol(')'));
+        return s;
     }
 
     // -------- JLSv3¤15.9 -----------
@@ -2152,34 +2182,38 @@ class JavaParser {
      *      ArgumentList ,Expression
      */
     public Parser argumentList() {
-        return new Alternation()
-            .add(expression())
-            .add(new TrackSequence()
+        Alternation a = new Alternation();
+            a.add(expression());
+            a.add(new TrackSequence()
                 .add(argumentList())
                 .add(new Symbol(','))
                 .add(expression())
-            )
-        ;
+            );
+        return a;
     }
 
 
     // todo ------- typos and abbreviations in spec ------------
     public Parser typeName() {
-        return type();
+        Parser p = type();
+        return p;
     }
 
     public Parser expr() {
-        return expression();
+        Parser p = expression();
+        return p;
     }
 
     public Parser expressionStatement() {
-        return statementExpression();
+        Parser p = statementExpression();
+        return p;
     }
 
     // Annotations refers to ¤15.25, but this is replaced with Expressions
     // todo - conditionalexpressions in annotations may not work, or too much might be allowed in annotations...
     public Parser conditionalExpression() {
-        return expression();
+        Parser p = expression();
+        return p;
     }
 
 
@@ -2190,32 +2224,38 @@ class JavaParser {
 
     private Parser nullLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     private Parser booleanLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     private Parser stringLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     private Parser characterLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     private Parser floatingPointLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 
     private Parser integerLiteral() {
         //todo
-        return new Word();
+        Parser p = new Word();
+        return p;
     }
 }
 
