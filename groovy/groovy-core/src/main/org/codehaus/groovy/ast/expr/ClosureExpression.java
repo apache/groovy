@@ -48,6 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 
 /**
@@ -75,6 +76,10 @@ public class ClosureExpression extends Expression {
         return this;
     }
     
+    public String toString() {
+        return super.toString() + InvokerHelper.toString(parameters) + "{ " + code + " }";
+    }
+
     public Statement getCode() {
         return code;
     }

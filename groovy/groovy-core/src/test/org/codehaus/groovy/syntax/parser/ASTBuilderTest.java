@@ -40,8 +40,11 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -193,6 +196,23 @@ public class ASTBuilderTest extends TestParserSupport {
         Expression exp = exprStmt.getExpression();
 
         System.out.println("expr: " + exp);
+    }
+
+    public void testClosureWithJustIdentifierInMapBug() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { ['x':{a}, 'd':123] } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+
+        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
+
+        MapExpression mapExp = (MapExpression) exprStmt.getExpression();
+        MapEntryExpression entryExp = (MapEntryExpression) mapExp.getMapEntryExpressions().get(0);
+        ClosureExpression closureExp = (ClosureExpression) entryExp.getValueExpression();
+        assertEquals("Parameters on closure", 0, closureExp.getParameters().length);
+        System.out.println("expr: " + closureExp);
     }
 
     public void testArrayExpression() throws Exception {

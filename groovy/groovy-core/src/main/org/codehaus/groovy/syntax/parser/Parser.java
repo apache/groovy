@@ -419,16 +419,8 @@ public class Parser {
     protected CSTNode parameterDeclarationList() throws IOException, SyntaxException {
         CSTNode parameterDeclarationList = new CSTNode();
 
-        while (lt() == Token.IDENTIFIER ||
-	           lt() == Token.KEYWORD_BOOLEAN ||
-	    	   lt() == Token.KEYWORD_BYTE ||
-	    	   lt() == Token.KEYWORD_CHAR ||
-	    	   lt() == Token.KEYWORD_DOUBLE ||
-	    	   lt() == Token.KEYWORD_FLOAT ||
-	    	   lt() == Token.KEYWORD_INT ||
-	    	   lt() == Token.KEYWORD_LONG ||
-	    	   lt() == Token.KEYWORD_SHORT)
-        {
+        while (lt() == Token.IDENTIFIER
+            || isIdentifierOrPrimtiveTypeKeyword(lt())) {
             parameterDeclarationList.addChild(parameterDeclaration());
 
             if (lt() == Token.COMMA) {
@@ -444,15 +436,15 @@ public class Parser {
 
     protected CSTNode parameterDeclaration() throws IOException, SyntaxException {
         CSTNode parameterDeclaration = null;
-        
+
         //
         // TODO: deal with array declarations
         // { int a[]
         //
 
         switch (lt(2)) {
-        	case (Token.IDENTIFIER) :
-        	case (Token.LEFT_SQUARE_BRACKET) :
+            case (Token.IDENTIFIER) :
+            case (Token.LEFT_SQUARE_BRACKET) :
             case (Token.DOT) :
                 {
                     parameterDeclaration = parameterDeclarationWithDatatype();
@@ -1617,20 +1609,21 @@ public class Parser {
         // { A a |
         // { A a, B b |
         // { int[] a, char b |
+        // but not { a }, 
+
+        int value = lt(1);
         
-        if (lt(1) == Token.KEYWORD_BOOLEAN ||
-    		lt(1) == Token.KEYWORD_BYTE ||
-    		lt(1) == Token.KEYWORD_CHAR ||
-    		lt(1) == Token.KEYWORD_DOUBLE ||
-    		lt(1) == Token.KEYWORD_FLOAT ||
-    		lt(1) == Token.KEYWORD_INT ||
-    		lt(1) == Token.KEYWORD_LONG ||
-    		lt(1) == Token.KEYWORD_SHORT ||
-        	lt(2) == Token.PIPE ||
-        	lt(2) == Token.COMMA ||
-        	lt(3) == Token.PIPE ||
-        	lt(3) == Token.COMMA)
-        {
+        boolean canBeParamList = false;
+        
+        if (isIdentifierOrPrimtiveTypeKeyword(lt())) {
+            if (isIdentifierOrPrimtiveTypeKeyword(lt(2))) {
+                canBeParamList = lt(3) == Token.PIPE || lt(3) == Token.COMMA;
+            }
+            else {
+                canBeParamList = lt(2) == Token.PIPE || lt(2) == Token.COMMA;
+            }
+        }
+        if (canBeParamList) {
             expr.addChild(parameterDeclarationList());
             pipeRequired = true;
         }
@@ -1638,19 +1631,33 @@ public class Parser {
             expr.addChild(new CSTNode());
         }
 
-        if (pipeRequired || lt() == Token.PIPE) {
-            consume(Token.PIPE);
-        }
-
         CSTNode block = new CSTNode();
 
-        statementsUntilRightCurly(block);
+        if (lt_bare() != Token.RIGHT_CURLY_BRACE) {
+            if (pipeRequired || lt() == Token.PIPE) {
+                consume(Token.PIPE);
+            }
+
+            statementsUntilRightCurly(block);
+        }
 
         consume(Token.RIGHT_CURLY_BRACE);
 
         expr.addChild(block);
 
         return expr;
+    }
+
+    protected boolean isIdentifierOrPrimtiveTypeKeyword(int value) {
+        return value == Token.IDENTIFIER
+            || value == Token.KEYWORD_BOOLEAN
+        || value == Token.KEYWORD_BYTE
+            || value == Token.KEYWORD_CHAR
+            || value == Token.KEYWORD_DOUBLE
+            || value == Token.KEYWORD_FLOAT
+            || value == Token.KEYWORD_INT
+            || value == Token.KEYWORD_LONG
+            || value == Token.KEYWORD_SHORT;
     }
 
     protected CSTNode listOrMapExpression() throws IOException, SyntaxException {
