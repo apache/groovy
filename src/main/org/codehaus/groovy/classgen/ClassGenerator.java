@@ -939,12 +939,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
 
+        String prototype = "(L" + getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;";
+
+        // now lets load the various parameters we're passing
+        Parameter[] localVariableParams = getClosureSharedVariables(expression);
+        for (int i = 0; i < localVariableParams.length; i++) {
+            Parameter param = localVariableParams[i];
+            visitVariableExpression(new VariableExpression(param.getName()));
+
+            prototype = prototype + "L" + getClassInternalName(param.getType()) + ";";
+        }
+
         // we may need to pass in some other constructors
-        cv.visitMethodInsn(
-            INVOKESPECIAL,
-            innerClassinternalName,
-            "<init>",
-            "(L" + getClassInternalName(ownerTypeName) + ";Ljava/lang/Object;)V");
+        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -1205,7 +1212,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return;
         }
         FieldNode field = classNode.getField(variableName);
-        if (field != null) {
+        if (field != null && variableStack.get(variableName) == null) {
             visitFieldExpression(new FieldExpression(field));
         }
         else {
@@ -1486,181 +1493,218 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             parameters = new Parameter[] { new Parameter("it")};
         }
 
+        Parameter[] localVariableParams = getClosureSharedVariables(expression);
+
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
         answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
         if (parameters.length > 1
             || (parameters.length == 1
                 && parameters[0].getType() != null
-                && !parameters[0].getType().equals(
-                    "java.lang.Object"))) {
-        // lets add a typesafe call method
-        answer
-                        .addMethod(
-                            "call",
-                            ACC_PUBLIC,
-                            "java.lang.Object",
-                            parameters,
-                            new ReturnStatement(new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "doCall", new ArgumentListExpression(parameters))));
-                }
-        FieldNode field = answer.addField("owner", ACC_PRIVATE, outerClassName, null);
-    // lets make the constructor
-        BlockStatement block = new BlockStatement();
-            block.addStatement(
-                new ExpressionStatement(
+                && !parameters[0].getType().equals("java.lang.Object"))) {
+
+            // lets add a typesafe call method
+            answer.addMethod(
+                "call",
+                ACC_PUBLIC,
+                "java.lang.Object",
+                parameters,
+                new ReturnStatement(
                     new MethodCallExpression(
-                        new VariableExpression("super"),
-                        "<init>",
-                        new VariableExpression("outerInstance"))));
+                        VariableExpression.THIS_EXPRESSION,
+                        "doCall",
+                        new ArgumentListExpression(parameters))));
+        }
+
+        FieldNode field = answer.addField("owner", ACC_PRIVATE, outerClassName, null);
+
+        // lets make the constructor
+        BlockStatement block = new BlockStatement();
+        block.addStatement(
+            new ExpressionStatement(
+                new MethodCallExpression(
+                    new VariableExpression("super"),
+                    "<init>",
+                    new VariableExpression("_outerInstance"))));
+        block.addStatement(
+            new ExpressionStatement(
+                new BinaryExpression(
+                    new FieldExpression(field),
+                    Token.equal(-1, -1),
+                    new VariableExpression("_outerInstance"))));
+
+        // lets assign all the parameter fields from the outer context
+        for (int i = 0; i < localVariableParams.length; i++) {
+            Parameter param = localVariableParams[i];
+            String paramName = param.getName();
+            FieldNode paramField = answer.addField(paramName, ACC_PRIVATE, param.getType(), null);
+
             block.addStatement(
                 new ExpressionStatement(
                     new BinaryExpression(
-                        new FieldExpression(field),
+                        new FieldExpression(paramField),
                         Token.equal(-1, -1),
-                        new VariableExpression("outerInstance"))));
-            Parameter[] contructorParams =
-                new Parameter[] {
-                    new Parameter(outerClassName, "outerInstance"),
-                    new Parameter("java.lang.Object", "delegate")};
-            answer.addConstructor(ACC_PUBLIC, contructorParams, block);
-            return answer;
-            }
+                        new VariableExpression(paramName))));
+        }
+
+        Parameter[] params = new Parameter[2 + localVariableParams.length];
+        params[0] = new Parameter(outerClassName, "_outerInstance");
+        params[1] = new Parameter("java.lang.Object", "_delegate");
+        System.arraycopy(localVariableParams, 0, params, 2, localVariableParams.length);
+
+        answer.addConstructor(ACC_PUBLIC, params, block);
+        return answer;
+    }
 
     protected ClassNode createGStringClass(GStringExpression expression) {
-        ClassNode owner = classNode; if (owner instanceof InnerClassNode) {
-            owner = owner.getOuterClass(); }
+        ClassNode owner = classNode;
+        if (owner instanceof InnerClassNode) {
+            owner = owner.getOuterClass();
+        }
         String outerClassName = owner.getName();
-            String name = outerClassName + "$" + context.getNextInnerClassIdx();
-            InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, GString.class.getName());
-            FieldNode stringsField =
-                answer.addField(
-                    "strings",
-                    ACC_PRIVATE | ACC_STATIC,
-                    "java.lang.String[]",
-                    new ArrayExpression("java.lang.String", expression.getStrings()));
-            answer.addMethod(
-                "getStrings",
-                ACC_PUBLIC,
+        String name = outerClassName + "$" + context.getNextInnerClassIdx();
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, GString.class.getName());
+        FieldNode stringsField =
+            answer.addField(
+                "strings",
+                ACC_PRIVATE | ACC_STATIC,
                 "java.lang.String[]",
-                Parameter.EMPTY_ARRAY,
-                new ReturnStatement(new FieldExpression(stringsField)));
-    // lets make the constructor
+                new ArrayExpression("java.lang.String", expression.getStrings()));
+        answer.addMethod(
+            "getStrings",
+            ACC_PUBLIC,
+            "java.lang.String[]",
+            Parameter.EMPTY_ARRAY,
+            new ReturnStatement(new FieldExpression(stringsField)));
+        // lets make the constructor
         BlockStatement block = new BlockStatement();
-            block.addStatement(
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new VariableExpression("super"),
-                        "<init>",
-                        new VariableExpression("values"))));
-            Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
-            answer.addConstructor(ACC_PUBLIC, contructorParams, block);
-            return answer;
-            }
+        block.addStatement(
+            new ExpressionStatement(
+                new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
+        Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
+        answer.addConstructor(ACC_PUBLIC, contructorParams, block);
+        return answer;
+    }
 
     protected void doCast(String type) {
-        cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type)); }
+        cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+    }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-//        if (isNonStaticField(leftExpression)) {
+        //        if (isNonStaticField(leftExpression)) {
         //            cv.visitVarInsn(ALOAD, 0);
         //        }
         //
-        leftHandExpression =
-        false;
-            leftExpression.visit(this);
-            cv.visitLdcInsn(method);
-            leftHandExpression = false;
-            new ArgumentListExpression(new Expression[] { expression.getRightExpression()}).visit(this);
-    // expression.getRightExpression().visit(this);
+        leftHandExpression = false;
+        leftExpression.visit(this);
+        cv.visitLdcInsn(method);
+        leftHandExpression = false;
+        new ArgumentListExpression(new Expression[] { expression.getRightExpression()}).visit(this);
+        // expression.getRightExpression().visit(this);
         invokeMethodMethod.call(cv);
-            }
+    }
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
-        Expression leftExpression = expression.getLeftExpression(); if (isNonStaticField(leftExpression)) {
-            cv.visitVarInsn(ALOAD, 0); }
+        Expression leftExpression = expression.getLeftExpression();
+        if (isNonStaticField(leftExpression)) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
 
         leftHandExpression = false;
-            leftExpression.visit(this);
-            leftHandExpression = false;
-            expression.getRightExpression().visit(this);
-    // now lets invoke the method
+        leftExpression.visit(this);
+        leftHandExpression = false;
+        expression.getRightExpression().visit(this);
+        // now lets invoke the method
         compareMethod.call(cv);
-            }
+    }
 
-    protected void evaluateEqual(
-        BinaryExpression expression) {
+    protected void evaluateEqual(BinaryExpression expression) {
         // lets evaluate the RHS then hopefully the LHS will be a field
-    Expression leftExpression =
-                expression.getLeftExpression();
-            if (isNonStaticField(leftExpression)) {
-            cv.visitVarInsn(ALOAD, 0); }
+        Expression leftExpression = expression.getLeftExpression();
+        if (isNonStaticField(leftExpression)) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
 
         leftHandExpression = false;
-            Expression rightExpression = expression.getRightExpression();
-            rightExpression.visit(this);
-            if (comparisonExpression(rightExpression)) {
+        Expression rightExpression = expression.getRightExpression();
+        rightExpression.visit(this);
+        if (comparisonExpression(rightExpression)) {
             Label l0 = new Label();
-                cv.visitJumpInsn(IFEQ, l0);
-                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-                Label l1 = new Label();
-                cv.visitJumpInsn(GOTO, l1);
-                cv.visitLabel(l0);
-                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-                cv.visitLabel(l1);
-                }
-        leftHandExpression = true; leftExpression.visit(this); leftHandExpression = false; }
+            cv.visitJumpInsn(IFEQ, l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+            Label l1 = new Label();
+            cv.visitJumpInsn(GOTO, l1);
+            cv.visitLabel(l0);
+            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+            cv.visitLabel(l1);
+        }
+        leftHandExpression = true;
+        leftExpression.visit(this);
+        leftHandExpression = false;
+    }
 
     protected void evaluateInstanceof(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
-            Expression rightExp = expression.getRightExpression();
-            String className = null;
-            if (rightExp instanceof ClassExpression) {
-            ClassExpression classExp = (ClassExpression) rightExp; className = classExp.getType(); }
+        Expression rightExp = expression.getRightExpression();
+        String className = null;
+        if (rightExp instanceof ClassExpression) {
+            ClassExpression classExp = (ClassExpression) rightExp;
+            className = classExp.getType();
+        }
         else {
             throw new RuntimeException(
                 "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
-                }
+        }
         String classInternalName = getClassInternalName(className);
-            cv.visitTypeInsn(INSTANCEOF, classInternalName);
-            } /**
-         * @return true if the given argument expression requires the stack, in
-         *         which case the arguments are evaluated first, stored in the
-         *         variable stack and then reloaded to make a method call
-         */
+        cv.visitTypeInsn(INSTANCEOF, classInternalName);
+    } /**
+                              * @return true if the given argument expression requires the stack, in
+                              *         which case the arguments are evaluated first, stored in the
+                              *         variable stack and then reloaded to make a method call
+                              */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
-            } /**
-         * @return true if the given expression represents a non-static field
-         */
+    } /**
+                              * @return true if the given expression represents a non-static field
+                              */
     protected boolean isNonStaticField(Expression expression) {
-        FieldNode field = null; if (expression instanceof VariableExpression) {
+        FieldNode field = null;
+        if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
-                field = classNode.getField(varExp.getVariable());
-                }
+            field = classNode.getField(varExp.getVariable());
+        }
         else if (expression instanceof FieldExpression) {
             FieldExpression fieldExp = (FieldExpression) expression;
-                field = classNode.getField(fieldExp.getFieldName());
-                }
+            field = classNode.getField(fieldExp.getFieldName());
+        }
         if (field != null) {
-            return !field.isStatic(); }
-        return false; }
+            return !field.isStatic();
+        }
+        return false;
+    }
 
     protected boolean isThisExpression(Expression expression) {
         if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression; return varExp.getVariable().equals("this"); }
-        return false; }
+            VariableExpression varExp = (VariableExpression) expression;
+            return varExp.getVariable().equals("this");
+        }
+        return false;
+    }
 
     protected Expression assignmentExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExp = (BinaryExpression) expression;
-                if (binExp.getOperation().getType() == Token.EQUAL) {
-                return binExp.getLeftExpression(); }
+            if (binExp.getOperation().getType() == Token.EQUAL) {
+                return binExp.getLeftExpression();
+            }
         }
-        return null; }
+        return null;
+    }
 
     protected boolean comparisonExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
-            BinaryExpression binExpr = (BinaryExpression) expression; switch (binExpr.getOperation().getType()) {
+            BinaryExpression binExpr = (BinaryExpression) expression;
+            switch (binExpr.getOperation().getType()) {
                 case Token.COMPARE_EQUAL :
                 case Token.MATCH_REGEX :
                 case Token.COMPARE_GREATER_THAN :
@@ -1670,171 +1714,281 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 case Token.COMPARE_IDENTICAL :
                 case Token.COMPARE_NOT_EQUAL :
                 case Token.KEYWORD_INSTANCEOF :
-                    return true; }
+                    return true;
+            }
         }
         else if (expression instanceof BooleanExpression) {
-            return true; }
-        return false; }
+            return true;
+        }
+        return false;
+    }
 
     protected void onLineNumber(ASTNode statement) {
-        int number = statement.getLineNumber(); if (number >= 0 && cv != null) {
-            cv.visitLineNumber(number, new Label()); }
+        int number = statement.getLineNumber();
+        if (number >= 0 && cv != null) {
+            cv.visitLineNumber(number, new Label());
+        }
     }
 
     protected void pushConstant(int value) {
         switch (value) {
             case 0 :
-                cv.visitInsn(ICONST_0); break; case 1 :
-                cv.visitInsn(ICONST_1); break; case 2 :
-                cv.visitInsn(ICONST_2); break; case 3 :
-                cv.visitInsn(ICONST_3); break; case 4 :
-                cv.visitInsn(ICONST_4); break; case 5 :
-                cv.visitInsn(ICONST_5); break; default :
-                cv.visitIntInsn(BIPUSH, value); break; }
-    } /**
-     * @return the last ID used by the stack
+                cv.visitInsn(ICONST_0);
+                break;
+            case 1 :
+                cv.visitInsn(ICONST_1);
+                break;
+            case 2 :
+                cv.visitInsn(ICONST_2);
+                break;
+            case 3 :
+                cv.visitInsn(ICONST_3);
+                break;
+            case 4 :
+                cv.visitInsn(ICONST_4);
+                break;
+            case 5 :
+                cv.visitInsn(ICONST_5);
+                break;
+            default :
+                cv.visitIntInsn(BIPUSH, value);
+                break;
+        }
+    }
+
+    /**
+     * @return a list of parameters for each local variable which needs to be passed into
+     * a closure
      */
+    protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
+        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+        VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
+
+        methodNode.getCode().visit(outerVisitor);
+        expression.getCode().visit(innerVisitor);
+
+        // now any variables declared in the outer context that are referred to
+        // in the inner context need to be copied
+        Set outerDecls = outerVisitor.getDeclaredVariables();
+        Set outerRefs = outerVisitor.getReferencedVariables();
+        Set innerDecls = innerVisitor.getDeclaredVariables();
+        Set innerRefs = innerVisitor.getReferencedVariables();
+        Set parameters = new HashSet();
+
+        Parameter[] params = expression.getParameters();
+        for (int i = 0; i < params.length; i++) {
+            parameters.add(params[i].getName());
+        }
+
+        List vars = new ArrayList();
+        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
+            String var = (String) iter.next();
+
+            // we should ignore the parameters
+            if (outerDecls.contains(var) && !parameters.contains(var) && classNode.getField(var) == null) {
+                String type = getVariableType(var);
+                vars.add(new Parameter(type, var));
+            }
+        }
+
+        //        if (!vars.isEmpty()) {
+        //            System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);
+        //        }
+
+        Parameter[] answer = new Parameter[vars.size()];
+        vars.toArray(answer);
+        return answer;
+    }
+
+    protected String getVariableType(String name) {
+        Variable variable = (Variable) variableStack.get(name);
+        if (variable != null) {
+            return variable.getType();
+        }
+        return null;
+    }
+
+    /**
+      * @return the last ID used by the stack
+      */
     protected int getLastStackId() {
-        return variableStack.size(); }
+        return variableStack.size();
+    }
 
     protected void resetVariableStack(Parameter[] parameters) {
         idx = 0;
-            variableStack.clear();
-            // lets push this onto the stack
+        variableStack.clear();
+        // lets push this onto the stack
         definingParameters = true;
-            if (!isStaticMethod()) {
+        if (!isStaticMethod()) {
             defineVariable("this", classNode.getName()).getIndex();
-                } // now lets create indices for the parameteres
-            for (int i = 0; i < parameters.length; i++) {
-            defineVariable(parameters[i].getName(), parameters[i].getType()); }
-        definingParameters = false; } /** @return true if the given name is a local variable or a field */
+        } // now lets create indices for the parameteres
+        for (int i = 0; i < parameters.length; i++) {
+            defineVariable(parameters[i].getName(), parameters[i].getType());
+        }
+        definingParameters = false;
+    }
+
+    /** @return true if the given name is a local variable or a field */
     protected boolean isFieldOrVariable(String name) {
         return variableStack.containsKey(name) || classNode.getField(name) != null;
-            } /**
-         * Defines the given variable in scope and assigns it to the stack
-         */
+    }
+
+    /**
+     * Defines the given variable in scope and assigns it to the stack
+     */
     protected Variable defineVariable(String name, String type) {
-        return defineVariable(name, type, true); }
+        return defineVariable(name, type, true);
+    }
 
     protected Variable defineVariable(String name, String type, boolean define) {
-        Variable answer = (Variable) variableStack.get(name); if (answer == null) {
+        Variable answer = (Variable) variableStack.get(name);
+        if (answer == null) {
             idx = Math.max(idx, variableStack.size());
-                answer = new Variable(idx, type, name);
-                variableStack.put(name, answer);
-                if (define
-                    && !definingParameters
-                    && !leftHandExpression) { // using new variable inside a comparison expression
-            // so lets initialize it too
-            cv
-                        .visitInsn(ACONST_NULL);
-                    cv.visitVarInsn(ASTORE, idx);
-                    }
+            answer = new Variable(idx, type, name);
+            variableStack.put(name, answer);
+            if (define
+                && !definingParameters
+                && !leftHandExpression) { // using new variable inside a comparison expression
+                // so lets initialize it too
+                cv.visitInsn(ACONST_NULL);
+                cv.visitVarInsn(ASTORE, idx);
+            }
         }
-        return answer; }
+        return answer;
+    }
 
     protected String checkValidType(String type, ASTNode node, String message) {
-        String original = type; if (type != null) {
+        String original = type;
+        if (type != null) {
             if (classNode.getNameWithoutPackage().equals(type)) {
-                return classNode.getName(); }
+                return classNode.getName();
+            }
             for (int i = 0; i < 2; i++) {
                 if (context.getCompileUnit().getClass(type) != null) {
-                    return type; }
+                    return type;
+                }
 
                 try {
-                    classLoader.loadClass(type); return type; }
+                    classLoader.loadClass(type);
+                    return type;
+                }
                 catch (Throwable e) { // fall through
                 } // lets try the system class loader
                 try {
-                    Class.forName(type); return type; }
+                    Class.forName(type);
+                    return type;
+                }
                 catch (Throwable e) { // fall through
                 } // lets try class in same package
                 String packageName = classNode.getPackageName();
-                    if (packageName == null || packageName.length() <= 0) {
-                    break; }
-                type = packageName + "." + type; }
+                if (packageName == null || packageName.length() <= 0) {
+                    break;
+                }
+                type = packageName + "." + type;
+            }
         }
-        throw new NoSuchClassException(original, node, message); }
+        throw new NoSuchClassException(original, node, message);
+    }
 
     protected String createVariableName(String type) {
         return "__" + type + idx;
-            } /**
-         * @return if the type of the expression can be determined at compile time
-         *         then this method returns the type - otherwise java.lang.Object
-         *         is returned.
-         */
+    } /**
+                              * @return if the type of the expression can be determined at compile time
+                              *         then this method returns the type - otherwise java.lang.Object
+                              *         is returned.
+                              */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
-            return Boolean.class; } /** @todo we need a way to determine this from an expression */
+            return Boolean.class;
+        } /** @todo we need a way to determine this from an expression */
         return Object.class;
-            } /**
-         * @return true if the value is an Integer, a Float, a Long, a Double or a
-         *         String .
-         */
+    } /**
+                              * @return true if the value is an Integer, a Float, a Long, a Double or a
+                              *         String .
+                              */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
             || value instanceof Double
             || value instanceof Long
             || value instanceof Float;
-            }
+    }
 
     protected boolean isStaticMethod() {
         if (methodNode == null) { // we're in a constructor
-        return false; }
-        return methodNode.isStatic(); } /**
-         * @return an array of ASM internal names of the type
-         */
+            return false;
+        }
+        return methodNode.isStatic();
+    } /**
+                              * @return an array of ASM internal names of the type
+                              */
     private String[] getClassInternalNames(String[] names) {
-        int size = names.length; String[] answer = new String[size]; for (int i = 0; i < size; i++) {
-            answer[i] = getClassInternalName(names[i]); }
-        return answer; } /**
-         * @return the ASM internal name of the type
-         */
+        int size = names.length;
+        String[] answer = new String[size];
+        for (int i = 0; i < size; i++) {
+            answer[i] = getClassInternalName(names[i]);
+        }
+        return answer;
+    } /**
+                              * @return the ASM internal name of the type
+                              */
     protected String getClassInternalName(String name) {
         if (name == null) {
-            return "java/lang/Object"; }
-        String answer = name.replace('.', '/'); if (answer.endsWith("[]")) {
-            return "[" + answer.substring(0, answer.length() - 2); }
-        return answer; } /**
-         * @return the ASM method type descriptor
-         */
-    protected String getMethodDescriptor(
-        String returnTypeName,
-        Parameter[] paramTypeNames) {
-            // lets avoid class loading
-    StringBuffer buffer = new StringBuffer("(");
-            for (int i = 0; i < paramTypeNames.length; i++) {
-            buffer.append(getTypeDescription(paramTypeNames[i].getType())); }
+            return "java/lang/Object";
+        }
+        String answer = name.replace('.', '/');
+        if (answer.endsWith("[]")) {
+            return "[" + answer.substring(0, answer.length() - 2);
+        }
+        return answer;
+    } /**
+                              * @return the ASM method type descriptor
+                              */
+    protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
+        // lets avoid class loading
+        StringBuffer buffer = new StringBuffer("(");
+        for (int i = 0; i < paramTypeNames.length; i++) {
+            buffer.append(getTypeDescription(paramTypeNames[i].getType()));
+        }
         buffer.append(")");
-            buffer.append(getTypeDescription(returnTypeName));
-            return buffer.toString();
-            } /**
-         * @return the ASM type description
-         */
-    protected String getTypeDescription(
-        String name) { // lets avoid class loading
-    // return getType(name).getDescriptor();
-    if (name == null) {
-            return "Ljava/lang/Object;"; }
+        buffer.append(getTypeDescription(returnTypeName));
+        return buffer.toString();
+    } /**
+                              * @return the ASM type description
+                              */
+    protected String getTypeDescription(String name) { // lets avoid class loading
+        // return getType(name).getDescriptor();
+        if (name == null) {
+            return "Ljava/lang/Object;";
+        }
         if (name.equals("void")) {
-            return "V"; }
-        String prefix = ""; if (name.endsWith("[]")) {
-            prefix = "["; name = name.substring(0, name.length() - 2); }
-        return prefix + "L" + name.replace('.', '/') + ";"; } /**
-         * @return the ASM type for the given class name
-         */
+            return "V";
+        }
+        String prefix = "";
+        if (name.endsWith("[]")) {
+            prefix = "[";
+            name = name.substring(0, name.length() - 2);
+        }
+        return prefix + "L" + name.replace('.', '/') + ";";
+    } /**
+                              * @return the ASM type for the given class name
+                              */
     protected Type getType(String className) {
         if (className.equals("void")) {
-            return Type.VOID_TYPE; }
+            return Type.VOID_TYPE;
+        }
         return Type.getType(loadClass(className));
-    //return Type.getType(className);
-        } /**
-         * @return loads the given type name
-         */
+        //return Type.getType(className);
+    } /**
+                              * @return loads the given type name
+                              */
     protected Class loadClass(String name) {
         try {
-            return getClassLoader().loadClass(name); }
+            return getClassLoader().loadClass(name);
+        }
         catch (ClassNotFoundException e) {
-            throw new ClassGeneratorException("Could not load class: " + name + " reason: " + e, e); }
+            throw new ClassGeneratorException("Could not load class: " + name + " reason: " + e, e);
+        }
     }
 }

@@ -43,70 +43,58 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.expr.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.syntax.Token;
 
 /**
- * Represents a parameter on a constructor or method call. The type name is
- * optional - it should be defaulted to java.lang.Object if unknown.
+ * A visitor which figures out which variables are in scope
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Parameter {
+public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
-    public static final Parameter[] EMPTY_ARRAY = {
-    };
+    private Set declaredVariables = new HashSet();
+    private Set referencedVariables = new HashSet();
 
-    private String type;
-    private String name;
-    private boolean dynamicType;
-    private Expression defaultValue;
-
-    public Parameter(String name) {
-        this("java.lang.Object", name);
+    public VariableScopeCodeVisitor() {
     }
 
-    public Parameter(String type, String name) {
-        this(type, name, null);
+    public Set getDeclaredVariables() {
+        return declaredVariables;
     }
 
-    public Parameter(String type, String name, Expression defaultValue) {
-        this.name = name;
-        this.type = type;
-        this.defaultValue = defaultValue;
-        if (type == null) {
-            this.type = "java.lang.Object";
-            this.dynamicType = true;
+    public Set getReferencedVariables() {
+        return referencedVariables;
+    }
+
+    public void visitBinaryExpression(BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        if (expression.getOperation().getType() == Token.EQUAL && leftExpression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) leftExpression;
+            declaredVariables.add(varExp.getVariable());
         }
+        else {
+            leftExpression.visit(this);
+        }
+        expression.getRightExpression().visit(this);
     }
 
-    public String toString() {
-        return super.toString() + "[name:" + name + "]";
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean isDynamicType() {
-        return dynamicType;
+    public void visitClosureExpression(ClosureExpression expression) {
+        // lets not walk into closures
     }
     
-    /**
-     * @return the default value expression for this parameter or null if
-     * no default value is specified
-     */
-    public Expression getDefaultValue() {
-        return defaultValue;
+    public void visitVariableExpression(VariableExpression expression) {
+        // check for undeclared variables?
+        referencedVariables.add(expression.getVariable());
     }
 }

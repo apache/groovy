@@ -43,70 +43,21 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.expr.*;
+package org.codehaus.groovy.classgen;
+
+import groovy.lang.GroovyObject;
+
+import org.codehaus.groovy.classgen.TestSupport;
 
 /**
- * Represents a parameter on a constructor or method call. The type name is
- * optional - it should be defaulted to java.lang.Object if unknown.
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Parameter {
+public class RunClosureTest extends TestSupport {
 
-    public static final Parameter[] EMPTY_ARRAY = {
-    };
-
-    private String type;
-    private String name;
-    private boolean dynamicType;
-    private Expression defaultValue;
-
-    public Parameter(String name) {
-        this("java.lang.Object", name);
-    }
-
-    public Parameter(String type, String name) {
-        this(type, name, null);
-    }
-
-    public Parameter(String type, String name, Expression defaultValue) {
-        this.name = name;
-        this.type = type;
-        this.defaultValue = defaultValue;
-        if (type == null) {
-            this.type = "java.lang.Object";
-            this.dynamicType = true;
-        }
-    }
-
-    public String toString() {
-        return super.toString() + "[name:" + name + "]";
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public boolean isDynamicType() {
-        return dynamicType;
-    }
-    
-    /**
-     * @return the default value expression for this parameter or null if
-     * no default value is specified
-     */
-    public Expression getDefaultValue() {
-        return defaultValue;
+    public void testClosure() throws Exception {
+        GroovyObject object = compile("src/test/groovy/ClosureUsingOuterVariablesTest.groovy");
+        object.invokeMethod("testUseOfOuterVariable", null);
     }
 }

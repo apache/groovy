@@ -58,12 +58,11 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class RunGroovyTest extends TestSupport {
 
-    /*
     public void testMap() throws Exception {
         GroovyObject object = compile("src/test/groovy/MapTest.groovy");
         object.invokeMethod("testMap", null);
     }
-    
+
     public void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureMethodTest.groovy");
         object.invokeMethod("testListMap", null);
@@ -79,7 +78,7 @@ public class RunGroovyTest extends TestSupport {
         object.invokeMethod("testSingleExpression", null);
         object.invokeMethod("testLastExpressionIsSimple", null);
     }
-*/
+
     public void testConsole() throws Exception {
         GroovyObject object = compile("src/main/groovy/ui/Console.groovy");
     }
