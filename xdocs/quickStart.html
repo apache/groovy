@@ -47,10 +47,23 @@ Once you have some collections you can then use some of the new collection helpe
 
 
 <h2>Working with closures</h2>
+
 Closures are similar to Java's inner classes, except they are a single method which is invokable, with arbitrary parameters.
+A closure can have as many parameters as you wish...
 
 <source>
   &gt;&gt;&gt; closure = { param | System.out.println("hello " + param) }
+  &gt;&gt;&gt; closure.call("world!")
+  hello world!
+  &gt;&gt;&gt; closure = { greeting, name | System.out.println(greeting + param) }
+  &gt;&gt;&gt; closure.call("hello ", "world!")
+  hello world!
+</source>
+
+If no parameter(s) is(are) specified before the | symbol then a default named parameter, called 'it' can be used. e.g.
+
+<source>
+  &gt;&gt;&gt; closure = { System.out.println("hello " + it) }
   &gt;&gt;&gt; closure.call("world!")
   hello world!
 </source>
@@ -73,7 +86,7 @@ iterate via a closure
 convert values to new list using closure
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].map { item | return item * 2 }
+  &gt;&gt;&gt; [1, 2, 3].map { it * 2 }
   [2, 4, 6]
 </source>
 
@@ -82,7 +95,7 @@ convert values to new list using closure
 finds first item matching closure predicate
   
 <source>
-  &gt;&gt;&gt; [1, 2, 3].find { item | return item &gt; 1 }
+  &gt;&gt;&gt; [1, 2, 3].find { it &gt; 1 }
   2
 </source>
 
@@ -91,7 +104,7 @@ finds first item matching closure predicate
  finds all items matching closure predicate
   
 <source>
-  &gt;&gt;&gt; [1, 2, 3].findAll { item | item &gt; 1 }
+  &gt;&gt;&gt; [1, 2, 3].findAll { it &gt; 1 }
   [2, 3]
 </source>
 
@@ -102,7 +115,7 @@ In addition there's 2 new methods for doing boolean logic on some collection...
  returns true if all items match the closure predicate
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].every { item | item &lt; 5 }
+  &gt;&gt;&gt; [1, 2, 3].every { it &lt; 5 }
   true
   &gt;&gt;&gt; [1, 2, 3].every { item | item &lt; 3 }
   false
@@ -112,7 +125,7 @@ In addition there's 2 new methods for doing boolean logic on some collection...
  returns true if any item match the closure predicate
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].every { item | item &gt; 2 }
+  &gt;&gt;&gt; [1, 2, 3].every { it &gt; 2 }
   true
   &gt;&gt;&gt; [1, 2, 3].every { item | item &gt; 3 }
   false
