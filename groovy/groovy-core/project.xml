@@ -94,6 +94,11 @@
       <name>1.0-beta9</name>
       <tag>GROOVY_1_0_BETA_9</tag>
     </version>
+    <version>
+      <id>b10</id>
+      <name>1.0-beta10</name>
+      <tag>GROOVY_1_0_BETA_10</tag>
+    </version>
   </versions>
 
   <mailingLists>
@@ -598,9 +603,9 @@
 
     <!-- used to build embeddable jar -->
     <dependency>
-      <groupId>jarjar</groupId>
+      <groupId>tonic</groupId>
       <artifactId>jarjar</artifactId>
-      <version>0.2</version>
+      <version>0.5</version>
     </dependency>
 
   </dependencies>
