@@ -104,9 +104,11 @@ import org.objectweb.asm.Constants;
 public class ASTBuilder {
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final String[] DEFAULT_IMPORTS = { "java.lang.", "groovy.lang.", "groovy.util." };
+    private static final Object NOT_RESOLVED = new Object();
 
     private ClassLoader classLoader;
     private Map imports;
+    private Map resolvedNames = new HashMap();
 
     private String packageName;
 
@@ -188,10 +190,10 @@ public class ASTBuilder {
                 CSTNode clause = importRoot.getChild( current );
                 String  name   = identifier( clause );
                 String  as     = (clause.children() > 0 ? identifier(clause.getChild(0)) : name);
- 
+
                 addImport( packageName + name, as );
                 node.addImport( as, name );
- 
+
                 current++;
            }
         }
@@ -202,14 +204,25 @@ public class ASTBuilder {
     }
 
     protected String resolveName(String name) {
+        
+        Object obj = resolvedNames.get(name);
+        if ( obj == NOT_RESOLVED ) {
+            return null;
+        } else if ( obj != null ) {
+            return (String)obj;
+        }
+        
+        String resolved = null;
+        
         String original = name;
         name = removeTypeModifiers(name);
         String postfix = "";
         if (original.length() > name.length()) {
             postfix = original.substring(name.length());
         }
+
         if (name.indexOf(".") >= 0) {
-            return original;
+            resolved = original;
         }
         else if (
             name.equals("void")
@@ -221,18 +234,19 @@ public class ASTBuilder {
                 || name.equals("byte")
                 || name.equals("double")
                 || name.equals("float")) {
-            return original;
+            resolved = original;
         }
 
-        if (this.imports.containsKey(name)) {
-            return (String) this.imports.get(name) + postfix;
+        if (resolved == null && this.imports.containsKey(name)) {
+            resolved = (String) this.imports.get(name) + postfix;
         }
 
-        if (packageName != null && packageName.length() > 0) {
+
+        if (resolved == null && packageName != null && packageName.length() > 0) {
             try {
                 getClassLoader().loadClass(packageName + "." + name);
 
-                return packageName + "." + name + postfix;
+                resolved = packageName + "." + name + postfix;
             }
             catch (Exception e) {
                 // swallow
@@ -241,20 +255,28 @@ public class ASTBuilder {
                 // swallow
             }
         }
-        for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
-            try {
-                String fullName = DEFAULT_IMPORTS[i] + name;
-                getClassLoader().loadClass(fullName);
-                return fullName + postfix;
-            }
-            catch (Exception e) {
-                // swallow
-            }
-            catch (Error e) {
-                // swallow
+        if ( resolved == null ) {
+            for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
+                try {
+                    String fullName = DEFAULT_IMPORTS[i] + name;
+                    getClassLoader().loadClass(fullName);
+                    resolved = fullName + postfix;
+                    break;
+                }
+                catch (Exception e) {
+                    // swallow
+                }
+                catch (Error e) {
+                    // swallow
+                }
             }
         }
-        return null;
+        if ( resolved == null ) {
+            resolvedNames.put(name,NOT_RESOLVED);
+        } else {
+            resolvedNames.put(name,resolved);
+        }
+        return resolved;
     }
 
     /**
@@ -426,7 +448,7 @@ public class ASTBuilder {
         }
 
         ClassNode classNode = new ClassNode(fqClassName, modifiers, superClassName, interfaceNames, mixinNames);
-		classNode.setCSTNode(classRoot.getChild(1));
+        classNode.setCSTNode(classRoot.getChild(1));
         CSTNode[] bodyRoots = classRoot.getChild(4).getChildren();
 
         for (int i = 0; i < bodyRoots.length; ++i) {
@@ -487,7 +509,7 @@ public class ASTBuilder {
     protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException {
         int modifiers = modifiers(methodRoot.getChild(0));
 
-		String identifier = methodRoot.getChild(1).getToken().getText();
+        String identifier = methodRoot.getChild(1).getToken().getText();
 
         String returnType = resolvedQualifiedName(methodRoot.getChild(2));
 
@@ -817,7 +839,7 @@ public class ASTBuilder {
         expression.setCSTNode(expressionRoot);
         return expression;
     }
-    
+
     protected Expression makeExpression(CSTNode expressionRoot) throws ParserException {
         switch (expressionRoot.getToken().getType()) {
             case (Token.MINUS) :
@@ -1262,24 +1284,24 @@ public class ASTBuilder {
      */
     protected Number createInteger(String text) {
         // lets use an Integer if it will fit as it makes for more efficient bytecode
-    	final long l;
-    	
-    	if (text.startsWith("0") && text.length() > 1) {
-    		final char c = text.charAt(1);
-    		
-    		if (c == 'X' || c == 'x') {
-    			l = Long.parseLong(text.substring(2), 16);
-    		} else {
-    			l = Long.parseLong(text, 8);
-    		}
-    	} else {
-    		l = Long.parseLong(text);
-    	}
+        final long l;
+        
+        if (text.startsWith("0") && text.length() > 1) {
+            final char c = text.charAt(1);
+            
+            if (c == 'X' || c == 'x') {
+                l = Long.parseLong(text.substring(2), 16);
+            } else {
+                l = Long.parseLong(text, 8);
+            }
+        } else {
+            l = Long.parseLong(text);
+        }
 
         if (l > Integer.MIN_VALUE && l < Integer.MAX_VALUE) {
             return new Integer((int) l);
         } else {
-        	return new Long(l);
+            return new Long(l);
         }
     }
 
