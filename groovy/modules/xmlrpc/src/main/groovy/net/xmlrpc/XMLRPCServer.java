@@ -208,7 +208,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 								
 								result = XMLRPCServer.this.defaultMethod.call(new Object[] {methodName,params.toArray()});
 							} else {
-								result = closure.call( params.toArray());
+								result = closure.call(params.toArray());
 							}
 							
 							if (result == null) result = new Integer(0);

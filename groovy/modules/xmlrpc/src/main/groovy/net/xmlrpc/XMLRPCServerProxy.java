@@ -47,7 +47,6 @@ package groovy.net.xmlrpc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
-import groovy.lang.GroovyRuntimeException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -55,8 +54,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
-
-import org.xml.sax.SAXException;
 
 import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 
@@ -114,7 +111,12 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			for (int i = 0; i != numberOfparams; i++) {
 			final Object param = params[i];
 				
-				XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
+				try {
+					XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
+				}
+				catch (final XMLRPCFailException e) {
+					throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
+				}
 			}
 			
 			buffer.append("\t</params>\n</methodCall>\n");

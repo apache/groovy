@@ -36,6 +36,7 @@ package uk.co.wilson.net.xmlrpc;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.net.xmlrpc.XMLRPCCallFailureException;
+import groovy.net.xmlrpc.XMLRPCFailException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -232,7 +233,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			} else if (param instanceof Date) {	 // Date can be subclassed so the initial elements.get() can fail
 				((Emitter)elements.get(Date.class)).emit(buffer, param);
 			} else {
-				throw new XMLRPCCallFailureException(param.getClass() + " is not a supported XML-RPC data type", new Integer(0));
+				throw new XMLRPCFailException(param.getClass() + " is not a supported XML-RPC data type", 0);
 			}
 		} else {
 			emitter.emit(buffer, param);
