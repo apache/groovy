@@ -555,14 +555,6 @@
       <fileset dir="../modules/xmlrpc/target">
         <include name="groovy*.jar"/>
       </fileset>
-
-      <!-- temporary hack while we move things around -->
-      <fileset dir="../jsr/ideas/parsers/antlr/dist">
-        <include name="groovy*.jar"/>
-      </fileset>
-      <fileset dir="../jsr/ideas/parsers/antlr/lib">
-        <include name="ant*.jar"/>
-      </fileset>
     </copy>
   </goal>
 

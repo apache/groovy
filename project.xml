@@ -99,6 +99,11 @@
       <name>1.0-beta10</name>
       <tag>GROOVY_1_0_BETA_10</tag>
     </version>
+    <version>
+      <id>jsr01</id>
+      <name>1.0-JSR-01</name>
+      <tag>GROOVY_1_0_JSR_01</tag>
+    </version>
   </versions>
 
   <mailingLists>
