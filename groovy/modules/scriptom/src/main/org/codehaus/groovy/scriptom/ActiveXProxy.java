@@ -3,6 +3,7 @@ package org.codehaus.groovy.scriptom;
 import com.jacob.activeX.ActiveXComponent;
 import com.jacob.com.Variant;
 import com.jacob.com.Dispatch;
+import com.jacob.com.DispatchEvents;
 import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -14,6 +15,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class ActiveXProxy extends GroovyObjectSupport
 {
     private ActiveXComponent activex;
+    private EventSupport eventSupport;
 
     /**
      * <p>Build a GroovyObject proxy for an ActiveX component,
@@ -32,17 +34,21 @@ public class ActiveXProxy extends GroovyObjectSupport
     public ActiveXProxy(String clsId)
     {
         activex = new ActiveXComponent(clsId);
+        eventSupport = new EventSupport(activex);
     }
 
     /**
      * Get the property
      *
-     * @param s the name of the property
+     * @param propName the name of the property
      * @return the value associated with the property name
      */
-    public Object getProperty(String s)
+    public Object getProperty(String propName)
     {
-        return toReturn(activex.getProperty(s));
+        if ("events".equals(propName))
+            return eventSupport;
+
+        return toReturn(activex.getProperty(propName));
     }
 
     /**
@@ -54,6 +60,9 @@ public class ActiveXProxy extends GroovyObjectSupport
      */
     public Object invokeMethod(String methodName, Object parameters)
     {
+        if ("getEvents".equals(methodName))
+            return eventSupport;
+
         Object[] objs = InvokerHelper.getInstance().asArray(parameters);
         Variant[] variants = new Variant[objs.length];
         for (int i = 0; i < variants.length; i++)
@@ -71,6 +80,8 @@ public class ActiveXProxy extends GroovyObjectSupport
      */
     public void setProperty(String propertyName, Object newValue)
     {
+        if ("events".equals(propertyName))
+            new DispatchEvents(activex, newValue);
         activex.setProperty(propertyName, new Variant(newValue));
     }
 
