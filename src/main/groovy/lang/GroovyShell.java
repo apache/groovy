@@ -266,6 +266,11 @@ public class GroovyShell extends GroovyObjectSupport {
             InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args } );
         }
         catch (MissingMethodException e) {
+
+            // if the class had a main method, but the code inside threw a MissingMethodException
+            if (!"main".equals(e.getMethod()))
+                throw e; // let's rethrow it
+
             // if no main() method was found, let's see if it's a unit test
             // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
             if (isUnitTestCase(scriptClass)) {
