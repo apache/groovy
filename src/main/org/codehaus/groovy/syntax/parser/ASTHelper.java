@@ -38,7 +38,7 @@ import java.util.Map;
 public class ASTHelper {
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String[] DEFAULT_IMPORTS = {"java.lang.", "groovy.lang.", "groovy.util."};
+    private static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
 
     /** The SourceUnit controlling us */
     private SourceUnit controller;
