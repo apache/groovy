@@ -1,8 +1,8 @@
 class AssertTest extends GroovyTestCase {
 
-    property x
-    
     void testAssert() {
+        x = null
+        
         assert x == null
         assert x != "abc"
         assert x != "foo"
@@ -26,7 +26,6 @@ class AssertTest extends GroovyTestCase {
 	void testAssertFail() {
 	    x = 1234
 	    
-	    /** @todo 
 	    runCode = false
         try {
 	        runCode = true
@@ -40,6 +39,5 @@ class AssertTest extends GroovyTestCase {
 	        //assert e.message == msg
 	    }
 	    assert runCode : "has not ran the try / catch block code"
-	     */
 	}
 }
