@@ -33,10 +33,13 @@ package uk.co.wilson.net.xmlrpc;
  OF THE POSSIBILITY OF SUCH DAMAGE
  */
 
+import groovy.lang.GString;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -115,14 +118,15 @@ public class XMLRPCMessageProcessor extends MinML {
 					}
 				});
 		elements.put(Float.class, elements.get(Double.class));
-		elements.put(java.math.BigDecimal.class, elements.get(Double.class));
+		elements.put(BigDecimal.class, elements.get(Double.class));
 		
 		elements.put(String.class,
 				new Emitter() {
 					public void emit(final StringBuffer buffer, final Object string) throws SAXException {
-						encodeString(buffer.append("<value><string>"), (String)string).append("</string></value>");
+						encodeString(buffer.append("<value><string>"), string.toString()).append("</string></value>");
 					}
 				});
+		elements.put(GString.class, elements.get(String.class));
 		
 		elements.put(Boolean.class,
 				new Emitter() {
@@ -210,6 +214,10 @@ public class XMLRPCMessageProcessor extends MinML {
 				}
 				
 				buffer.append("</struct></value>");
+			} else if (param instanceof GString) {
+				((Emitter)elements.get(GString.class)).emit(buffer, param);
+			} else {
+				throw new SAXException(param.getClass() + " is not a supported XML-RPC data type");
 			}
 		} else {
 			emitter.emit(buffer, param);
