@@ -100,6 +100,7 @@ public class DefaultGroovyMethods {
     private static Logger log = Logger.getLogger(DefaultGroovyMethods.class.getName());
 
     private static final Integer ONE = new Integer(1);
+    private static final char ZERO_CHAR = '\u0000';
 
     /**
      * Generates a detailed dump string of an object showing its class,
@@ -1417,13 +1418,19 @@ public class DefaultGroovyMethods {
         char firstCh = firstCharacter();
         for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
             char ch = increment(buffer.charAt(idx));
-            if (ch != 0) {
+            int value = ch;
+            if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
                 break;
             }
             else {
                 // lets find the first char
-                buffer.setCharAt(idx, firstCh);
+                if (idx == 0) {
+                    buffer.append("1");
+                }
+                else {
+                    buffer.setCharAt(idx, firstCh);
+                }
             }
         }
         return buffer.toString();
@@ -1441,13 +1448,18 @@ public class DefaultGroovyMethods {
         char lastCh = lastCharacter();
         for (int idx = buffer.length() - 1; idx >= 0; idx-- ) {
             char ch = decrement(buffer.charAt(idx));
-            if (ch != 0) {
+            if (ch != ZERO_CHAR) {
                 buffer.setCharAt(idx, ch);
                 break;
             }
             else {
-                // lets find the first char
-                buffer.setCharAt(idx, lastCh);
+                if (idx == 0) {
+                    return null;
+                }
+                else {
+	                // lets find the first char
+	                buffer.setCharAt(idx, lastCh);
+                }
             }
         }
         return buffer.toString();
@@ -1458,7 +1470,7 @@ public class DefaultGroovyMethods {
             return ch;
         }
         else {
-            return 0;
+            return ZERO_CHAR;
         }
     }
     
@@ -1467,7 +1479,7 @@ public class DefaultGroovyMethods {
             return ch;
         }
         else {
-            return 0;
+            return ZERO_CHAR;
         }
     }
     
@@ -1475,7 +1487,7 @@ public class DefaultGroovyMethods {
      * @return the first character used when a letter rolls over when incrementing
      */
     private static char firstCharacter() {
-        char ch = 0;
+        char ch = ZERO_CHAR;
         while (! Character.isLetterOrDigit(ch)) {
             ch++;
         }

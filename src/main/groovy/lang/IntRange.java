@@ -62,10 +62,24 @@ public class IntRange extends AbstractList implements Range {
 
     private int from;
     private int to;
+    private boolean reverse;
 
     public IntRange(int from, int to) {
+        if (from > to) {
+            this.from = to;
+            this.to = from;
+            this.reverse = true;
+        }
+        else {
+            this.from = from;
+            this.to = to;
+        }
+    }
+
+    protected IntRange(int from, int to, boolean reverse) {
         this.from = from;
         this.to = to;
+        this.reverse = reverse;
     }
 
     public boolean equals(Object that) {
@@ -81,8 +95,8 @@ public class IntRange extends AbstractList implements Range {
     public boolean equals(List that) {
         int size = size();
         if (that.size() == size) {
-            for (int i = 0; i < size; i++ ) {
-                if (! InvokerHelper.compareEqual(get(i), that.get(i))) {
+            for (int i = 0; i < size; i++) {
+                if (!InvokerHelper.compareEqual(get(i), that.get(i))) {
                     return false;
                 }
             }
@@ -92,7 +106,7 @@ public class IntRange extends AbstractList implements Range {
     }
 
     public boolean equals(IntRange that) {
-        return this.from == that.from && this.to == that.to;
+        return this.reverse == that.reverse && this.from == that.from && this.to == that.to;
     }
 
     public Comparable getFrom() {
@@ -102,7 +116,7 @@ public class IntRange extends AbstractList implements Range {
     public Comparable getTo() {
         return new Integer(to);
     }
-    
+
     public int getFromInt() {
         return from;
     }
@@ -111,14 +125,18 @@ public class IntRange extends AbstractList implements Range {
         return to;
     }
 
+    public boolean isReverse() {
+        return reverse;
+    }
+
     public Object get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        int value = index + from;
-        if (value > to) {
+        if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
         }
+        int value = (reverse) ? to - index : index + from;
         return new Integer(value);
     }
 
@@ -127,7 +145,7 @@ public class IntRange extends AbstractList implements Range {
     }
 
     public int hashCode() {
-        return from ^ to;
+        return from ^ to + (reverse ? 1 : 0);
     }
 
     public List subList(int fromIndex, int toIndex) {
@@ -140,13 +158,17 @@ public class IntRange extends AbstractList implements Range {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
-        return new IntRange(fromIndex + this.from, toIndex + this.from - 1);
+        return new IntRange(fromIndex + this.from, toIndex + this.from - 1, reverse);
     }
 
     public String toString() {
-        return "" + from + ".." + to;
+        return (reverse) ? "" + to + ".." + from : "" + from + ".." + to;
     }
-
+    
+    public String inspect() {
+        return toString();
+    }
+    
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             Integer integer = (Integer) value;
@@ -157,6 +179,9 @@ public class IntRange extends AbstractList implements Range {
     }
 
     public void step(int step, Closure closure) {
+        if (reverse) {
+            step = -step;
+        }
         if (step >= 0) {
             int value = from;
             while (value <= to) {

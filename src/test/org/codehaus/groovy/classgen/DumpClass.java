@@ -171,7 +171,7 @@ public class DumpClass {
     public void setLocalVar() {
         Object x = null;
         Object i = null;
-        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createRange(new Integer(0), new Integer(10)));
+        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createRange(new Integer(0), new Integer(10), true));
             iter.hasNext();
             ) {
             i = iter.next();

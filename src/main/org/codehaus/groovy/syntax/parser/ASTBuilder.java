@@ -978,10 +978,7 @@ public class ASTBuilder {
 
     protected RangeExpression rangeExpression(CSTNode expressionRoot, boolean inclusive) throws ParserException {
         Expression toExp = expression(expressionRoot.getChild(1));
-        if (! inclusive) {
-            toExp = new MethodCallExpression(toExp, "decrement", ConstantExpression.EMPTY_ARRAY);
-        }
-        return new RangeExpression(expression(expressionRoot.getChild(0)), toExp);
+        return new RangeExpression(expression(expressionRoot.getChild(0)), toExp, inclusive);
     }
 
     protected Expression propertyExpression(CSTNode expressionRoot) throws ParserException {

@@ -53,7 +53,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -61,14 +60,30 @@ import java.util.Map;
  */
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
-    public void testPrint() throws Exception {      
+    public void testPrint() throws Exception {
         Map map = new HashMap();
         map.put("bob", "drools");
         map.put("james", "geronimo");
         List list = new ArrayList();
         list.add(map);
-        
+
         /** @todo fix this! */
         //assertConsoleOutput(list, "[['bob':'drools', 'james':'geronimo']]");
+    }
+
+    public void testIncrementString() throws Exception {
+        String original = "z";
+        String answer = DefaultGroovyMethods.increment(original);
+
+        System.out.println(answer);
+        assertTrue(answer.compareTo(original) > 0);
+    }
+
+    public void testDecrementString() throws Exception {
+        String original = "a";
+        String answer = DefaultGroovyMethods.decrement(original);
+
+        System.out.println(answer);
+        assertTrue(InvokerHelper.compareLessThan(answer, original));
     }
 }

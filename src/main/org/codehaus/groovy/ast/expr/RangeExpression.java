@@ -59,10 +59,12 @@ public class RangeExpression extends Expression {
 
     private Expression from;
     private Expression to;
+    private boolean inclusive;
 
-    public RangeExpression(Expression from, Expression to) {
+    public RangeExpression(Expression from, Expression to, boolean inclusive) {
         this.from = from;
         this.to = to;
+        this.inclusive = inclusive;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
@@ -70,7 +72,7 @@ public class RangeExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new RangeExpression(transformer.transform(from), transformer.transform(to)); 
+        return new RangeExpression(transformer.transform(from), transformer.transform(to), inclusive); 
     }
     
     public Expression getFrom() {
@@ -79,6 +81,10 @@ public class RangeExpression extends Expression {
 
     public Expression getTo() {
         return to;
+    }
+
+    public boolean isInclusive() {
+        return inclusive;
     }
 
 }
