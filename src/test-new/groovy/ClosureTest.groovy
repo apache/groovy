@@ -33,7 +33,7 @@ class ClosureTest extends GroovyTestCase {
         assert count == 1
          
         count = 0
-        c1(new Object[]{1, 2, 3})
+        c1([1, 2, 3] as Object[])
         assert count == 6
 
         c2 = {| a, Object[] args | count += a; args.each{count += it}}
@@ -47,7 +47,7 @@ class ClosureTest extends GroovyTestCase {
         assert count == 1
          
         count = 0
-        c2(1, new Object[]{2, 3})
+        c2(1, [2, 3] as Object[])
         assert count == 6
     }
 

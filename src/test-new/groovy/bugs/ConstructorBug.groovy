@@ -18,7 +18,7 @@ class ConstructorBug extends GroovyTestCase {
 
         println "created type: ${type} of type: ${type.class}"
 
-        mytest = InvokerHelper.invokeConstructorOf(type, new Object[] { "Hello" })
+        mytest = InvokerHelper.invokeConstructorOf(type, ["Hello"] as Object[])
         assert mytest.foo == "Hello"
         /** @todo fix bug
         */

@@ -3,7 +3,7 @@ package groovy.bugs
 class ConstructorParameterBug extends GroovyTestCase {
 
     void testMethodWithNativeArray() {
-        value = new int[2*2]
+        int[] value = [2*2]
         println "${value} of type ${value.class}"
         /** @todo fixme!
     	blah2(value)
