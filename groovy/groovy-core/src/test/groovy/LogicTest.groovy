@@ -12,7 +12,6 @@ class LogicTest extends GroovyTestCase {
         assert x == true
     }
 
-    /** @todo parser
     void testAndWithFalse() {
 
         x = false
@@ -24,7 +23,7 @@ class LogicTest extends GroovyTestCase {
 
         assert x == false
 
-        n = -1
+        n = 0
         
         if ( n > 1 && n < 10 ) {
             x = true
@@ -73,5 +72,4 @@ class LogicTest extends GroovyTestCase {
     
         assert x == false
     }
-    */
 }
