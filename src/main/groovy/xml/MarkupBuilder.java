@@ -101,11 +101,11 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object createNode(Object name, Object value) {
         toState(2, name);
         out.print(">");
-        print(value);
+        out.print(value.toString());
         return name;
     }
 
-    protected Object createNode(Object name, Map attributes) {
+    protected Object createNode(Object name, Map attributes, Object value) {
         toState(1, name);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
@@ -115,9 +115,14 @@ public class MarkupBuilder extends BuilderSupport {
             print(transformValue(entry.getValue().toString()));
             out.print("'");
         }
+        // FIXME: the current state model doesn't allow for nodes with attributes and values
         return name;
     }
 
+    protected Object createNode(Object name, Map attributes) {
+        return createNode(name, attributes, null);
+    }
+    
     protected void nodeCompleted(Object parent, Object node) {
         toState(3, node);
         out.flush();

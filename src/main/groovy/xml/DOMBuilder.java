@@ -47,6 +47,8 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -61,6 +63,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * A helper class for creating a W3C DOM tree
@@ -92,6 +96,25 @@ public class DOMBuilder extends BuilderSupport {
         return new DOMBuilder(documentBuilder);
     }
 
+    public static Document parse(Reader reader) throws SAXException, IOException, ParserConfigurationException {
+	    	DocumentBuilder documentBuilder = null;
+	    	try {
+				documentBuilder = (DocumentBuilder) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+					public Object run() throws ParserConfigurationException {
+						return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+					}
+				});
+	    	} catch (PrivilegedActionException pae) {
+	    		Exception e = pae.getException();
+	    		if (e instanceof ParserConfigurationException) {
+	    			throw (ParserConfigurationException) e;
+	    		} else {
+	    			throw new RuntimeException(e);
+	    		}
+	    	}
+	    	return documentBuilder.parse(new InputSource(reader));
+    }
+    
     public DOMBuilder(Document document) {
         this.document = document;
     }
@@ -135,6 +158,12 @@ public class DOMBuilder extends BuilderSupport {
         return element;
     }
 
+    protected Object createNode(Object name, Map attributes, Object value) {
+        Element element = (Element) createNode(name, attributes);
+        element.appendChild(document.createTextNode(value.toString()));
+        return element;
+    }
+    
     protected Object createNode(Object name, Map attributes) {
         Element element = (Element) createNode(name);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {

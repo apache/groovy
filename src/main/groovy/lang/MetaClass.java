@@ -80,6 +80,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
@@ -223,8 +224,16 @@ public class MetaClass {
      */
     public List getMethods(String name) {
         List answer = (List) methodIndex.get(name);
+        List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
+        if (used != null) {
+            if (answer != null) {
+                answer.addAll(used);
+            } else{
+                answer = used;
+            }
+        }
         if (answer == null) {
-            return Collections.EMPTY_LIST;
+            answer = Collections.EMPTY_LIST;
         }
         return answer;
     }
@@ -470,12 +479,28 @@ public class MetaClass {
                 // lets try invoke a static getter method
                 metaMethod = findGetter(object, "get" + capitalize(property));
             }
-        }
-        if (metaMethod != null) {
-            return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
+            if (metaMethod != null) {
+                return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
+            }
         }
 
-        if (genericGetMethod != null) {
+        if (genericGetMethod == null) {
+            // Make sure there isn't a generic method in the "use" cases
+            List possibleGenericMethods = getMethods("get");
+            if (possibleGenericMethods != null) {
+                for (Iterator i = possibleGenericMethods.iterator(); i.hasNext(); ) {
+                    MetaMethod mmethod = (MetaMethod) i.next();
+                    Class[] paramTypes = mmethod.getParameterTypes();
+                    if (paramTypes.length == 1 && paramTypes[0] == String.class) {
+                        Object[] arguments = {property};
+                        Object answer = doMethodInvoke(object, mmethod, arguments);
+                        if (answer != null) {
+                            return answer;
+                        }
+                    }	
+                }
+            }
+        } else {
             Object[] arguments = { property };
             Object answer = doMethodInvoke(object, genericGetMethod, arguments);
             if (answer != null) {
@@ -1445,12 +1470,12 @@ public class MetaClass {
     }
 
     protected boolean isGenericSetMethod(MetaMethod method) {
-        return (method.getName().equals("set") || method.getName().equals("setAttribute"))
+        return (method.getName().equals("set"))
             && method.getParameterTypes().length == 2;
     }
 
     protected boolean isGenericGetMethod(MetaMethod method) {
-        if (method.getName().equals("get") || method.getName().equals("getAttribute")) {
+        if (method.getName().equals("get")) {
             Class[] parameterTypes = method.getParameterTypes();
             return parameterTypes.length == 1 && parameterTypes[0] == String.class;
         }

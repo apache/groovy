@@ -92,4 +92,8 @@ public class Namespace extends BuilderSupport {
     protected Object createNode(Object name, Map attributes) {
         return name;
     }
+
+    protected Object createNode(Object name, Map attributes, Object value) {
+        return name;
+    }
 }

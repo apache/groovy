@@ -49,6 +49,7 @@ package groovy.util;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -92,32 +93,58 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
         //System.out.println("Called invokeMethod with name: " + name + " arguments: " + list);
 
-        if (!list.isEmpty()) {
-            Object object = list.get(0);
-            if (object instanceof Map) {
-                node = proxyBuilder.createNode(name, (Map) object);
-            }
-            else if (object instanceof Closure) {
-                closure = (Closure) object;
-                node = proxyBuilder.createNode(name);
-            }
-            else {
-                node = proxyBuilder.createNode(name, object);
-            }
-            if (list.size() > 1) {
-                object = list.get(1);
-                if (object instanceof Closure) {
-                    closure = (Closure) object;
-                }
-            }
+        switch (list.size()) {
+        		case 0:
+        		    break;
+        	    	case 1:
+        	    	{
+        	    	    	Object object = list.get(0);
+        	    	    	if (object instanceof Map) {
+        	    	    	    node = proxyBuilder.createNode(name, (Map) object);
+        	    	    	} else if (object instanceof Closure) {
+        	    	    	    closure = (Closure) object;
+        	    	    	    node = proxyBuilder.createNode(name);
+        	    	    	} else {
+        	    	    	    node = proxyBuilder.createNode(name, object);
+        	    	    	}
+        	    	}
+        	    	break;
+        	    	case 2:
+        	    	{
+        	    	    Object object1 = list.get(0);
+    	    	        Object object2 = list.get(1);
+        	    	    if (object1 instanceof Map) {
+        	    	        if (object2 instanceof Closure) {
+        	    	            closure = (Closure) object2;
+        	    	            node = proxyBuilder.createNode(name, (Map) object1);
+        	    	        } else {
+        	    	            node = proxyBuilder.createNode(name, (Map) object1, object2);
+        	    	        }
+        	    	    } else {
+        	    	        if (object2 instanceof Closure) {
+        	    	            closure = (Closure) object2;
+        	    	            node = proxyBuilder.createNode(name, object1);
+        	    	        }
+        	    	    }
+        	    	}
+        	    	break;
+        	    	case 3:
+        	    	{
+        	    	    Object attributes = list.get(0);
+        	    	    Object value = list.get(1);
+        	    	    closure = (Closure) list.get(2);
+        	    	    node = proxyBuilder.createNode(name, (Map) attributes, value);
+        	    	}
+        	    	break;
         }
-        else {
-            node = proxyBuilder.createNode(name);
-        }
+
+        	if (node == null) {
+	    	    node = proxyBuilder.createNode(name);
+        	}
+        
         if (current != null) {
             proxyBuilder.setParent(current, node);
         }
-        //System.out.println("Created node: " + node);
 
         if (closure != null) {
             // push new node on stack
@@ -139,6 +166,7 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
     protected abstract Object createNode(Object name);
     protected abstract Object createNode(Object name, Object value);
     protected abstract Object createNode(Object name, Map attributes);
+    protected abstract Object createNode(Object name, Map attributes, Object value);
 
     /**
      * A hook to allow names to be converted into some other object
