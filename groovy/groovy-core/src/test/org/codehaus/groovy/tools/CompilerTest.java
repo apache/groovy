@@ -47,7 +47,6 @@
 package org.codehaus.groovy.tools;
 
 import java.io.File;
-import java.net.URL;
 
 import org.codehaus.groovy.GroovyTestCase;
 
@@ -66,9 +65,10 @@ public class CompilerTest extends GroovyTestCase {
     }
 
     protected void runTest(String name) throws Exception {
-        URL url = getClass().getClassLoader().getResource("groovy/" + name);
+        File file = new File("src/test/groovy/" + name);
         
-        File file = new File(url.getFile());
+        assertTrue("Could not find source file: " + file, file.exists());
+
         compiler.compile(new File[] { file });
     }
 
