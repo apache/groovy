@@ -224,7 +224,7 @@ public class ModuleNode extends ASTNode implements Constants {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();
             int modifiers = node.getModifiers();
-            if ((modifiers & ACC_ABSTRACT) == 0) {
+            if ((modifiers & ACC_ABSTRACT) != 0) {
                 throw new RuntimeException(
                     "Cannot use abstract methods in a script, they are only available inside classes. Method: "
                         + node.getName());

@@ -117,6 +117,18 @@ public class Parser {
 
         CSTNode modifiers = new CSTNode();
 
+        if (lt() == Token.KEYWORD_DEF) {
+            consume(lt());
+            
+            while (isModifier(lt())) {
+                consume(modifiers, lt());
+            }
+            CSTNode type = methodReturnType();
+            CSTNode identifier = methodIdentifier();
+            
+            return methodDeclaration(modifiers, type, identifier);
+        }
+        
         while (isModifier(lt())) {
             consume(modifiers, lt());
         }
@@ -132,7 +144,7 @@ public class Parser {
                     declaration = interfaceDeclaration(modifiers);
                     break;
                 }
-            default :
+          default :
                 {
                     declaration = statement();
                     /*                
@@ -265,6 +277,43 @@ public class Parser {
             consume_bare(lt_bare());
         }
 
+        CSTNode type = methodReturnType();
+        CSTNode identifier = methodIdentifier();
+
+        // now we must be either a property or method
+        // not that after the identifier, the left parenthesis *must* be on the same line
+        switch (lt_bare()) {
+            case Token.LEFT_PARENTHESIS :
+                bodyStatement = methodDeclaration(modifiers, type, identifier);
+                break;
+
+            case Token.EQUAL :
+            case Token.SEMICOLON :
+            case Token.NEWLINE :
+            case Token.RIGHT_CURLY_BRACE :
+            case -1 :
+                bodyStatement = propertyDeclaration(modifiers, type, identifier);
+                optionalSemicolon();
+                break;
+
+            default :
+                throwExpected(
+                    new int[] {
+                        Token.LEFT_PARENTHESIS,
+                        Token.EQUAL,
+                        Token.SEMICOLON,
+                        Token.NEWLINE,
+                        Token.RIGHT_CURLY_BRACE });
+        }
+
+        return bodyStatement;
+    }
+
+    protected CSTNode methodIdentifier() throws IOException, SyntaxException {
+        return new CSTNode(consume_bare(Token.IDENTIFIER));
+    }
+
+    protected CSTNode methodReturnType() throws IOException, SyntaxException {
         // lets consume the type if present
         // either an identifier, void or foo.bar.whatnot
         CSTNode type = new CSTNode();
@@ -300,37 +349,7 @@ public class Parser {
                     }
             }
         }
-
-        // lets consume the identifier
-        CSTNode identifier = new CSTNode(consume_bare(Token.IDENTIFIER));
-
-        // now we must be either a property or method
-        // not that after the identifier, the left parenthesis *must* be on the same line
-        switch (lt_bare()) {
-            case Token.LEFT_PARENTHESIS :
-                bodyStatement = methodDeclaration(modifiers, type, identifier);
-                break;
-
-            case Token.EQUAL :
-            case Token.SEMICOLON :
-            case Token.NEWLINE :
-            case Token.RIGHT_CURLY_BRACE :
-            case -1 :
-                bodyStatement = propertyDeclaration(modifiers, type, identifier);
-                optionalSemicolon();
-                break;
-
-            default :
-                throwExpected(
-                    new int[] {
-                        Token.LEFT_PARENTHESIS,
-                        Token.EQUAL,
-                        Token.SEMICOLON,
-                        Token.NEWLINE,
-                        Token.RIGHT_CURLY_BRACE });
-        }
-
-        return bodyStatement;
+        return type;
     }
 
     public CSTNode propertyDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)

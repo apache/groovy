@@ -250,6 +250,9 @@ public class ASTBuilder {
         else if (matches(datatypeCst, Token.KEYWORD_INTERFACE)) {
             module.addClass(interfaceDeclaration(packageName, datatypeCst));
         }
+        else if (matches(datatypeCst, Token.SYNTH_METHOD)) {
+            module.addMethod(methodDeclaration(datatypeCst));
+        }
         else {
             module.addStatement(statement(datatypeCst));
         }
@@ -352,6 +355,20 @@ public class ASTBuilder {
             methodNode.setCSTNode(methodRoot);
             classNode.addMethod(methodNode);
         }
+    }
+
+    protected MethodNode methodDeclaration(CSTNode methodRoot) throws ParserException {
+        int modifiers = modifiers(methodRoot.getChild(0));
+
+        String identifier = methodRoot.getChild(1).getToken().getText();
+
+        String returnType = resolvedQualifiedName(methodRoot.getChild(2));
+
+        Parameter[] parameters = parameters(methodRoot.getChild(3).getChildren());
+        MethodNode methodNode =
+            new MethodNode(identifier, modifiers, returnType, parameters, statementBlock(methodRoot.getChild(4)));
+        methodNode.setCSTNode(methodRoot);
+        return methodNode;
     }
 
     protected Parameter[] parameters(CSTNode[] paramRoots) {
