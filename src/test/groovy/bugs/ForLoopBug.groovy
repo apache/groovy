@@ -16,6 +16,14 @@ assert list == [1, 2, 3, 4, 5]
 EOF)        
     }
     
+    void testSeansBug() {
+        assertScript( <<<EOF
+for (i in 1..10) {
+    println i
+}
+EOF)        
+    }
+    
     void testNormalMethod() {
         list = []
         a = 1
