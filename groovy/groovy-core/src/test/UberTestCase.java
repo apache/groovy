@@ -181,6 +181,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(StaticMarkupBug.class);
         suite.addTestSuite(StaticPrintlnTest.class);
         suite.addTestSuite(StaticThisTest.class);
+	suite.addTestSuite(StringIncrementAndDecrementTest.class);
         suite.addTestSuite(StringOperationTest.class);
         suite.addTestSuite(StringTest.class);
         suite.addTestSuite(SubscriptAndExpressionBug.class);
