@@ -8,12 +8,12 @@ import groovy.xml.MarkupBuilder
  *
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  *
- * @version $Revision 1.3 $
+ * @version $Revision: 1.4 $
  *
- *     Fix the cr lf handling, depending on operating systems.
- *     This test should success on Windows XP.
+ *   Fix the cr lf handling of multiline stringon both of linux and Windows XP.
+ *   This test should success on Windows XP.
  *
- *     @author Pilho Kim
+ *   @author Pilho Kim
  */
 class Groovy593_Bug extends GroovyTestCase {
     
