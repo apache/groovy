@@ -45,6 +45,8 @@
  */
 package groovy.lang;
 
+import java.lang.reflect.Method;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -139,8 +141,26 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call(Object arguments) {
-        /** @todo we should customize the exception message better */
-        return InvokerHelper.invokeMethod(this, "doCall", arguments);
+        try {
+            return InvokerHelper.invokeMethod(this, "doCall", arguments);
+        }
+        catch (MissingMethodException e) {
+            Class[] expected = null;
+            try {
+                Method[] methods = getClass().getMethods();
+                for (int i = 0; i < methods.length; i++ ) {
+                    Method method = methods[i];
+                    if (method.getName().equals("doCall")) {
+                        expected = method.getParameterTypes();
+                        break;
+                    }
+                }
+            }
+            catch (Exception e2) {
+                // ignore
+            }
+            throw new IncorrectClosureArgumentsException(this, arguments, expected);
+        }
     }
 
     /**
