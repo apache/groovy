@@ -46,6 +46,7 @@
 package groovy.swing;
 
 import groovy.lang.Closure;
+import groovy.lang.MissingMethodException;
 
 import groovy.model.DefaultTableModel;
 import groovy.model.ValueHolder;
@@ -328,12 +329,15 @@ public class SwingBuilder extends BuilderSupport {
             }
             return value;
         }
-        else {
+        else if (value instanceof String) {
             Object widget = createNode(name);
-            if (widget != null && value instanceof String) {
+            if (widget != null) {
                 InvokerHelper.invokeMethod(widget, "setText", value);
             }
             return widget;
+        }
+        else {
+        	throw new MissingMethodException((String) name, getClass(), new Object[] {value});
         }
     }
 
