@@ -80,10 +80,10 @@ class ListTest extends GroovyTestCase {
     
     void testClosure() {
         l = [1, 2, 3, "abc"]
-        block = {i| println(i) }
+        block = {i :: println(i) }
         l.each(block)
         
-        l.each {i| println(i) }
+        l.each {i:: println(i) }
     }
     
     void testMax() {

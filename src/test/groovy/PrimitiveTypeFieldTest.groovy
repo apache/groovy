@@ -25,7 +25,7 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
         assert bugMethod2(123) == 246
 
         // @todo GROOVY-133
-        closure = {|int x| x * 2 }
+        closure = {int x:: x * 2 }
         assert closure.call(123) == 246
 
     }
