@@ -1078,6 +1078,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case BSR:
                 return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED, node);
 
+            case BSR_ASSIGN:
+                return binaryExpression(Types.RIGHT_SHIFT_UNSIGNED_EQUAL, node);
+
                 // Regex
             case REGEX_FIND:
                 return binaryExpression(Types.FIND_REGEX, node);

@@ -1002,6 +1002,27 @@ PropertyValue pv = (PropertyValue) itr.next();
         return new URL(self);
     }
 
+    /**
+     * Turns a String into a regular expression pattern
+     *
+     * @param self a String to convert into a regular expression
+     * @return the regular expression pattern
+     */
+    public static Pattern negate(String self) {
+        return InvokerHelper.regexPattern(self);
+    }
+
+    /**
+     * Turns a String into a regular expression pattern
+     *
+     * @param self a GString to convert into a regular expression
+     * @return the regular expression pattern
+     */
+    public static Pattern negate(GString self) {
+        return InvokerHelper.regexPattern(self.toString());
+    }
+
+
     private static String getPadding(String padding, int length) {
         if (padding.length() < length) {
             return multiply(padding, new Integer(length / padding.length() + 1)).substring(0, length);
