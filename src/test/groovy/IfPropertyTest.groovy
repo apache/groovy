@@ -1,25 +1,29 @@
 class IfPropertyTest extends GroovyTestCase {
 	
+    dummy
+    
 	// This is because normal classes are not extensible, but scripts are extensible by default.
 	Object get(String key) {
-		return null
+	    println("asking for property " + key)
+		return dummy
 	}
 	
 	void set(Object key, Object value) {
-	    
+	    println("setting the property " + key + " to: " + value)
+	    dummy = value
 	}
 
     void testIfNullPropertySet() {
-        /** @todo
-		if (cheese == null) {
-			cheese = 1
-		}
-		assert cheese == 1
-		*/
+        if (cheese == null) {
+            cheese = 1
+        }
+        if (cheese != 1) {
+            fail("Didn't change cheese")
+        }
+        assert cheese == 1
     }
     
     void testIfNullPropertySetRecheck() {
-        /** @todo
 		if (cheese == null) {
 			cheese = 1
 		}
@@ -27,7 +31,6 @@ class IfPropertyTest extends GroovyTestCase {
 			cheese = 2
 		}
 		assert cheese == 2
-		*/
     }
     
 }

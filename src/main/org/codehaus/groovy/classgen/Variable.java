@@ -57,6 +57,7 @@ public class Variable {
     private String type;
     private String name;
     private boolean holder;
+    private boolean property;
     
     public Variable(int index, String type, String name) {
         this.index = index;
@@ -90,6 +91,14 @@ public class Variable {
         this.holder = holder;
     }
 
+    public boolean isProperty() {
+        return property;
+    }
+
+    public void setProperty(boolean property) {
+        this.property = property;
+    }
+    
     public String toString() {
         // TODO Auto-generated method stub
         return super.toString() + "[" + type + " " + name + " (" + index + ")";

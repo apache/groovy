@@ -1412,7 +1412,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         variable = defineVariable(name, variableType);
                     }
                 }
-                if (variable == null) {
+                if (variable == null || variable.isProperty()) {
+                    if (variable == null) {
+                        variable = defineVariable(name, variableType);
+                        variable.setProperty(true);
+                    }
                     //variable = defineVariable(name, variableType, false);
                     visitPropertyExpression(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name));
                     // We need to store this in a local variable now since it
