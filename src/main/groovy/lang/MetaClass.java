@@ -1454,7 +1454,7 @@ public class MetaClass {
                 }
             }
             Object[] args = coerceNumbers(method, argumentArray);
-            if (args != null) {
+            if (args != null && !Arrays.equals(argumentArray,args)) {
                 try {
                     return doMethodInvoke(object, method, args);
                 }
@@ -1469,10 +1469,7 @@ public class MetaClass {
                     + " on: "
                     + object
                     + " with arguments: "
-                    + InvokerHelper.toString(argumentArray)
-                    + " reason: "
-                    + e,
-                    e);
+                    + InvokerHelper.toString(argumentArray));
         }
         catch (RuntimeException e) {
             throw e;
