@@ -852,19 +852,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         String returnType = methodNode.getReturnType();
         helper.unbox(returnType);
         if (returnType.equals("double")) {
-            //MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
             cv.visitInsn(DRETURN);
         }
         else if (returnType.equals("float")) {
-            //MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
             cv.visitInsn(FRETURN);
         }
         else if (returnType.equals("long")) {
-            //MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
             cv.visitInsn(LRETURN);
         }
         else if (returnType.equals("boolean")) {
-            //MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
             cv.visitInsn(IRETURN);
         }
         else if (
@@ -873,7 +869,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 || returnType.equals("int")
                 || returnType.equals("short")) { //byte,short,boolean,int are
             // all IRETURN
-            //MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
             cv.visitInsn(IRETURN);
         }
         else {
@@ -1595,6 +1590,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
                     }
                     else {
+                        
+                        /*
                         //TODO: make work with arrays
                         if (type.equals("double")) {
                             cv.visitVarInsn(DLOAD, index);
@@ -1615,6 +1612,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         else {
                             cv.visitVarInsn(ALOAD, index);
                         }
+                        */
+                        cv.visitVarInsn(ALOAD, index);
                     }
                 }
             }
@@ -2510,21 +2509,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             defineVariable("this", classNode.getName()).getIndex();
         } // now lets create indices for the parameteres
         for (int i = 0; i < parameters.length; i++) {
-            defineVariable(parameters[i].getName(), parameters[i].getType());
+            Parameter parameter = parameters[i];
+            String type = parameter.getType();
+            int idx = defineVariable(parameter.getName(), type).getIndex();
+            if (helper.isPrimitiveType(type)) {
+                helper.load(type, idx);
+                helper.box(type);
+                cv.visitVarInsn(ASTORE, idx);
+            }
         }
         definingParameters = false;
-    }
-
-    /** @return true if the given name is a local variable or a field */
-    protected boolean isFieldOrVariable(String name) {
-        return variableStack.containsKey(name) || classNode.getField(name) != null;
-    }
-
-    /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
-    protected Variable defineVariable(String name, String type) {
-        return defineVariable(name, type, true);
     }
 
     protected Variable defineVariable(String name, String type, boolean define) {
@@ -2558,6 +2552,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
         }
         return answer;
+    }
+
+    /** @return true if the given name is a local variable or a field */
+    protected boolean isFieldOrVariable(String name) {
+        return variableStack.containsKey(name) || classNode.getField(name) != null;
+    }
+
+    /**
+     * Defines the given variable in scope and assigns it to the stack
+     */
+    protected Variable defineVariable(String name, String type) {
+        return defineVariable(name, type, true);
     }
 
     protected String checkValidType(String type, ASTNode node, String message) {
