@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -560,7 +561,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 		 * @see java.lang.Object#toString()
 		 */
 		public String toString() {
-			return Closure.this.toString();
+		final StringWriter writer = new StringWriter();
+		
+			try {
+				writeTo(writer);
+			} catch (IOException e) {
+				return null;
+			}
+		
+			return writer.toString();
 		}
     }
 	/**
