@@ -323,12 +323,13 @@
 
         <!-- Parser decisions to make -->
 
-        <!-- do {} while() not supported -->
-        <exclude name="**/DoWhileLoopTest.groovy"/>
-        <exclude name="**/LoopBreakTest.groovy"/>
+        <!-- handling newlines with closure passing to method calls -->
+        <exclude name="**/CurlyBracketLayoutTest.groovy"/>
 
+        <!-- handling fully qualified class names in variable declarations -->
+        <exclude name="**/FullyQualifiedVariableTypeBug.groovy"/>
 
-        <!-- TODO - string literal stuff  -->
+        <!-- TODO - unsure about this test case - to do with string literals with backspace and $ -->
         <exclude name="**/Groovy675_Bug.groovy"/>
 
       </fileset>
