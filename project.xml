@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project>
+  <pomVersion>3</pomVersion>
+  <name>groovy</name>
+  <groupId>groovy</groupId>
+  <id>groovy</id>
+  <currentVersion>1.0-alpha-1</currentVersion>
+  <organization>
+    <name>The Codehaus</name>
+    <url>http://codehaus.org</url>
+    <logo>http://codehaus.org/codehaus-small.gif</logo>
+  </organization>
+  <inceptionYear>2003</inceptionYear>
+  <package>org.codehaus.groovy</package>
+  <shortDescription>groovy: hybrid language for the JVM</shortDescription>
+<!--
+  <logo>http://images.werken.com/werkflow.gif</logo>
+-->
+
+  <description>
+    hybrid language for the JVM.
+  </description>
+
+  <url>http://groovy.codehaus.org/</url>
+
+  <mailingLists>
+    <mailingList>
+      <name>groovy users</name>
+      <archive>http://lists.codehaus.org/pipermail/groovy-user/</archive>
+      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-user</subscribe>
+      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-user</unsubscribe>
+    </mailingList>
+    <mailingList>
+      <name>groovy cvs messages</name>
+      <archive>http://lists.codehaus.org/pipermail/groovy-scm/</archive>
+      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</subscribe>
+      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</unsubscribe>
+    </mailingList>
+    <mailingList>
+      <name>general workflow discussion</name>
+      <archive>http://lists.codehaus.org/pipermail/workflow-discuss/</archive>
+      <subscribe>http://lists.codehaus.org/mailman/listinfo/workflow-discuss</subscribe>
+      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/workflow-discuss</unsubscribe>
+    </mailingList>
+  </mailingLists>
+
+  <siteAddress>groovy.codehaus.org</siteAddress>
+  <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
+  <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10010&amp;report=roadmap</issueTrackingUrl>
+
+  <repository>
+    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>
+    <url>http://cvs.groovy.codehaus.org/</url>
+  </repository>
+
+  <developers>
+    <developer>
+      <name>bob mcwhirter</name>
+      <id>bob</id>
+      <email>bob@werken.com</email>
+      <organization>The Werken Company</organization>
+      <roles>
+        <role>Founder</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <dependencies>
+
+    <dependency>
+      <id>xerces</id>
+      <version>2.4.0</version>
+      <url>http://xml.apache.org/</url>
+    </dependency>
+
+    <dependency>
+      <id>xml-apis</id>
+      <version>1.0.b2</version>
+      <url>http://xml.apache.org/</url>
+    </dependency>
+
+    <dependency>
+      <id>log4j</id>
+      <version>1.2.8</version>
+      <url>http://jakarta.apache.org/log4j/</url>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <nagEmailAddress>groovy-scm@lists.codehaus.org</nagEmailAddress>
+    <sourceDirectory>src/java/main</sourceDirectory>
+    <unitTestSourceDirectory>src/java/test</unitTestSourceDirectory>
+    <aspectSourceDirectory/>
+
+    <unitTest>
+      <resources>
+        <resource>
+          <directory>src/java/test</directory>
+          <includes>
+            <include>**/*.properties</include>
+          </includes>
+        </resource>
+      </resources>
+
+      <includes>
+        <include>**/*Test.java</include>
+      </includes>
+
+    </unitTest>
+
+    <resources>
+      <resource>
+        <directory>src/java/main</directory>
+        <includes>
+          <include>**/*.properties</include>
+          <include>**/*.xml</include>
+        </includes>
+      </resource>
+    </resources>
+
+  </build>
+</project>
