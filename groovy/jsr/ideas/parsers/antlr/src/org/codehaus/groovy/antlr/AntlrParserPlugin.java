@@ -614,7 +614,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         BooleanExpression booleanExpression = booleanExpression(node);
 
         node = node.getNextSibling();
-        assertNodeType(SLIST, node);
+        // this node could be a BREAK node
+        //assertNodeType(SLIST, node);
         Statement ifBlock = statement(node);
 
         Statement elseBlock = EmptyStatement.INSTANCE;

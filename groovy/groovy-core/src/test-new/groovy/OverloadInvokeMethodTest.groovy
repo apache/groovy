@@ -12,7 +12,7 @@ class OverloadInvokeMethodTest extends GroovyTestCase {
      * Lets overload the invokeMethod() mechanism to provide an alias
      * to an existing method
      */
-    invokeMethod(String name, Object args) {
+    def invokeMethod(String name, Object args) {
         try {
             return metaClass.invokeMethod(this, name, args)
         }
@@ -26,7 +26,7 @@ class OverloadInvokeMethodTest extends GroovyTestCase {
         }
     }
     
-    bar(param) {
+    def bar(param) {
         return param * 2
     }
 

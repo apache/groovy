@@ -47,6 +47,8 @@ public class TestSuiteSupport implements Test, Protectable {
     public void protect() throws Throwable {
         System.out.println("Running test: " + fullName);
         GroovyMain.main(new String[]{fullName});
+
+        // TODO how do we extract any JUnit test failures?
     }
 
     public String toString() {

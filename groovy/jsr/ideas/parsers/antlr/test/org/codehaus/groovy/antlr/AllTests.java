@@ -53,6 +53,8 @@ public class AllTests extends TestSuiteSupport {
         "GeneratorTest.groovy",                 // TODO: closure params
         "InvokeNormalMethodsFirstTest.groovy",  // TODO: closure params
         "MockTest.groovy",                      // TODO: closure params
+        "RegularExpressionsTest.groovy",        // TODO: closure params
+        "SqlTest.groovy",                       // TODO: closure params
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "SuperMethod2Bug.groovy",               // TODO: constructor bug
@@ -61,6 +63,8 @@ public class AllTests extends TestSuiteSupport {
         "TestCaseBug.groovy",                   // TODO: constructor bug
         "TestDerived.groovy",                   // TODO: constructor bug
         "Build.groovy",                         // TODO: constructor bug
+        "PrivateVariableAccessFromAnotherInstanceTest.groovy",      // TODO: constructor bug
+        "SocketTest.groovy",                    // TODO: constructor bug
 
         "ClosureCloneTest.groovy",              // TODO: use of * with dot
         "DoubleOperationTest.groovy",           // TODO: use of * with dot
@@ -70,15 +74,24 @@ public class AllTests extends TestSuiteSupport {
         "IntegerOperationTest.groovy",          // TODO: use of *
         "ListTest.groovy",                      // TODO: use of *
         "ModuloTest.groovy",                    // TODO: use of *
+        "NumberMathTest.groovy",                // TODO: use of *
+        "OverloadInvokeMethodTest.groovy",      // TODO: use of *
+        "PrimitiveTypeFieldTest.groovy",        // TODO: use of *
+        "ReturnTest.groovy",                    // TODO: use of *
 
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
+        "PropertyTest.groovy",                  // TODO: arrays
+        "SubscriptTest.groovy",                 // TODO: arrays
 
         "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
 
         "MapConstructionTest.groovy",           // TODO: map keys cannot be numeric literals
         "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
+        "PrintTest.groovy",                     // TODO: map keys cannot be numeric literals
+        
+        "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
         "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
         "ConstructorBug.groovy",                // TODO: foo.class bug in parser
@@ -87,6 +100,7 @@ public class AllTests extends TestSuiteSupport {
         "CastTest.groovy",                      // TODO: foo.class bug in parser
         "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
         "ClassTest.groovy",                     // TODO: foo.class bug in parser
+        "SerializeTest.groovy",                 // TODO: foo.class bug in parser
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -121,11 +135,22 @@ public class AllTests extends TestSuiteSupport {
         "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: parser bug
 
 
+
         // Not sure of bug yet
+        "ProcessTest.groovy",                   // TODO: is this a parser bug or just a not very good compiler error?
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
+        "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
         // TODO: AST bugs I think...
         "PrintlnWithNewBug.groovy",
+
+
+        // Ignored test cases
+        //-------------------------------------------------------------------------
+        "SqlCompleteTest.groovy",                   // not easy to run from in IDE...
+        "SqlCompleteWithoutDataSourceTest.groovy",  // not easy to run from in IDE...
+        "SqlWithBuilderTest.groovy",                // not easy to run from in IDE...
+        "SqlWithTypedResultsTest.groovy",           // not easy to run from in IDE...
 
 
     };

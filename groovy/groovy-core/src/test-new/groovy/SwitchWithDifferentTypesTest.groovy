@@ -26,14 +26,14 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
     }
 
 
-    assertSwitch(a, b, c, d) {
+    void assertSwitch(a, b, c, d) {
         assertSwitchMatch1(a, a, b, c)
         assertSwitchMatch2(b, a, b, c)
         assertSwitchMatch3(c, a, b, c)
         assertSwitchMatchDefault(d, a, b, c)
     }
     
-    assertSwitchMatch1(value, case1Value, case2Value, case3Value) {
+    void assertSwitchMatch1(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
                 // worked
@@ -50,13 +50,13 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
         }
     }
 
-    assertSwitchMatch2(value, case1Value, case2Value, case3Value) {
+    void assertSwitchMatch2(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
                 failNotEquals(value, case1Value)
                 break
             case case2Value: 
-	            // worked
+                // worked
                 break
             case case3Value: 
                 failNotEquals(value, case3Value)
@@ -67,7 +67,7 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
         }
     }
     
-    assertSwitchMatch3(value, case1Value, case2Value, case3Value) {
+    void assertSwitchMatch3(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
                 failNotEquals(value, case1Value)
@@ -76,7 +76,7 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
                 failNotEquals(value, case2Value)
                 break
             case case3Value: 
-	            // worked
+                // worked
                 break
             default:
                 failNotDefault(value)
@@ -84,7 +84,7 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
         }
     }
     
-    assertSwitchMatchDefault(value, case1Value, case2Value, case3Value) {
+    void assertSwitchMatchDefault(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
                 failNotEquals(value, case1Value)
@@ -96,16 +96,16 @@ class SwitchWithDifferentTypesTest extends GroovyTestCase {
                 failNotEquals(value, case3Value)
                 break
             default:
-	            // worked
+                // worked
                 break
         }
     }
 
-	failNotEquals(value, expectedCaseValue) {
-	    fail("value: " + value + " is not equal to case value: " + expectedCaseValue)
-	}
-	
-	failNotDefault(value) {
-	    fail("value: " + value + " should not match the default switch clause" )
-	}
+    void failNotEquals(value, expectedCaseValue) {
+        fail("value: " + value + " is not equal to case value: " + expectedCaseValue)
+    }
+
+    void failNotDefault(value) {
+        fail("value: " + value + " should not match the default switch clause" )
+    }
 }

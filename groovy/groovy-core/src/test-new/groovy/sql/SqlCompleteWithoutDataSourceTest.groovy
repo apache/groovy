@@ -9,7 +9,7 @@ import java.sql.DriverManager
  */
 class SqlCompleteWithoutDataSourceTest extends SqlCompleteTest {
     
-    protected newSql(String uri) {
+    protected def newSql(String uri) {
         driver = AxionDriver
         println("Loading driver ${driver}")
         return new Sql(DriverManager.getConnection(uri))
