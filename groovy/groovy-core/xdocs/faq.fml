@@ -263,6 +263,43 @@
       </answer>
     </faq>   
     
+    <faq id="rules">
+      <question>
+        What are the development rules?
+      </question>
+      <answer>
+        <p>
+        Please try and write unit test cases for all new features, patches or fixes.
+       </p>
+        <p>
+        Its considered very bad form to commit code that doesn't compile or breaks the unit tests.
+        We run a continuous integration build (using DamageControl) to ensure that the build in CVS
+        works and the tests pass.
+       </p>
+        <p>
+        Its useful to subscribe to all 3 mail lists, especially groovy-scm which shows all CVS commits
+        along with any continuous integration build failures and JIRA issue changes.
+       </p>
+      </answer>
+    </faq>   
+    
+    <faq id="dc">
+      <question>
+        Where is the continuous integration build?
+      </question>
+      <answer>
+        <p>
+        We run DamageControl at codehaus. If a build fails a nag mail is sent to the groovy-scm mail list.
+        You can watch DC do its stuff using your IRC client and joining 
+        <a href="irc://irc.codehaus.org/damagecontrol">#damagecontrol</a>.
+       </p>
+        <p>
+        You can also view the latest DC <a href="http://builds.codehaus.org/log/groovy-core/">build logs</a> 
+        or see the <a href="http://builds.codehaus.org/checkout/groovy-core/target/test-reports/">test case results</a>
+       </p>
+      </answer>
+    </faq>   
+    
     <faq id="cvs">
       <question>
         How do I use codehaus's CVS?
