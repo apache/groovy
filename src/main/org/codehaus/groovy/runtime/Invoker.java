@@ -736,12 +736,13 @@ public class Invoker {
             Collection collection = (Collection) object;
             return !collection.isEmpty();
         }
-        else if (object instanceof String) {
-            String text = (String) object;
-            return text.equalsIgnoreCase("true");
+        else if (object instanceof Number) {
+            Number n = (Number) object;
+            return n.intValue() != 0;
         }
-        throw new GroovyRuntimeException(
-            object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
+        else {
+            return object != null;
+        }
     }
 
     protected Character asCharacter(Number value) {
