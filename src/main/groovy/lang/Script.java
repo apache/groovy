@@ -95,6 +95,11 @@ public abstract class Script extends GroovyObjectSupport {
 
     // println helper methods
 
+    /**
+     * Prints a newline to the current 'out' variable which should be a PrintWriter
+     * or at least have a println() method defined on it.
+     * If there is no 'out' property then print to standard out.
+     */
     public void println() {
         Object object = getProperty("out");
         if (object != null) {
@@ -105,6 +110,11 @@ public abstract class Script extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Prints the value to the current 'out' variable which should be a PrintWriter
+     * or at least have a print() method defined on it. 
+     * If there is no 'out' property then print to standard out.
+     */
     public void print(Object value) {
         Object object = getProperty("out");
         if (object != null) {
@@ -115,6 +125,11 @@ public abstract class Script extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Prints the value and a newline to the current 'out' variable which should be a PrintWriter
+     * or at least have a println() method defined on it. 
+     * If there is no 'out' property then print to standard out.
+     */
     public void println(Object value) {
         Object object = getProperty("out");
         if (object != null) {
