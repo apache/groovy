@@ -31,8 +31,8 @@ public class Table implements Cloneable {
         result.groovyName  = groovyName
         result.schema      = schema
         result.remarks     = remarks
-// @todo - strange stuff happening with the following assignment
-//        result.type        = type
+        result.type        = type
+// @todo - cannot access private variables in other instances of this class                  
 //        result.columns     = columns.clone()
 //        result.foreignKeys = foreignKeys.clone()
 //        result.indexes     = indexes.clone()
@@ -40,9 +40,10 @@ public class Table implements Cloneable {
         return result
     }
 
-    public String getType() {
-        return (type == null) ? "(null)" : type
-    }
+// @todo - cannot override property getter succesfully
+//    public String getType() {
+//        return (type == null) ? "(null)" : type
+//    }
 
     public void addColumn(aColumn) {
         columns << aColumn
@@ -91,7 +92,8 @@ public class Table implements Cloneable {
     }
 
     public Column findColumn(aName) {
-        //todo? warning ${name} inside closure refers to this.name, not method parameter called 'name' (in groovy 1.0b6) !!!
+        // @todo
+        // warning 'name' inside closure refers to 'this.name', not method parameter called 'name' (in groovy 1.0b6) !!!
         getColumns().find() {it.name.equalsIgnoreCase(aName)}
     }
 
