@@ -424,7 +424,7 @@ declarationStart!
     |   modifier!
     |   (   upperCaseIdent!
         |   builtInType!
-        ) (LBRACK balancedTokens! RBRACK)* (IDENT | "it")
+        ) (LBRACK balancedTokens! RBRACK)* IDENT
     ;
 
 /** Used only as a lookahead predicate for nested type declarations. */
@@ -1085,7 +1085,7 @@ singleVariable![AST mods, AST t]
         ;
 
 variableName
-        :   (IDENT | "it")
+        :   IDENT
         ;
 
 /*OBS*
@@ -1190,14 +1190,21 @@ parameterModifier
 		{#parameterModifier = #(#[MODIFIERS,"MODIFIERS"], #parameterModifier);}
 	;
 
+/** Closure parameters are exactly like method parameters,
+  * except that they are enclosed in vertical bars instead of parentheses.
+  * The first vertical bar is optional if the parameters are a simple list
+  * of one or more names, with no additional syntax.
+  * (An empty argument list must be spelled with two bars, <code>{|| ...}</code>)
+  */
 closureParameters
         :   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
                 {#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
-        |   LPAREN! parameterDeclarationList RPAREN! BOR!
+        |   BOR! nls! parameterDeclarationList nls! BOR!
                 // Yes, you can have a full parameter declaration list.
                 // Yes, you must parenthesize it (as for a named method) unless it's really, really simple.
         ;
 
+/** Lookahead for closureParameters. */
 closureParametersStart!
         :   BOR
         |       parameterIdent! nls! (BOR | COMMA)
@@ -1239,9 +1246,7 @@ parameterIdent
                 |   // Optional-null operator:  {(?x,?y)|[x,y]}(1)  ===  [1,null]
                         op:QUESTION^                    {#op.setType(OPTIONAL_ARG);}
                 )?
-                (   IDENT
-                |   "it"                // allow keyword "it", but only as a method or closure parameter
-                )
+                IDENT
         ;
 
 // Compound statement. This is used in many contexts:
@@ -1270,10 +1275,9 @@ openBlock
   */
 blockBody
         :   // Allow almost any expression, as long as it stands completely alone in the block.
-                // The expression must not contain line breaks outside of parentheses.
-                // DECIDE: Illegality of line breaks.  Forces coders to place the RCURLY right after the expression:  {1+1}.
-                // This makes expression-bearing blocks look more distinct.
-                (balancedTokensNoSep (RCURLY | EOF)) => (assignmentExpression (RCURLY | EOF)) => expressionNotBOR
+                (nls balancedTokensNoSep nls (RCURLY | EOF)) =>
+                (nls assignmentExpression nls (RCURLY | EOF)) =>
+                nls! expressionNotBOR nls!
 
         |       // include the (possibly-empty) list of statements
                 (statement)? (sep! (statement)?)*
@@ -1304,18 +1308,12 @@ closedBlock
                 RCURLY!
         ;
 
-/** A block inside an expression is assumed to be a closure, unless it is double braced.
- *  DECIDE: PROPOSAL: Double bracing always forces an open block.
- *  This syntax is useful for passing on a pre-existing closure to a call, rather than building another.
- *  Example:  <code>def forEachTwice(Closure y) { forEach{{y}}; forEach{{y}} }</code>
- *  In the absence of double bracing, the block may always be interpreted as a closure,
- *  even though its syntactic context may require that the closure be immediately invoked.
+/** A block inside an expression is always assumed to be a closure.
+ *  Only blocks which occur directly as substatements are kept open.
  */
 expressionBlock
-        :   (LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
-                LCURLY! openBlock RCURLY!
-        |   closedBlock
-        ;
+    	:   closedBlock
+    	;
 
 /** An appended block follows a method name or method argument list.
  *  It is optionally labeled.  DECIDE:  A good rule?
@@ -1352,10 +1350,8 @@ openOrClosedBlock
 
 statement
 	// A list of statements in curly braces -- start a new scope!
-	// Free-floating blocks must be labeled or double-braced, to defend against typos.
-        :       (LCURLY LCURLY balancedTokens RCURLY RCURLY) =>
-                LCURLY! openOrClosedBlock RCURLY!
-        |       compoundStatement
+	// Free-floating blocks must be labeled, to defend against typos.
+        :       compoundStatement
 		{require(false,
                                 "ambiguous free-floating block head{...} needs context to determine if it's open or closed",
                                 "surround {...} with extra braces {{...}} or use it as a closure in an expression x={...}");}
@@ -1482,7 +1478,6 @@ forInClause
         :       (   (declarationStart)=>
                         singleDeclarationNoInit
                 |   IDENT
-                |   "it"
                 )
                 i:"in"^         {#i.setType(FOR_IN_ITERABLE);}
                 shiftExpression
@@ -1511,10 +1506,11 @@ branchExpression
         // break:  get out of a loop, or switch, or method call
         // continue:  do next iteration of a loop, or leave a closure
         |       ("break"^ | "continue"^)
-                (   IDENT
-                        (   options {greedy=true;} :
-                                COLON! assignmentExpression
-                        )?
+                (   options {greedy=true;} :
+                    statementLabelPrefix
+                )?
+                (
+                    assignmentExpression
                 )?
 
         // throw an exception
@@ -1535,6 +1531,12 @@ branchExpression
 
         // Note:  The colon is too special in Groovy; we modify the FOR and ASSERT syntax to dispense with it.
         ;
+
+// TO DO: Use this in the statement grammar also.
+statementLabelPrefix
+	:	IDENT c:COLON^ {#c.setType(LABELED_STAT);}
+	;
+
 
 
 /** Any statement which begins with an expression, called the "head".
@@ -2058,8 +2060,7 @@ shiftExpression
         :       additiveExpression
                 (   ((SL^ | SR^ | BSR^) nls!
                         |   RANGE_INCLUSIVE^
-                        |   DEC^ {#DEC.setType(RANGE_EXCLUSIVE);}
-                                // DECIDE: Maybe use a--b to denote C/Java-style index range ("exclusive")
+                        |   TRIPLE_DOT^ {#TRIPLE_DOT.setType(RANGE_EXCLUSIVE);}
                         )
                         additiveExpression
                 )*
@@ -2147,7 +2148,6 @@ primaryExpression
         |       "false"
         |       "null"
     |   newExpression
-        |       "it"                                                    // implicit or explicit closure parameter (or method parameter)
         |       "this"
         |       "super"
         |       parenthesizedExpression                 // (general stuff..,.)
@@ -2392,7 +2392,7 @@ returns [boolean hasLabel = false]
                 expression
         ;
 
-/** A label for an argument is of the form a:b, 'a':b, "a":b, or (a):b.
+/** A label for an argument is of the form a:b, 'a':b, "a":b, (a):b, etc..
  *      The labels in (a:b), ('a':b), and ("a":b) are in all ways equivalent,
  *      except that the quotes allow more spellings.
  *  Equivalent dynamically computed labels are (('a'):b) and ("${'a'}":b)
@@ -2400,10 +2400,9 @@ returns [boolean hasLabel = false]
  *      Bottom line:  If you want a truly variable label, use parens and say ((a):b).
  */
 argumentLabel
-        :   STRING_LITERAL
-        |   id:IDENT                    {#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
-        |   stringConstructorExpression                                                 // dynamic expression
-        |   parenthesizedExpression                                                             // dynamic expression
+        :   (IDENT) =>
+            id:IDENT                    {#id.setType(STRING_LITERAL);}  // identifiers are self-quoting in this context
+        |   primaryExpression                                           // dynamic expression
         ;
 
 /** For lookahead only.  Fast approximate parse of a statementLabel followed by a colon. */
@@ -2676,8 +2675,9 @@ BAND			:	'&'		;
 BAND_ASSIGN		:	"&="	;
 LAND			:	"&&"	;
 SEMI			:	';'		;
-DOLLAR                  :       '$'             ;
-RANGE_INCLUSIVE		:       ".."    ;
+DOLLAR          :   '$'     ;
+RANGE_INCLUSIVE	:   ".."    ;
+TRIPLE_DOT		:   "..."   ;
 
 // Whitespace -- ignored
 WS      :       (
@@ -2722,9 +2722,13 @@ NLS     :
 // Single-line comments
 SL_COMMENT
         :       "//"
-                (~('\n'|'\r'))*
+                (
+                        options {  greedy = true;  }:
+                        ~('\n'|'\r')
+                )*
                 {$setType(Token.SKIP);}
-                ONE_NL
+                //This might be significant, so don't swallow it inside the comment:
+                //ONE_NL
         ;
 
 // multiple-line comments
@@ -2959,6 +2963,7 @@ NUM_INT
 	// TO DO:  This complex pattern seems wrong.  Verify or fix.
 	(	'0' {isDecimal = true;} // special case for just '0'
 			(	('x'|'X')
+			    {isDecimal = false;}
 				(											// hex
 					// the 'e'|'E' and float suffix stuff look
 					// like hex digits, hence the (...)+ doesn't
@@ -2972,10 +2977,10 @@ NUM_INT
 				)+
 
 			|	//float or double with leading zero
-				(('0'..'9')+ ('.'|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
-				{isDecimal=true;}
+				(('0'..'9')+ ('.'('0'..'9')|EXPONENT|FLOAT_SUFFIX)) => ('0'..'9')+
 
 			|	('0'..'7')+									// octal
+			    {isDecimal = false;}
 			)?
 		|	('1'..'9') ('0'..'9')*  {isDecimal=true;}		// non-zero decimal
 		)
@@ -2983,7 +2988,9 @@ NUM_INT
 		|	BIG_SUFFIX { _ttype = NUM_BIG_INT; }
 
 		// only check to see if it's a float if looks like decimal so far
-		|	{isDecimal}?
+		|
+            (~'.' | '.' ('0'..'9')) =>
+		    {isDecimal}?
 			(	'.' ('0'..'9')+ (EXPONENT)? (f2:FLOAT_SUFFIX {t=f2;} | g2:BIG_SUFFIX {t=g2;})?
 			|	EXPONENT (f3:FLOAT_SUFFIX {t=f3;} | g3:BIG_SUFFIX {t=g3;})?
 			|	f4:FLOAT_SUFFIX {t=f4;}
