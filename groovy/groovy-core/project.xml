@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-rc1-snapshot</currentVersion>
+  <currentVersion>1.0-beta-5</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -69,7 +69,12 @@
       <name>1.0-beta4</name>
       <tag>GROOVY_1_0_BETA_4</tag>
     </version>
-  </versions>
+    <version>
+      <id>b5</id>
+      <name>1.0-beta5</name>
+      <tag>GROOVY_1_0_BETA_5</tag>
+    </version>
+  	  </versions>
  
   <mailingLists>
     <mailingList>
