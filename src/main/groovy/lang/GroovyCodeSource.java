@@ -95,7 +95,7 @@ public class GroovyCodeSource {
 					Object[] info = new Object[2];
 					info[0] = file.getAbsolutePath();
 					//toURI().toURL() will encode, but toURL() will not.
-					info[1] = new CodeSource(file.toURI().toURL(), null);
+					info[1] = new CodeSource(file.toURI().toURL(), (Certificate[]) null);
 					return info;
 				}
 			});
