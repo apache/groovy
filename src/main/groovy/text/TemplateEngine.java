@@ -31,7 +31,7 @@
  * DAMAGE.
  *  
  */
- package groovy.text;
+package groovy.text;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -44,12 +44,10 @@ import java.net.URL;
 
 import org.codehaus.groovy.syntax.SyntaxException;
 
-
 /**
+ * Represents an API to any template engine which is basically a factory of Template instances from a given text input.
+ * 
  * @author sam
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
  */
 public abstract class TemplateEngine {
     public abstract Template createTemplate(Reader reader) throws SyntaxException, ClassNotFoundException, IOException;
