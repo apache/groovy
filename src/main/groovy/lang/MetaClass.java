@@ -565,7 +565,7 @@ public class MetaClass {
                      * checking won't work but that mostly affects the bytecode
                      * generation rather than viewing the AST
                      */
-                    CompilerFacade compiler = new CompilerFacade(theClass.getClassLoader(), new CompileUnit(new CompilerConfig())) {
+                    CompilerFacade compiler = new CompilerFacade(theClass.getClassLoader(), new CompileUnit(getClass().getClassLoader(), new CompilerConfig())) {
                         protected void onClass(ClassWriter classWriter, ClassNode classNode) {
                             if (classNode.getName().equals(theClass.getName())) {
                                 //System.out.println("Found: " +
