@@ -55,14 +55,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.BuildLogger;
-import org.apache.tools.ant.IntrospectionHelper;
-import org.apache.tools.ant.NoBannerLogger;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.TaskAdapter;
-import org.apache.tools.ant.TaskContainer;
+import org.apache.tools.ant.*;
 import org.apache.tools.ant.types.DataType;
 import org.codehaus.groovy.ant.FileScanner;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -70,7 +63,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
  * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>, changes by Dierk Koenig (dk)
  * @version $Revision$
  */
 public class AntBuilder extends BuilderSupport {
@@ -86,6 +79,11 @@ public class AntBuilder extends BuilderSupport {
 
     public AntBuilder(Project project) {
         this.project = project;
+    }
+
+    // dk: introduced for convenience in subclasses
+    protected Project getProject() {
+        return project;
     }
 
     /**
@@ -109,7 +107,20 @@ public class AntBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
     }
 
+    /**
+     * Determines, when the ANT Task that is represented by the "node" should perform.
+     * Node must be an ANT Task or no "perform" is called.
+     * If node is an ANT Task, it performs right after complete contstruction.
+     * If node is nested in a TaskContainer, calling "perform" is delegated to that
+     * TaskContainer.
+     * @param parent note: null when node is root
+     * @param node the node that now has all its children applied
+     */
     protected void nodeCompleted(Object parent, Object node) {
+        if (parent instanceof TaskContainer) {
+            log.finest("parent is TaskContainer: no perform on nodeCompleted");
+            return; // parent will care about when children perform
+        }
         if (node instanceof Task) {
             Task task = (Task) node;
             task.perform();
@@ -187,6 +198,11 @@ public class AntBuilder extends BuilderSupport {
 
                 // now lets set any attributes of this tag...
                 setBeanProperties(task, attributes);
+
+                // dk: TaskContainers have their own adding logic
+                if (parentObject instanceof TaskContainer){
+                    ((TaskContainer)parentObject).addTask(task);
+                }
             }
         }
 
@@ -346,7 +362,11 @@ public class AntBuilder extends BuilderSupport {
 
             if (ih != null) {
                 try {
-                    dataType = ih.createElement(getAntProject(), object, name.toLowerCase());
+                    // dk: the line below resolves the deprecation warning but may not work
+                    // properly with namespaces.
+                    String namespaceUri = "";               // todo: how to set this?
+                    UnknownElement unknownElement = null;   // todo: what is expected here?
+                    dataType = ih.getElementCreator(getAntProject(), namespaceUri, object, name.toLowerCase(), unknownElement).create();
                 }
                 catch (BuildException be) {
                     log.log(Level.SEVERE, "Caught: " + be, be);
