@@ -660,4 +660,8 @@ public class ClassNode extends MetadataNode implements Constants {
         this.script = script;
     }
 
-}
+    public String toString() {
+        return super.toString() + "[name: " + name + "]";
+    }
+
+   }

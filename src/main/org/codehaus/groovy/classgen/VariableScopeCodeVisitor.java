@@ -45,11 +45,11 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -67,41 +67,21 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
  */
 public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
-    private Set declaredVariables = new HashSet();
-    private Set referencedVariables = new HashSet();
-    private VariableScopeCodeVisitor closureVisitor;
-    private Set parameterSet = new HashSet();
-    private boolean outer;
+    private VariableScope scope;
 
-    public VariableScopeCodeVisitor() {
-    }
-
-    public VariableScopeCodeVisitor(boolean outer) {
-        this.outer = outer;
-    }
-
-    public Set getDeclaredVariables() {
-        return declaredVariables;
+    public VariableScopeCodeVisitor(VariableScope scope) {
+        this.scope = scope;
     }
 
     public Set getReferencedVariables() {
-        return referencedVariables;
+        return scope.getReferencedVariables();
     }
 
-    public Set getParameterSet() {
-        return parameterSet;
+    public Set getDeclaredVariables() {
+        return scope.getDeclaredVariables();
     }
 
-    public VariableScopeCodeVisitor getClosureVisitor() {
-        if (closureVisitor == null) {
-            closureVisitor = new VariableScopeCodeVisitor();
-        }
-        return closureVisitor;
-    }
-
-    public boolean isOuter() {
-        return outer;
-    }
+    
 
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
@@ -121,13 +101,8 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        VariableScopeCodeVisitor visitor = getClosureVisitor();
-        visitor.setParameters(expression.getParameters());
+        VariableScopeCodeVisitor visitor = createClosureVisitor(expression);
         expression.getCode().visit(visitor);
-        if (! outer) {
-            referencedVariables.addAll(visitor.referencedVariables);
-            declaredVariables.addAll(visitor.declaredVariables);
-        }
     }
     
     public void visitVariableExpression(VariableExpression expression) {
@@ -138,8 +113,9 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
             referencedVariables.add(variable);
         }
         */
-        referencedVariables.add(variable);
+        getReferencedVariables().add(variable);
     }
+
 
     public void visitPostfixExpression(PostfixExpression expression) {
         Expression exp = expression.getExpression();
@@ -163,15 +139,21 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     public void visitMethodCallExpression(MethodCallExpression call) {
         if (call.isImplicitThis()) {
-            referencedVariables.add(call.getMethod());
+            getReferencedVariables().add(call.getMethod());
         }
         super.visitMethodCallExpression(call);
     }
 
     protected void setParameters(Parameter[] parameters) {
+        /*
         parameterSet.clear();
         for (int i = 0; i < parameters.length; i++) {
             parameterSet.add(parameters[i].getName());
+        }
+        */
+        
+        for (int i = 0; i < parameters.length; i++) {
+            declareVariable(parameters[i].getName());
         }
     }
 
@@ -184,11 +166,18 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         /*
         if (!parameterSet.contains(variable)) {
             declaredVariables.add(variable);
-            referencedVariables.add(variable);
+            getReferencedVariables().add(variable);
         }
         */
-        declaredVariables.add(variable);
-        referencedVariables.add(variable);
+        getDeclaredVariables().add(variable);
+        getReferencedVariables().add(variable);
     }
 
+    protected VariableScopeCodeVisitor createClosureVisitor(ClosureExpression expression) {
+        VariableScope closureScope = new VariableScope(scope);
+        expression.setVariableScope(closureScope);
+        VariableScopeCodeVisitor answer = new VariableScopeCodeVisitor(closureScope);
+        answer.setParameters(expression.getParameters());
+        return answer;
+    }
 }

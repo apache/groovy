@@ -122,6 +122,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
                 return InvokerHelper.getProperty(aDelegate, property);
             }
             catch (GroovyRuntimeException e2) {
+//                System.out.println("Caught: " + e2);
+//                e2.printStackTrace();
+                
                 if (owner != aDelegate) {
                     try {
                         // lets try invoke method on delegate
@@ -129,6 +132,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
                     }
                     catch (GroovyRuntimeException e3) {
                         // ignore, we'll throw e
+//                        System.out.println("Caught: " + e3);
+//                        e3.printStackTrace();
                     }
                 }
             }

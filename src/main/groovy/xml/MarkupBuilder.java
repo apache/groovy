@@ -80,6 +80,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected void setParent(Object parent, Object child) {
     }
 
+    /*
     public Object getProperty(String property) {
         if (property.equals("_")) {
             nospace = true;
@@ -90,6 +91,7 @@ public class MarkupBuilder extends BuilderSupport {
             return node;
         }
     }
+    */
 
     protected Object createNode(Object name) {
         toState(1, name);

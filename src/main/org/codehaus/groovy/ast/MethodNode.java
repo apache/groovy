@@ -62,6 +62,7 @@ public class MethodNode extends MetadataNode implements Constants {
     private Parameter[] parameters;
     private Statement code;
     private boolean dynamicReturnType;
+    private VariableScope variableScope;
 
     public MethodNode(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
         this.name = name;
@@ -107,6 +108,14 @@ public class MethodNode extends MetadataNode implements Constants {
         return returnType;
     }
 
+    public VariableScope getVariableScope() {
+        return variableScope;
+    }
+
+    public void setVariableScope(VariableScope variableScope) {
+        this.variableScope = variableScope;
+    }
+
     public boolean isDynamicReturnType() {
         return dynamicReturnType;
     }
@@ -114,4 +123,9 @@ public class MethodNode extends MetadataNode implements Constants {
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
     }
+    
+    public String toString() {
+        return super.toString() + "[name: " + name + "]";
+    }
+
 }

@@ -43,56 +43,32 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.runtime;
 
-import org.codehaus.groovy.ast.stmt.*;
-
+import groovy.lang.Reference;
+import groovy.lang.Script;
 
 /**
- * Represents a constructor declaration
+ * Represents a reference to a variable in a script
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ConstructorNode extends MetadataNode {
+public class ScriptReference extends Reference {
 
-    private int modifiers;
-    private Parameter[] parameters;   
-    private Statement code;
-    private VariableScope variableScope;
-    
-    public ConstructorNode(int modifiers, Statement code) {
-        this(modifiers, Parameter.EMPTY_ARRAY, code);
-    }
-    
-    public ConstructorNode(int modifiers, Parameter[] parameters, Statement code) {
-        this.modifiers = modifiers;
-        this.parameters = parameters;
-        this.code = code;
-    }
-    
-    public Statement getCode() {
-        return code;
+    private Script script;
+    private String variable;
+
+    public ScriptReference(Script script, String variable) {
+        this.script = script;
+        this.variable = variable;
     }
 
-    public void setCode(Statement code) {
-        this.code = code;
+    public Object get() {
+        return script.getBinding().getVariable(variable);
     }
 
-    public int getModifiers() {
-        return modifiers;
+    public void set(Object value) {
+        script.getBinding().setVariable(variable, value);
     }
-
-    public Parameter[] getParameters() {
-        return parameters;
-    }
-
-    public VariableScope getVariableScope() {
-        return variableScope;
-    }
-
-    public void setVariableScope(VariableScope variableScope) {
-        this.variableScope = variableScope;
-    }
-    
 }
