@@ -65,6 +65,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;
@@ -80,21 +81,26 @@ public class TestSupport extends GroovyTestCase implements Constants {
     protected static boolean CHECK_CLASS = true;
     protected static boolean DUMP_CLASS = false;
 
-    protected GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader());
+    protected GroovyClassLoader loader = new GroovyClassLoader(getClass().getClassLoader()) {
+        protected void onClassNode(ClassWriter classWriter, ClassNode classNode) {
+            // lets test out the class verifier
+            if (DUMP_CLASS) {
+                dumper.visitClass(classNode);
+            }
+
+            if (CHECK_CLASS) {
+                checker.visitClass(classNode);
+            }
+            super.onClassNode(classWriter, classNode);
+        }
+    };
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
-    protected ClassGenerator checker = new ClassGenerator(new GeneratorContext(), new CheckClassAdapter(invisibleDumpVisitor), loader, null);
+    protected ClassGenerator checker =
+        new ClassGenerator(new GeneratorContext(), new CheckClassAdapter(invisibleDumpVisitor), loader, null);
     protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(), dumpVisitor, loader, null);
 
     protected Class loadClass(ClassNode classNode) {
-        // lets test out the class verifier
-        if (CHECK_CLASS) {
-            checker.visitClass(classNode);
-        }
-        if (DUMP_CLASS) {
-            dumper.visitClass(classNode);
-        }
-        
         Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy");
         return fooClass;
     }
@@ -155,7 +161,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
         assertEquals("Type", typeName, field.getType().getName());
         assertEquals("Modifiers", modifiers, field.getModifiers());
     }
-    
+
     protected ExpressionStatement createPrintlnStatement(Expression expression) throws NoSuchFieldException {
         return new ExpressionStatement(
             new MethodCallExpression(
@@ -166,11 +172,11 @@ public class TestSupport extends GroovyTestCase implements Constants {
 
     protected GroovyObject compile(String fileName) throws Exception {
         Class groovyClass = loader.parseClass(fileName);
-    
+
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
-        
+
         assertTrue(object != null);
-        
+
         return object;
     }
 }
