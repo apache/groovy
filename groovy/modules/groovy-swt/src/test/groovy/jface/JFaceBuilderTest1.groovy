@@ -14,9 +14,24 @@ class JFaceBuilderTest1 {
        			selectionChangedListener()
         	}
         	
+        	table {
+				tableViewer()
+        	}
+        	
         	tableTreeViewer()
+        	tabletree {
+        		tableTreeViewer()
+        	}
+        	
         	treeViewer()
-        	checkboxTreeViewer()	
+        	tree {
+        		treeViewer()
+        	}	
+        	
+        	checkboxTreeViewer()
+        	tree {
+	        	checkboxTreeViewer()	
+        	}
 
         	// ContributionManager 
         	menuManager( text:"menuManager" )
