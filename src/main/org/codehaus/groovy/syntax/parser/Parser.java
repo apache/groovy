@@ -2451,14 +2451,7 @@ public class Parser
 
                 case Types.CREATABLE_PRIMITIVE_TYPE:
                 {
-                    if( stack.atStartOfExpression() )
-                    {
-                        stack.push( variableDeclarationExpression(consume()) );
-                    }
-                    else
-                    {
-                        error( "type name not valid in this context" );
-                    }
+                    stack.shiftIf( stack.atStartOfExpression(), "type name not valid in this context" );
                     break;
                 }
 
@@ -2617,7 +2610,7 @@ public class Parser
 
             REDUCE: do
             {
-                if( !stack.topIsAnExpression() )
+                if( !stack.topIsAnExpression() && !ExpressionSupport.isAPotentialTypeName(stack.top(), false) )
                 {
                     break;
                 }
@@ -2739,7 +2732,7 @@ public class Parser
                 // necessary.  Empty array offsets are only allowed on types, and we
                 // run the appropriate conversion in that case.
 
-                if( top0.isA(Types.SYNTH_LIST) && top1.isAnExpression() )
+                if( top0.isA(Types.SYNTH_LIST) && top1.isAnExpression() || ExpressionSupport.isAPotentialTypeName(top1, false) )
                 {
                     //
                     // Empty list is an array type
