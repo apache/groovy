@@ -360,21 +360,19 @@ protected typeDefinitionInternal[AST mods]
 /** A declaration is the creation of a reference or primitive-type variable,
  *  or (if arguments are present) of a method.
  *  Generically, this is called a 'variable' definition, even in the case of a class field or method.
- *  It may start with the keyword "def" and/or modifiers.
- *  It may also start, more simply, with a capitalized type name.
+ *  It may start with the modifiers and a mandatory keyword "def".
+ *  It may also start with the modifiers and a capitalized type name.
  *  <p>
  *  AST effect: Create a separate Type/Var tree for each var in the var list.
  *  Must be guarded, as in (declarationStart) => declaration.
  */
 declaration!
-    :       DEF! nls!
-        (m:modifiers)? (t:typeSpec[false])? v:variableDefinitions[#m,#t]
-        {#declaration = #v;}
-    |   m2:modifiers   (t2:typeSpec[false])? v2:variableDefinitions[#m2,#t2]
-        {#declaration = #v2;}
-    |       t3:typeSpec[false] v3:variableDefinitions[null,#t3]
-        {#declaration = #v3;}
-    ;
+      :   ((modifiers!)? DEF!)=>
+          (m:modifiers)? DEF! nls! v:variableDefinitions[#m,null]
+          {#declaration = #v;}
+      |   (m2:modifiers)? t2:typeSpec[false] v2:variableDefinitions[#m2,#t2]
+          {#declaration = #v2;}
+      ; 
 
 /** A declaration with one declarator and no initialization, like a parameterDeclaration.
 
@@ -399,7 +397,7 @@ singleDeclaration
     ;
 
 /** Used only as a lookahead predicate, before diving in and parsing a declaration.
- *  A declaration can be unambiguously introduced with "def" or a modifier token like "final".
+ *  A declaration can be unambiguously introduced with "def", an annotation or a modifier token like "final".
  *  It may also be introduced by a simple identifier whose first character is an uppercase letter,
  *  as in {String x}.  A declaration can also be introduced with a built in type like 'int' or 'void'.
  *  Brackets (array and generic) are allowed, as in {List[] x} or {int[][] y}.
@@ -418,10 +416,12 @@ singleDeclaration
  *  This probably turns out to be tricky because of >> vs. > >. If so,
  *  just put a TO DO comment in.
  *   
+ *  *TODO* possibly need to eliminate @interface from matching the current AT! alternation
  */
 declarationStart!
-    :   DEF
+    :   DEF!
     |   modifier!
+    |   AT!
     |   (   upperCaseIdent!
         |   builtInType!
         ) (LBRACK balancedTokens! RBRACK)* IDENT
@@ -446,7 +446,7 @@ places: '@' ident '(' balancedTokens ')'.
 typeDeclarationStart!
     :   (modifier!)* ("class" | "interface" | "enum" | AT )
     ;
-
+    
 /** An IDENT token whose spelling is required to start with an uppercase letter.
  *  In the case of a simple statement {UpperID name} the identifier is taken to be a type name, not a command name.
  */
