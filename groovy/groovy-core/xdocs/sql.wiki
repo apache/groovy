@@ -17,7 +17,7 @@ sql.eachRow("select * from FOOD where type=${foo}") {
 {code}
 
 In the above example, you can refer to the various columns by name, using the property syntax on the row variable (e.g. it.name) 
-or you can refer to the columns by their index (e.g. it[1]) For example
+or you can refer to the columns by their index (e.g. it[0]) For example
 
 {code:groovysh}
 import groovy.sql.Sql
@@ -28,7 +28,7 @@ sql = TestHelper.makeSql()
 
 answer = 0
 sql.eachRow("select count(*) from FOOD where type=${foo}") { row |
-	answer = row[1]
+	answer = row[0]
 }
 assert answer > 0
 {code}
