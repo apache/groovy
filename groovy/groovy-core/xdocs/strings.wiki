@@ -42,7 +42,7 @@ println(text)
 1.1 GStrings
 
 Strings can contain arbitrary expressions inside them as shown above using the 
-~~~${expression}~~~ syntax in a similar way to JSP EL, Velocity and Jexl. 
+~~${expression}~~ syntax in a similar way to JSP EL, Velocity and Jexl. 
 Any valid Groovy expression can be enclosed in the ${...} including method calls etc
 
 What actually happens is a

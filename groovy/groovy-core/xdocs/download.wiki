@@ -1,7 +1,3 @@
-Download Groovy 
-
-
-
 1 Download Groovy
 
 You can download a distribution of Groovy from {link:this site|http://dist.codehaus.org/groovy/distributions/} .

@@ -14,6 +14,8 @@ although until then you'll need to manually register this class with your BSF in
 You can manually register Groovy into BSF via the following... 
 
 {code:groovysh}
+import org.apache.bsf.BSFManager
+
 BSFManager.registerScriptingEngine(
 	"groovy", 
 	"org.codehaus.groovy.bsf.GroovyEngine", 
@@ -24,6 +26,8 @@ BSFManager.registerScriptingEngine(
 You can then treat Groovy like any of the other scripting languages via the BSF API... 
 
 {code:groovysh}
+import org.apache.bsf.BSFManager
+
 String text = "println('Hello World')\n  return [1, 2, 3]"
 BSFManager manager = new BSFManager();
 Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, text);

@@ -122,7 +122,8 @@ value = [1, 2, 3].inject(0, { count, item | count + item })
 assert value == 6
 {code}
 
-~~~NOTE~~ that when using the neater syntax for specifying closures either without parenthesis or
+1.1. Important Note
+Note that when using the neater syntax for specifying closures either without parenthesis or
 by specifying the closure after the parenthesis, the closure must start on the same line.
 i.e. the { symbol must be on the same line as the method call statement. Otherwise the parser
 interprets the { as a start of a block.

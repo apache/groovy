@@ -1,7 +1,3 @@
-Compiling Groovy Code 
-
-
-
 1 Compiling Groovy
 
 There are various options for compiling Groovy code and then either running it or
@@ -9,7 +5,7 @@ using the Java objects it creates in Java code.
 
 1.1 Compling Groovy code to bytecode
 
-There is an Ant task called ~~~groovyc~~~ which works pretty similarly to the ~~~javac~~~ Ant
+There is an Ant task called __groovyc__ which works pretty similarly to the __javac__ Ant
 task which takes a bunch of groovy source files and compiles them into Java bytecode. Each
 groovy class then just becomes a normal Java class you can use inside your Java code if you wish.
 Indeed the generated Java class is indistinguishable from a normal Java class, other than it
@@ -26,7 +22,7 @@ The following Java code shows an example...
 {code:groovysh}
 ClassLoader parent = getClass().getClassLoader();
 GroovyClassLoader loader = new GroovyClassLoader(parent);
-Class groovyClass = loader.parse("Foo.groovy");
+Class groovyClass = loader.parse("src/test/groovy/script/HelloWorld.groovy");
 
 // lets call some method on an instance
 GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
@@ -38,7 +34,7 @@ groovyObject.invokeMethod("run", args);
 
 As well as the Groovy jar we also depend at runtime on 
 
-- asm 
+* asm 
 
 
 
