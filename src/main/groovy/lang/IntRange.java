@@ -116,14 +116,14 @@ public class IntRange extends AbstractList implements Range {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
         int value = index + from;
-        if (value >= to) {
+        if (value > to) {
             throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
         }
         return new Integer(value);
     }
 
     public int size() {
-        return to - from;
+        return to - from + 1;
     }
 
     public int hashCode() {
@@ -140,7 +140,7 @@ public class IntRange extends AbstractList implements Range {
         if (fromIndex > toIndex) {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
-        return new IntRange(fromIndex + this.from, toIndex + this.from);
+        return new IntRange(fromIndex + this.from, toIndex + this.from - 1);
     }
 
     public String toString() {
