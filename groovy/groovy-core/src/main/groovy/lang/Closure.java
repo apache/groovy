@@ -71,36 +71,41 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     }
 
     public Object invokeMethod(String method, Object arguments) {
-        if ("doCall".equals(method)) {
-            return call(arguments);
-        }
-        else if ("call".equals(method)) {
-            return call(arguments);
-        }
-        else {
-            try {
-                return getMetaClass().invokeMethod(this, method, arguments);
-            }
-            catch (MissingMethodException e) {
-                Object aDelegate = (delegate != null && delegate != this) ? delegate : owner;
-                try {
-                    // lets try invoke method on delegate
-                    return InvokerHelper.invokeMethod(aDelegate, method, arguments);
-                }
-                catch (GroovyRuntimeException e2) {
-                    if (owner != aDelegate) {
-                        try {
-                            // lets try invoke method on delegate
-                            return InvokerHelper.invokeMethod(owner, method, arguments);
-                        }
-                        catch (GroovyRuntimeException e3) {
-                            // ignore, we'll throw e
-                        }
-                    }
-                }
-                throw e;
-            }
-        }
+        return doInvokeMethod(method, arguments, this);
+    }
+    
+    private static Object doInvokeMethod(String method, Object arguments, Closure me) {
+    	if ("doCall".equals(method)) {
+    		return me.call(arguments);
+    	}
+    	else if ("call".equals(method)) {
+    		return me.call(arguments);
+    	}
+    	else {
+    		try {
+    			return me.getMetaClass().invokeMethod(me, method, arguments);
+    		}
+    		catch (MissingMethodException e) {
+    			Object aDelegate = (me.delegate != null && me.delegate != me) ? me.delegate : me.owner;
+    			try {
+    				// lets try invoke method on delegate
+    				return InvokerHelper.invokeMethod(aDelegate, method, arguments);
+    			}
+    			catch (GroovyRuntimeException e2) {
+    				if (me.owner != aDelegate) {
+    					try {
+    						// lets try invoke method on delegate
+    						return InvokerHelper.invokeMethod(me.owner, method, arguments);
+    					}
+    					catch (GroovyRuntimeException e3) {
+    						// ignore, we'll throw e
+    					}
+    				}
+    			}
+    			throw e;
+    		}
+    	}
+    	
     }
 
     public Object getProperty(String property) {
@@ -190,7 +195,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         }
     }
 
-    protected Object[] getParameters(Object arguments) {
+    protected static Object[] getParameters(Object arguments) {
     	if (arguments instanceof Object[]) {
     		if (arguments == null || ((Object[]) arguments).length == 0) {
     			return noParameters;
@@ -221,7 +226,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         return doCallMethod;
     }
 
-    protected Object throwRuntimeException(Throwable throwable) {
+    protected static Object throwRuntimeException(Throwable throwable) {
         if (throwable instanceof RuntimeException) {
             RuntimeException re = (RuntimeException) throwable;
             throw re;
@@ -258,40 +263,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
      * @return a version of this closure which implements Writable
      */
     public Closure asWritable() {
-        return new WritableClosure(this.delegate);
+        return new WritableClosure(this);
     }
     
     /**
      * Support for closure currying
      * @param arguments
      */
-    public Closure curry(Object arguments) {
-    	final Object[] parameters = getParameters(arguments);
-		
-		return new Closure(this) {
-			private Object[] curried_args = parameters;
-			
-			public Object call(Object args) {
-				Object[] new_args = getParameters(args);
-				Object[] all_args = new Object[new_args.length + curried_args.length];
-				
-				System.arraycopy(curried_args, 0, all_args, 0, curried_args.length);
-				System.arraycopy(new_args, 0, all_args, curried_args.length, new_args.length);
-				
-				return Closure.this.call(all_args);
-			}
-			
-			public Closure curry(Object arguments) {
-				Object[] args = getParameters(arguments);
-				Object[] new_curried_args = new Object[curried_args.length + args.length];
-				
-				System.arraycopy(curried_args, 0, new_curried_args, 0, curried_args.length);
-				System.arraycopy(args, 0, new_curried_args, curried_args.length, args.length);
-				this.curried_args = new_curried_args;
-				
-				return this;
-			}
-		};
+    public Closure curry(final Object arguments) {
+		return new CurriedClosure(this, arguments);
     }
 
     /**
@@ -301,103 +281,241 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         return super.clone();
     }
 
-    private class WritableClosure extends Closure implements Writable {
-        /**
-         * @param delegate
-         */
-        public WritableClosure(Object delegate) {
-            super(delegate);
-        }
+    private static class DelegatingClosure extends Closure {
+    	protected final Closure closure;
+    	/**
+    	 * @param delegate
+    	 */
+    	public DelegatingClosure(Closure closure) {
+    		super(closure.delegate);
+    		
+    		this.closure = closure;
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#asWritable()
-         */
-        public Closure asWritable() {
-            return this;
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#call()
+    	 */
+    	public Object call() {
+    		return this.closure.call();
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#call()
-         */
-        public Object call() {
-            return Closure.this.call();
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#call(java.lang.Object)
+    	 */
+    	public Object call(Object arguments) {
+    		return this.closure.call(arguments);
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#call(java.lang.Object)
-         */
-        public Object call(Object arguments) {
-            return Closure.this.call(arguments);
-        }
+    	/* (non-Javadoc)
+    	 * @see java.lang.Object#clone()
+    	 */
+    	public Object clone() throws CloneNotSupportedException {
+    		return this.closure.clone();
+    	}
 
-        /* (non-Javadoc)
-         * @see java.lang.Object#clone()
-         */
-        public Object clone() throws CloneNotSupportedException {
-            return Closure.this.clone();
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#getDelegate()
+    	 */
+    	public Object getDelegate() {
+    		return this.closure.getDelegate();
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getDelegate()
-         */
-        public Object getDelegate() {
-            return Closure.this.getDelegate();
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#getDoCallMethod()
+    	 */
+    	protected MetaMethod getDoCallMethod() {
+    		return this.closure.getDoCallMethod();
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getDoCallMethod()
-         */
-        protected MetaMethod getDoCallMethod() {
-            return Closure.this.getDoCallMethod();
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#getParameterTypes()
+    	 */
+    	public Class[] getParameterTypes() {
+    		return this.closure.getParameterTypes();
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getParameterTypes()
-         */
-        public Class[] getParameterTypes() {
-            return Closure.this.getParameterTypes();
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#getProperty(java.lang.String)
+    	 */
+    	public Object getProperty(String property) {
+    		return this.closure.getProperty(property);
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#getProperty(java.lang.String)
-         */
-        public Object getProperty(String property) {
-            return Closure.this.getProperty(property);
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#invokeMethod(java.lang.String, java.lang.Object)
+    	 */
+    	public Object invokeMethod(String method, Object arguments) {
+    		return doInvokeMethod(method, arguments, this);
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#invokeMethod(java.lang.String, java.lang.Object)
-         */
-        public Object invokeMethod(String name, Object args) {
-            return Closure.this.invokeMethod(name, args);
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#setDelegate(java.lang.Object)
+    	 */
+    	public void setDelegate(Object delegate) {
+    		this.closure.setDelegate(delegate);
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#setDelegate(java.lang.Object)
-         */
-        public void setDelegate(Object delegate) {
-            Closure.this.setDelegate(delegate);
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#setProperty(java.lang.String, java.lang.Object)
+    	 */
+    	public void setProperty(String property, Object newValue) {
+    		this.closure.setProperty(property, newValue);
+    	}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#setProperty(java.lang.String, java.lang.Object)
-         */
-        public void setProperty(String property, Object newValue) {
-            Closure.this.setProperty(property, newValue);
-        }
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#asWritable()
+    	 */
+    	public Closure asWritable() {
+    		return this.closure.asWritable();
+    	}
+    	
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#curry(java.lang.Object)
+		 */
+		public Closure curry(Object arguments) {
+			return this.closure.curry(arguments);
+		}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Closure#throwRuntimeException(java.lang.Throwable)
-         */
-        protected Object throwRuntimeException(Throwable throwable) {
-            return Closure.this.throwRuntimeException(throwable);
-        }
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		public boolean equals(Object arg0) {
+			return this.closure.equals(arg0);
+		}
 
-        /* (non-Javadoc)
-         * @see groovy.lang.Writable#writeTo(java.io.Writer)
-         */
-        public void writeTo(Writer out) throws IOException {
-            call(new Object[] { out });
-        }
+		/* (non-Javadoc)
+		 * @see groovy.lang.GroovyObjectSupport#getMetaClass()
+		 */
+		public MetaClass getMetaClass() {
+			return this.closure.getMetaClass();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		public int hashCode() {
+			return this.closure.hashCode();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.GroovyObjectSupport#setMetaClass(groovy.lang.MetaClass)
+		 */
+		public void setMetaClass(MetaClass metaClass) {
+			this.closure.setMetaClass(metaClass);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		public String toString() {
+			return this.closure.toString();
+		}
+    }
+    
+    private static class CurriedClosure extends DelegatingClosure {
+    	private Object[] curried_args;
+    	/**
+    	 * @param delegate
+    	 */
+    	public CurriedClosure(Closure closure, Object arguments) {
+    		super(closure);
+    		
+    		this.curried_args = getParameters(arguments);
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#call()
+    	 */
+    	public Object call() {
+    		return call(null);
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#call(java.lang.Object)
+    	 */
+    	public Object call(Object args) {
+    		Object[] new_args = getParameters(args);
+    		Object[] all_args = new Object[new_args.length + curried_args.length];
+    		
+    		System.arraycopy(curried_args, 0, all_args, 0, curried_args.length);
+    		System.arraycopy(new_args, 0, all_args, curried_args.length, new_args.length);
+    		
+    		return this.closure.call(all_args);
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#curry(java.lang.Object)
+    	 */
+    	public Closure curry(Object arguments) {
+    		Object[] args = getParameters(arguments);
+    		Object[] new_curried_args = new Object[curried_args.length + args.length];
+    		
+    		System.arraycopy(curried_args, 0, new_curried_args, 0, curried_args.length);
+    		System.arraycopy(args, 0, new_curried_args, curried_args.length, args.length);
+    		this.curried_args = new_curried_args;
+    		
+    		return this;
+    	}
+
+    	/**
+    	 * @return a version of this closure which implements Writable
+    	 */
+    	public Closure asWritable() {
+    		return new CurriedWritableClosure(this.closure, this.curried_args);
+    	}
+    }
+    
+    private static class WritableClosure extends DelegatingClosure implements Writable {
+    	/**
+    	 * @param delegate
+    	 */
+    	public WritableClosure(Closure closure) {
+    		super(closure);
+    	}
+
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#asWritable()
+    	 */
+    	public Closure asWritable() {
+    		return this;
+    	}
+
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+    	 */
+    	public void writeTo(Writer out) throws IOException {
+    		call(new Object[] { out });
+    	}
+    	
+    	/**
+    	 * Support for closure currying
+    	 * @param arguments
+    	 */
+    	public Closure curry(final Object arguments) {
+    		return new CurriedWritableClosure(this.closure, arguments);
+    	}
+    }
+    
+    private static class CurriedWritableClosure extends CurriedClosure implements Writable {
+    	/**
+    	 * @param delegate
+    	 */
+    	public CurriedWritableClosure(Closure closure, Object arguments) {
+    		super(closure, arguments);
+    	}
+
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Closure#asWritable()
+    	 */
+    	public Closure asWritable() {
+    		return this;
+    	}
+
+    	/* (non-Javadoc)
+    	 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+    	 */
+    	public void writeTo(Writer out) throws IOException {
+    		call(new Object[] { out });
+    	}
     }
 }
