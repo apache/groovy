@@ -57,7 +57,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class SpreadList extends AbstractList implements Spreadable {
+public class SpreadList extends AbstractList {
 
     private Object[] contents;
     private int hashCode;
