@@ -380,9 +380,9 @@ public class Groovyc extends MatchingTask {
             }
 
             try {
-                String classpath = getClasspath().toString();
+                Path classpath = getClasspath();
                 if (classpath != null) {
-                    compiler.setClasspath(classpath);
+                    compiler.setClasspath(classpath.toString());
                 }
                 compiler.setOutputDir(destDir);
                 compiler.compile(compileList);
