@@ -101,6 +101,10 @@ public class Sql {
         return new DataSet(this, table);
     }
 
+    public DataSet dataSet(Class type) {
+        return new DataSet(this, type);
+    }
+
     /**
 	 * Performs the given SQL query calling the closure with the result set
 	 */
