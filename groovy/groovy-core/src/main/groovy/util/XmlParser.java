@@ -52,6 +52,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -115,7 +116,7 @@ public class XmlParser implements ContentHandler {
      * Parses the content of the given file as XML turning it into a tree
      * of Nodes
      */
-    public Object parse(File file) throws IOException, SAXException {
+    public Node parse(File file) throws IOException, SAXException {
 
         InputSource input = new InputSource(new FileInputStream(file));
         input.setSystemId("file://" + file.getAbsolutePath());
@@ -127,7 +128,7 @@ public class XmlParser implements ContentHandler {
     /**
      * Parse the content of the specified input source into a tree of Nodes.
      */
-    public Object parse(InputSource input) throws IOException, SAXException {
+    public Node parse(InputSource input) throws IOException, SAXException {
         getXMLReader().parse(input);
         return parent;
     }
@@ -137,7 +138,7 @@ public class XmlParser implements ContentHandler {
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      */
-    public Object parse(InputStream input) throws IOException, SAXException {
+    public Node parse(InputStream input) throws IOException, SAXException {
         InputSource is = new InputSource(input);
         getXMLReader().parse(is);
         return parent;
@@ -148,7 +149,7 @@ public class XmlParser implements ContentHandler {
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      */
-    public Object parse(Reader in) throws IOException, SAXException {
+    public Node parse(Reader in) throws IOException, SAXException {
         InputSource is = new InputSource(in);
         getXMLReader().parse(is);
         return parent;
@@ -157,11 +158,22 @@ public class XmlParser implements ContentHandler {
     /**
      * Parse the content of the specified URI into a tree of Nodes
      */
-    public Object parse(String uri) throws IOException, SAXException {
+    public Node parse(String uri) throws IOException, SAXException {
         InputSource is = new InputSource(uri);
         getXMLReader().parse(is);
         return parent;
     }
+
+    /**
+     * A helper method to parse the given text as XML
+     * 
+     * @param text
+     * @return
+     */
+    public Node parseText(String text) throws IOException, SAXException {
+        return parse(new StringReader(text));
+    }
+    
 
     // ContentHandler interface
     //-------------------------------------------------------------------------                    

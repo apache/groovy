@@ -1,11 +1,9 @@
 package groovy.util
 
-import java.io.StringReader
-
 class XmlParserTest extends GroovyTestCase {
     
     void testXmlParser() {
-        text = <<<EOF
+        text = """
 <characters>
     <character id="1" name="Wallace">
     	<likes>cheese</likes>
@@ -14,12 +12,9 @@ class XmlParserTest extends GroovyTestCase {
 	    <likes>sleep</likes>
     </character>
 </characters>
-EOF
+"""
         
-        parser = new XmlParser()
-        node = parser.parse(new StringReader(text))
-        
-        //new NodePrinter().print(node)
+        node = new XmlParser().parseText(text);
         
         assert node != null
         assert node.children().size() == 2 : "Children ${node.children()}"
@@ -50,8 +45,7 @@ EOF
 <p>Please read the <a href="index.html">Home</a> page</p>
 EOF
         
-        parser = new XmlParser()
-        node = parser.parse(new StringReader(text))
+        node = new XmlParser().parseText(text)
         
         new NodePrinter().print(node)
         
