@@ -84,18 +84,26 @@ public class GroovyShell extends GroovyObjectSupport {
             return;
         }
         String scriptName = args[0];
-        String[] newArgs = new String[length - 1];
-        if (length > 1) {
-            System.arraycopy(args, 1, newArgs, 0, length - 1);
-        }
+        int p = scriptName.lastIndexOf(".");
+        if ( p++ >= 0) {
+            if (scriptName.substring(p).equals("java")) {
+                System.err.println( "error: cannot compile file with .java extension: " + scriptName );
 
-        try {
-            GroovyShell groovy = new GroovyShell();
-            groovy.run(new File(scriptName), newArgs);
-        }
-        catch (Exception e) {
-            System.out.println("Caught: " + e);
-            e.printStackTrace();
+            } else {
+                String[] newArgs = new String[length - 1];
+                if (length > 1) {
+                    System.arraycopy(args, 1, newArgs, 0, length - 1);
+                }
+
+                try {
+                    GroovyShell groovy = new GroovyShell();
+                    groovy.run(new File(scriptName), newArgs);
+                }
+                catch (Exception e) {
+                    System.out.println("Caught: " + e);
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -186,6 +194,15 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args the command line arguments to pass in
      */
     public void run(final File scriptFile, String[] args) throws CompilationFailedException, IOException {
+        String scriptName = scriptFile.getName();
+        int p = scriptName.lastIndexOf(".");
+        if ( p++ >= 0) {
+            if (scriptName.substring(p).equals("java")) {
+                System.err.println( "error: cannot dompile file with .java extension: " + scriptName );
+                throw new CompilationFailedException(0, null);
+            }
+        }
+
         // Get the current context classloader and save it on the stack
         final Thread thread = Thread.currentThread();
         ClassLoader currentClassLoader = thread.getContextClassLoader();
@@ -386,9 +403,10 @@ public class GroovyShell extends GroovyObjectSupport {
 
     /**
      * Evaluates some script against the current Binding and returns the result
-     * 
-     * @param in the stream reading the script
-     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     * @param codeSource
+     * @return
+     * @throws CompilationFailedException
+     * @throws IOException
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
         Script script = parse(codeSource);

@@ -24,9 +24,7 @@ class SerializeTest extends GroovyTestCase {
         assert object.name == "Gromit"
         
         assert object.class.name == "Foo" 
-        /** @todo
         assert object instanceof Foo
-        */
         assert object.location == "Moon"
     }
     

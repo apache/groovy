@@ -237,7 +237,7 @@ public class InvokerHelper {
     public static Object negate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return new Integer(-number.intValue());
+            return integerValue(-number.intValue());
         }
         else if (value instanceof Long) {
             Long number = (Long) value;
@@ -427,7 +427,7 @@ public class InvokerHelper {
     /**
      * Allows conversion of arrays into a mutable List
      * 
-     * @returns the array as a List
+     * @return the array as a List
      */
     protected static List primitiveArrayToList(Object array) {
         int size = Array.getLength(array);
@@ -474,37 +474,30 @@ public class InvokerHelper {
     }
 
     public static Object box(byte value) {
-        /** @todo cache? */
         return new Byte(value);
     }
 
     public static Object box(char value) {
-        /** @todo cache? */
         return new Character(value);
     }
     
     public static Object box(short value) {
-                /** @todo cache? */
         return new Short(value);
     }
     
     public static Object box(int value) {
-        /** @todo cache? */
-        return new Integer(value);
+        return integerValue(value);
     }
     
     public static Object box(long value) {
-        /** @todo cache? */
         return new Long(value);
     }
     
     public static Object box(float value) {
-        /** @todo cache? */
         return new Float(value);
     }
     
     public static Object box(double value) {
-        /** @todo cache? */
         return new Double(value);
     }
     
@@ -547,4 +540,301 @@ public class InvokerHelper {
         Number n = (Number) asType(value, Double.class);
         return n.doubleValue();
     }
-   }
+
+    /**
+     *
+     * @param a array of primitives
+     * @param type component type of the array
+     * @return
+     */
+    public static Object[] convertPrimitiveArray(Object a, Class type) {
+//        System.out.println("a.getClass() = " + a.getClass());
+        Object[] ans = null;
+        String elemType = type.getName();
+        if (elemType.equals("int")) {
+            // conservative coding
+            if (a.getClass().getName().equals("[Ljava.lang.Integer;")) {
+                ans = (Integer[])a;
+            }
+            else {
+                int[] ia = (int[])a;
+                ans = new Integer[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    int e = ia[i];
+                    ans[i] = integerValue(e);
+                }
+            }
+        }
+        else if(elemType.equals("char")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Character;")) {
+                ans = (Character[])a;
+            }
+            else {
+                char[] ia = (char[])a;
+                ans = new Character[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    char e = ia[i];
+                    ans[i] = new Character(e);
+                }
+            }
+        }
+        else if(elemType.equals("boolean")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Boolean;")) {
+                ans = (Boolean[])a;
+            }
+            else {
+                boolean[] ia = (boolean[])a;
+                ans = new Boolean[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    boolean e = ia[i];
+                    ans[i] = new Boolean(e);
+                }
+            }
+        }
+        else if(elemType.equals("byte")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Byte;")) {
+                ans = (Byte[])a;
+            }
+            else {
+                byte[] ia = (byte[])a;
+                ans = new Byte[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    byte e = ia[i];
+                    ans[i] = new Byte(e);
+                }
+            }
+        }
+        else if(elemType.equals("short")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Short;")) {
+                ans = (Short[])a;
+            }
+            else {
+                short[] ia = (short[])a;
+                ans = new Short[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    short e = ia[i];
+                    ans[i] = new Short(e);
+                }
+            }
+        }
+        else if(elemType.equals("float")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Float;")) {
+                ans = (Float[])a;
+            }
+            else {
+                float[] ia = (float[])a;
+                ans = new Float[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    float e = ia[i];
+                    ans[i] = new Float(e);
+                }
+            }
+        }
+        else if(elemType.equals("long")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Long;")) {
+                ans = (Long[])a;
+            }
+            else {
+                long[] ia = (long[])a;
+                ans = new Long[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    long e = ia[i];
+                    ans[i] = new Long(e);
+                }
+            }
+        }
+        else if(elemType.equals("double")) {
+            if (a.getClass().getName().equals("[Ljava.lang.Double;")) {
+                ans = (Double[])a;
+            }
+            else {
+                double[] ia = (double[])a;
+                ans = new Double[ia.length];
+                for (int i = 0; i < ia.length; i++) {
+                    double e = ia[i];
+                    ans[i] = new Double(e);
+                }
+            }
+        }
+        return ans;
+    }
+
+    public static int[] convertToIntArray(Object a){
+        int[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[I")) {
+            ans = (int[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new int[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).intValue();
+            }
+        }
+        return ans;
+    }
+
+    public static boolean[] convertToBooleanArray(Object a){
+        boolean[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[Z")) {
+            ans = (boolean[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new boolean[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Boolean)ia[i]).booleanValue();
+            }
+        }
+        return ans;
+    }
+    public static byte[] convertToByteArray(Object a){
+        byte[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[B")) {
+            ans = (byte[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new byte[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).byteValue();
+            }
+        }
+        return ans;
+    }
+    public static short[] convertToShortArray(Object a){
+        short[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[S")) {
+            ans = (short[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new short[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).shortValue();
+            }
+        }
+        return ans;
+    }
+
+    public static char[] convertToCharArray(Object a){
+        char[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[C")) {
+            ans = (char[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new char[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Character)ia[i]).charValue();
+            }
+        }
+        return ans;
+    }
+
+    public static long[] convertToLongArray(Object a){
+        long[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[J")) {
+            ans = (long[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new long[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).longValue();
+            }
+        }
+        return ans;
+    }
+
+    public static float[] convertToFloatArray(Object a){
+        float[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[F")) {
+            ans = (float[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new float[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).floatValue();
+            }
+        }
+        return ans;
+    }
+
+    public static double[] convertToDoubleArray(Object a){
+        double[] ans = null;
+
+        // conservative coding
+        if (a.getClass().getName().equals("[D")) {
+            ans = (double[])a;
+        }
+        else {
+            Object[] ia = (Object[])a;
+            ans = new double[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = ((Number)ia[i]).doubleValue();
+            }
+        }
+        return ans;
+    }
+
+    public static Object convertToPrimitiveArray(Object a, Class type) {
+        if (type == Byte.TYPE)
+            return convertToByteArray(a);
+        if (type == Boolean.TYPE)
+            return convertToBooleanArray(a);
+        if (type == Short.TYPE)
+            return convertToShortArray(a);
+        if (type == Character.TYPE)
+            return convertToCharArray(a);
+        if (type == Integer.TYPE)
+            return convertToIntArray(a);
+        if (type == Long.TYPE)
+            return convertToLongArray(a);
+        if (type == Float.TYPE)
+            return convertToFloatArray(a);
+        if (type == Double.TYPE)
+            return convertToDoubleArray(a);
+        else
+            return a;
+    }
+
+    /**
+     * get the Integer object from an int. Cached version is used for small ints.
+     * @param v
+     * @return
+     */
+    public static Integer integerValue(int v) {
+        int index = v + INT_CACHE_OFFSET;
+        if (index >= 0 && index < INT_CACHE_LEN ) {
+            return SMALL_INTEGERS[index];
+        }
+        else {
+            return new Integer(v);
+        }
+    }
+
+    private static Integer[] SMALL_INTEGERS;
+    private static int INT_CACHE_OFFSET = 128, INT_CACHE_LEN = 256;
+    static {
+        SMALL_INTEGERS = new Integer[INT_CACHE_LEN];
+        for (int i = 0; i < SMALL_INTEGERS.length; i++) {
+            SMALL_INTEGERS[i] = new Integer(i - INT_CACHE_OFFSET);
+        }
+    }
+}

@@ -30,7 +30,7 @@ public class ExceptionMessage extends Message
    /**
     *  Returns the underlying Exception.
     */
-    
+
     public Exception getCause()
     {
         return this.cause;

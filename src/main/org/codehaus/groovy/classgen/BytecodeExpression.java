@@ -64,4 +64,7 @@ public abstract class BytecodeExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
     }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+    }
 }

@@ -89,4 +89,8 @@ public class ForStatement extends Statement {
     public Type getVariableType() {
         return variableType;
     }
+
+    public void setVariableType(Type varType) {
+        variableType = varType;
+    }
 }

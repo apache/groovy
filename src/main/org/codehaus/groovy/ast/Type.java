@@ -58,6 +58,7 @@ public class Type {
     
     private String name;
     private boolean dynamic;
+    transient private String realName = ""; // holds the real type name if dynamic or reference
 
     public Type() {
         this.name = "java.lang.Object";
@@ -69,8 +70,13 @@ public class Type {
         this.dynamic = false;
     }
 
+    public Type(String name, boolean isDynamic) {
+        this.name = name;
+        this.dynamic = isDynamic;
+    }
+
     public String toString() {
-        return super.toString() + "[name:" + name + " dynamic: " + dynamic + "]";
+        return super.toString() + "[name:" + name + " dynamic: " + dynamic + " real name: " + realName + "]";
     }
 
     public String getName() {
@@ -79,5 +85,21 @@ public class Type {
 
     public boolean isDynamic() {
         return dynamic;
+    }
+	/**
+	 * @return Returns the realName.
+	 */
+	public String getRealName() {
+		return realName;
+	}
+	/**
+	 * @param realName The realName to set.
+	 */
+	public void setRealName(String realName) {
+		this.realName = realName;
+	}
+
+    public void setDynamic(boolean b) {
+        dynamic = b;
     }
 }

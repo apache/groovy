@@ -92,7 +92,7 @@ public class MetaMethod implements Cloneable {
      * @param arguments
      * @throws IllegalArgumentException if the parameters are not valid
      */
-    public void checkParameters(Object[] arguments) {
+    public void checkParameters(Class[] arguments) {
         // lets check that the argument types are valid
         if (!MetaClass.isValidMethod(getParameterTypes(), arguments, false)) {
             throw new IllegalArgumentException(

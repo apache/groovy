@@ -62,7 +62,7 @@ public class BlockScope {
     private Label breakLabel = null; //new Label();
     private Label continueLabel = null; //new Label();
     private BlockScope parent;
-    private int lastVariableIndex;
+    private int firstVariableIndex = 0;
     
     public BlockScope(BlockScope parent) {
         this.parent = parent;
@@ -88,12 +88,25 @@ public class BlockScope {
         return parent;
     }
 
-    public int getLastVariableIndex() {
-        return lastVariableIndex;
+    public int getFirstVariableIndex() {
+        return firstVariableIndex;
     }
 
-    public void setLastVariableIndex(int lastVariableIndex) {
-        this.lastVariableIndex = lastVariableIndex;
+    public void setFirstVariableIndex(int firstVariableIndex) {
+        this.firstVariableIndex = firstVariableIndex;
+    }
+
+    /**
+     *
+     * @param firstVariableIndex
+     * @deprecated
+     */
+    public void setLastVariableIndex(int firstVariableIndex) {
+        this.firstVariableIndex = firstVariableIndex;
+    }
+
+    public int getLastVariableIndex() {
+        return firstVariableIndex;
     }
 
 }

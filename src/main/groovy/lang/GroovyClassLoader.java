@@ -40,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
@@ -60,6 +61,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -79,6 +81,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
     private class PARSING {};
+    private class NOT_RESOLVED{};
     private CompilerConfiguration config;
     private String[] searchPaths;
 
@@ -118,7 +121,7 @@ public class GroovyClassLoader extends SecureClassLoader {
     public Class defineClass(ClassNode classNode, String file, String newCodeBase) {
     	CodeSource codeSource = null;
     	try {
-    		codeSource = new CodeSource(new URL("file", "", newCodeBase), null);
+    		codeSource = new CodeSource(new URL("file", "", newCodeBase), (java.security.cert.Certificate[]) null);
     	} catch (MalformedURLException e) {
     		//swallow
     	}
@@ -204,7 +207,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 	 */
 	public Class parseClass(GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
 		String name = codeSource.getName();
-		Class answer = null;
+        Class answer = null;
 		//ASTBuilder.resolveName can call this recursively -- for example when resolving a Constructor
 		//invocation for a class that is currently being compiled.  
 		synchronized (cache) {
@@ -220,11 +223,11 @@ public class GroovyClassLoader extends SecureClassLoader {
             CompilationUnit unit = new CompilationUnit(config, codeSource.getCodeSource(), this );
             // try {
                 ClassCollector collector = createCollector( unit );
-                
+
                 unit.addSource( name, codeSource.getInputStream() );
                 unit.setClassgenCallback( collector );
                 unit.compile( Phases.CLASS_GENERATION );
-                
+
                 answer = collector.generatedClass;
             // }
             // catch( CompilationFailedException e ) {
@@ -351,7 +354,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                 }
             }
         }
-    	throw new ClassNotFoundException(name);
+        throw new ClassNotFoundException(name);
     }
 
     //Read the bytes from a non-null JarEntry.  This is done here because the entry must be read completely 
@@ -523,8 +526,9 @@ public class GroovyClassLoader extends SecureClassLoader {
 	/* (non-Javadoc)
 	 * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
 	 * Implemented here to check package access prior to returning an already loaded class.
+     * todo : br shall we search for the source groovy here to see if the soource file has been updated first?
 	 */
-	protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+	protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
 			String className = name.replace('/', '.');
@@ -533,6 +537,100 @@ public class GroovyClassLoader extends SecureClassLoader {
 				sm.checkPackageAccess(className.substring(0, i));
 			}
 		}
-		return super.loadClass(name, resolve);
+        Class cls = super.loadClass(name, resolve);
+        
+        Class[] inters = cls.getInterfaces();
+        boolean isGroovyObject  = false;
+        for (int i = 0; i < inters.length; i++) {
+        	if (inters[i].getName().equals (GroovyObject.class.getName())) {
+        		isGroovyObject = true;
+        		break;
+        	}
+        }
+        
+        if (isGroovyObject) {
+            try {
+                File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                    public Object run() {
+                        return getSourceFile(name);
+                    }
+                });
+                if (source != null && cls != null && isSourceNewer(source, cls)) {
+                    cls = parseClass(source);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                synchronized(cache) {
+                    cache.put(name, NOT_RESOLVED.class);
+                }
+                throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
+            }
+        }
+        return cls;
+	}
+
+	private long getTimeStamp(Class cls) {
+		Field field;
+		Long o;
+		try {
+			field = cls.getField(Verifier.__TIMESTAMP);
+			o = (Long) field.get(null);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		return o.longValue();
+	}
+	
+//    static class ClassWithTimeTag {
+//        final static ClassWithTimeTag NOT_RESOLVED = new ClassWithTimeTag(null, 0);
+//        Class cls;
+//        long lastModified;
+//
+//        public ClassWithTimeTag(Class cls, long lastModified) {
+//            this.cls = cls;
+//            this.lastModified = lastModified;
+//        }
+//    }
+	
+	private File getSourceFile(String name) {
+    	File source = null;
+		String filename = name.replace('.', '/') + ".groovy";
+        String[] paths = getClassPath();
+        for (int i = 0; i < paths.length; i++) {
+            String pathName = paths[i];
+            File path = new File(pathName);
+            if (path.exists()) {  // case sensitivity depending on OS!
+                if (path.isDirectory()) {
+                    File file = new File(path, filename);
+                    if (file.exists()) {
+                    	// file.exists() might be case insensitive. Let's do case sensitive match for the filename
+                        boolean fileExists = false;
+                        int sepp = filename.lastIndexOf('/');
+                        String fn = filename;
+                        if (sepp >=0) {
+                            fn = filename.substring(++sepp);
+                        }
+                        File parent = file.getParentFile();
+                        String[] files = parent.list();
+                        for (int j = 0; j < files.length; j++) {
+                            if (files[j].equals(fn)) {
+                                fileExists = true;
+                                break;
+                            }
+                        }
+
+                        if (fileExists) {
+                        	source = file;
+                        	break;
+                        }
+                    }
+                } 
+            }
+        }
+        return source;
+	}
+	
+	private boolean isSourceNewer(File source, Class cls) {
+		return source.lastModified() > getTimeStamp(cls);
 	}
 }

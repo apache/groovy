@@ -106,7 +106,7 @@ public class DumpingClassLoader extends GroovyClassLoader implements Constants {
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
     protected CompileUnit unit = new CompileUnit(this, new CompilerConfiguration());
     protected ClassGenerator checker =
-        new AsmClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
-    protected ClassGenerator dumper = new AsmClassGenerator(new GeneratorContext(unit), dumpVisitor, this, null);
+        new AsmClassGenerator2(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), this, null);
+    protected ClassGenerator dumper = new AsmClassGenerator2(new GeneratorContext(unit), dumpVisitor, this, null);
 
 }

@@ -195,6 +195,7 @@ public class Types
     // KEYWORDS: TYPE SYSTEM
 
     public static final int KEYWORD_DEF                 = 530;   // identifies a function declaration
+    public static final int KEYWORD_DEFMACRO            = 539;   // XXX br identifies a macro declaration
     public static final int KEYWORD_CLASS               = 531;   // identifies a class declaration
     public static final int KEYWORD_INTERFACE           = 532;   // identifies an interface declaration
     public static final int KEYWORD_MIXIN               = 533;   // identifies a mixin declaration
@@ -583,6 +584,7 @@ public class Types
                     case KEYWORD_INTERFACE:
                     case KEYWORD_MIXIN:
                     case KEYWORD_DEF:
+                    case KEYWORD_DEFMACRO:
                     case KEYWORD_IN:
                     case KEYWORD_PROPERTY:
                         return true;
@@ -857,6 +859,7 @@ public class Types
                 switch( actual ) {
                     case IDENTIFIER:
                     case KEYWORD_DEF:
+                    case KEYWORD_DEFMACRO:
                     case KEYWORD_CLASS:
                     case KEYWORD_INTERFACE:
                     case KEYWORD_MIXIN:
@@ -1229,6 +1232,7 @@ public class Types
         addTranslation( "const"       , KEYWORD_CONST               );
         addTranslation( "continue"    , KEYWORD_CONTINUE            );
         addTranslation( "def"         , KEYWORD_DEF                 );
+        addTranslation( "defmacro"    , KEYWORD_DEF                 ); // xxx br defmacro
         addTranslation( "default"     , KEYWORD_DEFAULT             );
         addTranslation( "do"          , KEYWORD_DO                  );
         addTranslation( "else"        , KEYWORD_ELSE                );

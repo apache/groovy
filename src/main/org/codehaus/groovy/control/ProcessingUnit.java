@@ -265,7 +265,7 @@ public abstract class ProcessingUnit
     *  Convenience routine to return the specified error's
     *  underlying Exception, or null if it isn't one.
     */
-    
+
     public Exception getException( int index )
     {
         Exception exception = null;

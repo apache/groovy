@@ -46,7 +46,11 @@ public class NotExpression extends BooleanExpression {
 		visitor.visitNotExpression(this);
 	}
 
-	public Expression transformExpression(ExpressionTransformer transformer) {
+    public boolean isDynamic() {
+        return false;
+    }
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
 	    return new NotExpression(transformer.transform(getExpression()));
 	}
 	}

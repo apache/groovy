@@ -59,6 +59,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.security.AccessController;
@@ -300,23 +301,66 @@ public class MetaClass {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
+        MetaMethod method = retrieveMethod(object, methodName, arguments);
+
+        if (method != null) {
+            return doMethodInvoke(object, method, arguments);
+        } else {
+            throw new MissingMethodException(methodName, theClass, arguments);
+        }
+    }
+
+    protected MetaMethod retrieveMethod(Object owner, String methodName, Object[] arguments) {
         // lets try use the cache to find the method
         MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
         MetaMethod method = (MetaMethod) methodCache.get(methodKey);
         if (method == null) {
-            method = pickMethod(object, methodName, arguments);
+            method = pickMethod(owner, methodName, arguments);
             if (method != null && method.isCacheable()) {
                 methodCache.put(methodKey.createCopy(), method);
             }
         }
-
-        if (method != null) {
-            return doMethodInvoke(object, method, arguments);
-        }
-
-        throw new MissingMethodException(methodName, theClass, arguments);
+        return method;
     }
 
+    public MetaMethod retrieveMethod(String methodName, Class[] arguments) {
+        // lets try use the cache to find the method
+        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+        MetaMethod method = (MetaMethod) methodCache.get(methodKey);
+        if (method == null) {
+            method = pickMethod(methodName, arguments); // todo shall call pickStaticMethod also?
+            if (method != null && method.isCacheable()) {
+                methodCache.put(methodKey.createCopy(), method);
+            }
+        }
+        return method;
+    }
+
+    public Constructor retrieveConstructor(Class[] arguments) {
+        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments, false);
+        if (constructor != null) {
+            return constructor;
+        }
+        else {
+            constructor = (Constructor) chooseMethod("<init>", constructors, arguments, true);
+            if (constructor != null) {
+                return constructor;
+            }
+        }
+        return null;
+    }
+
+    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
+        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
+        if (method == null) {
+            method = pickStaticMethod(methodName, arguments);
+            if (method != null) {
+                staticMethodCache.put(methodKey.createCopy(), method);
+            }
+        }
+        return method;
+    }
     /**
      * Picks which method to invoke for the given object, method name and arguments
      */
@@ -324,9 +368,10 @@ public class MetaClass {
         MetaMethod method = null;
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            Class[] argClasses = convertToTypeArray(arguments);
+            method = (MetaMethod) chooseMethod(methodName, methods, argClasses, false);
             if (method == null) {
-                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+                method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
                 if (method == null) {
                     int size = (arguments != null) ? arguments.length : 0;
                     if (size == 1) {
@@ -338,7 +383,8 @@ public class MetaClass {
 
                             List list = (List) firstArgument;
                             arguments = list.toArray();
-                            method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+                            argClasses = convertToTypeArray(arguments);
+                            method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
                             return new TransformMetaMethod(method) {
                                 public Object invoke(Object object, Object[] arguments) throws Exception {
                                     Object firstArgument = arguments[0];
@@ -351,6 +397,26 @@ public class MetaClass {
                     }
                 }
             }
+        }
+        return method;
+    }
+
+    /**
+     * pick a method in a strict manner, i.e., without reinterpreting the first List argument.
+     * this method is used only by ClassGenerator for static binding
+     * @param methodName
+     * @param arguments
+     * @return
+     */
+    protected MetaMethod pickMethod(String methodName, Class[] arguments) {
+        MetaMethod method = null;
+        List methods = getMethods(methodName);
+        if (!methods.isEmpty()) {
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+// no coersion at classgen time.
+//            if (method == null) {
+//                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+//            }
         }
         return method;
     }
@@ -401,7 +467,7 @@ public class MetaClass {
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            method = (MetaMethod) chooseMethod(methodName, methods, convertToTypeArray(arguments), false);
         }
 
         if (method == null && theClass != Class.class) {
@@ -411,13 +477,33 @@ public class MetaClass {
         return method;
     }
 
+    protected MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
+        MetaMethod method = null;
+        List methods = getStaticMethods(methodName);
+
+        if (!methods.isEmpty()) {
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+// disabled to keep consistant with the original version of pickStatciMethod
+//            if (method == null) {
+//                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+//            }
+        }
+
+        if (method == null && theClass != Class.class) {
+            MetaClass classMetaClass = registry.getMetaClass(Class.class);
+            method = classMetaClass.pickMethod(methodName, arguments);
+        }
+        return method;
+    }
+
     public Object invokeConstructor(Object[] arguments) {
-        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, arguments, false);
+        Class[] argClasses = convertToTypeArray(arguments);
+        Constructor constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, false);
         if (constructor != null) {
             return doConstructorInvoke(constructor, arguments);
         }
         else {
-            constructor = (Constructor) chooseMethod("<init>", constructors, arguments, true);
+            constructor = (Constructor) chooseMethod("<init>", constructors, argClasses, true);
             if (constructor != null) {
                 return doConstructorInvoke(constructor, arguments);
             }
@@ -426,7 +512,7 @@ public class MetaClass {
         if (arguments.length == 1) {
             Object firstArgument = arguments[0];
             if (firstArgument instanceof Map) {
-                constructor = (Constructor) chooseMethod("<init>", constructors, EMPTY_ARRAY, false);
+                constructor = (Constructor) chooseMethod("<init>", constructors, EMPTY_TYPE_ARRAY, false);
                 if (constructor != null) {
                     Object bean = doConstructorInvoke(constructor, EMPTY_ARRAY);
                     setProperties(bean, ((Map) firstArgument));
@@ -455,7 +541,7 @@ public class MetaClass {
             }
             catch (GroovyRuntimeException e) {
                 // lets ignore missing properties
-                /** @todo should replace this code with a getMetaProperty(key) != null check
+                /** todo should replace this code with a getMetaProperty(key) != null check
                  i.e. don't try and set a non-existent property
                  */
             }
@@ -524,12 +610,12 @@ public class MetaClass {
             lastException = e;
         }
 
-        /** @todo or are we an extensible groovy class? */
+        /** todo or are we an extensible groovy class? */
         if (genericGetMethod != null) {
             return null;
         }
         else {
-            /** @todo these special cases should be special MetaClasses maybe */
+            /** todo these special cases should be special MetaClasses maybe */
             if (object instanceof Class) {
                 // lets try a static field
                 return getStaticProperty((Class) object, property);
@@ -589,9 +675,9 @@ public class MetaClass {
                 if (newValue instanceof List) {
                     List list = (List) newValue;
                     int params = list.size();
-                    Constructor[] constructors = descriptor.getPropertyType().getConstructors();
-                    for (int i = 0; i < constructors.length; i++) {
-                        Constructor constructor = constructors[i];
+                    Constructor[] propConstructors = descriptor.getPropertyType().getConstructors();
+                    for (int i = 0; i < propConstructors.length; i++) {
+                        Constructor constructor = propConstructors[i];
                         if (constructor.getParameterTypes().length == params) {
                             Object value = doConstructorInvoke(constructor, list.toArray());
                             doMethodInvoke(object, metaMethod, new Object[] { value });
@@ -665,7 +751,7 @@ public class MetaClass {
                 return;
             }
 
-            /** @todo or are we an extensible class? */
+            /** todo or are we an extensible class? */
 
             // lets try invoke the set method
 
@@ -691,7 +777,6 @@ public class MetaClass {
 
     /**
      * @param list
-     * @param params
      * @param parameterType
      * @return
      */
@@ -753,7 +838,7 @@ public class MetaClass {
                 try {
 
                     /**
-                     * @todo there is no CompileUnit in scope so class name
+                     * todo there is no CompileUnit in scope so class name
                      * checking won't work but that mostly affects the bytecode
                      * generation rather than viewing the AST
                      */
@@ -1001,7 +1086,7 @@ public class MetaClass {
             }
         }
 
-        /** @todo dirty hack - don't understand why this code is necessary - all methods should be in the allMethods list! */
+        /** todo dirty hack - don't understand why this code is necessary - all methods should be in the allMethods list! */
         try {
             Method method = type.getMethod(name, EMPTY_TYPE_ARRAY);
             if ((method.getModifiers() & Modifier.STATIC) != 0) {
@@ -1084,8 +1169,18 @@ public class MetaClass {
                     // allow fall through
                 }
             }
+            Object[] args = coerceNumbers(method, argumentArray);
+            if (args != null) {
+                try {
+                    return doMethodInvoke(object, method, args);
+                }
+                catch (Exception e3) {
+                    // allow fall through
+                }
+            }
+
             throw new GroovyRuntimeException(
-                "failed to invoke method: "
+                    "failed to invoke method: "
                     + method
                     + " on: "
                     + object
@@ -1093,7 +1188,7 @@ public class MetaClass {
                     + InvokerHelper.toString(argumentArray)
                     + " reason: "
                     + e,
-                e);
+                    e);
         }
         catch (RuntimeException e) {
             throw e;
@@ -1110,6 +1205,113 @@ public class MetaClass {
                     + e,
                 e);
         }
+    }
+
+    private static Object[] coerceNumbers(MetaMethod method, Object[] arguments) {
+        Object[] ans = null;
+        boolean coerced = false; // to indicate that at least one param is coerced
+
+        Class[] params = method.getParameterTypes();
+
+        if (params.length != arguments.length) {
+            return null;
+        }
+
+        ans = new Object[arguments.length];
+
+        for (int i = 0, size = arguments.length; i < size; i++) {
+            Object argument = arguments[i];
+            Class param = params[i];
+            if ((Number.class.isAssignableFrom(param) || param.isPrimitive()) && argument instanceof Number) { // Number types
+                if (param == Byte.class || param == Byte.TYPE ) {
+                    ans[i] = new Byte(((Number)argument).byteValue());
+                    coerced = true; continue;
+                }
+                if (param == Double.class || param == Double.TYPE) {
+                    ans[i] = new Double(((Number)argument).doubleValue());
+                    coerced = true; continue;
+                }
+                if (param == Float.class || param == Float.TYPE) {
+                    ans[i] = new Float(((Number)argument).floatValue());
+                    coerced = true; continue;
+                }
+                if (param == Integer.class || param == Integer.TYPE) {
+                    ans[i] = new Integer(((Number)argument).intValue());
+                    coerced = true; continue;
+                }
+                if (param == Long.class || param == Long.TYPE) {
+                    ans[i] = new Long(((Number)argument).longValue());
+                    coerced = true; continue;
+                }
+                if (param == Short.class || param == Short.TYPE) {
+                    ans[i] = new Short(((Number)argument).shortValue());
+                    coerced = true; continue;
+                }
+                if (param == BigDecimal.class ) {
+                    ans[i] = new BigDecimal(((Number)argument).doubleValue());
+                    coerced = true; continue;
+                }
+                if (param == BigInteger.class) {
+                    ans[i] = new BigInteger(String.valueOf(((Number)argument).longValue()));
+                    coerced = true; continue;
+                }
+            }
+            else if (param.isArray() && argument.getClass().isArray()) {
+                Class paramElem = param.getComponentType();
+                if (paramElem.isPrimitive()) {
+                    if (paramElem == boolean.class && argument.getClass().getName().equals("[Ljava.lang.Boolean;")) {
+                        ans[i] = InvokerHelper.convertToBooleanArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == byte.class && argument.getClass().getName().equals("[Ljava.lang.Byte;")) {
+                        ans[i] = InvokerHelper.convertToByteArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == char.class && argument.getClass().getName().equals("[Ljava.lang.Character;")) {
+                        ans[i] = InvokerHelper.convertToCharArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == short.class && argument.getClass().getName().equals("[Ljava.lang.Short;")) {
+                        ans[i] = InvokerHelper.convertToShortArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == int.class && argument.getClass().getName().equals("[Ljava.lang.Integer;")) {
+                        ans[i] = InvokerHelper.convertToIntArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == long.class
+                            && argument.getClass().getName().equals("[Ljava.lang.Long;")
+                            && argument.getClass().getName().equals("[Ljava.lang.Integer;")
+                                                            ) {
+                        ans[i] = InvokerHelper.convertToLongArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == float.class
+                            && argument.getClass().getName().equals("[Ljava.lang.Float;")
+                            && argument.getClass().getName().equals("[Ljava.lang.Integer;")
+                                                            ) {
+                        ans[i] = InvokerHelper.convertToFloatArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                    if (paramElem == double.class &&
+                            argument.getClass().getName().equals("[Ljava.lang.Double;") &&
+                            argument.getClass().getName().equals("[Ljava.lang.BigDecimal;") &&
+                            argument.getClass().getName().equals("[Ljava.lang.Float;")) {
+                        ans[i] = InvokerHelper.convertToDoubleArray(argument);
+                        coerced = true;
+                        continue;
+                    }
+                }
+            }
+        }
+        return coerced ? ans : null;
     }
 
     protected Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
@@ -1182,7 +1384,7 @@ public class MetaClass {
      *            the original argument to the method
      * @return
      */
-    protected Object chooseMethod(String methodName, List methods, Object[] arguments, boolean coerce) {
+    protected Object chooseMethod(String methodName, List methods, Class[] arguments, boolean coerce) {
         int methodCount = methods.size();
         if (methodCount <= 0) {
             return null;
@@ -1232,12 +1434,12 @@ public class MetaClass {
                 + InvokerHelper.toString(arguments));
     }
 
-    protected boolean isValidMethod(Object method, Object[] arguments, boolean includeCoerce) {
+    protected boolean isValidMethod(Object method, Class[] arguments, boolean includeCoerce) {
         Class[] paramTypes = getParameterTypes(method);
         return isValidMethod(paramTypes, arguments, includeCoerce);
     }
 
-    protected static boolean isValidMethod(Class[] paramTypes, Object[] arguments, boolean includeCoerce) {
+    public static boolean isValidMethod(Class[] paramTypes, Class[] arguments, boolean includeCoerce) {
         if (arguments == null) {
             return true;
         }
@@ -1247,8 +1449,7 @@ public class MetaClass {
             // lets check the parameter types match
             validMethod = true;
             for (int i = 0; i < size; i++) {
-                Object value = arguments[i];
-                if (!isCompatibleInstance(paramTypes[i], value, includeCoerce)) {
+                if (!isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) {
                     validMethod = false;
                 }
             }
@@ -1261,7 +1462,7 @@ public class MetaClass {
         return validMethod;
     }
 
-    protected Object chooseMostSpecificParams(String name, List matchingMethods, Object[] arguments) {
+    protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
         Object answer = null;
         int size = arguments.length;
         Class[] mostSpecificTypes = null;
@@ -1411,6 +1612,9 @@ public class MetaClass {
                     return value instanceof Short;
                 }
             }
+            else if(type.isArray() && value.getClass().isArray()) {
+                return isCompatibleClass(type.getComponentType(), value.getClass().getComponentType(), false);
+            }
             else if (includeCoerce) {
                 if (type == String.class && value instanceof GString) {
                     return true;
@@ -1423,8 +1627,100 @@ public class MetaClass {
         }
         return answer;
     }
+    protected static boolean isCompatibleClass(Class type, Class value, boolean includeCoerce) {
+        boolean answer = value == null || type.isAssignableFrom(value); // this might have taken care of primitive types, rendering part of the following code unnecessary
+        if (!answer) {
+            if (type.isPrimitive()) {
+                if (type == int.class) {
+                    return value == Integer.class;// || value == BigDecimal.class; //br added BigDecimal
+                }
+                else if (type == double.class) {
+                    return value == Double.class || value == Float.class || value == Integer.class || value == BigDecimal.class;
+                }
+                else if (type == boolean.class) {
+                    return value == Boolean.class;
+                }
+                else if (type == long.class) {
+                    return value == Long.class || value == Integer.class; // || value == BigDecimal.class;//br added BigDecimal
+                }
+                else if (type == float.class) {
+                    return value == Float.class || value == Integer.class; // || value == BigDecimal.class;//br added BigDecimal
+                }
+                else if (type == char.class) {
+                    return value == Character.class;
+                }
+                else if (type == byte.class) {
+                    return value == Byte.class;
+                }
+                else if (type == short.class) {
+                    return value == Short.class;
+                }
+            }
+            else if(type.isArray() && value.isArray()) {
+                return isCompatibleClass(type.getComponentType(), value.getComponentType(), false);
+            }
+            else if (includeCoerce) {
+//if (type == String.class && value == GString.class) {
+                if (type == String.class && GString.class.isAssignableFrom(value)) {
+                    return true;
+                }
+                else if (value == Number.class) {
+                    // lets allow numbers to be coerced downwards?
+                    return Number.class.isAssignableFrom(type);
+                }
+            }
+        }
+        return answer;
+    }
 
     protected boolean isAssignableFrom(Class mostSpecificType, Class type) {
+        // let's handle primitives
+        if (mostSpecificType.isPrimitive() && type.isPrimitive()) {
+            if (mostSpecificType == type) {
+                return true;
+            }
+            else {  // note: there is not coercion for boolean and char. Range matters, precision doesn't
+                if (type == int.class) {
+                    return
+                            mostSpecificType == int.class
+                            || mostSpecificType == short.class
+                            || mostSpecificType == byte.class;
+                }
+                else if (type == double.class) {
+                    return
+                            mostSpecificType == double.class
+                            || mostSpecificType == int.class
+                            || mostSpecificType == long.class
+                            || mostSpecificType == short.class
+                            || mostSpecificType == byte.class
+                            || mostSpecificType == float.class;
+                }
+                else if (type == long.class) {
+                    return
+                            mostSpecificType == long.class
+                            || mostSpecificType == int.class
+                            || mostSpecificType == short.class
+                            || mostSpecificType == byte.class;
+                }
+                else if (type == float.class) {
+                    return
+                            mostSpecificType == float.class
+                            || mostSpecificType == int.class
+                            || mostSpecificType == long.class
+                            || mostSpecificType == short.class
+                            || mostSpecificType == byte.class;
+                }
+                else if (type == short.class) {
+                    return
+                            mostSpecificType == short.class
+                            || mostSpecificType == byte.class;
+                }
+                else {
+                    return false;
+                }
+            }
+        }
+
         boolean answer = type.isAssignableFrom(mostSpecificType);
         if (!answer) {
             answer = autoboxType(type).isAssignableFrom(autoboxType(mostSpecificType));
@@ -1467,7 +1763,7 @@ public class MetaClass {
      * 
      * @return true if some coercion was done. 
      */
-    protected boolean coerceGStrings(Object[] arguments) {
+    protected static boolean coerceGStrings(Object[] arguments) {
         boolean coerced = false;
         for (int i = 0, size = arguments.length; i < size; i++) {
             Object argument = arguments[i];
@@ -1582,7 +1878,7 @@ public class MetaClass {
                     return true;
                 }
             }
-            /** @todo */
+            /** todo */
             //log.warning("Cannot invoke method on protected/private class which isn't visible on an interface so must use reflection instead: " + method);
             return false;
         }
@@ -1695,5 +1991,26 @@ public class MetaClass {
         for (int i = 0; i < methods.length; i++) {
             list.add(createMetaMethod(methods[i]));
         }
+    }
+
+    /**
+     * param instance array to the type array
+     * @param args
+     * @return
+     */
+    Class[] convertToTypeArray(Object[] args) {
+        if (args == null)
+            return null;
+        int s = args.length;
+        Class[] ans = new Class[s];
+        for (int i = 0; i < s; i++) {
+            Object o = args[i];
+            if (o != null) {
+                ans[i] = o.getClass();
+            } else {
+                ans[i] = null;
+            }
+        }
+        return ans;
     }
 }

@@ -79,7 +79,7 @@ public class Parameter {
         this.name = MethodNode.ensureJavaTypeNameSyntax(name);
         this.type = type;
         this.defaultValue = defaultValue;
-        if (type == null) {
+        if (type == null || type.length() == 0) {
             this.type = "java.lang.Object";
             this.dynamicType = true;
         }

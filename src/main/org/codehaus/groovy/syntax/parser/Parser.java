@@ -244,6 +244,8 @@ public class Parser
         //
         // First up, the package declaration
 
+        // XXX br: this is where i can do macro processing 
+        
         Reduction packageDeclaration = null;
 
         if( lt() == Types.KEYWORD_PACKAGE )
@@ -480,6 +482,11 @@ public class Parser
             Token     identifier = nameDeclaration( false );
 
             result = methodDeclaration(modifiers, type, identifier, false);
+        }
+
+        else if (lt() == Types.KEYWORD_DEFMACRO)
+        {
+        	// XXX add my logic here
         }
 
         //
@@ -2583,7 +2590,7 @@ public class Parser
                         // be sure that even things that look like casts are, but we assume
                         // they are and let later phases correct, where necessary.
 
-                        next = la(true);
+                        next = la(true); // XXX the precludes is true for GString. Seems wrong
                         boolean castPrecluded = next.isA(Types.NEWLINE) || next.isA(Types.PRECLUDES_CAST_OPERATOR);
 
                         if( ExpressionSupport.isAPotentialTypeName(top0, false) && !castPrecluded )

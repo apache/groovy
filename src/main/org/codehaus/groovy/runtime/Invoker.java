@@ -89,10 +89,12 @@ public class Invoker {
     protected static final Class[] EMPTY_TYPES = {
     };
 
+    public MetaClassRegistry getMetaRegistry() {
+        return metaRegistry;
+    }
+
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
 
-
-    
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());
     }

@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.beans.IntrospectionException;
+import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -76,8 +77,27 @@ public class MetaClassRegistry {
     		}
     	});
 
+    public static final int LOAD_DEFAULT = 0;
+    public static final int DONT_LOAD_DEFAULT = 1;
+    private static MetaClassRegistry instanceInclude;
+    private static MetaClassRegistry instanceExclude;
+
+
     public MetaClassRegistry() {
         this(true);
+    }
+
+    public MetaClassRegistry(int loadDefault) {
+        if (loadDefault == LOAD_DEFAULT) {
+            this.useAccessible = true;
+            // lets register the default methods
+            lookup(DefaultGroovyMethods.class).registerInstanceMethods();
+            lookup(DefaultGroovyStaticMethods.class).registerStaticMethods();
+            checkInitialised();
+        } else {
+            this.useAccessible = true;
+            // do nothing to avoid loading DefaultGroovyMethod
+        }
     }
 
     /**
@@ -170,5 +190,47 @@ public class MetaClassRegistry {
             metaClasses.put(theClass, answer);
         }
         return answer;
+    }
+
+
+    public MetaMethod getDefinedMethod(Class theClass, String methodName, Class[] args, boolean isStatic) {
+        MetaClass metaclass = this.getMetaClass(theClass);
+        if (metaclass == null) {
+            return null;
+        } else {
+            if (isStatic) {
+                return metaclass.retrieveStaticMethod(methodName, args);
+            } else {
+                return metaclass.retrieveMethod(methodName, args);
+            }
+        }
+    }
+
+    public Constructor getDefinedConstructor(Class theClass, Class[] args) {
+        MetaClass metaclass = this.getMetaClass(theClass);
+        if (metaclass == null) {
+            return null;
+        } else {
+            return metaclass.retrieveConstructor(args);
+        }
+    }
+            /**
+     * Singleton of MetaClassRegistry. Shall we use threadlocal to store the instance?
+     * @param includeExtension
+     * @return
+     */
+    public static MetaClassRegistry getIntance(int includeExtension) {
+        if (includeExtension != DONT_LOAD_DEFAULT) {
+            if (instanceInclude == null) {
+                instanceInclude  = new MetaClassRegistry();
+            }
+            return instanceInclude;
+        }
+        else {
+            if (instanceExclude == null) {
+                instanceExclude  = new MetaClassRegistry(DONT_LOAD_DEFAULT);
+            }
+            return instanceExclude;
+        }
     }
 }

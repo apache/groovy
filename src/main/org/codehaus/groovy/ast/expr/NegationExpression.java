@@ -34,6 +34,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * @author sam
@@ -57,10 +58,25 @@ public class NegationExpression extends Expression {
 	public Expression transformExpression(ExpressionTransformer transformer) {
 	    return new NegationExpression(transformer.transform(expression));
 	}
-	
-	public String getText() {
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        expression.resolve(resolver);
+        setTypeClass(expression.getTypeClass());
+    }
+
+    public String getText() {
 		return expression.getText();
 	}
 
-	
+    public String getType() {
+        return expression.getType();
+    }
+
+    public boolean isDynamic() {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Class getTypeClass() {
+        return expression.getTypeClass();
+    }
 }

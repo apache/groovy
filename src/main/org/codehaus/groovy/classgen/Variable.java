@@ -46,6 +46,7 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.Type;
+import org.objectweb.asm.Label;
 
 
 /**
@@ -61,7 +62,12 @@ public class Variable {
     private String name;
     private boolean holder;
     private boolean property;
-    
+
+    // br for setting on the LocalVariableTable in the class file
+    // these fields should probably go to jvm Operand class
+    private Label startLabel = null;
+    private Label endLabel = null;
+
     public Variable(int index, Type type, String name) {
         this.index = index;
         this.type = type;
@@ -106,9 +112,45 @@ public class Variable {
         this.property = property;
     }
     
+    public Label getStartLabel() {
+        return startLabel;
+    }
+
+    public void setStartLabel(Label startLabel) {
+        this.startLabel = startLabel;
+    }
+
+    public Label getEndLabel() {
+        return endLabel;
+    }
+
+    public void setEndLabel(Label endLabel) {
+        this.endLabel = endLabel;
+    }
+
     public String toString() {
         // TODO Auto-generated method stub
         return super.toString() + "[" + type + " " + name + " (" + index + ")";
     }
 
+    /**
+     * derive a new Variable from this if this is a primitive variable, or return this instance
+     * @return
+     */
+    public Variable deriveBoxedVersion() {
+        if (BytecodeHelper.isPrimitiveType(this.getTypeName())) {
+            Type t = new Type(BytecodeHelper.getObjectTypeForPrimitive(getTypeName()));
+            return new Variable(index, t, name);
+        } else {
+            return this;
+        }
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public void setDynamic(boolean b) {
+        type.setDynamic(b);
+    }
 }

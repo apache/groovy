@@ -61,14 +61,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.classgen.ClassCompletionVerifier;
-import org.codehaus.groovy.classgen.ClassGenerator;
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.classgen.Verifier;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
@@ -77,6 +75,7 @@ import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.DumpClassVisitor;
+import groovy.lang.GroovyRuntimeException;
 
 
 
@@ -256,7 +255,11 @@ public class CompilationUnit extends ProcessingUnit
             }
         };
         
-        try { applyToPrimaryClassNodes( handler ); } catch( CompilationFailedException e ) { }
+        try { 
+        	applyToPrimaryClassNodes( handler ); 
+        } catch( CompilationFailedException e ) {
+        	e.printStackTrace();
+        }
         return result[0];
     }
     
@@ -634,9 +637,8 @@ public class CompilationUnit extends ProcessingUnit
             }
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName() );
-            ClassGenerator generator = new AsmClassGenerator( context, visitor, classLoader, sourceName );
-             
-             
+            ClassGenerator generator = new AsmClassGenerator2( context, visitor, classLoader, sourceName );
+
             // 
             // Run the generation and create the class (if required)
 
@@ -935,11 +937,20 @@ public class CompilationUnit extends ProcessingUnit
             }
             catch( CompilationFailedException e )
             {
-                failures = true;
+            	e.printStackTrace();
+            	failures = true;
+                addError( new ExceptionMessage(e) );
             }
             catch( Exception e )
             {
-                failures = true;
+            	failures = true;
+                e.printStackTrace();
+//                String msg = e.getMessage();
+//                if (e instanceof RuntimeParserException) {
+//                    RuntimeParserException rpe = (RuntimeParserException) e;
+//                    ASTNode node = rpe.getNode();
+//                    msg += ". The probable error location: [" + node.getLineNumber() + ":" + node.getColumnNumber() + "]";
+//                }
                 addError( new ExceptionMessage(e) );
             }
         }

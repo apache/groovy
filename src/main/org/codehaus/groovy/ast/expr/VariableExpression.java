@@ -46,6 +46,8 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import org.codehaus.groovy.classgen.BytecodeHelper;
 
 
 /**
@@ -56,21 +58,38 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class VariableExpression extends Expression {
 
-    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
-    
+    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this", null);
+
     private String variable;
-    private String type;
-    
+
+    public VariableExpression(String variable, String type) {
+        this.variable = variable;
+        if (type == null || type.length() == 0) {
+            isDynamic = true;
+        }
+        else {
+            String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
+            boxedType = BytecodeHelper.getObjectArrayTypeForPrimitiveArray(boxedType);
+
+            super.setType(boxedType);  // todo delay setting until resolve()
+            isDynamic = false;
+        }
+    }
+
     public VariableExpression(String variable) {
         this.variable = variable;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitVariableExpression(this);
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
+    }
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        resolver.resolve(this);
     }
 
     public String getVariable() {
@@ -88,20 +107,20 @@ public class VariableExpression extends Expression {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    boolean isDynamic = true;
+    public boolean isDynamic() {
+        return isDynamic;
     }
 
     /**
      * @return true if this variable is dynamically typed
      */
-    public boolean isDynamic() {
-        return type == null;
-    }
-    
+
     public String toString() {
         return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
     }
-    
-    
+
+    public void setDynamic(boolean dynamic) {
+        isDynamic = dynamic;
+    }
 }

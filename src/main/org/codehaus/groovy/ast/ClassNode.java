@@ -249,6 +249,7 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     public void addField(FieldNode node) {
+    	node.setOwner(getName());
         fields.add(node);
         fieldIndex.put(node.getName(), node);
     }
@@ -512,7 +513,7 @@ public class ClassNode extends MetadataNode implements Constants {
      * @return the ClassNode of the super class of this type
      */
     public ClassNode getSuperClassNode() {
-        if (superClass != null && superClassNode == null && !name.equals("java.lang.Object")) {
+        if (superClass != null &&  superClass.length() > 0 && superClassNode == null && !name.equals("java.lang.Object")) {
             // lets try find the class in the compile unit
             String temp = resolveClassName(superClass);
             if (temp == null) {

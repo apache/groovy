@@ -50,6 +50,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
+import groovy.lang.GroovyRuntimeException;
 
 /**
  * Represents a base class for expressions which evaluate as an object
@@ -58,7 +60,59 @@ import org.codehaus.groovy.ast.ASTNode;
  * @version $Revision$
  */
 public abstract class Expression extends ASTNode {
-    
+    protected boolean typeResolved = false;
+
+    public boolean isResolveFailed() {
+        return resolveFailed;
+    }
+
+    public void setResolveFailed(boolean resolveFailed) {
+        this.resolveFailed = resolveFailed;
+    }
+
+    public String getFailure() {
+        return failure;
+    }
+
+    public void setFailure(String failure) {
+        this.failure = failure;
+    }
+
+    String failure = "";
+    private boolean resolveFailed = false;
+
+    public Class getTypeClass() {
+        return typeClass;
+    }
+
+    public void setTypeClass(Class typeClass) {
+        if (typeClass != null) {
+            this.typeClass = typeClass;
+            type = typeClass.getName();
+            setTypeResolved(true);
+        }
+    }
+
+    public Class typeClass = null;
+
+    public String getType() {
+        if (type != null){
+            return type;
+        } else {
+            Class cls = getTypeClass();
+            return cls != null? cls.getName() : null;//"java.lang.Object";
+        }
+    }
+
+    /**
+     * true if the datatype can be changed, false otherwise.
+     * @return
+     */
+    public boolean isDynamic() {
+        return true;
+    }
+
+    protected String type = null;
     /**
      * Return a copy of the expression calling the transformer on any nested expressions 
      * @param transformer
@@ -77,4 +131,108 @@ public abstract class Expression extends ASTNode {
         }
         return list;
     }
+
+    public void setType(String name) {
+        if (name == null)
+            throw new GroovyRuntimeException("cannot set null on type");
+        // handle primitives first
+        if (name.equals("int")) {
+            setTypeClass(Integer.TYPE);
+            return;
+        }
+        else if (name.equals("long")) {
+            setTypeClass(Long.TYPE);
+            return;
+        }
+        else if (name.equals("short")) {
+            setTypeClass(Short.TYPE);
+            return;
+        }
+        else if (name.equals("float")) {
+            setTypeClass(Float.TYPE);
+            return;
+        }
+        else if (name.equals("double")) {
+            setTypeClass(Double.TYPE);
+            return;
+        }
+        else if (name.equals("byte")) {
+            setTypeClass(Byte.TYPE);
+            return;
+        }
+        else if (name.equals("char")) {
+            setTypeClass(Character.TYPE);
+            return;
+        }
+        else if (name.equals("boolean")) {
+            setTypeClass(Boolean.TYPE);
+            return;
+        }
+
+        if (name.endsWith("[]")) {
+            String prefix = "[";
+            name = name.substring(0, name.length() - 2);
+
+            if (name.equals("int")) {
+                type = prefix + "I";
+            }
+            else if (name.equals("long")) {
+                type = prefix + "J";
+            }
+            else if (name.equals("short")) {
+                type = prefix + "S";
+            }
+            else if (name.equals("float")) {
+                type = prefix + "F";
+            }
+            else if (name.equals("double")) {
+                type = prefix + "D";
+            }
+            else if (name.equals("byte")) {
+                type = prefix + "B";
+            }
+            else if (name.equals("char")) {
+                type = prefix + "C";
+            }
+            else if (name.equals("boolean")) {
+                type = prefix + "Z";
+            } else {
+                type = prefix + "L" + name + ";";
+            }
+        }
+        else {
+            type = name;
+        }
+        if (type == null) {
+            System.out.println("Expression.setType(): null");
+            System.out.println("name = " + name);
+        }
+        try {
+            this.setTypeClass(Class.forName(type, false, this.getClass().getClassLoader()));
+        } catch (Throwable e) {
+            this.typeResolved = false;
+        }
+    }
+
+    public boolean isTypeResolved() {
+        return typeResolved;
+    }
+
+    public void setTypeResolved(boolean b) {
+        this.typeResolved = b;
+        this.resolveFailed = false;
+    }
+
+    public void resolve(AsmClassGenerator2 cg) {
+        if (shouldContinue()) {
+            resolveType(cg);
+        }
+    }
+
+    protected abstract void resolveType(AsmClassGenerator2 resolver);
+
+    protected boolean shouldContinue() {
+        return !isResolveFailed() && !isTypeResolved();
+    }
+
 }

@@ -45,7 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import groovy.lang.MetaMethod;
+
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.classgen.AsmClassGenerator2;
 
 /**
  * A static method call on a class
@@ -55,12 +58,13 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class StaticMethodCallExpression extends Expression {
 
-    private String type;
+    String ownerType;
     private String method;
     private Expression arguments;
-    
+    private MetaMethod metaMethod = null;
+
     public StaticMethodCallExpression(String type, String method, Expression arguments) {
-        this.type = type;
+        ownerType = type;
         this.method = method;
         this.arguments = arguments;
     }
@@ -72,13 +76,14 @@ public class StaticMethodCallExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         return new StaticMethodCallExpression(type, method, transformer.transform(arguments)); 
     }
-    
-    public Expression getArguments() {
-        return arguments;
+
+    protected void resolveType(AsmClassGenerator2 resolver) {
+        arguments.resolve(resolver);
+        resolver.resolve(this);
     }
 
-    public String getType() {
-        return type;
+    public Expression getArguments() {
+        return arguments;
     }
 
     public String getMethod() {
@@ -92,4 +97,20 @@ public class StaticMethodCallExpression extends Expression {
     public String toString() {
         return super.toString() + "[type: " + type + " method: " + method + " arguments: " + arguments + "]";
     }
+    public String getOwnerType() {
+        return ownerType;
+    }
+
+    public void setOwnerType(String ownerType) {
+        this.ownerType = ownerType;
+    }
+
+    public void setMetaMethod(MetaMethod metaMethod) {
+        this.metaMethod = metaMethod;
+    }
+
+    public MetaMethod getMetaMethod() {
+        return metaMethod;
+    }
+
 }

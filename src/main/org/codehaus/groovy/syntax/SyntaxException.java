@@ -108,4 +108,9 @@ public class SyntaxException extends GroovyException {
     public int getEndColumn() {
         return getStartColumn() + 1;
     }
+
+    public String getMessage() {
+        String msg = super.getMessage() + " @ line " + line + ", column " + column + ".";
+        return msg;
+    }
 }

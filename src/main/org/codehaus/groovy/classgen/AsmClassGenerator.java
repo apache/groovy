@@ -125,6 +125,7 @@ import org.objectweb.asm.Label;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
+ * @deprecated  AsmClassGenerator2 contains code for static method bindings.
  */
 public class AsmClassGenerator extends ClassGenerator {
 
