@@ -104,8 +104,9 @@ public class IntRangeTest extends TestCase {
         assertTrue("contains 11", r.contains(new Integer(11)));
         assertTrue("contains 10", r.contains(new Integer(10)));
         assertTrue("contains 19", r.contains(new Integer(19)));
+        assertTrue("contains 20", r.contains(new Integer(20)));
         assertFalse("contains 9", r.contains(new Integer(9)));
-        assertFalse("contains 21", r.contains(new Integer(20)));
+        assertFalse("contains 21", r.contains(new Integer(21)));
         assertFalse("contains 100", r.contains(new Integer(100)));
         assertFalse("contains -1", r.contains(new Integer(-1)));
     }
