@@ -70,9 +70,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -2122,6 +2124,56 @@ public class DefaultGroovyMethods {
         return new Integer(self.intValue());
     }
 
+
+    // Date methods
+    //-------------------------------------------------------------------------
+    
+    /**
+     * Increments a Date by a day
+     *
+     * @param self a Date
+     * @return the next days date
+     */
+    public static Date next(Date self) {
+        return plus(self, 1);
+    }
+
+    /**
+     * Decrement a Date by a day
+     *
+     * @param self a Date
+     * @return the previous days date
+     */
+    public static Date previous(Date self) {
+        return minus(self, 1);
+    }
+
+    /**
+     * Adds a number of days to this date and returns the new date
+     *
+     * @param self a Date
+     * @param days the number of days to increase
+     * @return the new date
+     */
+    public static Date plus(Date self, int days) {
+        Calendar calendar = (Calendar) Calendar.getInstance().clone();
+        calendar.setTime(self);
+        calendar.add(Calendar.DAY_OF_YEAR, days);
+        return calendar.getTime();
+    }
+
+    /**
+     * Subtracts a number of days from this date and returns the new date
+     *
+     * @param self a Date
+     * @return the new date
+     */
+    public static Date minus(Date self, int days) {
+        return plus(self, -days);
+    }
+
+    
+    
     // File based methods
     //-------------------------------------------------------------------------
 
