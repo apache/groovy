@@ -9,8 +9,9 @@
 	<classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/classworlds/jars/classworlds-1.0-rc2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.5.2.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-optional-1.5.2.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.jar"/>
+	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-launcher-1.6.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.4.1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar"/>
