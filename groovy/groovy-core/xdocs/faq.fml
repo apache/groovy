@@ -224,6 +224,26 @@
        </p>
       </answer>
     </faq>   
+    
+    <faq id="cvs">
+      <question>
+        How do I use codehaus's CVS?
+      </question>
+      <answer>
+        <p>
+        Codehaus uses SSH for CVS access. So from the command line you'd type
+        </p>
+        <source>
+export CVS_RSH=ssh
+		</source>
+		<p>
+		Or if you're using eclipse you might find 
+		<a href="http://www.jcraft.com/eclipse-cvsssh2/">this plugin</a>
+		handy.
+		I use it with extssh2 and it works great!        
+       </p>
+      </answer>
+    </faq>   
   </part>
 
 </faqs>
