@@ -6,6 +6,7 @@ package groovy.swt;
 
 import groovy.lang.Closure;
 import groovy.swt.factory.FormFactory;
+import groovy.swt.factory.FormLayoutDataFactory;
 import groovy.swt.factory.ImageFactory;
 import groovy.swt.factory.LayoutDataFactory;
 import groovy.swt.factory.LayoutFactory;
@@ -27,10 +28,12 @@ import org.eclipse.swt.browser.ProgressListener;
 import org.eclipse.swt.browser.StatusTextListener;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.custom.TableTree;
 import org.eclipse.swt.custom.TableTreeItem;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -201,6 +204,7 @@ public class SwtBuilder extends BuilderSupport {
         // custom widgets
         registerBeanFactory("cTabFolder", CTabFolder.class);
         registerBeanFactory("cTabItem", CTabItem.class);
+        registerBeanFactory("sashForm", SashForm.class);
         registerBeanFactory("tableTree", TableTree.class);
         registerBeanFactory("tableTreeItem", TableTreeItem.class);
 
@@ -208,10 +212,12 @@ public class SwtBuilder extends BuilderSupport {
         registerFactory("fillLayout", new LayoutFactory(FillLayout.class));
         registerFactory("gridLayout", new LayoutFactory(GridLayout.class));
         registerFactory("rowLayout", new LayoutFactory(RowLayout.class));
+        registerFactory("formLayout", new LayoutFactory(FormLayout.class));
 
         // layout data objects
         registerFactory("gridData", new LayoutDataFactory(GridData.class));
         registerFactory("rowData", new LayoutDataFactory(RowData.class));
+        registerFactory("formData", new FormLayoutDataFactory());
 
         // dialogs
         registerBeanFactory("colorDialog", ColorDialog.class);

@@ -17,7 +17,6 @@ import org.eclipse.swt.widgets.Listener;
  */
 public class ListenerImpl implements Listener, ClosureSupport {
     private Closure closure;
-    public Event event;
 
     public Closure getClosure() {
         return closure;
@@ -32,12 +31,6 @@ public class ListenerImpl implements Listener, ClosureSupport {
             throw new NullPointerException(
             "No closure has been configured for this Listener");
         }
-        this.event = event;
-        closure.setDelegate(this);
-        closure.call(this);
-    }
-
-    public Event getEvent() {
-        return event;
+        closure.call(event);
     }
 }

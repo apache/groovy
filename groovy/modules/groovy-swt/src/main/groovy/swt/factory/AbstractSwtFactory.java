@@ -55,6 +55,7 @@ public abstract class AbstractSwtFactory {
                 else {
                     InvokerHelper.setProperty(bean, property, value);
                 }
+                
             }
             catch (Exception e) {
             }

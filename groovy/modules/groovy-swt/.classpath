@@ -10,7 +10,7 @@
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.4.1.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/swt-win32-3.0m7.jar"/>
+	<classpathentry sourcepath="SWT_SRC" kind="var" path="MAVEN_REPO/swt/jars/swt-win32-3.0m7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/jface-3.0m7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/forms-3.0m7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/swt/jars/runtime-3.0m7.jar"/>
