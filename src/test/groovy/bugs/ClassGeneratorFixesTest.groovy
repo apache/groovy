@@ -19,7 +19,7 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
 
         foo =
             {i::
-                {j::
+                return {j::
                     i += j
                     i
                 }
