@@ -60,6 +60,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -96,9 +97,10 @@ public class TestSupport extends GroovyTestCase implements Constants {
     };
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
+    protected CompileUnit unit = new CompileUnit();
     protected ClassGenerator checker =
-        new ClassGenerator(new GeneratorContext(), new CheckClassAdapter(invisibleDumpVisitor), loader, null);
-    protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(), dumpVisitor, loader, null);
+        new ClassGenerator(new GeneratorContext(unit), new CheckClassAdapter(invisibleDumpVisitor), loader, null);
+    protected ClassGenerator dumper = new ClassGenerator(new GeneratorContext(unit), dumpVisitor, loader, null);
 
     protected Class loadClass(ClassNode classNode) {
         Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy");

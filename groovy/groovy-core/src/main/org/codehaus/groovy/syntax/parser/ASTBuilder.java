@@ -43,7 +43,9 @@ public class ASTBuilder
 
         packageName = packageDeclaration( children[ 0 ] );
 
-        importStatements( children[ 1 ] );
+        answer.setPackageName(packageName);
+        
+        importStatements( answer, children[ 1 ] );
 
         ClassNode[] datatypes = new ClassNode[ children.length - 2 ];
 
@@ -68,17 +70,17 @@ public class ASTBuilder
         return qualifiedName( nameRoot );
     }
 
-    protected void importStatements(CSTNode importsRoot)
+    protected void importStatements(ModuleNode node, CSTNode importsRoot)
     {
         CSTNode[] importStatements = importsRoot.getChildren();
 
         for ( int i = 0 ; i < importStatements.length ; ++i )
         {
-            importStatement( importStatements[ i ] );
+            importStatement( node, importStatements[ i ] );
         }
     }
 
-    protected void importStatement(CSTNode importRoot)
+    protected void importStatement(ModuleNode node,CSTNode importRoot)
     {
         String importName = qualifiedName( importRoot.getChild( 0 ) );
 
@@ -105,6 +107,8 @@ public class ASTBuilder
 
         addImport( importName,
                    asName );
+
+        node.addImport(asName, importName);
     }
 
     protected void addImport(String importName,

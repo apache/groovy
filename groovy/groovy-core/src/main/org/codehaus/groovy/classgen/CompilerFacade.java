@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.lexer.CharStream;
@@ -62,9 +63,11 @@ public abstract class CompilerFacade {
 
     private Verifier verifier = new Verifier();
     private ClassLoader classLoader;
+    private CompileUnit unit;
 
-    public CompilerFacade(ClassLoader classLoader) {
+    public CompilerFacade(ClassLoader classLoader, CompileUnit unit) {
         this.classLoader = classLoader;
+        this.unit = unit;
     }
 
     /**
@@ -125,8 +128,9 @@ public abstract class CompilerFacade {
 
         ASTBuilder astBuilder = new ASTBuilder(classLoader);
         ModuleNode module = astBuilder.build(compilationUnit);
-
-        GeneratorContext context = new GeneratorContext();
+        unit.addModule(module);
+        
+        GeneratorContext context = new GeneratorContext(unit);
         for (Iterator iter = module.getClasses().iterator(); iter.hasNext();) {
             generateClass(context, (ClassNode) iter.next(), file);
         }
