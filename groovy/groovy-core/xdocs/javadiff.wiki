@@ -11,7 +11,6 @@ Here we list all the major differences between Java and Groovy.
 
 Here we list the common things you might trip over if you're a Java developer starting to use Groovy
 * == means equals on all types and === means identity compare. In java there's a wierd part of the syntax where == means equality for primitive types and == means identity for objects. Since we're using autoboxing this would be very confusing for Java developers (since x == 5 would be mostly false if x was 5 :). So for simplicity == means equals() in Groovy
-* classes can be referred to directly by name. Don't use SomeClass.class (as that means the class of the class which will be java.lang.Class)
 * if you want to use the neat syntax sugar for passing closures into methods or using GroovyMarkup - be aware that the { must be on the same line.
 
 For example the following is valid groovy
