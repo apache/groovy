@@ -62,8 +62,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class GStringExpression extends Expression {
 
-    private static final Log log = LogFactory.getLog(GStringExpression.class);
-
     private String verbatimText;
     private List strings = new ArrayList();
     private List values = new ArrayList();
@@ -114,9 +112,6 @@ public class GStringExpression extends Expression {
             Object value = expression.getValue();
             if (value != null) {
                 buffer.append(value);
-            }
-            else {
-                log.warn("null expression in GString", new Exception());
             }
         }
         return new ConstantExpression(buffer.toString());
