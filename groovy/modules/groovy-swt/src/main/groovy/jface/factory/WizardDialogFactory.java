@@ -27,8 +27,7 @@ public class WizardDialogFactory extends AbstractSwtFactory implements SwtFactor
      * @see groovy.swt.factory.SwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent)
-    throws GroovyException {
+    public Object newInstance(Map properties, Object parent) throws GroovyException {
         Shell parentShell = SwtUtils.getParentShell(parent);
         Wizard wizard = new WizardImpl();
         WizardDialog wizardDialog = new WizardDialogImpl(parentShell, wizard);

@@ -11,6 +11,7 @@ import groovy.jface.factory.PreferencesDialogFactory;
 import groovy.jface.factory.PreferencesFieldEditorFactory;
 import groovy.jface.factory.PreferencesPageFactory;
 import groovy.jface.factory.SelectionChangedListenerFactory;
+import groovy.jface.factory.ViewerFactory;
 import groovy.jface.factory.WindowFactory;
 import groovy.jface.factory.WizardDialogFactory;
 import groovy.jface.factory.WizardPageFactory;
@@ -42,32 +43,28 @@ public class JFaceBuilder extends SwtBuilder {
         super.registerWidgets();
 
         // Viewer
-        registerBeanFactory("tableViewer", TableViewer.class);
-        registerBeanFactory("tableTreeViewer", TableTreeViewer.class);
-        registerBeanFactory("treeViewer", TreeViewer.class);
-        registerBeanFactory("checkboxTreeViewer", CheckboxTreeViewer.class);
+        registerFactory("tableViewer", new ViewerFactory(TableViewer.class));
+        registerFactory("tableTreeViewer", new ViewerFactory(TableTreeViewer.class));
+        registerFactory("treeViewer", new ViewerFactory(TreeViewer.class));
+        registerFactory("checkboxTreeViewer", new ViewerFactory(CheckboxTreeViewer.class));
 
         // Event
         registerFactory("doubleClickListener", new DoubleClickListenerFactory());
-        registerFactory("selectionChangedListener",
-                new SelectionChangedListenerFactory());
+        registerFactory("selectionChangedListener", new SelectionChangedListenerFactory());
 
         // Window
-        registerFactory("applicationWindow", new WindowFactory(
-                ApplicationWindowImpl.class));
-//        registerFactory("window", new WindowFactory(
-//                WindowImpl.class));
+        registerFactory("applicationWindow", new WindowFactory(ApplicationWindowImpl.class));
+        //        registerFactory("window", new WindowFactory(
+        //                WindowImpl.class));
 
         // ContributionManager
         registerFactory("menuManager", new MenuManagerFactory());
 
         // Action tags
-        registerFactory("action", new ContributionManagerFactory(
-                ActionImpl.class));
+        registerFactory("action", new ContributionManagerFactory(ActionImpl.class));
 
         // ContributionItem
-        registerFactory("separator", new ContributionManagerFactory(
-                Separator.class));
+        registerFactory("separator", new ContributionManagerFactory(Separator.class));
 
         // Wizard
         registerFactory("wizardDialog", new WizardDialogFactory());
@@ -76,18 +73,16 @@ public class JFaceBuilder extends SwtBuilder {
         // Preference
         registerFactory("preferenceDialog", new PreferencesDialogFactory());
         registerFactory("preferencePage", new PreferencesPageFactory());
-        registerFactory("booleanFieldEditor",
-                new PreferencesFieldEditorFactory(BooleanFieldEditor.class));
+        registerFactory("booleanFieldEditor", new PreferencesFieldEditorFactory(
+                BooleanFieldEditor.class));
         registerFactory("colorFieldEditor", new PreferencesFieldEditorFactory(
                 ColorFieldEditor.class));
-        registerFactory("directoryFieldEditor",
-                new PreferencesFieldEditorFactory(DirectoryFieldEditor.class));
-        registerFactory("fileFieldEditor", new PreferencesFieldEditorFactory(
-                FileFieldEditor.class));
-        registerFactory("fontFieldEditor", new PreferencesFieldEditorFactory(
-                FontFieldEditor.class));
-        registerFactory("integerFieldEditor",
-                new PreferencesFieldEditorFactory(IntegerFieldEditor.class));
+        registerFactory("directoryFieldEditor", new PreferencesFieldEditorFactory(
+                DirectoryFieldEditor.class));
+        registerFactory("fileFieldEditor", new PreferencesFieldEditorFactory(FileFieldEditor.class));
+        registerFactory("fontFieldEditor", new PreferencesFieldEditorFactory(FontFieldEditor.class));
+        registerFactory("integerFieldEditor", new PreferencesFieldEditorFactory(
+                IntegerFieldEditor.class));
         //registerBeanFactory("radioGroupFieldEditor",
         // RadioGroupFieldEditor.class);
         //registerBeanFactory("stringButtonFieldEditor",
