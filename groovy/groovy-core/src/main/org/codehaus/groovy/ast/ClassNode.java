@@ -61,6 +61,8 @@ import org.objectweb.asm.Constants;
  */
 public class ClassNode extends MetadataNode implements Constants {
 
+    private static final String[] defaultImports = { "java.lang", "java.util", "groovy.lang", "groovy.util" };
+
     private Logger log = Logger.getLogger(getClass().getName());
 
     private String name;
@@ -563,6 +565,15 @@ public class ClassNode extends MetadataNode implements Constants {
                         if (answer != null) {
                             return answer;
                         }
+                    }
+                }
+            }
+            if (answer == null) {
+                for (int i = 0, size = defaultImports.length; i < size; i++ ) {
+                    String packagePrefix = defaultImports[i];
+                    answer = tryResolveClassFromCompileUnit(packagePrefix + "." + type);
+                    if (answer != null) {
+                        return answer;
                     }
                 }
             }

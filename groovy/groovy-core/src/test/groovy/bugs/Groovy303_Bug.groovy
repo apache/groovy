@@ -37,7 +37,8 @@ class Scholastic implements ActionListener {
        pane.add(button, BorderLayout.CENTER)
        contents.add(pane)
        frame.setSize(100, 100)
-       frame.setVisible(true)
+       //frame.setVisible(true)
+       button.doClick()
     }
 
     public void actionPerformed(ActionEvent event) {

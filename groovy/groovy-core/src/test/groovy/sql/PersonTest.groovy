@@ -1,5 +1,7 @@
 package groovy.sql
 
+import javax.sql.DataSource
+
 import org.axiondb.jdbc.AxionDataSource
 
 class PersonTest extends GroovyTestCase {

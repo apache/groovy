@@ -221,12 +221,17 @@
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
         <exclude name="**/parser/*.groovy"/>
+        <!--
+        <exclude name="**/script/AtomTestScript.groovy"/>
+        -->
         <exclude name="CVS/*"/>
       </fileset>
     </copy>
+    <!--
     <touch>
     <fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/>
     </touch>
+    -->
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
