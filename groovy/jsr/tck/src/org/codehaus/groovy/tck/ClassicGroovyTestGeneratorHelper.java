@@ -34,9 +34,8 @@ public class ClassicGroovyTestGeneratorHelper implements TestGeneratorHelper {
         System.out.println("  " + testName);
         System.out.println("-------------------------------");
         try {
-            Reader reader = new StringReader(theSrcText);
-            GroovyLexer lexer = new GroovyLexer(reader);
-            GroovyRecognizer recognizer = new GroovyRecognizer(lexer);
+            Reader reader = new BufferedReader(new StringReader(theSrcText));
+            GroovyRecognizer recognizer = GroovyRecognizer.make(reader);
             recognizer.compilationUnit();
             System.out.println(decorateWithLineNumbers(theSrcText));
 
