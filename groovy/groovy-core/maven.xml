@@ -408,6 +408,7 @@
 			<include name="asm*.jar"/>
 			<exclude name="asm-attr*.jar"/>
 			<exclude name="asm-util*.jar"/>
+			<exclude name="asm-analysis*.jar"/>
 			<include name="groovy*.jar"/>
 		</fileset>
 	</unzip>
@@ -429,9 +430,12 @@
     <mkdir dir="${maven.build.dir}/native/classes"/>
     <unzip src="${maven.build.dir}/${maven.final.name}.jar" dest="${maven.build.dir}/native/classes"
 />
-    <unzip src="${groovy.install.staging.dest}/lib/asm-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-util-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-attrs-1.4.3.jar" dest="${maven.build.dir}/native/classes"/>
+
+    <unzip src="${groovy.install.staging.dest}/lib/asm-1.5.2.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-util-1.5.2.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-attrs-1.5.2.jar" dest="${maven.build.dir}/native/classes"/>
+    <unzip src="${groovy.install.staging.dest}/lib/asm-analysis-1.5.2.jar" dest="${maven.build.dir}/native/classes"/>
+
     <unzip src="${groovy.install.staging.dest}/lib/commons-cli-1.0.jar" dest="${maven.build.dir}/native/classes"/>
     <exec executable="gcc">
       <arg line="-g -o ${maven.build.dir}/native/base ${maven.src.dir}/native/base.c"/>
