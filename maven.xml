@@ -248,6 +248,14 @@
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
+
+      <!-- re compile java, so that UberTests are now built -->
+      <javac srcdir="${basedir}/src/test"
+             destdir="${basedir}/target/test-classes"
+             classpathref="test.classpath">
+        <include name="**/Uber*.java" />   
+      </javac>
+
   </goal>
 
 <!--
@@ -422,7 +430,7 @@
                                                         manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
 		<fileset dir="${groovy.embeddable.working.dir}"/>
 	</jar>
-	<delete dir="${groovy.embeddable.working.dir}"/>
+<!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
   </goal>
 
   <goal name="groovy:exe" prereqs="rebuild">
