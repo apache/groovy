@@ -1,9 +1,7 @@
 Core Groovy Tasks
 =================
 
-* AST closures 
-
-* test for statement
+* test local variables
 
 * test try / catch
 
