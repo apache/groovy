@@ -133,7 +133,9 @@ public class MetaClass {
     private List interfaceMethods;
     private Reflector reflector;
     private boolean initialised;
-
+	// we only need one of these that can be reused over and over.
+	private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
+	
     public MetaClass(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
         this.registry = registry;
         this.theClass = theClass;
@@ -726,6 +728,11 @@ public class MetaClass {
             klass = klass.getSuperclass();
         }
         
+		// if this an Array, then add the special read-only "length" property
+		if(theClass.isArray()) {
+			propertyMap.put("length", arrayLengthProperty);
+		}
+		
         // now iterate over the map of property descriptors and generate 
         // MetaBeanProperty objects
         for(int i=0; i<propertyDescriptors.length; i++) {
@@ -914,6 +921,10 @@ public class MetaClass {
                 mp.setProperty(object, newValue);
                 return;
             }
+			catch(ReadOnlyPropertyException e) {
+				// just rethrow it; there's nothing left to do here
+				throw e;
+			}
             catch (Exception e) {
                 // if the value is a List see if we can construct the value
                 // from a constructor
@@ -979,7 +990,6 @@ public class MetaClass {
             }
 
             if (genericSetMethod == null) {
-                //jes do we still need this logic??
                 // Make sure there isn't a generic method in the "use" cases
                 List possibleGenericMethods = getMethods("set");
                 if (possibleGenericMethods != null) {
@@ -1147,6 +1157,7 @@ public class MetaClass {
             return new Object[] { arguments };
         }
     }
+	
     /**
      * @param listenerType
      *            the interface of the listener to proxy
