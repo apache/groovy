@@ -46,41 +46,24 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.GroovyObject;
-
-import org.codehaus.groovy.classgen.TestSupport;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * Tests dynamically compiling and running a new class
+ * This is a scratch class used to experiment with ASM to see what kind of 
+ * stuff is output for normal Java code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class RunGroovyTest extends TestSupport {
+public class DumpClass4 {
 
-    /*
-    public void testMap() throws Exception {
-        GroovyObject object = compile("src/test/groovy/MapTest.groovy");
-        object.invokeMethod("testMap", null);
+    public DumpClass4() {
     }
     
-    public void testClosure() throws Exception {
-        GroovyObject object = compile("src/test/groovy/ClosureMethodTest.groovy");
-        object.invokeMethod("testListMap", null);
+    public static void main(String[] args) {
+        Object foo = InvokerHelper.invokeConstructor(DumpClass4.class, null);
     }
-
-    public void testClosureWithDefaultParam() throws Exception {
-        GroovyObject object = compile("src/test/groovy/ClosureWithDefaultParamTest.groovy");
-        object.invokeMethod("testListMap", null);
-    }
-
-    public void testOptionalReturn() throws Exception {
-        GroovyObject object = compile("src/test/groovy/OptionalReturnTest.groovy");
-        object.invokeMethod("testSingleExpression", null);
-        object.invokeMethod("testLastExpressionIsSimple", null);
-    }
-*/
-    public void testConsole() throws Exception {
-        GroovyObject object = compile("src/main/groovy/ui/Console.groovy");
+   
+    public void run() {
     }
 }
