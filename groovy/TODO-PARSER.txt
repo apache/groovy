@@ -24,9 +24,6 @@ PARSER CHANGES REQUIRED
 	foo[0];
 	foo["hello"] = 123;
 	
-* maps "{" entry ["," entry]* "}"
-	entry =  keyExpression ":" valueExpression
-
 * allow new object expressions to take a Map or List expression as a last expression
 
 	foo = new MySpecialMap(123, 10) [a:1, b:2];
