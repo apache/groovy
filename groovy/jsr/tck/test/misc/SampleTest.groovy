@@ -12,9 +12,6 @@ class SampleTest extends GroovyTestCase {
     private static  dummyx = 123
     protected final dummyY = 456
 
-    protected synchronized static void something() {
-    }
-
     void testListClosure() {
         def list = [1, 2, 3]
 
@@ -43,6 +40,16 @@ class SampleTest extends GroovyTestCase {
         //m3 = [123:456, 678:"whatnot"]
         m3 = [(123):456, (678):"whatnot"]
         println "Created map with named arguments $m3"
+    }
+
+    void testMultiLineString() {
+        println """
+this is
+a very
+long string
+which spans
+many lines
+"""
     }
 
     void testStrings() {
@@ -313,6 +320,10 @@ class SampleTest extends GroovyTestCase {
         // assert "\\\\ \\ ${z}" == "\\" + "\\" + " " + "\\" + " " + "300"
     }
 
+    protected synchronized static void something() {
+        println "Hey, I'm synchronized and static"
+    }
+
 
     /** TODO runtime breaks!
     void testPrePostFix() {
@@ -352,7 +363,7 @@ class SampleTest extends GroovyTestCase {
     }
 
 
-    void testMap() {
+    void testMapWithIntegerKey() {
         m = [1:2, "foo":"bar", "x":4.2]
 
         println "Created map $m"
