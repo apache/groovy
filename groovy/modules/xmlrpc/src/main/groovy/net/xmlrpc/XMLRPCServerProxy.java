@@ -141,7 +141,12 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			
 			final XMLRPCMessageProcessor responseParser = new XMLRPCMessageProcessor();
 			
-			responseParser.parseMessage(connection.getInputStream());
+			try {
+				responseParser.parseMessage(connection.getInputStream());
+			}
+			catch (final XMLRPCFailException e) {
+				throw new XMLRPCCallFailureException(e.getFaultString(), new Integer(e.getFaultCode()));
+			}
 			
 			final List response = responseParser.getParams();
 			

@@ -46,6 +46,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 package groovy.net.xmlrpc;
 
 import groovy.lang.Closure;
+import groovy.lang.GString;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
@@ -240,7 +241,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 							out.write(endResponse);
 						}
 						catch (final Throwable e) {
-						e.printStackTrace();
+//						e.printStackTrace();
 						final String message;
 						final int codeValue;
 							
@@ -304,6 +305,19 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 */
 	public void returnFault(String msg, int code) {
 		throw new XMLRPCFailException(msg, code);
+	}
+	
+	/**
+	 * 
+	 * Convenience method to be called by closures executing remote calls
+	 * Called when the closure wants to return a fault
+	 * The method always throws an exception
+	 * 
+	 * @param msg Fault message to be returned to the caller
+	 * @param code Fault code to be returned to the caller
+	 */
+	public void returnFault(GString msg, int code) {
+		returnFault(msg.toString(), code);	// sometimes Groovy doesn't do the cconversion to String 
 	}
 	
 	/**
