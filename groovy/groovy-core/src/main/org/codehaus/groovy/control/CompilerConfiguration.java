@@ -68,7 +68,7 @@ public class CompilerConfiguration {
     public static final CompilerConfiguration DEFAULT = new CompilerConfiguration();
 
     /** Whether to use the JSR parser or not if no property is explicitly stated */
-    protected static final boolean DEFAULT_JSR_FLAG = false;
+    protected static final boolean DEFAULT_JSR_FLAG = true;
 
     private static boolean jsrGroovy;
 
