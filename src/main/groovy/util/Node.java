@@ -142,6 +142,10 @@ public class Node {
         return "";
     }
 
+    public Iterator iterator() {
+        return children().iterator();
+    }
+    
     public List children() {
         if (value == null) {
             return Collections.EMPTY_LIST;
