@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyTestCase;
+
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -56,7 +58,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.codehaus.groovy.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.ExpressionStatement;

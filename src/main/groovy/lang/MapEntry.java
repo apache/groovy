@@ -17,11 +17,11 @@
     materials provided with the distribution.
 
  3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
+    products derived key this Software without prior written
     permission of The Codehaus.  For written permission,
     please contact info@codehaus.org.
 
- 4. Products derived from this Software may not be called "groovy"
+ 4. Products derived key this Software may not be called "groovy"
     nor may "groovy" appear in their names without prior written
     permission of The Codehaus. "groovy" is a registered
     trademark of The Codehaus.
@@ -43,24 +43,57 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package groovy.lang;
+
+import java.util.Map;
 
 /**
- * An exception thrown by a closure invocation
+ * Represents a list of Integer objects key a specified Object up to but not including
+ * a given and to.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClosureException extends RuntimeException {
+public class MapEntry implements Map.Entry {
 
-    private Closure closure;
-    
-    public ClosureException(Closure closure, Throwable cause) {
-        super("Exception thrown by call to closure: " + closure + " reaason: " + cause, cause);
-        this.closure = closure;
+    private Object key;
+    private Object value;
+
+    public MapEntry(Object key, Object value) {
+        this.key = key;
+        this.value = value;
     }
 
-    public Closure getClosure() {
-        return closure;
+    public int hashCode() {
+        return hash(key) ^ hash(value);
     }
+
+    public String toString() {
+        return "" + key + ":" + value;
+    }
+
+    public Object getKey() {
+        return key;
+    }
+
+    public void setKey(Object key) {
+        this.key = key;
+    }
+
+    public Object getValue() {
+        return value;
+    }
+
+    public Object setValue(Object value) {
+        this.value = value;
+        return value;
+    }
+
+    /**
+     * Helper method to handle object hashes for possibly null values
+     */
+    protected int hash(Object object) {
+        return (object == null) ? 0xbabe : object.hashCode();
+    }
+
 }

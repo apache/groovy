@@ -43,41 +43,23 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package groovy.lang;
+
+
 
 /**
- * Represents an arbitrary logging service. By default this outputs to
- * System.out though derivations of this class could log to Jakarta Commons Logging
- * or log4j or JDK 1.5 logging etc
+ * The interface implemented by all Groovy objects which is handy for
+ * using Groovy objects when in the Java world
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyLog implements GroovyObject {
+public interface GroovyObject {
 
-    String prefix;
 
     /** 
-     * Factory method to create new instances 
+     * Invokes the given method
+     * 
      */
-    public static GroovyLog newInstance(Class aClass) {
-        return new GroovyLog(aClass);
-    }
-    
-    public GroovyLog() {
-        this("");
-    }
-
-    public GroovyLog(Class owner) {
-        this(owner.getName());
-    }
-
-    public GroovyLog(String prefix) {
-        this.prefix = (prefix != null && prefix.length() > 0) ? "[" + prefix + ":" : "[";
-    }
-
-    public Object invokeMethod(String name, Object args) {
-        System.out.println(prefix + name + "] " + args);
-        return null;
-    }
+    public Object invokeMethod(String name, Object args);
 }

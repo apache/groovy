@@ -1,6 +1,6 @@
 package org.codehaus.groovy.syntax.parser;
 
-import org.codehaus.groovy.GroovyTestCase;
+import groovy.lang.GroovyTestCase;
 
 import org.codehaus.groovy.syntax.lexer.CharStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;

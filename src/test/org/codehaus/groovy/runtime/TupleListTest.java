@@ -46,10 +46,11 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyTestCase;
+
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.GroovyTestCase;
 
 /**
  * 

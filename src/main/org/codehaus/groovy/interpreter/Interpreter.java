@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.interpreter;
 
+import groovy.lang.Range;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -77,7 +79,6 @@ import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.WhileLoop;
-import org.codehaus.groovy.lang.Range;
 import org.codehaus.groovy.runtime.Invoker;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;

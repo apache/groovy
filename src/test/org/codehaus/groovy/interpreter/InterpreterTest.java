@@ -46,7 +46,8 @@
 
 package org.codehaus.groovy.interpreter;
 
-import org.codehaus.groovy.GroovyTestCase;
+import groovy.lang.GroovyTestCase;
+
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.runtime.InvokerException;
 

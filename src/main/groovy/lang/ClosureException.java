@@ -43,23 +43,24 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
-
-
+package groovy.lang;
 
 /**
- * The interface implemented by all Groovy objects which is handy for
- * using Groovy objects when in the Java world
+ * An exception thrown by a closure invocation
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyObject {
+public class ClosureException extends RuntimeException {
 
+    private Closure closure;
+    
+    public ClosureException(Closure closure, Throwable cause) {
+        super("Exception thrown by call to closure: " + closure + " reaason: " + cause, cause);
+        this.closure = closure;
+    }
 
-    /** 
-     * Invokes the given method
-     * 
-     */
-    public Object invokeMethod(String name, Object args);
+    public Closure getClosure() {
+        return closure;
+    }
 }

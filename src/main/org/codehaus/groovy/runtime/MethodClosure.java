@@ -1,6 +1,6 @@
 package org.codehaus.groovy.runtime;
 
-import org.codehaus.groovy.lang.Closure;
+import groovy.lang.Closure;
 
 
 /**

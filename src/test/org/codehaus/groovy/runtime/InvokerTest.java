@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyTestCase;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,7 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.GroovyTestCase;
 
 /**
  * Test the Invoker class

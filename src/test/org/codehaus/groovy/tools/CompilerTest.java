@@ -46,9 +46,10 @@
 
 package org.codehaus.groovy.tools;
 
+import groovy.lang.GroovyTestCase;
+
 import java.io.File;
 
-import org.codehaus.groovy.GroovyTestCase;
 /**
  * Tests the compiling & running of GroovyTestCases
  * 

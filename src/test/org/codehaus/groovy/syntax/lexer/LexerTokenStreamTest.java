@@ -1,7 +1,8 @@
 package org.codehaus.groovy.syntax.lexer;
 
+import groovy.lang.GroovyTestCase;
+
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.GroovyTestCase;
 
 public class LexerTokenStreamTest
     extends GroovyTestCase

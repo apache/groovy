@@ -1,6 +1,6 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import org.codehaus.groovy.GroovyTestCase;
+import groovy.lang.GroovyTestCase;
 
 public class StringCharStreamTest
     extends GroovyTestCase

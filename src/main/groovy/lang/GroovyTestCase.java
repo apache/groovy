@@ -43,53 +43,81 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package groovy.lang;
 
-import java.util.AbstractList;
-import java.util.List;
+import junit.framework.TestCase;
 
 /**
- * Represents a list of Integer objects from a specified int up to but not including
- * a given and to.
+ * A default JUnit TestCase in Groovy. This provides a number of helper methods
+ * plus avoids the JUnit restriction of requiring all test* methods to be void
+ * return type.
  * 
+ * @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Tuple extends AbstractList {
+public class GroovyTestCase extends TestCase {
 
-    private Object[] contents;
-    private int hashCode;
-
-    public Tuple(Object[] contents) {
-        this.contents = contents;
+    public GroovyTestCase() {
     }
 
-    public Object get(int index) {
-        return contents[index];
+    protected void assertLength(int length, char[] array) {
+        assertEquals(length, array.length);
     }
 
-    public int size() {
-        return contents.length;
+    protected void assertLength(int length, int[] array) {
+        assertEquals(length, array.length);
     }
 
-    public int hashCode() {
-        if (hashCode == 0) {
-            for (int i = 0; i < contents.length; i++ ) {
-                Object value = contents[i];
-                int hash = (value != null) ? value.hashCode() : 0xbabe;
-                hashCode ^= hash;
-            }
-            if (hashCode == 0) {
-                hashCode = 0xbabe;
+    protected void assertLength(int length, Object[] array) {
+        assertEquals(length, array.length);
+    }
+
+    protected void assertContains(char expected, char[] array) {
+        for (int i = 0; i < array.length; ++i) {
+            if (array[i] == expected) {
+                return;
             }
         }
-        return hashCode;
+
+        StringBuffer message = new StringBuffer();
+
+        message.append(expected + " not in {");
+
+        for (int i = 0; i < array.length; ++i) {
+            message.append("'" + array[i] + "'");
+
+            if (i < (array.length - 1)) {
+                message.append(", ");
+            }
+        }
+
+        message.append(" }");
+
+        fail(message.toString());
     }
 
-    public List subList(int fromIndex, int toIndex) {
-        int size = toIndex - fromIndex;
-        Object[] newContent = new Object[size];
-        System.arraycopy(contents, fromIndex, newContent, 0, size);
-        return new Tuple(newContent);
+    protected void assertContains(int expected, int[] array) {
+        for (int i = 0; i < array.length; ++i) {
+            if (array[i] == expected) {
+                return;
+            }
+        }
+
+        StringBuffer message = new StringBuffer();
+
+        message.append(expected + " not in {");
+
+        for (int i = 0; i < array.length; ++i) {
+            message.append("'" + array[i] + "'");
+
+            if (i < (array.length - 1)) {
+                message.append(", ");
+            }
+        }
+
+        message.append(" }");
+
+        fail(message.toString());
     }
 }

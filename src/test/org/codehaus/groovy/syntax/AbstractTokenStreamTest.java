@@ -1,7 +1,7 @@
 package org.codehaus.groovy.syntax;
 
-import org.codehaus.groovy.GroovyTestCase;
-import org.codehaus.groovy.syntax.LookAheadExhaustionException;
+
+import groovy.lang.GroovyTestCase;
 
 import java.io.IOException;
 

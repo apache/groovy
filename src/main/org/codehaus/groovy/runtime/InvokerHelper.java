@@ -45,6 +45,9 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Range;
+import groovy.lang.Tuple;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,8 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.lang.Range;
-import org.codehaus.groovy.lang.Tuple;
 
 /**
  * A static helper class to make bytecode generation easier and act as a facade over the Invoker
