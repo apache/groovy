@@ -951,15 +951,24 @@ public class Parser
     {
         CSTNode expr = multiplicativeExpression();
 
-        switch ( lt() )
+      LOOP:
+        while( true )
         {
-            case ( Token.PLUS ):
-            case ( Token.MINUS ):
+          SWITCH:
+            switch ( lt() )
             {
-                expr = rootNode( lt(),
-                                 expr );
-                expr.addChild( multiplicativeExpression() );
-                break;
+                case ( Token.PLUS ):
+                case ( Token.MINUS ):
+                {
+                    expr = rootNode( lt(),
+                                     expr );
+                    expr.addChild( multiplicativeExpression() );
+                    break SWITCH;
+                }
+                default:
+                {
+                    break LOOP;
+                }
             }
         }
 
@@ -971,16 +980,25 @@ public class Parser
     {
         CSTNode expr = unaryExpression();
 
-        switch ( lt() )
+      LOOP:
+        while ( true )
         {
-            case ( Token.MULTIPLY ):
-            case ( Token.DIVIDE ):
-            case ( Token.MOD ):
+          SWITCH:
+            switch ( lt() )
             {
-                expr = rootNode( lt(),
-                                 expr );
-                expr.addChild( unaryExpression() );
-                break;
+                case ( Token.MULTIPLY ):
+                case ( Token.DIVIDE ):
+                case ( Token.MOD ):
+                {
+                    expr = rootNode( lt(),
+                                     expr );
+                    expr.addChild( unaryExpression() );
+                    break SWITCH;
+                }
+                default:
+                {
+                    break LOOP;
+                }
             }
         }
 
