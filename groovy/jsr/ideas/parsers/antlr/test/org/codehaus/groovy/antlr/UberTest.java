@@ -39,7 +39,18 @@ public class UberTest implements Test {
         "BindingTest.groovy",
         "ChainedAssignment.groovy",
         "ClosureInClosureTest.groovy",
+        "IfElseCompactTest.groovy",
         "IfElseTest.groovy",
+        "IfTest.groovy",
+        "ImportTest.groovy",
+        "InstanceofTest.groovy",
+        // "ListTest.groovy",       TODO enable when assert can take ': message'
+        "LogicTest.groovy",
+        "MethodCallTest.groovy",
+        "MultilineStringTest.groovy",
+        "NegationTests.groovy",
+        // "PrimitiveTypeFieldTest.groovy",     TODO when parser can do closure arguments
+        "PrimitiveTypesTest.groovy",
     };
 
     static String[] tckTests = {

@@ -871,7 +871,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return new NotExpression(expression(node.getFirstChild()));
 
             case BNOT:
+            case UNARY_MINUS:
                 return new NegationExpression(expression(node.getFirstChild()));
+
+            case UNARY_PLUS:
+                return expression(node.getFirstChild());
+
 
                 // Prefix expressions
             case INC:
@@ -887,6 +892,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case POST_DEC:
                 return postfixExpression(node, Types.MINUS);
 
+                
                 // Binary expressions
 
             case ASSIGN:
