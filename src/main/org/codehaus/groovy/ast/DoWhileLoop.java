@@ -51,7 +51,7 @@ package org.codehaus.groovy.ast;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DoWhileLoop extends ASTNode {
+public class DoWhileLoop extends Statement {
 
     private BooleanExpression booleanExpression;
     private Statement loopBlock;
