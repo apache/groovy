@@ -45,6 +45,8 @@
  */
 package groovy.gdo;
 
+import javax.sql.DataSource;
+
 import groovy.lang.Closure;
 
 import org.codehaus.groovy.ast.MethodNode;
@@ -57,18 +59,29 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DataSet {
+public class DataSet extends Sql {
 
-    private Class type;
     private Closure where;
     private DataSet parent;
+    private String table;
 
-    public DataSet(Class type) {
-        this.type = type;
+    public DataSet(DataSource dataSource, Class type) {
+        super(dataSource);
+        String table = type.getName();
+        int idx = table.lastIndexOf('.');
+        if (idx > 0) {
+            table = table.substring(idx + 1);
+        }
+        this.table = table.toLowerCase();
+    }
+    
+    public DataSet(DataSource dataSource, String table) {
+        super(dataSource);
+        this.table = table;
     }
     
     public DataSet(DataSet parent, Closure where) {
-        this(parent.type);
+        this(parent.getDataSource(), parent.table);
         this.parent = parent;
         this.where = where;
     }
@@ -77,13 +90,12 @@ public class DataSet {
         return new DataSet(this, where);
     }
     
+    public void each(Closure closure) {
+        //this.query(getSql()), )
+    }
+    
     public String getSql() {
-        String typeName = type.getName();
-        int idx = typeName.lastIndexOf('.');
-        if (idx > 0) {
-            typeName = typeName.substring(idx + 1);
-        }
-        String sql = "select * from " + typeName.toLowerCase();
+        String sql = "select * from " + table;
         if (where != null) {
             sql += " where ";
             if (parent != null && parent.where != null)  {
@@ -94,11 +106,9 @@ public class DataSet {
         return sql;
     }
 
-    private String getWhereSql() {
+    protected String getWhereSql() {
         MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
         Statement statement = method.getCode();
-        
-        //System.out.println(statement.getText());
         
         SqlWhereVisitor visitor = new SqlWhereVisitor();
         statement.visit(visitor);

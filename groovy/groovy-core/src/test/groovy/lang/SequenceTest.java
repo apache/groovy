@@ -43,62 +43,62 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+
 package groovy.lang;
 
-import java.beans.IntrospectionException;
-import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerException;
-import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import groovy.util.GroovyTestCase;
 
 /**
- * A registery of MetaClass instances which caches introspection & 
- * reflection information and allows methods to be dynamically added to 
- * existing classes at runtime
+ * Tests the use of the structured Attribute type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MetaClassRegistry {
-    private Map metaClasses = Collections.synchronizedMap(new HashMap());
-    private boolean useAccessible;
+public class SequenceTest extends GroovyTestCase {
 
-    public MetaClassRegistry() {
-        this(true);
+    public void testConstruction() {
+        Sequence sequence = new Sequence(String.class);
+        sequence.add("James");
+        sequence.add("Bob");
+
+        assertEquals("Size", 2, sequence.size());
+        assertEquals("Element", "James", sequence.get(0));
+        assertEquals("Element", "Bob", sequence.get(1));
+
+        // now lets try some methods on each item in the list
+        List answer = (List) InvokerHelper.invokeMethod(sequence, "startsWith", new Object[] { "Ja" });
+        assertArrayEquals(new Object[] { Boolean.TRUE, Boolean.FALSE }, answer.toArray());
+
+        answer = (List) InvokerHelper.invokeMethod(sequence, "length", null);
+        assertArrayEquals(new Object[] { new Integer(5), new Integer(3)}, answer.toArray());
     }
 
-    /**
-     * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
-     * method will be called to enable access to all methods when using reflection
-     */
-    public MetaClassRegistry(boolean useAccessible) {
-        this.useAccessible = useAccessible;
+    public void testAddingWrongTypeFails() {
+        try {
+            Sequence sequence = new Sequence(String.class);
+            sequence.add(new Integer(5));
 
-        // lets register the default methods
-        getMetaClass(DefaultGroovyMethods.class).registerStaticMethods();
-    }
-
-    public MetaClass getMetaClass(Class theClass) {
-        /** @todo use static field to get the MetaClass from Groovy classes*/
-
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        if (answer == null) {
-            try {
-                answer = new MetaClass(this, theClass);
-            }
-            catch (IntrospectionException e) {
-                throw new InvokerException("Could not introspect class: " + theClass.getName() + ". Reason: " + e, e);
-            }
-            metaClasses.put(theClass, answer);
+            fail("Should have thrown exception");
         }
-        return answer;
+        catch (IllegalArgumentException e) {
+            System.out.println("Caught: " + e);
+        }
     }
 
-    public boolean useAccessible() {
-        return useAccessible;
+    public void testAddingNullFails() {
+        try {
+            Sequence sequence = new Sequence(String.class);
+            sequence.add(null);
+
+            fail("Should have thrown exception");
+        }
+        catch (NullPointerException e) {
+            System.out.println("Caught: " + e);
+        }
     }
+
 }

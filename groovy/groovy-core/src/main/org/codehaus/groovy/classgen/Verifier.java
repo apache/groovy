@@ -86,7 +86,19 @@ import org.objectweb.asm.Constants;
  */
 public class Verifier implements GroovyClassVisitor, Constants {
 
+    private ClassNode classNode;
+    private MethodNode methodNode;
+
+    public ClassNode getClassNode() {
+        return classNode;
+    }
+
+    public MethodNode getMethodNode() {
+        return methodNode;
+    }
+
     public void visitClass(ClassNode node) {
+        this.classNode = node;
         node.addInterface(GroovyObject.class.getName());
 
         // lets add a new field for the metaclass
@@ -168,6 +180,60 @@ public class Verifier implements GroovyClassVisitor, Constants {
         node.visitContents(this);
     }
 
+    public void visitConstructor(ConstructorNode node) {
+    }
+
+    public void visitMethod(MethodNode node) {
+        this.methodNode = node;
+        
+        if (!node.isVoidMethod()) {
+            Statement statement = node.getCode();
+            if (statement instanceof ExpressionStatement) {
+                ExpressionStatement expStmt = (ExpressionStatement) statement;
+                node.setCode(new ReturnStatement(expStmt.getExpression()));
+            }
+            else if (statement instanceof BlockStatement) {
+                BlockStatement block = (BlockStatement) statement;
+
+                // lets copy the list so we create a new block
+                List list = new ArrayList(block.getStatements());
+                if (!list.isEmpty()) {
+                    int idx = list.size() - 1;
+                    Statement last = (Statement) list.get(idx);
+                    if (last instanceof ExpressionStatement) {
+                        ExpressionStatement expStmt = (ExpressionStatement) last;
+                        list.set(idx, new ReturnStatement(expStmt.getExpression()));
+                    }
+                    else if (!(last instanceof ReturnStatement)) {
+                        list.add(new ReturnStatement(ConstantExpression.NULL));
+                    }
+                }
+                else {
+                    list.add(new ReturnStatement(ConstantExpression.NULL));
+                }
+                node.setCode(new BlockStatement(list));
+            }
+        }
+        if (node.getName().equals("main") && node.isStatic()) {
+            Parameter[] params = node.getParameters();
+            if (params.length == 1) {
+                Parameter param = params[0];
+                if (param.getType() == null || param.getType().equals("java.lang.Object")) {
+                    param.setType("java.lang.String[]");
+                }
+            }
+        }
+        node.getCode().visit(new VerifierCodeVisitor(this));
+    }
+
+    public void visitField(FieldNode node) {
+    }
+
+    public void visitProperty(PropertyNode node) {
+    }
+
+    // Implementation methods
+    
     protected void addClosureCode(InnerClassNode node) {
         // add a new invoke
     }
@@ -243,53 +309,5 @@ public class Verifier implements GroovyClassVisitor, Constants {
         return false;
     }
 
-    public void visitConstructor(ConstructorNode node) {
-    }
-
-    public void visitMethod(MethodNode node) {
-        if (!node.isVoidMethod()) {
-            Statement statement = node.getCode();
-            if (statement instanceof ExpressionStatement) {
-                ExpressionStatement expStmt = (ExpressionStatement) statement;
-                node.setCode(new ReturnStatement(expStmt.getExpression()));
-            }
-            else if (statement instanceof BlockStatement) {
-                BlockStatement block = (BlockStatement) statement;
-
-                // lets copy the list so we create a new block
-                List list = new ArrayList(block.getStatements());
-                if (!list.isEmpty()) {
-                    int idx = list.size() - 1;
-                    Statement last = (Statement) list.get(idx);
-                    if (last instanceof ExpressionStatement) {
-                        ExpressionStatement expStmt = (ExpressionStatement) last;
-                        list.set(idx, new ReturnStatement(expStmt.getExpression()));
-                    }
-                    else if (!(last instanceof ReturnStatement)) {
-                        list.add(new ReturnStatement(ConstantExpression.NULL));
-                    }
-                }
-                else {
-                    list.add(new ReturnStatement(ConstantExpression.NULL));
-                }
-                node.setCode(new BlockStatement(list));
-            }
-        }
-        if (node.getName().equals("main") && node.isStatic()) {
-            Parameter[] params = node.getParameters();
-            if (params.length == 1) {
-                Parameter param = params[0];
-                if (param.getType() == null || param.getType().equals("java.lang.Object")) {
-                    param.setType("java.lang.String[]");
-                }
-            }
-        }
-    }
-
-    public void visitField(FieldNode node) {
-    }
-
-    public void visitProperty(PropertyNode node) {
-    }
 
 }

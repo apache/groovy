@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.expr.Expression;
 
 /**
  * Represents a switch (object) { case value: ... case [1, 2, 3]: ...  default: ... } statement in Groovy.
@@ -58,11 +59,13 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class SwitchStatement extends Statement {
 
+    private Expression expression;
     private List caseStatements = new ArrayList();
     private Statement defaultStatement;
     
 
-    public SwitchStatement(Statement defaultStatement) {
+    public SwitchStatement(Expression expression, Statement defaultStatement) {
+        this.expression = expression;
         this.defaultStatement = defaultStatement;
     }
     
@@ -70,8 +73,12 @@ public class SwitchStatement extends Statement {
         visitor.visitSwitch(this);
     }
     
-    public List getCasetatements() {
+    public List getCaseStatements() {
         return caseStatements;
+    }
+
+    public Expression getExpression() {
+        return expression;
     }
 
     public Statement getDefaultStatement() {

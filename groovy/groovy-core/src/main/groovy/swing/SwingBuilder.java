@@ -79,6 +79,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
 import javax.swing.JDialog;
 import javax.swing.JEditorPane;
@@ -108,6 +109,7 @@ import javax.swing.JTextPane;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
 import javax.swing.RootPaneContainer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -134,7 +136,25 @@ public class SwingBuilder extends BuilderSupport {
 
     protected void setParent(Object parent, Object child) {
         if (child instanceof Action) {
-            InvokerHelper.setProperty(parent, "action", child);
+            Action action = (Action) child;
+            InvokerHelper.setProperty(parent, "action", action);
+            Object keyStroke = action.getValue("KeyStroke");
+            System.out.println("keystroke: " + keyStroke + " for: " + action);
+            if (parent instanceof JComponent) {
+                JComponent component = (JComponent) parent;
+                KeyStroke stroke = null;
+                if (keyStroke instanceof String) {
+                    stroke = KeyStroke.getKeyStroke((String) keyStroke);
+                }
+                else if (keyStroke instanceof KeyStroke) {
+                    stroke = (KeyStroke) keyStroke;
+                }
+                if (stroke != null) {
+                    String key = action.toString();
+                    component.getInputMap().put(stroke, key);
+                    component.getActionMap().put(key, action);
+                }
+            }
         }
         else if (child instanceof LayoutManager) {
             if (parent instanceof RootPaneContainer) {

@@ -399,4 +399,8 @@ public class ClassNode extends MetadataNode implements Constants {
         }
     }
 
+    public boolean isScriptClass() {
+        return "groovy.lang.GroovyShell".equals(superClass);
+    }
+
 }
