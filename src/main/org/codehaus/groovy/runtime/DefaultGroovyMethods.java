@@ -2346,6 +2346,50 @@ public class DefaultGroovyMethods {
     public static Number div(Number left, Number right) {
     	return NumberMath.divide(left, right);
     }
+    
+    /**
+     * Bitwise OR together two numbers
+     *
+     * @param left a Number
+     * @param right another Number to bitwise OR
+     * @return the bitwise OR of both Numbers
+     */
+    public static Number or(Number left, Number right) {
+        return NumberMath.or(left, right);
+    }
+    
+    /**
+     * Bitwise AND together two Numbers
+     *
+     * @param left a Number
+     * @param right another Number to bitwse AND
+     * @return the bitwise AND of both Numbers
+     */
+    public static Number and(Number left, Number right) {
+        return NumberMath.and(left, right);
+    }
+    
+    /**
+     * Performs a division modulus operation
+     *
+     * @param left a Number
+     * @param right another Number to mod
+     * @return the modulus result
+     */
+    public static Number mod(Number left, Number right) {
+        return NumberMath.mod(left, right);
+    }
+    
+    /**
+     * Negates the number
+     *
+     * @param left a Number
+     * @return the negation of the number
+     */
+    public static Number negate(Number left) {
+        return NumberMath.negate(left);
+    }
+
 
     /**
      * Iterates a number of times

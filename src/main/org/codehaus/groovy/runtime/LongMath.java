@@ -45,4 +45,19 @@ public class LongMath extends NumberMath {
 		}
 	}
 
+    protected Number andImpl(Number left, Number right) {
+        return new Long(left.longValue() & right.longValue());
+    }
+    
+    protected Number modImpl(Number left, Number right) {
+        return new Long(left.longValue() % right.longValue());
+    }
+    
+    protected Number negateImpl(Number left) {
+        return new Long(-left.longValue());
+    }
+    
+    protected Number orImpl(Number left, Number right) {
+        return new Long(left.longValue() | right.longValue());
+    }
 }

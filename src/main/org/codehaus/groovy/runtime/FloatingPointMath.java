@@ -39,4 +39,12 @@ public class FloatingPointMath extends NumberMath {
 			return (diff > 0) ? 1 : -1;
 		}
 	}
+    
+    protected Number modImpl(Number left, Number right) {
+        return new Double(left.doubleValue() % right.doubleValue());
+    }
+    
+    protected Number negateImpl(Number left) {
+        return new Double(-left.doubleValue());
+    }
 }
