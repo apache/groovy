@@ -92,7 +92,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 	private ResourceConnector rc;
 
 	private static class ScriptCacheEntry {
-		private Script scriptObject;
+		private Class scriptClass;
 		private long lastModified;
 		private Map dependencies = new HashMap();
 	}
@@ -233,19 +233,16 @@ public class GroovyScriptEngine implements ResourceConnector {
 						}
 					}
 				};
-				Class scriptClass;
 				try {
-					scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
+					entry.scriptClass = groovyLoader.parseClass(groovyScriptConn.getInputStream(), script);
 				} catch (Exception e) {
-					throw new ScriptException("Could not execute script: " + script, e);
+					throw new ScriptException("Could not parse script: " + script, e);
 				}
-				entry.scriptObject = InvokerHelper.createScript(scriptClass, binding);
 				entry.lastModified = lastModified;
 				scriptCache.put(script, entry);
-			} else {
-				entry.scriptObject.setBinding(binding);
 			}
 		}
-		return entry.scriptObject.run();
+		Script scriptObject = InvokerHelper.createScript(entry.scriptClass, binding);
+		return scriptObject.run();
 	}
 }
