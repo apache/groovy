@@ -1,9 +1,9 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"><html><head>
-  <title>XML, HTML and other markup languages with Groovy</title>
+  <title>GroovyMarkup</title>
 </head>
 
 <body>
-<h1>XML, HTML and other markup languages</h1>
+<h1>GroovyMarkup</h1>
 
 Groovy has native support for various markup languages from XML, HTML,
 SAX, W3C DOM, Ant tasks, Swing user interfaces and so forth. 
@@ -102,6 +102,16 @@ xml.customers() {
 	}
 }
 </source>
+
+<p>
+The interesting thing about the above is that the XML technology used at the other end 
+could be push-event based (SAX) or pull-event based (StAX) or a DOM-ish API (W3C, dom4j, JDOM, 
+EXML, XOM) or some JAXB-ish thing (XMLBeans, Castor) or just beans or just good old text files.
+e.g. a pull parser could literally pull the data out of the database - or the data could be pushed 
+into data some structure or piped straight to a file using IO or async NIO.
+The use of GroovyMarkup means developers can hide the XML plumbing and focus on tackling the real problems we're trying to solve.
+</p>
+
 
 <p>To see more examples of using GroovyMarkup try looking at our unit test cases</p>
 

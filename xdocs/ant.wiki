@@ -1,0 +1,8 @@
+1 Ant Scripting
+
+If ever you've been working with a build.xml or some Jelly script and found yourself a little restricted by all those pointy brackets & found it a bit wierd using XML as a scripting language and wanted something a little cleaner & more straight forward, then maybe Ant scripting with Groovy might be what you're after.
+
+Using {link:GroovyMarkup|markup.html} inside a Groovy script can make the scripting of Ant tasks really easy; allowing a real scripting language to be used for programming constructs (variables, methods, loops, logical branching , classes etc). It still looks like a neat concise version of Ant's XML without all those pointy brackets; though you can mix and match this markup inside your script.
+
+Here's {link:an example|http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/util/AntTest.groovy?rev=HEAD&view=auto} which in one simple concise file we have a JUnit test case that demonstrates the use of Ant inside Groovy along with testing that it actually works along with a demo of iterating through an Ant FileSet. 
+Notice that normal variables can be used to pass state into the Ant tasks and that Groovy code can be embedded anywhere in the markup.

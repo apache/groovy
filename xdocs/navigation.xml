@@ -41,6 +41,8 @@
       <item name="GPath"         	  href="http://wiki.codehaus.org/groovy/PathExpressionLanguage"/>
       <item name="Groovlets"          href="/servlets.html"/>
       <item name="Groovy Sql"         href="/sql.html"/>
+      <item name="Groovy Beans"       href="/beans.html"/>
+      <item name="Ant Scripting"      href="/ant.html"/>
       <item name="Regex"              href="/regex.html"/>
     </menu>
 

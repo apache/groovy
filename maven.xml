@@ -66,6 +66,18 @@
 
 
   <preGoal name="xdoc:jelly-transform">
+    <copy toDir="${maven.html2xdoc.dir}">
+      <fileset dir="${basedir}/xdocs">
+        <include name="**/*.html"/>
+      </fileset>
+  	</copy>
+  	
+  	<!-- now lets run the wiki plugin -->
+  	<attainGoal name="java:compile"/>
+  	<attainGoal name="setclasspath"/>
+  	
+  	<wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
+  
     <attainGoal name="html2xdoc"/>
     <attainGoal name="faq"/>
   </preGoal>
@@ -83,6 +95,7 @@
 	    <path refid="maven.dependency.classpath"/>
 	</path>
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
+    <taskdef name="wiki2html" classname="org.codehaus.groovy.ant.Wiki2Markup" classpathref="test.classpath"/> 
   </goal>
   
 
