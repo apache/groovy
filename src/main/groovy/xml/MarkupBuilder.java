@@ -167,7 +167,7 @@ public class MarkupBuilder extends BuilderSupport {
                 print(name);
                 break;
             case 3:
-                out.print("/>");
+                out.print(" />");
                 break;
             }
             break;
