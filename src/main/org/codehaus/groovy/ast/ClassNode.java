@@ -46,7 +46,9 @@
 package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Represents a class declaration
@@ -64,6 +66,7 @@ public class ClassNode extends ASTNode {
     private List methods = new ArrayList();
     private List fields = new ArrayList();
     private List properties = new ArrayList();
+    private Map fieldIndex = new HashMap();
 
     /**
      * @param name is the full name of the class
@@ -120,6 +123,7 @@ public class ClassNode extends ASTNode {
 
     public void addField(FieldNode node) {
         fields.add(node);
+        fieldIndex.put(node.getName(), node);
     }
 
     public void addProperty(PropertyNode node) {
@@ -136,5 +140,9 @@ public class ClassNode extends ASTNode {
 
     public void addField(String name, int modifiers, String type, Expression initialValue) {
         addField(new FieldNode(name, modifiers, type, getName(), initialValue));
+    }
+
+    public FieldNode getField(String name) {
+        return (FieldNode) fieldIndex.get(name);
     }
 }
