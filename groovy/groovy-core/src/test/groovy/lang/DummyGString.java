@@ -58,11 +58,16 @@ import groovy.lang.MetaClass;
  */
 public class DummyGString extends GString {
 
-    private static String[] strings = { "Hello ", "!" };
+    private String[] strings;
     private MetaClass metaClass;
     
     public DummyGString(Object[] values) {
+        this(values, new String[] { "Hello ", "!" });
+    }
+    
+    public DummyGString(Object[] values, String[] strings) {
         super(values);
+        this.strings = strings;
     }
     
     public String[] getStrings() {

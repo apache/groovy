@@ -39,5 +39,32 @@ class GStringTest extends GroovyTestCase {
         
         assert string == "Bob"
     }
+    
+    void testAppendString() {
+        a = "dog" 
+        b = "a ${a}"
+        
+		//c = b + " cat"
+		c = b.plus(" cat")
 
+        println("Created ${c}")
+        
+        assert c.toString() == "a dog cat" : c
+        
+        /*
+        b += " cat"
+        
+        assert b.toString() == "a dog cat" : b
+        */
+    }
+    
+    void testAppendGString() {
+        a = "dog" 
+        b = "a ${a}" 
+        b += " cat${a}"
+        
+        assert b.toString() == "a dog catdog" : b
+        
+        println("Created ${b}")
+    }
 }
