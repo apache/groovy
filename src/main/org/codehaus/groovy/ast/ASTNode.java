@@ -93,7 +93,7 @@ public class ASTNode {
             setLineNumber(token.getStartLine());
         }
         if (getLineNumber() < 0) {
-            System.out.println("No line number for token: " + token);
+            //System.out.println("No line number for token: " + token);
             if (node.children() > 0) {
                 for (int i = 0; i < node.children(); i++) {
                     CSTNode child = node.getChild(i);
