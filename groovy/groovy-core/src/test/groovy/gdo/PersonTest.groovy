@@ -2,8 +2,10 @@ package groovy.gdo
 
 class PersonTest extends GroovyTestCase {
 
+    property type
+    
     void testFoo() {
-        persons = new DataSet(Person)
+        persons = new DataSet(type)
 		
         blogs = persons.findAll { it.lastName == "Bloggs" }
 		
@@ -11,7 +13,7 @@ class PersonTest extends GroovyTestCase {
     }
 
     void testWhereWithAndClause() {
-        persons = new DataSet(Person)
+        persons = new DataSet(type)
 		
         blogs = persons.findAll { it.lastName == "Bloggs" }
         
@@ -21,18 +23,29 @@ class PersonTest extends GroovyTestCase {
     }
 
     void testWhereClosureWithAnd() {
-        persons = new DataSet(Person)
+        persons = new DataSet(type)
 		
-        blogs = persons.findAll { return ((it.size < 10) && (it.lastName == "Bloggs")) }
+        blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
 		
-        /** @todo bug
+        /** @todo bug in Groovy where the && is not parsed
         assertSql(blogs, "select * from person where size < 10 and lastName = 'Bloggs'")
         */
         assertSql(blogs, "select * from person where size < 10")
+    }
+ 
+    protected compareFn(value) {
+        value > 1 && value < 10
     }
     
     protected assertSql(dataSet, expectedSql) {
         sql = dataSet.sql
         assert sql == expectedSql
+    }
+    
+    protected void setUp() {
+        /** @todo parser & code gen bug 
+        type = Person
+        */
+        type = getClass().getClassLoader().loadClass("groovy.gdo.Person")
     }
 }

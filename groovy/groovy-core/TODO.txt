@@ -1,6 +1,12 @@
 Things to Test
 ==============
 
+* add parser bugs to JIRA...
+
+	referrring to your own class name - ClassExpressionTest
+	referrring to the classname of another Groovy class which is compiled in the same compile run
+	(and so isn't necessary available on the classpath at the time of building)	
+	
 * classloader bug when clean build of PersonTest
 
 * write a simple JUnit TestSuite which parsers a Groovy test case & runs all the test methods
@@ -96,15 +102,15 @@ Core Groovy Tasks
 	use a Holder object for all local variables and pass holder
 	into the closure
 	
-* looks like a bug on generated methods, should use param name over any field name
-	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
-	methods
-	
 * support instanceof operator
 			
 * Switch statement to use matches to handle classes, ranges, regexp etc		
 	- matches(object) for Range or Regexp or Class
 
+* looks like a bug on generated methods, should use param name over any field name
+	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
+	methods
+	
 * bug - x = methodName fails, but x = this.methodName works
 	- need to turn variableExpressions into property expressions
 	- if no local variable in scope

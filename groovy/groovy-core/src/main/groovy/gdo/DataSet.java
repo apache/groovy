@@ -98,7 +98,7 @@ public class DataSet {
         MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
         Statement statement = method.getCode();
         
-        System.out.println(statement.getText());
+        //System.out.println(statement.getText());
         
         SqlWhereVisitor visitor = new SqlWhereVisitor();
         statement.visit(visitor);
