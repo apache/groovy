@@ -231,7 +231,7 @@ public class Node {
      * Provide a collection of all the nodes in the tree
      * using a bredth first traversal
      */
-    public List bredthFirst() {
+    public List breadthFirst() {
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
@@ -243,7 +243,7 @@ public class Node {
         List copy = new ArrayList(answer);
         for (Iterator iter = copy.iterator(); iter.hasNext(); ) {
             Node childNode = (Node) iter.next();
-            List children = childNode.bredthFirst();
+            List children = childNode.breadthFirst();
             answer.addAll(children);
         }
         return answer;
