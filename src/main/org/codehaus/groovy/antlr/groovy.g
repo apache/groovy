@@ -235,6 +235,8 @@ tokens {
     public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
+    
+    private static GroovySourceAST dummyVariableToforceClassLoaderToFindASTClass = new GroovySourceAST();
 
     List warningList;
     public List getWarningList() { return warningList; }
@@ -1389,12 +1391,16 @@ closureParametersOpt[boolean addImplicit]
  *  There is a semantic predicate here to ensure that the closureParametersOpt is not empty.
  */
 closureParametersStart!
-    :   (
-        options { generateAmbigWarnings=false; }
-        // It's OK for a lookahead to be ambiguous, since the actions don't matter.
-        :   oldClosureParametersStart
-        |   parameterDeclarationList nls CLOSURE_OP
-        )
+    :   //(
+        // The oldClosureParametersStart cannot be used in this lookahead
+        // as the non-determinism arising could incorrectly identify
+        // a closure expression as an isolated open block, because it
+        // may not identify the opening closure arguments. 
+        //options { generateAmbigWarnings=false; }
+        //:
+        //oldClosureParametersStart|
+        parameterDeclarationList nls CLOSURE_OP
+        //)
     ;
 
 /** Provisional definition of old-style closure params based on BOR '|'.
@@ -1751,13 +1757,13 @@ checkSuspiciousExpressionStatement[int prevToken]
         // if prevToken is NLS, we have double trouble; issue a double warning
         // Example:  obj.foo \n {println x}
         // Might be appended block:  obj.foo {println x}
-        // Might be closure expression:  obj.foo ; {| println x}
+        // Might be closure expression:  obj.foo ; {x::println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
             "Closure expression looks like it may be an isolated open block, "+
             "or it may continue a previous statement."
             ,
-            "Add an explicit parameter list, as in {it|...}, or label it as L:{...}, "+
+            "Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}, "+
             "and also either remove previous newline, or add an explicit semicolon ';'."
             );
         }
@@ -1765,11 +1771,11 @@ checkSuspiciousExpressionStatement[int prevToken]
         {prevToken != NLS}?
         // If prevToken is SEMI or something else, issue a single warning:
         // Example:  obj.foo ; {println x}
-        // Might be closure expression:  obj.foo ; {| println x}
+        // Might be closure expression:  obj.foo ; {x::println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
             "Closure expression looks like it may be an isolated open block.",
-            "Add an explicit parameter list, as in {it|...}, or label it as L:{...}.");
+            "Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}.");
         }
     ;
 

@@ -48,27 +48,27 @@ import org.xml.sax.helpers.AttributesImpl
 import org.xml.sax.ext.LexicalHandler
 	
 	class StreamingSAXBuilder extends AbstractStreamingBuilder {
-		pendingStack = []
-		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		def pendingStack = []
+		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ::
 							if (contentHandler instanceof LexicalHandler) {
 								contentHandler.comment(body.toCharArray(), 0, body.length())
 							}
 						 }
-		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ::
 						if (body instanceof Closure) {
 							body()
 						} else {
 							contentHandler.characters(body.toCharArray(), 0, body.length())
 						}
 					  }
-		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler |
+		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ::
 						attributes = new AttributesImpl()
 			
-					    attrs.each {key, value |					    				
-			    				if (key.contains '$') {
-			    					parts = key.tokenize '$'
+					    attrs.each {key, value ::
+			    				if (key.contains('$')) {
+			    					parts = key.tokenize('$')
 			    					
-			    					if (namespaces.containsKey parts[0]) {
+			    					if (namespaces.containsKey(parts[0])) {
 			    						namespaceUri = namespaces[parts[0]]
 			    						
 //			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
@@ -84,7 +84,7 @@ import org.xml.sax.ext.LexicalHandler
 							  	
 						hiddenNamespaces = [:]
 
-						pendingNamespaces.each {key, value |
+						pendingNamespaces.each {key, value ::
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
 //							attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
@@ -130,7 +130,7 @@ import org.xml.sax.ext.LexicalHandler
 
 						contentHandler.endElement(uri, tag, qualifiedName)
 						
-						hiddenNamespaces.each {key, value |
+						hiddenNamespaces.each {key, value ::
 													contentHandler.endPrefixMapping(key)
 													
 													if (value == null) {
@@ -141,7 +141,7 @@ import org.xml.sax.ext.LexicalHandler
 											   }					
 					}
 		
-		builder = null
+		def builder = null
 		
 		StreamingSAXBuilder() {
 			specialTags.putAll(['yield':noopClosure,
@@ -155,10 +155,10 @@ import org.xml.sax.ext.LexicalHandler
 			this.builder = new BaseMarkupBuilder(nsSpecificTags)
 		}
 		
-		bind(closure) {
-			boundClosure = this.builder.bind closure
+		def bind(closure) {
+			boundClosure = this.builder.bind(closure)
 			
-			return {contentHandler |
+			return {contentHandler ::
 				boundClosure.trigger = contentHandler
 			}
 		}

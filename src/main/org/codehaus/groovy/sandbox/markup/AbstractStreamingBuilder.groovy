@@ -45,7 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 	
 	class AbstractStreamingBuilder {
-		badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest |
+		def badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest ::
 							uri = pendingNamespaces[prefix]
 							
 							if (uri == null) {
@@ -54,8 +54,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							
 							throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
 						}
-		namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
-									attrs.each { key, value |
+		def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ::
+									attrs.each { key, value ::
 										if ( key == "") {
 											key = ":"	// marker for default namespace
 										}
@@ -66,21 +66,21 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 											pendingNamespaces[key] = value
 										}
 										
-										if (!namespaceSpecificTags.containsKey value) {
+										if (!namespaceSpecificTags.containsKey(value)) {
 											baseEntry = namespaceSpecificTags[':']
 											namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
 										}
 									}
 								}
-		aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
-								attrs.each { key, value |
+		def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ::
+								attrs.each { key, value ::
 									if (value instanceof Map) {
 										// key is a namespace prefix value is the mapping
 										info = null
 										
-										if (namespaces.containsKey key) {
+										if (namespaces.containsKey(key)) {
 											info = namespaceSpecificTags[namespaces[key]]
-										} else if (pendingNamespaces.containsKey key) {
+										} else if (pendingNamespaces.containsKey(key)) {
 											info = namespaceSpecificTags[pendingNamespaces[key]]
 										} else {
 											throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
@@ -91,7 +91,7 @@ This is commented out because of a code generator bug
 This means that mkp.declareAlias(xsd:['fred':'schema']) won't work
 But mkp.declareAlias(jim:'harry') will work
 										
-										value.each { from, to |
+										value.each { from, to ::
 											info[2][to] = info[1].curry(from)
 										}*/
 									} else {
@@ -101,9 +101,9 @@ But mkp.declareAlias(jim:'harry') will work
 								}
 							}
 											
-		specialTags = ['declareNamespace':namespaceSetupClosure,
+		def specialTags = ['declareNamespace':namespaceSetupClosure,
 		               'declareAlias':aliasSetupClosure]
 		
-		builder = null
+		def builder = null
 	}
 	

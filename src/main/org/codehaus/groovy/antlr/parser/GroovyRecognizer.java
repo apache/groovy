@@ -1,4 +1,4 @@
-// $ANTLR 2.7.2: "groovy.g" -> "GroovyRecognizer.java"$
+// $ANTLR 2.7.5 (20050128): "groovy.g" -> "GroovyRecognizer.java"$
 
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
@@ -221,6 +221,8 @@ public class GroovyRecognizer extends antlr.LLkParser       implements GroovyTok
     public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
+    
+    private static GroovySourceAST dummyVariableToforceClassLoaderToFindASTClass = new GroovySourceAST();
 
     List warningList;
     public List getWarningList() { return warningList; }
@@ -747,10 +749,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			compatibleBodyStatement();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			boolean synPredMatched261 = false;
+			boolean synPredMatched260 = false;
 			if (((_tokenSet_7.member(LA(1))) && (_tokenSet_8.member(LA(2))) && (_tokenSet_9.member(LA(3))))) {
-				int _m261 = mark();
-				synPredMatched261 = true;
+				int _m260 = mark();
+				synPredMatched260 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -776,12 +778,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched261 = false;
+					synPredMatched260 = false;
 				}
-				rewind(_m261);
+				rewind(_m260);
 				inputState.guessing--;
 			}
-			if ( synPredMatched261 ) {
+			if ( synPredMatched260 ) {
 				{
 				switch ( LA(1)) {
 				case SEMI:
@@ -890,14 +892,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			match(LCURLY);
 			nls();
 			{
-			_loop264:
+			_loop263:
 			do {
 				if ((LA(1)==LITERAL_default||LA(1)==LITERAL_case)) {
 					casesGroup();
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop264;
+					break _loop263;
 				}
 				
 			} while (true);
@@ -925,10 +927,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			break;
 		}
 		default:
-			boolean synPredMatched252 = false;
+			boolean synPredMatched251 = false;
 			if (((_tokenSet_12.member(LA(1))) && (_tokenSet_13.member(LA(2))) && (_tokenSet_14.member(LA(3))))) {
-				int _m252 = mark();
-				synPredMatched252 = true;
+				int _m251 = mark();
+				synPredMatched251 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -936,21 +938,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched252 = false;
+					synPredMatched251 = false;
 				}
-				rewind(_m252);
+				rewind(_m251);
 				inputState.guessing--;
 			}
-			if ( synPredMatched252 ) {
+			if ( synPredMatched251 ) {
 				declaration();
 				astFactory.addASTChild(currentAST, returnAST);
 				statement_AST = (AST)currentAST.root;
 			}
 			else {
-				boolean synPredMatched254 = false;
+				boolean synPredMatched253 = false;
 				if (((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_15.member(LA(3))))) {
-					int _m254 = mark();
-					synPredMatched254 = true;
+					int _m253 = mark();
+					synPredMatched253 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -959,12 +961,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched254 = false;
+						synPredMatched253 = false;
 					}
-					rewind(_m254);
+					rewind(_m253);
 					inputState.guessing--;
 				}
-				if ( synPredMatched254 ) {
+				if ( synPredMatched253 ) {
 					AST tmp19_AST = null;
 					tmp19_AST = astFactory.create(LT(1));
 					astFactory.addASTChild(currentAST, tmp19_AST);
@@ -977,10 +979,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						c_AST.setType(LABELED_STAT);
 					}
 					{
-					boolean synPredMatched257 = false;
+					boolean synPredMatched256 = false;
 					if (((LA(1)==LCURLY) && (_tokenSet_16.member(LA(2))) && (_tokenSet_17.member(LA(3))))) {
-						int _m257 = mark();
-						synPredMatched257 = true;
+						int _m256 = mark();
+						synPredMatched256 = true;
 						inputState.guessing++;
 						try {
 							{
@@ -988,12 +990,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 							}
 						}
 						catch (RecognitionException pe) {
-							synPredMatched257 = false;
+							synPredMatched256 = false;
 						}
-						rewind(_m257);
+						rewind(_m256);
 						inputState.guessing--;
 					}
-					if ( synPredMatched257 ) {
+					if ( synPredMatched256 ) {
 						openOrClosedBlock();
 						astFactory.addASTChild(currentAST, returnAST);
 					}
@@ -1055,13 +1057,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		{
 			match(SEMI);
 			{
-			_loop479:
+			_loop478:
 			do {
 				if ((LA(1)==NLS) && (_tokenSet_24.member(LA(2))) && (_tokenSet_20.member(LA(3)))) {
 					match(NLS);
 				}
 				else {
-					break _loop479;
+					break _loop478;
 				}
 				
 			} while (true);
@@ -1078,18 +1080,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				sepToken = NLS;
 			}
 			{
-			_loop483:
+			_loop482:
 			do {
 				if ((LA(1)==SEMI) && (_tokenSet_24.member(LA(2))) && (_tokenSet_20.member(LA(3)))) {
 					match(SEMI);
 					{
-					_loop482:
+					_loop481:
 					do {
 						if ((LA(1)==NLS) && (_tokenSet_24.member(LA(2))) && (_tokenSet_20.member(LA(3)))) {
 							match(NLS);
 						}
 						else {
-							break _loop482;
+							break _loop481;
 						}
 						
 					} while (true);
@@ -1099,7 +1101,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop483;
+					break _loop482;
 				}
 				
 			} while (true);
@@ -1222,7 +1224,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		}
 		}
 		{
-		_loop244:
+		_loop243:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -1312,7 +1314,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop244;
+				break _loop243;
 			}
 			
 		} while (true);
@@ -2590,7 +2592,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST balancedTokens_AST = null;
 		
 		{
-		_loop476:
+		_loop475:
 		do {
 			if ((_tokenSet_32.member(LA(1)))) {
 				balancedBrackets();
@@ -2601,7 +2603,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop476;
+				break _loop475;
 			}
 			
 		} while (true);
@@ -3399,8 +3401,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			currentAST.advanceChildToEnd();
 		}
 		{
-		int _cnt358=0;
-		_loop358:
+		int _cnt357=0;
+		_loop357:
 		do {
 			if ((LA(1)==LBRACK) && (_tokenSet_44.member(LA(2))) && (_tokenSet_45.member(LA(3)))) {
 				lb = LT(1);
@@ -3415,10 +3417,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				match(RBRACK);
 			}
 			else {
-				if ( _cnt358>=1 ) { break _loop358; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt357>=1 ) { break _loop357; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt358++;
+			_cnt357++;
 		} while (true);
 		}
 		arrayOrTypeArgs_AST = (AST)currentAST.root;
@@ -5303,7 +5305,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			hasLabels=argument();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop451:
+			_loop450:
 			do {
 				if ((LA(1)==COMMA) && (_tokenSet_66.member(LA(2))) && (_tokenSet_67.member(LA(3)))) {
 					match(COMMA);
@@ -5314,7 +5316,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				else {
-					break _loop451;
+					break _loop450;
 				}
 				
 			} while (true);
@@ -6124,10 +6126,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST nlsWarn_AST = null;
 		
 		{
-		boolean synPredMatched489 = false;
+		boolean synPredMatched488 = false;
 		if (((_tokenSet_75.member(LA(1))) && (_tokenSet_20.member(LA(2))) && (_tokenSet_6.member(LA(3))))) {
-			int _m489 = mark();
-			synPredMatched489 = true;
+			int _m488 = mark();
+			synPredMatched488 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -6135,12 +6137,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched489 = false;
+				synPredMatched488 = false;
 			}
-			rewind(_m489);
+			rewind(_m488);
 			inputState.guessing--;
 		}
-		if ( synPredMatched489 ) {
+		if ( synPredMatched488 ) {
 			if ( inputState.guessing==0 ) {
 				addWarning(
 				"A newline at this point does not follow the Groovy Coding Conventions.",
@@ -6605,10 +6607,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			oldClosureParameters_AST = (AST)currentAST.root;
 		}
 		else {
-			boolean synPredMatched227 = false;
+			boolean synPredMatched226 = false;
 			if (((LA(1)==BOR) && (LA(2)==NLS||LA(2)==BOR) && (_tokenSet_85.member(LA(3))))) {
-				int _m227 = mark();
-				synPredMatched227 = true;
+				int _m226 = mark();
+				synPredMatched226 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -6618,12 +6620,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched227 = false;
+					synPredMatched226 = false;
 				}
-				rewind(_m227);
+				rewind(_m226);
 				inputState.guessing--;
 			}
-			if ( synPredMatched227 ) {
+			if ( synPredMatched226 ) {
 				match(BOR);
 				nls();
 				match(BOR);
@@ -6639,10 +6641,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				oldClosureParameters_AST = (AST)currentAST.root;
 			}
 			else {
-				boolean synPredMatched230 = false;
+				boolean synPredMatched229 = false;
 				if (((LA(1)==LPAREN||LA(1)==BOR) && (_tokenSet_86.member(LA(2))) && (_tokenSet_87.member(LA(3))))) {
-					int _m230 = mark();
-					synPredMatched230 = true;
+					int _m229 = mark();
+					synPredMatched229 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -6672,12 +6674,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched230 = false;
+						synPredMatched229 = false;
 					}
-					rewind(_m230);
+					rewind(_m229);
 					inputState.guessing--;
 				}
-				if ( synPredMatched230 ) {
+				if ( synPredMatched229 ) {
 					{
 					switch ( LA(1)) {
 					case BOR:
@@ -6706,10 +6708,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					oldClosureParameters_AST = (AST)currentAST.root;
 				}
 				else {
-					boolean synPredMatched234 = false;
+					boolean synPredMatched233 = false;
 					if (((_tokenSet_88.member(LA(1))) && (_tokenSet_89.member(LA(2))) && (_tokenSet_90.member(LA(3))))) {
-						int _m234 = mark();
-						synPredMatched234 = true;
+						int _m233 = mark();
+						synPredMatched233 = true;
 						inputState.guessing++;
 						try {
 							{
@@ -6747,12 +6749,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 							}
 						}
 						catch (RecognitionException pe) {
-							synPredMatched234 = false;
+							synPredMatched233 = false;
 						}
-						rewind(_m234);
+						rewind(_m233);
 						inputState.guessing--;
 					}
-					if ( synPredMatched234 ) {
+					if ( synPredMatched233 ) {
 						{
 						switch ( LA(1)) {
 						case BOR:
@@ -6826,22 +6828,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST closureParametersStart_AST = null;
 		
-		{
-		if ((_tokenSet_83.member(LA(1))) && (_tokenSet_91.member(LA(2))) && (_tokenSet_92.member(LA(3)))) {
-			oldClosureParametersStart();
-		}
-		else if ((_tokenSet_81.member(LA(1))) && (_tokenSet_93.member(LA(2))) && (_tokenSet_94.member(LA(3)))) {
-			parameterDeclarationList();
-			nls();
-			AST tmp174_AST = null;
-			tmp174_AST = astFactory.create(LT(1));
-			match(CLOSURE_OP);
-		}
-		else {
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		
-		}
+		parameterDeclarationList();
+		nls();
+		AST tmp174_AST = null;
+		tmp174_AST = astFactory.create(LT(1));
+		match(CLOSURE_OP);
 		returnAST = closureParametersStart_AST;
 	}
 	
@@ -6976,10 +6967,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		boolean zz; /*ignore*/
 		
 		{
-		boolean synPredMatched287 = false;
+		boolean synPredMatched286 = false;
 		if (((_tokenSet_19.member(LA(1))) && (_tokenSet_9.member(LA(2))) && (_tokenSet_20.member(LA(3))))) {
-			int _m287 = mark();
-			synPredMatched287 = true;
+			int _m286 = mark();
+			synPredMatched286 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -6987,12 +6978,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched287 = false;
+				synPredMatched286 = false;
 			}
-			rewind(_m287);
+			rewind(_m286);
 			inputState.guessing--;
 		}
-		if ( synPredMatched287 ) {
+		if ( synPredMatched286 ) {
 			checkSuspiciousExpressionStatement(prevToken);
 			astFactory.addASTChild(currentAST, returnAST);
 		}
@@ -7004,10 +6995,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		
 		}
 		{
-		boolean synPredMatched291 = false;
+		boolean synPredMatched290 = false;
 		if (((_tokenSet_19.member(LA(1))) && (_tokenSet_9.member(LA(2))) && (_tokenSet_20.member(LA(3))))) {
-			int _m291 = mark();
-			synPredMatched291 = true;
+			int _m290 = mark();
+			synPredMatched290 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7043,16 +7034,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched291 = false;
+				synPredMatched290 = false;
 			}
-			rewind(_m291);
+			rewind(_m290);
 			inputState.guessing--;
 		}
-		if ( synPredMatched291 ) {
+		if ( synPredMatched290 ) {
 			expression();
 			astFactory.addASTChild(currentAST, returnAST);
 		}
-		else if ((_tokenSet_95.member(LA(1))) && (_tokenSet_96.member(LA(2))) && (_tokenSet_20.member(LA(3)))) {
+		else if ((_tokenSet_91.member(LA(1))) && (_tokenSet_92.member(LA(2))) && (_tokenSet_20.member(LA(3)))) {
 			zz=pathExpression();
 			head_AST = (AST)returnAST;
 			commandArguments(head_AST);
@@ -7076,10 +7067,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST compatibleBodyStatement_AST = null;
 		
-		boolean synPredMatched276 = false;
+		boolean synPredMatched275 = false;
 		if (((LA(1)==LCURLY) && (_tokenSet_73.member(LA(2))) && (_tokenSet_9.member(LA(3))))) {
-			int _m276 = mark();
-			synPredMatched276 = true;
+			int _m275 = mark();
+			synPredMatched275 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7087,12 +7078,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched276 = false;
+				synPredMatched275 = false;
 			}
-			rewind(_m276);
+			rewind(_m275);
 			inputState.guessing--;
 		}
-		if ( synPredMatched276 ) {
+		if ( synPredMatched275 ) {
 			compoundStatement();
 			astFactory.addASTChild(currentAST, returnAST);
 			compatibleBodyStatement_AST = (AST)currentAST.root;
@@ -7123,10 +7114,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		match(LITERAL_for);
 		match(LPAREN);
 		{
-		boolean synPredMatched268 = false;
-		if (((_tokenSet_97.member(LA(1))) && (_tokenSet_98.member(LA(2))) && (_tokenSet_99.member(LA(3))))) {
-			int _m268 = mark();
-			synPredMatched268 = true;
+		boolean synPredMatched267 = false;
+		if (((_tokenSet_93.member(LA(1))) && (_tokenSet_94.member(LA(2))) && (_tokenSet_95.member(LA(3))))) {
+			int _m267 = mark();
+			synPredMatched267 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7135,16 +7126,16 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched268 = false;
+				synPredMatched267 = false;
 			}
-			rewind(_m268);
+			rewind(_m267);
 			inputState.guessing--;
 		}
-		if ( synPredMatched268 ) {
+		if ( synPredMatched267 ) {
 			traditionalForClause();
 			astFactory.addASTChild(currentAST, returnAST);
 		}
-		else if ((_tokenSet_12.member(LA(1))) && (_tokenSet_100.member(LA(2))) && (_tokenSet_101.member(LA(3)))) {
+		else if ((_tokenSet_12.member(LA(1))) && (_tokenSet_96.member(LA(2))) && (_tokenSet_97.member(LA(3)))) {
 			forInClause();
 			astFactory.addASTChild(currentAST, returnAST);
 		}
@@ -7168,18 +7159,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST casesGroup_AST = null;
 		
 		{
-		int _cnt302=0;
-		_loop302:
+		int _cnt301=0;
+		_loop301:
 		do {
 			if ((LA(1)==LITERAL_default||LA(1)==LITERAL_case)) {
 				aCase();
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				if ( _cnt302>=1 ) { break _loop302; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt301>=1 ) { break _loop301; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt302++;
+			_cnt301++;
 		} while (true);
 		}
 		caseSList();
@@ -7210,21 +7201,21 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		compoundStatement();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop317:
+		_loop316:
 		do {
-			if ((LA(1)==NLS||LA(1)==LITERAL_catch) && (LA(2)==LPAREN||LA(2)==LITERAL_catch) && (_tokenSet_102.member(LA(3)))) {
+			if ((LA(1)==NLS||LA(1)==LITERAL_catch) && (LA(2)==LPAREN||LA(2)==LITERAL_catch) && (_tokenSet_98.member(LA(3)))) {
 				nls();
 				handler();
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop317;
+				break _loop316;
 			}
 			
 		} while (true);
 		}
 		{
-		if ((LA(1)==NLS||LA(1)==LITERAL_finally) && (_tokenSet_103.member(LA(2))) && (_tokenSet_73.member(LA(3)))) {
+		if ((LA(1)==NLS||LA(1)==LITERAL_finally) && (_tokenSet_99.member(LA(2))) && (_tokenSet_73.member(LA(3)))) {
 			nls();
 			finallyClause();
 			astFactory.addASTChild(currentAST, returnAST);
@@ -7338,11 +7329,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			}
 			}
 			{
-			if ((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_104.member(LA(3)))) {
+			if ((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_100.member(LA(3)))) {
 				statementLabelPrefix();
 				astFactory.addASTChild(currentAST, returnAST);
 			}
-			else if ((_tokenSet_104.member(LA(1))) && (_tokenSet_18.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
+			else if ((_tokenSet_100.member(LA(1))) && (_tokenSet_18.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -7427,7 +7418,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				expression();
 				astFactory.addASTChild(currentAST, returnAST);
 			}
-			else if ((_tokenSet_105.member(LA(1))) && (_tokenSet_106.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
+			else if ((_tokenSet_101.member(LA(1))) && (_tokenSet_102.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -7549,10 +7540,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST i_AST = null;
 		
 		{
-		boolean synPredMatched273 = false;
-		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_107.member(LA(2))))) {
-			int _m273 = mark();
-			synPredMatched273 = true;
+		boolean synPredMatched272 = false;
+		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_103.member(LA(2))))) {
+			int _m272 = mark();
+			synPredMatched272 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -7560,12 +7551,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched273 = false;
+				synPredMatched272 = false;
 			}
-			rewind(_m273);
+			rewind(_m272);
 			inputState.guessing--;
 		}
-		if ( synPredMatched273 ) {
+		if ( synPredMatched272 ) {
 			singleDeclarationNoInit();
 			astFactory.addASTChild(currentAST, returnAST);
 		}
@@ -7738,9 +7729,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		additiveExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop395:
+		_loop394:
 		do {
-			if ((_tokenSet_108.member(LA(1)))) {
+			if ((_tokenSet_104.member(LA(1)))) {
 				{
 				switch ( LA(1)) {
 				case SR:
@@ -7811,7 +7802,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop395;
+				break _loop394;
 			}
 			
 		} while (true);
@@ -7953,14 +7944,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST checkSuspiciousExpressionStatement_AST = null;
 		
-		boolean synPredMatched294 = false;
+		boolean synPredMatched293 = false;
 		if (((_tokenSet_19.member(LA(1))) && (_tokenSet_9.member(LA(2))) && (_tokenSet_20.member(LA(3))))) {
-			int _m294 = mark();
-			synPredMatched294 = true;
+			int _m293 = mark();
+			synPredMatched293 = true;
 			inputState.guessing++;
 			try {
 				{
-				if ((_tokenSet_109.member(LA(1)))) {
+				if ((_tokenSet_105.member(LA(1)))) {
 					matchNot(LCURLY);
 				}
 				else if ((LA(1)==LCURLY)) {
@@ -7974,12 +7965,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched294 = false;
+				synPredMatched293 = false;
 			}
-			rewind(_m294);
+			rewind(_m293);
 			inputState.guessing--;
 		}
-		if ( synPredMatched294 ) {
+		if ( synPredMatched293 ) {
 			{
 			if (((_tokenSet_19.member(LA(1))) && (_tokenSet_9.member(LA(2))) && (_tokenSet_20.member(LA(3))))&&(prevToken == NLS)) {
 				if ( inputState.guessing==0 ) {
@@ -8004,7 +7995,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				"Closure expression looks like it may be an isolated open block, "+
 				"or it may continue a previous statement."
 				,
-				"Add an explicit parameter list, as in {it|...}, or label it as L:{...}, "+
+				"Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}, "+
 				"and also either remove previous newline, or add an explicit semicolon ';'."
 				);
 				
@@ -8015,7 +8006,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			if ( inputState.guessing==0 ) {
 				require(false,
 				"Closure expression looks like it may be an isolated open block.",
-				"Add an explicit parameter list, as in {it|...}, or label it as L:{...}.");
+				"Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}.");
 				
 			}
 			checkSuspiciousExpressionStatement_AST = (AST)currentAST.root;
@@ -8084,7 +8075,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		expression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop325:
+		_loop324:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
@@ -8093,7 +8084,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop325;
+				break _loop324;
 			}
 			
 		} while (true);
@@ -8162,7 +8153,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		statement(COLON);
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop308:
+		_loop307:
 		do {
 			if ((LA(1)==SEMI||LA(1)==NLS)) {
 				sep();
@@ -8253,7 +8244,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop308;
+				break _loop307;
 			}
 			
 		} while (true);
@@ -8279,7 +8270,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		controlExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop331:
+		_loop330:
 		do {
 			if ((LA(1)==COMMA)) {
 				match(COMMA);
@@ -8288,7 +8279,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop331;
+				break _loop330;
 			}
 			
 		} while (true);
@@ -8843,10 +8834,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST head_AST = null;
 		boolean zz; /*ignore*/
 		
-		boolean synPredMatched334 = false;
-		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_107.member(LA(2))) && (_tokenSet_110.member(LA(3))))) {
-			int _m334 = mark();
-			synPredMatched334 = true;
+		boolean synPredMatched333 = false;
+		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_103.member(LA(2))) && (_tokenSet_106.member(LA(3))))) {
+			int _m333 = mark();
+			synPredMatched333 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -8854,17 +8845,17 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched334 = false;
+				synPredMatched333 = false;
 			}
-			rewind(_m334);
+			rewind(_m333);
 			inputState.guessing--;
 		}
-		if ( synPredMatched334 ) {
+		if ( synPredMatched333 ) {
 			singleDeclaration();
 			astFactory.addASTChild(currentAST, returnAST);
 			controlExpression_AST = (AST)currentAST.root;
 		}
-		else if ((_tokenSet_95.member(LA(1))) && (_tokenSet_111.member(LA(2))) && (_tokenSet_99.member(LA(3)))) {
+		else if ((_tokenSet_91.member(LA(1))) && (_tokenSet_107.member(LA(2))) && (_tokenSet_95.member(LA(3)))) {
 			zz=pathExpression();
 			head_AST = (AST)returnAST;
 			{
@@ -9037,9 +9028,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST pe_AST = null;
 		
 		{
-		_loop340:
+		_loop339:
 		do {
-			if ((_tokenSet_112.member(LA(1))) && (_tokenSet_113.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
+			if ((_tokenSet_108.member(LA(1))) && (_tokenSet_109.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 				endBrackets=pathElement(result);
 				pe_AST = (AST)returnAST;
 				if ( inputState.guessing==0 ) {
@@ -9047,7 +9038,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			else {
-				break _loop340;
+				break _loop339;
 			}
 			
 		} while (true);
@@ -9568,7 +9559,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				appendedBlock();
 				astFactory.addASTChild(currentAST, returnAST);
 			}
-			else if ((_tokenSet_114.member(LA(1))) && (_tokenSet_6.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
+			else if ((_tokenSet_110.member(LA(1))) && (_tokenSet_6.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
 			}
 			else {
 				throw new NoViableAltException(LT(1), getFilename());
@@ -9918,7 +9909,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		stringConstructorValuePart();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop441:
+		_loop440:
 		do {
 			if ((LA(1)==STRING_CTOR_MIDDLE)) {
 				cm = LT(1);
@@ -9932,7 +9923,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop441;
+				break _loop440;
 			}
 			
 		} while (true);
@@ -9965,7 +9956,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		logicalAndExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop366:
+		_loop365:
 		do {
 			if ((LA(1)==LOR)) {
 				AST tmp279_AST = null;
@@ -9977,7 +9968,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop366;
+				break _loop365;
 			}
 			
 		} while (true);
@@ -9995,7 +9986,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		inclusiveOrExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop369:
+		_loop368:
 		do {
 			if ((LA(1)==LAND)) {
 				AST tmp280_AST = null;
@@ -10007,7 +9998,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop369;
+				break _loop368;
 			}
 			
 		} while (true);
@@ -10025,7 +10016,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		exclusiveOrExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop372:
+		_loop371:
 		do {
 			if ((LA(1)==BOR)) {
 				AST tmp281_AST = null;
@@ -10037,7 +10028,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop372;
+				break _loop371;
 			}
 			
 		} while (true);
@@ -10055,7 +10046,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		andExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop375:
+		_loop374:
 		do {
 			if ((LA(1)==BXOR)) {
 				AST tmp282_AST = null;
@@ -10067,7 +10058,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop375;
+				break _loop374;
 			}
 			
 		} while (true);
@@ -10085,7 +10076,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		regexExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop378:
+		_loop377:
 		do {
 			if ((LA(1)==BAND)) {
 				AST tmp283_AST = null;
@@ -10097,7 +10088,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop378;
+				break _loop377;
 			}
 			
 		} while (true);
@@ -10115,7 +10106,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		equalityExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop382:
+		_loop381:
 		do {
 			if ((LA(1)==REGEX_FIND||LA(1)==REGEX_MATCH)) {
 				{
@@ -10147,7 +10138,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop382;
+				break _loop381;
 			}
 			
 		} while (true);
@@ -10165,7 +10156,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		relationalExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop386:
+		_loop385:
 		do {
 			if (((LA(1) >= NOT_EQUAL && LA(1) <= COMPARE_TO))) {
 				{
@@ -10205,7 +10196,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop386;
+				break _loop385;
 			}
 			
 		} while (true);
@@ -10415,7 +10406,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		multiplicativeExpression();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop399:
+		_loop398:
 		do {
 			if ((LA(1)==PLUS||LA(1)==MINUS)) {
 				{
@@ -10447,7 +10438,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop399;
+				break _loop398;
 			}
 			
 		} while (true);
@@ -10474,9 +10465,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			powerExpression();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop404:
+			_loop403:
 			do {
-				if ((_tokenSet_115.member(LA(1)))) {
+				if ((_tokenSet_111.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
@@ -10514,7 +10505,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop404;
+					break _loop403;
 				}
 				
 			} while (true);
@@ -10534,9 +10525,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			powerExpression();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop408:
+			_loop407:
 			do {
-				if ((_tokenSet_115.member(LA(1)))) {
+				if ((_tokenSet_111.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
@@ -10574,7 +10565,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop408;
+					break _loop407;
 				}
 				
 			} while (true);
@@ -10597,9 +10588,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			powerExpression();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop412:
+			_loop411:
 			do {
-				if ((_tokenSet_115.member(LA(1)))) {
+				if ((_tokenSet_111.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
@@ -10637,7 +10628,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop412;
+					break _loop411;
 				}
 				
 			} while (true);
@@ -10660,9 +10651,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			powerExpression();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop416:
+			_loop415:
 			do {
-				if ((_tokenSet_115.member(LA(1)))) {
+				if ((_tokenSet_111.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
@@ -10700,7 +10691,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop416;
+					break _loop415;
 				}
 				
 			} while (true);
@@ -10734,9 +10725,9 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			powerExpression();
 			astFactory.addASTChild(currentAST, returnAST);
 			{
-			_loop420:
+			_loop419:
 			do {
-				if ((_tokenSet_115.member(LA(1)))) {
+				if ((_tokenSet_111.member(LA(1)))) {
 					{
 					switch ( LA(1)) {
 					case STAR:
@@ -10774,7 +10765,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					astFactory.addASTChild(currentAST, returnAST);
 				}
 				else {
-					break _loop420;
+					break _loop419;
 				}
 				
 			} while (true);
@@ -10800,7 +10791,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		unaryExpressionNotPlusMinus();
 		astFactory.addASTChild(currentAST, returnAST);
 		{
-		_loop423:
+		_loop422:
 		do {
 			if ((LA(1)==STAR_STAR)) {
 				AST tmp317_AST = null;
@@ -10812,7 +10803,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				break _loop423;
+				break _loop422;
 			}
 			
 		} while (true);
@@ -10876,10 +10867,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		case NUM_BIG_DECIMAL:
 		{
 			{
-			boolean synPredMatched428 = false;
+			boolean synPredMatched427 = false;
 			if (((LA(1)==LPAREN) && ((LA(2) >= LITERAL_void && LA(2) <= LITERAL_any)) && (LA(3)==LBRACK||LA(3)==RPAREN))) {
-				int _m428 = mark();
-				synPredMatched428 = true;
+				int _m427 = mark();
+				synPredMatched427 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -10890,12 +10881,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched428 = false;
+					synPredMatched427 = false;
 				}
-				rewind(_m428);
+				rewind(_m427);
 				inputState.guessing--;
 			}
-			if ( synPredMatched428 ) {
+			if ( synPredMatched427 ) {
 				lpb = LT(1);
 				lpb_AST = astFactory.create(lpb);
 				astFactory.makeASTRoot(currentAST, lpb_AST);
@@ -10910,10 +10901,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				astFactory.addASTChild(currentAST, returnAST);
 			}
 			else {
-				boolean synPredMatched430 = false;
-				if (((LA(1)==LPAREN) && (LA(2)==IDENT) && (_tokenSet_116.member(LA(3))))) {
-					int _m430 = mark();
-					synPredMatched430 = true;
+				boolean synPredMatched429 = false;
+				if (((LA(1)==LPAREN) && (LA(2)==IDENT) && (_tokenSet_112.member(LA(3))))) {
+					int _m429 = mark();
+					synPredMatched429 = true;
 					inputState.guessing++;
 					try {
 						{
@@ -10924,12 +10915,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 						}
 					}
 					catch (RecognitionException pe) {
-						synPredMatched430 = false;
+						synPredMatched429 = false;
 					}
-					rewind(_m430);
+					rewind(_m429);
 					inputState.guessing--;
 				}
-				if ( synPredMatched430 ) {
+				if ( synPredMatched429 ) {
 					lp = LT(1);
 					lp_AST = astFactory.create(lp);
 					astFactory.makeASTRoot(currentAST, lp_AST);
@@ -10943,7 +10934,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					unaryExpressionNotPlusMinus();
 					astFactory.addASTChild(currentAST, returnAST);
 				}
-				else if ((_tokenSet_117.member(LA(1))) && (_tokenSet_118.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
+				else if ((_tokenSet_113.member(LA(1))) && (_tokenSet_114.member(LA(2))) && (_tokenSet_6.member(LA(3)))) {
 					postfixExpression();
 					astFactory.addASTChild(currentAST, returnAST);
 				}
@@ -11400,10 +11391,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		ASTPair currentAST = new ASTPair();
 		AST strictContextExpression_AST = null;
 		
-		boolean synPredMatched438 = false;
-		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_107.member(LA(2))) && (_tokenSet_119.member(LA(3))))) {
-			int _m438 = mark();
-			synPredMatched438 = true;
+		boolean synPredMatched437 = false;
+		if (((_tokenSet_12.member(LA(1))) && (_tokenSet_103.member(LA(2))) && (_tokenSet_115.member(LA(3))))) {
+			int _m437 = mark();
+			synPredMatched437 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11411,12 +11402,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched438 = false;
+				synPredMatched437 = false;
 			}
-			rewind(_m438);
+			rewind(_m437);
 			inputState.guessing--;
 		}
-		if ( synPredMatched438 ) {
+		if ( synPredMatched437 ) {
 			singleDeclaration();
 			astFactory.addASTChild(currentAST, returnAST);
 			strictContextExpression_AST = (AST)currentAST.root;
@@ -11426,7 +11417,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			astFactory.addASTChild(currentAST, returnAST);
 			strictContextExpression_AST = (AST)currentAST.root;
 		}
-		else if (((LA(1) >= LITERAL_void && LA(1) <= LITERAL_any)) && (_tokenSet_120.member(LA(2)))) {
+		else if (((LA(1) >= LITERAL_void && LA(1) <= LITERAL_any)) && (_tokenSet_116.member(LA(2)))) {
 			builtInType();
 			astFactory.addASTChild(currentAST, returnAST);
 			strictContextExpression_AST = (AST)currentAST.root;
@@ -11436,7 +11427,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			astFactory.addASTChild(currentAST, returnAST);
 			strictContextExpression_AST = (AST)currentAST.root;
 		}
-		else if ((LA(1)==AT) && (LA(2)==IDENT) && (_tokenSet_121.member(LA(3)))) {
+		else if ((LA(1)==AT) && (LA(2)==IDENT) && (_tokenSet_117.member(LA(3)))) {
 			annotation();
 			astFactory.addASTChild(currentAST, returnAST);
 			strictContextExpression_AST = (AST)currentAST.root;
@@ -11486,10 +11477,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST lb_AST = null;
 		
 		{
-		int _cnt469=0;
-		_loop469:
+		int _cnt468=0;
+		_loop468:
 		do {
-			if ((LA(1)==LBRACK) && (_tokenSet_122.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
+			if ((LA(1)==LBRACK) && (_tokenSet_118.member(LA(2))) && (_tokenSet_17.member(LA(3)))) {
 				lb = LT(1);
 				lb_AST = astFactory.create(lb);
 				astFactory.makeASTRoot(currentAST, lb_AST);
@@ -11541,10 +11532,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				match(RBRACK);
 			}
 			else {
-				if ( _cnt469>=1 ) { break _loop469; } else {throw new NoViableAltException(LT(1), getFilename());}
+				if ( _cnt468>=1 ) { break _loop468; } else {throw new NoViableAltException(LT(1), getFilename());}
 			}
 			
-			_cnt469++;
+			_cnt468++;
 		} while (true);
 		}
 		newArrayDeclarator_AST = (AST)currentAST.root;
@@ -11566,10 +11557,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST sp_AST = null;
 		
 		{
-		boolean synPredMatched456 = false;
-		if (((_tokenSet_123.member(LA(1))) && (_tokenSet_124.member(LA(2))) && (_tokenSet_99.member(LA(3))))) {
-			int _m456 = mark();
-			synPredMatched456 = true;
+		boolean synPredMatched455 = false;
+		if (((_tokenSet_119.member(LA(1))) && (_tokenSet_120.member(LA(2))) && (_tokenSet_95.member(LA(3))))) {
+			int _m455 = mark();
+			synPredMatched455 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11577,12 +11568,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched456 = false;
+				synPredMatched455 = false;
 			}
-			rewind(_m456);
+			rewind(_m455);
 			inputState.guessing--;
 		}
-		if ( synPredMatched456 ) {
+		if ( synPredMatched455 ) {
 			argumentLabel();
 			astFactory.addASTChild(currentAST, returnAST);
 			c = LT(1);
@@ -11602,7 +11593,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				sp_AST.setType(SPREAD_ARG);
 			}
 		}
-		else if ((_tokenSet_125.member(LA(1))) && (_tokenSet_67.member(LA(2))) && (_tokenSet_18.member(LA(3)))) {
+		else if ((_tokenSet_121.member(LA(1))) && (_tokenSet_67.member(LA(2))) && (_tokenSet_18.member(LA(3)))) {
 		}
 		else {
 			throw new NoViableAltException(LT(1), getFilename());
@@ -11712,10 +11703,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		AST id_AST = null;
 		AST kw_AST = null;
 		
-		boolean synPredMatched459 = false;
-		if (((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_125.member(LA(3))))) {
-			int _m459 = mark();
-			synPredMatched459 = true;
+		boolean synPredMatched458 = false;
+		if (((LA(1)==IDENT) && (LA(2)==COLON) && (_tokenSet_121.member(LA(3))))) {
+			int _m458 = mark();
+			synPredMatched458 = true;
 			inputState.guessing++;
 			try {
 				{
@@ -11723,12 +11714,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 			}
 			catch (RecognitionException pe) {
-				synPredMatched459 = false;
+				synPredMatched458 = false;
 			}
-			rewind(_m459);
+			rewind(_m458);
 			inputState.guessing--;
 		}
-		if ( synPredMatched459 ) {
+		if ( synPredMatched458 ) {
 			id = LT(1);
 			id_AST = astFactory.create(id);
 			astFactory.addASTChild(currentAST, id_AST);
@@ -11739,10 +11730,10 @@ public GroovyRecognizer(ParserSharedInputState state) {
 			argumentLabel_AST = (AST)currentAST.root;
 		}
 		else {
-			boolean synPredMatched461 = false;
-			if (((_tokenSet_126.member(LA(1))))) {
-				int _m461 = mark();
-				synPredMatched461 = true;
+			boolean synPredMatched460 = false;
+			if (((_tokenSet_122.member(LA(1))))) {
+				int _m460 = mark();
+				synPredMatched460 = true;
 				inputState.guessing++;
 				try {
 					{
@@ -11750,12 +11741,12 @@ public GroovyRecognizer(ParserSharedInputState state) {
 					}
 				}
 				catch (RecognitionException pe) {
-					synPredMatched461 = false;
+					synPredMatched460 = false;
 				}
-				rewind(_m461);
+				rewind(_m460);
 				inputState.guessing--;
 			}
-			if ( synPredMatched461 ) {
+			if ( synPredMatched460 ) {
 				keywordPropertyNames();
 				kw_AST = (AST)returnAST;
 				astFactory.addASTChild(currentAST, returnAST);
@@ -11764,7 +11755,7 @@ public GroovyRecognizer(ParserSharedInputState state) {
 				}
 				argumentLabel_AST = (AST)currentAST.root;
 			}
-			else if ((_tokenSet_95.member(LA(1))) && (_tokenSet_124.member(LA(2))) && (_tokenSet_99.member(LA(3)))) {
+			else if ((_tokenSet_91.member(LA(1))) && (_tokenSet_120.member(LA(2))) && (_tokenSet_95.member(LA(3)))) {
 				primaryExpression();
 				astFactory.addASTChild(currentAST, returnAST);
 				argumentLabel_AST = (AST)currentAST.root;
@@ -12751,45 +12742,14 @@ public GroovyRecognizer(ParserSharedInputState state) {
 	}
 	public static final BitSet _tokenSet_90 = new BitSet(mk_tokenSet_90());
 	private static final long[] mk_tokenSet_91() {
-		long[] data = new long[12];
-		data[0]=-14L;
-		data[1]=-2305843009222082561L;
-		data[2]=9223372036854775807L;
-		data[3]=8388607L;
-		return data;
-	}
-	public static final BitSet _tokenSet_91 = new BitSet(mk_tokenSet_91());
-	private static final long[] mk_tokenSet_92() {
-		long[] data = new long[12];
-		data[0]=-14L;
-		for (int i = 1; i<=2; i++) { data[i]=-1L; }
-		data[3]=8388607L;
-		return data;
-	}
-	public static final BitSet _tokenSet_92 = new BitSet(mk_tokenSet_92());
-	private static final long[] mk_tokenSet_93() {
-		long[] data = { 137438953474L, -8935001047492460544L, 96L, 0L, 0L, 0L};
-		return data;
-	}
-	public static final BitSet _tokenSet_93 = new BitSet(mk_tokenSet_93());
-	private static final long[] mk_tokenSet_94() {
-		long[] data = new long[8];
-		data[0]=7009386627074L;
-		data[1]=-7638105089554776064L;
-		data[2]=8070453831034461292L;
-		data[3]=1023L;
-		return data;
-	}
-	public static final BitSet _tokenSet_94 = new BitSet(mk_tokenSet_94());
-	private static final long[] mk_tokenSet_95() {
 		long[] data = new long[8];
 		data[1]=2166358016L;
 		data[2]=4611686018427387916L;
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_95 = new BitSet(mk_tokenSet_95());
-	private static final long[] mk_tokenSet_96() {
+	public static final BitSet _tokenSet_91 = new BitSet(mk_tokenSet_91());
+	private static final long[] mk_tokenSet_92() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=1296614349514473472L;
@@ -12797,8 +12757,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_96 = new BitSet(mk_tokenSet_96());
-	private static final long[] mk_tokenSet_97() {
+	public static final BitSet _tokenSet_92 = new BitSet(mk_tokenSet_92());
+	private static final long[] mk_tokenSet_93() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=4755378858767417344L;
@@ -12806,8 +12766,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_97 = new BitSet(mk_tokenSet_97());
-	private static final long[] mk_tokenSet_98() {
+	public static final BitSet _tokenSet_93 = new BitSet(mk_tokenSet_93());
+	private static final long[] mk_tokenSet_94() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=-3026841284171268096L;
@@ -12815,8 +12775,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_98 = new BitSet(mk_tokenSet_98());
-	private static final long[] mk_tokenSet_99() {
+	public static final BitSet _tokenSet_94 = new BitSet(mk_tokenSet_94());
+	private static final long[] mk_tokenSet_95() {
 		long[] data = new long[8];
 		data[0]=288484363337728L;
 		data[1]=-1073872896L;
@@ -12824,13 +12784,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_99 = new BitSet(mk_tokenSet_99());
-	private static final long[] mk_tokenSet_100() {
+	public static final BitSet _tokenSet_95 = new BitSet(mk_tokenSet_95());
+	private static final long[] mk_tokenSet_96() {
 		long[] data = { 4810363371520L, -9079679194111410176L, 65536L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_100 = new BitSet(mk_tokenSet_100());
-	private static final long[] mk_tokenSet_101() {
+	public static final BitSet _tokenSet_96 = new BitSet(mk_tokenSet_96());
+	private static final long[] mk_tokenSet_97() {
 		long[] data = new long[8];
 		data[0]=7009386627072L;
 		data[1]=-7926335465706487808L;
@@ -12838,18 +12798,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_101 = new BitSet(mk_tokenSet_101());
-	private static final long[] mk_tokenSet_102() {
+	public static final BitSet _tokenSet_97 = new BitSet(mk_tokenSet_97());
+	private static final long[] mk_tokenSet_98() {
 		long[] data = { 137438953472L, 140600069849088L, 32L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_102 = new BitSet(mk_tokenSet_102());
-	private static final long[] mk_tokenSet_103() {
+	public static final BitSet _tokenSet_98 = new BitSet(mk_tokenSet_98());
+	private static final long[] mk_tokenSet_99() {
 		long[] data = { 0L, -8070450532247928832L, 67108864L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_103 = new BitSet(mk_tokenSet_103());
-	private static final long[] mk_tokenSet_104() {
+	public static final BitSet _tokenSet_99 = new BitSet(mk_tokenSet_99());
+	private static final long[] mk_tokenSet_100() {
 		long[] data = new long[8];
 		data[0]=2L;
 		data[1]=-1008806305762115584L;
@@ -12857,13 +12817,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_104 = new BitSet(mk_tokenSet_104());
-	private static final long[] mk_tokenSet_105() {
+	public static final BitSet _tokenSet_100 = new BitSet(mk_tokenSet_100());
+	private static final long[] mk_tokenSet_101() {
 		long[] data = { 2L, -2161727812539514880L, 16779265L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_105 = new BitSet(mk_tokenSet_105());
-	private static final long[] mk_tokenSet_106() {
+	public static final BitSet _tokenSet_101 = new BitSet(mk_tokenSet_101());
+	private static final long[] mk_tokenSet_102() {
 		long[] data = new long[8];
 		data[0]=288484363337730L;
 		data[1]=-131072L;
@@ -12871,18 +12831,18 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_106 = new BitSet(mk_tokenSet_106());
-	private static final long[] mk_tokenSet_107() {
+	public static final BitSet _tokenSet_102 = new BitSet(mk_tokenSet_102());
+	private static final long[] mk_tokenSet_103() {
 		long[] data = { 4810363371520L, -9079679194111410176L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_107 = new BitSet(mk_tokenSet_107());
-	private static final long[] mk_tokenSet_108() {
+	public static final BitSet _tokenSet_103 = new BitSet(mk_tokenSet_103());
+	private static final long[] mk_tokenSet_104() {
 		long[] data = { 0L, 103079215104L, 54043195528445984L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_108 = new BitSet(mk_tokenSet_108());
-	private static final long[] mk_tokenSet_109() {
+	public static final BitSet _tokenSet_104 = new BitSet(mk_tokenSet_104());
+	private static final long[] mk_tokenSet_105() {
 		long[] data = new long[8];
 		data[0]=-16L;
 		data[1]=-1152921504606846977L;
@@ -12890,8 +12850,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=8388607L;
 		return data;
 	}
-	public static final BitSet _tokenSet_109 = new BitSet(mk_tokenSet_109());
-	private static final long[] mk_tokenSet_110() {
+	public static final BitSet _tokenSet_105 = new BitSet(mk_tokenSet_105());
+	private static final long[] mk_tokenSet_106() {
 		long[] data = new long[8];
 		data[0]=7009386627072L;
 		data[1]=-2882303883051532288L;
@@ -12899,8 +12859,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_110 = new BitSet(mk_tokenSet_110());
-	private static final long[] mk_tokenSet_111() {
+	public static final BitSet _tokenSet_106 = new BitSet(mk_tokenSet_106());
+	private static final long[] mk_tokenSet_107() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=6340645940759363584L;
@@ -12908,13 +12868,13 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_111 = new BitSet(mk_tokenSet_111());
-	private static final long[] mk_tokenSet_112() {
+	public static final BitSet _tokenSet_107 = new BitSet(mk_tokenSet_107());
+	private static final long[] mk_tokenSet_108() {
 		long[] data = { 0L, 1152921504896253952L, 13194139533312L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_112 = new BitSet(mk_tokenSet_112());
-	private static final long[] mk_tokenSet_113() {
+	public static final BitSet _tokenSet_108 = new BitSet(mk_tokenSet_108());
+	private static final long[] mk_tokenSet_109() {
 		long[] data = new long[8];
 		data[0]=7009386627072L;
 		data[1]=-864691254888366080L;
@@ -12922,8 +12882,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_113 = new BitSet(mk_tokenSet_113());
-	private static final long[] mk_tokenSet_114() {
+	public static final BitSet _tokenSet_109 = new BitSet(mk_tokenSet_109());
+	private static final long[] mk_tokenSet_110() {
 		long[] data = new long[8];
 		data[0]=2L;
 		data[1]=-143692839482556416L;
@@ -12931,26 +12891,26 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_114 = new BitSet(mk_tokenSet_114());
-	private static final long[] mk_tokenSet_115() {
+	public static final BitSet _tokenSet_110 = new BitSet(mk_tokenSet_110());
+	private static final long[] mk_tokenSet_111() {
 		long[] data = { 0L, 140737488355328L, 216172782113783808L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_115 = new BitSet(mk_tokenSet_115());
-	private static final long[] mk_tokenSet_116() {
+	public static final BitSet _tokenSet_111 = new BitSet(mk_tokenSet_111());
+	private static final long[] mk_tokenSet_112() {
 		long[] data = { 0L, 144115192643452928L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_116 = new BitSet(mk_tokenSet_116());
-	private static final long[] mk_tokenSet_117() {
+	public static final BitSet _tokenSet_112 = new BitSet(mk_tokenSet_112());
+	private static final long[] mk_tokenSet_113() {
 		long[] data = new long[8];
 		data[1]=1152921506777399296L;
 		data[2]=4611686018427387916L;
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_117 = new BitSet(mk_tokenSet_117());
-	private static final long[] mk_tokenSet_118() {
+	public static final BitSet _tokenSet_113 = new BitSet(mk_tokenSet_113());
+	private static final long[] mk_tokenSet_114() {
 		long[] data = new long[8];
 		data[0]=7009386627074L;
 		data[1]=-1073872896L;
@@ -12958,8 +12918,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_118 = new BitSet(mk_tokenSet_118());
-	private static final long[] mk_tokenSet_119() {
+	public static final BitSet _tokenSet_114 = new BitSet(mk_tokenSet_114());
+	private static final long[] mk_tokenSet_115() {
 		long[] data = new long[8];
 		data[0]=7009386627072L;
 		data[1]=-7493989901478920192L;
@@ -12967,26 +12927,26 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_119 = new BitSet(mk_tokenSet_119());
-	private static final long[] mk_tokenSet_120() {
+	public static final BitSet _tokenSet_115 = new BitSet(mk_tokenSet_115());
+	private static final long[] mk_tokenSet_116() {
 		long[] data = { 0L, 144115196674179072L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_120 = new BitSet(mk_tokenSet_120());
-	private static final long[] mk_tokenSet_121() {
+	public static final BitSet _tokenSet_116 = new BitSet(mk_tokenSet_116());
+	private static final long[] mk_tokenSet_117() {
 		long[] data = { 0L, 144115196959391744L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_121 = new BitSet(mk_tokenSet_121());
-	private static final long[] mk_tokenSet_122() {
+	public static final BitSet _tokenSet_117 = new BitSet(mk_tokenSet_117());
+	private static final long[] mk_tokenSet_118() {
 		long[] data = new long[8];
 		data[1]=1152921506785787904L;
 		data[2]=8070453830795395084L;
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_122 = new BitSet(mk_tokenSet_122());
-	private static final long[] mk_tokenSet_123() {
+	public static final BitSet _tokenSet_118 = new BitSet(mk_tokenSet_118());
+	private static final long[] mk_tokenSet_119() {
 		long[] data = new long[8];
 		data[0]=2199023255552L;
 		data[1]=422077226549248L;
@@ -12994,8 +12954,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_123 = new BitSet(mk_tokenSet_123());
-	private static final long[] mk_tokenSet_124() {
+	public static final BitSet _tokenSet_119 = new BitSet(mk_tokenSet_119());
+	private static final long[] mk_tokenSet_120() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=1296614349246038016L;
@@ -13003,8 +12963,8 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_124 = new BitSet(mk_tokenSet_124());
-	private static final long[] mk_tokenSet_125() {
+	public static final BitSet _tokenSet_120 = new BitSet(mk_tokenSet_120());
+	private static final long[] mk_tokenSet_121() {
 		long[] data = new long[8];
 		data[0]=4810363371520L;
 		data[1]=1296614344951070720L;
@@ -13012,11 +12972,11 @@ public GroovyRecognizer(ParserSharedInputState state) {
 		data[3]=1023L;
 		return data;
 	}
-	public static final BitSet _tokenSet_125 = new BitSet(mk_tokenSet_125());
-	private static final long[] mk_tokenSet_126() {
+	public static final BitSet _tokenSet_121 = new BitSet(mk_tokenSet_121());
+	private static final long[] mk_tokenSet_122() {
 		long[] data = { 2199023255552L, 422075060191232L, 235002880L, 0L, 0L, 0L};
 		return data;
 	}
-	public static final BitSet _tokenSet_126 = new BitSet(mk_tokenSet_126());
+	public static final BitSet _tokenSet_122 = new BitSet(mk_tokenSet_122());
 	
 	}
