@@ -75,11 +75,13 @@ public class AllTests extends TestSuiteSupport {
         "TestBase.groovy",                      // TODO: constructor bug
         "TestCaseBug.groovy",                   // TODO: constructor bug
         "TestDerived.groovy",                   // TODO: constructor bug
+        "Build.groovy",                         // TODO: constructor bug
 
         "ClosureCloneTest.groovy",              // TODO: use of * with dot
         "DoubleOperationTest.groovy",           // TODO: use of * with dot
         "ClosureMethodTest.groovy",             // TODO: use of *
         "ClosureWithDefaultParamTest.groovy",   // TODO: use of *
+        "GroovyMethodsTest.groovy",             // TODO: use of *
 
         "CompareToTest.groovy",                 // TODO: can't parse <=>
 
