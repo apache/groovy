@@ -34,8 +34,6 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.lang.GroovyClassLoader;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
