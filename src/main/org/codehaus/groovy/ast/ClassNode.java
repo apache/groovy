@@ -631,15 +631,15 @@ public class ClassNode extends MetadataNode implements Constants {
             }
 			// try to resolve Class names
             answer = tryResolveClassAndInnerClass(type);
-			if (answer == null) {
-				// try to resolve a public static inner class' name
-                if (type.indexOf('.') > -1) {
-                    int lastPoint = type.lastIndexOf('.');
-                    String replacedPointType = new StringBuffer()
-                        .append(type.substring(0, lastPoint)).append("$")
-                        .append(type.substring(lastPoint + 1)).toString();
-                    answer = tryResolveClassAndInnerClass(replacedPointType);
-                }
+
+            // try to resolve a public static inner class' name
+            String replacedPointType = type;
+			while (answer == null && replacedPointType.indexOf('.') > -1) {
+                int lastPoint = replacedPointType.lastIndexOf('.');
+                replacedPointType = new StringBuffer()
+                                    .append(replacedPointType.substring(0, lastPoint)).append("$")
+                                    .append(replacedPointType.substring(lastPoint + 1)).toString();
+                answer = tryResolveClassAndInnerClass(replacedPointType);
 			}
         }
         return answer;

@@ -24,4 +24,13 @@ class CallInnerClassCtorTest extends GroovyTestCase {
         assert address.zipcode == 92360
     }
 
+    void testCallInnerInnerCtor() {
+        address = new groovy.OuterUser.InnerAddress.Street()
+        address.name = "rue de la paix"
+        address.number = 17
+
+        assert address.name == "rue de la paix"
+        assert address.number == 17
+    }
+
 }
