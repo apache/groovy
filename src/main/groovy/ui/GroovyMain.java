@@ -96,7 +96,13 @@ public class GroovyMain {
 
     // automatically output the result of each script
     private boolean autoOutput;
-
+    
+    // process sockets
+    private boolean processSockets;
+    
+    // port to listen on when processing sockets
+    private int port;
+    
     // backup input files with extension
     private String backupExtension;
 
@@ -174,6 +180,8 @@ public class GroovyMain {
         options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line").create('n'));
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line and print result").create('p'));
+        
+        options.addOption(OptionBuilder.withArgName("port").hasOptionalArg().withDescription("process socket i/o").create('w'));
         return options;
     }
 
@@ -214,7 +222,12 @@ public class GroovyMain {
         else {
             main.script = line.getOptionValue('e');
         }
-
+        
+        main.processSockets = line.hasOption('w');
+        if (main.processSockets) {
+            String p = line.getOptionValue('w',"1960"); // default port to listen to
+            main.port = new Integer(p).intValue();
+        }
         main.args = args;
 
         main.run();
@@ -228,7 +241,9 @@ public class GroovyMain {
      */
     private void run() {
         try {
-            if (processFiles) {
+            if (processSockets) {
+                processSockets();
+            } else if (processFiles) {
                 processFiles();
             }
             else {
@@ -240,7 +255,21 @@ public class GroovyMain {
             e.printStackTrace();
         }
     }
-
+    
+    /**
+     * Process Sockets.
+     */
+    private void processSockets() throws CompilationFailedException, IOException {
+        GroovyShell groovy = new GroovyShell(conf);
+        Script s;
+        if (isScriptFile) {
+            s = groovy.parse(new File(script));
+        } else {
+            s = groovy.parse(script, "main");
+        }
+        new GroovySocketServer(s,port);
+    }
+    
     /**
      * Process the input files.
      */
