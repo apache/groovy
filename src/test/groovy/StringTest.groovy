@@ -40,7 +40,21 @@ class StringTest extends GroovyTestCase {
     	assert b > z
     	
     	println "Incremented z: " + b
-    	
-    	
 	}
+    
+    void testApppendToString() {
+        name = "Gromit"
+        result = "hello " << name << "!" 
+        
+        assert result.toString() == "hello Gromit!"
+    }
+    
+    void testApppendToStringBuffer() {
+        buffer = new StringBuffer()
+        
+        name = "Gromit"
+        buffer << "hello " << name << "!" 
+        
+        assert buffer.toString() == "hello Gromit!"
+    }
 }
