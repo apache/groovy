@@ -37,9 +37,11 @@ public class UberTest implements Test {
         // "AmbiguousInvocationTest.groovy",  - requires classpath stuff
         "AssertNumberTest.groovy",
         "AssertTest.groovy",
+        "Bar.groovy",
         "BindingTest.groovy",
         "ChainedAssignment.groovy",
         "ClosureInClosureTest.groovy",
+        "Foo.groovy",
         //"ForLoopTest.groovy",                 TODO - fixme - AST gen bug
         "IfElseCompactTest.groovy",
         "IfElseTest.groovy",

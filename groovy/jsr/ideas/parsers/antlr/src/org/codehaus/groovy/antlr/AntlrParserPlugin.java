@@ -167,7 +167,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String superClass = null;
         if (isType(EXTENDS_CLAUSE, node)) {
-            superClass = getFirstChildText(node);
+            superClass = resolveTypeName(getFirstChildText(node));
             node = node.getNextSibling();
         }
         if (superClass == null) {
@@ -305,7 +305,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected String[] interfaces(AST node) {
         List interfaceList = new ArrayList();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
-            interfaceList.add(implementNode.getText());
+            interfaceList.add(resolveTypeName(implementNode.getText()));
         }
         String[] interfaces = {};
         if (!interfaceList.isEmpty()) {

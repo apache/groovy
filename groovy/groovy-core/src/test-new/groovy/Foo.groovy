@@ -9,31 +9,36 @@ import java.io.Serializable
 class Foo implements Serializable {
 
     // public properties
-    name = "James"
-    count
+    def name = "James"
+    def count
     String location = "London"
     
     // declare private variables
-	private blah = 9
-	private invisible = "invisible"
+    private def blah = 9
+    private def invisible = "invisible"
 
     // declare a protected variable
-    protected prot = "hide me!"
+    protected def prot = "hide me!"
 
- 	// provide a getter method
- 	getCount() {
- 	    if (count == null) {
- 	        count = 1
- 	    }
- 	    return count
- 	}
-     
-	getBlah() {
- 	    return blah
- 	}
-	
     // declare a bean with explicit typing
     private String body
+
+    static void main(args) {
+        f = new Foo()
+        println f
+    }
+    
+    // provide a getter method
+    def getCount() {
+         if (count == null) {
+             count = 1
+         }
+         return count
+    }
+     
+    def getBlah() {
+         return blah
+    }
 
     public String getBody() {
         return this.body
@@ -43,7 +48,7 @@ class Foo implements Serializable {
         this.body = body
     }
 
-	String toString() {
-		return super.toString() + " name: ${name} location: ${location}"
-	}
+    String toString() {
+        return super.toString() + " name: ${name} location: ${location}"
+    }
 }
