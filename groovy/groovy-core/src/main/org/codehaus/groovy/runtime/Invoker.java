@@ -52,8 +52,8 @@ import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MissingMethodException;
 import groovy.lang.Range;
-import groovy.lang.Tuple;
 import groovy.lang.SpreadList;
+import groovy.lang.Tuple;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Element;
@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -78,7 +79,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.math.BigDecimal;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -209,7 +209,7 @@ public class Invoker {
         else if (arguments instanceof Tuple) {
             Tuple tuple = (Tuple) arguments;
             Object[] objects = tuple.toArray();
-      	     ArrayList array = new ArrayList();
+            ArrayList array = new ArrayList();
             for (int i = 0; i < objects.length; i++) {
                 if (objects[i] instanceof SpreadList) {
                     SpreadList slist = (SpreadList) objects[i];
@@ -221,7 +221,7 @@ public class Invoker {
                     array.add(objects[i]);
                 }
             }
-	     return array.toArray();
+            return array.toArray();
         }
         else if (arguments instanceof Object[]) {
             Object[] objects = (Object[]) arguments;
@@ -907,6 +907,27 @@ public class Invoker {
         }
         if (type == Boolean.class) {
             return asBool(object) ? Boolean.TRUE : Boolean.FALSE;
+        }
+        Object[] args = null;
+        if (object instanceof Collection) {
+            Collection list = (Collection) object;
+            args = list.toArray();
+        }
+        else if (object instanceof Object[]) {
+            args = (Object[]) object;
+        }
+        if (args != null) {
+            // lets try invoke the constructor with the list as arguments
+            // such as for creating a Dimension, Point, Color etc.
+            try {
+                return invokeConstructorOf(type, args);
+            }
+            catch (Exception e) {
+                // lets ignore exception and return the original object
+                // as the caller has more context to be able to throw a more
+                // meaningful exception
+            }
+
         }
         return object;
     }
