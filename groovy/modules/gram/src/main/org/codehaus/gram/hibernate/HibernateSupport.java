@@ -36,6 +36,13 @@ public abstract class HibernateSupport extends GramSupport {
             answer.setCardinality("0..N");
             return answer;
         }
+        ann = property.getAnnotation("hibernate.bag");
+        if (ann != null) {
+            answer.setTableName(stringValue(ann, "table"));
+            answer.setQualifiedTypeName(annotationValue(property, "hibernate.collection-many-to-many", "class"));
+            answer.setCardinality("0..N");
+            return answer;
+        }
         ann = property.getAnnotation("hibernate.many-to-one");
         if (ann != null) {
             answer.setQualifiedTypeName(stringValue(ann, "class"));
