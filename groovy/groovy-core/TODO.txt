@@ -20,7 +20,12 @@ Things to Test
 
 * test Button(actionPerformed:{event| event.println() }
 
+* remove dependency on asm-util on the compiler
 
+* test compiler errors when
+	- unknown class
+	- unknown variable
+	
 Core Groovy Tasks
 =================
 

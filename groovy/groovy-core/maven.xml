@@ -59,9 +59,7 @@
       <fileset dir="${basedir}/src/test">
         <include name="**/*.groovy"/>
         <exclude name="**/notworking/*.groovy"/>
-<!--
-        <include name="**/groovy/Little*.groovy"/>
--->
+        <exclude name="**/parser/*.groovy"/>
       </fileset>
     </copy>
     <touch>

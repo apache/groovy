@@ -17,6 +17,7 @@ public class UnexpectedTokenException
     public UnexpectedTokenException(Token token,
                                     int[] expectedTypes)
     {
+        super("Unexpected token", token);
         this.token         = token;
         this.expectedTypes = expectedTypes;
     }

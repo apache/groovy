@@ -231,6 +231,16 @@ public class ASTBuilder
         return resolveName( qualifiedName( nameRoot ) );
     }
 
+    protected String resolvedQualifiedNameNotNull(CSTNode child) 
+    {
+        String answer = resolvedQualifiedName(child);
+        if (answer == null) 
+        {
+            throw new ParserException("Unknown type: " + child.getToken().getText() + " could not be resolved", child.getToken());
+        }
+        return answer;
+    }
+
     protected String[] qualifiedNames(CSTNode[] nameRoots)
     {
         String[] qualifiedNames = new String[ nameRoots.length ];
@@ -243,13 +253,18 @@ public class ASTBuilder
         return qualifiedNames;
     }
 
-    protected String[] resolvedQualifiedNames(CSTNode[] nameRoots)
+    protected String[] resolvedQualifiedNamesNotNull(CSTNode[] nameRoots)
     {
         String[] qualifiedNames = qualifiedNames( nameRoots );
 
         for ( int i = 0 ; i < qualifiedNames.length ; ++i )
         {
             qualifiedNames[ i ] = resolveName( qualifiedNames[ i ] );
+            if (qualifiedNames[ i ] == null) 
+            {
+                Token token = nameRoots[i].getToken();
+                throw new ParserException("Unknown type: " + token.getText() + " could not be resolved", token);
+            }
         }
 
         return qualifiedNames;
@@ -283,7 +298,7 @@ public class ASTBuilder
         if ( matches( classRoot.getChild( 2 ),
                       Token.KEYWORD_EXTENDS ) )
         {
-            superClassName = resolvedQualifiedName( classRoot.getChild( 2 ).getChild( 0 ) );
+            superClassName = resolvedQualifiedNameNotNull( classRoot.getChild( 2 ).getChild( 0 ) );
         }
         else
         {
@@ -295,7 +310,7 @@ public class ASTBuilder
         if ( matches( classRoot.getChild( 3 ),
                       Token.KEYWORD_IMPLEMENTS ) )
         {
-            interfaceNames = resolvedQualifiedNames( classRoot.getChild( 3 ).getChildren() );
+            interfaceNames = resolvedQualifiedNamesNotNull( classRoot.getChild( 3 ).getChildren() );
         }
 
         /** @todo parser 
@@ -524,7 +539,7 @@ public class ASTBuilder
 
         for ( int i = 0 ; i < catchRoots.length ; ++i )
         {
-            String exceptionType = resolvedQualifiedName( catchRoots[ i ].getChild( 0 ) );
+            String exceptionType = resolvedQualifiedNameNotNull( catchRoots[ i ].getChild( 0 ) );
             String identifier = identifier( catchRoots[ i ].getChild( 1 ) );
             Statement block = statementBlock( catchRoots[ i ].getChild( 2 ) );
             
@@ -654,7 +669,7 @@ public class ASTBuilder
 
     protected ConstructorCallExpression newExpression(CSTNode expressionRoot)
     {
-        String datatype = resolvedQualifiedName( expressionRoot.getChild( 0 ) );
+        String datatype = resolvedQualifiedNameNotNull( expressionRoot.getChild( 0 ) );
 
         TupleExpression args = tupleExpression( expressionRoot.getChild( 1 ) );
 
