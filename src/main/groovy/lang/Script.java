@@ -56,6 +56,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * This object represents a Groovy script
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Guillaume Laforge
+ * 
  * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
@@ -92,12 +94,22 @@ public abstract class Script extends GroovyObjectSupport {
         //System.out.println("binding are now: " + binding.getVariables());
     }
 
+    /**
+     * Invoke a method defined in the class, and if it's not found, let's fall through to the binding,
+     * and see if there is a method closure available with the same name.
+     *
+     * @param name method to call
+     * @param args arguments to pass to the method
+     * @return value
+     */
     public Object invokeMethod(String name, Object args)
     {
         try
         {
             return super.invokeMethod(name, args);
         }
+        // if the method was not found in the current scope (the script's methods)
+        // let's try to see if there's a method closure with the same name in the binding
         catch (MissingMethodException mme)
         {
             Object boundClosure = binding.getVariable(name);
