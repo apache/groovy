@@ -20,7 +20,11 @@ package org.codehaus.groovy.antlr;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.framework.TestResult;
+import junit.framework.TestCase;
 import groovy.ui.GroovyMain;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * A simpler test runner to run multiple test cases straight from the groovy scripts
@@ -30,7 +34,11 @@ import groovy.ui.GroovyMain;
 public class UberTest implements Test {
 
     static String[] classicTests = {
+        // "AmbiguousInvocationTest.groovy",  - requires classpath stuff
         "AssertNumberTest.groovy",
+        "BindingTest.groovy",
+        "ChainedAssignment.groovy",
+        "ClosureInClosureTest.groovy",
         "IfElseTest.groovy",
     };
 
@@ -43,10 +51,6 @@ public class UberTest implements Test {
     };
 
     private String fullName;
-
-    public UberTest(String fullName) {
-        this.fullName = fullName;
-    }
 
 
     public static Test suite() {
@@ -61,7 +65,11 @@ public class UberTest implements Test {
             String name = names[i];
             String fullName = root + name;
 
-            suite.addTest(new UberTest(fullName));
+            UberTest uberTest = new UberTest();
+            uberTest.fullName = fullName;
+            TestSuite childSuite = new TestSuite(fullName);
+            childSuite.addTest(uberTest);
+            suite.addTest(childSuite);
         }
     }
 
@@ -71,5 +79,5 @@ public class UberTest implements Test {
 
     public void run(TestResult testResult) {
         GroovyMain.main(new String[] { fullName } );
-    };
+    }
 }

@@ -1309,6 +1309,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (isType(DOT, node)) {
             return qualifiedName(node);
         }
+        int type = node.getType();
+        switch (type) {
+            case LITERAL_boolean:
+            case LITERAL_byte:
+            case LITERAL_char:
+            case LITERAL_double:
+            case LITERAL_float:
+            case LITERAL_int:
+            case LITERAL_long:
+            case LITERAL_short:
+                return node.getText();
+        }
         String identifier = identifier(node);
         return resolveTypeName(identifier);
     }
