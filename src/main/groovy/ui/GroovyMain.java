@@ -156,7 +156,7 @@ public class GroovyMain {
      */
     private static CommandLine parseCommandLine(Options options, String[] args) throws ParseException {
         CommandLineParser parser = new PosixParser();
-        CommandLine cmd = parser.parse(options, args);
+        CommandLine cmd = parser.parse(options, args, true);
         return cmd;
     }
 
