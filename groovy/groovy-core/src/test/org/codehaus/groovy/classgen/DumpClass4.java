@@ -133,4 +133,11 @@ public class DumpClass4 {
             System.out.println("Finally");
         }
     }
-   }
+
+    public void emptyTryCatch() {
+        try {
+        }
+        catch (Throwable t) {
+        }
+    }
+}
