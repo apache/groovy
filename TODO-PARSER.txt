@@ -23,7 +23,7 @@ PARSER CHANGES REQUIRED
 	}
 	
 * support named parameter arguments. e.g. foo(a:1234, b:542);
-	which uses NamedParameterExpression
+	which uses NamedArgumentListExpression which is-a MapExpression
 
 * support parsing of Foo.class which should create a ConstantExpression
 
