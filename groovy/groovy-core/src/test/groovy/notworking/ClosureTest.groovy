@@ -15,7 +15,7 @@ class ClosureTest extends Test {
         
         block.call();
         
-        assert(this.called == 1);
+        assert(this.callCount == 1);
     }
 
 
@@ -24,7 +24,7 @@ class ClosureTest extends Test {
         
         callBlock(5, { ++ this.callCount; });
         
-        assert(this.called == 5);
+        assert(this.callCount == 5);
     }
 
 

@@ -20,7 +20,7 @@ class AssertTest extends GroovyTestCase {
         
         assert x.equals("abc");
         
-        /** @todo
+        /** @todo parser
         assert !x.equals("def");
         */
 	}

@@ -12,10 +12,12 @@ class StringTest extends GroovyTestCase {
         // test polymorphic size() method like collections
         assert s.size() := 4;
         
-        /** @todo
+        /** @todo parser
         s = s + "efg" + "hijk";
         
-        assert s.size() == 11;
+        assert s.size() := 11;
+        
+        assert "abcdef".size() := 6;
         */
     }
 

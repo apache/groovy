@@ -11,20 +11,20 @@ class ClosureWithParamTest extends Test {
     testSimpleBlockCall() {
         this.callCount = 0;
         
-        block = { step | this.callCount += step; }
+        block = { |step| this.callCount += step; }
         
         block.call(2);
         
-        assert(this.called == 2);
+        assert(this.callCount == 2);
     }
 
 
     testBlockAsParameter() {
         this.callCount = 0;
         
-        callBlock(5, 3, { step | this.callCount += step; });
+        callBlock(5, 3, { |step| this.callCount += step; });
         
-        assert(this.called == 15);
+        assert(this.callCount == 15);
     }
 
 

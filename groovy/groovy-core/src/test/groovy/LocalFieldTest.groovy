@@ -5,7 +5,7 @@ import org.codehaus.groovy.GroovyTestCase;
 class LocalFieldTest extends GroovyTestCase {
 
 	// lets define some fields - no necessary for instance variables but supported
-	/** @todo
+	/** @todo parser
     private x;
     private static z;
     private String y;
