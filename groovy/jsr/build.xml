@@ -25,37 +25,45 @@
     <ant dir="ideas/parsers/antlr" target="clean"/>
   </target>
 
-  <target name="dist" description="create distributables">
-    <!--workaround for biscuit local dir issue -->
-    <copy file="spec/SearchAndReplace" todir="."/>
-    <copy file="spec/SearchAndReplaceRegex" todir="."/>
-    <copy file="spec/TemplatePage.html" todir="."/>
-
+  <target name="compile">
     <echo>
 --------------------
 create the parser...
 --------------------
-</echo>
+    </echo>
     <ant dir="ideas/parsers/antlr" target="standalone" inheritAll="false"/>
 
     <!-- place parser in tck -->
     <copy todir="tck/testlib">
       <fileset dir="ideas/parsers/antlr/standalone"/>
     </copy>
+  </target>
+
+
+  <target name="test" depends="compile">
     <echo>
 --------------------------------------
 execute the tck over the new parser...
 --------------------------------------
-</echo>
+    </echo>
     <ant dir="tck" target="pretty-test" inheritAll="false"/>
+  </target>
 
+
+  <target name="doc">
     <echo>
 -----------------------
 render specification...
 -----------------------
-</echo>
+    </echo>
+    <!--workaround for biscuit local dir issue -->
+    <copy file="spec/SearchAndReplace" todir="."/>
+    <copy file="spec/SearchAndReplaceRegex" todir="."/>
+    <copy file="spec/TemplatePage.html" todir="."/>
     <ant dir="spec" target="render" inheritAll="false"/>
   </target>
+
+  <target name="dist" depends="test,doc" description="create distributables"/>
 
   <target name="publish" depends="dist" description="publish distributables">
     <copy todir="${publish.dir}/spec">
