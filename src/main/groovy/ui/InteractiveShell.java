@@ -48,8 +48,8 @@ package groovy.ui;
 import groovy.lang.GroovyShell;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,6 +59,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.tools.ErrorReporter;
+import org.gnu.readline.Readline;
+import org.gnu.readline.ReadlineLibrary;
+import org.gnu.readline.ReadlineReader;
 
 
 /**
@@ -67,12 +70,12 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * 
  *  @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  *  @author <a href="mailto:cpoirier@dreaming.org"   >Chris Poirier</a>
+ *  @author Yuri Schimke
  *  @version $Revision$
  */
 public class InteractiveShell {
-
-    GroovyShell shell = new GroovyShell();
-    BufferedReader reader;
+    protected GroovyShell shell = new GroovyShell();
+    protected BufferedReader reader;
 
 
    /**
@@ -93,9 +96,13 @@ public class InteractiveShell {
 
    /**
     *  Default constructor.
+   * @throws IOException if there was a problem with the history file.
     */
-
-    public InteractiveShell() {
+    public InteractiveShell() throws IOException {
+      File history = getHistoryFile();
+      ReadlineReader rr = new ReadlineReader("groovy> ", history, getReadlineLibrary());
+      reader = new BufferedReader(rr);
+      Readline.setCompleter(new ShellCompleter(this.shell));
     }
 
 
@@ -109,8 +116,6 @@ public class InteractiveShell {
     */
 
     public void run(String[] args) throws Exception {
-        reader = new BufferedReader(new InputStreamReader(System.in));
-
         String version = InvokerHelper.getVersion();
         
         System.out.println("Lets get Groovy!");
@@ -128,6 +133,7 @@ public class InteractiveShell {
 
             String command = read();
             if( command == null ) {
+              close();
                 break;
             }
 
@@ -155,10 +161,20 @@ public class InteractiveShell {
     }
 
 
+    protected void close() {
+      try {
+        reader.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
 
 
   //---------------------------------------------------------------------------
   // COMMAND LINE PROCESSING MACHINERY
+
+
+
 
 
     private StringBuffer accepted = new StringBuffer();  // The statement text accepted to date
@@ -209,12 +225,6 @@ public class InteractiveShell {
         boolean done     = false;
 
         while( /* !complete && */ !done ) {
-
-            //
-            // Prompt
-
-            System.out.print( line + "> ");
-
 
             //
             // Read a line.  If IOException or null, or command "exit", terminate
@@ -303,8 +313,7 @@ public class InteractiveShell {
     }
 
 
-       
-   /**
+  /**
     *  Returns the accepted statement as a string.  If not <code>complete</code>,
     *  returns the empty string.
     */
@@ -350,7 +359,36 @@ public class InteractiveShell {
     }
 
 
+    //---------------------------------------------------------------------------
+    // READLINE ROUTINES
+    
+    
+    //  PureJava, GnuReadline, Editline, Getline
+    private ReadlineLibrary getReadlineLibrary() {
+      String library = System.getProperty("readline.library");
+      if (library == null || library.trim().length() == 0)
+        library = "PureJava";
+      
+      return ReadlineLibrary.byName(library);
+    }
+    
+    private File getGroovyUserDir() {
+      File dir = new File(System.getProperty("user.home") + "/.groovy");
+      dir.mkdir();
+      return dir;
+    }
 
+    private File getHistoryFile() {
+      File history = new File(getGroovyUserDir(), "groovysh.history");
+      if (!history.exists()) {
+        try {
+          history.createNewFile();
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
+        }
+      }
+      return history;
+    }
 
 
   //---------------------------------------------------------------------------
