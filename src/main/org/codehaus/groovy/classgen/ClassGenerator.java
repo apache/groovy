@@ -1525,16 +1525,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitTupleExpression(TupleExpression expression) {
         int size = expression.getExpressions().size();
 
-        /*
-        int[] indices = new int[size];
-
-        for (int i = 0; i < size; i++) {
-            indices[i] = defineVariable(createVariableName("array"), "java.util.Iterator", false).getIndex();
-            expression.getExpression(i).visit(this);
-            cv.visitVarInsn(ASTORE, indices[i]);
-        }
-        */
-        
         pushConstant(size);
 
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
@@ -1542,7 +1532,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
             pushConstant(i);
-            //cv.visitVarInsn(ALOAD, indices[i]);
             expression.getExpression(i).visit(this);
             cv.visitInsn(AASTORE);
         }
@@ -1556,11 +1545,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String typeName = getClassInternalName(expression.getType());
         cv.visitTypeInsn(ANEWARRAY, typeName);
 
-        //int arrayIdx = defineVariable(createVariableName("array"), "java.util.Iterator", false).getIndex();
-        //cv.visitVarInsn(ASTORE, arrayIdx);
-
         for (int i = 0; i < size; i++) {
-            //cv.visitVarInsn(ALOAD, arrayIdx);
             cv.visitInsn(DUP);
             pushConstant(i);
             Expression elementExpression = expression.getExpression(i);
@@ -1889,8 +1874,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, tempIdx);
+        /*
+        if (! isStaticMethod() && ! isHolderVariable(expression)) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
+        */
         cv.visitVarInsn(ALOAD, tempIdx);
-
+        
         cv.visitLdcInsn(method);
         new ArgumentListExpression().visit(this);
         invokeMethodMethod.call(cv);
@@ -1900,6 +1890,23 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftHandExpression = false;
 
         cv.visitVarInsn(ALOAD, tempIdx);
+    }
+
+    protected boolean isHolderVariable(Expression expression) {
+        if (expression instanceof FieldExpression) {
+            FieldExpression fieldExp = (FieldExpression) expression;
+            return fieldExp.getField().isHolder();
+        }
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            FieldNode field = classNode.getField(varExp.getVariable());
+            Variable variable = (Variable) variableStack.get(varExp.getVariable());
+            if (field != null && variable == null) {
+                return field.isHolder();
+            }
+            return variable.isHolder();
+        }
+        return false;
     }
 
     protected void evaluateInstanceof(BinaryExpression expression) {
@@ -2060,6 +2067,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 vars.add(new Parameter(type, var));
             }
         }
+        
 
         //        if (!vars.isEmpty()) {
         //            System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);

@@ -61,9 +61,18 @@ public class RunClosureTest extends TestSupport {
         object.invokeMethod("testExampleUseOfClosureScopesUsingEach", null);
     }
     
-    public void testBytecodeBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/BytecodeBug.groovy");
-        object.invokeMethod("testBytecodeBug", null);
+    public void testStaticClosureBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/StaticClosurePropertyBug.groovy");
+        object.invokeMethod("testCallStaticClosure", null);
     }
     
+    public void testBytecodeBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/BytecodeBug.groovy");
+        object.invokeMethod("testTedsBytecodeBug", null);
+    }
+
+    public void testBytecode2Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
+        object.invokeMethod("testTedsBytecodeBug", null);
+    }
 }

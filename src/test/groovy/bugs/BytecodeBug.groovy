@@ -2,14 +2,30 @@
  * @version $Revision$
  */
 class BytecodeBug extends GroovyTestCase {
-
-    Integer count = 0
     
-    void testBytecodeBug() {
-		getCollection().each { count += it }       
+    void testTedsBytecodeBug() {
+        //a = ['tom','dick','harry']
+        a = [1, 2, 3, 4]
+        doTest(a)
     }
     
-    getCollection() {
-        [1, 2, 3, 4]
+    void doTest(args) {
+        m = [:]
+        i = 1
+        args.each { 
+            //talk(it)
+            m.put(it, i++)
+        }
+        //println(i)
+        //assert i == 5
+        /*
+        l.each {
+            println(it)
+        }
+        */
+    }
+    
+    talk(a) {
+        println("hello "+a)
     }
 }
