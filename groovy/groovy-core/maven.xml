@@ -48,10 +48,11 @@
   </goal>
   
 
-  <goal name="groovy:test-quick" description="Tries running all the unit test cases in the same JVM">
+  <goal name="groovy:test-quick" prereqs="clean" description="Tries running all the unit test cases in the same JVM">
    <attainGoal name="clean"/>
    <attainGoal name="groovy:compile"/>
    <j:set var="testcase" value="org.codehaus.groovy.tools.FindAllTestsSuite"/>
+   <j:set var="maven.junit.usefile" value="false"/>
    <attainGoal name="test:single"/>
   </goal>
   
