@@ -362,12 +362,54 @@ public class XMLRPCMessageProcessor extends MinML {
 					tmp = (tmp << 6) | sixBit;
 	
 					if (byteShift-- != 4) {
-						this.buffer.setCharAt(bytesIndex++, (char)((tmp >{šo¾ÎêQ›ñX­o.^Ö;=_<V^[È.@ş«í(¶6QŒşñ
-M×ÄQjHŞt÷:î|ƒ‘"ÀA †îø¡-¼_~laØ^4tÓü¾,Œ>7¨ÏÂ¢åœî¨!·Kù+ı‘†øOŞ°­F†ônjÓ	gZÎòïátç<8@,3İÇ?ìIøØÖ„n¦Ú•á/ˆf¡Pƒ~|'¿ì)³hñÚ)"W¦:áWÓœ+uäí±»"óW¢-<¶û724Š“¿ì€ôœŞtÊ’ÚBÃ©N[ˆ AXŒJ~ÃV]Ô–ƒ€´(#ÊUÃ>À²Ÿ¸G®ÇVM!Í["F®¼ÃÎÁ{V4ä€({ƒÈz~ÄFóF³œºÆPaĞ^qS«4ô¼îA‚9ÊÓpæ@	‚”x§œÁ¯JOŸƒ=§Ÿ¯W#±qR&ƒ$9?Ó²ëìÌ$Ü…Ó€³­¾—›Ò`5 Í…H‘â·^ƒZ9zÜ¬&X¾ägqgÖ÷kÉ›ëÇw˜Éyéb™¨pÍ§ÇìĞŒ<Á(»Xô]£ïİÔwõW;Øß€X¨8Xp¶ò’~Êå õ‰§!ÕÚHu»TÃ¡ğãwÀÉ¬Á¶^•o±ëì,Eb÷é¼‘Dä„ GtHY8±£íM#eÅiõ¯…Ê'ØHÄ¹: ¼iÉdgµ­¥	±ÑËÍ„“]±ìÖ‘z ‚Yø5-Éá&ş"ßFˆ»ÔnÛ‹”•Pßˆc¨Ìzƒ-xçqşİqÏáøOÖö'ÊìŸ9#]>;
-–Ö8|¸‡4du¦>/Ïu‚fNˆhDIüJ½B[ã‰±Ÿ<`hæH%“Qm°kR#ï?©Ó-¼ ÷€oİÍ»SŞ‰øø3n¡CµBêüåKÌ?Êt¤ÿ_2¼Õß]¯âº†â¥Ÿy¹És	Rş>~¹HU°€™‚i9/i=îÜ‚*ó0|‚¥cò:Pµ×ÓÁŸŸ–Ys3öÜ#>£;)[£Ç˜¼QIFqÏÇµÚÎÛêÃ4·áY/Ïg¤r–PU€Ì!å8±˜°Uº‹¡'å0)c:Qº:2ğTik¿l(_š>š±(]–që€m$œqYÁl :ADçøí2Ç½¤#¯Êbg”\H=2¢kïRH9ÈET.ı¦	é.v²‚ë<1ìí´ƒ¶ş«†Vg9ÿá
-qõ¨©Ø	Ä…zJJ+SEFîSÖ ÌØ©”	Š'gµû.š³7	Ò£	åmöù¶‹TUR­õIÇF=_óÛUFzîr‹±å½üVæ#T,µ˜ÅÛã‚ İ‚ƒ½@@Tú|‡ö³èÆ;ÊWvÌìÈvôş]”í8
-vnDf³–}	Å~DÁI”ıáï#Üqk_#Ï@f>Ğğ<§« /cü–š4¦	I”F_Œ–È·»«îvËóØíT‡óÓá¦[s\‹,†®VÆVR%U2–lìFÕf9s)x4iÉWüpÆ£¨šu›™¿{Ì/œ	g8A"·áx/·C~ç ÄE ½K)Ö&íÎëÎÊ¸±ËF-m›3MãSxÇ»ñ«FŠ)tXœ/á7-”¨ÎíÙ|®"9#¾F&&À¸ğ1DGB?ñ½˜<‰à)qûzk\d=—U`ìûP Pìô£g8ßø5Ìƒ‡5â\˜‹,å5ÀÔr¼š¢g”qÜf‘aÄ>É4âÏA¨‘)·ÍQìıøÿ±öÁ™ğo¶(Ü±mÛ¶mÛ¶mvlÛ¶mÛ¶m§ãtòv?ÿ™9gÏ>ûİSuW%•äKê·.¬Kë0N‚İ)
-…ûÉˆ¥{¬Ï)œ9
-1¤€âQµ:<)œô­x•]YiJiöØñ)Áv½-šÁÜ-÷¼kóìï‡Š3w«é¢YÆdÆza#4µCMëÕØ¼›vÅÊ0ñ²H½öİ*€N¾¡ğË9Q¸•nŸdfr~#e[h4–X¼Mº,áÓPXúDÚ«$va{F®£áÃİ¡õØFŠ(v¾5Ô¨ÄöŒÔ{ÈG&œÊ ôTxîËsNìl«z‡¨AâR‰ÂNT±spÉb`]ÜR.SŒMâFé~FL16´œd ¤Âœ¿›ºÌò™Aö¿gÍ“Ïuwu¨¬¿¢îŠH«/ï–óÆÓP‘Ír	'}’®ƒQ˜Ê$g}TjŸv§0ÇZAƒ#•Øçv²
-İäÃqíYªá7¡q¥‘t—HâµÜô¦¯L‹^¼)KÆ.ÊÉO©O;q¥è·Ğ·]¤o®…*‘G¯O¼°^!L¢Œ]¬>ü/Z‹•Â·ÑAoNè×tKg4»°
-ÇŸm¥¿áìä
+						this.buffer.setCharAt(bytesIndex++, (char)((tmp >> (byteShift * 2)) & 0XFF));
+					}
+	
+				} else if (sixBit == 64) {
+	
+					byteShift--;
+					done = true;
+	
+				} else if (sixBit == 66) {
+					// RFC 2045 says that I'm allowed to take the presence of 
+					// these characters as evedence of data corruption
+					// So I will
+					throw new SAXException("bad character in base64 value");
+				}
+
+				if (byteShift == 0) byteShift = 4;
+			}
+			this.buffer.setLength(bytesIndex);
+			try {
+				this.params = this.buffer.toString().getBytes("ISO-8859-1");
+			} catch (UnsupportedEncodingException e) {
+				throw new SAXException("Base 64 decode produced byte values > 255");
+			}
+			this.gotValue = true;
+		} else if ("double".equals(name)) {
+			this.params = new Double(this.buffer.toString());
+			this.gotValue = true;
+		} else if ("name".equals(name)) {
+			this.name = this.buffer.toString();
+			this.inArray = (Boolean)this.aggregateStack.pop();
+		} else if ("member".equals(name)) {
+			this.struct.put(this.name, this.params);
+		} else if ("struct".equals(name)) {
+			this.params = this.struct;
+			this.name = (String)this.aggregateStack.pop();
+			this.struct = (Map)this.aggregateStack.pop();
+		} else if ("array".equals(name) || "params".equals(name)) {
+			this.params = this.array;
+			this.array = (List)this.aggregateStack.pop();
+			this.inArray = (Boolean)this.aggregateStack.pop();
+		} else if ("methodName".equals(name)) {
+			this.methodName = this.buffer.toString();
+			this.inArray = (Boolean)this.aggregateStack.pop();
+		} else if ("fault".equals(name)) {
+			throw new RuntimeException("XML-RPC call Failure: " +
+					                   (String)((Map)this.params).get("faultString") +
+					                   ", fault code = " +
+					                   ((Integer)((Map)this.params).get("faultCode")).toString());
+		}
+	}
+}

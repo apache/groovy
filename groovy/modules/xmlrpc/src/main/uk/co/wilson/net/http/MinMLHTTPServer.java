@@ -247,21 +247,68 @@ public abstract class MinMLHTTPServer extends MinMLSocketServer {
     protected void processPut(final InputStream in,
                               final OutputStream out,
                               final String uri,
-                              final Stri`MØU,‰ {–$s²WdðCì)‘oxà"ÒX9F9æç“C>Ø¼PE'ï¢X°n&I{àÇ0¶(–úø b„ÂÝŸeãW
-n<Æ±µîšNª¼íÁìõ­ÝN¾ÜÀ*|«ÕIKÍSa¸gŸ~~<8Žt¨;Öd1CÂ@Þ;+™JÜiÊSnn0Mf*ëˆÚD;·ThA,«†ª—ÙÜõ]Oæßê]*
-?£Êªe?0ØìcÃUŸ
-Œº½)Â›œq\arâOÔ>[ûN3 /¿ê<Ì¼Íh‘·ïü·œé¿•	û”Žÿ}»ä/•SŸ«}÷üE+#º?)@bµHãZ2fŒÎœk¢¡JÐ=¼ó,:ø œ×lÈwzz¹Ù:Qy‹ð®=’_:qÉJ?-	”NŠYÙª·}óJÚ·×sêšzÍZýc_Ù-wüU5Ï$ŽÀÁªÍÊ•/A‘É)¤¿ïŠ^h<§b·ºA<gx¢SG`ñ§„Û%ÞÆAûXS,8_çÐ{‹YÅs×u‚€r–8e|uâ½ÒñøøN
-Ä†€špz"ä£c¡ûÏuáB8Hy¯¼‚f®‡õGÌo‰ÕËSÈ5¼!?ÉB¦ö¹‘bÛ€öý¾åÌ¡¥>N,}ä¦C5æžVÂAaœ.u[0Ó	"uuÖùÝb.òRxþÐwhM1È•¹uþÌ.>øÊ; ÖÏAõÇTÀ|é,¼b4þ„¾²¼X}-QýŸ‚ªq“é;÷˜IKÛèýÙ6°Ñ5ØŒÔî-³‚ÿ¶XÿŸŒø—êÜRYÕK]k±AX˜©O’f7v#¿”"TCB>>uîÊGÝ>h¾+à[å­£ˆ3Ò^Öº3tEã­´Ý©4Lg'éûAûž÷GG´Ÿ)2¥DÅ1º‘‰šºƒäÛ#~(‡Wös3‡K%w’|ÓqÞNõ?Zõf»³›‰ÐD.@Ä`£aBFNÞ-å@’@º„­(«ÖV |œîsàUY@g¹Z¤Ì Ee›eZ©+°õ€œÇLJþÀÒ–“¨vÉ\l; {œU^Ôl¡ÎÔ`8¢ñ’´›ó0OAÅÑ-ª©/Ô ÝždmKo”U)´¢w7PðC#
-5Ã-¼¦`Ÿ£½ŒÒ(ƒ«Q‰{ø£@Dþ•Â«ò'+Òö²™„fôûN„[§
-=IêmœÆZ½ŸƒÁxé†›"¸ˆ¶i´º¦SÄD¤Ûx§#˜½ˆ~F5ÊÓ}ˆ1‰ïŒÎƒõ)ê“3s:å3;¿uÉÜ_$0&VwO®qÊà¹*÷¢ ,Ý†gÜûé'—çH´`HëG7xš|G
-†+¿æv"C›¼Ó´ð¼#I˜g­¦P™5ÐŒ1Í?‚”ç›ÔA2?Ó{-âyß!1Kƒ´{éÂjËà0#’Lj¤RóRe‡>””|ç`±ÜÁ$ó{¯‰vŒïÑ*’Êœoð£,
-ß+,îåÎ¶“ûkgM@N&Û£H(¡}F-]}6Ê*£ògõh#Sú>ÝñÕ¡Ð™vV†žõi—%¹	ióJùÌ7S~&¢µTO`ÇÄwûïž9ÞA<¿³m‚ƒl7ÍƒWí¹ä¦UËô
-”¡µvÆ§Fø–(†j½·´AÞÔ‘[	/‹{†:&ˆë WhÉ~	°©a­šP[µÁA¶ßÆ`…ã¼#A]æB¹Œ¬‹>ˆ:n÷c›–
-yTq½y¹‘\ô‡¢<DÏO¾•VcGN.êéØÞ¨j{ýNö­'çb¢âÓJú&Qàþ@ou÷Ûþ7Q%dkm`n£ïdû_©QFv…ÑÓ’‹¿€_*ZWÐÜ€BÅVü‹$™]p|(¥x»Èú®Á"ÓaÛœ x¯<àâ¶[1åíUèæžÉkž¶ëi)×/wî—pdé°ŒCU”=Ž(–ê˜n1"a‡•¤´Ùªõ·H…,60xAJÂáŸ#±#¾xP>8Uü(¢û*ÎlùÁ¸Sgôýœûª³[å¢ÄÖtsnÉ×x"Ùs·4áaŽ¥xfØfD?
-9Ñ|E¦Ã¸ä[
-á;f•ûJdC.Ôà…P²¥v×ÕóGnœhÃv­â,w	¨¶¢#œº‰§Hy—Wí> 1sƒ8è3§îÞ@,
-Ìb˜(k}ðØ€oJX­µG§õë-p·D*F.]Ý8{€Ä×¥šxnãä§VªÀü ‘qwê¯.\õm^$ƒaúÅÀ™fð`p+L0:SøãCÞ¨Ì kw8dfù¾uô"¦XR›÷w(œÜ"˜cBö‰ëC–³:×G’øIÍ¦ý×‰ŠóØö*QUL\uåy°õ.°–Ï±ÎÑû§ ‹ÏBYvXHhE¦Åçüyº“Ë=ÁkÃPyIDaÜDë¤GÉ×òNèè;ˆx”žrjr…°FÔ$¤¥ä04"¯jð³‡Ê³>¼üšbLŒêA>¼%i±ÿüèý¿»Óo÷>˜,~ñJ‡Ù$|¾Li¦pÎµTøõ,®FAPs¶Ó_{'Í/w v¡Ä äŸÓ¨„?y¥ÿà•bw’P¬¶´ç·òHÙ&ŸøØÎÄè4–C<¨Ù{Ð´ÚÊ-Ð¡ŒŸ´ËÐAnY\dò5áð¨sèZMÇ€rÔßÍ~WMzÀ]Ù71þðC&WÈ.gÜŽ{¡Pt„áÚâö$¸qÝz/ëÔ'ž”JNUìIó_
-èØhÒã÷‹b’]@? áåõ2^ŸÓ,“yJ,aáÖu,ÇXI'î}¿°éŠZèqâÙ€ú@	Ì™ÅsJ2Œ“i˜Ä|À4=®‘ PÓ‹;w[A]
-ÍûŽì!%‹ØPÚæ÷õ3<]:ÃÍ;Æ úé·V&-Oðeb0_V)a*n¬†9¬þ°ÜQm|ìMè"¦ÿ‡S4K[UÞŒÉù¿`Ì¿¥,ªhñ4"ÄBÖ¡
-ó#É™…5|¦ûœ˜£ @…*ß!g G–ó¬Êûs“óù{8ß°½mQwêèêÀéR[«ÇÄ:Ÿ·÷0b_¤¿—¿çp7ªD]
-%™
+                              final String version)
+      throws Exception
+    {
+      out.write(version.getBytes());
+      out.write(errorMessage1);
+      out.write(put);
+      out.write(errorMessage2);
+    }
+
+    protected void processOther(final InputStream in,
+                                final OutputStream out,
+                                final String method,
+                                final String uri,
+                                final String version)
+      throws Exception
+    {
+      out.write(version.getBytes());
+      out.write(errorMessage1);
+      out.write(method.getBytes());
+      out.write(errorMessage2);
+    }
+
+    protected void writeKeepAlive(final OutputStream res) throws IOException {
+      res.write(this.keepAlive ? keepConnection : closeConnection);
+    }
+
+    private int readLine(final InputStream in) throws IOException {
+    int nextByte;
+
+      this.count = 0;
+
+      while (!((nextByte = in.read()) == '\r' && (nextByte = in.read()) =='\n') && nextByte != -1) {
+      	this.buf[this.count] = (byte)nextByte;
+
+        if (this.count != this.buf.length - 1) this.count++;   // sort of crude should probably handle long lines better
+      }
+
+      return nextByte;
+    }
+
+    private final byte[] buf = new byte[256];
+    private int count = 0;
+    private boolean keepAlive = false;
+  }
+
+  private int keepAliveCount = 0;
+  protected final int maxKeepAlives;
+  protected final int socketReadTimeout;
+
+  protected static final byte[] okMessage = (" 200 OK \r\n"
+                                             + "Server: uk.co.wilson.net.http.HTTPServer\r\n").getBytes();
+
+  protected static final byte[] endOfLine = "\r\n".getBytes();
+  protected static final byte[] get = "GET".getBytes();
+  protected static final byte[] head = "HEAD".getBytes();
+  protected static final byte[] post = "POST".getBytes();
+  protected static final byte[] put = "PUT".getBytes();
+  protected static final byte[] errorMessage1 = (" 400 Bad Request\r\n"
+                                                 + "Server: uk.co.wilson.net.http.HTTPServer\r\n\r\n"
+                                                 + "Method ").getBytes();
+
+  protected static final byte[] errorMessage2 = " not implemented\r\n".getBytes();
+  protected static final byte[] keepConnection = "Connection: Keep-Alive\r\n".getBytes();
+  protected static final byte[] closeConnection = "Connection: Close\r\n".getBytes();
+}

@@ -244,25 +244,103 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	
 	public void stopServer() throws IOException {
 		this.server.shutDown();
-÷û½ÛñâGÔâÃ…A1±çüH(fð^@òK
-•-À$ˆ
-dQ)IÖ€bþ··¨µ™z×ç-C	äàXÄE—0ëéÌð5'¨E]„vF”ÒV„3At	ÃM´×®û›3æ‚Þ#âv(Å®Óuç“z\›—ñ’ÞÏÖç4?Vm±Æá~"ªK†‚O¥“&Å"L}Öó§–WqÇ —,gvá\·Ò}vŽƒ4ÖÓÆ:C¯Ñó³ÐH 3Og‹#hÇe¯+WK|Û0«M[>C¾¬oo0#ÅN:„üXõ(ù£‰
-nº «Iêg<Udnuìkñ˜ÎpåPÊ|_Ú3ê)˜»\Ìé£f@‹zûéÑHöÇu´6éöv •’V£²©®ØÈdÊeR0=|0ÛÛ7ð·lMX<åÕá©²åèY“qp}oƒØÀVK¤/éz¿<éÑ‚>†¯UQnÑ¤YîY³8êw®£`;†h·tB²H±áÜ€²j°LVËÑ/8ÛETd¥SŠµ^TF
-ÆÈŠ‘»£À²œÏÂ®bVª[gM›õ,D±§Q¬9Æ†îjbÞë_{p‡n7Æê9ðÆ%µJ?†nXå)!û÷r9a©HaQ
-pùÂÜrÅ¯Êçnw¸â
-F²U²h…?²uh´¼ÐZ…Û²,`9‡¼€Å×jn8ï‚2jÓ,bÕjö>,¹¬LÊ23¼6Ñ¤jÃaa»†Í%ÔòtÜB¹…hDê†¯Ë˜³éÔwíîÿrÓŒmý¹šöoA™wtj%ŽØÝ~.p›`·c¶µ½
-’µÌo=z€.•U!å‡•e¨~!¯Š§¥¶	Yˆ6×DÕJœøÄâÈ¶;H¯›‡ÄÓ>
-<Ò%e<wr®`[”Ã-³Ã~fÆe>çÀÔ-ÖÃv†ÃxNÆé&ðr›†p¨¿ueâõƒØøCÍC{(W?ç9
-8ÜË»ö€ë¬~6ÆÇŸÇpŽÿÜ9ðñ\>+ãÏxnúÙMâ”©wàâ+jJ{„	†?bâ«žü—±§ò‰!ß€º¶l®°vüææEÇfžHðÌ/©/Ì±#{ îÁa½ŸèûÛFþðnüž''ËËccþt†túWÇwpÿn¡å~©;êà!ÍPQ¯ô)	Ì/ÏOÿ^é[(¨¶`ë›ˆ—vŸõ|‰pRîÝ"¨z› íI[&_áô¹ãÅÂÌäÂ´uj—‚Ú©¥¶QA>ÕBÙÄÆÈ|*´-0ÈþM)(ïÀÌå'c`îaö”ÏîžN¤ƒ ãRí;p€Ž1{sã«ÃÑá'F þ(Ù—ìÖ^yßwªo¨J–œÕ™×àþîì7Añ]îÛ,¸×MMƒ~füåÛT8ÿÝ+ëÝ„a’ê»’}
-¬oÔoá£ì7æ×öž/øaí#ìWÊô·”ÌÙwhÿ÷¾©<iOâ‰ã÷j`¬¾šÄßë;UTõŽ½›;uÓy•…•6Ó8Úy†¬Ïhð×*¶s -sÚ|K~Á…æøü#AÚê#ìÌ¼}Ïü|$³v^yíØ——Õ¦‚9±LšåX)“Êåš­‚,ˆpI=ZaÄqÁªó“j ˆ,ŒI™>ÀiOQ¯ÒT½þ™¥MiîÒêüf³ƒÈPMÎT'v¦««3+sîÎÆîüzòKá’˜ÀhªWIòÅkÎÚzsg“‡JV6? ¿…¾'­•ašðŒ¿§­¢ÉF`0%cödQávWÊË%IYÌOtFÓÖ6órÒ’ÆÖ„*óYÓ×í)T±¶qTAâPÇÍŒêV¡¥ªT§7 ¿½êÀù~>‡mÓ¥c×·D¤íÅ8ÚHIù“¦–5jêÀ#P«vçã5f·ó‰\~¾¼XîÎ*3±S»Ì•©±mBdfñ*Ã’ö´Ø!íkü‚/VÌÅ ¦±5NäØ@F[“÷ûZûµW?÷ÓÍ—Û{gõÕ%+k­å²ùÕõ=åhN”‹ËíªÞæ-Ž³ÆÓ·5®3';%ÝcA3î ™ÂÍÅDz¤–ôÉ	67?÷«¾N;ý7‡_ÿvÂ­®J›¢×¬~\´
-—¡nçEÍ=s[’šùNJêúåaÏßÁ"ŸÙ6<Ù£ÔÝ^[—X¢vÇÚ
-š5#í¬!Â(a³éƒÞ—ßgbH¡W©HCÒª2û–J’!·­|Ç“k:ÃØ›ÀÓÖ‚rn)æ…R‚Éµ*QmMmíÝâÂQ‡š«ÌM.ËŒÊ=xCžºm26;w«“ƒáC­¥P!Ó^thïEu´«Ý“ó>ËçÖÐª[®‹•~AŠJäìqž6,‘«þ‹Yë@˜'Å«[JŒv|ï%=û%dj')G•—šª³d¼+Tk0ºN^oÑmÐÀ£ÕóÊ†¬úNGûçñ¥0¡[ø“ui²íFô„ Ð?”xÛ}I~QšúuÖS¥ÃÈ
-nLœÊ'Óa"—µÏ^èe6?,„ˆ÷\ág2ÂTÏ'¢È’‚þIê£ÖWa¥J¯YáòóëÍÓëÌ+ºïÏ…“<µoÀqhÿ»È'ÒªÞè%ÒcBèÞæ8Jw©p¬½ˆ§Ô	Jg„`Ê¹3kì#ý˜Ân.Qr­cü —½XQ~¶(çè
-†›<âMñCsTé|	sm‘Ç³@'hÙ
-–3ÕNè¡ø³J'.=Vó+YJÿ¯°‘¹ŸN„‚G<Te%Ù¼ân˜ºúŸÎLÉ|îùNA½"®{£ÚðYKÒÉ…åkÛioKWx\KÄÆ·Mã; i~ŠüKTÉQœüCÍ«Dq¨nåsíbN‘’‰”˜¼c>8~@dFn‘~T@FŠ¼ÖEŒò6¨\˜ï%@ðlQOØàÙ{í«{mè\¾"÷Z—ÿÞy3OØìmDŠ7N+FÌ#mâ{2!	•Š>‘¤ºNº.Ï©mºÈ
-£
-ò"I„I„ªöíêRd…inÃÔÁÍ‘JVÖYE\žh»zƒñŠMžj„V#UkpÿÖ…oÚ6\„o„o
-x™×!µAÞ(1!nÖ™~ÑC—g„ãWä÷àãœ³÷k«G®[{Ý1Ÿü0nÔD&RPdbUL'Z0Ò#ú`«KSúK“<³Ëß-J<OÉ•q|ËE·møzÎ—nÀcdþioJÖsL,$ÇšU-yö=T<Y"xQâN2+ÎuIÈ=ˆÏK&ƒ¾b½p)¦8‘ü´¢ã6þ‹úl2(Ð6˜IÇFgø»™oPÐ	•nÍè`®r­€VQ=©R)@ádÑ½ ²[£,]7â‰êû˜Y¨bzàLÕ’”!´pŽ8Vù¶þ¼EôUN-Â¤y°ðÓS¸ž‘¯YQ¨À¢Úôºp}¤¬Ìx†0£Ó–gzWJàj^÷ež›]VÎ-‚Xòˆp	3Æ”böƒ~”\›µ.W¢-\fÏP³ÿà'çì°{k¿kë%žyðO1Ç	f	ÔÅ›ðUñÈŽ·X©é_	/oê\|Qì„™r/Æ0Ê9ê¾.Ð1ßê!#ŸÙ‘
-¤}0ˆàLãDOÝÊ€r]ô!/8cP¹BŽ®@Ó,&¨¼OàŒ×‚`«;Í#V§HcŽH_$åSvSê›!'³à»0Øz9ô¬[êÙ',Õc,ÝƒU˜ŽÂ.û¡žMEäUŸ
-%´rW4‚!•ª¿®¬ç˜9
-Ä¨Yð‰›‡’³àX2ª¢
+	}
+	
+	/* (non-Javadoc)
+	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
+	 */
+	public Object getProperty(final String property) {
+		/**
+		 * 
+		 * Allow server.a.b.c = {...}
+		 * This creates a method with the name "a.b.c"
+		 * This technique is shamelessly stolen from the Python XML-RPC implementation
+		 * Thanks and credit to Fredrik Lundh
+		 * 
+		 */
+
+		this.propertyPrefix.append(property).append('.');
+		
+		return this;
+	}
+	
+	/* (non-Javadoc)
+	 * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
+	 */
+	public void setProperty(final String property, final Object method) {
+	final String methodName = this.propertyPrefix.append(property).toString();
+	final Closure closure;
+	
+		this.propertyPrefix.setLength(0);
+	
+		if (method instanceof Closure) {
+			try {
+				closure = (Closure)(((Closure)method).clone());
+				closure.setDelegate(this);
+			} catch (CloneNotSupportedException e) {
+				throw new GroovyRuntimeException("groovy.lang.Closure doesn't implement Clonable");
+			}
+		} else if (method instanceof Class) {
+			closure = null;
+		} else {
+		//
+		// calling a method on an instance of a class
+		//
+			
+		final Method methods[] = method.getClass().getMethods();
+		boolean foundMatch = false;
+		int numberofParameters = 0;
+		
+			for (int i = 0; i != methods.length; i++) {
+				if (methods[i].getName().equals(methodName)) {
+					if (foundMatch) {
+						if (numberofParameters != methods[i].getParameterTypes().length)
+							;// TODO: throw exception
+					} else {
+						foundMatch = true;
+						numberofParameters = methods[i].getParameterTypes().length;
+					}
+				}
+			}
+			
+			if (foundMatch) {
+				closure = makeObjectProxy(methodName, numberofParameters);
+				closure.setDelegate(method);
+			} else {
+				// TODO: throw execption
+				closure = null;
+			}
+		}
+		
+		this.registeredMethods.put(methodName, closure);
+	}
+	
+	private Closure makeObjectProxy(final String methodName, final int numberOfParameters) {
+	final String paramIn, paramOut;
+	
+		if (numberOfParameters == 0) {
+			paramIn = paramOut = "";
+		} else {
+		final StringBuffer params = new StringBuffer();
+		
+			for (int i = 0; i != numberOfParameters; i++) {
+				params.append(", p" + i);
+			}
+			
+			paramOut = params.delete(0, 2).toString();
+			paramIn = paramOut + " |";
+		}
+		
+	final String generatedCode = "class X { closure = {" + paramIn + " this." + methodName + "(" + paramOut + ") }}";
+	System.out.println(generatedCode);
+	
+		try {
+		final InputStream in = new ByteArrayInputStream(generatedCode.getBytes());
+		final GroovyObject groovyObject = (GroovyObject)new GroovyClassLoader().parseClass(in, methodName).newInstance();
+			
+			return (Closure)(groovyObject.getProperty("closure"));
+		} catch (Exception e) {
+			throw new GroovyRuntimeException("Can't generate proxy for XML-RPC method " + methodName, e);
+		}
+	}
+}

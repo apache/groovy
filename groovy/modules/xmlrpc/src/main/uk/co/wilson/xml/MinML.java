@@ -718,6 +718,18 @@ main: while(true) {
     "\u0d13\u0013\u0d13\u0d13\u0e13\u0d13\u0d13\u0d13\u0d13\u0d13\u0d13\u0d13\u0d13\u170f\u0d13",
     "\u0c10\u100d\u100d\u1a0c\u100d\u100d\u100d\u100d\u100d\u100d\u100d\u100d\u0f12\u170f\u100d",
     "\u0a13\u100d\u100d\u1a0c\u100d\u100d\u100d\u100d\u100d\u100d\u100d\u100d\u100d\u170f\u100d",
-“DÅ&†ï£QÁ}H4jÐ¯gó3¤v/y“(›ñûÐGöž@©Í,WwÑÆG¨ã3 Àm’€Û
-ÒöÙ:ä{rÜ1ñj”R™¬$‰Ê›*‘GióÎ“£’eÆ3A ¾8­}sù.øyžç·è!êŸÓ£vÜÛæßQŸïâñî£û÷î!t†½AK$JóüÅ›¼ôcñkA"+mêÍ³´¸lÈZânz…JìU”¡;Ažd¤[ – OäÚøRÖ³§áÚÖF©9ö”kó}ÁàXçõE.Á	yq=Ñ|~¾@føVq•¤ŽÒC†‹„,IA‘ûp(#IP¨xl>ˆ!ÈŽm0€q¥•Ì-[£ÓŒùŠ«ˆY!ºae¤ û¥[-µ@‰åC²J46ÆuÃ™gØŽs©baÈ €e»sŸâ$Ñ…Ë»vÄ	óÀ[×®yøHts|øÀZ(gÉ›…-nM§tóÈðuHá8±ƒE¤TåLÇßLaqƒfËè‡ŸUP·LÝ6~ˆ7ÃÃ°+„P'fP?Ä‘V´`v”}áÚ’Ç¦UKÐÈÊ2­ã6·;Û²úâY˜Ç£ ;G¡¨P«™š6±A©Ò	/w„HÂ'Ir´úø©Çþ|j$u|—)ï˜äÍˆˆ»Øë+èË&HéCßaO;ÛKÓ7±3	T QCÈ¼§Ú,<@´HôÈÀÑª ¶ÚBÔ‚mkŒ!xÉÔFš¯¬	s`äjWÉaY£K=!.ó*åAg»óNŸäí€-.8Ñ®â‚òfî‹3~dbH=UŠñ‹NKóˆ/éžÞ”ÜsàjÞ?'ì{ÌYŽZ˜›|¦ÈÞ®Ìø€’)Îó¹¸D~îŽÑ£r0:«À
-Ï†Ÿl1bnçè ìïâÖHÝ¸‰Ú[ñäD%
+    "\u1d0f\u1d0f\u1d0f\u1d0f\u1d0f\u1d0f\u1d0f\u1d0f\u1d0f\u120a\u1d0f\u1306\u1d0f\u170f\u1413",
+    "\u120d\u120d\u120d\u120d\u120d\u120d\u120d\u120d\u120d\u120d\u100b\u120d\u120d\u170f\u120d",
+    "\u1313\u1313\u1313\u1313\u1313\u1313\u1313\u1313\u1313\u1313\u1313\u0007\u1313\u170f\u1313",
+    "\u1408\u0009\u1413\u1413\u1413\u1413\u1413\u1413\u1413\u1413\u1413\u1413\u1413\u170f\u1413",
+    "expected Element",
+    "unexpected character in tag",
+    "unexpected end of file found",
+    "attribute name not followed by '='",
+    "invalid attribute value",
+    "invalid Character Entity",
+    "expecting end tag",
+    "empty tag",
+    "unexpected character after <!"
+  };
+}
