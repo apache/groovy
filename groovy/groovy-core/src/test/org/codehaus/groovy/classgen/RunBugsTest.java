@@ -131,11 +131,15 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/ToStringBug.groovy");
         object.invokeMethod("testBug", null);
     }
+    public void testByteIndexBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ByteIndexBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
     
     */
         
-    public void testByteIndexBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/ByteIndexBug.groovy");
+    public void testGroovy252_Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/Groovy252_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
     

@@ -8,16 +8,29 @@ class Groovy252_Bug extends GroovyTestCase {
     void testBug() {
         value = f()
         assert value == null
+        
+        value = g()
+        assert value == null
+        
+        value = h()
+        assert value == null
     }
     
     
     f() {
-        /** @todo fixme!
-          
-        if (count++ == 5)
-    	    return null
-        else
-        */
-	        return null
+         if (count++ == 5)
+            return null
+         else
+            return null
+    } 
+    
+    g() {
+         count++
+	     return null
+    } 
+    
+    h() {
+         ++count
+	     return null
     } 
 }
