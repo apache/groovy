@@ -74,4 +74,9 @@ public class FieldExpression extends Expression {
     public FieldNode getField() {
         return field;
     }
+
+    public String getText() {
+        return "this." + field.getName();
+    }
+
 }

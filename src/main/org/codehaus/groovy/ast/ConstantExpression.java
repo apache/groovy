@@ -78,6 +78,6 @@ public class ConstantExpression extends Expression {
     }
 
     public String getText() {
-        return getValue().toString();
+        return (value == null) ? "null" : value.toString();
     }
 }

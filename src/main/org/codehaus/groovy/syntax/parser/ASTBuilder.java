@@ -1,31 +1,29 @@
 package org.codehaus.groovy.syntax.parser;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.Expression;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.BooleanExpression;
+import org.codehaus.groovy.ast.CatchStatement;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstantExpression;
-import org.codehaus.groovy.ast.VariableExpression;
+import org.codehaus.groovy.ast.Expression;
+import org.codehaus.groovy.ast.ExpressionStatement;
+import org.codehaus.groovy.ast.ForLoop;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyExpression;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
+import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
-import org.codehaus.groovy.ast.ExpressionStatement;
-import org.codehaus.groovy.ast.AssertStatement;
-import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.TryCatchFinally;
-import org.codehaus.groovy.ast.CatchStatement;
+import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.syntax.Token;
-
 import org.objectweb.asm.Constants;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.HashMap;
 
 public class ASTBuilder
 {
@@ -464,7 +462,8 @@ public class ASTBuilder
 
         if ( messageRoot.getToken() == null )
         {
-            messageExpr = new ConstantExpression( assertExpr.getText() );
+            // lets pass in null since we know the expression string
+            messageExpr = ConstantExpression.NULL;
         }
         else
         {
@@ -586,7 +585,7 @@ public class ASTBuilder
             }
             case ( Token.INTEGER_NUMBER ):
             {
-                expr = new ConstantExpression( new Long( expressionRoot.getToken().getText() ) );
+                expr = new ConstantExpression( createInteger( expressionRoot.getToken().getText() ) );
                 break;
             }
             case ( Token.FLOAT_NUMBER ):
@@ -598,7 +597,26 @@ public class ASTBuilder
 
         return expr;
     }
-
+  
+    /**
+     * Chooses the right Number implementation for the given integer number.
+     * Typically this is an Integer for efficiency or a Long if the number is very large
+     * 
+     * @param text
+     * @return
+     */
+    protected Number createInteger(String text) 
+    {
+        // lets use an Integer if it will fit as it makes for more efficient bytecode
+        Long answer = new Long(text);
+        long l = answer.longValue();
+        if (l > Integer.MIN_VALUE && l < Integer.MAX_VALUE) 
+        {
+            return new Integer((int) l);
+        }
+        return answer;
+    }
+    
     protected BinaryExpression binaryExpression(CSTNode expressionRoot)
     {
         Expression lhsExpression = expression( expressionRoot.getChild( 0 ) );

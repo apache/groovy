@@ -88,7 +88,7 @@ public class BinaryExpression extends Expression {
     }
 
     public String getText() {
-        return "(" + leftExpression.getText() + " " + operation.getDescription() + " " + rightExpression.getText() + ")";
+        return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
 
 }

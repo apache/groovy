@@ -114,6 +114,15 @@ public class InvokerTest extends GroovyTestCase {
         }
     }
     
+    public void testLessThan() {
+        assertTrue(InvokerHelper.compareLessThan(new Integer(1), new Integer(2)));
+        assertTrue(InvokerHelper.compareLessThanEqual(new Integer(2), new Integer(2)));
+    }
+    
+    public void testGreaterThan() {
+        assertTrue(InvokerHelper.compareGreaterThan(new Integer(3), new Integer(2)));
+        assertTrue(InvokerHelper.compareGreaterThanEqual(new Integer(2), new Integer(2)));
+    }
     
     // Implementation methods
     //-------------------------------------------------------------------------

@@ -229,8 +229,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitField(FieldNode fieldNode) {
-        System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
-        
+        //System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
+
         Object fieldValue = null;
         Expression expression = fieldNode.getInitialValueExpression();
         if (expression instanceof ConstantExpression) {
@@ -417,8 +417,28 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (value == null) {
             cv.visitInsn(ACONST_NULL);
         }
-        else {
+        else if (value instanceof String) {
             cv.visitLdcInsn(value);
+        }
+        else if (value instanceof Number) {
+            /** @todo it would be more efficient to generate class constants */
+            Number n = (Number) value;
+            String className = getClassInternalName(value.getClass().getName());
+            cv.visitTypeInsn(NEW, className);
+            cv.visitInsn(DUP);
+            String methodType = "(I)V";
+            if (n instanceof Double) {
+                methodType = "(D)V";
+            }
+            else if (n instanceof Float) {
+                methodType = "(F)V";
+            }
+            cv.visitLdcInsn(n);
+            cv.visitMethodInsn(INVOKESPECIAL, className, "<init>", methodType);
+        }
+        else {
+            throw new ClassGeneratorException(
+                "Cannot generate bytecode for constant: " + value + " of type: " + value.getClass().getName());
         }
     }
 
@@ -426,7 +446,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
-        if (! isStatic && !leftHandExpression) {
+        if (!isStatic && !leftHandExpression) {
             cv.visitVarInsn(ALOAD, 0);
         }
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
@@ -436,11 +456,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 : Type.getInternalName(loadClass(field.getOwner()));
 
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
-        
+
         // lets push this back on the stack 
-//        if (! isStatic && leftHandExpression) {
-//            cv.visitVarInsn(ALOAD, 0);
-//        }
+        //        if (! isStatic && leftHandExpression) {
+        //            cv.visitVarInsn(ALOAD, 0);
+        //        }
     }
 
     public void visitBooleanExpression(BooleanExpression expression) {
@@ -616,7 +636,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // this may be redundant - we should maybe do this after each method call?
         cv.visitVarInsn(ALOAD, 0);
-        
+
         leftHandExpression = false;
         expression.getRightExpression().visit(this);
 

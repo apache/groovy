@@ -53,7 +53,7 @@ package org.codehaus.groovy.ast;
  */
 public abstract class Expression extends ASTNode {
     public String getText() {
-        return "<not implemented yet>";
+        return "<not implemented yet for class: " + getClass().getName() + ">";
     }
         
 }
