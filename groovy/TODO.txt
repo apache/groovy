@@ -1,4 +1,7 @@
-* AST closures and range expressions
+Core Groovy Tasks
+=================
+
+* AST closures 
 
 * test the use of PropertyExpression
 	a.b = c.d
@@ -53,3 +56,12 @@
 	e.g. Map?
 	
 	
+	
+OTHER STUFF
+===========
+
+* start work on the Eclipse plugin. I *so* want neat Eclipse support for groovy
+
+* patch GroovyTestCase so that methods which return Object are included in the test. This avoids us having to
+specify void for method return types.
+

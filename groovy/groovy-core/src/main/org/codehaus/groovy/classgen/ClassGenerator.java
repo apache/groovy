@@ -134,6 +134,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller createListMethod = MethodCaller.newStatic(InvokerHelper.class, "createList");
     MethodCaller createTupleMethod = MethodCaller.newStatic(InvokerHelper.class, "createTuple");
     MethodCaller createMapMethod = MethodCaller.newStatic(InvokerHelper.class, "createMap");
+    
+    MethodCaller assertFailedMethod = MethodCaller.newStatic(InvokerHelper.class, "assertFailed");
 
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
@@ -351,6 +353,29 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l1);
     }
 
+
+    public void visitAssertStatement(AssertStatement statement) {
+        BooleanExpression booleanExpression = statement.getBooleanExpression();
+        booleanExpression.visit(this);
+
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+        
+        // do nothing
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        // push expression string onto stack
+        cv.visitLdcInsn(booleanExpression);
+        // now the optional exception expression
+        statement.getMessageExpression().visit(this);
+        
+        assertFailedMethod.call(cv);
+        cv.visitLabel(l1);
+    }
+
     public void visitReturnStatement(ReturnStatement statement) {
         statement.getExpression().visit(this);
 
@@ -379,11 +404,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitExpressionStatement(ExpressionStatement statement) {
         statement.getExpression().visit(this);
-    }
-
-    public void visitAssertStatement(AssertStatement statement) {
-        // TODO Auto-generated method stub
-
     }
 
     // Expressions
