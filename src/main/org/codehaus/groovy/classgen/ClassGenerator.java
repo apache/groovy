@@ -148,6 +148,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     // current stack index
     private int idx;
 
+    private boolean definingParameters;
+
     public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
         this.classVisitor = classVisitor;
         this.classLoader = classLoader;
@@ -265,27 +267,30 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitForLoop(ForLoop loop) {
         onLineNumber(loop);
 
+        int iteratorIdx = this.defineVariable(createIteratorName(), "java.util.Iterator").getIndex();
+        int iIdx = this.defineVariable(loop.getVariable(), "java.lang.Object").getIndex();
+
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
 
-        cv.visitVarInsn(ASTORE, ++idx);
+        cv.visitVarInsn(ASTORE, iteratorIdx);
 
         Label label1 = new Label();
         cv.visitJumpInsn(GOTO, label1);
         Label label2 = new Label();
         cv.visitLabel(label2);
 
-        cv.visitVarInsn(ALOAD, idx);
+        cv.visitVarInsn(ALOAD, iteratorIdx);
 
         iteratorNextMethod.call(cv);
 
-        cv.visitVarInsn(ASTORE, ++idx);
+        cv.visitVarInsn(ASTORE, iIdx);
 
         loop.getLoopBlock().visit(this);
 
         cv.visitLabel(label1);
-        cv.visitVarInsn(ALOAD, --idx);
+        cv.visitVarInsn(ALOAD, iteratorIdx);
 
         iteratorHasNextMethod.call(cv);
 
@@ -817,6 +822,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         variableStack.clear();
 
         // lets push this onto the stack
+        definingParameters = true;
         defineVariable("this", classNode.getName()).getIndex();
         //cv.visitVarInsn(ALOAD, idx);
 
@@ -824,6 +830,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         for (int i = 0; i < parameters.length; i++) {
             defineVariable(parameters[i].getName(), parameters[i].getType());
         }
+        definingParameters = false;
     }
 
     /**
@@ -835,20 +842,21 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             idx = Math.max(idx, variableStack.size());
             answer = new Variable(idx, type, name);
             variableStack.put(name, answer);
+            
+            if (! definingParameters && !leftHandExpression) {
+                // using new variable inside a comparison expression
+                // so lets initialize it too
+                cv.visitInsn(ACONST_NULL);
+                cv.visitVarInsn(ASTORE, idx);
+            }
         }
         return answer;
     }
 
-    /**
-     * @return looks up the given variable name
-     */
-    protected Variable lookupVariable(String name) {
-        Variable answer = (Variable) variableStack.get(name);
-        if (answer == null) {
-            throw new ClassGeneratorException("Undefined variable: " + name);
-        }
-        return answer;
+    protected String createIteratorName() {
+        return "__iterator" + idx;
     }
+
 
     /**
      * @return if the type of the expression can be determined at compile time then 
