@@ -547,6 +547,11 @@ public class Token
         return getTokenDescription( getType() );
     }
 
+    public String toString()
+    {
+        return super.toString() + "[text=" + this.text + ",type=" + type + "]";
+    }
+
     // ----------------------------------------------------------------------
     //     Factory methods
     // ----------------------------------------------------------------------
