@@ -1111,7 +1111,12 @@ public class ASTBuilder
 
     protected VariableExpression variableExpression(CSTNode expressionRoot)
     {
-        return new VariableExpression( expressionRoot.getToken().getText() );
+        VariableExpression answer = new VariableExpression( expressionRoot.getToken().getText() );
+        if (expressionRoot.getChildren().length > 0) 
+        {
+            answer.setType(expressionRoot.getChild(0).getToken().getText());
+        }
+        return answer;
     }
 
     protected ConstantExpression constantExpression(CSTNode expressionRoot)

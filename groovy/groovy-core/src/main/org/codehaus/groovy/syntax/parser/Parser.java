@@ -12,6 +12,7 @@ import org.codehaus.groovy.syntax.lexer.StringCharStream;
 public class Parser
 {
     private TokenStream tokenStream;
+    private boolean lastTokenStatementSeparator;
 
     public Parser(TokenStream tokenStream)
     {
@@ -597,13 +598,19 @@ public class Parser
         {
             root.addChild( statement() );
 
-            if ( lt() == Token.RIGHT_CURLY_BRACE )
+            if ( lt_bare() == Token.RIGHT_CURLY_BRACE )
             {
                 break;
             }
-            else if ( lt() == -1 )
-            {
-                throwExpected( new int[] { Token.RIGHT_CURLY_BRACE } );
+            else {
+                optionalSemicolon();
+
+                if (lt_bare() == -1) {
+                    throwExpected(new int[] { Token.RIGHT_CURLY_BRACE });
+                }
+                if (!lastTokenStatementSeparator) {
+                    throwExpected(new int[] { Token.NEWLINE, Token.SEMICOLON, Token.RIGHT_CURLY_BRACE });
+                }
             }
         }
     }
@@ -967,7 +974,17 @@ public class Parser
     protected CSTNode assignmentExpression()
         throws IOException, SyntaxException
     {
-        CSTNode expr = conditionalExpression();
+        CSTNode expr = null;
+        
+        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.IDENTIFIER  && lt_bare(3) == Token.EQUAL) {
+            // a typed variable declaration
+            CSTNode typeExpr = new CSTNode(consume_bare(lt_bare()));
+            expr = new CSTNode(consume_bare(lt_bare()));
+            expr.addChild(typeExpr);
+        }
+        else {
+            expr = conditionalExpression();
+        }
 
         switch ( lt_bare() )
         {
@@ -1997,6 +2014,8 @@ public class Parser
             throw new UnexpectedTokenException( la_bare(),
                     type );
         }
+        
+        lastTokenStatementSeparator = type == Token.SEMICOLON || type == Token.NEWLINE;
 
         return getTokenStream().consume( type );
     }

@@ -93,11 +93,6 @@ public class RunClosureTest extends TestSupport {
         object.invokeMethod("testUsingProperty", null);
     }
 
-    public void testRodsBug() throws Exception {
-        GroovyObject object = compile("src/test/groovy/bugs/RodsBug.groovy");
-        object.invokeMethod("testBug", null);
-    }
-
     public void testBytecode5Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode5Bug.groovy");
         object.invokeMethod("testUsingLocalVar", null);

@@ -44,7 +44,7 @@ public class UnexpectedTokenException
         if ( getToken() != null )
         {
             startLine = "" + getToken().getStartLine();
-            description = getToken().getDescription();
+            description = getToken().getDescription() + " '" + getToken().getText() + "'";
         }
 
         message.append( startLine + ": " );
