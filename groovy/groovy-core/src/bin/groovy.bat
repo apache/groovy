@@ -70,7 +70,7 @@ if "x%1" == "x-cp" set CP=%2
 if "x%1" == "x-classpath" set CP=%2
 if not "x" == "x%CP%" shift /1
 if not "x" == "x%CP%" shift /1
-set CMD_LINE_ARGS=%*
+set CMD_LINE_ARGS=%1 %2 %3 %4 %5 %6 %7 %8 %9
 goto execute
 
 :win9xME_args
