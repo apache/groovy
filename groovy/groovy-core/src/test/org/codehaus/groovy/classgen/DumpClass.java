@@ -125,14 +125,6 @@ public class DumpClass {
     //        assert result == null : "message";
     //    }
 
-    public void testGroovyAssertion() {
-        if (InvokerHelper.compareEqual(bar, "foo")) {
-        }
-        else {
-            InvokerHelper.assertFailed("expression", "message");
-        }
-    }
-
     public void testGroovyAssertion2() {
         if (InvokerHelper.compareEqual(bar, "foo")) {
         }
@@ -188,7 +180,21 @@ public class DumpClass {
     }
     
     public void setLocalVar() {
-        Object l = "foo";
-        InvokerHelper.invokeMethod(l, "foo", "whatever");
+        Object x = null;
+        Object i = null;
+        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createRange(new Integer(0), new Integer(10))); iter.hasNext(); ) {
+            i = iter.next();
+            x = i;
+        }
     }
+
+    public void testGroovyAssertion() {
+        x = "abc";
+        if (InvokerHelper.compareEqual(x, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "message");
+        }
+    }
+
 }
