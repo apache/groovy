@@ -103,18 +103,12 @@ public class InvokerTest extends GroovyTestCase {
         assertAsBoolean(true, Boolean.TRUE);
         assertAsBoolean(true, "true");
         assertAsBoolean(true, "TRUE");
+        assertAsBoolean(true, "false");
         assertAsBoolean(false, Boolean.FALSE);
-        assertAsBoolean(false, "false");
-        assertAsBoolean(false, "FALSE");
-        
-        try {
-            assertAsBoolean(false, new Integer(1234));
-            fail("Should fail - Numbers can't be converted to booleans");
-        }
-        catch (GroovyRuntimeException e) {
-            // worked
-        }
-    }
+        assertAsBoolean(false, (String) null);
+        assertAsBoolean(true, new Integer(1234));
+        assertAsBoolean(false, new Integer(0));
+       }
     
     public void testLessThan() {
         assertTrue(InvokerHelper.compareLessThan(new Integer(1), new Integer(2)));
