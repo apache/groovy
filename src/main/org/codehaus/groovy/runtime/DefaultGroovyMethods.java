@@ -1697,6 +1697,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Appends a String
+     *
+     * @param value a Number
+     * @param right a String
+     * @return a String
+     */
+    public static String plus(Number value, String right) {
+        return toString(value) + right;
+    }
+
+    /**
      * Remove a part of a String
      *
      * @param left a String
