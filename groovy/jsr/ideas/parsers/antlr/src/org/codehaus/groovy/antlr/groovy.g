@@ -394,13 +394,19 @@ suppressions like "options { greedy = true; }".
 */
 
 singleDeclarationNoInit!
-    :       DEF! nls!
-        (m:modifiers)? (t:typeSpec[false])?  v:singleVariable[#m,#t]
-        {#singleDeclarationNoInit = #v;}
-    |   m2:modifiers   (t2:typeSpec[false])? v2:singleVariable[#m2,#t2]
-        {#singleDeclarationNoInit = #v2;}
-    |       t3:typeSpec[false] v3:singleVariable[null,#t3]
-        {#singleDeclarationNoInit = #v3;}
+:      						// method/variable using def
+            (m:modifiers)?
+            
+            (
+        						DEF! nls! v:singleVariable[#m, null]	
+        						{#singleDeclarationNoInit = #v;}
+      						
+	        				|
+
+  	    						 // method/variable using a type
+ 	      						t2:typeSpec[false] v2:singleVariable[#m,#t2]
+  		          {#singleDeclarationNoInit = #v2;}
+  		        )
     ;
 
 singleDeclaration
@@ -492,7 +498,7 @@ typeSpec[boolean addImagNode]
 // - generic type arguments after
 classTypeSpec[boolean addImagNode]
 	:	t:classOrInterfaceType[false]
-		(   ata:arrayOrTypeArgs[#t]  )?
+	   ata:arrayOrTypeArgs[#t] 
 		{
 // TODO - following line seems to cause stack overflow errors
 //      - need to figure out why INDEX_OP isn't being added to AST... 
@@ -591,7 +597,7 @@ typeArgumentBounds
 // A builtin type array specification is a builtin type with brackets afterwards
 builtInTypeArraySpec[boolean addImagNode]
 	:	t:builtInType
-		(   ata:arrayOrTypeArgs[#t]  )+
+		ata:arrayOrTypeArgs[#t]
 		{
 			if (#ata != null)  #builtInTypeArraySpec = #ata;
 			if ( addImagNode ) {
@@ -605,7 +611,7 @@ builtInTypeArraySpec[boolean addImagNode]
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
 	:	t:builtInType
-		(   ata:arrayOrTypeArgs[#t]  )*
+		ata:arrayOrTypeArgs[#t] 
 		{
 			if (#ata != null)  #builtInTypeSpec = #ata;
 			if ( addImagNode ) {
@@ -894,10 +900,11 @@ annotationField!
 //An enum constant may have optional parameters and may have a
 //a class body
 enumConstant!
+	        {boolean zz; /*ignored*/ }
 	:	an:annotations
 		i:IDENT
 		(	LPAREN!
-			a:argList
+			zz=a:argList
 			RPAREN!
 		)?
 		( b:enumConstantBlock )?
@@ -1214,7 +1221,7 @@ parameterDeclarationList
 	// The semantic check in ( .... )* block is flagged as superfluous, and seems superfluous but
 	// is the only way I could make this work. If my understanding is correct this is a known bug
 	:	(	( parameterDeclaration )=> parameterDeclaration
-			( options {warnWhenFollowAmbig=false;} : ( COMMA! nls! parameterDeclaration ) => COMMA! nls! parameterDeclaration )*
+			( options {warnWhenFollowAmbig=false;} : COMMA! nls! parameterDeclaration )*
 			( COMMA! nls! variableLengthParameterDeclaration )?
 		|
 			variableLengthParameterDeclaration
@@ -1259,14 +1266,16 @@ parameterModifier
   * (An empty argument list must be spelled with two bars, <code>{|| ...}</code>)
   */
 closureParameters
-        :   BOR! nls! 
+        : (BOR! nls! BOR!)=> 
+           BOR! nls! BOR!
+									| (BOR! nls! (parameterDeclarationList|LPAREN))=> 
+									   BOR! nls! 
         							(parameterDeclarationList | (LPAREN! nls! parameterDeclarationList nls! RPAREN!))
         							nls! BOR!
         |   LPAREN! nls! parameterDeclarationList nls! RPAREN!	nls! BOR!
                 // Yes, you can have a full parameter declaration list.
                 // they can be wrapped in parens to allow complex expressions
                 
-									| BOR! nls! BOR!
 									| LOR!
 																	// allow empty double bar if folks wanna explicitly mean a zero parameter closure
 																	
@@ -1511,8 +1520,10 @@ statement
 	|	s:SEMI {#s.setType(EMPTY_STAT);}
 	*OBS*/
 
+// removed as it conflicts with the 3 alternations of 'statement': compoundStatement, expressionStatement, a labeled statement
+// todo: suggest fixing 'expressionStatement' to correctly accept the SL token '<<'
         /// Patch for x = []; x << 5 
-        | conditionalExpression
+//        | conditionalExpression
 	
 	// NOTE: some alternations have been moved to 'branchExpression'
 	;
@@ -1575,7 +1586,8 @@ compatibleBodyStatement
 branchExpression
         :
         // Return an expression
-                "return"^ (assignmentExpression)?
+        // optionality of assignmentExpression is not needed as it implicitly can be an empty expression
+                "return"^ assignmentExpression
 
         // break:  get out of a loop, or switch, or method call
         // continue:  do next iteration of a loop, or leave a closure
@@ -1583,10 +1595,9 @@ branchExpression
                 (   options {greedy=true;} :
                     statementLabelPrefix
                 )?
-                (
-                    assignmentExpression
-                )?
-
+                // optionality of assignmentExpression is not needed as it implicitly can be an empty expression
+                assignmentExpression
+                
         // throw an exception
         |       "throw"^ assignmentExpression
 
@@ -1910,6 +1921,7 @@ returns [boolean endBrackets = false]
                 // In Groovy, the stuff between brackets is a general argument list,
                 // since the bracket operator is transformed into a method call.
                 // This can also be a declaration head; square brackets are used to parameterize array types.
+                //todo: check that multiple arrayOrTypeArgs are valid here
                 ata:arrayOrTypeArgs[prefix]
                 {   #pathElement = #ata; endBrackets = false;  }
 
@@ -2052,7 +2064,7 @@ arrayOrTypeArgs[AST indexee]
                         lb:LBRACK^ {#lb.setType(INDEX_OP);}
                         zz=argList
                         RBRACK!
-                )+
+                )*
         ;
 
 // assignment expression (level 13)
@@ -2092,14 +2104,8 @@ logicalOrExpression
 
 // logical and (&&)  (level 10)
 logicalAndExpression
-        :       regexExpression (LAND^ nls! regexExpression)*
+        :       inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
         ;
-
-// regex find and match (=~ and ==~) (level 9.5)
-regexExpression
-        :       inclusiveOrExpression ((REGEX_FIND^ | REGEX_MATCH^) nls! inclusiveOrExpression)*
-        ;
-
 
 // bitwise or non-short-circuiting or (|)  (level 9)
 inclusiveOrExpression
@@ -2115,15 +2121,20 @@ exclusiveOrExpression
 
 // bitwise or non-short-circuiting and (&)  (level 7)
 andExpression
-        :       equalityExpression (BAND^ nls! equalityExpression)*
+        :       regexExpression (BAND^ nls! regexExpression)*
         ;
 
+// regex find and match (=~ and ==~) (level 6.5)
+// jez: moved =~ closer to precedence of == etc, as...
+// 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
+regexExpression
+        :       equalityExpression ((REGEX_FIND^ | REGEX_MATCH^) nls! equalityExpression)*
+        ;
 
 // equality/inequality (==/!=) (level 6)
 equalityExpression
         :       relationalExpression ((NOT_EQUAL^ | EQUAL^ | COMPARE_TO^) nls! relationalExpression)*
         ;
-
 
 // boolean relational expressions (level 5)
 relationalExpression
