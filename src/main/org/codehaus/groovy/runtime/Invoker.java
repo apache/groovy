@@ -104,27 +104,50 @@ public class Invoker {
                     + methodName
                     + " arguments: "
                     + InvokerHelper.toString(arguments));
-                    
                     */
 
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        if (object instanceof GroovyObject) {
-            GroovyObject groovy = (GroovyObject) object;
-            return groovy.invokeMethod(methodName, arguments);
-        } else {
-            if (object instanceof Class) {
-                Class theClass = (Class) object;
-
-                MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-                return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
-            } else {
+        // if the object is a Class, call a static method from that class
+        if (object instanceof Class) {
+            Class theClass = (Class) object;
+            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+            return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
+        }
+        else // it's an instance
+        {
+            // if it's not an object implementing GroovyObject (thus not builder, nor a closure)
+            if (!(object instanceof GroovyObject)) {
                 Class theClass = object.getClass();
-
                 MetaClass metaClass = metaRegistry.getMetaClass(theClass);
                 return metaClass.invokeMethod(object, methodName, asArray(arguments));
+            }
+            // it's an object implementing GroovyObject
+            else
+            {
+                // if it's a closure, use the closure's invokeMethod()
+                if (object instanceof Closure) {
+                    Closure closure = (Closure) object;
+                    return closure.invokeMethod(methodName, arguments);
+                }
+                // it's some kind of wacky object that overrides invokeMethod() to do some groovy stuff
+                // (like a proxy, a builder, some custom funny object which controls the invokation mechanism)
+                else
+                {
+                    GroovyObject groovy = (GroovyObject) object;
+                    try
+                    {
+                        // if there's a statically typed method or a GDK method
+                        return groovy.getMetaClass().invokeMethod(object, methodName, arguments);
+                    }
+                    catch (MissingMethodException e)
+                    {
+                        // in case there's nothing else, invoke the object's own invokeMethod()
+                        return groovy.invokeMethod(methodName, arguments);
+                    }
+                }
             }
         }
     }
