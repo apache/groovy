@@ -3258,7 +3258,8 @@ returns [int tt=STRING_CTOR_END]
 
 protected
 STRING_CH
-    :   ~('"'|'\''|'\\'|'$'|'\n'|'\r')
+    :  { if (LA(1) == EOF_CHAR) throw new MismatchedCharException(LA(1), EOF_CHAR, true, this);} 
+       ~('"'|'\''|'\\'|'$'|'\n'|'\r')
     ;
 
 REGEXP_LITERAL
