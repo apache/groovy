@@ -820,6 +820,48 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * Selects the item in a collection that maximizies the given closure
+     *
+     * @param self a Collection
+     * @param c a Closure
+     * @return the maximizing item
+     */
+    public static Object maximize(Collection self, Closure c) {
+        Object answer = null;
+        Object answer_value = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object item = iter.next();
+            Object value = c.call(item);
+            if (answer == null || InvokerHelper.compareGreaterThan(value, answer_value)) {
+                answer = item;
+                answer_value = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the item in a collection that minimizes the given closure
+     *
+     * @param self a Collection
+     * @param c a Closure
+     * @return the minimizing item
+     */
+    public static Object minimize(Collection self, Closure c) {
+        Object answer = null;
+        Object answer_value = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object item = iter.next();
+            Object value = c.call(item);
+            if (answer == null || InvokerHelper.compareLessThan(value, answer_value)) {
+                answer = item;
+                answer_value = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
      * Makes a String look like a Collection by adding support for the size() method
      *
      * @param text a String
