@@ -7,6 +7,15 @@ import java.io.InputStreamReader
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovyTestCase {
+	void testCollect() {
+		assert [2, 4, 6].collect { it * 2} == [4, 8, 12]
+		
+		answer = [2, 4, 6].collect(new Vector()) { it * 2}
+		
+		assert answer[0] == 4
+		assert answer[1] == 8
+		assert answer[2] == 12
+	}
 
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
