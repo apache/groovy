@@ -582,6 +582,7 @@ public class Types
                     case KEYWORD_MIXIN:
                     case KEYWORD_DEF:
                     case KEYWORD_IN:
+                    case KEYWORD_PROPERTY:
                         return true;
                 }
                 break;
