@@ -105,7 +105,7 @@
         </fileset>
       </classpath>
     </antlr>
-    <move file="doc/GroovyLexer.txt" tofile="doc/GroovyLexer.html"/>
+    <move file="doc/GroovyLexer.txt" tofile="doc/GroovyLexer.html" failonerror="No"/>
 
     <copy todir="${generated.src.dir}">
       <fileset dir="${src.dir}"/>
