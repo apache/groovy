@@ -164,24 +164,18 @@ public class InvokerHelper {
         }
     }
 
+    /**
+     * Provides a hook for type coercion of the given object to the required type
+     * @param type of object to convert the given object to
+     * @param object the object to be converted
+     * @return the original object or a new converted value
+     */
+    public static Object asType(Class type, Object object) {
+        return getInstance().asType(type, object);
+    }
+        
     public static boolean asBool(Object object) {
-        if (object instanceof Boolean) {
-            Boolean booleanValue = (Boolean) object;
-            return booleanValue.booleanValue();
-        }
-        else if (object instanceof Matcher) {
-            Matcher matcher = (Matcher) object;
-            return matcher.find();
-        }
-        else if (object instanceof Collection) {
-            Collection collection = (Collection) object;
-            return !collection.isEmpty();
-        }
-        else if (object instanceof String) {
-            String text = (String) object;
-            return text.equalsIgnoreCase("true");
-        }
-        throw new GroovyRuntimeException(object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
+        return getInstance().asBool(object);
     }
 
     public static boolean notObject(Object object) {
