@@ -48,6 +48,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
@@ -115,6 +116,44 @@ public class ASTBuilderTest extends TestParserSupport {
         for (Iterator iter = statement.getStatements().iterator(); iter.hasNext();) {
             System.out.println(iter.next());
         }
+    }
+
+    public void testJdk15ForLoop() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { for (x : foo) { println x } } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        ForStatement stmt = (ForStatement) statement.getStatements().get(0);
+        assertEquals("x", stmt.getVariable());
+        assertTrue(stmt.getVariableType().isDynamic());
+        System.out.println(stmt);
+    }
+
+    public void testJdk15ForLoopWithType() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { for (Integer x : foo) { println x } } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        ForStatement stmt = (ForStatement) statement.getStatements().get(0);
+        assertEquals("x", stmt.getVariable());
+        assertEquals("java.lang.Integer", stmt.getVariableType().getName());
+        assertFalse(stmt.getVariableType().isDynamic());
+        System.out.println(stmt);
+    }
+
+    public void testForLoopWithType() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { for (Foo x in foo) { println x } } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        ForStatement stmt = (ForStatement) statement.getStatements().get(0);
+        assertEquals("x", stmt.getVariable());
+        assertEquals("Foo", stmt.getVariableType().getName());
+        assertFalse(stmt.getVariableType().isDynamic());
+        System.out.println(stmt);
     }
 
     public void testSubscriptAssignment() throws Exception {

@@ -105,6 +105,32 @@ public class DefaultGroovyMethods {
     private static final char ZERO_CHAR = '\u0000';
 
     /**
+     * Allows the subscript operator to be used to lookup dynamic property values.
+     * <code>bean[somePropertyNameExpression]</code>. The normal property notation 
+     * of groovy is neater and more concise but only works with compile time known 
+     * property names.
+     * 
+     * @param self
+     * @return
+     */
+    public static Object getAt(Object self, String property) {
+        return InvokerHelper.getProperty(self, property);
+    }
+    
+    /**
+     * Allows the subscript operator to be used to set dynamically named property values.
+     * <code>bean[somePropertyNameExpression] = foo</code>. The normal property notation 
+     * of groovy is neater and more concise but only works with compile time known 
+     * property names.
+     * 
+     * @param self
+     * @return
+     */
+    public static void putAt(Object self, String property, Object newValue) {
+        InvokerHelper.setProperty(self, property, newValue);
+    }
+    
+    /**
      * Generates a detailed dump string of an object showing its class,
      * hashCode and fields
      */
@@ -1384,7 +1410,7 @@ public class DefaultGroovyMethods {
             //remove duplicates
             //can't use treeset since the base classes are different
             List answer = new LinkedList();
-            Object[] array = (Object[]) tmpAnswer.toArray(new Object[tmpAnswer.size()]);
+            Object[] array = tmpAnswer.toArray(new Object[tmpAnswer.size()]);
 
             for (int i = 0; i < array.length; i++) {
                 if (array[i] != null) {

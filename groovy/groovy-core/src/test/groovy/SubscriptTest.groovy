@@ -189,4 +189,15 @@ class SubscriptTest extends GroovyTestCase {
         assert sublist == 4..10
         assert sublist == [4, 5, 6, 7, 8, 9, 10]
     }
+    
+    void testBeanProperties() {
+    	foo = new Foo()
+    	
+    	foo['name'] = 'Gromit'
+    	
+    	assert foo.name == 'Gromit'
+    	
+    	value = foo['name']
+    	assert value == 'Gromit'
+    }
 }

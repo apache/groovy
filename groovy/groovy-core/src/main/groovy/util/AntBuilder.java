@@ -231,7 +231,7 @@ public class AntBuilder extends BuilderSupport {
                                     + nested.getClass());
                         }
 
-                        ih.storeElement(project, parentObject, nested, (String) tagName);
+                        ih.storeElement(project, parentObject, nested, tagName);
                     }
                     catch (Exception e) {
                         log.log(Level.WARNING, "Caught exception setting nested: " + tagName, e);

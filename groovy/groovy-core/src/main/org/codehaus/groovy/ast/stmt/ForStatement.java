@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast.stmt;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.Expression;
 
 /**
@@ -59,10 +60,12 @@ public class ForStatement extends Statement {
     private String variable;
     private Expression collectionExpression;
     private Statement loopBlock;
+    private Type variableType;
     
 
-    public ForStatement(String variable, Expression collectionExpression, Statement loopBlock) {
+    public ForStatement(String variable, Type variableType, Expression collectionExpression, Statement loopBlock) {
         this.variable = variable;
+        this.variableType = variableType;
         this.collectionExpression = collectionExpression;
         this.loopBlock = loopBlock;
     }
@@ -82,5 +85,8 @@ public class ForStatement extends Statement {
     public String getVariable() {
         return variable;
     }
-
+    
+    public Type getVariableType() {
+        return variableType;
+    }
 }

@@ -60,6 +60,7 @@ import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
@@ -112,7 +113,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.Type;
 
 /**
  * Generates Java class versions of Groovy classes
@@ -377,7 +377,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitForLoop(ForStatement loop) {
         onLineNumber(loop);
 
-        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", true).getIndex();
+        Type variableType = checkValidType(loop.getVariableType(), loop, "for loop variable");
+        int iIdx = defineVariable(loop.getVariable(), variableType, true).getIndex();
 
         loop.getCollectionExpression().visit(this);
 
@@ -1425,7 +1426,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         String ownerName =
             (field.getOwner().equals(classNode.getName()))
                 ? internalClassName
-                : Type.getInternalName(loadClass(field.getOwner()));
+                : org.objectweb.asm.Type.getInternalName(loadClass(field.getOwner()));
 
         if (holder) {
             if (leftHandExpression) {
@@ -1549,7 +1550,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     //cv.visitVarInsn(ASTORE, variable.getIndex());
                     return;
                 }
-                String type = variable.getType();
+                String type = variable.getTypeName();
                 int index = variable.getIndex();
                 //lastVariableIndex = index;
                 boolean holder = variable.isHolder() && !passingClosureParams;
@@ -2203,7 +2204,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 if (variable.isHolder() || variable.isProperty()) {
                     return null;
                 }
-                type = variable.getType();
+                type = variable.getTypeName();
                 if (isValidTypeForCast(type)) {
                     return type;
                 }
@@ -2428,7 +2429,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
         List vars = new ArrayList();
         if (!isInScriptBody()) {
-            VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+            VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor(true);
             VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
 
             if (methodNode != null) {
@@ -2472,7 +2473,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void findMutableVariables(MethodNode node) {
-        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor(true);
         node.getCode().visit(outerVisitor);
 
         VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
@@ -2503,7 +2504,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     protected String getVariableType(String name) {
         Variable variable = (Variable) variableStack.get(name);
         if (variable != null) {
-            return variable.getType();
+            return variable.getTypeName();
         }
         return null;
     }
@@ -2535,8 +2536,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         definingParameters = false;
     }
-
+    
     protected Variable defineVariable(String name, String type, boolean define) {
+        return defineVariable(name, new Type(type), define);
+    }
+        
+    private Variable defineVariable(String name, Type type, boolean define) {
         Variable answer = (Variable) variableStack.get(name);
         if (answer == null) {
             idx = Math.max(idx, variableStack.size());
@@ -2581,6 +2586,17 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return defineVariable(name, type, true);
     }
 
+    protected Type checkValidType(Type type, ASTNode node, String message) {
+        if (type.isDynamic()) {
+            return type;
+        }
+        String name = checkValidType(type.getName(), node, message);
+        if (type.getName().equals(name)) {
+            return type;
+        }
+        return new Type(name);
+    }
+    
     protected String checkValidType(String type, ASTNode node, String message) {
         if (helper.isPrimitiveType(type)) {
             return type;

@@ -614,13 +614,19 @@ public class ASTBuilder {
     }
 
     protected ForStatement forStatement(CSTNode statementRoot) throws ParserException {
-        String variable = statementRoot.getChild(0).getToken().getText();
+        CSTNode variableNode = statementRoot.getChild(0);
+        String variable = variableNode.getToken().getText();
+        
+        Type variableType = Type.DYNAMIC_TYPE;
+        if (variableNode.getChildren().length > 0) {
+            variableType = new Type(resolvedQualifiedNameNotNull(variableNode.getChild(0)));
+        }
 
         Expression collectionExpr = expression(statementRoot.getChild(1));
 
         BlockStatement bodyBlock = statementOrStatementBlock(statementRoot.getChild(2));
 
-        return new ForStatement(variable, collectionExpr, bodyBlock);
+        return new ForStatement(variable, variableType, collectionExpr, bodyBlock);
     }
 
     protected AssertStatement assertStatement(CSTNode statementRoot) throws ParserException {

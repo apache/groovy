@@ -127,7 +127,7 @@ public class InvokerTest extends GroovyTestCase {
     }
     
     public void testCompareTo() {
-        assertTrue(InvokerHelper.compareEqual("x", new Integer((int) 'x')));
+        assertTrue(InvokerHelper.compareEqual("x", new Integer('x')));
     }
     
     // Implementation methods

@@ -419,8 +419,7 @@ public class Parser {
     protected CSTNode parameterDeclarationList() throws IOException, SyntaxException {
         CSTNode parameterDeclarationList = new CSTNode();
 
-        while (lt() == Token.IDENTIFIER
-            || isIdentifierOrPrimtiveTypeKeyword(lt())) {
+        while (lt() == Token.IDENTIFIER || isIdentifierOrPrimtiveTypeKeyword(lt())) {
             parameterDeclarationList.addChild(parameterDeclaration());
 
             if (lt() == Token.COMMA) {
@@ -845,20 +844,39 @@ public class Parser {
 
         return statement;
     }
-
+    
     protected CSTNode forStatement() throws IOException, SyntaxException {
         CSTNode statement = rootNode(Token.KEYWORD_FOR);
 
         consume(Token.LEFT_PARENTHESIS);
 
-        consume(statement, Token.IDENTIFIER);
-
-        Token potentialIn = consume(Token.IDENTIFIER);
-
-        if (!potentialIn.getText().equals("in")) {
-            throw new UnexpectedTokenException(potentialIn, new int[] {
-            });
+        CSTNode identifierOrType = new CSTNode(consume(Token.IDENTIFIER));
+        if (la_bare().getType() == Token.COLON) {
+            consume(Token.COLON);
         }
+        else {
+            Token potentialIn = consume(Token.IDENTIFIER);
+            if (!potentialIn.getText().equals("in")) {
+                // we could be a type declaration
+
+                // our next token must either be a colon or 'in'
+                if (la_bare().getType() == Token.COLON) {
+                    consume(Token.COLON);
+                }
+                else {
+                    // must be followed by 'in'
+                    Token inToken = consume(Token.IDENTIFIER);
+                    if (!inToken.getText().equals("in")) {
+                        throw new UnexpectedTokenException(inToken, new int[] { Token.COLON, Token.IDENTIFIER });
+                    }
+                }
+                CSTNode identifier = new CSTNode(potentialIn);
+                identifier.addChild(identifierOrType);
+                identifierOrType = identifier;
+            }
+        }
+
+        statement.addChild(identifierOrType);
 
         CSTNode expr = expression();
 
@@ -1612,9 +1630,9 @@ public class Parser {
         // but not { a }, 
 
         int value = lt(1);
-        
+
         boolean canBeParamList = false;
-        
+
         if (isIdentifierOrPrimtiveTypeKeyword(lt())) {
             if (isIdentifierOrPrimtiveTypeKeyword(lt(2))) {
                 canBeParamList = lt(3) == Token.PIPE || lt(3) == Token.COMMA;
@@ -1651,7 +1669,7 @@ public class Parser {
     protected boolean isIdentifierOrPrimtiveTypeKeyword(int value) {
         return value == Token.IDENTIFIER
             || value == Token.KEYWORD_BOOLEAN
-        || value == Token.KEYWORD_BYTE
+            || value == Token.KEYWORD_BYTE
             || value == Token.KEYWORD_CHAR
             || value == Token.KEYWORD_DOUBLE
             || value == Token.KEYWORD_FLOAT

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import org.codehaus.groovy.ast.Type;
+
 /**
  * Represents compile time variable metadata while compiling a method.
  * 
@@ -54,23 +56,27 @@ package org.codehaus.groovy.classgen;
 public class Variable {
 
     private int index;
-    private String type;
+    private Type type;
     private String name;
     private boolean holder;
     private boolean property;
     
-    public Variable(int index, String type, String name) {
+    public Variable(int index, Type type, String name) {
         this.index = index;
         this.type = type;
         this.name = name;
     }
-    
+
     public String getName() {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
+    }
+    
+    public String getTypeName() {
+        return type.getName();
     }
 
     /**
