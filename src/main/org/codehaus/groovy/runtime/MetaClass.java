@@ -212,14 +212,12 @@ public class MetaClass {
                 return doMethodInvoke(theClass, method, argumentList.toArray());
             }
         }
-        
-        if (object instanceof Class && object != Class.class) {
-            // lets try methods on Class
+
+        if (theClass != Class.class) {
             return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments, argumentList);
         }
-        else {
-            throw new InvokerException("Could not find matching method called: " + methodName + " for class: " + theClass.getName());
-        }
+        throw new InvokerException(
+            "Could not find matching method called: " + methodName + " for class: " + theClass.getName());
     }
 
     /**
@@ -232,7 +230,6 @@ public class MetaClass {
         }
         return newStaticInstanceMethods;
     }
-
 
     /**
      * @return the given property's value on the object
@@ -367,8 +364,8 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-        //        System.out.println("Evaluating method: " + method);
-        //        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+        // System.out.println("Evaluating method: " + method);
+        // System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
 
         try {
             return method.invoke(object, argumentArray);

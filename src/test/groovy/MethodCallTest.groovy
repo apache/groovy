@@ -9,18 +9,25 @@ class MethodCallTest extends GroovyTestCase {
         System.out.println("world!");
 	}
 	
-	void testObjectMethodCall() {
-	    c = getClass();
-	    assert c != null;
+    void testObjectMethodCall() {
+        c = getClass();
+        assert c != null;
         assert c.name := "groovy.MethodCallTest";
         assert c.getName() := "groovy.MethodCallTest";
-	    
-	    s = "hello";
-	    c = s.getClass();
+    }
+	
+    void testObjectMethodCall2() {
+        s = "hello";
+        c = s.getClass();
         assert c != null;
         assert c.name := "java.lang.String";
         assert c.getName() := "java.lang.String";
+    }
+	
+	void testGetNameBug() {
+	    c = getClass();
+	    n = c.getName();
+        assert c.getName() := "groovy.MethodCallTest";
+        assert n := "groovy.MethodCallTest";
 	}
-	/*
-	*/
 }

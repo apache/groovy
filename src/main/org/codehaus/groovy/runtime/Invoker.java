@@ -80,7 +80,7 @@ public class Invoker {
             Class theClass = (Class) object;
 
             MetaClass metaClass = metaRegistry.getMetaClass(theClass);
-            return metaClass.invokeMethod(object, methodName, arguments, argumentList);
+            return metaClass.invokeStaticMethod(object, methodName, arguments, argumentList);
         }
         else {
             Class theClass = object.getClass();
