@@ -69,36 +69,61 @@ public class BSFTest extends TestCase {
     }
 
     public void testExec() throws Exception {
-        manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec'); assert bsf != null : 'should have a bsf variable'");
+        manager.exec(
+            "groovy",
+            "Test1.groovy",
+            0,
+            0,
+            "println('testing Exec'); assert bsf != null : 'should have a bsf variable'");
     }
 
     public void testEval() throws Exception {
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('testing Eval')\n  return [1, 2, 3]");
-        
+
         assertTrue("Should return a list: " + answer, answer instanceof List);
         List list = (List) answer;
         assertEquals("List should be of right size", 3, list.size());
-        
+
         System.out.println("The eval returned the value: " + list);
     }
-    
+
     public void testTwoEvalsWithSameName() throws Exception {
         Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('first line')\n  return 'cheese'");
         assertEquals("cheese", answer);
-        
+
         answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('second line')\n  return 'gromit'");
         assertEquals("gromit", answer);
     }
-    
+
+    public void testExecBug() throws Exception {
+        for (int i = 0; i < 10; i++) {
+            manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
+
+            manager.exec("groovy", "Test1.groovy", 0, 0, "println('testing Exec')");
+        }
+    }
+
     public void testBsfVariables() throws Exception {
-        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "println('testing variables')\n  assert this.bsf != null\n  return this.bsf");
+        Object answer =
+            manager.eval(
+                "groovy",
+                "Test1.groovy",
+                0,
+                0,
+                "println('testing variables')\n  assert this.bsf != null\n  return this.bsf");
         assertTrue("Should have an answer", answer != null);
     }
-    
+
     public void testVariables() throws Exception {
         manager.registerBean("x", new Integer(4));
-        
-        Object answer = manager.eval("groovy", "Test1.groovy", 0, 0, "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
+
+        Object answer =
+            manager.eval(
+                "groovy",
+                "Test1.groovy",
+                0,
+                0,
+                "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         assertEquals("Incorrect return", new Integer(5), answer);
     }
 }
