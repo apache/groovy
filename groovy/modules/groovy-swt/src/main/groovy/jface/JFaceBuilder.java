@@ -1,9 +1,10 @@
 /*
  * Created on Feb 25, 2004
- *
+ *  
  */
 package groovy.jface;
 
+import groovy.jface.factory.ContributionManagerFactory;
 import groovy.jface.factory.DoubleClickListenerFactory;
 import groovy.jface.factory.MenuManagerFactory;
 import groovy.jface.factory.PreferencesDialogFactory;
@@ -13,9 +14,9 @@ import groovy.jface.factory.SelectionChangedListenerFactory;
 import groovy.jface.factory.WindowFactory;
 import groovy.jface.factory.WizardDialogFactory;
 import groovy.jface.factory.WizardPageFactory;
+import groovy.jface.impl.ActionImpl;
 import groovy.jface.impl.ApplicationWindowImpl;
 import groovy.swt.SwtBuilder;
-import groovy.swt.factory.ActionFactory;
 import groovy.swt.factory.ImageFactory;
 
 import org.eclipse.jface.action.Separator;
@@ -36,6 +37,7 @@ import org.eclipse.jface.viewers.TreeViewer;
  * @version $Revision$
  */
 public class JFaceBuilder extends SwtBuilder {
+
     protected void registerWidgets() {
         super.registerWidgets();
 
@@ -47,20 +49,23 @@ public class JFaceBuilder extends SwtBuilder {
 
         // Event
         registerFactory("doubleClickListener", new DoubleClickListenerFactory());
-        registerFactory("selectionChangedListener", 
-        new SelectionChangedListenerFactory());
+        registerFactory("selectionChangedListener",
+                new SelectionChangedListenerFactory());
 
         // Window
-        registerFactory("applicationWindow", new WindowFactory(ApplicationWindowImpl.class));
+        registerFactory("applicationWindow", new WindowFactory(
+                ApplicationWindowImpl.class));
 
         // ContributionManager
         registerFactory("menuManager", new MenuManagerFactory());
 
         // Action tags
-        registerFactory("action", new ActionFactory());
+        registerFactory("action", new ContributionManagerFactory(
+                ActionImpl.class));
 
         // ContributionItem
-        registerBeanFactory("separator", Separator.class);
+        registerFactory("separator", new ContributionManagerFactory(
+                Separator.class));
 
         // Wizard
         registerFactory("wizardDialog", new WizardDialogFactory());
@@ -69,24 +74,24 @@ public class JFaceBuilder extends SwtBuilder {
         // Preference
         registerFactory("preferenceDialog", new PreferencesDialogFactory());
         registerFactory("preferencePage", new PreferencesPageFactory());
-        registerFactory("booleanFieldEditor", new PreferencesFieldEditorFactory(
-        BooleanFieldEditor.class));
+        registerFactory("booleanFieldEditor",
+                new PreferencesFieldEditorFactory(BooleanFieldEditor.class));
         registerFactory("colorFieldEditor", new PreferencesFieldEditorFactory(
-        ColorFieldEditor.class));
-        registerFactory("directoryFieldEditor", new PreferencesFieldEditorFactory(
-        DirectoryFieldEditor.class));
+                ColorFieldEditor.class));
+        registerFactory("directoryFieldEditor",
+                new PreferencesFieldEditorFactory(DirectoryFieldEditor.class));
         registerFactory("fileFieldEditor", new PreferencesFieldEditorFactory(
-        FileFieldEditor.class));
+                FileFieldEditor.class));
         registerFactory("fontFieldEditor", new PreferencesFieldEditorFactory(
-        FontFieldEditor.class));
-        registerFactory("integerFieldEditor", new PreferencesFieldEditorFactory(
-        IntegerFieldEditor.class));
+                FontFieldEditor.class));
+        registerFactory("integerFieldEditor",
+                new PreferencesFieldEditorFactory(IntegerFieldEditor.class));
         //registerBeanFactory("radioGroupFieldEditor",
         // RadioGroupFieldEditor.class);
         //registerBeanFactory("stringButtonFieldEditor",
         // StringButtonFieldEditor.class);
         registerFactory("stringFieldEditor", new PreferencesFieldEditorFactory(
-        StringFieldEditor.class));
+                StringFieldEditor.class));
 
         // other
         registerFactory("image", new ImageFactory());

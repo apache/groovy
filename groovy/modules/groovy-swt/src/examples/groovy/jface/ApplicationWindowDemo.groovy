@@ -29,7 +29,7 @@ class ApplicationWindowDemo {
 		}
   
 		mainapp.MenuBarManager.updateAll( true )
-		mainapp.getShell().pack()
+		mainapp.getShell().layout()
 		mainapp.open()
 
 	}

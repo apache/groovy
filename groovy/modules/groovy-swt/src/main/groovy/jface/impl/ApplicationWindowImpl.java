@@ -16,14 +16,14 @@ public class ApplicationWindowImpl extends ApplicationWindow {
      * @param shell
      */
     public ApplicationWindowImpl(Shell parentShell) {
-        super(parentShell);
-
+        super(null);
+System.out.println(parentShell + "  " + parentShell.hashCode()+ "  " + parentShell.handle);
         // default at all
         addMenuBar();
         addStatusLine();
-        addToolBar(SWT.NULL);
+        addToolBar(SWT.FLAT | SWT.WRAP);
         setBlockOnOpen(true);
-
+        
         // create window
         create();
     }
