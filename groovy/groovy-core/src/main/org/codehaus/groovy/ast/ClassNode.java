@@ -70,6 +70,7 @@ public class ClassNode extends ASTNode implements Constants {
     private List fields = new ArrayList();
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
+    private String source;
 
     /**
      * @param name is the full name of the class
@@ -182,6 +183,14 @@ public class ClassNode extends ASTNode implements Constants {
 
     public FieldNode getField(String name) {
         return (FieldNode) fieldIndex.get(name);
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
     }
 
     /**
