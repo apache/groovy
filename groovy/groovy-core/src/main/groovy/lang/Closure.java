@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -133,6 +134,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                     try {
                         // lets try invoke method on the owner
                         return InvokerHelper.invokeMethod(this.owner, method, arguments);
+                    } catch (InvokerInvocationException iie) {
+                        throw new InvokerInvocationException(iie.getCause());
                     } catch (GroovyRuntimeException e1) {
                         if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                             // lets try invoke method on the delegate

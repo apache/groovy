@@ -61,4 +61,8 @@ public class InvokerInvocationException extends GroovyRuntimeException {
         super(e.getTargetException().toString(), e.getTargetException());
     }
 
+    public InvokerInvocationException(Throwable cause) {
+        super(cause.getMessage(),cause);
+    }
+
 }
