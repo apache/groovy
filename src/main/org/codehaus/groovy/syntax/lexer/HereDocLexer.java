@@ -219,7 +219,7 @@ public class HereDocLexer extends TextLexerBase
                 {
                     while( (c = source.la()) == ' ' || c == '\t' )
                     {
-                        raw.append( c );
+                        raw.append( source.consume() );
                     }
                 }
 
