@@ -571,14 +571,26 @@ public class DefaultGroovyMethods {
      * @return the Character object at the given index
      */
     public static Object get(String text, int index) {
-        return new String(text.getBytes(), index, 1);
+    	index = normaliseIndex(index, text.length());
+        return text.substring(index, index + 1);
     }
 
     /**
      * Support the range subscript operator for String
      */
     public static Object get(String text, Range range) {
-        return text.substring(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
+    	int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
+    	int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
+    	int length = text.length();
+    	
+    	// if this is a backwards range, reverse the arguments to substring
+    	if (from > to) {
+    		int tmp = from;
+    		from = to;
+    		to = tmp;
+    	}
+    	
+    	return text.substring(from, to + 1);
     }
 
     /**
@@ -588,6 +600,8 @@ public class DefaultGroovyMethods {
      */
     public static String get(Matcher matcher, int idx) {
         matcher.reset();
+        idx = normaliseIndex(idx, matcher.groupCount());
+        
         // are we using groups?
         if (matcher.groupCount() > 0) {
             // yes, so return the specified group
@@ -611,7 +625,7 @@ public class DefaultGroovyMethods {
      * including the ranges's to value
      */
     public static List get(List list, Range range) {
-        return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()));
+        return list.subList(InvokerHelper.asInt(range.getFrom()), InvokerHelper.asInt(range.getTo()) + 1);
     }
 
     /**
