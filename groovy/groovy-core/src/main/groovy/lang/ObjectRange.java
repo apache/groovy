@@ -82,6 +82,12 @@ public class ObjectRange extends AbstractList implements Range {
     }
     
     private void constructorHelper(Comparable from, Comparable to) {
+        if (from == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'from' index in a Range");
+        }
+        if (to == null) {
+            throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
+        }
     	if (from.getClass() == to.getClass()) {
     		this.from = from;
     		this.to = to;
