@@ -7,7 +7,7 @@ import groovy.OuterUser
 class CallInnerClassCtorTest extends GroovyTestCase {
 
     void testCallCtor() {
-        user = new OuterUser()
+        user = new groovy.OuterUser()
         user.name = "Guillaume"
         user.age = 27
 
@@ -16,7 +16,7 @@ class CallInnerClassCtorTest extends GroovyTestCase {
     }
 
     void testCallInnerCtor() {
-        address = new OuterUser.InnerAddress()
+        address = new groovy.OuterUser.InnerAddress()
         address.city = "Meudon"
         address.zipcode = 92360
 
