@@ -45,7 +45,7 @@
  */
 package groovy.xml;
 
-import groovy.lang.BuilderSupport;
+import groovy.util.BuilderSupport;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -60,7 +60,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * A helper class for creating a W3C D
+ * A helper class for creating a W3C DOM tree
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

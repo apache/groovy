@@ -43,7 +43,8 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.util;
+
 
 
 import java.io.PrintWriter;
@@ -61,21 +62,18 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class NodePrinter {
 
-    private int indentLevel;
-    private String indent = "  ";
-    private PrintWriter out;
+    private IndentPrinter out;
 
     public NodePrinter(PrintWriter out) {
-        if (out == null) {
-            /** @todo temporary hack */
-            out = new PrintWriter(System.out);
-            //throw new IllegalArgumentException("Must specify a PrintWriter");
-        }
+        this(new IndentPrinter(out));
+    }
+
+    public NodePrinter(IndentPrinter out) {
         this.out = out;
     }
 
     public void print(Node node) {
-        printIndent();
+        out.printIndent();
         printName(node);
         Map attributes = node.attributes();
         boolean hasAttributes = attributes != null && !attributes.isEmpty();
@@ -85,18 +83,18 @@ public class NodePrinter {
         Object value = node.value();
         if (value instanceof List) {
             if (!hasAttributes) {
-                print("()");
+                out.print("()");
             }
             printList((List) value);
         }
         else {
             if (value instanceof String) {
-                print("('");
-                print((String) value);
-                println("')");
+                out.print("('");
+                out.print((String) value);
+                out.println("')");
             }
             else {
-                println("()");
+                out.println("()");
             }
         }
         out.flush();
@@ -105,40 +103,40 @@ public class NodePrinter {
     protected void printName(Node node) {
         Object name = node.name();
         if (name != null) {
-            print(name.toString());
+            out.print(name.toString());
         }
         else {
-            print("null");
+            out.print("null");
         }
     }
 
     protected void printList(List list) {
         if (list.isEmpty()) {
-            println("");
+            out.println("");
         }
         else {
-            println(" {");
-            ++indentLevel;
+            out.println(" {");
+            out.incrementIndent();
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 Object value = iter.next();
                 if (value instanceof Node) {
                     print((Node) value);
                 }
                 else {
-                    printIndent();
-                    print("builder.append(");
-                    print(InvokerHelper.toString(value));
-                    println(")");
+                    out.printIndent();
+                    out.print("builder.append(");
+                    out.print(InvokerHelper.toString(value));
+                    out.println(")");
                 }
             }
-            --indentLevel;
-            printIndent();
-            println("}");
+            out.decrementIndent();
+            out.printIndent();
+            out.println("}");
         }
     }
 
     protected void printAttributes(Map attributes) {
-        print("(");
+        out.print("(");
         boolean first = true;
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
@@ -146,27 +144,12 @@ public class NodePrinter {
                 first = false;
             }
             else {
-                print(", ");
+                out.print(", ");
             }
-            print(entry.getKey().toString());
-            print(":");
-            print(InvokerHelper.toString(entry.getValue()));
+            out.print(entry.getKey().toString());
+            out.print(":");
+            out.print(InvokerHelper.toString(entry.getValue()));
         }
-        print(")");
-    }
-
-    protected void println(String text) {
-        out.print(text);
-        out.println();
-    }
-
-    protected void print(String text) {
-        out.print(text);
-    }
-
-    protected void printIndent() {
-        for (int i = 0; i < indentLevel; i++) {
-            out.print(indent);
-        }
+        out.print(")");
     }
 }

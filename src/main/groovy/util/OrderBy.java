@@ -43,41 +43,64 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package groovy.util;
 
-package groovy.xml;
+import groovy.lang.Closure;
 
-import java.io.IOException;
-
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 /**
+ * A helper class for sorting objects via a closure to return the field
+ * or operation on which to sort.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TestXmlSupport extends TestSupport {
+public class OrderBy implements Comparator {
 
-    protected void dump(Node node) throws IOException {
-        XMLSerializer printer = createSerializer();
-        if (node instanceof Document) {
-            printer.serialize((Document) node);
-        }
-        else {
-            printer.serialize((Element) node);
-        }
-        System.out.println();
+    List closures;
+
+    public OrderBy() {
+        this.closures = new ArrayList();
     }
 
-    protected XMLSerializer createSerializer() {
-        return new XMLSerializer(System.out, new OutputFormat());
+    public OrderBy(Closure closure) {
+        this();
+        closures.add(closure);
     }
 
-    protected SAXBuilder createSAXBuilder() throws IOException {
-        return new SAXBuilder(createSerializer().asContentHandler());
+    public OrderBy(List closures) {
+        this.closures = closures;
+    }
+
+    public void add(Closure closure) {
+        closures.add(closure);
+    }
+
+    public int compare(Object object1, Object object2) {
+        for (Iterator iter = closures.iterator(); iter.hasNext();) {
+            Closure closure = (Closure) iter.next();
+            Object value1 = closure.call(object1);
+            Object value2 = closure.call(object2);
+
+            if (value1 == value2) {
+                continue;
+            }
+            if (value1 == null) {
+                return -1;
+            }
+            if (value1 instanceof Comparable) {
+                Comparable c1 = (Comparable) value1;
+                return c1.compareTo(value2);
+            }
+            if (value1.equals(value2)) {
+                continue;
+            }
+            return value1.hashCode() - value2.hashCode();
+        }
+        return 0;
     }
 }

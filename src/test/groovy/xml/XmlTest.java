@@ -46,38 +46,19 @@
 
 package groovy.xml;
 
-import java.io.IOException;
+import groovy.lang.GroovyObject;
 
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
 import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TestXmlSupport extends TestSupport {
+public class XmlTest extends TestSupport {
 
-    protected void dump(Node node) throws IOException {
-        XMLSerializer printer = createSerializer();
-        if (node instanceof Document) {
-            printer.serialize((Document) node);
-        }
-        else {
-            printer.serialize((Element) node);
-        }
-        System.out.println();
-    }
-
-    protected XMLSerializer createSerializer() {
-        return new XMLSerializer(System.out, new OutputFormat());
-    }
-
-    protected SAXBuilder createSAXBuilder() throws IOException {
-        return new SAXBuilder(createSerializer().asContentHandler());
+    public void testTree() throws Exception {
+        GroovyObject object = compile("src/test/groovy/xml/MarkupTest.groovy");
+        object.invokeMethod("testTree", null);
     }
 }

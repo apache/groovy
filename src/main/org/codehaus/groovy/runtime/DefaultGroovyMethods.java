@@ -317,6 +317,27 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    /**
+     * Concatenates all of the items of the collection together with the
+     * given string as a separator
+     */
+    public static String join(Collection self, String separator) {
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (first) {
+                first = false;
+            }
+            else {
+                buffer.append(separator);
+            }
+            buffer.append(InvokerHelper.toString(value));
+        }
+        return buffer.toString();
+    }
+
+
 
     /**
      * Selects the maximum value found in the collection
@@ -526,6 +547,12 @@ public class DefaultGroovyMethods {
 
     public static boolean isFloatingPoint(Number number) {
         return number instanceof Float || number instanceof Double;
+    }
+
+    public static void times(Number self, Closure closure) {
+        for (int i = 0, size = self.intValue(); i < size; i++ ) {
+            closure.call(new Integer(i));
+        }
     }
 
     // File based methods

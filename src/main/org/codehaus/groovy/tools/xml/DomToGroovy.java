@@ -45,11 +45,21 @@
  */
 package org.codehaus.groovy.tools.xml;
 
+import groovy.util.IndentPrinter;
+
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Comment;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.ProcessingInstruction;
+import org.w3c.dom.Text;
 
 /**
  * A SAX handler for turning XML into Groovy scripts
@@ -59,12 +69,16 @@ import org.w3c.dom.*;
  */
 public class DomToGroovy {
 
-    private PrintWriter out;
-    private int indent;
+    private IndentPrinter out;
 
     public DomToGroovy(PrintWriter out) {
+        this(new IndentPrinter(out));
+    }
+
+    public DomToGroovy(IndentPrinter out) {
         this.out = out;
     }
+
 
     public void print(Document document) {
         printChildren(document, new HashMap());
@@ -127,7 +141,7 @@ public class DomToGroovy {
             }
             else if (mixedContent(list)) {
                 println(" [");
-                ++indent;
+                out.incrementIndent();
                 boolean first = true;
                 int idx = 0;
                 for (node = element.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -135,15 +149,15 @@ public class DomToGroovy {
 
                     print(node, namespaces, useComma);
                 }
-                --indent;
+                out.decrementIndent();
                 printIndent();
                 printEnd("]", endWithComma);
             }
             else {
                 println(" {");
-                ++indent;
+                out.incrementIndent();
                 printChildren(element, namespaces);
-                --indent;
+                out.decrementIndent();
                 printIndent();
                 printEnd("}", endWithComma);
             }
@@ -317,17 +331,13 @@ public class DomToGroovy {
     }
 
     protected void println(String text) {
-        out.print(text);
-        out.println();
-    }
+        out.println(text);    }
 
     protected void print(String text) {
         out.print(text);
     }
 
     protected void printIndent() {
-        for (int i = 0; i < indent; i++) {
-            out.print("    ");
-        }
+        out.printIndent();
     }
 }

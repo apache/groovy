@@ -43,41 +43,56 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package groovy.util;
 
-package groovy.xml;
-
-import java.io.IOException;
-
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
+ * A helper class for creating nested trees of Node objects for 
+ * handling arbitrary data
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TestXmlSupport extends TestSupport {
+public class NodeBuilder extends BuilderSupport {
 
-    protected void dump(Node node) throws IOException {
-        XMLSerializer printer = createSerializer();
-        if (node instanceof Document) {
-            printer.serialize((Document) node);
+    public static NodeBuilder newInstance() {
+        return new NodeBuilder();
+    }
+
+    protected void setParent(Object parent, Object child) {
+        Node current = (Node) parent;
+        Node node = (Node) child;
+
+        // lets add it to the parents children
+        Object parentValue = current.value();
+        List parentList = null;
+        if (parentValue instanceof List) {
+            parentList = (List) parentValue;
         }
         else {
-            printer.serialize((Element) node);
+            parentList = new ArrayList();
+            parentList.add(parentValue);
+            current.setValue(parentList);
         }
-        System.out.println();
+        parentList.add(node);
     }
 
-    protected XMLSerializer createSerializer() {
-        return new XMLSerializer(System.out, new OutputFormat());
+    protected Object createNode(Object name) {
+        return new Node(getCurrentNode(), name, new ArrayList());
     }
 
-    protected SAXBuilder createSAXBuilder() throws IOException {
-        return new SAXBuilder(createSerializer().asContentHandler());
+    protected Object createNode(Object name, Object value) {
+        return new Node(getCurrentNode(), name, value);
+    }
+
+    protected Object createNode(Object name, Map attributes) {
+        return new Node(getCurrentNode(), name, attributes, new ArrayList());
+    }
+
+    protected Node getCurrentNode() {
+        return (Node) getCurrent();
     }
 }

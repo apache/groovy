@@ -167,11 +167,13 @@ public class DumpClass {
         buffer.append(x);
         InvokerHelper.assertFailed(buffer, "message");
     }
-    
+
     public void setLocalVar() {
         Object x = null;
         Object i = null;
-        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createRange(new Integer(0), new Integer(10))); iter.hasNext(); ) {
+        for (Iterator iter = InvokerHelper.asIterator(InvokerHelper.createRange(new Integer(0), new Integer(10)));
+            iter.hasNext();
+            ) {
             i = iter.next();
             x = i;
         }
@@ -186,16 +188,15 @@ public class DumpClass {
         }
     }
 
-    
     public void doPlus() {
         Object z = "abcd";
         x = InvokerHelper.invokeMethod(z, "length", null);
     }
-    
+
     public void setBoolean() {
         x = Boolean.TRUE;
     }
-    
+
     public void tryCatch() {
         try {
             InvokerHelper.invokeMethod(this, "testGroovyAssertion", null);
@@ -208,12 +209,12 @@ public class DumpClass {
         }
         InvokerHelper.invokeMethod(this, "afterTryCatch", null);
     }
-    
+
     public void doPrintln() {
         Object value = InvokerHelper.getProperty(System.class, "out");
         InvokerHelper.invokeMethod(value, "println", "Hello");
     }
-    
+
     public void doClosure() {
         x = new Closure(this) {
             public Object call(Object arguments) {
@@ -229,7 +230,7 @@ public class DumpClass {
             }
         };
     }
-    
+
     public Object ifDemo() {
         if (InvokerHelper.compareEqual(bar, "abc")) {
             return Boolean.TRUE;
@@ -239,5 +240,16 @@ public class DumpClass {
         }
     }
 
+    public void testWhile() {
+        while (InvokerHelper.compareEqual(bar, "abc")) {
+            System.out.println("Hello");
+        }
+    }
 
+    public void testDoWhile() {
+        do {
+            System.out.println("Hello");
+        }
+        while (InvokerHelper.compareEqual(bar, "abc"));
+    }
 }

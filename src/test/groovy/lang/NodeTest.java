@@ -47,6 +47,8 @@
 package groovy.lang;
 
 
+import groovy.util.Node;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

@@ -735,7 +735,7 @@ public class ASTBuilder
                 CSTNode keyRoot = paramRoots[ i ].getChild( 0 );
                 CSTNode valueRoot = paramRoots[ i ].getChild( 1 );
                 
-                System.err.println( "param: " + paramRoots[i] );
+                //System.err.println( "param: " + paramRoots[i] );
                 
                 Expression keyExpr   = new ConstantExpression( keyRoot.getToken().getText() );
                 Expression valueExpr = expression( valueRoot );
@@ -758,7 +758,7 @@ public class ASTBuilder
             }
         }
 
-        System.err.println( "paramList: " + paramList );
+        // System.err.println( "paramList: " + paramList );
 
         return paramList;
     }
