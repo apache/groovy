@@ -146,9 +146,9 @@ In addition there's 2 new methods for doing boolean logic on some collection...
  returns true if any item match the closure predicate
 
 <source>
-  groovy&gt; [1, 2, 3].every { it &gt; 2 }
+  groovy&gt; [1, 2, 3].any { it &gt; 2 }
   true
-  groovy&gt; [1, 2, 3].every { item | item &gt; 3 }
+  groovy&gt; [1, 2, 3].any { item | item &gt; 3 }
   false
 </source>
 
