@@ -15,4 +15,8 @@ class TestBase {
         this.foo = aFoo
     }
     */
+    
+    doSomething() {
+    	"TestBase"
+    }
 }
