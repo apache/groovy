@@ -6,12 +6,33 @@
  */
 
 import java.io.*
+import java.util.*
 
 class ProcessTest extends GroovyTestCase {
     property myProcess
     
     void setUp() {
         myProcess = new MockProcess()
+    }
+    
+    void testProcessAppendBytes() {
+        myBytes = "mooky".getBytes()
+                  
+        myProcess << myBytes
+                  
+        result = myProcess.outputStream.toByteArray()          
+        assert result != null
+        assert Arrays.equals(myBytes,result)
+    }
+    void testProcessAppendTwoByteArrays() {
+        myBytes1 = "foo".getBytes()
+        myBytes2 = "bar".getBytes()
+                  
+        myProcess << myBytes1 << myBytes2
+                  
+        result = myProcess.outputStream.toByteArray()
+        assert result != null
+        assert result.size() == myBytes1.size() + myBytes2.size()          
     }
     
     void testProcessAppend() {
