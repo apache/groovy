@@ -1523,7 +1523,7 @@ statement
 // removed as it conflicts with the 3 alternations of 'statement': compoundStatement, expressionStatement, a labeled statement
 // todo: suggest fixing 'expressionStatement' to correctly accept the SL token '<<'
         /// Patch for x = []; x << 5 
-//        | conditionalExpression
+        | conditionalExpression
 	
 	// NOTE: some alternations have been moved to 'branchExpression'
 	;
