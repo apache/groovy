@@ -56,7 +56,7 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Binding {
+public class Binding extends GroovyObjectSupport {
     private Map variables = new HashMap();
     
     public Binding() {
@@ -71,16 +71,51 @@ public class Binding {
         setVariable("args", args);
     }
     
+    /**
+     * @param name the name of the variable to lookup
+     * @return the variable value
+     */
     public Object getVariable(String name) {
         return variables.get(name);
     }
     
+    /**
+     * Sets the value of the given variable
+     * @param name the name of the variable to set
+     * @param value the new value for the given variable
+     */
     public void setVariable(String name, Object value) {
         variables.put(name, value);
     }
     
     public Map getVariables() {
         return variables;
+    }
+
+    /**
+     * Overloaded to make variables appear as bean properties or via the subscript operator
+     */
+    public Object getProperty(String property) {
+        /** @todo we should check if we have the property with the metaClass instead of try/catch  */
+        try {
+            return super.getProperty(property);
+        }
+        catch (MissingPropertyException e) {
+            return getVariable(property);
+        }
+    }
+
+    /**
+     * Overloaded to make variables appear as bean properties or via the subscript operator
+     */
+    public void setProperty(String property, Object newValue) {
+        /** @todo we should check if we have the property with the metaClass instead of try/catch  */
+        try {
+            super.setProperty(property, newValue);
+        }
+        catch (MissingPropertyException e) {
+            setVariable(property, newValue);
+        }
     }
 
 }
