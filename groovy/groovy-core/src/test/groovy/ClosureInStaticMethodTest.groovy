@@ -15,7 +15,7 @@ class ClosureInStaticMethodTest extends GroovyTestCase {
     }
     
     static closureInStaticMethod() {
-        { println(it) }
+        return { println(it) }
     }
 
     static methodClosureInStaticMethod() {

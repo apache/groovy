@@ -48,6 +48,7 @@ import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -224,15 +225,15 @@ public class ASTBuilderTest extends TestParserSupport {
     }
 
     public void testClosureWithJustIdentifierBug() throws Exception {
-        ModuleNode module = parse("class Foo { void testMethod() { {a} } }", "Dummy.groovy");
+        ModuleNode module = parse("class Foo { void testMethod() { return {a} } }", "Dummy.groovy");
         BlockStatement statement = getCode(module, "testMethod");
 
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
 
         System.out.println(statement.getStatements());
 
-        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
-        Expression exp = exprStmt.getExpression();
+        ReturnStatement returnStmt = (ReturnStatement)statement.getStatements().get(0);
+        Expression exp = returnStmt.getExpression();
 
         System.out.println("expr: " + exp);
     }

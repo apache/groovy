@@ -462,14 +462,21 @@ public class ASTBuilder {
         return methodNode;
     }
 
-    protected Parameter[] parameters(CSTNode[] paramRoots) {
+    protected Parameter[] parameters(CSTNode[] paramRoots) throws ParserException {
         Parameter[] parameters = new Parameter[paramRoots.length];
 
         for (int i = 0; i < paramRoots.length; ++i) {
             String identifier = paramRoots[i].getChild(1).getToken().getText();
-            String type = resolvedQualifiedName(paramRoots[i].getChild(0));
+            String type       = resolvedQualifiedName(paramRoots[i].getChild(0));
 
-            parameters[i] = new Parameter(type, identifier);
+            CSTNode defaultNode = paramRoots[i].getChild(2);
+            if( defaultNode == null || defaultNode.isEmpty() ) {
+                parameters[i] = new Parameter( type, identifier );
+            }
+            else {
+                Expression defaultExpression = expression( defaultNode );
+                parameters[i] = new Parameter( type, identifier, defaultExpression );
+            }
         }
 
         return parameters;
@@ -505,9 +512,11 @@ public class ASTBuilder {
 
         for (int i = startIndex; i < statementRoots.length; ++i) {
             CSTNode statementRoot = statementRoots[i];
-            Statement statement = statement(statementRoot);
-            statementBlock.addStatement(statement);
-            statement.setCSTNode(statementRoot);
+            if( statementRoot.getToken() != null ) {
+                Statement statement = statement(statementRoot);
+                statementBlock.addStatement(statement);
+                statement.setCSTNode(statementRoot);
+            }
         }
 
         return statementBlock;
@@ -516,7 +525,10 @@ public class ASTBuilder {
     protected Statement statement(CSTNode statementRoot) throws ParserException {
         Statement statement = null;
 
-        switch (statementRoot.getToken().getType()) {
+        //
+        // Convert the statement
+
+        switch (statementRoot.getToken().getInterpretation()) {
             case (Token.KEYWORD_ASSERT) :
                 {
                     statement = assertStatement(statementRoot);
@@ -527,16 +539,16 @@ public class ASTBuilder {
                     statement = forStatement(statementRoot);
                     break;
                 }
-           case (Token.KEYWORD_WHILE) :
-           {
-               statement = whileStatement(statementRoot);
-               break;
-           }
-          case (Token.KEYWORD_DO) :
-          {
-              statement = doWhileStatement(statementRoot);
-              break;
-          }
+            case (Token.KEYWORD_WHILE) :
+                {
+                    statement = whileStatement(statementRoot);
+                    break;
+                }
+            case (Token.KEYWORD_DO) :
+                {
+                    statement = doWhileStatement(statementRoot);
+                    break;
+                }
             case (Token.KEYWORD_TRY) :
                 {
                     statement = tryStatement(statementRoot);
@@ -575,6 +587,23 @@ public class ASTBuilder {
             case (Token.KEYWORD_SYNCHRONIZED) :
                 {
                     statement = synchronizedStatement(statementRoot);
+                    break;
+                }
+            case (Token.SYNTH_BLOCK) :
+            case (Token.LEFT_CURLY_BRACE) :
+                {
+                    statement = statementBlock(statementRoot);
+                    break;
+                }
+            case (Token.SYNTH_CLOSURE) :
+                {
+                    statement = expressionStatement(statementRoot);
+                    break;
+                }
+            case (Token.SYNTH_LABEL) :
+                { 
+                    statement = statement(statementRoot.getChild(1));
+                    statement.setStatementLabel( statementRoot.getChild(0).getToken().getText() );
                     break;
                 }
             default :
@@ -701,7 +730,15 @@ public class ASTBuilder {
     }
 
     protected ReturnStatement returnStatement(CSTNode statementRoot) throws ParserException {
-        return new ReturnStatement(expression(statementRoot.getChild(0)));
+        if( statementRoot.children() > 0 ) {
+            return new ReturnStatement(expression(statementRoot.getChild(0)));
+        }
+        else {
+            //
+            // THIS IS A HACK!!!!  We need an EmptyExpression for void returns.
+
+            return new ReturnStatement(ConstantExpression.NULL);
+        }
     }
 
     protected ForStatement forStatement(CSTNode statementRoot) throws ParserException {

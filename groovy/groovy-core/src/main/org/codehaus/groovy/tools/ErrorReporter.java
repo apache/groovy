@@ -53,6 +53,7 @@ import org.codehaus.groovy.tools.ExceptionCollector;
 import org.codehaus.groovy.tools.CompilationFailuresException;
 
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.FileReader;
 import java.io.StringReader;
 import java.io.BufferedReader;
@@ -77,7 +78,7 @@ public class ErrorReporter
                                             //  - use setSource() to set!
 
     private Map         sources  = null;    // If set, a map of String sources, keyed on description
-    private PrintStream stream   = null;    // The stream to which to output
+    private Object      output   = null;    // The stream/writer to which to output
 
 
    /**
@@ -126,8 +127,30 @@ public class ErrorReporter
 
     public void write( PrintStream stream )
     {
-        this.stream = stream;
+        this.output = stream;
+        dispatch();
+        stream.flush();
+    }
 
+
+   /**
+    *  Writes the error to the specified <code>PrintWriter</code>.
+    */
+
+    public void write( PrintWriter writer )
+    {
+        this.output = writer;
+        dispatch();
+        writer.flush();
+    }
+
+
+   /**
+    *  Runs the report once all initialization is complete.
+    */
+
+    protected void dispatch()
+    {
         if( base instanceof CompilationFailuresException )
         {
             report( (CompilationFailuresException)base, false );
@@ -135,6 +158,10 @@ public class ErrorReporter
         else if( base instanceof ExceptionCollector )
         {
             report( (ExceptionCollector)base, false );
+        }
+        else if( base instanceof CompilerBugException )
+        {
+            report( (CompilerBugException)base, false );
         }
         else
         {
@@ -220,6 +247,18 @@ public class ErrorReporter
 
 
    /**
+    *  For CompilerBugException.
+    */
+
+    protected void report( CompilerBugException e, boolean child )
+    {
+        println( ">>> caught a bug:\n>>> " + e.getMessage() );
+        stacktrace( e.getUnderlyingException(), true );
+    }
+
+
+
+   /**
     *  For GroovyException.
     */
 
@@ -253,12 +292,26 @@ public class ErrorReporter
 
     protected void println( String line )
     {
-        stream.println( line );
+        if( output instanceof PrintStream )
+        {
+            ((PrintStream)output).println( line );
+        }
+        else
+        {
+            ((PrintWriter)output).println( line );
+        }
     }
 
     protected void println( StringBuffer line )
     {
-        stream.println( line );
+        if( output instanceof PrintStream )
+        {
+            ((PrintStream)output).println( line );
+        }
+        else
+        {
+            ((PrintWriter)output).println( line );
+        }
     }
 
 
@@ -271,8 +324,15 @@ public class ErrorReporter
     {
         if( debug || always )
         {
-           stream.println( ">>> stacktrace:" );
-           e.printStackTrace( stream );
+            println( ">>> stacktrace:" );
+            if( output instanceof PrintStream )
+            {
+                e.printStackTrace( (PrintStream)output );
+            }
+            else
+            {
+                e.printStackTrace( (PrintWriter)output );
+            }
         }
     }
 

@@ -43,34 +43,26 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast.stmt;
+package org.codehaus.groovy.tools;
 
-import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.GroovyException;
 
-/**
- * Base class for any statement
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class Statement extends ASTNode {
+public class CompilerBugException extends GroovyException {
 
-    private String statementLabel;
+    private String    source;
+    private String    phase;
+    private Throwable caught;
 
-    public Statement() {
-        statementLabel = null;
+    public CompilerBugException( String source, String phase, Throwable caught ) {
+        super( "uncaught exception during " + phase + " phase on [" + source + "]: " + caught.toString() );
+
+        this.source = source;
+        this.phase  = phase;
+        this.caught = caught;
     }
 
-    public String getStatementLabel() {
-        return statementLabel;
+    public Throwable getUnderlyingException() {
+        return this.caught;
     }
 
-    public void setStatementLabel( String label ) {
-        statementLabel = label;
-    }
-
-    public boolean isEmpty() {
-        return false;
-    }
-    
 }
