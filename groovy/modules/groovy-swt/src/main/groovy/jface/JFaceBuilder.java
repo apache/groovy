@@ -11,6 +11,7 @@ import groovy.jface.factory.PreferencesDialogFactory;
 import groovy.jface.factory.PreferencesFieldEditorFactory;
 import groovy.jface.factory.PreferencesPageFactory;
 import groovy.jface.factory.SelectionChangedListenerFactory;
+import groovy.jface.factory.ToolBarManagerFactory;
 import groovy.jface.factory.ViewerFactory;
 import groovy.jface.factory.WindowFactory;
 import groovy.jface.factory.WizardDialogFactory;
@@ -59,6 +60,7 @@ public class JFaceBuilder extends SwtBuilder {
 
         // ContributionManager
         registerFactory("menuManager", new MenuManagerFactory());
+        registerFactory("toolBarManager", new ToolBarManagerFactory());
 
         // Action tags
         registerFactory("action", new ContributionManagerFactory(ActionImpl.class));

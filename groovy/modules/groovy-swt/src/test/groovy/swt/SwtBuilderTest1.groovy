@@ -100,6 +100,8 @@ class SwtBuilderTest1 {
 				statusTextListener()
 			}	
 			form(){
+				toolBarManager()
+				
 				formButton()
 				formComposite()
 				formCompositeSeparator()

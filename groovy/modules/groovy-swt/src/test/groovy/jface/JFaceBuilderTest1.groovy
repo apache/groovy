@@ -8,6 +8,8 @@ class JFaceBuilderTest1 {
         jface = new JFaceBuilder()
                
         jface.applicationWindow() {
+        	toolBarManager()
+        
         	// Viewers
         	tableViewer() {
         		doubleClickListener()

@@ -14,16 +14,15 @@ import org.eclipse.swt.widgets.Event;
  * @version $Revision$
  */
 public class ActionImpl extends Action implements ClosureSupport {
+
     private Closure closure;
-    private Event event;
 
     public void runWithEvent(Event event) {
         if (closure == null) {
-            throw new NullPointerException(
-            "No closure has been configured for this Listener");
+            throw new NullPointerException("No closure has been configured for this Listener");
         }
-        this.event = event;
-        closure.call(this);
+
+        closure.call(event);
     }
 
     public Closure getClosure() {
@@ -34,7 +33,4 @@ public class ActionImpl extends Action implements ClosureSupport {
         this.closure = closure;
     }
 
-    public Event getEvent() {
-        return event;
-    }
 }
