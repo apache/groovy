@@ -54,6 +54,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class ConstantExpression extends Expression {
+    public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression NULL = new ConstantExpression(null);
     public static final ConstantExpression TRUE = new ConstantExpression(Boolean.TRUE);
     public static final ConstantExpression FALSE = new ConstantExpression(Boolean.FALSE);

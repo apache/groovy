@@ -127,4 +127,20 @@ public interface TokenStream
 
     void restore();
 
+
+    /**
+     * Returns true if the stream is out of tokens, possibly
+     * ignoring trailing whitespace.
+     */
+
+    boolean atEnd( boolean ignoringWhitespace );
+
+
+
+    /**
+     * Returns true if the stream is out of tokens.  
+     */
+
+    boolean atEnd( );
+
 }

@@ -747,6 +747,13 @@ public class Lexer {
 
                         StringBuffer stringLiteral = new StringBuffer();
 
+                        boolean tripleQuoted = false;
+                        if( la() == '"' && la(2) == '"' ) {
+                            tripleQuoted = true;
+                            consume();
+                            consume();
+                        }
+
                         LITERAL_LOOP : while (true) {
                             c = la();
 
@@ -788,8 +795,20 @@ public class Lexer {
                                     }
                                 case ('"') :
                                     {
-                                        consume();
-                                        break LITERAL_LOOP;
+                                        if( !tripleQuoted ) {
+                                            consume();
+                                            break LITERAL_LOOP;
+                                        }
+                                        else {
+                                            if( la(2) == '"' && la(3) == '"' ) {
+                                                consume(); consume(); consume();
+                                                break LITERAL_LOOP;
+                                            }
+                                            else {
+                                                stringLiteral.append(consume());
+                                                break LITERAL_SWITCH;
+                                            }
+                                        }
                                     }
                                 case (char) - 1 :
                                     {

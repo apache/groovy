@@ -152,7 +152,7 @@ public class Compiler {
      *  exceptions are bugs that need to be caught and encapsulated.
      */
 
-    public GroovyClass[] compile(CharStream source) throws Exception {
+    public GroovyClass[] compile(CharStream source) throws CompilationFailuresException, CompilerBugException {
         return compile(new CharStream[] { source });
     }
 
@@ -162,7 +162,7 @@ public class Compiler {
      *  on error.  Other exceptions are bugs that need to be caught and encapsulated.
      */
 
-    public GroovyClass[] compile(CharStream[] sources) throws GroovyException {
+    public GroovyClass[] compile(CharStream[] sources) throws CompilationFailuresException, CompilerBugException {
         CompilationFailuresException failures = new CompilationFailuresException();
 
         //

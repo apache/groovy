@@ -266,6 +266,7 @@ public class Token {
     public static final int KEYWORD_DEF          = 560;
     public static final int KEYWORD_TRANSIENT    = 570;
     public static final int KEYWORD_VOLATILE     = 571;
+    public static final int KEYWORD_IN           = 572;
 
     public static final int SYNTH_METHOD                = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
@@ -311,6 +312,7 @@ public class Token {
         addKeyword( "for"         , KEYWORD_FOR          );
         addKeyword( "goto"        , KEYWORD_GOTO         );
         addKeyword( "if"          , KEYWORD_IF           );
+//        addKeyword( "in"          , KEYWORD_IN           );
         addKeyword( "implements"  , KEYWORD_IMPLEMENTS   );
         addKeyword( "import"      , KEYWORD_IMPORT       );
         addKeyword( "instanceof"  , KEYWORD_INSTANCEOF   );
