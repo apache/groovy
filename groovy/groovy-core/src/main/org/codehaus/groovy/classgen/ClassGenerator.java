@@ -55,6 +55,7 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
+import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -63,6 +64,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.BytecodeExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
@@ -202,7 +204,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     //private PropertyNode propertyNode;
     private BlockScope scope;
     private BytecodeHelper helper = new BytecodeHelper(null);
-    
+
     public ClassGenerator(
         GeneratorContext context,
         ClassVisitor classVisitor,
@@ -271,7 +273,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         String methodType = helper.getMethodDescriptor("void", node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), "<init>", methodType, null, null);
         helper = new BytecodeHelper(cv);
-        
+
         resetVariableStack(node.getParameters());
 
         Statement code = node.getCode();
@@ -297,7 +299,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         String methodType = helper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
         helper = new BytecodeHelper(cv);
-        
+
         resetVariableStack(node.getParameters());
 
         findMutableVariables(node);
@@ -369,14 +371,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitForLoop(ForStatement loop) {
         onLineNumber(loop);
 
+        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", true).getIndex();
+
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
 
-        int iteratorIdx = defineVariable(createVariableName("iterator"), "java.util.Iterator", false).getIndex();
+        final int iteratorIdx = defineVariable(createVariableName("iterator"), "java.util.Iterator", false).getIndex();
         cv.visitVarInsn(ASTORE, iteratorIdx);
-
-        int iIdx = defineVariable(loop.getVariable(), "java.lang.Object", false).getIndex();
 
         pushBlockScope();
 
@@ -385,11 +387,15 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Label label2 = new Label();
         cv.visitLabel(label2);
 
-        cv.visitVarInsn(ALOAD, iteratorIdx);
+        BytecodeExpression expression = new BytecodeExpression() {
+            public void visit(GroovyCodeVisitor visitor) {
+                cv.visitVarInsn(ALOAD, iteratorIdx);
 
-        iteratorNextMethod.call(cv);
-
-        cv.visitVarInsn(ASTORE, iIdx);
+                iteratorNextMethod.call(cv);
+            }
+        };
+        evaluateEqual(
+            new BinaryExpression(new VariableExpression(loop.getVariable()), Token.equal(-1, -1), expression));
 
         loop.getLoopBlock().visit(this);
 
@@ -706,11 +712,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         statement.getExpression().visit(this);
 
         pushBlockScope();
-        
+
         int switchVariableIndex = defineVariable(createVariableName("switch"), "java.lang.Object").getIndex();
         cv.visitVarInsn(ASTORE, switchVariableIndex);
 
-        
         List caseStatements = statement.getCaseStatements();
         int caseCount = caseStatements.size();
         Label[] labels = new Label[caseCount + 1];
@@ -727,7 +732,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         statement.getDefaultStatement().visit(this);
 
         cv.visitLabel(scope.getBreakLabel());
-        
+
         popScope();
     }
 
@@ -741,7 +746,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Label nextLabel) {
 
         onLineNumber(statement);
-        
+
         cv.visitVarInsn(ALOAD, switchVariableIndex);
         statement.getExpression().visit(this);
 
@@ -762,7 +767,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         cv.visitLabel(l0);
     }
-    
 
     public void visitBreakStatement(BreakStatement statement) {
         onLineNumber(statement);
@@ -1419,7 +1423,11 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         // field
         if (!isStatic) {
             cv.visitVarInsn(ALOAD, 0);
-            cv.visitFieldInsn(GETFIELD, internalClassName, "owner", helper.getTypeDescription(outerClassNode.getName()));
+            cv.visitFieldInsn(
+                GETFIELD,
+                internalClassName,
+                "owner",
+                helper.getTypeDescription(outerClassNode.getName()));
         }
 
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
@@ -1634,7 +1642,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     null,
                     null);
             helper = new BytecodeHelper(cv);
-            
+
             Label l0 = new Label();
             cv.visitLabel(l0);
             cv.visitVarInsn(ALOAD, 0);
