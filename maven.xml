@@ -74,7 +74,7 @@
   </goal>
   
   <postGoal name="dist:prepare-bin-filesystem">
-    <attainGoal name="groovy:make-install"/>
+    <attainGoal name="groovy:make-full-install"/>
     <echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>
     <copy toDir="${maven.dist.bin.assembly.dir}">
       <fileset dir="${groovy.install.staging.dest}">
@@ -384,7 +384,9 @@
         <include name="*"/>
       </fileset>
     </chmod>
+  </goal>
 
+  <goal name="groovy:make-full-install" prereqs="groovy:make-install">
     <!-- lets copy xmlrpc into the release -->
     <attainGoal name="modules"/>
     <!--
