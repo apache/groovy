@@ -1,1 +1,0 @@
-swt 3.0 libs are currently not on ibiblio.
