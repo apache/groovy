@@ -156,7 +156,6 @@ public class MetaClass {
         }
 
         Class theClass = object.getClass();
-
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
             Method method = chooseMethod(methods, arguments, argumentList);
@@ -165,6 +164,7 @@ public class MetaClass {
             }
         }
 
+        // lets see if there's a new static method we've added in groovy-land to this class
         List staticMethods = getStaticMethods(methodName);
         List staticArgumentList = new ArrayList(argumentList.size() + 1);
         staticArgumentList.add(object);
@@ -174,7 +174,7 @@ public class MetaClass {
             method = findStaticMethod(methodName, staticArgumentList);
         }
         if (method != null) {
-            return doMethodInvoke(null, method, arguments, staticArgumentList);
+            return doMethodInvoke(null, method, staticArgumentList.toArray());
         }
 
         throw new InvokerException("Could not find matching method called: " + methodName);
@@ -201,14 +201,14 @@ public class MetaClass {
             if (method == null) {
                 throw new InvokerException("Cannot read property: " + property);
             }
-            return doMethodInvoke(method, object, EMPTY_ARRAY);
+            return doMethodInvoke(object, method, EMPTY_ARRAY);
         }
 
         if (genericGetMethod != null) {
             Object[] arguments = { property };
-            Object answer = doMethodInvoke(genericGetMethod, object, arguments);
+            Object answer = doMethodInvoke(object, genericGetMethod, arguments);
             if (answer != null) {
-            return answer;
+                return answer;
             }
         }
 
@@ -244,13 +244,13 @@ public class MetaClass {
                 throw new InvokerException("Cannot set read-only property: " + property);
             }
             Object[] arguments = { newValue };
-            doMethodInvoke(method, object, arguments);
+            doMethodInvoke(object, method, arguments);
             return;
         }
 
         if (genericSetMethod != null) {
             Object[] arguments = { property, newValue };
-            doMethodInvoke(genericSetMethod, object, arguments);
+            doMethodInvoke(object, genericSetMethod, arguments);
             return;
         }
 
@@ -301,12 +301,12 @@ public class MetaClass {
             }
         }
 
-        return doMethodInvoke(method, object, argumentArray);
+        return doMethodInvoke(object, method, argumentArray);
     }
 
-    protected Object doMethodInvoke(Method method, Object object, Object[] argumentArray) {
-        //        System.out.println("Evaluating method: " + method);
-        //        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+    protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
+//        System.out.println("Evaluating method: " + method);
+//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
 
         try {
             return method.invoke(object, argumentArray);

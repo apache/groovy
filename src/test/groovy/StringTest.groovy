@@ -4,15 +4,18 @@ import org.codehaus.groovy.GroovyTestCase;
 
 class StringTest extends GroovyTestCase {
 
-	property x;
-	
     void testString() {
-        z = "abcd";
-        x = z.toString();
-        
-        /*
         s = "abcd";
-        l = s.length();
+        assert s.length() := 4;
+        assert 4 := s.length();
+        
+        // test polymorphic size() method like collections
+        assert s.size() := 4;
+        
+        /** @todo
+        s = s + "efg" + "hijk";
+        
+        assert s.size() == 11;
         */
     }
 

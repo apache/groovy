@@ -143,6 +143,11 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("contains method", Boolean.TRUE, value);
     }
     
+    public void testNewMethods() throws Throwable {
+        Object value = invoke("hello", "size", null);
+        assertEquals("size of string", new Integer(5), value);
+    }
+    
     public void testInvokeUnknownMethod() throws Throwable {
         try {
             Object value = invoke(this, "unknownMethod", "abc");

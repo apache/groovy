@@ -51,6 +51,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -65,6 +66,7 @@ import org.codehaus.groovy.ast.MethodCallExpression;
 import org.objectweb.asm.Constants;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.DumpClassVisitor;
+import org.objectweb.asm.util.PrintClassVisitor;
 
 /**
  * Base class for test cases
@@ -79,7 +81,8 @@ public class TestSupport extends GroovyTestCase implements Constants {
     
     protected GroovyClassLoader loader = new GroovyClassLoader();
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-    protected ClassGenerator checker = new ClassGenerator(new CheckClassAdapter(dumpVisitor), loader, null);
+    protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
+    protected ClassGenerator checker = new ClassGenerator(new CheckClassAdapter(invisibleDumpVisitor), loader, null);
     protected ClassGenerator dumper = new ClassGenerator(dumpVisitor, loader, null);
 
     protected Class loadClass(ClassNode classNode) {
