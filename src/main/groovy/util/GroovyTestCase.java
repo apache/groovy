@@ -230,13 +230,23 @@ public class GroovyTestCase extends TestCase {
         }
         catch (Exception e) {
             failed = true;
-            log.info("Worked: caught expected exception: " + e);
-            //log.log(Level.INFO, "Worked: caught expected exception: " + e, e);
         }
         assertTrue("Closure " + code + " should have failed", failed);
     }
 
-
+    protected void shouldFail(Class clazz, Closure code) {
+        boolean failed = false;
+        try {
+            code.call();
+        }
+        catch (Exception e) {
+            if (clazz.isInstance(e)) {
+            		failed = true;
+            }
+        }
+        assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), failed);
+    }
+    
 
     /**
      *  Returns a copy of a string in which all EOLs are \n.

@@ -33,12 +33,14 @@
  */
  package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -82,7 +84,7 @@ public class GroovyCategorySupport {
      * 
      * @param categoryClass
      */
-    public static void use(Class categoryClass) {
+    private static void use(Class categoryClass) {
         Map properties = getProperties();
         Map methodMaps = getMetaClassMap(properties);
         Object classDefined = methodMaps.get(categoryClass);
@@ -110,12 +112,61 @@ public class GroovyCategorySupport {
         }        
     }
     
+	/**
+	 * @param clazz
+	 * @param closure
+	 */
+	public static void use(Class clazz, Closure closure) {
+		newScope();
+		try {
+			use(clazz);
+			closure.call();
+		} finally {
+			endScope();
+		}
+	}
+
+	/**
+	 * @param classes
+	 * @param closure
+	 */
+	public static void use(List classes, Closure closure) {
+		newScope();
+		try {
+			for (Iterator i = classes.iterator(); i.hasNext(); ) {
+				Class clazz = (Class) i.next();
+				use(clazz);
+			}
+			closure.call();
+		} finally {
+			endScope();
+		}		
+	}
+
     private static ThreadLocal local = new ThreadLocal() {
-        protected Object initialValue() { return new WeakHashMap(); }
+        protected Object initialValue() {
+        		List stack = new ArrayList();
+        		stack.add(Collections.EMPTY_MAP);
+        		return stack;
+        	}
     };
     
+    private static void newScope() {
+        List stack = (List) local.get();
+    		Map properties = new WeakHashMap();
+    		properties.entrySet().addAll(getProperties().entrySet());
+    		stack.add(properties);
+    }
+    
+    private static void endScope() {
+        List stack = (List) local.get();
+    		stack.remove(stack.size() - 1);   		
+    }
+    
     private static Map getProperties() {
-        return (Map) local.get();
+        List stack = (List) local.get();
+        Map properties = (Map) stack.get(stack.size() - 1);
+        return properties;
     }
     
     /**
