@@ -2,7 +2,7 @@
  * @author Guillaume Laforge
  * @version $Revision$
  */
-class GuillamesBug extends GroovyTestCase {
+class GuillaumesBug extends GroovyTestCase {
     
     void testBug() {
         if (true) 
