@@ -51,7 +51,7 @@ class Console extends ConsoleSupport {
                         menuModifier = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()
                         action(
                             name:'Run', 
-                            closure:{ owner.runScript() }, 
+                            closure:{ runScript() }, 
 	                        keyStroke:'ctrl enter',
     	                    acceleratorKey:KeyStroke.getKeyStroke(KeyEvent.VK_R, menuModifier)
                         )
@@ -65,11 +65,11 @@ class Console extends ConsoleSupport {
             }
             splitPane(orientation:JSplitPane.VERTICAL_SPLIT) {
                 scrollPane {
-                    owner.outputArea = textPane(editable:false)
-                    owner.addStylesToDocument(owner.outputArea)
+                    outputArea = textPane(editable:false)
+                    addStylesToDocument(outputArea)
                 }
                 scrollPane {
-                    owner.textArea = textArea()
+                    textArea = textArea()
                 }
             }
         }        
