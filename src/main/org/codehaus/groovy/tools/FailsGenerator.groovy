@@ -33,8 +33,13 @@ class FailsGenerator {
 
     
         dir = new File(dir)
+        if (!dir.isDirectory() throw new RuntimeException("${dir} has to be a directory containg the xml tests reports")
         dir.eachFileRecurse {file::
             if (!file.getName().endsWith(".xml")) return
+            if (!file.getName().indexOf("$")>-1) {
+              println("${file.name) is ignored because it's output for a subclass")
+              return
+            }
             node = new XmlSlurper().parse(file);
             name = node['@name']
             errorVal = Integer.parseInt(node['@errors'])
@@ -70,22 +75,18 @@ class FailsGenerator {
         }
         
         def lineloop = {line,lbreak,func::
-        println "ll "+nr
             while(true) {
                 if (line!=null && lbreak) return line
                 if (line==null) line = readLine(line)
                 if (line==null) return
                 nr= reader.lineNumber;
-                println nr
                 line = func(line)
             }
             return line
         }
         
         def attRead = {el,line::
-        println "ar "+nr
             line = lineloop(line,true) {line::
-            println "ar ll "+nr
                 if (line[0]=="[" || line[-1]=="]") return line
                 int index = line.indexOf('=');
                 if (index==-1) throw new RuntimeException(" ${conf.name}:${nr} = expected somewhere, but got ${line}");
@@ -100,9 +101,7 @@ class FailsGenerator {
         
         
         def fileStart = {::
-        println "fs "+nr
             lineloop(null,false) {line::
-            println "fs ll "+nr
                 if (line[0]!="[" || line[-1]!="]") {
                     throw new RuntimeException("${conf.name}:${nr} filename inside of [] expected, but got ${line}")
                 }
