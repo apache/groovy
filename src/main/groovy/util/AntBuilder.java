@@ -64,6 +64,7 @@ import org.apache.tools.ant.Task;
 import org.apache.tools.ant.TaskAdapter;
 import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.types.DataType;
+import org.codehaus.groovy.ant.FileScanner;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -127,6 +128,10 @@ public class AntBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Map attributes) {
 
+        if (name.equals("fileScanner")) {
+            return new FileScanner(project);
+        }
+        
         String tagName = name.toString();
         Object answer = null;
 

@@ -30,4 +30,27 @@ class AntTest extends GroovyTestCase {
         file = new File("target/AntTest/groovy/util/AntTest.groovy")
         assert file.exists()
     }
+    
+    void testFileIteration() {
+        ant = new AntBuilder()
+        
+        // lets create a scanner of filesets
+        scanner = ant.fileScanner {
+            fileset(dir:"src/test") {
+                include(name:"**/Ant*.groovy")
+            }
+        }
+        
+        // now lets iterate over 
+        found = false
+        for (f in scanner.iterator()) {
+            println("Found file ${f}")
+            
+            found = true
+            
+            assert f instanceof File
+            assert f.name.endsWith(".groovy")
+        }
+        assert found
+    }
 }
