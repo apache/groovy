@@ -78,6 +78,8 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.forms.events.ExpansionListener;
 import org.eclipse.ui.forms.events.HyperlinkListener;
+import org.eclipse.ui.forms.widgets.ColumnLayout;
+import org.eclipse.ui.forms.widgets.ColumnLayoutData;
 import org.eclipse.ui.forms.widgets.TableWrapData;
 import org.eclipse.ui.forms.widgets.TableWrapLayout;
 
@@ -278,6 +280,10 @@ public class SwtBuilder extends BuilderSupport {
                 TableWrapLayout.class));
         registerFactory("tableWrapData", new LayoutDataFactory(
                 TableWrapData.class));
+        registerFactory("columnLayout", new LayoutFactory(
+                ColumnLayout.class));
+        registerFactory("columnLayoutData", new LayoutDataFactory(
+                ColumnLayoutData.class));
 
         // forms listeners
         registerFactory("hyperlinkListener", new ListenerFactory(
