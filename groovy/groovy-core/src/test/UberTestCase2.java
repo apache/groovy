@@ -44,6 +44,8 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.lang.IntRangeTest.class);
         suite.addTestSuite(groovy.lang.MetaClassTest.class);
         suite.addTestSuite(groovy.lang.RangeTest.class);
+
+        // bad test - we need to change to whatever int divide is (method?)
         //todo suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
         suite.addTestSuite(groovy.lang.ScriptPrintTest.class);
         suite.addTestSuite(groovy.lang.ScriptTest.class);
@@ -64,14 +66,16 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.sql.SqlWithBuilderTest.class);
         suite.addTestSuite(groovy.sql.SqlWithTypedResultsTest.class);
         suite.addTestSuite(groovy.sql.SqlRowsTest.class);
-        //todo suite.addTestSuite(groovy.text.TemplateTest.class);
+        suite.addTestSuite(groovy.text.TemplateTest.class);
         suite.addTestSuite(groovy.tree.NodePrinterTest.class);
         suite.addTestSuite(groovy.txn.TransactionTest.class);
-        //todo suite.addTestSuite(groovy.util.EmptyScriptTest.class);
+        suite.addTestSuite(groovy.util.EmptyScriptTest.class);
         suite.addTestSuite(groovy.util.MBeanTest.class);
         suite.addTestSuite(groovy.util.NodeTest.class);
         suite.addTestSuite(groovy.util.XmlParserTest.class);
-        //todo suite.addTestSuite(groovy.util.BuilderSupportTest.class);
+        suite.addTestSuite(groovy.util.BuilderSupportTest.class);
+
+        // no idea - tugs crazy streaming stuff
 
         //todo suite.addTestSuite(groovy.xml.dom.DOMTest.class);
         suite.addTestSuite(groovy.xml.DOMTest.class);

@@ -96,7 +96,8 @@ class BuilderSupportTest extends GroovyTestCase{
     that does nothing but logging how it was called, returning 'x' for each node.
 **/
 class SpoofBuilder extends BuilderSupport{
-    def log = []
+    @Property log = []
+    
     protected void setParent(Object parent, Object child){
         log << "set_parent"
         log << parent

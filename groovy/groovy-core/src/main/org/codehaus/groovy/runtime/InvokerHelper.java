@@ -455,6 +455,14 @@ public class InvokerHelper {
     }
 
     public static Script createScript(Class scriptClass, Binding context) {
+        // for empty scripts
+        if (scriptClass == null) {
+            return new Script() {
+                public Object run() {
+                    return null;
+                }
+            };
+        }
         try {
             final GroovyObject object = (GroovyObject) scriptClass.newInstance();
             Script script = null;
