@@ -1,9 +1,6 @@
 PARSER CHANGES REQUIRED
 =======================
 
-* use ClassExpression rather than VariableExpression for class names
-	e.g. for "System" in code System.out.println
-	
 * implement closures (handle ClosureExpression)
 	try syntax of closure to be...
 		"{" parameterList "|" statements "}"
