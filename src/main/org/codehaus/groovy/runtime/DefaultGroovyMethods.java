@@ -92,11 +92,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.servlet.ServletContext;
-import javax.servlet.ServletRequest;
-import javax.servlet.http.HttpSession;
-import javax.servlet.jsp.PageContext;
-
 /**
  * This class defines all the new groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
@@ -1043,25 +1038,6 @@ public class DefaultGroovyMethods {
             map.put(key, answer);
         }
         return answer;
-    }
-
-    /**
-     * Servlet support
-     */
-    public static Object get(ServletContext context, String key) {
-        return context.getAttribute(key);
-    }
-    
-    public static Object get(HttpSession session, String key) {
-        return session.getAttribute(key);
-    }
-    
-    public static Object get(ServletRequest request, String key) {
-        return request.getAttribute(key);
-    }
-
-    public static Object get(PageContext context, String key) {
-        return context.getAttribute(key);
     }
 
     /**
