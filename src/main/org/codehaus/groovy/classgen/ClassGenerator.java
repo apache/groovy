@@ -1264,6 +1264,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
+        
+        // lets check if we're a fully qualified class name
+        
+        String className = checkForQualifiedClass(expression);
+        if (className != null) { 
+            visitClassExpression(new ClassExpression(className));
+        }
+        else {
         boolean left = leftHandExpression;
         // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
         // rather than ALOAD
@@ -1289,6 +1297,22 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             else {
                 getPropertyMethod.call(cv);
             }
+        }
+        }
+    }
+
+    /**
+     * Checks if the given property expression represents a fully qualified class name
+     * @return the class name or null if the property is not a valid class name
+     */
+    protected String checkForQualifiedClass(PropertyExpression expression) {
+        String text = expression.getText();
+        try {
+            loadClass(text);
+            return text;
+        }
+        catch (Exception e) {
+            return null;
         }
     }
 
