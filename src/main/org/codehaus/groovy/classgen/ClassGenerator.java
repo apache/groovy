@@ -1092,12 +1092,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             visitClassExpression(new ClassExpression(ownerTypeName));
         }
         else {
-            if (isInnerClass()) {
-                visitFieldExpression(new FieldExpression(classNode.getField("owner")));
-            }
-            else {
-                cv.visitVarInsn(ALOAD, 0);
-            }
+            loadThisOrOwner();
         }
         /*
         }
@@ -1112,12 +1107,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 visitClassExpression(new ClassExpression(ownerTypeName));
             }
             else {
-                if (isInnerClass()) {
-                    visitFieldExpression(new FieldExpression(classNode.getField("owner")));
-                }
-                else {
-                    cv.visitVarInsn(ALOAD, 0);
-                }
+                loadThisOrOwner();
             }
         }
 
@@ -1141,6 +1131,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", BytecodeHelper.getMethodDescriptor("void", localVariableParams ));
+    }
+
+    /**
+     * Loads either this object or if we're inside a closure then load the top level owner
+     */
+    protected void loadThisOrOwner() {
+        if (isInnerClass()) {
+            visitFieldExpression(new FieldExpression(classNode.getField("owner")));
+        }
+        else {
+            cv.visitVarInsn(ALOAD, 0);
+        }
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -1606,7 +1608,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         cv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
                         cv.visitInsn(DUP);
 
-                        cv.visitVarInsn(ALOAD, 0);
+                        loadThisOrOwner();
                         cv.visitLdcInsn(name);
 
                         cv.visitMethodInsn(

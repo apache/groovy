@@ -2,6 +2,14 @@ package groovy.script
 
 import groovy.xml.MarkupBuilder;
 
+/** note you could use Expando classes if you don't mind being dynamically typed 
+f = new Expando()
+
+f.author = new Expando(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')
+
+f.entries = [ new Expando(title:'one',summary:'first post'), new Expando(title:'two',summary:'the second post'), new Expando(title:'three', summary:'post the third'), new Expando(title:'four',summary:'the ponderous fourth post') ]
+*/
+
 f = new Feed()
 
 f.author = new Person(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')
@@ -13,7 +21,7 @@ println f.author.name
 
 xml = new MarkupBuilder()
 
-a = xml.atom() {
+atom = xml.atom() {
   title("Ted Leung off the air")
   link("http://www.sauria.com/noblog")
   author() {
@@ -23,16 +31,15 @@ a = xml.atom() {
       email(f.author.email)
     }
   }
+
   for (e in f.entries) {
     entry() {
-    /*
-      title(e.getTitle())
       title(e.title)
       summary(e.summary)
-      */
     }
   }
 }
+
 
 class Feed {
     String title
