@@ -56,6 +56,7 @@
 
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
+    <attainGoal name="faq"/>
   </preGoal>
 
   <postGoal name="test:compile">
