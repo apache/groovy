@@ -155,14 +155,7 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			}
 			
 		} catch (final IOException e) {
-			e.printStackTrace();
-			
-			return null;
-			
-		} catch (final SAXException e) {
-			e.printStackTrace();
-			
-			return null;
+			throw new XMLRPCCallFailureException(e.getMessage(), new Integer(0));
 		}
 	}
 }

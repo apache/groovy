@@ -96,7 +96,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			+ "\u0031\u0032\u0033").getBytes();
 	
 	private interface Emitter {
-		void emit(StringBuffer buffer, Object value) throws SAXException;
+		void emit(StringBuffer buffer, Object value);
 	}
 	
 	private final static Map elements = new HashMap();
@@ -124,7 +124,7 @@ public class XMLRPCMessageProcessor extends MinML {
 		
 		elements.put(String.class,
 				new Emitter() {
-					public void emit(final StringBuffer buffer, final Object string) throws SAXException {
+					public void emit(final StringBuffer buffer, final Object string) {
 						encodeString(buffer.append("<value><string>"), string.toString()).append("</string></value>");
 					}
 				});
@@ -189,9 +189,9 @@ public class XMLRPCMessageProcessor extends MinML {
 				});
 	}
 	
-	public static StringBuffer emit(final StringBuffer buffer, final Object param) throws SAXException {
+	public static StringBuffer emit(final StringBuffer buffer, final Object param) {
 		if (param == null) {
-			throw new SAXException("an XML-RPC data value cannot be null");
+			throw new XMLRPCCallFailureException("an XML-RPC data value cannot be null", new Integer(0));
 		}
 		
 		final Emitter emitter = (Emitter)elements.get(param.getClass());
@@ -218,7 +218,7 @@ public class XMLRPCMessageProcessor extends MinML {
 				final Object name = entry.getKey();
 				
 					if (name == null) {
-						throw new SAXException("the name of a struct element cannot be null");
+						throw new XMLRPCCallFailureException("the name of a struct element cannot be null", new Integer(0));
 					}
 					
 					emit(encodeString(buffer.append("<member><name>"), name.toString()).append("</name>"), entry.getValue()).append("</member>");
@@ -232,7 +232,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			} else if (param instanceof Date) {	 // Date can be subclassed so the initial elements.get() can fail
 				((Emitter)elements.get(Date.class)).emit(buffer, param);
 			} else {
-				throw new SAXException(param.getClass() + " is not a supported XML-RPC data type");
+				throw new XMLRPCCallFailureException(param.getClass() + " is not a supported XML-RPC data type", new Integer(0));
 			}
 		} else {
 			emitter.emit(buffer, param);
@@ -241,7 +241,7 @@ public class XMLRPCMessageProcessor extends MinML {
 		return buffer;
 	}
 	
-	public static StringBuffer encodeString(final StringBuffer buffer, final String string) throws SAXException {
+	public static StringBuffer encodeString(final StringBuffer buffer, final String string) {
 		for (int i = 0; i != string.length(); i++) {
 			final char c = string.charAt(i);
 			
@@ -254,9 +254,10 @@ public class XMLRPCMessageProcessor extends MinML {
 					buffer.append("&amp;");
 				} else if (c > 0xff) {
 					if (c > 0XD800 && !(c >= 0XE000 && c < 0XFFFE)) 
-						throw new SAXException("Can't include character with value 0x"
-											   + Integer.toHexString(c)
-											   + " in a well formed XML document");
+						throw new XMLRPCCallFailureException("Can't include character with value 0x"
+											   				+ Integer.toHexString(c)
+															+ " in a well formed XML document",
+															new Integer(0));
 					
 
 					buffer.append("&#x").append(Integer.toHexString(c)).append(';');
@@ -264,9 +265,10 @@ public class XMLRPCMessageProcessor extends MinML {
 					buffer.append(c);
 				}
 			} else {
-				throw new SAXException("Can't include character with value 0x"
-						               + Integer.toHexString(c)
-						               + " in a well formed XML document");
+				throw new XMLRPCCallFailureException("Can't include character with value 0x"
+						               				+ Integer.toHexString(c)
+													+ " in a well formed XML document",
+													new Integer(0));
 			}
 		}
 		
@@ -296,8 +298,6 @@ public class XMLRPCMessageProcessor extends MinML {
 	public void parseMessage(final InputStream in) throws IOException { 
 		try {
 			parse(new InputStreamReader(in, "ISO-8859-1"));
-		} catch (final XMLRPCFaultException e) {
-			throw new XMLRPCCallFailureException(e.getFaultString(), e.getFaultCode());
 		} catch (final SAXException e) {
 			throw new GroovyRuntimeException("XML error in response from remote system: " + e.getMessage());
 		}
@@ -342,7 +342,7 @@ public class XMLRPCMessageProcessor extends MinML {
 	/* (non-Javadoc)
 	 * @see org.xml.sax.DocumentHandler#endElement(java.lang.String)
 	 */
-	public void endElement(final String name) throws SAXException {
+	public void endElement(final String name) {
 		if ("value".equals(name)) {
 			if (!this.gotValue) {
 				this.params = this.buffer.toString();
@@ -364,7 +364,7 @@ public class XMLRPCMessageProcessor extends MinML {
 				this.params = this.bools[Integer.parseInt(this.buffer.toString())];
 			}
 			catch (final RuntimeException e) {
-				throw new SAXException("bad Boolean value: " + this.buffer.toString());
+				throw new XMLRPCCallFailureException("bad Boolean value: " + this.buffer.toString(), new Integer(0));
 			}
 			
 			this.gotValue = true;
@@ -383,7 +383,7 @@ public class XMLRPCMessageProcessor extends MinML {
 						this.params = this.dateTime1.parse(this.buffer.toString());
 					}
 				} catch (final ParseException e1) {
-					throw new SAXException(e);	// throw the original exception
+					throw new XMLRPCCallFailureException(e.getMessage(), new Integer(0));	// throw the original exception
 				}
 			}
 			this.gotValue = true;
@@ -398,7 +398,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			final int sixBit = (c < 123) ? translateTable[c] : 66;
 
 				if (sixBit < 64) {
-					if (done) throw new SAXException("= character not at end of base64 value");
+					if (done) throw new XMLRPCCallFailureException("= character not at end of base64 value", new Integer(0));
 	
 					tmp = (tmp << 6) | sixBit;
 	
@@ -415,7 +415,7 @@ public class XMLRPCMessageProcessor extends MinML {
 					// RFC 2045 says that I'm allowed to take the presence of 
 					// these characters as evedence of data corruption
 					// So I will
-					throw new SAXException("bad character in base64 value");
+					throw new XMLRPCCallFailureException("bad character in base64 value", new Integer(0));
 				}
 
 				if (byteShift == 0) byteShift = 4;
@@ -424,7 +424,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			try {
 				this.params = this.buffer.toString().getBytes("ISO-8859-1");
 			} catch (UnsupportedEncodingException e) {
-				throw new SAXException("Base 64 decode produced byte values > 255");
+				throw new XMLRPCCallFailureException("Base 64 decode produced byte values > 255", new Integer(0));
 			}
 			this.gotValue = true;
 		} else if ("double".equals(name)) {
@@ -447,7 +447,7 @@ public class XMLRPCMessageProcessor extends MinML {
 			this.methodName = this.buffer.toString();
 			this.inArray = (Boolean)this.aggregateStack.pop();
 		} else if ("fault".equals(name)) {
-			throw new XMLRPCFaultException(((Map)this.params).get("faultString"), ((Map)this.params).get("faultCode"));
+			throw new XMLRPCCallFailureException(((Map)this.params).get("faultString"), ((Map)this.params).get("faultCode"));
 		}
 	}
 }
