@@ -39,8 +39,6 @@ Core Groovy Tasks
 	class = current class
 	super = parent class
 
-* add setMetaClass() method to GroovyObject
-
 * MetaClass.deriveMetaClass()
 	MetaClass.addMixin(mixin)
 
@@ -73,29 +71,11 @@ Core Groovy Tasks
 	so rather than just doing 'hasMethod' or 'understandsMethod' we can return
 	a Closure or MethodProxy or something or null if a method is not understood
 
-* allow closures to have a delegate object, so that when they are used in a 
-	tree build kind of way, the methods can be forwarded to a top level owner.
-	
-	e.g.
-	
-	someBuilder.root {
-		child {
-			grandChild()
-		}
-	}
-	
-	the child and grandChild methods could be invoked on someBuilder if the builder decided to 
-	register itself as the delegate on the Closure. The delegate would be, by default, the
-	outer class instance.
-	
-
 * integer.times() method?
 
 * validator for things like - undeclared variables
 
-* test use of constructors
-
-* closures need to be able to access properties and methods of outer class
+* closures need to be able to access properties of outer class
 
 * closures - handle passing in of variables from outer scope?
 
@@ -107,8 +87,6 @@ Core Groovy Tasks
 
 * test try / catch with multiple exception types
 
-* change to use == for equals?
-
 * test [] on lists & maps?
 
 * constructors - test use of super()
@@ -118,11 +96,6 @@ Core Groovy Tasks
 * += and -= operators
 
 * ++ and --
-
-* this.foo should declare a local field?
-	if so this could cause confusion with property access?
-	maybe some new syntax like @foo or this->foo = x;
-	
 
 * should we implement + and - for collections and maps?
 
@@ -139,7 +112,7 @@ Core Groovy Tasks
 * test the use of PropertyExpression
 	a.b = c.d
 	
-* support static new() method for constructors
+* support static newInstance() method for constructors
 
 * finish expression support in classgen
 
@@ -204,7 +177,7 @@ OTHER STUFF
 
 OPTIMISATIONS
 =============
-* method invocations - if instanceof DynamicMethodInvoke
+* method invocations - if foo instanceof GroovyObject
 then generate bytecode
 
 foo.invokeMethod(method, args);
@@ -212,13 +185,6 @@ foo.invokeMethod(method, args);
 * could code generate the MetaClass with very efficient dynamic dispatch
 	e.g. could switch() on the method name & then use real method invocation
 	on the method instance
-
-
-L
-MARKUP
-======
-
-Have Groovy -> SAX thingy for others to use as XML language?
 
 
 THINGS TO PONDER
