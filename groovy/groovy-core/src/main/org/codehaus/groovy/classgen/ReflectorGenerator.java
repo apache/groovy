@@ -82,7 +82,7 @@ public class ReflectorGenerator implements Constants {
         fileName += ".java";
 
         classInternalName = BytecodeHelper.getClassInternalName(className);
-        cw.visit(ACC_PUBLIC + ACC_SUPER, classInternalName, "org/codehaus/groovy/runtime/Reflector", null, fileName);
+        cw.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, "org/codehaus/groovy/runtime/Reflector", null, fileName);
 
         cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         cv.visitVarInsn(ALOAD, 0);

@@ -62,4 +62,19 @@ public abstract class ClassGenerator extends CodeVisitorSupport implements Groov
         return classLoader;
     }
 
+  /**
+   *  A constant that is the ASM representation of the JDK version number for use in the
+   *  <code>CodeWriter.visitor</code> method calls.
+   *
+   *  <p>Prior to version 1.5 of ASM, the code generated was always JDK1.3 compliant.  As of ASM version
+   *  1.5 there is an extra (first) parameter to specify the bytecode version to generate.  In
+   *  version 1.5 these are in Constants.  The CVS (as at 2004.12.12) and presumably in version 2.0,
+   *  the interface Constants is replaced by Opcodes.</p>
+   *
+   *  @author Russel Winder
+   *  @version 2004.12.14
+   */
+  public final static int asmJDKVersion = V1_3 ;
+  //  We can use V1_3 and not org.objectweb.asm.Constants.V1_3 because this abstract class
+  //  implements org.objectweb.asm.Constants so all its constants are available directly.
 }
