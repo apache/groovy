@@ -790,7 +790,7 @@ public class MetaClass {
                     method.getParameterTypes().length == 0) {
                     
                     // get the name of the property
-                    String propName = methodName.substring(3).toLowerCase();
+                    String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
                     
                     // is this property already accounted for?
                     mp = (MetaProperty) propertyMap.get(propName);
@@ -817,7 +817,7 @@ public class MetaClass {
                     method.getParameterTypes().length == 1) {
                     
                     // get the name of the property
-                    String propName = methodName.substring(3).toLowerCase();
+                    String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
                     
                     // did we already find the getter of this?
                     mp = (MetaProperty) propertyMap.get(propName);
