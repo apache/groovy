@@ -67,6 +67,9 @@ public class Sql {
     private DataSource dataSource;
     private Connection useConnection;
 
+    /** lets only warn of using deprecated methods once */
+    private boolean warned;
+
     /**
      * A helper method which creates a new Sql instance from a JDBC connection URL
      * 
@@ -268,10 +271,6 @@ public class Sql {
         warnDeprecated();
         eachRow(sql, closure);
     }
-    
-    private void warnDeprecated() {
-        log.warning("queryEach() is deprecated, please use eachRow() instead");
-    }
 
     /**
      * Performs the given SQL query calling the closure with each row of the
@@ -342,7 +341,7 @@ public class Sql {
         List params = getParameters(gstring);
         eachRow(sql, params, closure);
     }
-    
+
     /** 
      * @deprecated please use eachRow instead 
      */
@@ -350,8 +349,6 @@ public class Sql {
         warnDeprecated();
         eachRow(gstring, closure);
     }
-    
-    
 
     /**
      * Executes the given piece of SQL
@@ -601,6 +598,13 @@ public class Sql {
             catch (SQLException e) {
                 log.log(Level.SEVERE, "Caught exception closing connection: " + e, e);
             }
+        }
+    }
+
+    private void warnDeprecated() {
+        if (!warned) {
+            warned = true;
+            log.warning("queryEach() is deprecated, please use eachRow() instead");
         }
     }
 }
