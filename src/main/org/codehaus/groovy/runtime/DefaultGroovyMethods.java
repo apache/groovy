@@ -2053,6 +2053,10 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object getAt(double[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
+    
+    public static Object getAt(boolean[] array, int idx) {
+        return primitiveArrayGet(array, idx);
+    }
 
     public static Object getAt(byte[] array, Range range) {
         return primitiveArrayGet(array, range);
@@ -2079,6 +2083,10 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     public static Object getAt(double[] array, Range range) {
+        return primitiveArrayGet(array, range);
+    }
+    
+    public static Object getAt(boolean[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
@@ -2110,6 +2118,14 @@ PropertyValue pv = (PropertyValue) itr.next();
         return primitiveArrayGet(array, indices);
     }
 
+    public static Object getAt(boolean[] array, Collection indices) {
+        return primitiveArrayGet(array, indices);
+    }
+    
+    public static void putAt(boolean[] array, int idx, Boolean newValue) {
+        primitiveArrayPut(array, idx, newValue);
+    }
+    
     public static void putAt(byte[] array, int idx, Object newValue) {
         if (!(newValue instanceof Byte)) {
             Number n = (Number) newValue;
