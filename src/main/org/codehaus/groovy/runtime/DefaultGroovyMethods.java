@@ -3394,7 +3394,19 @@ public class DefaultGroovyMethods {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is, charset));
         return getText(reader);
     }
-
+    
+    /**
+     * Reads the content of the Reader and returns it as a String
+     * 
+     * @param reader a Reader whose content we want to read
+     * @return a String containing the content of the buffered reader
+     * @throws IOException
+     */
+    public static String getText(Reader reader) throws IOException {
+        BufferedReader bufferedReader = new BufferedReader(reader);
+        return getText(bufferedReader);
+    }
+    
     /**
      * Reads the content of the BufferedReader and returns it as a String
      *
