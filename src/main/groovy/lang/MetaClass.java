@@ -300,12 +300,12 @@ public class MetaClass {
                     return bean;
                 }
             }
-            else if (firstArgument instanceof GString) {
-                arguments[0] = firstArgument.toString();
-                constructor = (Constructor) chooseMethod("<init>", constructors, arguments);
-                if (constructor != null) {
-                    return doConstructorInvoke(constructor, arguments);
-                }
+        }
+
+        if (coerceGStrings(arguments)) {
+            constructor = (Constructor) chooseMethod("<init>", constructors, arguments);
+            if (constructor != null) {
+                return doConstructorInvoke(constructor, arguments);
             }
         }
         throw new GroovyRuntimeException("Could not find matching constructor for class: " + theClass.getName());
@@ -782,8 +782,7 @@ public class MetaClass {
                 e);
         }
         catch (IllegalArgumentException e) {
-            if (argumentArray.length == 1 && argumentArray[0] instanceof GString) {
-                argumentArray[0] = argumentArray[0].toString();
+            if (coerceGStrings(argumentArray)) {
                 return doMethodInvoke(object, method, argumentArray);
             }
             else {
@@ -1129,6 +1128,23 @@ public class MetaClass {
         return type;
     }
 
+    /**
+     * Coerces any GString instances into Strings
+     * 
+     * @return true if some coercion was done. 
+     */
+    protected boolean coerceGStrings(Object[] arguments) {
+        boolean coerced = false;
+        for (int i = 0, size = arguments.length; i < size; i++) {
+            Object argument = arguments[0];
+            if (argument instanceof GString) {
+                arguments[i] = argument.toString();
+                coerced = true;
+            }
+        }
+        return coerced;
+    }
+    
     protected boolean isGenericSetMethod(Method method) {
         return (method.getName().equals("set") || method.getName().equals("setAttribute"))
             && method.getParameterTypes().length == 2;
