@@ -43,6 +43,12 @@ public class AbstractCharStreamTest
 
             return c;
         }
+
+        public void close()
+            throws IOException
+        {
+
+        }
     }
 
     public void testConstruct_Default()

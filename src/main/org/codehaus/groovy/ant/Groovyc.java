@@ -55,7 +55,7 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
-import org.codehaus.groovy.tools.Compiler;
+import org.codehaus.groovy.tools.FileSystemCompiler;
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -354,7 +354,7 @@ public class Groovyc extends MatchingTask {
     }
 
     protected void compile() {
-        Compiler compiler = new Compiler();
+        FileSystemCompiler compiler = new FileSystemCompiler();
 
         if (compileList.length > 0) {
             log("Compiling "

@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,7 +16,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.apache.log4j.Category;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
@@ -23,6 +23,8 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
+import org.codehaus.groovy.syntax.lexer.CharStream;
+import org.codehaus.groovy.syntax.lexer.FileCharStream;
 import org.codehaus.groovy.syntax.parser.ASTBuilder;
 import org.codehaus.groovy.syntax.parser.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
@@ -33,19 +35,17 @@ import org.objectweb.asm.util.DumpClassVisitor;
 public class Compiler
 {
     private static final File[] EMPTY_FILE_ARRAY = new File[0];
+    private static final Exception[] EMPTY_EXCEPTION_ARRAY = new Exception[0];
 
-    private static final Category LOG = Category.getInstance( Compiler.class );
-
-    private Verifier verifier = new Verifier();
+    private Verifier verifier;
     private CompilerClassLoader classLoader;
-    private List sourceDirs;
-    private File outputDir;
-    private boolean debug;
+    private List errors;
 
     public Compiler()
     {
+        this.verifier    = new Verifier();
         this.classLoader = new CompilerClassLoader();
-        this.sourceDirs  = new ArrayList();
+        this.errors      = new ArrayList();
     }
 
     protected CompilerClassLoader getClassLoader()
@@ -65,99 +65,66 @@ public class Compiler
         }
     }
 
-    public void setSourcePath(String sourcePath)
+    public GroovyClass[] compile(CharStream source)
+        throws Exception
     {
-        StringTokenizer dirs = new StringTokenizer( sourcePath,
-                                                    File.pathSeparator );
+        return compile( new CharStream[] { source } );
+    }
 
-        while ( dirs.hasMoreTokens() )
+    public GroovyClass[] compile(CharStream[] sources)
+        throws Exception
+    {
+        CSTNode[] compilationUnits = new CSTNode[ sources.length ];
+
+        for ( int i = 0 ; i < sources.length ; ++i )
         {
-            addSourceDir( dirs.nextToken() );
-        }
-    }
-
-    public void addSourceDir(String sourceDir)
-    {
-        addSourceDir( new File( sourceDir ) );
-    }
-
-    public void addSourceDir(File sourceDir)
-    {
-        this.sourceDirs.add( sourceDir );
-    }
-
-    public File[] getSourceDirs()
-    {
-        return (File[]) this.sourceDirs.toArray( EMPTY_FILE_ARRAY );
-    }
-
-    public void setOutputDir(String outputDir)
-        throws Exception
-    {
-        setOutputDir( new File( outputDir ) );
-    }
-
-    public void setOutputDir(File outputDir)
-        throws Exception
-    {
-        this.outputDir = outputDir;
-        getClassLoader().addPath( outputDir.getPath() );
-    }
-
-    public File getOutputDir()
-    {
-        return this.outputDir;
-    }
-
-    public boolean isDebug() {
-        return debug;
-    }
-
-    public void setDebug(boolean debug) {
-        this.debug = debug;
-    }
-
-    public void compile(String[] paths)
-        throws Exception
-    {
-        File[] files = new File[ paths.length ];
-
-        for ( int i = 0 ; i < paths.length ; ++i )
-        {
-            files[ i ] = new File( paths[ i ] );
+            try
+            {
+                compilationUnits[ i ] = stageOneCompile( sources[ i ] );
+            }
+            catch (Exception e)
+            {
+                this.errors.add( e );
+            }
+            finally
+            {
+                try
+                {
+                    sources[ i ].close();
+                }
+                catch (IOException e)
+                {
+                    // swallow?
+                }
+            }
         }
 
-        compile( files );
-    }
-
-    public void compile(File[] files)
-        throws Exception
-    {
-        CSTNode[] compilationUnits = new CSTNode[ files.length ];
-
-        for ( int i = 0 ; i < files.length ; ++i )
+        if ( ! this.errors.isEmpty() )
         {
-            compilationUnits[ i ] = stageOneCompile( files[ i ] );
+            throw new MultiException( (Exception[]) this.errors.toArray( EMPTY_EXCEPTION_ARRAY ) );
         }
 
         stageTwoCompile( compilationUnits );
 
+        List results = new ArrayList();
+
         for ( int i = 0 ; i < compilationUnits.length ; ++i )
         {
-            stageThreeCompile( compilationUnits[ i ],
-                               files[ i ] );
+            GroovyClass[] classes = stageThreeCompile( compilationUnits[ i ],
+                                                       sources[ i ] );
+                                                       
+            for ( int j = 0 ; j < classes.length ; ++j )
+            {
+                results.add( classes[ j ] );
+            }
         }
-    }
 
-    protected CSTNode stageOneCompile(File file)
+        return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
+    }
+    
+    protected CSTNode stageOneCompile(CharStream charStream)
         throws Exception
     {
-        LOG.info( "stage-1 compiling: " + file );
-
-        FileInputStream       fileIn     = new FileInputStream( file );
-        BufferedInputStream   bufferedIn = new BufferedInputStream( fileIn );
-        InputStreamCharStream charStream = new InputStreamCharStream( bufferedIn );
-
         try
         {
             Lexer lexer = new Lexer( charStream );
@@ -174,217 +141,90 @@ public class Compiler
     protected void stageTwoCompile(CSTNode[] compilationUnits)
         throws Exception
     {
-        LOG.info( "stage-2 compiling" );
         SemanticVerifier verifier = new SemanticVerifier();
 
         verifier.verify( compilationUnits );
     }
 
-    protected void stageThreeCompile(CSTNode compilationUnit,
-                                     File file )
+    protected GroovyClass[] stageThreeCompile(CSTNode compilationUnit,
+                                              CharStream charStream )
         throws Exception
     {
-        LOG.info( "stage-3 compiling: " + file );
         ASTBuilder astBuilder = new ASTBuilder( getClassLoader() );
 
         ClassNode[] classNodes = astBuilder.build( compilationUnit );
 
+        List results = new ArrayList();
+
         for ( int i = 0 ; i < classNodes.length ; ++i )
         {
-            dumpClass( new GeneratorContext(), classNodes[ i ], file );
+            GroovyClass[] classes = generateClasses( new GeneratorContext(),
+                                                     classNodes[ i ],
+                                                     charStream.getDescription() );
+
+            for ( int j = 0 ; j < classes.length ; ++j )
+            {
+                results.add( classes[ j ] );
+            }
         }
+
+        return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
     }
 
-    protected void dumpClass(GeneratorContext context, 
-                             ClassNode classNode,
-                             File file)
+    protected GroovyClass[] generateClasses(GeneratorContext context,
+                                            ClassNode classNode,
+                                            String sourceLocator)
         throws Exception
     {
+        List results = new ArrayList();
+
         ClassGenerator classGenerator = null;
         
         verifier.visitClass(classNode);
         
-        if (debug) 
+        if ( false ) 
         {
             DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-            classGenerator = new ClassGenerator(context, dumpVisitor, getClassLoader(), file.getName());
+
+            classGenerator = new ClassGenerator( context,
+                                                 dumpVisitor,
+                                                 getClassLoader(),
+                                                 sourceLocator );
             classGenerator.visitClass( classNode );
         }
         else 
         {
-            ClassWriter    classWriter    = new ClassWriter( true );
+            ClassWriter classWriter = new ClassWriter( true );
+
             classGenerator = new ClassGenerator( context, 
                                                  classWriter,
                                                  getClassLoader(),
-                                                 file.getName() );
+                                                 sourceLocator );
     
             classGenerator.visitClass( classNode );
     
-            byte[] code = classWriter.toByteArray();
-    
-            File outputFile = createOutputFile( classNode.getName() );
-    
-            if ( ! outputFile.getParentFile().exists() )
-            {
-                outputFile.getParentFile().mkdirs();
-            }
-    
-            LOG.info( "generating class to: " + outputFile );
-    
-            FileOutputStream out = new FileOutputStream( outputFile );
-    
-            try
-            {
-                out.write( code );
-            }
-            finally
-            {
-                out.close();
-            }
+            byte[] bytes = classWriter.toByteArray();
+            
+            results.add( new GroovyClass( classNode.getName(),
+                                          bytes ) );
         }
+    
         
-        // now lets process inner classes
         LinkedList innerClasses = classGenerator.getInnerClasses();
-        while (! innerClasses.isEmpty()) 
+
+        while ( ! innerClasses.isEmpty() ) 
         {
-            dumpClass(context, (ClassNode) innerClasses.removeFirst(), file);
-        }
-    }
+            GroovyClass[] classes = generateClasses( context,
+                                                     (ClassNode)
+                                                     innerClasses.removeFirst(),
+                                                     sourceLocator );
 
-    protected File createOutputFile(String className)
-    {
-        String path = className.replace( '.',
-                                         File.separatorChar ) + ".class" ;
-
-        return new File( getOutputDir(),
-                         path );
-    }
-
-    public static void displayHelp()
-    {
-        System.err.println( "Usage: groovy <options> <source files>" );
-        System.err.println( "where possible options include: " );
-        System.err.println( "  --classpath <path>        Specify where to find user class files" );
-        System.err.println( "  --sourcepath <path>       Specify where to find input source files" );
-        System.err.println( "  -d <directory>            Specify where to place generated class files" );
-        System.err.println( "  --strict                  Turn on strict type safety" );
-        System.err.println( "  --version                 Print the verion" );
-        System.err.println( "  --help                    Print a synopsis of standard options" );
-        System.err.println( "" );
-    }
-    
-
-    public static void displayVersion()
-    {
-        System.err.println( "groovy compiler version 1.0-alpha-1" );
-        System.err.println( "Copyright 2003 The Codehaus. http://groovy.codehaus.org/" );
-        System.err.println( "" );
-    }
-
-    public static int checkFiles(String[] filenames)
-    {
-        int errors = 0;
-
-        for ( int i = 0 ; i < filenames.length ; ++i )
-        {
-            File file = new File( filenames[i] );
-
-            if ( ! file.exists() )
+            for ( int i = 0 ; i < classes.length ; ++i )
             {
-                System.err.println( "error: file not found: " + file );
-                ++errors;
-            }
-            else if ( ! file.canRead() )
-            {
-                System.err.println( "error: file not readable: " + file );
-                ++errors;
+                results.add( classes[ i ] );
             }
         }
 
-        return errors;
-    }
-
-    public static void main(String[] args)
-        throws Exception
-    {
-        Options options = new Options();
-
-        options.addOption( OptionBuilder.withLongOpt( "classpath" ).hasArg().withArgName( "classpath" ).create() );
-        options.addOption( OptionBuilder.withLongOpt( "sourcepath" ).hasArg().withArgName( "sourcepath" ).create() );
-        options.addOption( OptionBuilder.hasArg().create( 'd' ) );
-        options.addOption( OptionBuilder.withLongOpt( "strict" ).create( 's' ) );
-        options.addOption( OptionBuilder.withLongOpt( "help" ).create( 'h' ) );
-        options.addOption( OptionBuilder.withLongOpt( "version" ).create( 'v' ) );
-
-        PosixParser cliParser = new PosixParser();
-
-        CommandLine cli = cliParser.parse( options,
-                                           args );
-
-        if ( cli.hasOption( 'h' ) )
-        {
-            displayHelp();
-            return;
-        }
-
-        if ( cli.hasOption( 'v' ) )
-        {
-            displayVersion();
-        }
-
-        Compiler compiler = new Compiler();
-
-        if ( cli.hasOption( "classpath" ) )
-        {
-            compiler.setClasspath( cli.getOptionValue( "classpath" ) );
-        }
-        else
-        {
-            compiler.setClasspath( System.getProperty( "java.class.path" ) );
-        }
-
-        if ( cli.hasOption( "sourcepath" ) )
-        {
-            compiler.setSourcePath( cli.getOptionValue( "sourcepath" ) );
-        }
-        else
-        {
-            compiler.setSourcePath( System.getProperty( "user.dir" ) );
-        }
-
-        if ( cli.hasOption( 'd' ) )
-        {
-            compiler.setOutputDir( cli.getOptionValue( 'd' ) );
-        }
-        else
-        {
-            compiler.setOutputDir( System.getProperty( "user.dir" ) );
-        }
-
-        String[] filenames = cli.getArgs();
-
-        if ( filenames.length == 0 )
-        {
-            displayHelp();
-            return;
-        }
-
-        int errors = checkFiles( filenames );
-
-        if ( errors == 0 )
-        {
-            compiler.compile( filenames );
-        }
-        else
-        {
-            if ( errors == 1 )
-            {
-                System.err.println( "1 error" );
-            }
-            else
-            {
-                System.err.println( errors + " errors" );
-            }
-        }
+        return (GroovyClass[]) results.toArray( GroovyClass.EMPTY_ARRAY );
     }
 }
