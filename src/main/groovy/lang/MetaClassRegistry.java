@@ -109,18 +109,20 @@ public class MetaClassRegistry {
     }
 
     public MetaClass getMetaClass(Class theClass) {
-        MetaClass answer = (MetaClass) metaClasses.get(theClass);
-        if (answer == null) {
-            try {
-                answer = new MetaClass(this, theClass);
-                answer.checkInitialised();
-            } catch (IntrospectionException e) {
-                throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
-                        e);
+        synchronized(theClass) {
+            MetaClass answer = (MetaClass) metaClasses.get(theClass);
+            if (answer == null) {
+                try {
+                    answer = new MetaClass(this, theClass);
+                    answer.checkInitialised();
+                } catch (IntrospectionException e) {
+                    throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
+                            e);
+                }
+                metaClasses.put(theClass, answer);
             }
-            metaClasses.put(theClass, answer);
+            return answer;
         }
-        return answer;
     }
 
     public void removeMetaClass(Class theClass) {
