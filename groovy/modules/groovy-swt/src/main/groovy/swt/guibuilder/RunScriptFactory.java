@@ -76,7 +76,11 @@ public class RunScriptFactory extends AbstractSwtFactory implements SwtFactory {
         }
 
         // run script
-        return runScript(src, parentComposite, binding);
+        Object result = runScript(src, parentComposite, binding);
+        if (result == null ) {
+            throw new NullPointerException("Script returns null: " + src);
+        }
+        return result;
     }
 
     /**
