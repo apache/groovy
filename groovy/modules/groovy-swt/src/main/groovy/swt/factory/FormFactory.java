@@ -38,7 +38,8 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      */
     public static FormToolkit getToolkit() {
         if (toolkit == null) {
-            FormColors formColors = new FormColors(Display.getCurrent());
+            FormColors formColors = new FormColors(Display.getCurrent() == null ? new Display()
+                    : Display.getCurrent());
             toolkit = new FormToolkit(formColors);
             toolkit.setBorderStyle(SWT.BORDER);
         }
