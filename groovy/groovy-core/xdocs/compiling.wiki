@@ -3,7 +3,7 @@
 There are various options for compiling Groovy code and then either running it or
 using the Java objects it creates in Java code. 
 
-1.1 Compling Groovy code to bytecode
+1.1 Compling Groovy code to bytecode using a script
 
 There is an Ant task called __groovyc__ which works pretty similarly to the __javac__ Ant
 task which takes a bunch of groovy source files and compiles them into Java bytecode. Each
@@ -11,31 +11,19 @@ groovy class then just becomes a normal Java class you can use inside your Java 
 Indeed the generated Java class is indistinguishable from a normal Java class, other than it
 implements the {link:GroovyObject|apidocs/groovy/lang/GroovyObject.html} interface. 
 
+1.1. Compiling Groovy code to bytecode using Ant
+
 The groovyc Ant task is implemented by the {link:Groovyc|apidocs/org/codehaus/groovy/ant/Groovyc.html} class.
 You can see an example of this in action inside Groovy's maven.xml file (just search for 'groovyc') 
 
-1.1 Dynamically loading and running Groovy code inside Java
+1.1 Dynamically using Groovy inside Java applications
 
-Another option is to use a {link:GroovyClassLoader|apidocs/groovy/lang/GroovyClassLoader.html} to load classes dynamically into a Java program and execute them (or use them) directly.
-The following Java code shows an example... 
-
-{code:java}
-ClassLoader parent = getClass().getClassLoader();
-GroovyClassLoader loader = new GroovyClassLoader(parent);
-Class groovyClass = loader.parse("src/test/groovy/script/HelloWorld.groovy");
-
-// lets call some method on an instance
-GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();
-Object[] args = {};
-groovyObject.invokeMethod("run", args);
-{code}
+If you don't want to explicitly compile groovy code to bytecode you can just 
+{link:embed groovy|embedding.html} directly into your Java application.
 
 1.1 Runtime dependencies
 
-As well as the Groovy jar we also depend at runtime on 
-
-* asm 
-
+As well as Java 1.4 and the Groovy jar we also depend at runtime on the ASM library. 
 
 
 

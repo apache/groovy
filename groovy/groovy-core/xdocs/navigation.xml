@@ -35,6 +35,7 @@
 
     <menu name="Using Groovy">
       <item name="Installing"          href="/install.html"/>
+      <item name="Embedding"           href="/embedding.html"/>
       <item name="Running"             href="/running.html"/>
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>

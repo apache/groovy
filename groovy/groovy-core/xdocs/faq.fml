@@ -56,6 +56,17 @@
   <part id="using">
     <title>Using Groovy</title>
     
+    <faq id="how-embed">
+      <question>
+        How can I embed Groovy into my Java application
+      </question>
+      <answer>
+        <p>
+		  Please see this description of <a href="embedding.html">embedding Groovy</a>
+       </p>
+      </answer>
+    </faq>   
+    
     <faq id="how-compile">
       <question>
         How can I compile Groovy to bytecode either at runtime or build time?
