@@ -1,12 +1,16 @@
+import org.codehaus.groovy.classgen.TestSupport
+
 /**
  * @author John Wilson
  * @version $Revision$
  */
-class ClosureParameterPassingBug extends GroovyTestCase {
+class ClosureParameterPassingBug extends TestSupport {
     
     void testBugInMethod() {
 		c = { x | 
+			y = 123
 			c1 = { 
+				println y
 				println x
 				println x[0] 
 			} 
@@ -17,12 +21,13 @@ class ClosureParameterPassingBug extends GroovyTestCase {
 		c([1]) 
     }
     
-    
     void testBug() {
     	assertScript <<<EOF
 c = { x | 
+	y = 123
 	c1 = { 
 		assert x != null : "Could not find a value for x"
+		assert y == 123 : "Could not find a value for y"
 		println x[0] 
 	} 
 	
