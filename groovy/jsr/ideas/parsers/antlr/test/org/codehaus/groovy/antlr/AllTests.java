@@ -52,6 +52,7 @@ public class AllTests extends TestSuiteSupport {
         "GroovyMethodsTest.groovy",             // TODO: arrays
         "ConstructorBug.groovy",                // TODO: arrays
         "ClosureTest.groovy",                   // TODO: arrays
+        "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: arrays
 
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
@@ -61,6 +62,7 @@ public class AllTests extends TestSuiteSupport {
         "BuilderSupportTest.groovy",            // TODO: can't parse foo.bar <<
         "bugs/ForAndSqlBug.groovy",             // TODO: can't parse foo.bar <<
         "PrintTest.groovy",                     // TODO: can't parse foo.bar <<
+        "Groovy308_Bug.groovy",                 // TODO: can't parse foo.bar <<
 
         "RegularExpressionsTest.groovy",        // TODO: regex issue
 
@@ -68,16 +70,6 @@ public class AllTests extends TestSuiteSupport {
 
         "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
 
-        "Groovy308_Bug.groovy",                 // TODO: parser bug
-        "NestedClosure2Bug.groovy",             // TODO: parser bug
-
-        "DoubleSizeParametersBug.groovy",       // TODO: parser bug
-        "InconsistentStackHeightBug.groovy",    // TODO: parser bug
-        "MarkupAndMethodBug.groovy",            // TODO: parser bug
-        "NestedClosureBug.groovy",              // TODO: parser bug
-        "OverloadInvokeMethodBug.groovy",       // TODO: parser bug
-        "RodsBooleanBug.groovy",                // TODO: parser bug
-        "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: parser bug
 
 
 
@@ -92,6 +84,8 @@ public class AllTests extends TestSuiteSupport {
 
 
         // Not sure of bug yet
+        "InconsistentStackHeightBug.groovy",    // TODO: parser bug
+        "DoubleSizeParametersBug.groovy",       // TODO: parser bug
         "InvokeNormalMethodsFirstTest.groovy",  // TODO: not sure
 
         "ProcessTest.groovy",                   // TODO: is this a parser bug or just a not very good compiler error?

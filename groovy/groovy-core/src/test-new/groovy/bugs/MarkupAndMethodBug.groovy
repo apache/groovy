@@ -39,7 +39,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
         return root
     }
     
-    protected defgetName() {
+    protected def getName() {
         "James"
     }
 }
