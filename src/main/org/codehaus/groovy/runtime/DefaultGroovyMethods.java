@@ -65,7 +65,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -655,23 +654,23 @@ public class DefaultGroovyMethods {
     }
 
     public static List plus(List left, Collection right) {
-            List answer = new ArrayList(left.size()+right.size());
-            answer.addAll(left);
-            answer.addAll(right);
-            return answer;
-        }
+        List answer = new ArrayList(left.size() + right.size());
+        answer.addAll(left);
+        answer.addAll(right);
+        return answer;
+    }
 
     public static List plus(List left, Object right) {
-        List answer = new ArrayList(left.size()+1);
+        List answer = new ArrayList(left.size() + 1);
         answer.addAll(left);
         answer.add(right);
         return answer;
     }
 
     public static List multiply(List self, Number factor) {
-        int size=factor.intValue(); 
+        int size = factor.intValue(); 
         List answer = new ArrayList(self.size() * size);
-        for (int i = 0; i<size;i++) {
+        for (int i = 0; i < size; i++) {
            answer.addAll(self);
          }
         return answer;
@@ -679,14 +678,15 @@ public class DefaultGroovyMethods {
 
     public static List intersect(List left, Collection right) {
 
-        if (left.size()==0)
+        if (left.size() == 0)
             return new ArrayList();
 
         boolean nlgnSort=sameType(new Collection[] {left, right});
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
-        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) : left;
+        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) 
+                                       : left;
 
         for (Iterator iter = right.iterator(); iter.hasNext();) {
             final Object o = iter.next();
@@ -698,7 +698,7 @@ public class DefaultGroovyMethods {
 
     public static List minus(List self, Collection removeMe) {
     
-        if (self.size() ==0 )
+        if (self.size() == 0 )
             return new ArrayList();
 
         boolean nlgnSort = sameType(new Collection[] {self, removeMe});
@@ -720,7 +720,8 @@ public class DefaultGroovyMethods {
            for (Iterator iter = tmpAnswer.iterator(); iter.hasNext();) {
                Object element = iter.next();
                boolean removeElement = false;
-               for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
+               for (Iterator iterator = removeMe.iterator(); 
+                   iterator.hasNext();) {
                    if (element.equals(iterator.next())) {    
                        iter.remove();
                    }
@@ -728,13 +729,15 @@ public class DefaultGroovyMethods {
            }
            //remove duplicates
            //can't use treeset since the base classes are different
-           List answer=new LinkedList();
-           Object[] array= (Object[]) tmpAnswer.toArray(new Object[tmpAnswer.size()]);
-           for (int i = 0;i<array.length;i++) {
+           List answer = new LinkedList();
+           Object[] array= (Object[]) 
+               tmpAnswer.toArray(new Object[tmpAnswer.size()]);
+           
+           for (int i = 0; i < array.length; i++) {
                if (array[i] != null) {
-                  for (int j = i + 1 ; j< array.length;j++) {
+                  for (int j = i + 1; j < array.length; j++) {
                       if (array[i].equals(array[j])) {
-                          array[j]=null;
+                          array[j] = null;
                       }
                   }
                   answer.add(array[i]);
@@ -751,7 +754,7 @@ public class DefaultGroovyMethods {
     private static List flatten(Collection elements, List addTo) {
         Iterator iter = elements.iterator();
         while (iter.hasNext()) {
-            Object element=iter.next();
+            Object element = iter.next();
             if (element instanceof Collection) { 
                flatten((Collection) element, addTo);
             }
@@ -767,23 +770,23 @@ public class DefaultGroovyMethods {
 
     private static boolean sameType(Collection[] cols)
     {
-        List all=new LinkedList();
+        List all = new LinkedList();
         for (int i = 0; i < cols.length; i++) {
             all.addAll(cols[i]);
         }
-        if (all.size()==0)
+        if (all.size() == 0)
             return true;
 
-        Object first=all.get(0);
+        Object first = all.get(0);
     
         //trying to determine the base class of the collections
         //special case for Numbers
         Class baseClass;
         if (first instanceof Number) {
-            baseClass=Number.class;
+            baseClass = Number.class;
         }
         else {
-            baseClass=first.getClass();
+            baseClass = first.getClass();
         }
     
         for (int i = 0; i < cols.length; i++) {
@@ -867,11 +870,14 @@ public class DefaultGroovyMethods {
     }
 
     public static Number power(Number self, Number exponent) {
-        double answer=Math.pow(self.doubleValue(), exponent.doubleValue());
-        if (isFloatingPoint(self) || isFloatingPoint(exponent) || answer < 1 ) {
+        double answer = Math.pow(self.doubleValue(), 
+                exponent.doubleValue());
+        if (isFloatingPoint(self) || isFloatingPoint(exponent) 
+                || answer < 1 ) {
             return new Double(answer); 
         }
-        else if (isLong(self) || isLong(exponent) || answer > Integer.MAX_VALUE ) {
+        else if (isLong(self) || isLong(exponent) 
+                    || answer > Integer.MAX_VALUE ) {
             return new Long((long) answer);
         }
         else {
