@@ -88,7 +88,7 @@ class ComparableFoo {
     this.value = theValue
   }
 
-  greaterThan(anotherFoo) {
+  def greaterThan(anotherFoo) {
     return (this.value - anotherFoo.value)
   }
 }

@@ -808,6 +808,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case CTOR_CALL:
                 return constructorCallExpression(node);
 
+                case QUESTION:
+                return ternaryExpression(node);
+
             case DOT:
                 return dotExpression(node);
 
@@ -1006,6 +1009,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 unknownAST(node);
         }
         return null;
+    }
+
+    protected Expression ternaryExpression(AST ternaryNode) {
+        AST node = ternaryNode.getFirstChild();
+        BooleanExpression booleanExpression = booleanExpression(node);
+        node = node.getNextSibling();
+        Expression left = expression(node);
+        Expression right = expression(node.getNextSibling());
+        return new TernaryExpression(booleanExpression, left, right);
     }
 
     protected Expression variableExpression(AST node) {

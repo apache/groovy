@@ -34,10 +34,6 @@ public class AllTests extends TestSuiteSupport {
 
         // TODO the following are all parser bugs
 
-        "VerboseDOMTest.groovy",                // TODO: closure params (explicit {|| to denote closure start)
-
-        "ClosureComparatorTest.groovy",         // TODO: cannot pass closure into new expression
-
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "SuperMethod2Bug.groovy",               // TODO: constructor bug
         "SuperMethodBug.groovy",                // TODO: constructor bug
@@ -47,6 +43,7 @@ public class AllTests extends TestSuiteSupport {
         "Build.groovy",                         // TODO: constructor bug
         "PrivateVariableAccessFromAnotherInstanceTest.groovy",      // TODO: constructor bug
         "SocketTest.groovy",                    // TODO: constructor bug
+        "ClosureComparatorTest.groovy",         // TODO: constructor bug
 
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
@@ -56,12 +53,7 @@ public class AllTests extends TestSuiteSupport {
         "ConstructorBug.groovy",                // TODO: arrays
         "ClosureTest.groovy",                   // TODO: arrays
 
-        "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
-        "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
-
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
-
-        "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
 
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
@@ -76,13 +68,7 @@ public class AllTests extends TestSuiteSupport {
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
-        "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
-        "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
-
         "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
-
-        "IntegerOperationTest.groovy",          // TODO: what to do about integer divide?
-        "NumberMathTest.groovy",                // TODO: what to do about integer divide?
 
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
@@ -94,6 +80,16 @@ public class AllTests extends TestSuiteSupport {
         "OverloadInvokeMethodBug.groovy",       // TODO: parser bug
         "RodsBooleanBug.groovy",                // TODO: parser bug
         "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: parser bug
+
+
+
+        // TODO: Parser decisions to make
+        "BigDecimalOperationTest.groovy",       // TODO: do we disallow .1 as a number?
+        "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
+        "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
+        "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
+        "IntegerOperationTest.groovy",          // TODO: what to do about integer divide?
+        "NumberMathTest.groovy",                // TODO: what to do about integer divide?
 
 
 
