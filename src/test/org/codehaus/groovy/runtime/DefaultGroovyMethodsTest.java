@@ -73,7 +73,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testIncrementString() throws Exception {
         String original = "z";
-        String answer = DefaultGroovyMethods.increment(original);
+        String answer = DefaultGroovyMethods.next(original);
 
         System.out.println(answer);
         assertTrue(answer.compareTo(original) > 0);
@@ -81,7 +81,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testDecrementString() throws Exception {
         String original = "a";
-        String answer = DefaultGroovyMethods.decrement(original);
+        String answer = DefaultGroovyMethods.previous(original);
 
         System.out.println(answer);
         assertTrue(InvokerHelper.compareLessThan(answer, original));

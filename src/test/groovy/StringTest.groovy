@@ -22,16 +22,16 @@ class StringTest extends GroovyTestCase {
         assert x == "hello null"
     }
     
-    void testIncrementDecrement() {
+    void testNextPrevious() {
     	x = 'a'
-    	y = x.increment()
+    	y = x.next()
     	assert y == 'b'
     
-    	z = 'z'.decrement()
+    	z = 'z'.previous()
     	assert z == 'y'
     	
     	z = 'z'
-    	b = z.increment()
+    	b = z.next()
     	assert b != 'z'
     	
     	println(z.charAt(0))

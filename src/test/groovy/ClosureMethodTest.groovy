@@ -8,8 +8,6 @@ import java.io.File
  */
 class ClosureMethodTest extends GroovyTestCase {
 
-	property count
-
     void testListMap() {
         list = [1, 2, 3, 4]
         answer = list.map( {item| return item * 2 } )
@@ -105,6 +103,19 @@ class ClosureMethodTest extends GroovyTestCase {
         
         map.each({e| count = count + e.value + e.key })
 		
+        assert count == 50
+    }
+    
+    void testMapEachWith2Params() {
+        count = 0
+
+        map = [1:2, 2:4, 3:6, 4:8]
+        map.each {key, value | count = count + value }
+
+        assert count == 20
+        
+        map.each {key, value | count = count + value + key }
+        
         assert count == 50
     }
     
