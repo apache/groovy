@@ -8,11 +8,12 @@ import groovy.xml.MarkupBuilder
  *
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
  *
- * @version Revision 1.2 $
+ * @version $Revision 1.3 $
  *
- *     Fix the crlf handling, depending on operating system.
+ *     Fix the cr lf handling, depending on operating systems.
+ *     This test should success on Windows XP.
  *
- *     @author <a href="mailto:phkim@cluecom.co.kr">Pilho Kim</a>
+ *     @author Pilho Kim
  */
 class Groovy593_Bug extends GroovyTestCase {
     
