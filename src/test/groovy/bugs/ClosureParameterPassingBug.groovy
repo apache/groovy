@@ -4,7 +4,7 @@
  */
 class ClosureParameterPassingBug extends GroovyTestCase {
     
-    void testBug() {
+    void testBugInMethod() {
 		c = { x | 
 			c1 = { 
 				println x
@@ -18,7 +18,7 @@ class ClosureParameterPassingBug extends GroovyTestCase {
     }
     
     
-    void testBugInScript() {
+    void testBug() {
     	assertScript <<<EOF
 c = { x | 
 	c1 = { 
