@@ -84,6 +84,16 @@ class SampleTest extends GroovyTestCase {
         assert x == 3
     }
 
+    void testIf() {
+        def x = 123
+        def y = 1
+        if (x > 100) {
+            y = 2
+        }
+
+        assert y == 2
+    }
+
     void testIfElse() {
         def x = 123
         def y = 1
@@ -133,6 +143,23 @@ class SampleTest extends GroovyTestCase {
         def answer = a + b
         return answer
     }
+
+    void testTryCatchWithException() {
+        try {
+            methodThatThrowsException()
+            fail "Should have thrown an exception by now!"
+        }
+        catch (Exception e) {
+            println "Worked! Caught expected exception $e"
+
+        }
+    }
+
+    void methodThatThrowsException() {
+        // TODO parser doesn't return the thrown expression
+        throw new Exception("Test exception")
+    }
+
 
     void testFor() {
         def list = [1, 2, 3]
@@ -259,32 +286,6 @@ class SampleTest extends GroovyTestCase {
     }
 
 
-    void testTryCatchWithException() {
-        try {
-            methodThatThrowsException()
-            fail "Should have thrown an exception by now!"
-        }
-        catch (Exception e) {
-            println "Worked! Caught expected exception $e"
-
-        }
-    }
-
-    void methodThatThrowsException() {
-        // TODO parser doesn't return the thrown expression
-        throw new Exception("Test exception")
-    }
-
-    void testIf() {
-        def x = 123
-        def y = 1
-        if (x > 100) {
-            y = 2
-        }
-
-        // TODO the parser expects else...
-        assert y == 2
-    }
 
     void testSwitch() {
         x = 12

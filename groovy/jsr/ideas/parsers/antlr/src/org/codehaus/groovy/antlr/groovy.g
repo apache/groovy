@@ -1397,7 +1397,8 @@ statement
                         options {
                                 warnWhenFollowAmbig = false;
                         }
-                :
+                : // lookahead to check if we're entering an 'else' clause
+                  ( (sep!)? "else"! )=>
                         (sep!)?  // allow SEMI here for compatibility with Java
                         "else"! nls! compatibleBodyStatement
                 )?
@@ -1517,7 +1518,7 @@ branchExpression
                 )?
 
         // throw an exception
-        |       "throw"^ assignmentExpression!
+        |       "throw"^ assignmentExpression
 
 
 	// TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
