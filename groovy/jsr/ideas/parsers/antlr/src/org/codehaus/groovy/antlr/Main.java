@@ -4,15 +4,15 @@ import antlr.collections.AST;
 import antlr.collections.impl.*;
 import antlr.debug.misc.*;
 import antlr.*;
+import com.thoughtworks.xstream.XStream;
 import java.awt.event.*;
 
 class Main {
 
 	static boolean showTree = false;
+    static boolean xml = false;
 	static boolean verbose = false;
     public static void main(String[] args) {
-	System.out.println("groovy compiler - JSR 241 preview - v0.0.2");
-	System.out.println("");
 		// Use a try/catch block for parser exceptions
 		try {
 			// if we have at least one command-line argument
@@ -24,6 +24,9 @@ class Main {
 					if ( args[i].equals("-showtree") ) {
 						showTree = true;
 					}
+                    else if ( args[i].equals("-xml") ) {
+                        xml = true;
+                    }
 					else if ( args[i].equals("-verbose") ) {
 						verbose = true;
 					}
@@ -42,7 +45,7 @@ class Main {
 					}
 				} }
 			else
-				System.err.println("Usage: java -jar groovyc.jar [-showtree] [-verbose] [-trace{,Lexer,Parser}]"+
+				System.err.println("Usage: java -jar groovyc.jar [-showtree] [-xml] [-verbose] [-trace{,Lexer,Parser}]"+
                                    "<directory or file name>");
 		}
 		catch(Exception e) {
@@ -112,6 +115,22 @@ class Main {
 		        }
 			);
 			if (verbose)  System.out.println(t.toStringList());
+		}
+        if ( xml ) {
+			((CommonAST)t).setVerboseStringConversion(true, tokenNames);
+			ASTFactory factory = new ASTFactory();
+			AST r = factory.create(0,"AST ROOT");
+			r.setFirstChild(t);
+            XStream xstream = new XStream();
+            xstream.alias("ast", CommonAST.class);
+			try {
+                xstream.toXML(r,new FileWriter(f + ".xml"));
+                System.out.println("Written AST to " + f + ".xml");
+            } catch (Exception e) {
+                System.out.println("couldn't write to " + f + ".xml");
+                e.printStackTrace();
+            }
+			//if (verbose)  System.out.println(t.toStringList());
 		}
 	/*@todo
 		GroovyTreeParser tparse = new GroovyTreeParser();
