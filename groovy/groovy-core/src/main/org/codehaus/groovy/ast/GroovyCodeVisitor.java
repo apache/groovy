@@ -76,4 +76,5 @@ public interface GroovyCodeVisitor {
     public void visitMapEntryExpression(MapEntryExpression expression);
     public void visitListExpression(ListExpression expression);
     public void visitPropertyExpression(PropertyExpression expression);
+    public void visitRangeExpression(RangeExpression expression);
 }

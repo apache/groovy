@@ -65,11 +65,13 @@ import org.codehaus.groovy.ast.MapEntryExpression;
 import org.codehaus.groovy.ast.MapExpression;
 import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.PropertyExpression;
+import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.ast.WhileLoop;
+import org.codehaus.groovy.lang.Range;
 import org.codehaus.groovy.runtime.Invoker;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -125,6 +127,15 @@ public class Interpreter implements GroovyCodeVisitor {
         Boolean booleanValue = invoker.asBoolean(value);
         return booleanValue.booleanValue();
     }
+
+    /**
+     * Evaluates the given expression as an int value
+     */
+    public int evaluateInt(Expression expression) {
+        Object value = evaluate(expression);
+        return InvokerHelper.asInt(value);
+    }
+
 
     // Statements
     //-------------------------------------------------------------------------
@@ -266,6 +277,12 @@ public class Interpreter implements GroovyCodeVisitor {
         }
     }
 
+    public void visitRangeExpression(RangeExpression expression) {
+        int from = evaluateInt(expression.getFrom());  
+        int to = evaluateInt(expression.getTo());
+        pushExpressionValue(new Range(from, to));
+    }
+
     public void visitVariableExpression(VariableExpression expression) {
         Object value = context.getVariable(expression.getVariable());
         pushExpressionValue(value);
@@ -322,6 +339,7 @@ public class Interpreter implements GroovyCodeVisitor {
 
     // Implementation methods
     //-------------------------------------------------------------------------
+
 
     /**
      * Performs a compareTo() on the two expressions and returns an integer comparison value

@@ -73,6 +73,7 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.TupleExpression;
@@ -531,6 +532,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 }
             }
         }
+    }
+
+    public void visitRangeExpression(RangeExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {

@@ -143,4 +143,8 @@ public class InvokerHelper {
         }
         return answer;
     }
+
+    public static int asInt(Object value) {
+        return getInstance().asInt(value);
+    }
 }

@@ -64,7 +64,7 @@ public class RangeExpression extends Expression {
     }
     
     public void visit(GroovyCodeVisitor visitor) {
-        //visitor.visitRangeExpression(this);
+        visitor.visitRangeExpression(this);
     }
 
     public Expression getFrom() {
