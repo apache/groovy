@@ -53,6 +53,7 @@ import groovy.lang.ScriptContext;
 import groovy.lang.Tuple;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -283,8 +284,11 @@ public class InvokerHelper {
 
     public static Script createScript(Class scriptClass, ScriptContext context) {
         try {
-            Constructor constructor = scriptClass.getConstructor(new Class[] { ScriptContext.class });
-            return (Script) constructor.newInstance(new Object[] { context });
+            Constructor constructor = scriptClass.getConstructor(new Class[] {});
+            Script script = (Script) constructor.newInstance(new Object[] {});
+            Method setBindings = script.getClass().getMethod("setBindings", new Class[] { ScriptContext.class });
+            setBindings.invoke(script, new Object[] { context });
+            return script;
         }
         catch (Exception e) {
             throw new InvokerException(
