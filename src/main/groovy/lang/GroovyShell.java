@@ -68,6 +68,7 @@ public class GroovyShell extends GroovyObjectSupport {
     
     private GroovyClassLoader loader;
     private Binding context;
+    private int counter;
 
     public static void main(String args[]) {
         int length = args.length;
@@ -231,16 +232,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(String scriptText) throws SyntaxException, ClassNotFoundException, IOException {
-        return evaluate(new ByteArrayInputStream(scriptText.getBytes()), "script" + System.currentTimeMillis() + ".groovy");
+        return evaluate(new ByteArrayInputStream(scriptText.getBytes()), generateScriptName());
     }
 
+    
     /**
      * Evaluates some script against the current ScriptContext and returns the result
      *
      * @param in the stream reading the script
      */
     public Object evaluate(InputStream in) throws SyntaxException, ClassNotFoundException, IOException {
-        return evaluate(in, "script" + System.currentTimeMillis() + ".groovy");
+        return evaluate(in, generateScriptName());
     }
 
     /**
@@ -253,5 +255,9 @@ public class GroovyShell extends GroovyObjectSupport {
         Class scriptClass = loader.parseClass(in, fileName);
         Script script = InvokerHelper.createScript(scriptClass, context);
         return script.run();
+    }
+    
+    protected synchronized String generateScriptName() {
+        return "Script" + (++counter)  + ".groovy";
     }
 }
