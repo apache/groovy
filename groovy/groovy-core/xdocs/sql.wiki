@@ -64,7 +64,7 @@ sql = TestHelper.makeSql()
 xml = new MarkupBuilder()
 
 ignore = 'James'
-sql.queryEach ("select * from person where firstname != $${ignore}") { person | 
+sql.queryEach ("select * from person where firstname != ${ignore}") { person | 
     // lets process each row by emitting some markup
     xml.customer(id:person.id, type:'Customer', name:person.firstname + " " + person.lastname) 
 }
