@@ -13,4 +13,10 @@ class SubscriptOnStringArrayBug extends TestSupport {
         
         println("Contents of array are ${array.toConsoleOutput()}")
     }
+    
+    void testRobsTestCase() {
+        array = "one two three".split(" ")
+        
+        assert array[1] == "two"
+    }
 }
