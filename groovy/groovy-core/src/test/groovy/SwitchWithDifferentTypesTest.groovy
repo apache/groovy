@@ -1,27 +1,28 @@
 
+import java.util.Date
 
 /** 
- * A test case for switch statement
+ * A test case for switch statement with different types
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-class SwitchTest {
+class SwitchWithDifferentTypesTest extends GroovyTestCase {
 
-    testSwitchWithIntValues() {
+    void testSwitchWithIntValues() {
         assertSwitch(1, 2, 3, 4)
     }
 
-    testSwitchWithDoubleValues() {
+    void testSwitchWithDoubleValues() {
         assertSwitch(1.5, 2.4, 3.2, 4.1)
     }
     
-    testSwitchWithStringValues() {
+    void testSwitchWithStringValues() {
         assertSwitch("abc", "def", "xyz", "unknown")
     }
 
-    testSwitchWithMixedTypeValues() {
-        assertSwitch("abc", Date(), 5.32, 23)
+    void testSwitchWithMixedTypeValues() {
+        assertSwitch("abc", new Date(), 5.32, 23)
     }
 
 

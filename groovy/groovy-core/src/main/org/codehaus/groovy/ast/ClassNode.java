@@ -40,15 +40,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
 /**
@@ -72,29 +66,29 @@ public class ClassNode extends MetadataNode implements Constants {
     private ModuleNode module;
 
     /**
-	 * @param name
-	 *            is the full name of the class
-	 * @param modifiers
-	 *            the modifiers,
-	 * @see org.objectweb.asm.Constants
-	 * @param superClass
-	 *            the base class name - use "java.lang.Object" if no direct
-	 *            base class
-	 */
+     * @param name
+     *            is the full name of the class
+     * @param modifiers
+     *            the modifiers,
+     * @see org.objectweb.asm.Constants
+     * @param superClass
+     *            the base class name - use "java.lang.Object" if no direct
+     *            base class
+     */
     public ClassNode(String name, int modifiers, String superClass) {
         this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
-	 * @param name
-	 *            is the full name of the class
-	 * @param modifiers
-	 *            the modifiers,
-	 * @see org.objectweb.asm.Constants
-	 * @param superClass
-	 *            the base class name - use "java.lang.Object" if no direct
-	 *            base class
-	 */
+     * @param name
+     *            is the full name of the class
+     * @param modifiers
+     *            the modifiers,
+     * @see org.objectweb.asm.Constants
+     * @param superClass
+     *            the base class name - use "java.lang.Object" if no direct
+     *            base class
+     */
     public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
         this.name = name;
         this.modifiers = modifiers;
@@ -155,28 +149,6 @@ public class ClassNode extends MetadataNode implements Constants {
     public void addProperty(PropertyNode node) {
         FieldNode field = node.getField();
         addField(field);
-
-        String name = node.getName();
-        String getterName = "get" + capitalize(name);
-        String setterName = "set" + capitalize(name);
-
-        Statement getterBlock = node.getGetterBlock();
-        if (getterBlock == null) {
-            getterBlock = createGetterBlock(node, field);
-        }
-        Statement setterBlock = node.getGetterBlock();
-        if (setterBlock == null) {
-            setterBlock = createSetterBlock(node, field);
-        }
-
-        MethodNode getter =
-            new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
-
-        addMethod(getter);
-
-        Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
-        MethodNode setter = new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
-        addMethod(setter);
 
         properties.add(node);
     }
@@ -263,36 +235,20 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     /**
-	 * @return the field node on the outer class or null if this is not an
-	 *         inner class
-	 */
+     * @return the field node on the outer class or null if this is not an
+     *         inner class
+     */
     public FieldNode getOuterField(String name) {
         return null;
     }
 
     /**
-	 * Helper method to avoid casting to inner class
-	 * 
-	 * @return
-	 */
+     * Helper method to avoid casting to inner class
+     * 
+     * @return
+     */
     public ClassNode getOuterClass() {
         return null;
-    }
-
-    /**
-	 * Capitalizes the start of the given bean property name
-	 */
-    public static String capitalize(String name) {
-        return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
-    }
-
-    protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
-        return new ReturnStatement(new FieldExpression(field));
-    }
-
-    protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
-        return new ExpressionStatement(
-            new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
     }
 
     public void addStaticInitializerStatements(List staticStatements) {
@@ -341,7 +297,7 @@ public class ClassNode extends MetadataNode implements Constants {
                 }
                 else {
                     // lets prepend the package name to see if its in our
-					// package
+                    // package
                     String packageName = getPackageName();
                     if (packageName != null) {
                         String guessName = packageName + "." + identifier;
@@ -362,8 +318,8 @@ public class ClassNode extends MetadataNode implements Constants {
     }
 
     /**
-	 * @return the package name of this class
-	 */
+     * @return the package name of this class
+     */
     public String getPackageName() {
         int idx = name.lastIndexOf('.');
         if (idx > 0) {
@@ -401,6 +357,30 @@ public class ClassNode extends MetadataNode implements Constants {
 
     public boolean isScriptClass() {
         return "groovy.lang.GroovyShell".equals(superClass);
+    }
+
+    public MethodNode getGetterMethod(String getterName) {
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (getterName.equals(method.getName())
+                && !"void".equals(method.getReturnType())
+                && method.getParameters().length == 0) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    public MethodNode getSetterMethod(String getterName) {
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (getterName.equals(method.getName())
+                && "void".equals(method.getReturnType())
+                && method.getParameters().length == 1) {
+                return method;
+            }
+        }
+        return null;
     }
 
 }

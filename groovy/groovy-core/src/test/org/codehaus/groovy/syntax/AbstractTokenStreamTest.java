@@ -172,7 +172,11 @@ public class AbstractTokenStreamTest
         assertNull( in.la() );
     }
 
-    /** @todo don't know why this is borked */
+    /** 
+     * this test is broken as we have a large look-ahead token buffer now 
+     * to handle newlines. if we supported mid-stream consumption 
+     * (e.g. consumeAtIndex(3) then we could avoid such a large buffer
+     */
     public void DISABLED_testExhaustLookAhead()
         throws Exception
     {

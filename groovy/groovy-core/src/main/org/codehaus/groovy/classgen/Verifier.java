@@ -230,6 +230,38 @@ public class Verifier implements GroovyClassVisitor, Constants {
     }
 
     public void visitProperty(PropertyNode node) {
+        String name = node.getName();
+        FieldNode field = node.getField();
+
+        String getterName = "get" + capitalize(name);
+        String setterName = "set" + capitalize(name);
+
+        Statement getterBlock = node.getGetterBlock();
+        if (getterBlock == null) {
+            if (!node.isPrivate() && classNode.getGetterMethod(getterName) == null) {
+                getterBlock = createGetterBlock(node, field);
+            }
+        }
+        Statement setterBlock = node.getGetterBlock();
+        if (setterBlock == null) {
+            if (!node.isPrivate() && classNode.getSetterMethod(setterName) == null) {
+                setterBlock = createSetterBlock(node, field);
+            }
+        }
+
+        if (getterBlock != null) {
+            MethodNode getter =
+                new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, getterBlock);
+            classNode.addMethod(getter);
+            visitMethod(getter);
+        }
+        if (setterBlock != null) {
+            Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
+            MethodNode setter =
+                new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
+            classNode.addMethod(setter);
+            visitMethod(setter);
+        }
     }
 
     // Implementation methods
@@ -307,6 +339,22 @@ public class Verifier implements GroovyClassVisitor, Constants {
             }
         }
         return false;
+    }
+
+    /**
+     * Capitalizes the start of the given bean property name
+     */
+    public static String capitalize(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
+    }
+
+    protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
+        return new ReturnStatement(new FieldExpression(field));
+    }
+
+    protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
+        return new ExpressionStatement(
+            new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
     }
 
 }

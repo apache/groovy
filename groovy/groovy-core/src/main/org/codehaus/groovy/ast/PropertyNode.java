@@ -107,9 +107,13 @@ public class PropertyNode extends Statement implements Constants {
     public boolean isDynamicType() {
         return field.isDynamicType();
     }
-    
+
     public FieldNode getField() {
         return field;
+    }
+
+    public boolean isPrivate() {
+        return (modifiers & ACC_PRIVATE) != 0;
     }
 
 }
