@@ -1,4 +1,5 @@
 import org.codehaus.groovy.runtime.InvokerHelper
+import java.io.File
 
 /**
  * @author Jason Thomas
@@ -7,12 +8,12 @@ import org.codehaus.groovy.runtime.InvokerHelper
 class ConstructorBug extends GroovyTestCase {
     
     void testBug() {
-        type = new GroovyClassLoader().parseClass("src/test/groovy/bugs/TestBase.groovy")
+        type = new GroovyClassLoader().parseClass(new File("src/test/groovy/bugs/TestBase.groovy"))
         assert type != null
 
         println "created type: ${type}"
         
-        type = new GroovyClassLoader().parseClass("src/test/groovy/bugs/TestDerived.groovy")
+        type = new GroovyClassLoader().parseClass(new File("src/test/groovy/bugs/TestDerived.groovy"))
         assert type != null
 
         println "created type: ${type} of type: ${type.class}"

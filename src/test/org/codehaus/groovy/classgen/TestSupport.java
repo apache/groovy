@@ -55,7 +55,7 @@ import groovy.util.GroovyTestCase;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.ByteArrayInputStream;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -174,7 +174,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
     }
     
     protected GroovyObject compile(String fileName) throws Exception {
-        Class groovyClass = loader.parseClass(fileName);
+        Class groovyClass = loader.parseClass(new File(fileName));
 
         GroovyObject object = (GroovyObject) groovyClass.newInstance();
 

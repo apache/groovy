@@ -39,6 +39,8 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 
+import java.io.File;
+
 
 /**
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
@@ -98,6 +100,6 @@ public class GroovyTestSuite extends TestSuite {
     }
     
     public Class compile(String fileName) throws Exception {
-        return loader.parseClass(fileName);
+        return loader.parseClass(new File(fileName));
     }
 }

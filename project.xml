@@ -30,7 +30,7 @@
   <logo>/images/groovy-logo.png</logo>
 
   <description>
-   	a powerful and dynamic scripting language for the JVM
+    a powerful and dynamic scripting language for the JVM
   </description>
 
   <url>http://groovy.codehaus.org/</url>
@@ -166,6 +166,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Guillaume Laforge</name>
+      <id>glaforge</id>
+      <email></email>
+      <organization></organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
@@ -194,10 +203,6 @@
       <email></email>
     </contributor>
     <contributor>
-      <name>Guillaume Laforge</name>
-      <email></email>
-    </contributor>
-    <contributor>
       <name>John Wilson</name>
       <email></email>
     </contributor>
@@ -213,14 +218,14 @@
 
   <dependencies>
 
-	<!-- core dependencies -->
+    <!-- core dependencies -->
     <dependency>
       <id>asm</id>
       <version>1.4.1</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
-	<!-- dependencies used by optional features -->
+    <!-- dependencies used by optional features -->
     <dependency>
       <id>xerces</id>
       <version>2.4.0</version>
@@ -233,7 +238,7 @@
       <url>http://xml.apache.org/</url>
     </dependency>
 
-	<!-- only used for command line tools -->
+    <!-- only used for command line tools -->
     <dependency>
       <id>classworlds</id>
       <version>1.0-rc2</version>
@@ -250,13 +255,13 @@
       <version>1.5.2</version>
     </dependency>
 
-  <!-- only used for testing helper classes -->
+    <!-- only used for testing helper classes -->
     <dependency>
       <id>junit</id>
       <version>3.8.1</version>
     </dependency>
 
-  <!-- only used for testing/debugging-->
+    <!-- only used for testing/debugging-->
     <dependency>
       <id>asm+util</id>
       <version>1.4.1</version>
@@ -268,7 +273,7 @@
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
-  <!-- only used for BSF adapter-->
+    <!-- only used for BSF adapter-->
     <dependency>
       <id>bsf</id>
       <version>2.3.0-rc1</version>
@@ -298,8 +303,8 @@
     </dependency>
 
   <!-- only used for SQL library -->
-  	<dependency>
-	  <id>axion</id>   
+    <dependency>
+      <id>axion</id>
       <version>1.0-M3-dev</version>
     </dependency>
     <dependency>

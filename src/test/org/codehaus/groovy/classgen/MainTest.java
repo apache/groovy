@@ -48,6 +48,8 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyShell;
 
+import java.io.File;
+
 /**
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -57,6 +59,6 @@ public class MainTest extends TestSupport {
 
     public void testMainMethod() throws Exception {
         GroovyShell shell = new GroovyShell();
-        shell.run("src/test/groovy/SampleMain.groovy", new String[] { "A", "B", "C" });
+        shell.run(new File("src/test/groovy/SampleMain.groovy"), new String[] { "A", "B", "C" });
     }
 }

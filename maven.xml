@@ -12,12 +12,12 @@
   <goal name="dc" prereqs="clean, test"/>
 
   <preGoal name="site:deploy">
-  	<attainGoal name="javadoc"/>
+    <attainGoal name="javadoc"/>
   </preGoal>
   
   <postGoal name="dist:prepare-src-filesystem">
-  	<!-- lets zap the build.xml -->
-  	<delete file="${maven.dist.src.assembly.dir}/build.xml"/>
+    <!-- lets zap the build.xml -->
+    <delete file="${maven.dist.src.assembly.dir}/build.xml"/>
   </postGoal>
   
   <goal name="rebuild" prereqs="clean" description="Rebuilds the groovy install without running the unit tests">
@@ -27,7 +27,7 @@
   </goal>
   
   <goal name="groovy:release" prereqs="clean, groovy:disable-unittests, site, dist:deploy-bin, dist:deploy-src, jar:deploy"
-  	description="Performs a release of the source, binary and jar distros">
+    description="Performs a release of the source, binary and jar distros">
   </goal>
 
   <goal name="groovy:disable-unittests" description="Disables the running of the unit test cases">
@@ -48,24 +48,21 @@
   </goal>
   
   <postGoal name="dist:prepare-bin-filesystem">
-  	<attainGoal name="groovy:make-install"/>
-  	
-  	<echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>
-  	<copy toDir="${maven.dist.bin.assembly.dir}">
+    <attainGoal name="groovy:make-install"/>
+    <echo>Copying groovy install to ${maven.dist.bin.assembly.dir}</echo>
+    <copy toDir="${maven.dist.bin.assembly.dir}">
       <fileset dir="${groovy.install.staging.dest}">
         <include name="**/*"/>
       </fileset>
-  	</copy>
+    </copy>
   </postGoal>
   
   <goal name="run" prereqs="test:compile"
-		description="Runs the given compiled Groovy class">
-
-	<j:if test="${empty(name)}">
+    description="Runs the given compiled Groovy class">
+    <j:if test="${empty(name)}">
       <j:set var="name" value="HelloWorld"/>
-	</j:if>
-	
-	<echo>Running class $$name = ${name}</echo>
+    </j:if>
+    <echo>Running class $$name = ${name}</echo>
     <java classname="${name}" fork="yes">
       <classpath refid="test.classpath"/>
       <arg value="${args}"/>
@@ -73,13 +70,13 @@
   </goal>
 
   <goal name="script" prereqs="test:compile"
-		description="Runs the given Groovy script file">
+    description="Runs the given Groovy script file">
 
-	<j:if test="${empty(name)}">
+    <j:if test="${empty(name)}">
       <j:set var="name" value="src/test/groovy/script/HelloWorld.groovy"/>
-	</j:if>
-	
-	<echo>Running class $$name = ${name}</echo>
+    </j:if>
+
+    <echo>Running class $$name = ${name}</echo>
     <java classname="groovy.lang.GroovyShell" fork="yes">
       <classpath refid="test.classpath"/>
       <arg value="${name}"/>
@@ -89,11 +86,11 @@
 
 
   <goal name="console" prereqs="test:compile"
-		description="Runs the Groovy command console">
+    description="Runs the Groovy command console">
     <java classname="groovy.ui.Console" fork="yes">
       <classpath refid="test.classpath"/>
     </java>
-<!--		
+<!--
     <java classname="groovy.lang.GroovyShell" fork="yes">
       <arg value="src/main/groovy/ui/Console.groovy"/>
       <classpath refid="test.classpath"/>
@@ -102,7 +99,7 @@
   </goal>
 
   <goal name="swing:demo" prereqs="test:compile"
-		description="Runs the GroovySwing demo">
+    description="Runs the GroovySwing demo">
     <java classname="groovy.swing.Demo" fork="yes">
       <classpath refid="test.classpath"/>
     </java>
@@ -111,36 +108,36 @@
 
 
   <preGoal name="xdoc:jelly-transform">
-  	<attainGoal name="groovy:xdoc-stuff"/>
+    <attainGoal name="groovy:xdoc-stuff"/>
   </preGoal>
-  	
+
   <goal name="groovy:xdoc-stuff" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
     <mkdir dir="${maven.html2xdoc.dir}"/>
-  	<!--
+    <!--
     <copy toDir="${maven.html2xdoc.dir}">
       <fileset dir="${basedir}/xdocs">
         <include name="**/*.html"/>
       </fileset>
-  	</copy>
-  	-->
-  	
-  	<!-- now lets run the wiki plugin -->
-  	<!--
-  	<attainGoal name="java:compile"/>
-  	<attainGoal name="setclasspath"/>
-  	-->
-  	
-  	<wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
+    </copy>
+    -->
 
-	<!-- lets generate the HTML docs -->
-	<attainGoal name="groovy:make-new-javadoc"/>
-	
+    <!-- now lets run the wiki plugin -->
+    <!--
+    <attainGoal name="java:compile"/>
+    <attainGoal name="setclasspath"/>
+    -->
+
+    <wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
+
+    <!-- lets generate the HTML docs -->
+    <attainGoal name="groovy:make-new-javadoc"/>
+
     <attainGoal name="html2xdoc"/>
     <attainGoal name="faq"/>
   </goal>
 
   <goal name="groovy:make-new-javadoc" prereqs="java:compile"
-		description="Generates the HTML of the new JavaDoc added to the JDK">
+    description="Generates the HTML of the new JavaDoc added to the JDK">
     <mkdir dir="${maven.html2xdoc.dir}"/>
     <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes">
       <classpath refid="test.classpath"/>
@@ -155,12 +152,12 @@
   </postGoal>
     
   <goal name="setclasspath">
-	<path id="test.classpath">
-	    <pathelement path="${maven.build.dest}"/>
-	    <pathelement path="target/classes"/>
-	    <pathelement path="target/test-classes"/>
-	    <path refid="maven.dependency.classpath"/>
-	</path>
+    <path id="test.classpath">
+      <pathelement path="${maven.build.dest}"/>
+      <pathelement path="target/classes"/>
+      <pathelement path="target/test-classes"/>
+      <path refid="maven.dependency.classpath"/>
+    </path>
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
     <taskdef name="wiki2html" classname="org.codehaus.groovy.wiki.Wiki2Markup" classpathref="test.classpath"/> 
     <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
@@ -168,13 +165,13 @@
   
 
   <goal name="asm:dump" prereqs="test:compile"
-		description="Dumps the ASM instructions to generate the given class using the name property">
+    description="Dumps the ASM instructions to generate the given class using the name property">
 
-	<j:if test="${empty(name)}">
+    <j:if test="${empty(name)}">
       <j:set var="name" value="org.codehaus.groovy.classgen.DumpClass"/>
-	</j:if>
-	
-	<echo>Dumping class $$name = ${name}</echo>
+    </j:if>
+
+    <echo>Dumping class $$name = ${name}</echo>
     <java classname="org.objectweb.asm.util.DumpClassVisitor" fork="yes">
       <classpath refid="test.classpath"/>
       <arg value="${name}"/>
@@ -182,8 +179,8 @@
   </goal>
 
   <goal name="groovy:compile" prereqs="java:compile, setclasspath"
-  		description="Compiles the Groovy code">
-  		
+    description="Compiles the Groovy code">
+
     <!-- lets create the test cases from the wiki documentation -->
     <mkdir dir="${basedir}/target/test-classes/wiki"/>
     <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
@@ -200,7 +197,7 @@
   </goal>
 
   <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath"
-  		description="Compiles the Groovy unit test cases">
+    description="Compiles the Groovy unit test cases">
     <!-- lets copy and touch all the groovy files to ensure they all recompile -->
     <mkdir dir="${basedir}/target/test-classes"/>
     <copy todir="${basedir}/target/test-classes">
@@ -212,7 +209,7 @@
       </fileset>
     </copy>
     <touch>
-    	<fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/> 
+    <fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/>
     </touch>
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
@@ -316,12 +313,12 @@
       <echo>Processing ${lib.name}</echo>
       <j:choose>
         <j:when test="${lib.name.startsWith('commons-log')}">
-      	  <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/commons-logging.jar"/>
+          <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/commons-logging.jar"/>
         </j:when>
         <j:when test="${lib.name.startsWith('asm-util')}">
         </j:when>
         <j:when test="${lib.name.startsWith('asm')}">
-      	  <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
+          <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
         </j:when>
       </j:choose>
     </j:forEach>
