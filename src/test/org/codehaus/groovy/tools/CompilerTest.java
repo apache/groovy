@@ -63,7 +63,8 @@ public class CompilerTest extends GroovyTestCase {
 
     public void testMethodCall() throws Exception {
         //runTest("ClosureMethodTest.groovy");
-        runTest("tree/VerboseTreeTest.groovy");
+        //runTest("tree/VerboseTreeTest.groovy");
+        runTest("tree/NestedClosureBugTest.groovy");
     }
 
     protected void runTest(String name) throws Exception {

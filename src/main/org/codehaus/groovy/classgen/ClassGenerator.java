@@ -646,15 +646,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         innerClasses.add(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
-        cv.visitTypeInsn(NEW, innerClassinternalName);
-        cv.visitInsn(DUP);
-        cv.visitVarInsn(ALOAD, 0);
 
         ClassNode owner = innerClass.getOuterClass();
         if (classNode instanceof InnerClassNode) {
             // lets load the outer this
-            cv.visitFieldInsn(GETFIELD, getClassInternalName(owner.getName()), "__outerInstance", getTypeDescription(owner.getName()));
-        }        
+            int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+            cv.visitVarInsn(ALOAD, 0);
+            cv.visitFieldInsn(GETFIELD, internalClassName, "__outerInstance", getTypeDescription(owner.getName()));
+            cv.visitVarInsn(ASTORE, paramIdx);
+
+            cv.visitTypeInsn(NEW, innerClassinternalName);
+            cv.visitInsn(DUP);
+            cv.visitVarInsn(ALOAD, paramIdx);
+        }     
+        else {
+            cv.visitTypeInsn(NEW, innerClassinternalName);
+            cv.visitInsn(DUP);
+            cv.visitVarInsn(ALOAD, 0);
+            
+        }   
 
         // we may need to pass in some other constructors
         cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "(L" + getClassInternalName(owner.getName()) + ";)V");
@@ -723,18 +733,18 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
 
-        if (arguments instanceof TupleExpression) {
-            int parametersItx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+        if (argumentsUseStack(arguments)) {
+            int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
 
             arguments.visit(this);
 
-            cv.visitVarInsn(ASTORE, parametersItx);
+            cv.visitVarInsn(ASTORE, paramIdx);
 
             call.getObjectExpression().visit(this);
 
             cv.visitLdcInsn(call.getMethod());
 
-            cv.visitVarInsn(ALOAD, parametersItx);
+            cv.visitVarInsn(ALOAD, paramIdx);
 
             idx--;
         }
@@ -1101,6 +1111,15 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftHandExpression = true;
         leftExpression.visit(this);
         leftHandExpression = false;
+    }
+
+    /**
+     * @return true if the given argument expression requires the
+     * stack, in which case the arguments are evaluated first, stored 
+     * in the variable stack and then reloaded to make a method call
+     */
+    protected boolean argumentsUseStack(Expression arguments) {
+        return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     }
 
     /**

@@ -1,10 +1,46 @@
 Core Groovy Tasks
 =================
 
-* test closure with no argument
+* write a Node pretty printer
+
+* test closure with no argument, once bob's done the parser. both
+    foo = { someMethod() }
+    foo2 = {| someMethod() }
+    foo.call()
 
 * test tree builder - calling of nested methods
 
+* refactor the MetaClass to use an Object[] rather than Object?
+
+* have some kinda way to do this
+
+	MethodProxy proxy = metaClass.getMethod("name", List arguments)
+	if (proxy != null) {
+		proxy.call(instance, arguments);
+	}
+	else {
+		// invoke on delegate
+		InvokeHelper.invokeMethod(delegate, name, arguments)
+	}	
+
+	so rather than just doing 'hasMethod' or 'understandsMethod' we can return
+	a Closure or MethodProxy or something or null if a method is not understood
+
+* allow closures to have a delegate object, so that when they are used in a 
+	tree build kind of way, the methods can be forwarded to a top level owner.
+	
+	e.g.
+	
+	someBuilder.root {
+		child {
+			grandChild()
+		}
+	}
+	
+	the child and grandChild methods could be invoked on someBuilder if the builder decided to 
+	register itself as the delegate on the Closure. The delegate would be, by default, the
+	outer class instance.
+	
 
 * integer.times() method?
 
