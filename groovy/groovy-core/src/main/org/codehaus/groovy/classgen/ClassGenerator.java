@@ -169,6 +169,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
     MethodCaller compareNotEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareNotEqual");
+    MethodCaller compareToMethod = MethodCaller.newStatic(InvokerHelper.class, "compareTo");
     MethodCaller findRegexMethod = MethodCaller.newStatic(InvokerHelper.class, "findRegex");
     MethodCaller matchRegexMethod = MethodCaller.newStatic(InvokerHelper.class, "matchRegex");
     MethodCaller compareLessThanMethod = MethodCaller.newStatic(InvokerHelper.class, "compareLessThan");
@@ -917,7 +918,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 break;
 
             case Token.COMPARE_TO :
-                evaluateBinaryExpression("compareTo", expression);
+                evaluateCompareTo(expression);
                 break;
 
             case Token.COMPARE_GREATER_THAN :
@@ -2014,6 +2015,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         new ArgumentListExpression(new Expression[] { expression.getRightExpression()}).visit(this);
         // expression.getRightExpression().visit(this);
         invokeMethodMethod.call(cv);
+    }
+
+    protected void evaluateCompareTo(BinaryExpression expression) {
+        Expression leftExpression = expression.getLeftExpression();
+        leftHandExpression = false;
+        leftExpression.visit(this);
+        expression.getRightExpression().visit(this);
+        compareToMethod.call(cv);
     }
 
     protected void evaluateBinaryExpressionWithAsignment(String method, BinaryExpression expression) {
