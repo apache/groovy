@@ -305,6 +305,22 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Support the subscript operator for List
+     * 
+     * @return
+     */
+    public static Object get(Collection coll, String property) {
+        List answer = new ArrayList(coll.size());
+        for (Iterator iter = coll.iterator(); iter.hasNext(); ) {
+            Object item = iter.next();
+            Object value = InvokerHelper.getProperty(item, property);
+            answer.add(value);
+        }
+        return answer;
+    }
+
+
+    /**
      * A convenience method for creating an immutable map
      */
     public static Map immutable(Map self) {

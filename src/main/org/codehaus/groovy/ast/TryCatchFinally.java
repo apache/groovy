@@ -85,4 +85,14 @@ public class TryCatchFinally extends Statement {
     public void addCatch(CatchStatement catchStatement) {
         catchStatements.add(catchStatement);
     }
+
+    /**
+     * @return the catch statement of the given index or null
+     */
+    public CatchStatement getCatchStatement(int idx) {
+        if (idx >= 0 && idx < catchStatements.size()) {
+            return (CatchStatement) catchStatements.get(idx);
+        }
+        return null;
+    }
 }

@@ -43,72 +43,64 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.lang;
+package org.codehaus.groovy.tools.xml;
 
-import java.util.List;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.URL;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import junit.framework.TestCase;
+
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * @author James Strachan
  * @version $Revision$
  */
-public class TupleTest extends TestCase {
+public class DomToGroovyTest extends TestCase {
 
-    Object[] data = { "a", "b", "c" };
-    Tuple t = new Tuple(data);
+    protected DocumentBuilder builder;
+    protected DomToGroovy converter;
+    protected File dir = new File("target/generated-groovyxml");
 
-    public void testSize() {
-        assertEquals("Size of " + t, 3, t.size());
-
-        assertEquals("get(0)", "a", t.get(0));
-        assertEquals("get(1)", "b", t.get(1));
+    public void testConversion() throws Exception {
+        convert("test1.xml", "test1.groovy");
     }
 
-    public void testGetOutOfTuple() {
-        try {
-            t.get(-1);
-            fail("Should have thrown IndexOut");
-        }
-        catch (IndexOutOfBoundsException e) {
-            // worked
-        }
-        try {
-            t.get(10);
-            fail("Should have thrown IndexOut");
-        }
-        catch (IndexOutOfBoundsException e) {
-            // worked
-        }
+    protected void convert(String name, String output) throws Exception {
+        Document document = parse(name);
 
+        PrintWriter writer = new PrintWriter(new FileWriter(new File(dir, output)));
+        converter = new DomToGroovy(writer);
+
+        writer.println("#!/bin/groovy");
+        writer.println();
+        writer.println("// generated from " + name);
+        writer.println();
+        converter.print(document);
+        writer.close();
     }
 
-    public void testContains() {
-        assertTrue("contains a", t.contains("a"));
-        assertTrue("contains b", t.contains("b"));
+    protected Document parse(String name) throws SAXException, IOException {
+        URL resource = getClass().getResource(name);
+        assertTrue("Could not find resource: " + name, resource != null);
+        return builder.parse(new InputSource(resource.toString()));
     }
 
-    public void testSubList() {
-        List s = t.subList(1, 2);
+    protected void setUp() throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        builder = factory.newDocumentBuilder();
 
-        assertTrue("is a Tuple", s instanceof Tuple);
-
-        assertEquals("size", 1, s.size());
-    }
-
-    public void testHashCodeAndEquals() {
-        Tuple a = new Tuple(new Object[] { "a", "b", "c" });
-        Tuple b = new Tuple(new Object[] { "a", "b", "c" });
-        Tuple c = new Tuple(new Object[] { "d", "b", "c" });
-
-        assertEquals("hashcode", a.hashCode(), b.hashCode());
-        assertTrue("hashcode", a.hashCode() != c.hashCode());
-
-        assertEquals("a and b", a, b);
-        assertFalse("a != c", a.equals(c));
-    }
-
-    public void testIterator() {
+        dir.mkdirs();
     }
 
 }

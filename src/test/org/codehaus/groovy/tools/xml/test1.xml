@@ -1,0 +1,10 @@
+<html>
+  <head>
+	<title>XML encoding with Groovy</title>
+  </head>
+  <body>
+    <h1>XML encoding with Groovy</h1>
+    <p><a href="http://groovy.codehaus.org">Groovy</a> can be used as an alternative markup to XML</p>
+    <p>This is some <b>mixed</b> text</p>
+  </body>
+</html>

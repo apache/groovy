@@ -107,3 +107,118 @@ OTHER STUFF
 ===========
 
 
+OPTIMISATIONS
+=============
+method invocations - if instanceof DynamicMethodInvoke
+then generate bytecode
+
+foo.invokeMethod(method, args);
+
+
+
+
+LOGGING?
+========
+
+class Foo {
+
+  Foo(log = new GroovyLogger(thisClass)) {
+    @log = log;
+  }
+  
+  foo(file) {
+    log.aboutToOpenFile("opening file ${file});
+
+    ..
+    
+    log.closedFile("closed down file ${file}");
+  }
+}
+
+The above could call GroovyLogger.new(Class owner) which 
+could then then have CommonsLogger(thisClass) implementation 
+that can be switched in via registration or system property etc
+
+
+MARKUP
+======
+
+Have Groovy -> SAX thingy for others to use as XML language?
+
+A Groovy file could look like this & we could implement a Groovy SAX / DOM parser...
+
+foo {
+  bar {
+    x(a:1, b:2) {
+      c("hello");
+      d(x:1, b:2);
+    }
+  }
+}
+
+For mixed text we could do
+
+html {
+  body {
+    h1("this is title");
+    
+    p("blob of text");
+    
+    // mixed text
+    p {
+      xml.append("the ");
+      b("quick");
+      xml.append(" brown fox");
+    }
+    
+    // element with attributes and text
+    a(href:'http://blah', title:"foo") {
+      xml.append("the text");
+    }
+    
+    // though it'd be nicer like this
+    a(href:'http://blah', title:"foo").append("the text");
+  }
+}  
+
+For something heavily namespaced we could do...
+
+xsl = xml.namespace("http://foo");
+xsl.template {
+  xsl.element (match:"*") {
+     foo = xml.namespace("whatnot");
+     
+     // lets use some namespaced attributes
+     foo.bar(a:"123", b:5, xmlns:[foo.x:"abc", xsl.y:"abc"]) {
+     	// i.e. for namespace prefixed attributes we use a map expression
+     	// so that we can refer to namespace variables
+     }
+  }
+}
+
+If we supported named parameter calling...
+
+class Foo extends MarkupBuilder {
+
+  foo() {
+    return html {
+      tr(a : "hello");
+      td(valign : "centre") {
+  	    b("some text);
+	    a(href : "http://blah", title : "whatnot") {
+	      p("hello there");
+	    };       
+      };
+      for i in [1, 2, 3] {
+        td(valign: "right") {
+          p("hello there ${i});
+        }
+      }
+    };
+  }
+}
+
+If we could remove the ; 
+
+
+

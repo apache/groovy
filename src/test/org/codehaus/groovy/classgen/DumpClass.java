@@ -201,4 +201,17 @@ public class DumpClass {
     public void setBoolean() {
         x = Boolean.TRUE;
     }
+    
+    public void tryCatch() {
+        try {
+            testGroovyAssertion();
+        }
+        catch (AssertionError e) {
+            System.out.println(e);
+        }
+        finally {
+            result = null;   
+        }
+        System.out.println("Hello!");
+    }
 }
