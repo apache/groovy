@@ -549,7 +549,7 @@ public class Token
 
     public String toString()
     {
-        return super.toString() + "[text=" + this.text + ",type=" + type + "]";
+        return super.toString() + "[(" + getDescription() + ") text=" + this.text + ",type=" + type + "]";
     }
 
     // ----------------------------------------------------------------------
