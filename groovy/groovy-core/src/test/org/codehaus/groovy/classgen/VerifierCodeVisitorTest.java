@@ -43,12 +43,12 @@ public class VerifierCodeVisitorTest extends TestCase {
     }
 
     protected void assertValidName(String name) {
-        VerifierCodeVisitor.assertValidIdentifier(name, new ASTNode());
+        VerifierCodeVisitor.assertValidIdentifier(name, "variable name", new ASTNode());
     }
 
     protected void assertInvalidName(String name) {
         try {
-            VerifierCodeVisitor.assertValidIdentifier(name, new ASTNode());
+            VerifierCodeVisitor.assertValidIdentifier(name, "variable name", new ASTNode());
             fail("Should have thrown exception due to invalid name: " + name);
         }
         catch (RuntimeParserException e) {

@@ -47,8 +47,12 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
@@ -67,9 +71,28 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
-        String method = call.getMethod();
-        assertValidIdentifier(method, call);
+        assertValidIdentifier(call.getMethod(), "method name", call);
         super.visitMethodCallExpression(call);
+    }
+
+    public void visitForLoop(ForStatement expression) {
+        assertValidIdentifier(expression.getVariable(), "for loop variable name", expression);
+        super.visitForLoop(expression);
+    }
+
+    public void visitPropertyExpression(PropertyExpression expression) {
+        assertValidIdentifier(expression.getProperty(), "property name", expression);
+        super.visitPropertyExpression(expression);
+    }
+
+    public void visitFieldExpression(FieldExpression expression) {
+        assertValidIdentifier(expression.getFieldName(), "field name", expression);
+        super.visitFieldExpression(expression);
+    }
+
+    public void visitVariableExpression(VariableExpression expression) {
+        assertValidIdentifier(expression.getVariable(), "variable name", expression);
+        super.visitVariableExpression(expression);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
@@ -91,20 +114,20 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
         super.visitBinaryExpression(expression);
     }
 
-    public static void assertValidIdentifier(String name, ASTNode node) {
+    public static void assertValidIdentifier(String name, String message, ASTNode node) {
         int size = name.length();
         if (size <= 0) {
-            throw new RuntimeParserException("An empty string is not a valid method identifier", node);
+            throw new RuntimeParserException("Invalid " + message + ". Identifier must not be empty", node);
         }
         char firstCh = name.charAt(0);
         if (!Character.isJavaIdentifierStart(firstCh) || firstCh == '$') {
-            throw new RuntimeParserException("Invalid method name. Must start with a letter but was: " + name, node);
+            throw new RuntimeParserException("Invalid " + message + ". Must start with a letter but was: " + name, node);
         }
 
         for (int i = 1; i < size; i++) {
             char ch = name.charAt(i);
             if (!Character.isJavaIdentifierPart(ch)) {
-                throw new RuntimeParserException("Invalid method name. Invalid character at position: " + (i + 1) + " of value:  " + ch + " in name: " + name, node);
+                throw new RuntimeParserException("Invalid " + message + ". Invalid character at position: " + (i + 1) + " of value:  " + ch + " in name: " + name, node);
             }
         }
     }
