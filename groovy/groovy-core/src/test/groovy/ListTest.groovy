@@ -95,4 +95,46 @@ class ListTest extends GroovyTestCase {
         l = [1, 2, 7]
         assert l.min() == 1
     }
+    
+    void testPlus() {
+        l1 = [6, 4, 5, 1, 7, 2]        
+        l2 = [6, 4, 5, 1, 7, [4,5]]
+        assert l1 + l2 == [6, 4, 5, 1, 7, 2, 6, 4, 5, 1, 7, [4,5]]            
+    }
+    
+    void testPlusOneElement() {
+        l1 = [6, 4, 5, 1, 7, 2]        
+        l2 = "erererer"
+        assert l1 + l2 == [6, 4, 5, 1, 7, 2, "erererer"]            
+    }
+    
+    void testTimes() {
+        l = [4,7,8]
+        assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]
+    }
+    
+    void testMinus() {
+        l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5] 
+        l2 = [1, 2, 4] 
+        assert l1 - l2 == [3, 5] 
+    }
+
+    void testMinusDifferentTypes() {
+        l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"] 
+        l2 = [1, 2, "w"] 
+        assert l1 - l2 == ["wrer", 3, "wrewer", 4, 5] 
+    }  
+     
+    void testIntersect() {
+        l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"] 
+        l2 = [1, 2, "f", "w"] 
+        assert l1.intersect(l2) == [1, 2, "w"] 
+    }
+      
+    void testFlatten() {
+        l= [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
+        assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
+    }
+    
+    
 }
