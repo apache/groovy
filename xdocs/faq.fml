@@ -184,6 +184,24 @@
   </part>
 
 	<!-- More faqs or parts here -->
-
+  <part id="committer">
+    <title>Groovy Committers FAQ</title>
+    
+    <faq id="start">
+      <question>
+        I've just been given CVS commit access; what should I do now?
+      </question>
+      <answer>
+        <p>
+        If you've just been given CVS commit access see if you can do a commit.
+        You'll need to do an SSH based CVS checkout. Once you've done this 
+        you should be able to edit the project.xml file and change yourself 
+        from being a committer to being a developer. Then try commit that
+        and see if it works.
+        If you need more help, please ask on IRC or email.
+       </p>
+      </answer>
+    </faq>   
+  </part>
 
 </faqs>
