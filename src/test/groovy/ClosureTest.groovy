@@ -34,6 +34,20 @@ class ClosureTest extends GroovyTestCase {
         assert count := 10
     }
   
+  	void testMethodClosure() {
+  	    block = this.incrementCallCount
+  	    
+  	    count = 0
+  	    
+  	    block.call()
+  	    
+  	    assert count := 1
+  	    
+  	    block = System.out.println
+  	    
+  	    block.call("I just invoked a closure!");
+  	}
+  
 	incrementCallCount() {
 	    //System.out.println("invoked increment method!")
 	    count = count + 1

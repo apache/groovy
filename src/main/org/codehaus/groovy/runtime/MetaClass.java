@@ -59,8 +59,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.lang.Closure;
-
 /**
  * Allows methods to be dynamically added to existing classes at runtime
  * 
@@ -276,11 +274,7 @@ public class MetaClass {
         // closure
         List methods = getMethods(property);
         if (!methods.isEmpty()) {
-            return new Closure() {
-                public Object call(Object args) {
-                    return InvokerHelper.invokeMethod(object, property, args);
-                }
-            };
+            return new MethodClosure(object, property);
         }
 
         /** @todo or are we an extensible groovy class? */
