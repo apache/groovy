@@ -1858,13 +1858,15 @@ public class DefaultGroovyMethods {
      * @param self a String to be repeated
      * @param factor the number of times the String should be repeated
      * @return a String composed of a repeatition
-     * @throws IllegalArgumentException if the number of repeatition is &lt; 1
+     * @throws IllegalArgumentException if the number of repeatition is &lt; 0
      */
     public static String multiply(String self, Number factor) {
         int size = factor.intValue();
-        if (size < 1) {
+        if (size == 0)
+            return "";
+        else if (size < 0) {
             throw new IllegalArgumentException(
-                "multiply() should be called with a number of 1 or greater not: " + size);
+                "multiply() should be called with a number of 0 or greater not: " + size);
         }
         StringBuffer answer = new StringBuffer(self);
         for (int i = 1; i < size; i++) {
