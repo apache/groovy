@@ -72,17 +72,17 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
 	 */
 	public Object getProperty(final String property) {
-		/**
-		 * 
-		 * Allow serverProxy.a.b.c(...)
-		 * This invokes a remote method with the name "a.b.c"
-		 * This technique is shamelessly stolen from the Python XML-RPC implementation
-		 * Thanks and credit to Fredrik Lundh
-		 * 
-		 */
-		
 		return new GroovyObjectSupport() {
-		private StringBuffer propertyPrefix = new StringBuffer(property + ".");
+			/**
+			 * 
+			 * Allow serverProxy.a.b.c(...)
+			 * This invokes a remote method with the name "a.b.c"
+			 * This technique is shamelessly stolen from the Python XML-RPC implementation
+			 * Thanks and credit to Fredrik Lundh
+			 * 
+			 */
+					
+			private final StringBuffer propertyPrefix = new StringBuffer(property + ".");
 		
 			public Object getProperty(final String property) {
 				this.propertyPrefix.append(property).append('.');

@@ -136,7 +136,6 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	private final int maxKeepAlives;
 	private final int workerIdleLife;
 	private final int socketReadTimeout;
-	private final StringBuffer propertyPrefix = new StringBuffer();
 	private final Map registeredMethods = Collections.synchronizedMap(new HashMap());
 
 	/**
@@ -389,28 +388,39 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
 	 */
 	public Object getProperty(final String property) {
-		/**
-		 * 
-		 * Allow server.a.b.c = {...}
-		 * This creates a method with the name "a.b.c"
-		 * This technique is shamelessly stolen from the Python XML-RPC implementation
-		 * Thanks and credit to Fredrik Lundh
-		 * 
-		 */
-
-		this.propertyPrefix.append(property).append('.');
+		return new GroovyObjectSupport() {
+			/**
+			 * 
+			 * Allow server.a.b.c = {....}
+			 * This deefines a remote method with the name "a.b.c"
+			 * This technique is shamelessly stolen from the Python XML-RPC implementation
+			 * Thanks and credit to Fredrik Lundh
+			 * 
+			 */
+					
+			private final StringBuffer propertyPrefix = new StringBuffer(property + ".");
 		
-		return this;
+			public Object getProperty(final String property) {
+				this.propertyPrefix.append(property).append('.');
+				
+				return this;
+			}
+			
+			public void setProperty(final String name, final Object args) {
+				XMLRPCServer.this.setProperty(this.propertyPrefix + name, name, args);
+			}
+		};
 	}
 	
 	/* (non-Javadoc)
 	 * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
 	 */
-	public void setProperty(final String property, final Object method) {
-	final String methodName = this.propertyPrefix.append(property).toString();
-	Closure closure = null;
+	public void setProperty(final String methodName, final Object method) {
+		setProperty(methodName, methodName, method);
+	}
 	
-		this.propertyPrefix.setLength(0);
+	private void setProperty(final String methodName, final String javaMethodName, final Object method) {
+	Closure closure = null;
 	
 		if (method instanceof Closure) {
 			//
@@ -429,14 +439,14 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 		//
 		// calling a static method on a class
 		//
-		
-		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC | Modifier.STATIC, ((Class)method).getMethods(), property);			
+			
+		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC | Modifier.STATIC, ((Class)method).getMethods(), javaMethodName);			
 		
 			if (numberofParameters != -1) {
-				closure = makeMethodProxy(property, numberofParameters, ((Class)method).getName());
+				closure = makeMethodProxy(javaMethodName, numberofParameters, ((Class)method).getName());
 			} else {
 				throw new GroovyRuntimeException("No static method "
-						                         + property
+						                         + javaMethodName
 											    + " on class "
 												+ ((Class)method).getName());
 			}
@@ -445,14 +455,14 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 		// calling a method on an instance of a class
 		//
 			
-		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC, method.getClass().getMethods(), property);			
+		final int numberofParameters = getNumberOfParameters(Modifier.PUBLIC, method.getClass().getMethods(), javaMethodName);			
 		
 			if (numberofParameters != -1) {
-				closure = makeMethodProxy(property, numberofParameters, "delegate");
+				closure = makeMethodProxy(javaMethodName, numberofParameters, "delegate");
 				closure.setDelegate(method);
 			} else {
 				throw new GroovyRuntimeException("No method "
-                        + property
+                        + javaMethodName
 					    + " on class "
 						+ method.getClass().getName());
 			}
