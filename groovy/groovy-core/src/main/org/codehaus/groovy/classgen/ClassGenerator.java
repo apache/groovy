@@ -149,6 +149,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructorOf");
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeClosure");
+    MethodCaller asIntMethod = MethodCaller.newStatic(InvokerHelper.class, "asInt");
     MethodCaller asTypeMethod = MethodCaller.newStatic(InvokerHelper.class, "asType");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller getPropertySafeMethod = MethodCaller.newStatic(InvokerHelper.class, "getPropertySafe");
@@ -948,6 +949,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 evaluateBinaryExpressionWithAsignment("divide", expression);
                 break;
 
+               case Token.LEFT_SHIFT :
+                   evaluateBinaryExpression("leftShift", expression);
+                   break;
+
+                  case Token.RIGHT_SHIFT :
+                      evaluateBinaryExpression("rightShift", expression);
+                      break;
+
             case Token.KEYWORD_INSTANCEOF :
                 evaluateInstanceof(expression);
                 break;
@@ -1700,23 +1709,33 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
-        int size = expression.getExpressions().size();
-        pushConstant(size);
-
         String typeName = getClassInternalName(expression.getType());
-        cv.visitTypeInsn(ANEWARRAY, typeName);
+        Expression sizeExpression = expression.getSizeExpression();
+        if (sizeExpression != null) {
+            // lets convert to an int
+            visitAndAutobox(sizeExpression);
+            asIntMethod.call(cv);
 
-        for (int i = 0; i < size; i++) {
-            cv.visitInsn(DUP);
-            pushConstant(i);
-            Expression elementExpression = expression.getExpression(i);
-            if (elementExpression == null) {
-                ConstantExpression.NULL.visit(this);
+            cv.visitTypeInsn(ANEWARRAY, typeName);
+        }
+        else {
+            int size = expression.getExpressions().size();
+            pushConstant(size);
+
+            cv.visitTypeInsn(ANEWARRAY, typeName);
+
+            for (int i = 0; i < size; i++) {
+                cv.visitInsn(DUP);
+                pushConstant(i);
+                Expression elementExpression = expression.getExpression(i);
+                if (elementExpression == null) {
+                    ConstantExpression.NULL.visit(this);
+                }
+                else {
+                    visitAndAutobox(elementExpression);
+                }
+                cv.visitInsn(AASTORE);
             }
-            else {
-                visitAndAutobox(elementExpression);
-            }
-            cv.visitInsn(AASTORE);
         }
     }
 
@@ -1891,7 +1910,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         BlockStatement block = new BlockStatement();
         block.addStatement(
             new ExpressionStatement(
-                new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
+                new MethodCallExpression(
+                    new VariableExpression("super"),
+                    "<init>",
+                    new VariableExpression("values"))));
         Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object[]", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
@@ -1899,7 +1921,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     protected void doCast(String type) {
         if (!type.equals("java.lang.Object")) {
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            cv.visitTypeInsn(
+                CHECKCAST,
+                type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
         }
     }
 
@@ -1911,7 +1935,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 asTypeMethod.call(cv);
             }
 
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            cv.visitTypeInsn(
+                CHECKCAST,
+                type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
         }
     }
 
@@ -2035,7 +2061,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         leftBinExpr.getLeftExpression(),
                         "putAt",
                         new ArgumentListExpression(
-                            new Expression[] { leftBinExpr.getRightExpression(), expression.getRightExpression()})));
+                            new Expression[] {
+                                leftBinExpr.getRightExpression(),
+                                expression.getRightExpression()})));
                 cv.visitInsn(POP);
                 return;
             }
@@ -2045,617 +2073,617 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         // lets evaluate the RHS then hopefully the LHS will be a field
-        leftHandExpression = false;
-        Expression rightExpression = expression.getRightExpression();
+            leftHandExpression = false;
+            Expression rightExpression = expression.getRightExpression();
 
-        String type = getLHSType(leftExpression);
-        if (type != null) {
-            //System.out.println("### expression: " + leftExpression);
-            //System.out.println("### type: " + type);
-            visitCastExpression(new CastExpression(type, rightExpression));
-        }
-        else {
-            visitAndAutobox(rightExpression);
-        }
-
-        leftHandExpression = true;
-        leftExpression.visit(this);
-        leftHandExpression = false;
-    }
-
-    /**
-     * Deduces the type name required for some casting
-     * 
-     * @return the type of the given (LHS) expression or null if it is java.lang.Object or it cannot be deduced
-     */
-    protected String getLHSType(Expression leftExpression) {
-        if (leftExpression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) leftExpression;
-            String type = varExp.getType();
-            if (isValidTypeForCast(type)) {
-                return type;
+            String type = getLHSType(leftExpression);
+            if (type != null) {
+                //System.out.println("### expression: " + leftExpression);
+                //System.out.println("### type: " + type);
+                visitCastExpression(new CastExpression(type, rightExpression));
             }
-            String variableName = varExp.getVariable();
-            Variable variable = (Variable) variableStack.get(variableName);
-            if (variable != null) {
-                if (variable.isHolder() || variable.isProperty()) {
-                    return null;
-                }
-                type = variable.getType();
+            else {
+                visitAndAutobox(rightExpression);
+            }
+
+            leftHandExpression = true;
+            leftExpression.visit(this);
+            leftHandExpression = false;
+        }
+
+        /**
+         * Deduces the type name required for some casting
+         * 
+         * @return the type of the given (LHS) expression or null if it is java.lang.Object or it cannot be deduced
+         */
+        protected String getLHSType(Expression leftExpression) {
+            if (leftExpression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) leftExpression;
+                String type = varExp.getType();
                 if (isValidTypeForCast(type)) {
                     return type;
                 }
-            }
-            else {
-                FieldNode field = classNode.getField(variableName);
-                if (field == null) {
-                    field = classNode.getOuterField(variableName);
-                }
-                if (field != null) {
-                    type = field.getType();
-                    if (!field.isHolder() && isValidTypeForCast(type)) {
+                String variableName = varExp.getVariable();
+                Variable variable = (Variable) variableStack.get(variableName);
+                if (variable != null) {
+                    if (variable.isHolder() || variable.isProperty()) {
+                        return null;
+                    }
+                    type = variable.getType();
+                    if (isValidTypeForCast(type)) {
                         return type;
                     }
                 }
-            }
-        }
-        return null;
-    }
-
-    protected boolean isValidTypeForCast(String type) {
-        return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference");
-    }
-
-    protected void visitAndAutobox(Expression expression) {
-        expression.visit(this);
-
-        if (comparisonExpression(expression)) {
-            Label l0 = new Label();
-            cv.visitJumpInsn(IFEQ, l0);
-            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
-            Label l1 = new Label();
-            cv.visitJumpInsn(GOTO, l1);
-            cv.visitLabel(l0);
-            cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
-            cv.visitLabel(l1);
-        }
-    }
-
-    protected void evaluatePrefixMethod(String method, Expression expression) {
-        expression.visit(this);
-        cv.visitLdcInsn(method);
-        new ArgumentListExpression().visit(this);
-        invokeMethodMethod.call(cv);
-
-        leftHandExpression = true;
-        expression.visit(this);
-        leftHandExpression = false;
-        expression.visit(this);
-    }
-
-    protected void evaluatePostfixMethod(String method, Expression expression) {
-        leftHandExpression = false;
-        expression.visit(this);
-
-        int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
-        cv.visitVarInsn(ASTORE, tempIdx);
-        /*
-         * if (! isStaticMethod() && ! isHolderVariable(expression)) {
-         * cv.visitVarInsn(ALOAD, 0); }
-         */
-        cv.visitVarInsn(ALOAD, tempIdx);
-
-        cv.visitLdcInsn(method);
-        new ArgumentListExpression().visit(this);
-        invokeMethodMethod.call(cv);
-
-        leftHandExpression = true;
-        expression.visit(this);
-        leftHandExpression = false;
-
-        cv.visitVarInsn(ALOAD, tempIdx);
-    }
-
-    protected boolean isHolderVariable(Expression expression) {
-        if (expression instanceof FieldExpression) {
-            FieldExpression fieldExp = (FieldExpression) expression;
-            return fieldExp.getField().isHolder();
-        }
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            FieldNode field = classNode.getField(varExp.getVariable());
-            Variable variable = (Variable) variableStack.get(varExp.getVariable());
-            if (field != null && variable == null) {
-                return field.isHolder();
-            }
-            return variable.isHolder();
-        }
-        return false;
-    }
-
-    protected void evaluateInstanceof(BinaryExpression expression) {
-        expression.getLeftExpression().visit(this);
-        Expression rightExp = expression.getRightExpression();
-        String className = null;
-        if (rightExp instanceof ClassExpression) {
-            ClassExpression classExp = (ClassExpression) rightExp;
-            className = classExp.getType();
-        }
-        else {
-            throw new RuntimeException(
-                "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
-        }
-        String classInternalName = getClassInternalName(className);
-        cv.visitTypeInsn(INSTANCEOF, classInternalName);
-    }
-
-    /**
-     * @return true if the given argument expression requires the stack, in
-     *         which case the arguments are evaluated first, stored in the
-     *         variable stack and then reloaded to make a method call
-     */
-    protected boolean argumentsUseStack(Expression arguments) {
-        return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
-    }
-
-    /**
-     * @return true if the given expression represents a non-static field
-     */
-    protected boolean isNonStaticField(Expression expression) {
-        FieldNode field = null;
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            field = classNode.getField(varExp.getVariable());
-        }
-        else if (expression instanceof FieldExpression) {
-            FieldExpression fieldExp = (FieldExpression) expression;
-            field = classNode.getField(fieldExp.getFieldName());
-        }
-        if (field != null) {
-            return !field.isStatic();
-        }
-        return false;
-    }
-
-    protected boolean isThisExpression(Expression expression) {
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            return varExp.getVariable().equals("this");
-        }
-        return false;
-    }
-
-    /**
-     * For assignment expressions, return a safe expression for the LHS we can use
-     * to return the value 
-     */
-    protected Expression createReturnLHSExpression(Expression expression) {
-        if (expression instanceof BinaryExpression) {
-            BinaryExpression binExpr = (BinaryExpression) expression;
-            if (binExpr.getOperation().isAssignmentToken()) {
-                return createReusableExpression(binExpr.getLeftExpression());
-            }
-        }
-        return null;
-    }
-
-    protected Expression createReusableExpression(Expression expression) {
-        ExpressionTransformer transformer = new ExpressionTransformer() {
-            public Expression transform(Expression expression) {
-                if (expression instanceof PostfixExpression) {
-                    PostfixExpression postfixExp = (PostfixExpression) expression;
-                    return postfixExp.getExpression();
+                else {
+                    FieldNode field = classNode.getField(variableName);
+                    if (field == null) {
+                        field = classNode.getOuterField(variableName);
+                    }
+                    if (field != null) {
+                        type = field.getType();
+                        if (!field.isHolder() && isValidTypeForCast(type)) {
+                            return type;
+                        }
+                    }
                 }
-                else if (expression instanceof PrefixExpression) {
-                    PrefixExpression prefixExp = (PrefixExpression) expression;
-                    return prefixExp.getExpression();
+            }
+            return null;
+        }
+
+        protected boolean isValidTypeForCast(String type) {
+            return type != null && !type.equals("java.lang.Object") && !type.equals("groovy.lang.Reference");
+        }
+
+        protected void visitAndAutobox(Expression expression) {
+            expression.visit(this);
+
+            if (comparisonExpression(expression)) {
+                Label l0 = new Label();
+                cv.visitJumpInsn(IFEQ, l0);
+                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "TRUE", "Ljava/lang/Boolean;");
+                Label l1 = new Label();
+                cv.visitJumpInsn(GOTO, l1);
+                cv.visitLabel(l0);
+                cv.visitFieldInsn(GETSTATIC, "java/lang/Boolean", "FALSE", "Ljava/lang/Boolean;");
+                cv.visitLabel(l1);
+            }
+        }
+
+        protected void evaluatePrefixMethod(String method, Expression expression) {
+            expression.visit(this);
+            cv.visitLdcInsn(method);
+            new ArgumentListExpression().visit(this);
+            invokeMethodMethod.call(cv);
+
+            leftHandExpression = true;
+            expression.visit(this);
+            leftHandExpression = false;
+            expression.visit(this);
+        }
+
+        protected void evaluatePostfixMethod(String method, Expression expression) {
+            leftHandExpression = false;
+            expression.visit(this);
+
+            int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
+            cv.visitVarInsn(ASTORE, tempIdx);
+            /*
+             * if (! isStaticMethod() && ! isHolderVariable(expression)) {
+             * cv.visitVarInsn(ALOAD, 0); }
+             */
+            cv.visitVarInsn(ALOAD, tempIdx);
+
+            cv.visitLdcInsn(method);
+            new ArgumentListExpression().visit(this);
+            invokeMethodMethod.call(cv);
+
+            leftHandExpression = true;
+            expression.visit(this);
+            leftHandExpression = false;
+
+            cv.visitVarInsn(ALOAD, tempIdx);
+        }
+
+        protected boolean isHolderVariable(Expression expression) {
+            if (expression instanceof FieldExpression) {
+                FieldExpression fieldExp = (FieldExpression) expression;
+                return fieldExp.getField().isHolder();
+            }
+            if (expression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) expression;
+                FieldNode field = classNode.getField(varExp.getVariable());
+                Variable variable = (Variable) variableStack.get(varExp.getVariable());
+                if (field != null && variable == null) {
+                    return field.isHolder();
                 }
-                return expression;
+                return variable.isHolder();
             }
-        };
-
-        // could just be a postfix / prefix expression or nested inside some other expression
-        return transformer.transform(expression.transformExpression(transformer));
-    }
-
-    protected boolean comparisonExpression(Expression expression) {
-        if (expression instanceof BinaryExpression) {
-            BinaryExpression binExpr = (BinaryExpression) expression;
-            switch (binExpr.getOperation().getType()) {
-                case Token.COMPARE_EQUAL :
-                case Token.MATCH_REGEX :
-                case Token.COMPARE_GREATER_THAN :
-                case Token.COMPARE_GREATER_THAN_EQUAL :
-                case Token.COMPARE_LESS_THAN :
-                case Token.COMPARE_LESS_THAN_EQUAL :
-                case Token.COMPARE_IDENTICAL :
-                case Token.COMPARE_NOT_EQUAL :
-                case Token.KEYWORD_INSTANCEOF :
-                    return true;
-            }
+            return false;
         }
-        else if (expression instanceof BooleanExpression) {
-            return true;
-        }
-        return false;
-    }
 
-    protected void onLineNumber(ASTNode statement) {
-        int number = statement.getLineNumber();
-        if (number >= 0 && cv != null) {
-            cv.visitLineNumber(number, new Label());
-        }
-    }
-
-    protected void pushConstant(int value) {
-        switch (value) {
-            case 0 :
-                cv.visitInsn(ICONST_0);
-                break;
-            case 1 :
-                cv.visitInsn(ICONST_1);
-                break;
-            case 2 :
-                cv.visitInsn(ICONST_2);
-                break;
-            case 3 :
-                cv.visitInsn(ICONST_3);
-                break;
-            case 4 :
-                cv.visitInsn(ICONST_4);
-                break;
-            case 5 :
-                cv.visitInsn(ICONST_5);
-                break;
-            default :
-                cv.visitIntInsn(BIPUSH, value);
-                break;
-        }
-    }
-
-    /**
-     * @return a list of parameters for each local variable which needs to be
-     *         passed into a closure
-     */
-    protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
-        List vars = new ArrayList();
-        if (!isInScriptBody()) {
-            VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
-            VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
-
-            if (methodNode != null) {
-                // we must be in a property
-                outerVisitor.setParameters(methodNode.getParameters());
-                methodNode.getCode().visit(outerVisitor);
+        protected void evaluateInstanceof(BinaryExpression expression) {
+            expression.getLeftExpression().visit(this);
+            Expression rightExp = expression.getRightExpression();
+            String className = null;
+            if (rightExp instanceof ClassExpression) {
+                ClassExpression classExp = (ClassExpression) rightExp;
+                className = classExp.getType();
             }
             else {
-                // propertyNode.getInitialValueExpression().visit(outerVisitor);
+                throw new RuntimeException(
+                    "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
             }
-            expression.getCode().visit(innerVisitor);
+            String classInternalName = getClassInternalName(className);
+            cv.visitTypeInsn(INSTANCEOF, classInternalName);
+        }
 
-            // now any variables declared in the outer context that are referred to
-            // in the inner context need to be copied
+        /**
+         * @return true if the given argument expression requires the stack, in
+         *         which case the arguments are evaluated first, stored in the
+         *         variable stack and then reloaded to make a method call
+         */
+        protected boolean argumentsUseStack(Expression arguments) {
+            return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
+        }
+
+        /**
+         * @return true if the given expression represents a non-static field
+         */
+        protected boolean isNonStaticField(Expression expression) {
+            FieldNode field = null;
+            if (expression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) expression;
+                field = classNode.getField(varExp.getVariable());
+            }
+            else if (expression instanceof FieldExpression) {
+                FieldExpression fieldExp = (FieldExpression) expression;
+                field = classNode.getField(fieldExp.getFieldName());
+            }
+            if (field != null) {
+                return !field.isStatic();
+            }
+            return false;
+        }
+
+        protected boolean isThisExpression(Expression expression) {
+            if (expression instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) expression;
+                return varExp.getVariable().equals("this");
+            }
+            return false;
+        }
+
+        /**
+         * For assignment expressions, return a safe expression for the LHS we can use
+         * to return the value 
+         */
+        protected Expression createReturnLHSExpression(Expression expression) {
+            if (expression instanceof BinaryExpression) {
+                BinaryExpression binExpr = (BinaryExpression) expression;
+                if (binExpr.getOperation().isAssignmentToken()) {
+                    return createReusableExpression(binExpr.getLeftExpression());
+                }
+            }
+            return null;
+        }
+
+        protected Expression createReusableExpression(Expression expression) {
+            ExpressionTransformer transformer = new ExpressionTransformer() {
+                public Expression transform(Expression expression) {
+                    if (expression instanceof PostfixExpression) {
+                        PostfixExpression postfixExp = (PostfixExpression) expression;
+                        return postfixExp.getExpression();
+                    }
+                    else if (expression instanceof PrefixExpression) {
+                        PrefixExpression prefixExp = (PrefixExpression) expression;
+                        return prefixExp.getExpression();
+                    }
+                    return expression;
+                }
+            };
+
+            // could just be a postfix / prefix expression or nested inside some other expression
+            return transformer.transform(expression.transformExpression(transformer));
+        }
+
+        protected boolean comparisonExpression(Expression expression) {
+            if (expression instanceof BinaryExpression) {
+                BinaryExpression binExpr = (BinaryExpression) expression;
+                switch (binExpr.getOperation().getType()) {
+                    case Token.COMPARE_EQUAL :
+                    case Token.MATCH_REGEX :
+                    case Token.COMPARE_GREATER_THAN :
+                    case Token.COMPARE_GREATER_THAN_EQUAL :
+                    case Token.COMPARE_LESS_THAN :
+                    case Token.COMPARE_LESS_THAN_EQUAL :
+                    case Token.COMPARE_IDENTICAL :
+                    case Token.COMPARE_NOT_EQUAL :
+                    case Token.KEYWORD_INSTANCEOF :
+                        return true;
+                }
+            }
+            else if (expression instanceof BooleanExpression) {
+                return true;
+            }
+            return false;
+        }
+
+        protected void onLineNumber(ASTNode statement) {
+            int number = statement.getLineNumber();
+            if (number >= 0 && cv != null) {
+                cv.visitLineNumber(number, new Label());
+            }
+        }
+
+        protected void pushConstant(int value) {
+            switch (value) {
+                case 0 :
+                    cv.visitInsn(ICONST_0);
+                    break;
+                case 1 :
+                    cv.visitInsn(ICONST_1);
+                    break;
+                case 2 :
+                    cv.visitInsn(ICONST_2);
+                    break;
+                case 3 :
+                    cv.visitInsn(ICONST_3);
+                    break;
+                case 4 :
+                    cv.visitInsn(ICONST_4);
+                    break;
+                case 5 :
+                    cv.visitInsn(ICONST_5);
+                    break;
+                default :
+                    cv.visitIntInsn(BIPUSH, value);
+                    break;
+            }
+        }
+
+        /**
+         * @return a list of parameters for each local variable which needs to be
+         *         passed into a closure
+         */
+        protected Parameter[] getClosureSharedVariables(ClosureExpression expression) {
+            List vars = new ArrayList();
+            if (!isInScriptBody()) {
+                VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+                VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
+
+                if (methodNode != null) {
+                    // we must be in a property
+                    outerVisitor.setParameters(methodNode.getParameters());
+                    methodNode.getCode().visit(outerVisitor);
+                }
+                else {
+                    // propertyNode.getInitialValueExpression().visit(outerVisitor);
+                }
+                expression.getCode().visit(innerVisitor);
+
+                // now any variables declared in the outer context that are referred to
+                // in the inner context need to be copied
+                Set outerDecls = outerVisitor.getDeclaredVariables();
+                outerDecls.addAll(outerVisitor.getParameterSet());
+                Set outerRefs = outerVisitor.getReferencedVariables();
+                Set innerDecls = innerVisitor.getDeclaredVariables();
+                Set innerRefs = innerVisitor.getReferencedVariables();
+
+                Set varSet = new HashSet();
+                for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
+                    String var = (String) iter.next();
+                    if (outerDecls.contains(var) && classNode.getField(var) == null) {
+                        String type = getVariableType(var);
+                        vars.add(new Parameter(type, var));
+                        varSet.add(var);
+                    }
+                }
+                for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
+                    String var = (String) iter.next();
+                    if (innerDecls.contains(var) && classNode.getField(var) == null && !varSet.contains(var)) {
+                        String type = getVariableType(var);
+                        vars.add(new Parameter(type, var));
+                    }
+                }
+            }
+            Parameter[] answer = new Parameter[vars.size()];
+            vars.toArray(answer);
+            return answer;
+        }
+
+        protected void findMutableVariables(MethodNode node) {
+            VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
+            node.getCode().visit(outerVisitor);
+
+            VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
             Set outerDecls = outerVisitor.getDeclaredVariables();
-            outerDecls.addAll(outerVisitor.getParameterSet());
             Set outerRefs = outerVisitor.getReferencedVariables();
             Set innerDecls = innerVisitor.getDeclaredVariables();
             Set innerRefs = innerVisitor.getReferencedVariables();
 
-            Set varSet = new HashSet();
+            mutableVars.clear();
+
+            for (Iterator iter = innerDecls.iterator(); iter.hasNext();) {
+                String var = (String) iter.next();
+                if ((outerDecls.contains(var) || outerRefs.contains(var)) && classNode.getField(var) == null) {
+                    mutableVars.add(var);
+                }
+            }
+
+            // we may call the closure twice and modify the variable in the outer scope
+            // so for now lets assume that all variables are mutable
             for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
                 String var = (String) iter.next();
                 if (outerDecls.contains(var) && classNode.getField(var) == null) {
-                    String type = getVariableType(var);
-                    vars.add(new Parameter(type, var));
-                    varSet.add(var);
-                }
-            }
-            for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
-                String var = (String) iter.next();
-                if (innerDecls.contains(var) && classNode.getField(var) == null && !varSet.contains(var)) {
-                    String type = getVariableType(var);
-                    vars.add(new Parameter(type, var));
+                    mutableVars.add(var);
                 }
             }
         }
-        Parameter[] answer = new Parameter[vars.size()];
-        vars.toArray(answer);
-        return answer;
-    }
 
-    protected void findMutableVariables(MethodNode node) {
-        VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
-        node.getCode().visit(outerVisitor);
-
-        VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
-        Set outerDecls = outerVisitor.getDeclaredVariables();
-        Set outerRefs = outerVisitor.getReferencedVariables();
-        Set innerDecls = innerVisitor.getDeclaredVariables();
-        Set innerRefs = innerVisitor.getReferencedVariables();
-
-        mutableVars.clear();
-
-        for (Iterator iter = innerDecls.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if ((outerDecls.contains(var) || outerRefs.contains(var)) && classNode.getField(var) == null) {
-                mutableVars.add(var);
+        protected String getVariableType(String name) {
+            Variable variable = (Variable) variableStack.get(name);
+            if (variable != null) {
+                return variable.getType();
             }
+            return null;
         }
 
-        // we may call the closure twice and modify the variable in the outer scope
-        // so for now lets assume that all variables are mutable
-        for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
-            String var = (String) iter.next();
-            if (outerDecls.contains(var) && classNode.getField(var) == null) {
-                mutableVars.add(var);
+        /**
+         * @return the last ID used by the stack
+         */
+        protected int getLastStackId() {
+            return variableStack.size();
+        }
+
+        protected void resetVariableStack(Parameter[] parameters) {
+            idx = 0;
+            variableStack.clear();
+            // lets push this onto the stack
+            definingParameters = true;
+            if (!isStaticMethod()) {
+                defineVariable("this", classNode.getName()).getIndex();
+            } // now lets create indices for the parameteres
+            for (int i = 0; i < parameters.length; i++) {
+                defineVariable(parameters[i].getName(), parameters[i].getType());
             }
+            definingParameters = false;
         }
-    }
 
-    protected String getVariableType(String name) {
-        Variable variable = (Variable) variableStack.get(name);
-        if (variable != null) {
-            return variable.getType();
+        /** @return true if the given name is a local variable or a field */
+        protected boolean isFieldOrVariable(String name) {
+            return variableStack.containsKey(name) || classNode.getField(name) != null;
         }
-        return null;
-    }
 
-    /**
-     * @return the last ID used by the stack
-     */
-    protected int getLastStackId() {
-        return variableStack.size();
-    }
-
-    protected void resetVariableStack(Parameter[] parameters) {
-        idx = 0;
-        variableStack.clear();
-        // lets push this onto the stack
-        definingParameters = true;
-        if (!isStaticMethod()) {
-            defineVariable("this", classNode.getName()).getIndex();
-        } // now lets create indices for the parameteres
-        for (int i = 0; i < parameters.length; i++) {
-            defineVariable(parameters[i].getName(), parameters[i].getType());
+        /**
+         * Defines the given variable in scope and assigns it to the stack
+         */
+        protected Variable defineVariable(String name, String type) {
+            return defineVariable(name, type, true);
         }
-        definingParameters = false;
-    }
 
-    /** @return true if the given name is a local variable or a field */
-    protected boolean isFieldOrVariable(String name) {
-        return variableStack.containsKey(name) || classNode.getField(name) != null;
-    }
-
-    /**
-     * Defines the given variable in scope and assigns it to the stack
-     */
-    protected Variable defineVariable(String name, String type) {
-        return defineVariable(name, type, true);
-    }
-
-    protected Variable defineVariable(String name, String type, boolean define) {
-        Variable answer = (Variable) variableStack.get(name);
-        if (answer == null) {
-            idx = Math.max(idx, variableStack.size());
-            answer = new Variable(idx, type, name);
-            if (mutableVars.contains(name)) {
-                answer.setHolder(true);
-            }
-            variableStack.put(name, answer);
-            if (define && !definingParameters) {
-                // using new variable inside a comparison expression
-                // so lets initialize it too
-                if (answer.isHolder()) {
-                    //cv.visitVarInsn(ASTORE, idx + 1);
-
-                    cv.visitTypeInsn(NEW, "groovy/lang/Reference");
-                    cv.visitInsn(DUP);
-                    cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
-
-                    cv.visitVarInsn(ASTORE, idx);
-                    //cv.visitVarInsn(ALOAD, idx + 1);
+        protected Variable defineVariable(String name, String type, boolean define) {
+            Variable answer = (Variable) variableStack.get(name);
+            if (answer == null) {
+                idx = Math.max(idx, variableStack.size());
+                answer = new Variable(idx, type, name);
+                if (mutableVars.contains(name)) {
+                    answer.setHolder(true);
                 }
-                else {
-                    if (!leftHandExpression) {
-                        cv.visitInsn(ACONST_NULL);
+                variableStack.put(name, answer);
+                if (define && !definingParameters) {
+                    // using new variable inside a comparison expression
+                    // so lets initialize it too
+                    if (answer.isHolder()) {
+                        //cv.visitVarInsn(ASTORE, idx + 1);
+
+                        cv.visitTypeInsn(NEW, "groovy/lang/Reference");
+                        cv.visitInsn(DUP);
+                        cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
+
                         cv.visitVarInsn(ASTORE, idx);
+                        //cv.visitVarInsn(ALOAD, idx + 1);
+                    }
+                    else {
+                        if (!leftHandExpression) {
+                            cv.visitInsn(ACONST_NULL);
+                            cv.visitVarInsn(ASTORE, idx);
+                        }
                     }
                 }
             }
+            return answer;
         }
-        return answer;
-    }
 
-    protected String checkValidType(String type, ASTNode node, String message) {
-        String original = type;
-        type = resolveClassName(type);
-        if (type != null) {
-            return type;
-        }
-        throw new MissingClassException(original, node, message);
-    }
-
-    protected String resolveClassName(String type) {
-        if (type != null) {
-            if (classNode.getNameWithoutPackage().equals(type)) {
-                return classNode.getName();
+        protected String checkValidType(String type, ASTNode node, String message) {
+            String original = type;
+            type = resolveClassName(type);
+            if (type != null) {
+                return type;
             }
-            for (int i = 0; i < 2; i++) {
-                if (context.getCompileUnit().getClass(type) != null) {
-                    return type;
-                }
+            throw new MissingClassException(original, node, message);
+        }
 
-                try {
-                    classLoader.loadClass(type);
-                    return type;
+        protected String resolveClassName(String type) {
+            if (type != null) {
+                if (classNode.getNameWithoutPackage().equals(type)) {
+                    return classNode.getName();
                 }
-                catch (Throwable e) {
-                    // fall through
-                }
+                for (int i = 0; i < 2; i++) {
+                    if (context.getCompileUnit().getClass(type) != null) {
+                        return type;
+                    }
 
-                // lets try our class loader
-                try {
-                    getClass().getClassLoader().loadClass(type);
-                    return type;
-                }
-                catch (Throwable e) {
-                    // fall through
-                }
+                    try {
+                        classLoader.loadClass(type);
+                        return type;
+                    }
+                    catch (Throwable e) {
+                        // fall through
+                    }
 
-                // lets try the system class loader
-                try {
-                    Class.forName(type);
-                    return type;
-                }
-                catch (Throwable e) {
-                    // fall through
-                }
+                    // lets try our class loader
+                    try {
+                        getClass().getClassLoader().loadClass(type);
+                        return type;
+                    }
+                    catch (Throwable e) {
+                        // fall through
+                    }
 
-                // lets try class in same package
-                String packageName = classNode.getPackageName();
-                if (packageName == null || packageName.length() <= 0) {
-                    break;
+                    // lets try the system class loader
+                    try {
+                        Class.forName(type);
+                        return type;
+                    }
+                    catch (Throwable e) {
+                        // fall through
+                    }
+
+                    // lets try class in same package
+                    String packageName = classNode.getPackageName();
+                    if (packageName == null || packageName.length() <= 0) {
+                        break;
+                    }
+                    type = packageName + "." + type;
                 }
-                type = packageName + "." + type;
+            }
+            return null;
+        }
+
+        protected String createVariableName(String type) {
+            return "__" + type + idx;
+        }
+
+        /**
+         * @return if the type of the expression can be determined at compile time
+         *         then this method returns the type - otherwise java.lang.Object
+         *         is returned.
+         */
+        protected Class getExpressionType(Expression expression) {
+            if (comparisonExpression(expression)) {
+                return Boolean.class;
+            } /** @todo we need a way to determine this from an expression */
+            return Object.class;
+        }
+
+        /**
+         * @return true if the value is an Integer, a Float, a Long, a Double or a
+         *         String .
+         */
+        protected boolean isPrimitiveFieldType(String type) {
+            return type.equals("java.lang.String")
+                || type.equals("java.lang.Integer")
+                || type.equals("java.lang.Double")
+                || type.equals("java.lang.Long")
+                || type.equals("java.lang.Float");
+        }
+
+        protected boolean isInClosureConstructor() {
+            return constructorNode != null
+                && classNode.getOuterClass() != null
+                && classNode.getSuperClass().equals(Closure.class.getName());
+        }
+
+        protected boolean isStaticMethod() {
+            if (methodNode == null) { // we're in a constructor
+                return false;
+            }
+            return methodNode.isStatic();
+        }
+
+        /**
+         * @return an array of ASM internal names of the type
+         */
+        private String[] getClassInternalNames(String[] names) {
+            int size = names.length;
+            String[] answer = new String[size];
+            for (int i = 0; i < size; i++) {
+                answer[i] = getClassInternalName(names[i]);
+            }
+            return answer;
+        }
+
+        /**
+         * @return the ASM internal name of the type
+         */
+        protected String getClassInternalName(String name) {
+            if (name == null) {
+                return "java/lang/Object";
+            }
+            String answer = name.replace('.', '/');
+            if (answer.endsWith("[]")) {
+                return "[" + answer.substring(0, answer.length() - 2);
+            }
+            return answer;
+        }
+
+        /**
+         * @return the ASM method type descriptor
+         */
+        protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
+            // lets avoid class loading
+            StringBuffer buffer = new StringBuffer("(");
+            for (int i = 0; i < paramTypeNames.length; i++) {
+                buffer.append(getTypeDescription(paramTypeNames[i].getType()));
+            }
+            buffer.append(")");
+            buffer.append(getTypeDescription(returnTypeName));
+            return buffer.toString();
+        }
+
+        /**
+         * @return the ASM type description
+         */
+        protected String getTypeDescription(String name) { // lets avoid class
+            // loading
+            // return getType(name).getDescriptor();
+            if (name == null) {
+                return "Ljava/lang/Object;";
+            }
+            if (name.equals("void")) {
+                return "V";
+            }
+            if (name.equals("int")) {
+                return "I";
+            }
+            if (name.equals("long")) {
+                return "J";
+            }
+            if (name.equals("short")) {
+                return "S";
+            }
+            if (name.equals("float")) {
+                return "F";
+            }
+            if (name.equals("double")) {
+                return "D";
+            }
+            if (name.equals("byte")) {
+                return "B";
+            }
+            if (name.equals("char")) {
+                return "C";
+            }
+            if (name.equals("boolean")) {
+                return "Z";
+            }
+            String prefix = "";
+            if (name.endsWith("[]")) {
+                prefix = "[";
+                name = name.substring(0, name.length() - 2);
+            }
+            return prefix + "L" + name.replace('.', '/') + ";";
+        }
+
+        /**
+         * @return loads the given type name
+         */
+        protected Class loadClass(String name) {
+            try {
+                return getClassLoader().loadClass(name);
+            }
+            catch (ClassNotFoundException e) {
+                throw new ClassGeneratorException("Could not load class: " + name + " reason: " + e, e);
             }
         }
-        return null;
     }
-
-    protected String createVariableName(String type) {
-        return "__" + type + idx;
-    }
-
-    /**
-     * @return if the type of the expression can be determined at compile time
-     *         then this method returns the type - otherwise java.lang.Object
-     *         is returned.
-     */
-    protected Class getExpressionType(Expression expression) {
-        if (comparisonExpression(expression)) {
-            return Boolean.class;
-        } /** @todo we need a way to determine this from an expression */
-        return Object.class;
-    }
-
-    /**
-     * @return true if the value is an Integer, a Float, a Long, a Double or a
-     *         String .
-     */
-    protected boolean isPrimitiveFieldType(String type) {
-        return type.equals("java.lang.String")
-            || type.equals("java.lang.Integer")
-            || type.equals("java.lang.Double")
-            || type.equals("java.lang.Long")
-            || type.equals("java.lang.Float");
-    }
-
-    protected boolean isInClosureConstructor() {
-        return constructorNode != null
-            && classNode.getOuterClass() != null
-            && classNode.getSuperClass().equals(Closure.class.getName());
-    }
-
-    protected boolean isStaticMethod() {
-        if (methodNode == null) { // we're in a constructor
-            return false;
-        }
-        return methodNode.isStatic();
-    }
-
-    /**
-     * @return an array of ASM internal names of the type
-     */
-    private String[] getClassInternalNames(String[] names) {
-        int size = names.length;
-        String[] answer = new String[size];
-        for (int i = 0; i < size; i++) {
-            answer[i] = getClassInternalName(names[i]);
-        }
-        return answer;
-    }
-
-    /**
-     * @return the ASM internal name of the type
-     */
-    protected String getClassInternalName(String name) {
-        if (name == null) {
-            return "java/lang/Object";
-        }
-        String answer = name.replace('.', '/');
-        if (answer.endsWith("[]")) {
-            return "[" + answer.substring(0, answer.length() - 2);
-        }
-        return answer;
-    }
-
-    /**
-     * @return the ASM method type descriptor
-     */
-    protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
-        // lets avoid class loading
-        StringBuffer buffer = new StringBuffer("(");
-        for (int i = 0; i < paramTypeNames.length; i++) {
-            buffer.append(getTypeDescription(paramTypeNames[i].getType()));
-        }
-        buffer.append(")");
-        buffer.append(getTypeDescription(returnTypeName));
-        return buffer.toString();
-    }
-
-    /**
-     * @return the ASM type description
-     */
-    protected String getTypeDescription(String name) { // lets avoid class
-        // loading
-        // return getType(name).getDescriptor();
-        if (name == null) {
-            return "Ljava/lang/Object;";
-        }
-        if (name.equals("void")) {
-            return "V";
-        }
-        if (name.equals("int")) {
-            return "I";
-        }
-        if (name.equals("long")) {
-            return "J";
-        }
-        if (name.equals("short")) {
-            return "S";
-        }
-        if (name.equals("float")) {
-            return "F";
-        }
-        if (name.equals("double")) {
-            return "D";
-        }
-        if (name.equals("byte")) {
-            return "B";
-        }
-        if (name.equals("char")) {
-            return "C";
-        }
-        if (name.equals("boolean")) {
-            return "Z";
-        }
-        String prefix = "";
-        if (name.endsWith("[]")) {
-            prefix = "[";
-            name = name.substring(0, name.length() - 2);
-        }
-        return prefix + "L" + name.replace('.', '/') + ";";
-    }
-
-    /**
-     * @return loads the given type name
-     */
-    protected Class loadClass(String name) {
-        try {
-            return getClassLoader().loadClass(name);
-        }
-        catch (ClassNotFoundException e) {
-            throw new ClassGeneratorException("Could not load class: " + name + " reason: " + e, e);
-        }
-    }
-}

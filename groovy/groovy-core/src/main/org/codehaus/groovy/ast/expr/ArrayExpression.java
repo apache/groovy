@@ -45,15 +45,15 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents an array object construction 
+ * Represents an array object construction either using a fixed size
+ * or an initializer expression
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -61,15 +61,11 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class ArrayExpression extends Expression {
     private String type;
     private List expressions;
+    private Expression sizeExpression;
 
-    public ArrayExpression() {
-        this(new ArrayList());
-    }
-
-    public ArrayExpression(List expressions) {
-        this("java/lang/Object", expressions);
-    }
-
+    /**
+     * Creates an array using an initializer expression
+     */
     public ArrayExpression(String type, List expressions) {
         this.type = type;
         this.expressions = expressions;
@@ -82,9 +78,13 @@ public class ArrayExpression extends Expression {
         }
     }
 
-    public ArrayExpression(Expression[] expressionArray) {
-        this();
-        expressions.addAll(Arrays.asList(expressionArray));
+    /**
+     * Creates an empty array of a certain size
+     */
+    public ArrayExpression(String type, Expression sizeExpression) {
+        this.type = type;
+        this.sizeExpression = sizeExpression;
+        this.expressions = Collections.EMPTY_LIST;
     }
 
     public void addExpression(Expression expression) {
@@ -127,6 +127,10 @@ public class ArrayExpression extends Expression {
         }
         buffer.append("]");
         return buffer.toString();
+    }
+
+    public Expression getSizeExpression() {
+        return sizeExpression;
     }
 
     public String toString() {

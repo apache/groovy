@@ -455,6 +455,24 @@ public class Parser {
     }
 
     protected CSTNode datatype() throws IOException, SyntaxException {
+        CSTNode datatype = datatypeWithoutArray();
+
+        if (datatype != null) {
+            if (lt_bare() == Token.LEFT_SQUARE_BRACKET && lt_bare(2) == Token.RIGHT_SQUARE_BRACKET) {
+                CSTNode newRoot = new CSTNode(Token.leftSquareBracket(-1, -1));
+                newRoot.addChild(datatype);
+                datatype = newRoot;
+
+                //datatype = rootNode( Token.LEFT_SQUARE_BRACKET, datatype );
+
+                consume_bare(datatype, Token.LEFT_SQUARE_BRACKET);
+                consume_bare(Token.RIGHT_SQUARE_BRACKET);
+            }
+        }
+        return datatype;
+    }
+
+    protected CSTNode datatypeWithoutArray() throws IOException, SyntaxException {
         CSTNode datatype = null;
 
         switch (lt()) {
@@ -483,20 +501,6 @@ public class Parser {
                     }
                 }
         }
-
-        if (datatype != null) {
-            if (lt_bare() == Token.LEFT_SQUARE_BRACKET && lt_bare(2) == Token.RIGHT_SQUARE_BRACKET) {
-                CSTNode newRoot = new CSTNode(Token.leftSquareBracket(-1, -1));
-                newRoot.addChild(datatype);
-                datatype = newRoot;
-
-                //datatype = rootNode( Token.LEFT_SQUARE_BRACKET, datatype );
-
-                consume_bare(datatype, Token.LEFT_SQUARE_BRACKET);
-                consume_bare(Token.RIGHT_SQUARE_BRACKET);
-            }
-        }
-
         return datatype;
     }
 
@@ -963,19 +967,20 @@ public class Parser {
         CSTNode expr = additiveExpression();
 
         if (lt_bare() == Token.DOT_DOT) {
-        	expr = rootNode(Token.DOT_DOT, expr);
-        	optionalNewlines();
-        	expr.addChild(additiveExpression());
-        } else if (lt_bare() == Token.DOT_DOT_DOT) {
-        	expr = rootNode(Token.DOT_DOT_DOT, expr);
-        	Token t = expr.getToken();
-        	int line = t.getStartLine();
-        	int column = t.getStartColumn();
-        	optionalNewlines();
-        	CSTNode expr1 = new CSTNode(Token.minus(line, column));
-        	expr1.addChild(additiveExpression());
-        	expr1.addChild(new CSTNode(Token.integerNumber(line, column, "1")));
-        	expr.addChild(expr1);
+            expr = rootNode(Token.DOT_DOT, expr);
+            optionalNewlines();
+            expr.addChild(additiveExpression());
+        }
+        else if (lt_bare() == Token.DOT_DOT_DOT) {
+            expr = rootNode(Token.DOT_DOT_DOT, expr);
+            Token t = expr.getToken();
+            int line = t.getStartLine();
+            int column = t.getStartColumn();
+            optionalNewlines();
+            CSTNode expr1 = new CSTNode(Token.minus(line, column));
+            expr1.addChild(additiveExpression());
+            expr1.addChild(new CSTNode(Token.integerNumber(line, column, "1")));
+            expr.addChild(expr1);
         }
         return expr;
     }
@@ -987,6 +992,8 @@ public class Parser {
             SWITCH : switch (lt_bare()) {
                 case (Token.PLUS) :
                 case (Token.MINUS) :
+                case (Token.LEFT_SHIFT) :
+                case (Token.RIGHT_SHIFT) :
                     {
                         expr = rootNode(lt_bare(), expr);
                         optionalNewlines();
@@ -1367,7 +1374,7 @@ public class Parser {
             if (exprStart > 0) {
                 if (text.charAt(exprStart - 1) == '$') {
                     StringBuffer buf = new StringBuffer(text);
-                    buf.replace(exprStart -1, exprStart, "");
+                    buf.replace(exprStart - 1, exprStart, "");
                     text = buf.toString();
                     cur = exprStart + 1;
                     continue;
@@ -1495,7 +1502,7 @@ public class Parser {
     protected CSTNode newExpression() throws IOException, SyntaxException {
         CSTNode expr = rootNode(Token.KEYWORD_NEW);
 
-        expr.addChild(datatype());
+        expr.addChild(datatypeWithoutArray());
 
         /*
         consume( Token.LEFT_PARENTHESIS );
@@ -1505,21 +1512,37 @@ public class Parser {
         consume( Token.RIGHT_PARENTHESIS );
         */
 
-        CSTNode paramList = null;
-
         if (lt_bare() == Token.LEFT_PARENTHESIS) {
-            consume(Token.LEFT_PARENTHESIS);
+            consume_bare(Token.LEFT_PARENTHESIS);
 
             expr.addChild(parameterList(Token.RIGHT_PARENTHESIS));
 
             consume(Token.RIGHT_PARENTHESIS);
         }
         else if (lt_bare() == Token.LEFT_CURLY_BRACE) {
-            paramList = parameterList(Token.LEFT_CURLY_BRACE);
-            expr.addChild(paramList);
-            expr.addChild(closureExpression());
-        }
+            consume_bare(Token.LEFT_CURLY_BRACE);
 
+            CSTNode paramList = parameterList(Token.RIGHT_CURLY_BRACE);
+            expr.addChild(paramList);
+            paramList.addChild(closureExpression());
+        }
+        else if (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
+            expr.addChild(new CSTNode(consume_bare(Token.LEFT_SQUARE_BRACKET)));
+
+            if (lt_bare() == Token.RIGHT_SQUARE_BRACKET) {
+                // no size so must use a size expression
+                consume_bare(Token.RIGHT_SQUARE_BRACKET);
+                expr.addChild(new CSTNode(consume_bare(Token.LEFT_CURLY_BRACE)));
+                CSTNode paramList = parameterList(Token.RIGHT_CURLY_BRACE);
+                consume(Token.RIGHT_CURLY_BRACE);
+
+                expr.addChild(paramList);
+            }
+            else {
+                expr.addChild(expression());
+                consume_bare(Token.RIGHT_SQUARE_BRACKET);
+            }
+        }
         return expr;
     }
 
