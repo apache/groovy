@@ -291,7 +291,11 @@
       <name>Ivan Z. Ganza</name>
       <email></email>
     </contributor>
-  </contributors>
+    <contributor>
+      <name>Arjun Nayyar</name>
+      <email></email>
+    </contributor>
+  	  </contributors>
   <dependencies>
 
     <!-- core dependencies -->
