@@ -68,7 +68,7 @@ fi
 if [ -z "$CLASSWORLDS_CONF" ]; then
     CLASSWORLDS_CONF="$GROOVY_HOME/conf/groovy-classworlds.conf"
 fi
-CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar"
+CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar:$CLASSPATH"
 
 # Create the final classpath
 if [ -n "$CP" ]; then

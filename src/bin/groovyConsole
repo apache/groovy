@@ -59,7 +59,7 @@ fi
 if [ -z "$CLASSWORLDS_CONF" ]; then
     CLASSWORLDS_CONF="$GROOVY_HOME/conf/groovyConsole-classworlds.conf"
 fi
-CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar"
+CLASSWORLDS_CLASSPATH="$GROOVY_HOME/lib/classworlds-${CLASSWORLDS_VERSION}.jar:$CLASSPATH"
 
 # Determine the Java command to use to start the JVM
 if [ -z "$JAVACMD" ]; then
