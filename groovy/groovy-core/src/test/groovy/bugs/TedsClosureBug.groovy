@@ -15,12 +15,11 @@ class TedsClosureBug extends GroovyTestCase {
 		f.entries = [ new Entry(title:'one',summary:'first post'), new Entry(title:'two',summary:'the second post'), new Entry(title:'three', summary:'post the third'), new Entry(title:'four',summary:'the ponderous fourth post') ]
 		
 		//f.entries.each { println it.title }
-		
-		println f.author.name
+		//println f.author.name
 		
 		xml = new MarkupBuilder()
 		
-		a = xml.atom() {
+		atom = xml.atom() {
 		  title("Ted Leung off the air")
 		  link("http://www.sauria.com/noblog")
 		  author() {
@@ -30,15 +29,14 @@ class TedsClosureBug extends GroovyTestCase {
 		      email(f.author.email)
 		    }
 		  }
-		  
-		  /** @todo fixme! 
 		  for (e in f.entries) {
 		    entry() {
-		      title(e.title())
-		      summary(e.summary())
+		    	/** @todo if use the non-existent title() method then a confusing exception is thrown */
+		    	
+		      title(e.title)
+		      summary(e.summary)
 		    }
 		  }
-		  */
 		}
 	}   
 }
