@@ -160,7 +160,7 @@
 
   <goal name="groovy-eclipse:copyjars">
     <j:if test="${empty(groovy.eclipse.dir)}">
-      <j:set var="groovy.eclipse.dir" value="../groovyui"/>
+      <j:set var="groovy.eclipse.dir" value="../groovy-eclipse"/>
     </j:if>
     
     <copy file="${maven.build.dir}/${maven.final.name}.jar" tofile="${groovy.eclipse.dir}/lib/groovy.jar"/>

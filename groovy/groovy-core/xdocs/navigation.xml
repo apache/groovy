@@ -31,6 +31,7 @@
       <item name="Compiling"           href="/compiling.html"/>
       <item name="Unit Testing"        href="/unitTesting.html"/>
       <item name="BSF Integration"     href="/bsf.html"/>
+      <item name="Eclipse Plugin"      href="/eclipse.html"/>
     </menu>
 
     <menu name="Features">
@@ -40,10 +41,10 @@
     </menu>
 
     <menu name="Examples">
-      <item name="Scripts"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/script/"/>
-      <item name="Unit tests"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/"/>
-      <item name="GroovyAnt"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/util/AntTest.groovy?rev=HEAD&amp;view=auto"/>
-      <item name="GroovySwing"        href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/src/test/groovy/swing/"/>
+      <item name="Scripts"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/script/"/>
+      <item name="Unit tests"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/"/>
+      <item name="GroovyAnt"  		  href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/util/AntTest.groovy?rev=HEAD&amp;view=auto"/>
+      <item name="GroovySwing"        href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/"/>
     </menu>
     
     <menu name="Presentation">

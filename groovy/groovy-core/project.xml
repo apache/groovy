@@ -42,9 +42,9 @@
   <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
 
   <repository>
-    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/</url>
+    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</connection>
+    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</developerConnection>
+    <url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/</url>
   </repository>
 
 
