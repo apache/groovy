@@ -81,6 +81,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
+
 /**
  * Verifies the AST node and adds any defaulted AST code before
  * bytecode generation occurs.
@@ -103,106 +104,109 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
     public void visitClass(ClassNode node) {
         this.classNode = node;
-        node.addInterface(GroovyObject.class.getName());
 
-        // lets add a new field for the metaclass
-        StaticMethodCallExpression initMetaClassCall =
-            new StaticMethodCallExpression(
-                InvokerHelper.class.getName(),
-                "getMetaClass",
-                VariableExpression.THIS_EXPRESSION);
+        if (!node.isDerivedFromGroovyObject()) {
+            node.addInterface(GroovyObject.class.getName());
 
-        PropertyNode metaClassProperty =
-            node.addProperty("metaClass", ACC_PUBLIC, MetaClass.class.getName(), initMetaClassCall, null, null);
-        metaClassProperty.setSynthetic(true);
-        FieldNode metaClassField = metaClassProperty.getField();
-        metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
+            // lets add a new field for the metaclass
+            StaticMethodCallExpression initMetaClassCall =
+                new StaticMethodCallExpression(
+                    InvokerHelper.class.getName(),
+                    "getMetaClass",
+                    VariableExpression.THIS_EXPRESSION);
 
-        FieldExpression metaClassVar = new FieldExpression(metaClassField);
-        IfStatement initMetaClassField =
-            new IfStatement(
-                new BooleanExpression(
-                    new BinaryExpression(metaClassVar, Token.compareEqual(-1, -1), ConstantExpression.NULL)),
-                new ExpressionStatement(new BinaryExpression(metaClassVar, Token.equal(-1, -1), initMetaClassCall)),
-                EmptyStatement.INSTANCE);
+            PropertyNode metaClassProperty =
+                node.addProperty("metaClass", ACC_PUBLIC, MetaClass.class.getName(), initMetaClassCall, null, null);
+            metaClassProperty.setSynthetic(true);
+            FieldNode metaClassField = metaClassProperty.getField();
+            metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
 
-        node.addSyntheticMethod(
-            "getMetaClass",
-            ACC_PUBLIC,
-            MetaClass.class.getName(),
-            Parameter.EMPTY_ARRAY,
-            new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)}));
+            FieldExpression metaClassVar = new FieldExpression(metaClassField);
+            IfStatement initMetaClassField =
+                new IfStatement(
+                    new BooleanExpression(
+                        new BinaryExpression(metaClassVar, Token.compareEqual(-1, -1), ConstantExpression.NULL)),
+                    new ExpressionStatement(new BinaryExpression(metaClassVar, Token.equal(-1, -1), initMetaClassCall)),
+                    EmptyStatement.INSTANCE);
 
-        // @todo we should check if the base class implements the invokeMethod method
-
-        // lets add the invokeMethod implementation
-        String superClass = node.getSuperClass();
-        boolean addDelegateObject =
-            (node instanceof InnerClassNode && superClass.equals(Closure.class.getName()))
-                || superClass.equals(GString.class.getName());
-
-        // don't do anything as the base class implements the invokeMethod
-        if (!addDelegateObject) {
             node.addSyntheticMethod(
-                "invokeMethod",
+                "getMetaClass",
                 ACC_PUBLIC,
-                Object.class.getName(),
-                new Parameter[] {
-                    new Parameter(String.class.getName(), "method"),
-                    new Parameter(Object.class.getName(), "arguments")},
-                new BlockStatement(
-                    new Statement[] {
-                        initMetaClassField,
-                        new ReturnStatement(
-                            new MethodCallExpression(
-                                metaClassVar,
-                                "invokeMethod",
-                                new ArgumentListExpression(
-                                    new Expression[] {
-                                        VariableExpression.THIS_EXPRESSION,
-                                        new VariableExpression("method"),
-                                        new VariableExpression("arguments")})))
-            }));
-            
-            if (! node.isScript()) {
+                MetaClass.class.getName(),
+                Parameter.EMPTY_ARRAY,
+                new BlockStatement(new Statement[] { initMetaClassField, new ReturnStatement(metaClassVar)}));
+
+            // @todo we should check if the base class implements the invokeMethod method
+
+            // lets add the invokeMethod implementation
+            String superClass = node.getSuperClass();
+            boolean addDelegateObject =
+                (node instanceof InnerClassNode && superClass.equals(Closure.class.getName()))
+                    || superClass.equals(GString.class.getName());
+
+            // don't do anything as the base class implements the invokeMethod
+            if (!addDelegateObject) {
                 node.addSyntheticMethod(
-                    "getProperty",
+                    "invokeMethod",
                     ACC_PUBLIC,
                     Object.class.getName(),
-                    new Parameter[] { new Parameter(String.class.getName(), "property")},
+                    new Parameter[] {
+                        new Parameter(String.class.getName(), "method"),
+                        new Parameter(Object.class.getName(), "arguments")},
                     new BlockStatement(
                         new Statement[] {
                             initMetaClassField,
                             new ReturnStatement(
                                 new MethodCallExpression(
                                     metaClassVar,
-                                    "getProperty",
+                                    "invokeMethod",
                                     new ArgumentListExpression(
                                         new Expression[] {
                                             VariableExpression.THIS_EXPRESSION,
-                                            new VariableExpression("property")})))
+                                            new VariableExpression("method"),
+                                            new VariableExpression("arguments")})))
                 }));
 
-                node.addSyntheticMethod(
-                    "setProperty",
-                    ACC_PUBLIC,
-                    "void",
-                    new Parameter[] {
-                        new Parameter(String.class.getName(), "property"),
-                        new Parameter(Object.class.getName(), "value")},
-                    new BlockStatement(
-                        new Statement[] {
-                            initMetaClassField,
-                            new ExpressionStatement(
-                                new MethodCallExpression(
-                                    metaClassVar,
-                                    "setProperty",
-                                    new ArgumentListExpression(
-                                        new Expression[] {
-                                            VariableExpression.THIS_EXPRESSION,
-                                            new VariableExpression("property"),
-                                            new VariableExpression("value")})))
-                }));
+                if (!node.isScript()) {
+                    node.addSyntheticMethod(
+                        "getProperty",
+                        ACC_PUBLIC,
+                        Object.class.getName(),
+                        new Parameter[] { new Parameter(String.class.getName(), "property")},
+                        new BlockStatement(
+                            new Statement[] {
+                                initMetaClassField,
+                                new ReturnStatement(
+                                    new MethodCallExpression(
+                                        metaClassVar,
+                                        "getProperty",
+                                        new ArgumentListExpression(
+                                            new Expression[] {
+                                                VariableExpression.THIS_EXPRESSION,
+                                                new VariableExpression("property")})))
+                    }));
+
+                    node.addSyntheticMethod(
+                        "setProperty",
+                        ACC_PUBLIC,
+                        "void",
+                        new Parameter[] {
+                            new Parameter(String.class.getName(), "property"),
+                            new Parameter(Object.class.getName(), "value")},
+                        new BlockStatement(
+                            new Statement[] {
+                                initMetaClassField,
+                                new ExpressionStatement(
+                                    new MethodCallExpression(
+                                        metaClassVar,
+                                        "setProperty",
+                                        new ArgumentListExpression(
+                                            new Expression[] {
+                                                VariableExpression.THIS_EXPRESSION,
+                                                new VariableExpression("property"),
+                                                new VariableExpression("value")})))
+                    }));
+                }
             }
         }
 
