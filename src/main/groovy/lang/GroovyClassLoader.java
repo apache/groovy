@@ -470,11 +470,6 @@ public class GroovyClassLoader extends SecureClassLoader {
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
-            //
-            // BUG: Why is this not conditional?
-
-            // cl.debugWriteClassfile(classNode, code);
-
             Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
 
             if (generatedClass == null) {
@@ -489,22 +484,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
     }
 
-    //
-    // BUG: Should this be replaced with CompilationUnit.output()?
-
-    /*
-     * private void debugWriteClassfile(ClassNode classNode, byte[] code) { if
-     * (config.getTargetDirectory().length() > 0 ) { File targetDir = new
-     * File(config.getTargetDirectory());
-     * 
-     * String filename = classNode.getName().replace('.', File.separatorChar) +
-     * ".class"; int index = filename.lastIndexOf(File.separator); String
-     * dirname; if (index != -1) { dirname = filename.substring(0, index); }
-     * else { dirname = ""; } File outputFile = new File(targetDir, filename);
-     * System.err.println("Writing: " + outputFile); try { new File(targetDir,
-     * dirname).mkdirs(); FileOutputStream fos = new
-     * FileOutputStream(outputFile); fos.write(code, 0, code.length);
-     * fos.close(); } catch (IOException ioe) { ioe.printStackTrace(); } } } /**
+    /**
      * open up the super class define that takes raw bytes
      *  
      */
