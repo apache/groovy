@@ -1,19 +1,15 @@
-package groovy;
-
-
-
 /**
  * Tests iterating with local variables
  */
 class ForLoopWithLocalVariablesTest extends GroovyTestCase {
 
     void testForLoop() {
-        x = null;
+        x = null
 
         for i in 0..10 {
-            x = i;
+            x = i
         }
 
-        assert x := 9;
+        assert x := 9
 	}
 }

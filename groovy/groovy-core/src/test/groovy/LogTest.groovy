@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests the use of GroovyLog
  * 
@@ -15,7 +11,7 @@ class LogTest extends GroovyTestCase {
 	    
         log = GroovyLog.newInstance(getClass())
         
-        log.starting("Hey I'm starting up...");
+        log.starting("Hey I'm starting up...")
         
 	    log.openFile("Am about to open file ${file}")
 	    
@@ -23,6 +19,6 @@ class LogTest extends GroovyTestCase {
 	    
 	    log.closeFile("Have closed the file ${file}")
 
-        log.stopping("..Finished");
+        log.stopping("..Finished")
 	}
 }

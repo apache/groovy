@@ -40,6 +40,7 @@ public class Compiler
     private Verifier verifier;
     private CompilerClassLoader classLoader;
     private List errors;
+    private boolean verbose = false;
 
     public Compiler()
     {
@@ -127,6 +128,10 @@ public class Compiler
     {
         try
         {
+            if (verbose)
+            {
+                System.out.println("Parsing: " + charStream.getDescription());
+            }
             Lexer lexer = new Lexer( charStream );
             Parser parser = new Parser( new LexerTokenStream( lexer ) );
 

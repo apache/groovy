@@ -1,4 +1,4 @@
-package groovy;
+
 
 /** 
  * A test case for switch statement
@@ -9,102 +9,102 @@ package groovy;
 class SwitchTest {
 
     testSwitchWithIntValues() {
-        assertSwitch(1, 2, 3, 4);
+        assertSwitch(1, 2, 3, 4)
     }
 
     testSwitchWithDoubleValues() {
-        assertSwitch(1.5, 2.4, 3.2, 4.1);
+        assertSwitch(1.5, 2.4, 3.2, 4.1)
     }
     
     testSwitchWithStringValues() {
-        assertSwitch("abc", "def", "xyz", "unknown");
+        assertSwitch("abc", "def", "xyz", "unknown")
     }
 
     testSwitchWithMixedTypeValues() {
-        assertSwitch("abc", Date(), 5.32, 23);
+        assertSwitch("abc", Date(), 5.32, 23)
     }
 
 
     assertSwitch(a, b, c, d) {
-        assertSwitchMatch1(a, a, b, c);
-        assertSwitchMatch2(b, a, b, c);
-        assertSwitchMatch3(c, a, b, c);
-        assertSwitchMatchDefault(d, a, b, c);
+        assertSwitchMatch1(a, a, b, c)
+        assertSwitchMatch2(b, a, b, c)
+        assertSwitchMatch3(c, a, b, c)
+        assertSwitchMatchDefault(d, a, b, c)
     }
     
     assertSwitchMatch1(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
                 // worked
-                break;
+                break
             case case2Value: 
-                failNotEquals(value, case2Value);
-                break;
+                failNotEquals(value, case2Value)
+                break
             case case3Value: 
-                failNotEquals(value, case3Value);
-                break;
+                failNotEquals(value, case3Value)
+                break
             default:
-                failNotDefault(value);
-                break;
+                failNotDefault(value)
+                break
         }
     }
 
     assertSwitchMatch2(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
-                failNotEquals(value, case1Value);
-                break;
+                failNotEquals(value, case1Value)
+                break
             case case2Value: 
 	            // worked
-                break;
+                break
             case case3Value: 
-                failNotEquals(value, case3Value);
-                break;
+                failNotEquals(value, case3Value)
+                break
             default:
-                failNotDefault(value);
-                break;
+                failNotDefault(value)
+                break
         }
     }
     
     assertSwitchMatch3(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
-                failNotEquals(value, case1Value);
-                break;
+                failNotEquals(value, case1Value)
+                break
             case case2Value: 
-                failNotEquals(value, case2Value);
-                break;
+                failNotEquals(value, case2Value)
+                break
             case case3Value: 
 	            // worked
-                break;
+                break
             default:
-                failNotDefault(value);
-                break;
+                failNotDefault(value)
+                break
         }
     }
     
     assertSwitchMatchDefault(value, case1Value, case2Value, case3Value) {
         switch (value) {
             case case1Value: 
-                failNotEquals(value, case1Value);
-                break;
+                failNotEquals(value, case1Value)
+                break
             case case2Value: 
-                failNotEquals(value, case2Value);
-                break;
+                failNotEquals(value, case2Value)
+                break
             case case3Value: 
-                failNotEquals(value, case3Value);
-                break;
+                failNotEquals(value, case3Value)
+                break
             default:
 	            // worked
-                break;
+                break
         }
     }
 
 	failNotEquals(value, expectedCaseValue) {
-	    fail("value: " + value + " is not equal to case value: " + expectedCaseValue);
+	    fail("value: " + value + " is not equal to case value: " + expectedCaseValue)
 	}
 	
 	failNotDefault(value) {
-	    fail("value: " + value + " should not match the default switch clause" );
+	    fail("value: " + value + " should not match the default switch clause" )
 	}
 }

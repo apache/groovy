@@ -93,6 +93,15 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Print to a console in interactive format along with a newline
+     */
+    public static void println(Object self) {
+        /** @todo should re-enable this */
+        //InvokerHelper.invokeMethod(self, "println", new PrintWriter(System.out));
+        System.out.println(InvokerHelper.toString(self));
+    }
+
+    /**
      * @return the String that would be printend on the console if the print() 
      * method were called
      */
@@ -111,6 +120,17 @@ public class DefaultGroovyMethods {
             out = new PrintWriter(System.out);
         }
         out.print(InvokerHelper.toString(self));
+    }
+
+    /**
+     * Print to a console in interactive format
+     */
+    public static void println(Object self, PrintWriter out) {
+        if (out == null) {
+            out = new PrintWriter(System.out);
+        }
+        InvokerHelper.invokeMethod(self, "print", out);
+        out.println();
     }
 
     /**

@@ -1,4 +1,4 @@
-package groovy.tree;
+
 
 class ClosureClassLoaderBug extends GroovyTestCase {
     
@@ -11,6 +11,6 @@ class ClosureClassLoaderBug extends GroovyTestCase {
             b.elem1('hello1')
         })
         
-        root.print();
+        root.print()
     }
 }

@@ -1,7 +1,3 @@
-package groovy
-
-
-
 class IfWithMethodCallTest extends GroovyTestCase {
 
 	void testIfWithMethodCall() {

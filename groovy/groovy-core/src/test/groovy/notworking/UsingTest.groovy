@@ -1,4 +1,4 @@
-package groovy;
+
 
 /** 
  * A test case for the using statement

@@ -1,69 +1,65 @@
-package groovy;
-
-
-
 class BooleanOperationTest extends GroovyTestCase {
 
     void testComparisons() {
-        assert true;
-        assert true != false;
+        assert true
+        assert true != false
         
-        x = true;
+        x = true
         
-        assert x;
-        assert x := true;
-        assert x != false;
+        assert x
+        assert x := true
+        assert x != false
         
-        x = false;
+        x = false
         
-        assert x := false;
-        assert x != true;
+        assert x := false
+        assert x != true
         
         /** @todo parser
-        assert !x;
+        assert !x
         */
         
-        y = false;        
-        assert x := y;
+        y = false        
+        assert x := y
         
-        y = true;
-        assert x != y;
+        y = true
+        assert x != y
     }
     
     
     void testIfBranch() {
-        x = false;
-        r = false;
+        x = false
+        r = false
         
         if x {
             // ignore
         }
         else {
-            r = true;
+            r = true
         }
 
-        assert r;
+        assert r
         
-        x = true;
-        r = false;
+        x = true
+        r = false
         
         if x {
-            r = true;
+            r = true
         }
         else {
             // ignore
         }
-        assert r;
+        assert r
         
         /** @todo parser 
         if !x {
-            r = false;
+            r = false
         }
         else {
-            r = true;
+            r = true
         }
         
-        assert r;
+        assert r
         */
     }
 

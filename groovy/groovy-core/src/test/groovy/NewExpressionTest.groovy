@@ -1,12 +1,9 @@
-
-package groovy;
-
 class NewExpressionTest extends GroovyTestCase {
 
     void testNewInstance() {
-        cheese = new String( "hey you hosers" );
+        cheese = new String( "hey you hosers" )
         assert cheese != null
-        System.err.println( cheese );
+        System.err.println( cheese )
     }
 
 }

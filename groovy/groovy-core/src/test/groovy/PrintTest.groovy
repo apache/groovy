@@ -1,5 +1,3 @@
-package groovy;
-
 class PrintTest extends GroovyTestCase {
 
     void testPrint() {

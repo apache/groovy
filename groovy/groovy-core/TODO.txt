@@ -1,6 +1,8 @@
 Core Groovy Tasks
 =================
 
+* remove package from *.groovy
+
 * make TestMixin which would allow...
 	use to use a GroovyTestSuite to avoid the 'void' issue
 	allow other naming conventions - endsWith("Test" || "Bug")

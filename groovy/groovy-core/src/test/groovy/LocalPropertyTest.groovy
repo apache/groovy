@@ -1,22 +1,18 @@
-package groovy;
-
-
-
 class LocalPropertyTest extends GroovyTestCase {
 
-    property x;
+    property x
     
 	void testNormalPropertyAccess() {
-	    x = "abc";
+	    x = "abc"
 	    
-	    assert x := "abc";
-        assert x != "def";
+	    assert x := "abc"
+        assert x != "def"
 	}
 	
 	void testPropertyWithThis() {
-        this.x = "abc";
+        this.x = "abc"
 	    
-	    assert this.x := "abc";
-	    assert this.x != "def";
+	    assert this.x := "abc"
+	    assert this.x != "def"
 	}
 }

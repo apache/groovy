@@ -1,4 +1,4 @@
-package groovy.tree;
+
 
 /**
  * This test uses the verbose syntax to test the building of trees
@@ -8,7 +8,7 @@ class VerboseTreeTest extends GroovyTestCase {
     
     property b
 
-    void testTree() {
+    void testSmallTree() {
         b = NodeBuilder.newInstance()
         
         root = b.root1(['a':5, 'b':7], {|
@@ -19,10 +19,10 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print();
+        root.print()
     }
     
-    void testTree2() {
+    void testTree() {
         b = NodeBuilder.newInstance()
         
         root = b.root2(['a':5, 'b':7], {|
@@ -41,7 +41,7 @@ class VerboseTreeTest extends GroovyTestCase {
         
         assert root != null
         
-        root.print();
+        root.print()
 
 		elem1 = root.elem1
         assert elem1.value() := 'hello1'
@@ -65,16 +65,14 @@ class VerboseTreeTest extends GroovyTestCase {
         list = root.value()
         assert list.size() := 4
         
-        /** @todo parser error        
-                assert root.attributes().a := 5
-                assert root.attributes().b := 7
+        assert root.attributes().a := 5
+        assert root.attributes().b := 7
 
-                assert root.elem2.nestedElem.attributes().x := 'abc'
-                assert root.elem2.nestedElem.attributes().y := 'def'
-
-                assert root.elem2.nestedElem2.attributes().z := 'zzz'
-        */
-
+        assert root.nestedElem.attributes().x := 'abc'
+        assert root.nestedElem.attributes().y := 'def'
+        assert root.nestedElem2.attributes().z := 'zzz'
+        assert root.nestedElem2.child.attributes().z := 'def'
+        
         /** @todo parser add .@ as an operation
                 assert root.@a := 5
                 assert root.@b := 7

@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests Closures in Groovy
  * 
@@ -10,14 +6,14 @@ package groovy;
  */
 class ClosureTest extends GroovyTestCase {
 
-	property count;
+	property count
 
     void testSimpleBlockCall() {
-        count = 0;
+        count = 0
 
         block = {owner| owner.incrementCallCount() }
         
-        assertClosure(block);
+        assertClosure(block)
         assert count := 1
 
         assertClosure({owner| owner.incrementCallCount() })
@@ -45,7 +41,7 @@ class ClosureTest extends GroovyTestCase {
   	    
   	    block = System.out.println
   	    
-  	    block.call("I just invoked a closure!");
+  	    block.call("I just invoked a closure!")
   	}
   
 	incrementCallCount() {

@@ -1,4 +1,4 @@
-package groovy;
+
 
 /** 
  * Tests the use of properties in Groovy
@@ -9,89 +9,89 @@ package groovy;
 class PropertyTest extends Test {
 
     static class ClassWithConciseProperties {
-        property count = 1;
-        property blah = "abc";
+        property count = 1
+        property blah = "abc"
     }
 	
     static class ClassWithMediumConciseProperties {
         property count {
             get() {
-                return this.count;
+                return this.count
             }
             set() {
-                this.count = value;
+                this.count = value
             }
-        } = 1;
+        } = 1
             
         property blah { 
             get() {
-                return this.blah;
+                return this.blah
             }
             set() {
-                this.blah = value;
+                this.blah = value
             }
-        } = "abc";
+        } = "abc"
     }
 	
     static class ClassWithJavaVerboseProperties {
-        count = 1;
-        blah = "abc";
+        count = 1
+        blah = "abc"
         
         getCount() {
-            return this.count;
+            return this.count
         }
         
         setCount(value) {
-            this.count = value;
+            this.count = value
         }
         
         getBlah() {
-            return this.blah;
+            return this.blah
         }
         
         setBlah(value) {
-            this.blah = value;
+            this.blah = value
         }
     }
 	
 	
     testConciseProperties() { 
-        testProperties(ClassWithConciseProperties());
+        testProperties(ClassWithConciseProperties())
     }
 	
     testConciseProperties() { 
-        testProperties(ClassWithMediumConciseProperties());
+        testProperties(ClassWithMediumConciseProperties())
     }
 	
     testJavaVerboseProperties() { 
-        testProperties(ClassWithJavaVerboseProperties());
+        testProperties(ClassWithJavaVerboseProperties())
     }
 	
 	
     protected testProperties(foo) {
-        assertEquals(foo.count, 1);
-        assertEquals(foo.getCount(), 1);
-        assertEquals(foo.blah, "abc");
-        assertEquals(foo.getBlah(), "abc");
+        assertEquals(foo.count, 1)
+        assertEquals(foo.getCount(), 1)
+        assertEquals(foo.blah, "abc")
+        assertEquals(foo.getBlah(), "abc")
         
-		foo.count = 7;
+		foo.count = 7
 		
-        assertEquals(foo.count, 7);
-        assertEquals(foo.getCount(), 7);
+        assertEquals(foo.count, 7)
+        assertEquals(foo.getCount(), 7)
 
-		foo.setCount(12);
+		foo.setCount(12)
 		
-        assertEquals(foo.count, 12);
-        assertEquals(foo.getCount(), 12);
+        assertEquals(foo.count, 12)
+        assertEquals(foo.getCount(), 12)
 		        
-        foo.name = "Bob";
+        foo.name = "Bob"
         
-        assertEquals(foo.name, "Bob");
-        assertEquals(foo.getName(), "Bob");
+        assertEquals(foo.name, "Bob")
+        assertEquals(foo.getName(), "Bob")
 
-        foo.setName("James");
+        foo.setName("James")
         
-        assertEquals(foo.name, "James");
-        assertEquals(foo.getName(), "James");
+        assertEquals(foo.name, "James")
+        assertEquals(foo.getName(), "James")
     }
 }

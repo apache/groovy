@@ -1,7 +1,3 @@
-package groovy;
-
-
-
 /** 
  * Tests Closures in Groovy
  * 
@@ -11,11 +7,11 @@ package groovy;
 class ClosureAsParamTest extends GroovyTestCase {
 
     void testSimpleBlockCall() {
-        assertClosure({owner| System.out.println(owner) });
+        assertClosure({owner| owner.println() })
     }
   
 	assertClosure(Closure block) {
 	    assert block != null
-	    block.call("hello!");
+	    block.call("hello!")
 	}
 }

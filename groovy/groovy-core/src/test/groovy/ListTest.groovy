@@ -1,36 +1,32 @@
-package groovy;
-
-
-
 class ListTest extends GroovyTestCase {
 
     void testList() {
-        x = [10, 11];
+        x = [10, 11]
 		
-		assert x.size() := 2;
+		assert x.size() := 2
 		
-		x.add("cheese");
+		x.add("cheese")
 		
-		assert x.size() := 3;
+		assert x.size() := 3
 		
-        assert x.contains(10);
-        assert x.contains(11);
-		assert x.contains("cheese");
+        assert x.contains(10)
+        assert x.contains(11)
+		assert x.contains("cheese")
 
 
-        assert x.get(0) := 10;
-        assert x.get(1) := 11;
-        assert x.get(2) := "cheese";
+        assert x.get(0) := 10
+        assert x.get(1) := 11
+        assert x.get(2) := "cheese"
 
 		// subscript operator
         /** @todo parser
-		assert x[0] := 10;
-        assert x[1] := 11;
-        assert x[2] := "cheese;
+		assert x[0] := 10
+        assert x[1] := 11
+        assert x[2] := "cheese
 		
-		x[3] = 12;
+		x[3] = 12
 		
-		assert x[3] := 12;
+		assert x[3] := 12
 		*/
 		
 		
@@ -38,14 +34,14 @@ class ListTest extends GroovyTestCase {
             // ignore
         }
         else {
-            assert false : "x should contain cheese!";
+            assert false : "x should contain cheese!"
         }
 		
         if x.contains(10) {
             // ignore
         }
         else {
-            assert false : "x should contain 1!";
+            assert false : "x should contain 1!"
         }
     }
     
@@ -68,13 +64,13 @@ class ListTest extends GroovyTestCase {
     
     void testClosure() {
         l = [1, 2, 3, "abc"]
-        block = {i| System.out.println(i) }
+        block = {i| i.println() }
         l.each(block)
         
-        l.each( {i| System.out.println(i) } )
+        l.each( {i| i.println() } )
         
         /* @todo parser
-        l.each {i| System.out.println(i) }
+        l.each {i| i.println() }
         */
     }
     

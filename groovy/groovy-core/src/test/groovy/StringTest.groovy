@@ -1,24 +1,19 @@
-package groovy;
-
-
-
 class StringTest extends GroovyTestCase {
 
     void testString() {
-        s = "abcd";
-        assert s.length() := 4;
-        assert 4 := s.length();
+        s = "abcd"
+        assert s.length() := 4
+        assert 4 := s.length()
         
         // test polymorphic size() method like collections
-        assert s.size() := 4;
+        assert s.size() := 4
         
         /** @todo parser
-        s = s + "efg" + "hijk";
+        s = s + "efg" + "hijk"
         
-        assert s.size() := 11;
-        
-        assert "abcdef".size() := 6;
+        assert s.size() := 11
         */
+        assert "abcdef".size() := 6
     }
 
 }
