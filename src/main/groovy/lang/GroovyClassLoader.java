@@ -1,8 +1,8 @@
 /*
  * $Id$
- * 
+ *
  * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
- * 
+ *
  * Redistribution and use of this software and associated documentation
  * ("Software"), with or without modification, are permitted provided that the
  * following conditions are met:
@@ -18,7 +18,7 @@
  * "groovy" appear in their names without prior written permission of The
  * Codehaus. "groovy" is a registered trademark of The Codehaus.
  *  5. Due credit should be given to The Codehaus - http://groovy.codehaus.org/
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *  
+ *
  */
 package groovy.lang;
 
@@ -58,7 +58,7 @@ import org.objectweb.asm.ClassWriter;
 
 /**
  * A ClassLoader which can load Groovy classes
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @version $Revision$
@@ -100,7 +100,7 @@ public class GroovyClassLoader extends ClassLoader {
 
     /**
      * Parses the given file into a Java class capable of being run
-     * 
+     *
      * @param file the file name to parse
      * @return the main class defined in the given script
      */
@@ -110,7 +110,7 @@ public class GroovyClassLoader extends ClassLoader {
 
     /**
      * Parses the given text into a Java class capable of being run
-     * 
+     *
      * @param text the text of the script/class to parse
      * @param fileName the file name to use as the name of the class
      * @return the main class defined in the given script
@@ -203,7 +203,7 @@ public class GroovyClassLoader extends ClassLoader {
                                         "Error reading groovy file: " + filename, e1);
                             }
                         }
-                        
+
                     } catch (IOException e) {
                         // Bad jar in classpath, ignore
                     }
@@ -212,9 +212,9 @@ public class GroovyClassLoader extends ClassLoader {
         }
     	throw new ClassNotFoundException(name);
     }
-    
+
     private String[] paths;
-    
+
     /**
      * @return
      */
@@ -225,7 +225,6 @@ public class GroovyClassLoader extends ClassLoader {
             expandClassPath(pathList, "", classpath);
             paths = new String[pathList.size()];
             paths = (String[]) pathList.toArray(paths);
-            System.out.println(pathList);
         }
         return paths;
     }
@@ -265,12 +264,12 @@ public class GroovyClassLoader extends ClassLoader {
     protected Class loadClass(String name, byte[] bytecode) {
         return defineClass(name, bytecode, 0, bytecode.length);
     }
-    
+
     protected ClassCollector createCollector(CompileUnit unit) {
         return new ClassCollector(this, unit);
     }
 
-    
+
     protected static class ClassCollector extends CompilerFacade {
         private Class generatedClass;
         private GroovyClassLoader cl;
