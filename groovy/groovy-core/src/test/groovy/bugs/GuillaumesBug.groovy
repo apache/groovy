@@ -1,6 +1,6 @@
 /**
  * @author Guillaume Laforge
- *
+ * 
  * @version $Revision$
  */
 class GuillaumesBug extends GroovyTestCase {
