@@ -45,11 +45,13 @@
  */
 package org.codehaus.groovy.bsf;
 
+import java.io.File;
 import java.util.List;
 
 import junit.framework.TestCase;
 
 import org.apache.bsf.BSFManager;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Tests the BSF integration
@@ -134,5 +136,15 @@ public class BSFTest extends TestCase {
                 0,
                 "valueOfX = this.bsf.lookupBean('x'); assert valueOfX == 4; valueOfX + 1");
         assertEquals("Incorrect return", new Integer(5), answer);
+    }
+    
+    public void testExecFile() throws Exception {
+        execScript("src/test/groovy/script/MapFromList.groovy");
+        execScript("src/test/groovy/script/AtomTestScript.groovy");
+    }
+
+    protected void execScript(String fileName) throws Exception {
+        System.out.println("Executing script: " + fileName);
+        manager.exec("groovy", fileName, 0, 0, DefaultGroovyMethods.getText(new File(fileName)));
     }
 }

@@ -406,7 +406,15 @@ public class MetaClass {
             Map.Entry entry = (Map.Entry) iter.next();
             String key = entry.getKey().toString();
             Object value = entry.getValue();
-            setProperty(bean, key, value);
+            try {
+                setProperty(bean, key, value);
+            }
+            catch (GroovyRuntimeException e) {
+                // lets ignore missing properties
+                /** @todo should replace this code with a getMetaProperty(key) != null check
+                 i.e. don't try and set a non-existent property
+                 */
+            }
         }
     }
 
