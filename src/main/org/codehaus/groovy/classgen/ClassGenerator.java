@@ -930,6 +930,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             visitClassExpression(new ClassExpression(classNode.getName()));
             return;
         }
+        if (variableName.equals("super")) {
+            visitClassExpression(new ClassExpression(classNode.getSuperClass()));
+            return;
+        }
         String className = classNode.getClassNameForExpression(variableName);
         if (className != null) {
             visitClassExpression(new ClassExpression(className));
