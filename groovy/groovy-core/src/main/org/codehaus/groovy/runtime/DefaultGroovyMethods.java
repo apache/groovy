@@ -198,6 +198,9 @@ public class DefaultGroovyMethods {
     }
 
     public static boolean isCase(String caseValue, Object switchValue) {
+        if (switchValue == null) {
+            return caseValue == null;
+        }
         return caseValue.equals(switchValue.toString());
     }
 
