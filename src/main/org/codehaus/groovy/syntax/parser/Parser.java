@@ -972,8 +972,41 @@ public class Parser
 
                 if ( lt() == Token.LEFT_PARENTHESIS )
                 {
-                    cur = rootNode( Token.LEFT_PARENTHESIS,
-                                    cur );
+                    // foo.bar.baz()
+                    // -----------
+
+                    // foo()
+                    // ---
+
+                    switch ( cur.getToken().getType() )
+                    {
+                        case ( Token.DOT ):
+                        {
+                            CSTNode newCur = rootNode( Token.LEFT_PARENTHESIS );
+
+                            newCur.addChild( cur.getChild( 0 ) );
+                            newCur.addChild( cur.getChild( 1 ) );
+
+                            cur = newCur;
+                            break;
+                        }
+
+                        case ( Token.IDENTIFIER ):
+                        {
+                            CSTNode newCur = rootNode( Token.LEFT_PARENTHESIS );
+
+                            newCur.addChild( new CSTNode() );
+                            newCur.addChild( cur );
+
+                            cur = newCur;
+                            break;
+                        }
+                        case ( Token.KEYWORD_SUPER ):
+                        case ( Token.KEYWORD_THIS ):
+                        {
+                            break;
+                        }
+                    }
 
                     cur.addChild( argumentList() );
 
