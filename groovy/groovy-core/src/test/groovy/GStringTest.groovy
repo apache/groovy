@@ -24,7 +24,6 @@ class GStringTest extends GroovyTestCase {
         assert string == "hello Bob"
     }
     
-    /** @todo parser bug
     void testWithVariableAtBeginning() {
         name = "Bob"
         template = "${name} hey"
@@ -40,5 +39,5 @@ class GStringTest extends GroovyTestCase {
         
         assert string == "Bob"
     }
-    */
+
 }

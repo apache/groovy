@@ -57,6 +57,7 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression NULL = new ConstantExpression(null);
     public static final ConstantExpression TRUE = new ConstantExpression(Boolean.TRUE);
     public static final ConstantExpression FALSE = new ConstantExpression(Boolean.FALSE);
+    public static final ConstantExpression EMPTY_STRING = new ConstantExpression("");
     public static final Expression EMPTY_ARRAY = new PropertyExpression(new ClassExpression(ArgumentListExpression.class.getName()), "EMPTY_ARRAY");
 
     private Object value;
