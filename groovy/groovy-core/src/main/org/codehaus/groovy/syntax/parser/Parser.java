@@ -1126,18 +1126,25 @@ public class Parser
         switch ( lt() )
         {
 			case ( Token.NOT ):
-            case ( Token.PLUS_PLUS ):
             case ( Token.PLUS ):
-            case ( Token.MINUS_MINUS ):
             case ( Token.MINUS ):
             {
                 expr = rootNode( lt() );
-                expr.addChild( unaryExpression() );
+                expr.addChild( postfixExpression() );
+                break;
+            }
+            case ( Token.PLUS_PLUS ):
+            case ( Token.MINUS_MINUS ):
+            {
+                expr = new CSTNode(Token.syntheticPrefix());
+                CSTNode prefixExpr = rootNode( lt() );
+                expr.addChild(prefixExpr);
+                prefixExpr.addChild(primaryExpression());
                 break;
             }
             default:
             {
-                expr = primaryExpression();
+                expr = postfixExpression();
                 break;
             }
         }
@@ -1150,17 +1157,21 @@ public class Parser
     {
         CSTNode expr = primaryExpression();
 
-        switch ( lt() )
+        Token laToken = la();
+        if (laToken != null) 
         {
-            case ( Token.PLUS_PLUS ):
-            case ( Token.MINUS_MINUS ):
+            switch ( laToken.getType() )
             {
-                expr = rootNode( lt(),
-                                 expr );
-                break;
+                case ( Token.PLUS_PLUS ):
+                case ( Token.MINUS_MINUS ):
+                {
+                    CSTNode primaryExpr = expr;
+                    expr = new CSTNode(Token.syntheticPostfix());
+                    expr.addChild(rootNode(lt(), primaryExpr));
+                }
             }
         }
-
+        
         return expr;
     }
 
@@ -1303,19 +1314,7 @@ public class Parser
             }
         }
 
-      Token laToken = la();
-      if (laToken != null) 
-      {
-          switch ( laToken.getType() )
-          {
-              case ( Token.PLUS_PLUS ):
-              case ( Token.MINUS_MINUS ):
-              {
-                  expr = rootNode(lt(), expr);
-              }
-          }
-      }
-      return expr;
+        return expr;
     }
 
     protected CSTNode sugaryMethodCallExpression(CSTNode expr,
