@@ -17,20 +17,12 @@
  **/
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.syntax.parser.ParserException;
-import org.codehaus.groovy.ast.ModuleNode;
-
-import java.io.Reader;
-
 /**
- * A simple extension point to allow us to switch between the classic Groovy parser and the new Antlr based parser
- * 
  * @version $Revision$
  */
-public abstract class ParserPlugin {
+public class ClassicParserPluginFactory extends ParserPluginFactory {
 
-    public abstract Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException;
-
-    public abstract ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
+    public ParserPlugin createParserPlugin() {
+        return new ClassicParserPlugin();
+    }
 }

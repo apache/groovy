@@ -15,22 +15,17 @@
  * limitations under the License.
  *
  **/
-package org.codehaus.groovy.control;
+package org.codehaus.groovy.antlr;
 
-import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.syntax.parser.ParserException;
-import org.codehaus.groovy.ast.ModuleNode;
-
-import java.io.Reader;
+import org.codehaus.groovy.control.ParserPlugin;
+import org.codehaus.groovy.control.ParserPluginFactory;
 
 /**
- * A simple extension point to allow us to switch between the classic Groovy parser and the new Antlr based parser
- * 
  * @version $Revision$
  */
-public abstract class ParserPlugin {
+public class AntlrParserPluginFactory extends ParserPluginFactory {
 
-    public abstract Reduction parseCST(SourceUnit sourceUnit, Reader reader) throws CompilationFailedException;
-
-    public abstract ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException;
+    public ParserPlugin createParserPlugin() {
+        return new AntlrParserPlugin();
+    }
 }
