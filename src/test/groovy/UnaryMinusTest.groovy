@@ -20,7 +20,6 @@ class UnaryMinusTest extends TestSupport {
         
         assert b == -1
     }
-    */
     
     void testShellBug() {
         assertScript("
