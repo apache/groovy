@@ -45,7 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 	
 	class AbstractStreamingBuilder {
-		badTagClosure = {tag, pendingNamespaces, namespaces, Object[] rest |
+		badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest |
 							uri = pendingNamespaces[prefix]
 							
 							if (uri == null) {
@@ -54,7 +54,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							
 							throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
 						}
-		namespaceSetupClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
+		namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
 									attrs.each { key, value |
 										if ( key == "") {
 											key = ":"	// marker for default namespace
@@ -72,7 +72,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 										}
 									}
 								}
-		aliasSetupClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
+		aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest |
 								attrs.each { key, value |
 									if (value instanceof Map) {
 										// key is a namespace prefix value is the mapping

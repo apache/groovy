@@ -46,18 +46,22 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 	
 	class StreamingMarkupBuilder extends AbstractStreamingBuilder {
 		pendingStack = []
-		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 							out.unescaped() << "<!--"
 							out.bodyText() << body
 							out.unescaped() << "-->"
 						 }
-		noopClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
-							out.bodyText() << body
+		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+							if (body instanceof Buildable) {
+								body.build(doc)
+							} else {
+								out.bodyText() << body
+							}
 					  }
-		unescapedClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 								out.unescaped() << body
 						   }
-		tagClosure = {tag, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
 						if (prefix != "") {
 							if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
 								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
@@ -102,7 +106,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							pendingStack.add pendingNamespaces.clone()	  	
 							pendingNamespaces.clear()
 											
-							out.bodyText() << body
+							if (body instanceof Buildable) {
+								body.build(doc)
+							} else {
+								out.bodyText() << body
+							}
 							
 							pendingNamespaces.clear()					
 							pendingNamespaces.putAll pendingStack.pop()

@@ -49,21 +49,21 @@ import org.w3c.dom.Node
 	
 	class StreamingDOMBuilder extends AbstractStreamingBuilder {
 		pendingStack = []
-		commentClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
 							comment = dom.document.createComment(body)
 							
 							if (comment != null) {
 								dom.element.appendChild(comment)
 							}
 						 }
-		noopClosure = {pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
 						if (body instanceof Closure) {
 							body()
 						} else {
 							dom.element.appendChild(dom.document.createTextNode(body))
 						}
 					  }
-		tagClosure = {tag, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
 						attributes = []
 						nsAttributes = []
 						
