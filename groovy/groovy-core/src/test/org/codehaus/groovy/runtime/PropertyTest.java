@@ -56,6 +56,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JFrame;
+
 /**
  * Test the property access of the Invoker class
  * 
@@ -140,6 +142,16 @@ public class PropertyTest extends GroovyTestCase {
 
         InvokerHelper.setProperty(bean, "point", list);
         assertEquals("Should have set a point", new Point(10, 20), bean.getPoint());
+    }
+
+    public void testListCoercionPropertyOnJFrame() throws Exception {
+        JFrame bean = new JFrame();
+        List list = new ArrayList();
+        list.add(new Integer(10));
+        list.add(new Integer(20));
+
+        InvokerHelper.setProperty(bean, "location", list);
+        assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
     }
 
     public void testListNavigationProperty() throws Exception {

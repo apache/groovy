@@ -25,7 +25,7 @@ class Console extends ConsoleSupport {
 	    scriptList = []
         swing = new SwingBuilder()
 
-        frame = swing.frame(title:'GroovyConsole') { // location:[100,100],  size:[800,400]) {
+        frame = swing.frame(title:'GroovyConsole', location:[100,100], size:[800,400]) {
             menuBar {
                 menu(text:'File') {
                     menuItem() {
