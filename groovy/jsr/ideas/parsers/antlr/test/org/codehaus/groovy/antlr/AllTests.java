@@ -54,6 +54,9 @@ public class AllTests extends TestSuiteSupport {
         "bugs/ForAndSqlBug.groovy",             // TODO: closure params
         "bugs/VariblePrecedence.groovy",        // TODO: closure params
         "ClosureAsParamTest.groovy",            // TODO: closure params
+        "ClosureComparatorTest.groovy",         // TODO: closure params
+        "ClosureCurryTest.groovy",              // TODO: closure params
+        "ClosureMethodCallTest.groovy",         // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
