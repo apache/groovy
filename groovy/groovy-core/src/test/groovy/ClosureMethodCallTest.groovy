@@ -4,17 +4,21 @@
  */
 class ClosureMethodCallTest extends GroovyTestCase {
 
-    property foo
-    
     void testCallingClosureWithMultipleArguments() {
-		closure = { a, b | foo = "hello ${a} and ${b}".toString() }		        
+        closure = { a, b | foo = "hello ${a} and ${b}".toString() }                
         
-		closure("james", "bob")
+        closure("james", "bob")
 
-		assert foo == "hello james and bob"
+        assert foo == "hello james and bob"
 
-		closure.call("sam", "james")
+        closure.call("sam", "james")
 
-		assert foo == "hello sam and james"
-	}
+        assert foo == "hello sam and james"
+    }
+    
+    
+    void testSystemOutPrintlnAsAClosure() {
+        closure = System.out.println
+        closure("Hello world")
+    }
 }
