@@ -53,9 +53,9 @@ import org.codehaus.groovy.classgen.TestSupport;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClosuresInScriptBug extends TestSupport {
+public class ClassInScriptBug extends TestSupport {
 
     public void testBug() throws Exception {
-        assertScript( "a = 1\n [2].each { a = it }\n assert a == 2" );
+        assertScript( "class X {}\nx = new X()\nprintln(x)" );
     }
 }
