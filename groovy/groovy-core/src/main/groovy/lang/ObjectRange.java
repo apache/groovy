@@ -100,6 +100,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
         return false;
     }
+    
     public Comparable getFrom() {
         return from;
     }
@@ -127,7 +128,7 @@ public class ObjectRange extends AbstractList implements Range {
             // lets lazily calculate the size
             size = 0;
             Object value = from;
-            while (to.compareTo(value) > 0) {
+            while (to.compareTo(value) >= 0) {
                 value = increment(value);
                 size++;
             }
