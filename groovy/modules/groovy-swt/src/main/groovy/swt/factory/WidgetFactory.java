@@ -21,7 +21,6 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.swt.widgets.Widget;
 
 /**
  * @author <a href="mailto:ckl@dacelo.nl">Christiaan ten Klooster </a>
@@ -55,7 +54,7 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
             style = SwtUtils.parseStyle(SWT.class, styleProperty);
         }
         
-        Widget parentWidget = SwtUtils.getParentWidget(parent);        
+        Object parentWidget = SwtUtils.getParentWidget(parent);        
         Object bean = createWidget(parentWidget);
         if (bean != null) {
             setBeanProperties(bean, properties);

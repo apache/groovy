@@ -127,7 +127,7 @@ public class SwtUtils  {
      * @param parent
      * @return
      */
-    public static Widget getParentWidget(Object parent) {
+    public static Object getParentWidget(Object parent) {
         if (parent instanceof ApplicationWindow) {
             return (Composite) ((ApplicationWindowImpl) parent).getContents();
         }
@@ -146,11 +146,11 @@ public class SwtUtils  {
         else if (parent instanceof TabItem) {
             return ((TabItem) parent).getParent();
         }
-        else if (parent instanceof Composite) {
-            return (Composite) parent;
+        else if (parent instanceof Widget) {
+            return (Widget) parent;
         }
         else {
-            return null;
+            return parent;
         }
     }
     
