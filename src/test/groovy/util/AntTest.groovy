@@ -53,4 +53,13 @@ class AntTest extends GroovyTestCase {
         }
         assert found
     }
+    
+    void testJunitTask() {
+    	ant = new AntBuilder()
+        
+        ant.junit {
+        	test(name:'groovy.util.AntTest')
+        }
+    }
+    
 }
