@@ -48,6 +48,5 @@ class TrayDemo {
 			}
 		}
 			
-		shell.display.dispose()	
 	}
 }

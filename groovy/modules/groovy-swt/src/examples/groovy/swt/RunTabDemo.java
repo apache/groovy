@@ -11,6 +11,7 @@ import groovy.lang.GroovyObject;
  * $Id$
  */
 public class RunTabDemo {
+    
     public static void main(String[] args) throws Exception {
         RunDemoBrowser demo = new RunDemoBrowser();
         GroovyObject object = demo.compile("src/examples/groovy/swt/TabDemo.groovy");

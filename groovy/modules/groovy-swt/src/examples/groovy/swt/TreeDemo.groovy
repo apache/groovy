@@ -43,7 +43,6 @@ class SwtDemo {
 				shell.display.sleep();
 			}
 		}
-			
-		shell.display.dispose()	
+
 	}
 }

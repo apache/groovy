@@ -1,7 +1,7 @@
 package groovy.swt.examples
 
 import groovy.swt.SwtBuilder
-import groovy.swing.SwingBuilder
+import groovy.swt.CustomSwingBuilder
 
 
 class AwtSwtDemo {
@@ -9,7 +9,7 @@ class AwtSwtDemo {
         
     void run() {
         swt = new SwtBuilder()
-   		swing = new SwingBuilder()        
+   		swing = new CustomSwingBuilder()        
    		
         shell = swt.shell ( text:'The AwtSwt Demo' ) {
          	fillLayout()
@@ -25,7 +25,6 @@ class AwtSwtDemo {
 				shell.display.sleep();
 			}
 		}
-			
-		shell.display.dispose()	
+		
 	}
 }

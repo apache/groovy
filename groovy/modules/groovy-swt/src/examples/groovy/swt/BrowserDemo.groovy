@@ -10,7 +10,7 @@ class BrowserSwtDemo extends Script {
     property status
     property progressBar
         
-    void run() {
+    run() {
         swt = new SwtBuilder()
         
         shell = swt.shell( text:"The Browser Test", location:[100,100], size:[700,600] ) {
@@ -43,13 +43,13 @@ class BrowserSwtDemo extends Script {
         	}
 
         	label( style:"none", text:"Address" )
-        	location = text( style:"Border" ) {  
-	        	gridData( horizontalAlignment:"fill", horizontalSpan:2, grabExcessHorizontalSpace:true )
+        	location = text( style:"border" ) {  
+	        	gridData( style:"fill_horizontal", horizontalSpan:2, grabExcessHorizontalSpace:true )
         	}
 
 
 			browser = browser( style:"border" ) {
-				gridData( horizontalAlignment:"fill", verticalAlignment:"fill", horizontalSpan:3, grabExcessHorizontalSpace:true, grabExcessVerticalSpace:true)
+				gridData( horizontalSpan:3, style:"fill_both", grabExcessHorizontalSpace:true )
 
  				locationListener(type:"changed", closure: { event |
 					location.setText( event.location )
@@ -58,7 +58,8 @@ class BrowserSwtDemo extends Script {
 				progressListener(type:"changed", closure: { event |
 					if (event.total != 0) {
 						ratio = event.current * 100 / event.total
-						progressBar.setSelection( Integer.parseInt("" + Math.round(Double.parseDouble("" + ratio))) )
+						progressBar.setSelection( 
+							Integer.parseInt("" + Math.round(Double.parseDouble("" + ratio))) )
 					}
 				})
 			
@@ -91,6 +92,5 @@ class BrowserSwtDemo extends Script {
 			}
 		}
 			
-		shell.display.dispose()	
 	}
 }

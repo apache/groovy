@@ -136,5 +136,5 @@ public class WidgetFactory extends AbstractSwtFactory implements SwtFactory {
             }
         }
     }
-
+    
 }

@@ -13,4 +13,5 @@ public class RunDemoBrowser extends SwtTest {
         GroovyObject object = demo.compile("src/examples/groovy/swt/BrowserDemo.groovy");
         object.invokeMethod("run", null);
     }
+    
 }

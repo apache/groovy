@@ -38,6 +38,5 @@ class TableTreeDemo {
 			}
 		}
 			
-		shell.display.dispose()	
 	}
 }
