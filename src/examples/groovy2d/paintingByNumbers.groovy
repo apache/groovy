@@ -1,26 +1,27 @@
 /** 
  *  simple patchwork graphics demo
- * @author: Jeremy Rayner
+ * @author: Jeremy Rayner, changes by Dierk Koenig
  */
 
 width = 500; height = 400; blockSize = 10
 g = createGraphics()
 
-// create convienence closure for random numbers
-rnd = {(int)(Math.random() * it)}
-
 // main loop
 while (true) {
-    for (row in 0..(int)(height / blockSize)) {
-        drawBlock(row,rnd)
-    }
+    drawBlock()
 }
 
 // --------------------------------------------------
 
-// draw a random coloured square in the specified row
-def drawBlock(row,rnd) {
-    column = rnd(width / blockSize)
+// random integer
+def rnd(upperBound){
+    (int)(Math.random() * upperBound)
+}
+
+// draw a random coloured square within bounds
+def drawBlock() {
+    row    = rnd(height / blockSize)
+    column = rnd(width  / blockSize)
     colour = new java.awt.Color(rnd(255),rnd(255),rnd(255))
     g.setColor(colour)
     g.fillRect(column * blockSize, row * blockSize, blockSize, blockSize)
