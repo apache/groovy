@@ -79,7 +79,7 @@ public class CompilationUnit extends ProcessingUnit {
 
     //---------------------------------------------------------------------------
     // CONSTRUCTION AND SUCH
-    
+
     protected HashMap sources;    // The SourceUnits from which this unit is built
     protected ArrayList names;      // Names for each SourceUnit in sources.
 
@@ -634,14 +634,14 @@ public class CompilationUnit extends ProcessingUnit {
         while (iterator.hasNext()) {
             //
             // Get the class and calculate its filesystem name
-            
+
             GroovyClass gclass = (GroovyClass) iterator.next();
             String name = gclass.getName().replace('.', File.separatorChar) + ".class";
             File path = new File(configuration.getTargetDirectory(), name);
-            
+
             //
             // Ensure the path is ready for the file
-            
+
             File directory = path.getParentFile();
             if (directory != null && !directory.exists()) {
                 directory.mkdirs();
@@ -649,7 +649,7 @@ public class CompilationUnit extends ProcessingUnit {
 
             //
             // Create the file and write out the data
-            
+
             byte[] bytes = gclass.getBytes();
 
             FileOutputStream stream = null;
@@ -772,7 +772,7 @@ public class CompilationUnit extends ProcessingUnit {
                 try {
                     body.call(source);
                 } catch (CompilationFailedException e) {
-                    failures = true;
+                    throw e;
                 } catch (Exception e) {
                     throw new GroovyBugError(e);
                 }
