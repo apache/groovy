@@ -5,11 +5,11 @@
 class ByteIndexBug extends GroovyTestCase {
      
     void testBug() {
-		sb = new StringBuffer("<<<FOO\n")
+		sb = new StringBuffer("\"\"\"`n")
 		for (j in 0..127){ // 126 is okay.
 			sb.append('$').append("{x}")
 		}
-		sb.append("\nFOO\n")
+		sb.append("\n\"\"\"\n")
 		
 		b = new Binding(x:null)
 		

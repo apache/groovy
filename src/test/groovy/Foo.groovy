@@ -9,9 +9,9 @@ import java.io.Serializable
 class Foo implements Serializable {
 
     // public properties
-    def name = "James"
-    def count
-    String location = "London"
+    @Property def name = "James"
+    @Property def count
+    @Property String location = "London"
     
     // declare private variables
     private def blah = 9
