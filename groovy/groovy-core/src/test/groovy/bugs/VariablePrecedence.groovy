@@ -5,7 +5,7 @@
 class VariblePrecedence extends GroovyTestCase {
     
     void testVariablePrecedence() {
- /*
+ 
         assertScript( <<<-EOF
             class VariableFoo {
                 x = 100
@@ -32,11 +32,14 @@ class VariblePrecedence extends GroovyTestCase {
             }
 
         EOF );
- */
+
     }
 
 
 /*
+ * CURRENTLY BROKEN.  Variable scoping needs an overhaul to
+ * fix it.
+ *
     void testVariablePrecedenceInScript() {
         assertScript( <<<-EOF
             c = { |x| assert x == 1; assert y == 93; }
@@ -46,6 +49,6 @@ class VariblePrecedence extends GroovyTestCase {
             c.call(1);
         EOF);
     }
-*/
+ */
 
 }
