@@ -384,12 +384,13 @@ public class GroovyClassLoader extends SecureClassLoader {
                                 pathList.add(paths[i]);
 
                                 Manifest manifest = jar.getManifest();
-                                Attributes classPathAttributes = manifest.getMainAttributes();
-                                String manifestClassPath = classPathAttributes.getValue("Class-Path");
+                                if (manifest != null) {
+                                    Attributes classPathAttributes = manifest.getMainAttributes();
+                                    String manifestClassPath = classPathAttributes.getValue("Class-Path");
 
-                                if (manifestClassPath != null)
-                                    expandClassPath(pathList, paths[i], manifestClassPath);
-
+                                    if (manifestClassPath != null)
+                                        expandClassPath(pathList, paths[i], manifestClassPath);
+                                }
                             } catch (IOException e) {
                                 // Bad jar, ignore
                                 continue;
