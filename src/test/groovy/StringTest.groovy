@@ -8,12 +8,21 @@ class StringTest extends GroovyTestCase {
         // test polymorphic size() method like collections
         assert s.size() == 4
         
-        /** @todo parser
         s = s + "efg" + "hijk"
         
         assert s.size() == 11
+        /** @todo parser
         */
         assert "abcdef".size() == 6
     }
 
+    void testStringPlusNull() {
+        /** @todo when fixed the method invocation code 
+        y = null
+        
+        x = "hello " + y
+        
+        assert x == "hello null"
+        */
+    }
 }
