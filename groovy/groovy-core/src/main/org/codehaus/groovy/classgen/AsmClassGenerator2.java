@@ -817,72 +817,83 @@ public class AsmClassGenerator2 extends ClassGenerator {
 
         }
         else {
-            String exceptionVar = catchStatement.getVariable();
-            String exceptionType =
-                checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
+            int finallySubAddress = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
+            int anyExceptionIndex = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
 
-            int exceptionIndex = defineVariable(exceptionVar, exceptionType, false).getIndex();
-            int index2 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
-            int index3 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
-
-            final Label l0 = new Label();
-            cv.visitLabel(l0);
-
+            // start try block, label needed for exception table
+            final Label tryStart = new Label();
+            cv.visitLabel(tryStart);
             tryStatement.visit(this);
-
-            final Label l1 = new Label();
-            cv.visitLabel(l1);
-            Label l2 = new Label();
-            cv.visitJumpInsn(JSR, l2);
-            final Label l3 = new Label();
-            cv.visitLabel(l3);
-            Label l4 = new Label();
-            cv.visitJumpInsn(GOTO, l4);
-            final Label l5 = new Label();
-            cv.visitLabel(l5);
-
-            cv.visitVarInsn(ASTORE, exceptionIndex);
-
-            if (catchStatement != null) {
+            // goto finally part
+            final Label finallyStart = new Label();
+            cv.visitJumpInsn(GOTO, finallyStart);
+            // marker needed for Exception table
+            final Label tryEnd = new Label();
+            cv.visitLabel(tryEnd);
+            
+            for (Iterator it=statement.getCatchStatements().iterator(); it.hasNext();) {
+                catchStatement = (CatchStatement) it.next();
+                String exceptionType =
+                    checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
+                int exceptionIndex = defineVariable(catchStatement.getVariable(), exceptionType, false).getIndex();
+                
+                // start catch block, label needed for exception table
+                final Label catchStart = new Label();
+                cv.visitLabel(catchStart);
+                // store the exception 
+                cv.visitVarInsn(ASTORE, exceptionIndex);
                 catchStatement.visit(this);
+                // goto finally start
+                cv.visitJumpInsn(GOTO, finallyStart);
+                // add exception to table
+                final String exceptionTypeInternalName = BytecodeHelper.getClassInternalName(exceptionType);
+                exceptionBlocks.add(new Runnable() {
+                    public void run() {
+                        cv.visitTryCatchBlock(tryStart, tryEnd, catchStart, exceptionTypeInternalName);
+                    }
+                });
             }
-
-            cv.visitJumpInsn(JSR, l2);
-            final Label l6 = new Label();
-            cv.visitLabel(l6);
-            cv.visitJumpInsn(GOTO, l4);
-
-            final Label l7 = new Label();
-            cv.visitLabel(l7);
-            cv.visitVarInsn(ASTORE, index2);
-            cv.visitJumpInsn(JSR, l2);
-
-            final Label l8 = new Label();
-            cv.visitLabel(l8);
-            cv.visitVarInsn(ALOAD, index2);
+            
+            // marker needed for the exception table
+            final Label endOfAllCatches = new Label();
+            cv.visitLabel(endOfAllCatches);
+            
+            // start finally
+            cv.visitLabel(finallyStart);
+            Label finallySub = new Label();
+            // run finally sub
+            cv.visitJumpInsn(JSR, finallySub);
+            // goto end of finally
+            Label afterFinally = new Label();
+            cv.visitJumpInsn(GOTO, afterFinally);
+            
+            // start a block catching any Exception
+            final Label catchAny = new Label();
+            cv.visitLabel(catchAny);
+            //store exception
+            cv.visitVarInsn(ASTORE, anyExceptionIndex);
+            // run finally subroutine
+            cv.visitJumpInsn(JSR, finallySub);
+            // load the exception and rethrow it
+            cv.visitVarInsn(ALOAD, anyExceptionIndex);
             cv.visitInsn(ATHROW);
-            cv.visitLabel(l2);
-            cv.visitVarInsn(ASTORE, index3);
-
-            statement.getFinallyStatement().visit(this);
-
-            cv.visitVarInsn(RET, index3);
-            cv.visitLabel(l4);
-
-            // rest of code goes here...
-
-            //final String exceptionTypeInternalName = (catchStatement !=
-            // null) ?
-            // getTypeDescription(exceptionType) : null;
-            final String exceptionTypeInternalName =
-                (catchStatement != null) ? BytecodeHelper.getClassInternalName(exceptionType) : null;
-
+            
+            // start the finally subroutine
+            cv.visitLabel(finallySub);
+            // store jump address
+            cv.visitVarInsn(ASTORE, finallySubAddress);
+            if (!statement.getFinallyStatement().isEmpty())
+                statement.getFinallyStatement().visit(this);
+            // return from subroutine
+            cv.visitVarInsn(RET, finallySubAddress);
+            
+            // end of all catches and finally parts
+            cv.visitLabel(afterFinally);
+            
+            // add catch any block to exception table
             exceptionBlocks.add(new Runnable() {
                 public void run() {
-                    cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
-                    cv.visitTryCatchBlock(l0, l3, l7, null);
-                    cv.visitTryCatchBlock(l5, l6, l7, null);
-                    cv.visitTryCatchBlock(l7, l8, l7, null);
+                    cv.visitTryCatchBlock(tryStart, endOfAllCatches, catchAny, null);
                 }
             });
         }
