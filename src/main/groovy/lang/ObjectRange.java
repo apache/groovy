@@ -64,24 +64,31 @@ public class ObjectRange extends AbstractList implements Range {
     private Comparable from;
     private Comparable to;
     private int size = -1;
-    private boolean reverse;
+    private final boolean reverse;
 
     public ObjectRange(Comparable from, Comparable to) {
-        if (InvokerHelper.compareGreaterThan(from, to)) {
-            this.from = to;
-            this.to = from;
-            this.reverse = true;
-        }
-        else {
-            this.from = from;
-            this.to = to;
-        }
+    	this.reverse = InvokerHelper.compareGreaterThan(from, to);
+    	if (this.reverse) {
+    		constructorHelper(to, from);
+    	} else {
+    		constructorHelper(from, to);
+    	}
     }
 
     public ObjectRange(Comparable from, Comparable to, boolean reverse) {
-        this.from = from;
-        this.to = to;
+    	constructorHelper(from, to);
+    	
         this.reverse = reverse;
+    }
+    
+    private void constructorHelper(Comparable from, Comparable to) {
+    	if (from.getClass() == to.getClass()) {
+    		this.from = from;
+    		this.to = to;
+    	} else {
+    		this.from = normaliseType(from);
+    		this.to = normaliseType(to);
+    	}
     }
 
     public int hashCode() {
@@ -275,5 +282,20 @@ public class ObjectRange extends AbstractList implements Range {
 
     protected Object decrement(Object value) {
         return InvokerHelper.invokeMethod(value, "previous", null);
+    }
+    
+    private static Comparable normaliseType(final Comparable operand) {
+    	if (operand instanceof Character) {
+    		return new Integer(((Character)operand).charValue());
+    	} else if (operand instanceof String) {
+    	final String string = (String)operand;
+    	
+    		if (string.length() == 1)
+    			return new Integer(string.charAt(0));
+    		else
+    			return string;
+    	} else {
+    		return operand;
+    	}
     }
 }
