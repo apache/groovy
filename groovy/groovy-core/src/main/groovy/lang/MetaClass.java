@@ -1336,7 +1336,7 @@ public class MetaClass {
     protected boolean coerceGStrings(Object[] arguments) {
         boolean coerced = false;
         for (int i = 0, size = arguments.length; i < size; i++) {
-            Object argument = arguments[0];
+            Object argument = arguments[i];
             if (argument instanceof GString) {
                 arguments[i] = argument.toString();
                 coerced = true;
