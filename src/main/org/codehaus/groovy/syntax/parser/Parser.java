@@ -575,6 +575,7 @@ public class Parser
             }
             case ( Token.KEYWORD_WHILE ):
             {
+                statement = whileStatement();
                 break;
             }
             case ( Token.KEYWORD_CONTINUE ):
@@ -715,6 +716,22 @@ public class Parser
         CSTNode statement = rootNode( Token.KEYWORD_RETURN );
 
         statement.addChild( expression() );
+
+        return statement;
+    }
+
+    protected CSTNode whileStatement()
+        throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_WHILE );
+
+        consume( Token.LEFT_PARENTHESIS );
+
+        statement.addChild( expression() );
+
+        consume( Token.RIGHT_PARENTHESIS );
+
+        statement.addChild( statementBlock() );
 
         return statement;
     }

@@ -446,6 +446,11 @@ public class ASTBuilder
                 statement = forStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_WHILE ):
+            {
+                statement = whileStatement( statementRoot );
+                break;
+            }
             case ( Token.KEYWORD_TRY ):
             {
                 statement = tryStatement( statementRoot );
@@ -469,6 +474,15 @@ public class ASTBuilder
         setLineNumber(statement, statementRoot);
 
         return statement;
+    }
+
+    protected WhileStatement whileStatement(CSTNode statementRoot)
+    {
+        Expression expr = expression( statementRoot.getChild( 0 ) );
+        BlockStatement statementBlock = statementBlock( statementRoot.getChild( 1 ) );
+
+        return new WhileStatement( new BooleanExpression( expr ),
+                                   statementBlock );
     }
 
     protected IfStatement ifStatement(CSTNode statementRoot)
