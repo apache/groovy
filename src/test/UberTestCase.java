@@ -138,6 +138,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(MultiplyDivideEqualsTest.class);
         suite.addTestSuite(NamedParameterTest.class);
         suite.addTestSuite(NavigationTest.class);
+        suite.addTestSuite(NegateListsTest.class);
         suite.addTestSuite(NegationTests.class);
         suite.addTestSuite(NestedClosure2Bug.class);
         suite.addTestSuite(NestedClosureBug.class);
