@@ -37,6 +37,22 @@ find one and modify it to try reproduce your problem.
 Then we can add your issue to CVS and then we'll know when its really fixed and 
 we can ensure that the problem stays fixed in future releases.
 
+1.1 Submitting patches
+
+We gladly accept patches if you can find ways to improve, tune or fix Groovy in some way.
+
+Most IDEs can create nice patches now very easily. If you're a command line person try the following to create the patch
+
+{code:bash}
+diff -u Main.java.orig Main.java >> patchfile.txt
+{code}
+
+or
+
+{code:bash}
+cvs diff -u Main.java >> patchfile.txt
+{code}
+
 1.1 Using the issue tracker
 
 Before you can raise an issue in the issue tracker you need to register with it. This is quick & painless.
