@@ -1455,6 +1455,19 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    /**
+     * Iterate over each element of the list in the reverse order.
+     *
+     * @param self a List
+     * @param closure a closure
+     */
+    public static void reverseEach(List self, Closure closure) {
+        List reversed = reverse(self);
+        for (Iterator iter = reversed.iterator(); iter.hasNext();) {
+            closure.call(iter.next());
+        }
+    }
+
     private static List flatten(Collection elements, List addTo) {
         Iterator iter = elements.iterator();
         while (iter.hasNext()) {

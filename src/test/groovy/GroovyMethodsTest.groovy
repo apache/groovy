@@ -73,6 +73,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert joined == "a, b, c, d"
     }
 
+    void testReverseEach() {
+        l = ["cheese", "loves", "Guillaume"]
+        expected = ["Guillaume", "loves", "cheese"]
+        
+        answer = []
+        l.reverseEach{ answer << it }
+
+        assert answer == expected
+    }
     
     void DISABLE_testExecuteCommandLineProcessUsingAString() {
     	/** @todo why does this not work
