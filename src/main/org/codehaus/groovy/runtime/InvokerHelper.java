@@ -48,11 +48,20 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.*;
 
 import java.beans.Introspector;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -236,28 +245,35 @@ public class InvokerHelper {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return integerValue(-number.intValue());
-        } else if (value instanceof Long) {
+        }
+        else if (value instanceof Long) {
             Long number = (Long) value;
             return new Long(-number.longValue());
-        } else if (value instanceof BigInteger) {
+        }
+        else if (value instanceof BigInteger) {
             return ((BigInteger) value).negate();
-        } else if (value instanceof BigDecimal) {
+        }
+        else if (value instanceof BigDecimal) {
             return ((BigDecimal) value).negate();
-        } else if (value instanceof Double) {
+        }
+        else if (value instanceof Double) {
             Double number = (Double) value;
             return new Double(-number.doubleValue());
-        } else if (value instanceof Float) {
+        }
+        else if (value instanceof Float) {
             Float number = (Float) value;
             return new Float(-number.floatValue());
-        } else if (value instanceof ArrayList) {
+        }
+        else if (value instanceof ArrayList) {
             // value is an list.
             ArrayList newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
-	    for(; it.hasNext(); ) {
-	        newlist.add(negate(it.next()));
-	    }
+            for (; it.hasNext();) {
+                newlist.add(negate(it.next()));
+            }
             return newlist;
-        } else {
+        }
+        else {
             throw new GroovyRuntimeException("Cannot negate type " + value.getClass().getName() + ", value " + value);
         }
     }
@@ -266,29 +282,38 @@ public class InvokerHelper {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
             return integerValue(~number.intValue());
-        } else if (value instanceof Long) {
+        }
+        else if (value instanceof Long) {
             Long number = (Long) value;
             return new Long(~number.longValue());
-        } else if (value instanceof BigInteger) {
+        }
+        else if (value instanceof BigInteger) {
             return ((BigInteger) value).not();
-        } else if (value instanceof String) {
+        }
+        else if (value instanceof String) {
             // value is a regular expression.
             return getInstance().regexPattern(value);
-        } else if (value instanceof ArrayList) {
+        }
+        else if (value instanceof GString) {
+            // value is a regular expression.
+            return getInstance().regexPattern(value.toString());
+        }
+        else if (value instanceof ArrayList) {
             // value is an list.
             ArrayList newlist = new ArrayList();
             Iterator it = ((ArrayList) value).iterator();
-	    for(; it.hasNext(); ) {
-	        newlist.add(bitNegate(it.next()));
-	    }
+            for (; it.hasNext();) {
+                newlist.add(bitNegate(it.next()));
+            }
             return newlist;
-        } else {
+        }
+        else {
             throw new BitwiseNegateEvaluatingException("Cannot bitwise negate type " + value.getClass().getName() + ", value " + value);
         }
     }
 
     public static boolean isCase(Object switchValue, Object caseExpression) {
-    return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
+        return asBool(invokeMethod(caseExpression, "isCase", new Object[]{switchValue}));
     }
 
     public static boolean compareIdentical(Object left, Object right) {
@@ -335,7 +360,8 @@ public class InvokerHelper {
         int answer = getInstance().compareTo(left, right);
         if (answer == 0) {
             return ZERO;
-        } else {
+        }
+        else {
             return answer > 0 ? ONE : MINUS_ONE;
         }
     }
@@ -365,13 +391,15 @@ public class InvokerHelper {
         if (!inclusive) {
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod(to, "next", EMPTY_ARGS);
-            } else {
+            }
+            else {
                 to = invokeMethod(to, "previous", EMPTY_ARGS);
             }
         }
         if (from instanceof Integer && to instanceof Integer) {
             return new IntRange(asInt(from), asInt(to));
-        } else {
+        }
+        else {
             return new ObjectRange((Comparable) from, (Comparable) to);
         }
     }
@@ -383,7 +411,8 @@ public class InvokerHelper {
     public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
             throw new AssertionError("Expression: " + expression);
-        } else {
+        }
+        else {
             throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
@@ -400,7 +429,8 @@ public class InvokerHelper {
             Script script = null;
             if (object instanceof Script) {
                 script = (Script) object;
-            } else {
+            }
+            else {
                 // it could just be a class, so lets wrap it in a Script wrapper
                 // though the bindings will be ignored
                 script = new Script() {
@@ -413,7 +443,8 @@ public class InvokerHelper {
             }
             script.setBinding(context);
             return script;
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             throw new GroovyRuntimeException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
                     e);
         }
@@ -461,15 +492,18 @@ public class InvokerHelper {
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
             out.write((String) object);
-        } else if (object instanceof Writable) {
+        }
+        else if (object instanceof Writable) {
             Writable writable = (Writable) object;
             writable.writeTo(out);
-        } else if (object instanceof InputStream || object instanceof Reader) {
+        }
+        else if (object instanceof InputStream || object instanceof Reader) {
             // Copy stream to stream
             Reader reader;
             if (object instanceof InputStream) {
                 reader = new InputStreamReader((InputStream) object);
-            } else {
+            }
+            else {
                 reader = (Reader) object;
             }
             char[] chars = new char[8192];
@@ -478,7 +512,8 @@ public class InvokerHelper {
                 out.write(chars, 0, i);
             }
             reader.close();
-        } else {
+        }
+        else {
             out.write(toString(object));
         }
     }
@@ -568,7 +603,8 @@ public class InvokerHelper {
             // conservative coding
             if (a.getClass().getName().equals("[Ljava.lang.Integer;")) {
                 ans = (Integer[]) a;
-            } else {
+            }
+            else {
                 int[] ia = (int[]) a;
                 ans = new Integer[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -576,10 +612,12 @@ public class InvokerHelper {
                     ans[i] = integerValue(e);
                 }
             }
-        } else if (elemType.equals("char")) {
+        }
+        else if (elemType.equals("char")) {
             if (a.getClass().getName().equals("[Ljava.lang.Character;")) {
                 ans = (Character[]) a;
-            } else {
+            }
+            else {
                 char[] ia = (char[]) a;
                 ans = new Character[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -587,10 +625,12 @@ public class InvokerHelper {
                     ans[i] = new Character(e);
                 }
             }
-        } else if (elemType.equals("boolean")) {
+        }
+        else if (elemType.equals("boolean")) {
             if (a.getClass().getName().equals("[Ljava.lang.Boolean;")) {
                 ans = (Boolean[]) a;
-            } else {
+            }
+            else {
                 boolean[] ia = (boolean[]) a;
                 ans = new Boolean[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -598,10 +638,12 @@ public class InvokerHelper {
                     ans[i] = new Boolean(e);
                 }
             }
-        } else if (elemType.equals("byte")) {
+        }
+        else if (elemType.equals("byte")) {
             if (a.getClass().getName().equals("[Ljava.lang.Byte;")) {
                 ans = (Byte[]) a;
-            } else {
+            }
+            else {
                 byte[] ia = (byte[]) a;
                 ans = new Byte[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -609,10 +651,12 @@ public class InvokerHelper {
                     ans[i] = new Byte(e);
                 }
             }
-        } else if (elemType.equals("short")) {
+        }
+        else if (elemType.equals("short")) {
             if (a.getClass().getName().equals("[Ljava.lang.Short;")) {
                 ans = (Short[]) a;
-            } else {
+            }
+            else {
                 short[] ia = (short[]) a;
                 ans = new Short[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -620,10 +664,12 @@ public class InvokerHelper {
                     ans[i] = new Short(e);
                 }
             }
-        } else if (elemType.equals("float")) {
+        }
+        else if (elemType.equals("float")) {
             if (a.getClass().getName().equals("[Ljava.lang.Float;")) {
                 ans = (Float[]) a;
-            } else {
+            }
+            else {
                 float[] ia = (float[]) a;
                 ans = new Float[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -631,10 +677,12 @@ public class InvokerHelper {
                     ans[i] = new Float(e);
                 }
             }
-        } else if (elemType.equals("long")) {
+        }
+        else if (elemType.equals("long")) {
             if (a.getClass().getName().equals("[Ljava.lang.Long;")) {
                 ans = (Long[]) a;
-            } else {
+            }
+            else {
                 long[] ia = (long[]) a;
                 ans = new Long[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -642,10 +690,12 @@ public class InvokerHelper {
                     ans[i] = new Long(e);
                 }
             }
-        } else if (elemType.equals("double")) {
+        }
+        else if (elemType.equals("double")) {
             if (a.getClass().getName().equals("[Ljava.lang.Double;")) {
                 ans = (Double[]) a;
-            } else {
+            }
+            else {
                 double[] ia = (double[]) a;
                 ans = new Double[ia.length];
                 for (int i = 0; i < ia.length; i++) {
@@ -663,11 +713,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[I")) {
             ans = (int[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new int[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Number) ia[i]).intValue();
             }
         }
@@ -680,11 +733,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[Z")) {
             ans = (boolean[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Boolean) ia[i]).booleanValue();
             }
         }
@@ -697,12 +753,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[B")) {
             ans = (byte[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new byte[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i] != null)
+                if (ia[i] != null) {
                     ans[i] = ((Number) ia[i]).byteValue();
+                }
             }
         }
         return ans;
@@ -714,7 +772,8 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[S")) {
             ans = (short[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new short[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -730,11 +789,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[C")) {
             ans = (char[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new char[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Character) ia[i]).charValue();
             }
         }
@@ -747,11 +809,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[J")) {
             ans = (long[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new long[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Number) ia[i]).longValue();
             }
         }
@@ -764,11 +829,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[F")) {
             ans = (float[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new float[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Number) ia[i]).floatValue();
             }
         }
@@ -781,11 +849,14 @@ public class InvokerHelper {
         // conservative coding
         if (a.getClass().getName().equals("[D")) {
             ans = (double[]) a;
-        } else {
+        }
+        else {
             Object[] ia = (Object[]) a;
             ans = new double[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i]==null) continue;
+                if (ia[i] == null) {
+                    continue;
+                }
                 ans[i] = ((Number) ia[i]).doubleValue();
             }
         }
@@ -793,24 +864,33 @@ public class InvokerHelper {
     }
 
     public static Object convertToPrimitiveArray(Object a, Class type) {
-        if (type == Byte.TYPE)
+        if (type == Byte.TYPE) {
             return convertToByteArray(a);
-        if (type == Boolean.TYPE)
+        }
+        if (type == Boolean.TYPE) {
             return convertToBooleanArray(a);
-        if (type == Short.TYPE)
+        }
+        if (type == Short.TYPE) {
             return convertToShortArray(a);
-        if (type == Character.TYPE)
+        }
+        if (type == Character.TYPE) {
             return convertToCharArray(a);
-        if (type == Integer.TYPE)
+        }
+        if (type == Integer.TYPE) {
             return convertToIntArray(a);
-        if (type == Long.TYPE)
+        }
+        if (type == Long.TYPE) {
             return convertToLongArray(a);
-        if (type == Float.TYPE)
+        }
+        if (type == Float.TYPE) {
             return convertToFloatArray(a);
-        if (type == Double.TYPE)
+        }
+        if (type == Double.TYPE) {
             return convertToDoubleArray(a);
-        else
+        }
+        else {
             return a;
+        }
     }
 
     /**
@@ -823,7 +903,8 @@ public class InvokerHelper {
         int index = v + INT_CACHE_OFFSET;
         if (index >= 0 && index < INT_CACHE_LEN) {
             return SMALL_INTEGERS[index];
-        } else {
+        }
+        else {
             return new Integer(v);
         }
     }
