@@ -5,9 +5,27 @@ Groovy tries to be as natural as possible for Java developers.
 We've tried to follow the principle of least surprise when designing Groovy, 
 particularly for developers learning Groovy who've come from a Java background.
 
-Here we list all the major and minor differences between Java and Groovy.
+Here we list all the major differences between Java and Groovy.
+
+1.1 Things to be careful of
+
+* == means equals on all types and === means identity compare. In java there's a wierd part of the syntax where == means equality for primitive types and == means identity for objects. Since we're using autoboxing this would be very confusing for Java developers (since x == 5 would be mostly false if x was 5 :). So for simplicity == means equals() in Groovy
+* semicolon is optional
+* the return keyword is optional
+* classes can be referred to directly by name. Don't use SomeClass.class (as that means the class of the class which will be java.lang.Class)
+* you can use the __this__ keyword inside static methods (which refers to this class)
+* things are public by default. There's no need to use the public modifier on classes or methods though you can if you like
+* protected in Groovy is the equivalent of both package-protected and protected in Java. i.e. you can have friends in the same package - or derived classes can also see protected members.
 
 
-{code:groovy}
-{code}
+1.1 New features added to Groovy not available in Java
 
+* {link:closures|closures.html}
+* native {link:syntax|collections.html} for lists and maps
+* {link:GroovyMarkup|markup.html} and GPath support
+* native support for {link:regular expressions|regex.html}
+* polymorphic {link:iteration|loops.html} and powerful {link:switch statement|branches.html}
+* dynamic and static typing is supported - so you can omit the type declarations on methods, fields and variables
+* you cam embed expressions inside {link:strings|strings.html}
+* lots of new helper methods added to the {link:JDK|groovy-jdk.html}
+* simpler syntax for writing {link:beans|beans.html} for both properties and adding event listeners
