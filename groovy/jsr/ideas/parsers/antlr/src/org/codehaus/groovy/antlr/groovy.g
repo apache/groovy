@@ -376,9 +376,9 @@ declaration!
         {#declaration = #v3;}
     ;
 
-/** A declaration with one declarator and no initialization, like a parameterDeclaration. */
+/** A declaration with one declarator and no initialization, like a parameterDeclaration.
 
-/*TODO* Yes, and we must also audit the various occurrences of warning
+*TODO* We must also audit the various occurrences of warning
 suppressions like "options { greedy = true; }".
 */
 
