@@ -159,27 +159,42 @@ public class ASTBuilder {
     }
 
     protected void importStatement(ModuleNode node, CSTNode importRoot) {
-        String importName = qualifiedName(importRoot.getChild(0));
 
-        String asName = null;
+        //
+        // First, get the package name (if supplied).
 
-        if (matches(importRoot.getChild(1), Token.KEYWORD_AS)) {
-            asName = identifier(importRoot.getChild(1).getChild(0));
+        CSTNode packageNode = importRoot.getChild(0);
+        String  packageName = null;
+        if( packageNode.isEmpty() ) {
+            packageName = "";
         }
         else {
-            int lastDot = importName.lastIndexOf(".");
+            packageName = qualifiedName( packageNode ) + ".";
+        }
 
-            if (lastDot < 0) {
-                asName = importName;
-            }
-            else {
-                asName = importName.substring(lastDot + 1);
+        //
+        // Process the import list.
+
+        int current = 1;
+        if( importRoot.getChild(current).getToken().getType() == Token.MULTIPLY ) {
+            String[] classes = node.addImportPackage( packageName );
+            for( int i = 0; i < classes.length; i++ ) {
+                addImport( packageName + classes[i], classes[i] );
             }
         }
 
-        addImport(importName, asName);
-
-        node.addImport(asName, importName);
+        else {
+            while( current < importRoot.children() ) {
+                CSTNode clause = importRoot.getChild( current );
+                String  name   = identifier( clause );
+                String  as     = (clause.children() > 0 ? identifier(clause.getChild(0)) : name);
+ 
+                addImport( packageName + name, as );
+                node.addImport( as, name );
+ 
+                current++;
+           }
+        }
     }
 
     protected void addImport(String importName, String asName) {

@@ -128,8 +128,9 @@ public class ModuleNode extends ASTNode implements Constants {
         importIndex.put(alias, className);
     }
 
-    public void addImportPackage(String packageName) {
+    public String[]  addImportPackage(String packageName) {
         importPackages.add(packageName);
+        return new String[] { /* class names, not qualified */ };
     }
 
     public void addStatement(Statement node) {

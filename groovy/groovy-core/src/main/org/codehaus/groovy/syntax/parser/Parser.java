@@ -366,44 +366,87 @@ public class Parser {
     *  Processes an import statement.  Called by <code>compilationUnit()</code>.
     *  <p>
     *  Grammar: <pre>
-    *     importStatement = "import" <identifier> ("."<identifier>)* ["as" <identifier] <eos>
+    *     importStatement = "import" (all|specific) <eos>
+    * 
+    *     all      = package "." (package ".")* "*"
+    *
+    *     specific = (package "." (package ".")*)? classes
+    *     classes  = class ["as" alias] ("," class ["as" alias])*
+    *
+    *     package  = <identifier>
+    *     class    = <identifier>
+    *     alias    = <identifier>
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     import  = { "import" classes as }
-    *     classes = { "." classes class } | class
-    *     class   = { <identifier> }
-    *     as      = { "as" class } | {}
+    *     import   = { "import" (package|{}) ({"*"} | clause*) }
+    *
+    *     package  = { "." package element } | element
+    *     element  = { <identifier> }
+    *
+    *     clause   = { <identifier> alias }
+    *     alias    = { <identifer> } | {}
     *  </pre>
     */
 
     public CSTNode importStatement() throws ReadException, SyntaxException, ExceptionCollector {
+
         CSTNode importStatement = rootNode(Token.KEYWORD_IMPORT);
 
-        CSTNode cur = rootNode(Token.IDENTIFIER);
+        //
+        // First, pull process any package name.  
 
-        while (lt() == Token.DOT) {
-            CSTNode dot = rootNode(Token.DOT, cur);
-            consume(dot, Token.IDENTIFIER);
+        CSTNode packageNode = null;
+        if( lt(2) == Token.DOT ) {
+            packageNode = rootNode( Token.IDENTIFIER );
 
-            cur = dot;
+            while( lt(3) == Token.DOT ) {
+                packageNode = rootNode( Token.DOT, packageNode );
+                packageNode.addChild( rootNode(Token.IDENTIFIER) );
+            };
+
+            consume( Token.DOT );
         }
 
-        importStatement.addChild(cur);
+        if( packageNode == null ) {
+            packageNode = new CSTNode();
+        }
 
-        if (lt() == Token.KEYWORD_AS) {
-            CSTNode as = rootNode(Token.KEYWORD_AS);
+        importStatement.addChild( packageNode );
 
-            consume(as, Token.IDENTIFIER);
 
-            importStatement.addChild(as);
+        //
+        // Then process the class list.
+
+        if( !packageNode.isEmpty() && lt() == Token.MULTIPLY ) { 
+            importStatement.addChild( rootNode(Token.MULTIPLY) );
         }
         else {
-            importStatement.addChild(new CSTNode());
+
+           boolean done = false;
+           while( !done ) {
+               CSTNode clause = rootNode( Token.IDENTIFIER );
+               if( lt() == Token.KEYWORD_AS ) {
+                   consume( Token.KEYWORD_AS );
+                   clause.addChild( rootNode(Token.IDENTIFIER) );
+               }
+
+               importStatement.addChild( clause );
+
+               if( lt() == Token.COMMA ) {
+                   consume( Token.COMMA );
+               } 
+               else {
+                   done = true;
+               }
+           }
+
         }
 
-        endOfStatement( false );
+        //
+        // End the statement and return.
 
+        endOfStatement( false );
         return importStatement;
     }
 

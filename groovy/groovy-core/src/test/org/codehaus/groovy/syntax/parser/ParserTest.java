@@ -142,9 +142,9 @@ public class ParserTest extends GroovyTestCase {
         assertNode(root, "import", Token.KEYWORD_IMPORT, 2);
 
         {
-            assertNode(root.getChild(0), "Cheese", Token.IDENTIFIER, 0);
+            assertNullNode(root.getChild(0), 0);
 
-            assertNullNode(root.getChild(1), 0);
+            assertNode(root.getChild(1), "Cheese", Token.IDENTIFIER, 0);
         }
     }
 
@@ -156,12 +156,11 @@ public class ParserTest extends GroovyTestCase {
         assertNode(root, "import", Token.KEYWORD_IMPORT, 2);
 
         {
-            assertNode(root.getChild(0), "Cheese", Token.IDENTIFIER, 0);
+            assertNullNode(root.getChild(0), 0);
 
-            assertNode(root.getChild(1), "as", Token.KEYWORD_AS, 1);
-            {
-                assertNode(root.getChild(1).getChild(0), "Toast", Token.IDENTIFIER, 0);
-            }
+            assertNode(root.getChild(1), "Cheese", Token.IDENTIFIER, 1);
+
+            assertNode(root.getChild(1).getChild(0), "Toast", Token.IDENTIFIER, 0);
         }
     }
 
@@ -173,15 +172,8 @@ public class ParserTest extends GroovyTestCase {
         assertNode(root, "import", Token.KEYWORD_IMPORT, 2);
 
         {
-            assertNode(root.getChild(0), ".", Token.DOT, 2);
-
-            {
-                assertNode(root.getChild(0).getChild(0), "cheese", Token.IDENTIFIER, 0);
-
-                assertNode(root.getChild(0).getChild(1), "Toast", Token.IDENTIFIER, 0);
-            }
-
-            assertNullNode(root.getChild(1), 0);
+            assertNode(root.getChild(0), "cheese", Token.IDENTIFIER, 0);
+            assertNode(root.getChild(1), "Toast", Token.IDENTIFIER, 0);
         }
     }
 
@@ -193,18 +185,11 @@ public class ParserTest extends GroovyTestCase {
         assertNode(root, "import", Token.KEYWORD_IMPORT, 2);
 
         {
-            assertNode(root.getChild(0), ".", Token.DOT, 2);
+            assertNode(root.getChild(0), "cheese", Token.IDENTIFIER, 0);
 
-            {
-                assertNode(root.getChild(0).getChild(0), "cheese", Token.IDENTIFIER, 0);
+            assertNode(root.getChild(1), "Toast", Token.IDENTIFIER, 1);
 
-                assertNode(root.getChild(0).getChild(1), "Toast", Token.IDENTIFIER, 0);
-            }
-
-            assertNode(root.getChild(1), "as", Token.KEYWORD_AS, 1);
-            {
-                assertNode(root.getChild(1).getChild(0), "Bread", Token.IDENTIFIER, 0);
-            }
+            assertNode(root.getChild(1).getChild(0), "Bread", Token.IDENTIFIER, 0);
         }
     }
 
@@ -217,19 +202,12 @@ public class ParserTest extends GroovyTestCase {
 
         {
             assertNode(root.getChild(0), ".", Token.DOT, 2);
-
             {
-                assertNode(root.getChild(0).getChild(0), ".", Token.DOT, 2);
-                {
-                    assertNode(root.getChild(0).getChild(0).getChild(0), "cheddar", Token.IDENTIFIER, 0);
-
-                    assertNode(root.getChild(0).getChild(0).getChild(1), "cheese", Token.IDENTIFIER, 0);
-                }
-
-                assertNode(root.getChild(0).getChild(1), "Toast", Token.IDENTIFIER, 0);
+                assertNode(root.getChild(0).getChild(0), "cheddar", Token.IDENTIFIER, 0);
+                assertNode(root.getChild(0).getChild(1), "cheese", Token.IDENTIFIER, 0);
             }
-
-            assertNullNode(root.getChild(1), 0);
+            
+            assertNode(root.getChild(1), "Toast", Token.IDENTIFIER, 0);
         }
     }
 
@@ -242,22 +220,13 @@ public class ParserTest extends GroovyTestCase {
 
         {
             assertNode(root.getChild(0), ".", Token.DOT, 2);
-
             {
-                assertNode(root.getChild(0).getChild(0), ".", Token.DOT, 2);
-                {
-                    assertNode(root.getChild(0).getChild(0).getChild(0), "cheddar", Token.IDENTIFIER, 0);
-
-                    assertNode(root.getChild(0).getChild(0).getChild(1), "cheese", Token.IDENTIFIER, 0);
-                }
-
-                assertNode(root.getChild(0).getChild(1), "Toast", Token.IDENTIFIER, 0);
+                assertNode(root.getChild(0).getChild(0), "cheddar", Token.IDENTIFIER, 0);
+                assertNode(root.getChild(0).getChild(1), "cheese", Token.IDENTIFIER, 0);
             }
-
-            assertNode(root.getChild(1), "as", Token.KEYWORD_AS, 1);
-            {
-                assertNode(root.getChild(1).getChild(0), "Bread", Token.IDENTIFIER, 0);
-            }
+            
+            assertNode(root.getChild(1), "Toast", Token.IDENTIFIER, 1);
+            assertNode(root.getChild(1).getChild(0), "Bread", Token.IDENTIFIER, 0);
         }
     }
 
