@@ -691,6 +691,17 @@ public class Invoker {
     }
 
     /**
+     * Returns the method pointer for the given object name
+     */
+    public Closure getMethodPointer(Object object, String methodName) {
+        if (object == null) {
+            throw new NullPointerException("Cannot access method pointer for '" + methodName + "' on null object");
+        }
+        return metaRegistry.getMetaClass(object.getClass()).getMethodPointer(object, methodName);
+    }
+
+
+    /**
      * Attempts to load the given class via name using the current class loader
      * for this code or the thread context class loader
      */

@@ -234,6 +234,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         expression.getExpression().visit(this);
     }
 
+    public void visitMethodPointerExpression(MethodPointerExpression expression) {
+        expression.getExpression().visit(this);
+    }
+
     public void visitNegationExpression(NegationExpression expression) {
         expression.getExpression().visit(this);
     }

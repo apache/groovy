@@ -51,30 +51,41 @@ import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
+import groovy.lang.Closure;
 
 /**
- * Represents a spread expression *x in the list expression [1, *x, 2].
+ * Represents a method pointer on an object such as
+ * foo.&bar which means find the method pointer on foo for the method called "bar"
+ * which is equivalent to
+ * <code>
+ * foo.metaClass.getMethodPointer(foo, "bar")
  * 
  * @version $Revision$
  */
-public class SpreadExpression extends Expression {
+public class MethodPointerExpression extends Expression {
 
     private Expression expression;
-	
-    public SpreadExpression(Expression expression) {
+    private String methodName;
+
+    public MethodPointerExpression(Expression expression, String methodName) {
         this.expression = expression;
+        this.methodName = methodName;
     }
 
     public Expression getExpression() {
         return expression;
     }
 
+    public String getMethodName() {
+        return methodName;
+    }
+
     public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitSpreadExpression(this);
+        visitor.visitMethodPointerExpression(this);
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new SpreadExpression(transformer.transform(expression));
+        return new MethodPointerExpression(transformer.transform(expression), methodName);
     }
 
     protected void resolveType(AsmClassGenerator resolver) {
@@ -83,18 +94,18 @@ public class SpreadExpression extends Expression {
     }
 
     public String getText() {
-		return "*" + expression.getText();
+		return expression.getText() + ".&" + methodName;
 	}
 
     public String getType() {
-        return expression.getType();
+        return "groovy.lang.Closure";
     }
 
     public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     public Class getTypeClass() {
-        return expression.getTypeClass();
+        return Closure.class;
     }
 }

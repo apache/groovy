@@ -6,7 +6,7 @@
  */
 class ClosureTest extends GroovyTestCase {
 
-	def count
+    def count
 
     void testSimpleBlockCall() {
         count = 0
@@ -62,16 +62,16 @@ class ClosureTest extends GroovyTestCase {
     }
   
     void testMethodClosure() {
-        block = this.incrementCallCount
+        block = this.&incrementCallCount
 
         count = 0
-  	    
+
         block.call()
-  	    
+
         assert count == 1
-  	        
-        block = System.out.println
-  	    
+
+        block = System.out.&println
+
         block.call("I just invoked a closure!")
     }
   
@@ -79,12 +79,12 @@ class ClosureTest extends GroovyTestCase {
         //System.out.println("invoked increment method!")
         count = count + 1
     }
-	
+
     def assertClosure(Closure block) {
         assert block != null
         block.call(this)
     }
-	
+
     protected void callBlock(Integer num, Closure block) {
         for ( i in 0..num ) {
             block.call(this)

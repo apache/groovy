@@ -467,7 +467,7 @@ declarationStart!
     |   AT IDENT  // IDENT != "interface"
     |   (   upperCaseIdent
         |   builtInType
-        // cannot use fully qualified type names in declarations yet
+        // cannot use fully qualified type names in declarations 
         // as it is ambiguous with method calls
         //
         // e.g. 
@@ -2058,6 +2058,8 @@ returns [boolean endBrackets = false]
             sp:STAR_DOT^                        {#sp.setType(SPREAD_ARG);}
         |   // Optional-null operator:  x?.y  === (x==null)?null:x.y
             op:QUESTION_DOT^                    {#op.setType(OPTIONAL_ARG);}
+        |   // Method pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
+            mp:METHOD_POINTER^                    {#mp.setType(METHOD_POINTER);}
         |   // The all-powerful dot.
             DOT^
         ) nls! namePart
@@ -3001,6 +3003,7 @@ RANGE_INCLUSIVE         :   ".."            ;
 TRIPLE_DOT              :   "..."           ;
 STAR_DOT                :   "*."            ;
 QUESTION_DOT            :   "?."            ;
+METHOD_POINTER          :   ".&"            ;
 REGEX_FIND              :   "=~"            ;
 REGEX_MATCH             :   "==~"           ;
 STAR_STAR               :   "**"            ;

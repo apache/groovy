@@ -958,6 +958,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SPREAD_ARG:
                 return spreadExpression(node);
 
+            case METHOD_POINTER:
+                return methodPointerExpression(node);
+
             case INDEX_OP:
                 return indexExpression(node);
 
@@ -1228,6 +1231,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         configureAST(spreadExpression, node);
         return spreadExpression;
     }
+
+    protected Expression methodPointerExpression(AST node) {
+        AST exprNode = node.getFirstChild();
+        String methodName = identifier(exprNode.getNextSibling());
+        Expression expression = expression(exprNode);
+        MethodPointerExpression methodPointerExpression = new MethodPointerExpression(expression, methodName);
+        configureAST(methodPointerExpression, node);
+        return methodPointerExpression;
+    }
+
 
     protected Expression listExpression(AST listNode) {
         List expressions = new ArrayList();

@@ -2,7 +2,7 @@
 class GeneratorTest extends GroovyTestCase {
 
     void testGenerator() {
-        x = this.sampleGenerator
+        x = this.&sampleGenerator
         //System.out.println("x: " + x)
 		
         result = ''
@@ -14,7 +14,7 @@ class GeneratorTest extends GroovyTestCase {
     }
 
     void testFindAll() {
-        x = this.sampleGenerator
+        x = this.&sampleGenerator
  	    
         value = x.findAll { item -> return item == "C" }
         assert value == ["C"]
@@ -25,7 +25,7 @@ class GeneratorTest extends GroovyTestCase {
     
 	
     void testEach() {
-        x = this.sampleGenerator
+        x = this.&sampleGenerator
  	    
         value = x.each { println(it) }
     }
@@ -33,17 +33,17 @@ class GeneratorTest extends GroovyTestCase {
 	
     void testMissingThisBug() {
         result = ''
-        for (i in sampleGenerator) {
+        for (i in this.&sampleGenerator) {
             result = result + i
         }
 	    
         assert result == "ABC"
     }
 	
-	void sampleGenerator(closure) {
-	    // kinda like yield statements
-	    closure.call("A")
-	    closure.call("B")
-	    closure.call("C")
-	}
+    void sampleGenerator(closure) {
+        // kinda like yield statements
+        closure.call("A")
+        closure.call("B")
+        closure.call("C")
+    }
 }

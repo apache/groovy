@@ -274,6 +274,13 @@ public class ScriptBytecodeAdapter {
     }
 
 
+    /**
+     * Returns the method pointer for the given object name
+     */
+    public static Closure getMethodPointer(Object object, String methodName) {
+        return InvokerHelper.getMethodPointer(object, methodName);
+    }
+
     // Coercions
     //-------------------------------------------------------------------------
     public static Iterator asIterator(Object collection) throws Throwable {
