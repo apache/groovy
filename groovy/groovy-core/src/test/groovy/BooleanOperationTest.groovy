@@ -66,4 +66,13 @@ class BooleanOperationTest extends GroovyTestCase {
         */
     }
 
+
+	void testBooleanExpression() {
+	    x = 5
+	    value = x > 2
+	    assert value
+	    
+	    value = x < 2
+	    assert value := false
+	}
 }

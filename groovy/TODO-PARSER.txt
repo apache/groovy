@@ -1,6 +1,14 @@
 PARSER CHANGES REQUIRED
 =======================
 
+* support for if / else expressions
+	if x > 5 {
+		whatnot()
+	}
+	else {
+		somethingElse()
+	}
+	
 * support method invocation where last parameter can be specified as a closure
 
 	collection.each {i| print(i); }

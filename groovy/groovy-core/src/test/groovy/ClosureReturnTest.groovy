@@ -10,7 +10,6 @@ import org.codehaus.groovy.GroovyTestCase;
  */
 class ClosureReturnTest extends GroovyTestCase {
 
-	/** @todo
     void testReturnValues() {
         block = {x| return x > 5}
         
@@ -20,38 +19,21 @@ class ClosureReturnTest extends GroovyTestCase {
         value = block.call(3)
         assert value == false
     }
-	*/
 	
+
+/** @todo
     void testReturnValueUsingFunction() {
-        block = {x| return true }
+        block = {x| return someFunction(x) }
         
         value = block.call(10)
         assert value
 
-		/** @todo	    
         value = block.call(3)
         assert value == false
-        */
     }
     
     someFunction(x) {
-        /** @todo
         return x > 5
-         */
-        
-        /** @todo parser
-      	if x > 5 {
-      	    return true
-      	}
-      	return false;
-		*/
-        
-        /** @todo parser	        
-        answer = false
-      	if x > 5 {
-      	    answer = true
-      	}
-      	*/
-      	return false
     }
+*/
 }
