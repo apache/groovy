@@ -55,8 +55,21 @@ public class ASTNode {
 
     protected static final String[] EMPTY_STRING_ARRAY = {};
 
-
+    private int lineNumber = -1;
+    
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
+    }
+
+    public String getText() {
+        return "<not implemented yet for class: " + getClass().getName() + ">";
+    }
+
+    public int getLineNumber() {
+        return lineNumber;
+    }
+
+    public void setLineNumber(int lineNumber) {
+        this.lineNumber = lineNumber;
     }
 }

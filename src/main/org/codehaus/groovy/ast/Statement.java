@@ -53,13 +53,4 @@ package org.codehaus.groovy.ast;
  */
 public class Statement extends ASTNode {
     
-    private int lineNumber = -1;
-    
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
-    public void setLineNumber(int lineNumber) {
-        this.lineNumber = lineNumber;
-    }
 }

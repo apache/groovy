@@ -51,9 +51,5 @@ package org.codehaus.groovy.ast;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Expression extends ASTNode {
-    public String getText() {
-        return "<not implemented yet for class: " + getClass().getName() + ">";
-    }
-        
+public class Expression extends ASTNode {
 }
