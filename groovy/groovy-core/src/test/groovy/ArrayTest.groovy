@@ -30,4 +30,22 @@ class ArrayTest extends GroovyTestCase {
         assert array.size() == 5
     }
     */
+
+
+/*
+    void testArrayDeclaration() {
+        String[] array = new String{} { "a", "b", "c" }
+
+        array.each { |element| println( element ) }
+
+        assert array.size() == 3
+
+    }
+
+    static void main( String[] args ) {
+        o = new ArrayTest();
+
+        o.testArrayDeclaration();
+    }
+*/
 }

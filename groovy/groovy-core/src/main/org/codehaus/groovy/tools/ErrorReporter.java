@@ -128,7 +128,8 @@ public class ErrorReporter
     public void write( PrintStream stream )
     {
         this.output = stream;
-        dispatch();
+        dispatch( base, false );
+        cleanup();
         stream.flush();
     }
 
@@ -140,7 +141,8 @@ public class ErrorReporter
     public void write( PrintWriter writer )
     {
         this.output = writer;
-        dispatch();
+        dispatch( base, false );
+        cleanup();
         writer.flush();
     }
 
@@ -149,26 +151,33 @@ public class ErrorReporter
     *  Runs the report once all initialization is complete.
     */
 
-    protected void dispatch()
+    protected void dispatch( Throwable object, boolean child )
     {
-        if( base instanceof CompilationFailuresException )
+        if( object instanceof CompilationFailuresException )
         {
-            report( (CompilationFailuresException)base, false );
+            report( (CompilationFailuresException)object, child );
         }
-        else if( base instanceof ExceptionCollector )
+        else if( object instanceof ExceptionCollector )
         {
-            report( (ExceptionCollector)base, false );
+            report( (ExceptionCollector)object, child );
         }
-        else if( base instanceof CompilerBugException )
+        else if( object instanceof CompilerBugException )
         {
-            report( (CompilerBugException)base, false );
+            report( (CompilerBugException)object, child );
+        }
+        else if( object instanceof SyntaxException )
+        {
+            report( (SyntaxException)object, child );
+        }
+        else if( object instanceof Exception )
+        {
+            report( (Exception)object, child );
         }
         else
         {
-            report( base, false );
+            report( object, child );
         }
 
-        cleanup();
     }
 
 
@@ -206,14 +215,7 @@ public class ErrorReporter
         while( iterator.hasNext() )
         {
             GroovyException error = (GroovyException)iterator.next();
-            if( error instanceof SyntaxException )
-            {
-               report( (SyntaxException)error, true );
-            }
-            else
-            {
-               report( error, true );
-            }
+            dispatch( error, true );
             println( "" );
         }
     }
@@ -225,6 +227,11 @@ public class ErrorReporter
 
     protected void report( SyntaxException e, boolean child )
     {
+        if( source == null && e.getSourceLocator() != null )
+        {
+            setSource( e.getSourceLocator() );
+        }
+
         if( source != null )
         {
             String description = source.getDescriptor() + ":" + e.getLine() + ": " + e.getMessage();
@@ -238,7 +245,7 @@ public class ErrorReporter
         }
         else
         {
-           println( "unknown:" + e.getLine() + ": " + e.getMessage() );
+           println( ":" + e.getLine() + ": " + e.getMessage() );
         }
 
         stacktrace( e, false );
@@ -271,12 +278,24 @@ public class ErrorReporter
 
 
    /**
+    *  For Exception.
+    */
+
+    protected void report( Exception e, boolean child )
+    {
+        println( e.getMessage() );
+        stacktrace( e, false );
+    }
+
+
+
+   /**
     *  For everything else.
     */
 
     protected void report( Throwable e, boolean child )
     {
-        println( ">>> caught a bug:" );
+        println( ">>> a serious error occurred: " + e.getMessage() );
         stacktrace( e, true );
     }
 

@@ -61,7 +61,11 @@ import org.codehaus.groovy.tools.ExceptionCollector;
  *  (CSTs).  Exceptions are collected during processing, and parsing will
  *  continue for while possible, in order to report as many problems as 
  *  possible.   <code>compilationUnit()</code> is the primary entry point.
- */
+ *
+ *  @author Bob McWhirter
+ *  @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
+  */
 
 public class Parser {
 
@@ -91,6 +95,23 @@ public class Parser {
     public Parser(TokenStream tokenStream, ExceptionCollector collector) {
         this.tokenStream = tokenStream;
         this.collector = collector;
+    }
+
+
+   /**
+    *  Convenience routine to wrap a <code>String</code> in a <code>Parser</code>.
+    */
+
+    public static Parser create( String text, int errorTolerance ) {
+
+        ExceptionCollector collector = new ExceptionCollector( errorTolerance );
+
+        Lexer       lexer  = new Lexer( new StringCharStream(text) );
+        TokenStream stream = new LexerTokenStream(lexer );
+        Parser      parser = new Parser( stream, collector );
+
+        return parser;
+
     }
 
 
@@ -426,7 +447,7 @@ public class Parser {
         // declared this way cannot be abstract.  Note that "def" 
         // is required because the return type is not, and it would
         // be very hard to tell the difference between a function 
-        // def and a function invokation with clusure...
+        // def and a function invokation with closure...
 
         if (lt() == Token.KEYWORD_DEF) {
             consume(lt());
@@ -937,7 +958,7 @@ public class Parser {
     *  significant, if required for disambiguation.
     *  <p>
     *  Grammar: <pre>
-    *     identifier = <identifier>
+    *     nameDeclaration = <identifier>
     *  </pre>
     *  <p>
     *  CST: <pre>
@@ -961,7 +982,7 @@ public class Parser {
     *  if required for disambiguation.
     *  <p>
     *  Grammar: <pre>
-    *     nameReference = <identifier> | "class" | "interface" 
+    *     nameReference = <identifier> | <various keywords>
     *  </pre>
     *  <p>
     *  CST: <pre>
@@ -1015,8 +1036,15 @@ public class Parser {
             // name.  We test this by verifying that it a) isn't a simple
             // identifier or b) that it is followed by another identifier.
 
-            if( lt_bare(2) != -1 && la_bare(2).isA(OPTIONAL_DATATYPE_FOLLOWER) ) {
-                type = datatype(allowVoid);
+            if( useBare ) {
+                if( lt_bare(2) != -1 && la_bare(2).isA(OPTIONAL_DATATYPE_FOLLOWER) ) {
+                    type = datatype(allowVoid);
+                }
+            }
+            else {
+                if( lt(2) != -1 && la(2).isA(OPTIONAL_DATATYPE_FOLLOWER) ) {
+                    type = datatype(allowVoid);
+                }
             }
         }
 
@@ -1078,7 +1106,7 @@ public class Parser {
     *     methodDeclaration = modifierList optionalDatatype identifier 
     *                         "(" parameterDeclarationList ")" 
     *                         [ "throws" typeList ]
-    *                         ( statementBody | ";" )?
+    *                         ( statementBody | <eos> )?
     *  </pre>
     *  <p>
     *  CST: <pre>
@@ -1125,22 +1153,28 @@ public class Parser {
         }
 
         //
-        // And the body, but only if allowed.
+        // And the body.  If it isn't supposed to be there, report the
+        // error, but process it anyway, for the point of recovering.
+
+        CSTNode body = null;
 
         if (emptyOnly) {
-            method.addChild(new CSTNode());
-
             if (lt() == Token.LEFT_CURLY_BRACE) {
                 collector.add(new ParserException("abstract and interface methods cannot have a body", la()));
             }
             else {
+                body = new CSTNode();
                 endOfStatement();
             }
 
         }
-        else {
-            method.addChild( statementBody(true) );
+
+        if( body == null ) {
+            body = statementBody(true);
         }
+
+        method.addChild( body );
+
 
         //
         // Finally, tack on the throws clause and return.
@@ -1264,9 +1298,6 @@ public class Parser {
 
         CSTNode datatype = scalarDatatype(allowVoid);
 
-        //
-        // Then handle any number of array dimensions
-
         while (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
             CSTNode array = rootNode(Token.LEFT_SQUARE_BRACKET, datatype);
             consume_bare(Token.RIGHT_SQUARE_BRACKET);
@@ -1370,7 +1401,7 @@ public class Parser {
 
    /**
     *  Reads statements until a "}" is met.  Adds each statement as a child of the
-    *  root noe, which you must supply.
+    *  root node, which you must supply.
     *  <p>
     *  Grammar: <pre>
     *     statementsUntilRightCurly = statement* (?= "}")
@@ -1382,7 +1413,6 @@ public class Parser {
     */
 
     protected CSTNode statementsUntilRightCurly(CSTNode root) throws ReadException, SyntaxException, ExceptionCollector {
-
 
         while (lt() != Token.RIGHT_CURLY_BRACE) {
             try {
@@ -1399,13 +1429,15 @@ public class Parser {
     }
 
 
+
    /**
     *  Processes a single statement.  Statements include: loop constructs, branch
     *  constructs, flow control constructs, exception constructs, expressions of
     *  a variety of types, and pretty much anything you can put inside a method.
     *  <p>
     *  Grammar: <pre>
-    *     statement = (label ":")? pureStatement
+    *     statement     = (label ":")? bareStatement
+    *     bareStatement = (emptyStatement|pureStatement|blockStatement)
     *
     *     pureStatement = forStatement 
     *                   | whileStatement
@@ -1420,19 +1452,25 @@ public class Parser {
     *                   | returnStatement
     *                   | assertStatement
     *                   | expression <eos>
-    *                   | ";"
     *
-    *     label = <identifier>
+    *     label          = <identifier>
+    *     blockStatement = "{" statement* "}" 
+    *     emptyStatement = ";"
     *  </pre>
     *  <p>
     *  Recognition: <pre>
-    *     <keyword>  => <keyword>Statement
-    *     *          => expression
+    *     ";"       => emptyStatement
+    *     <keyword> => <keyword>Statement
+    *     "{"       => expression, then:
+    *                    if it is a closureExpression and has no parameters => blockStatement
+    *     *         => expression
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     labelled = { ":" <identifier> pureStatement }
-    *     empty = { "{" }
+    *     labelled       = { ":" <identifier> bareStatement }
+    *     bareStatement  = emptyStatement | blockStatement | pureStatement
+    *     emptyStatement = { "{" }
+    *     blockStatement = { "{" statement* }
     *
     *     see forStatement()
     *     see whileStatement()
@@ -1532,6 +1570,7 @@ public class Parser {
                     Token token = consume(lt());
                     token.setInterpretation( Token.SYNTH_BLOCK );
                     statement = new CSTNode( token );
+                    break;
                 }
             case (Token.LEFT_CURLY_BRACE) :
                 {
@@ -1586,8 +1625,9 @@ public class Parser {
                 }
         }
 
+
         //
-        // Wrap in the statement in the label, in necessary.
+        // Wrap the statement in the label, if necessary.
 
         if( label != null ) {
             label.addChild( statement );
@@ -1596,6 +1636,7 @@ public class Parser {
 
         return statement;
     }
+
 
 
    /**
@@ -1618,7 +1659,12 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     statements added as children of supplied root node
+    *     switch = { "switch" expression case* }
+    *     case   = { "case" expression statement* } 
+    *            | { "default" statement* }
+    *
+    *     see expression()
+    *     see statement()
     *  </pre>
     */
 
@@ -1648,7 +1694,7 @@ public class Parser {
             }
             else {
                 if( defaultFound ) {
-                    throw new ParserException( "duplicate default entry in switch", la() );
+                    collector.add( new ParserException("duplicate default entry in switch", la()) );
                 }
                      
                 caseBlock = rootNode( Token.KEYWORD_DEFAULT );
@@ -1772,9 +1818,10 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     statement = { "throw" expression }
+    *     statement = { "synchronized" expression statementBody }
     *
     *     see expression()
+    *     see statementBody()
     *  </pre>
     */
 
@@ -1801,9 +1848,7 @@ public class Parser {
     *     ifStatement  = ifClause elseIfClause* elseClause?
     *
     *     ifClause     = "if" "(" expression ")" statementBody
-    *
     *     elseIfClause = "else" "if" "(" expression ")" statementBody
-    *
     *     elseClause   = "else" statementBody
     *  </pre>
     *  <p>
@@ -1824,6 +1869,7 @@ public class Parser {
         CSTNode statement = rootNode(Token.KEYWORD_IF);
 
         consume(Token.LEFT_PARENTHESIS);
+
         try {
             statement.addChild(expression());
         }
@@ -1831,6 +1877,7 @@ public class Parser {
             collector.add( e );
             recover( GENERAL_CLAUSE_TERMINATOR );
         }
+
         consume(Token.RIGHT_PARENTHESIS);
 
         statement.addChild( statementBody(false) );
@@ -1865,7 +1912,6 @@ public class Parser {
     *     tryStatement  = "try" statementBody catchClause* finallyClause?
     *
     *     catchClause   = "catch" "(" datatype identifier ")" statementBody
-    *
     *     finallyClause = "finally" statementBody
     *  </pre>
     *  <p>
@@ -1894,7 +1940,7 @@ public class Parser {
 
         //
         // Process the catch clauses, saving them in a node for 
-        // later appending (it goes in /after/ the finally clause.
+        // later appending (it goes in /after/ the finally clause).
 
         CSTNode catches = new CSTNode();
         while (lt() == Token.KEYWORD_CATCH) {
@@ -1988,6 +2034,7 @@ public class Parser {
         CSTNode statement = rootNode(Token.KEYWORD_WHILE);
 
         consume(Token.LEFT_PARENTHESIS);
+
         try {
             statement.addChild(expression());
         }

@@ -734,10 +734,7 @@ public class ASTBuilder {
             return new ReturnStatement(expression(statementRoot.getChild(0)));
         }
         else {
-            //
-            // THIS IS A HACK!!!!  We need an EmptyExpression for void returns.
-
-            return new ReturnStatement(ConstantExpression.NULL);
+            return ReturnStatement.RETURN_VOID;
         }
     }
 

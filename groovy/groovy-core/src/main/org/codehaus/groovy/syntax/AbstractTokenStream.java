@@ -156,4 +156,42 @@ public abstract class AbstractTokenStream
         first = checkpoint_first;
         avail = checkpoint_avail;
     }
+
+
+    /**
+     * Returns true if the stream is out of tokens.
+     */
+
+    public boolean atEnd( boolean ignoringWhitespace ) {
+
+        try {
+            int offset = 1;
+
+            if( ignoringWhitespace ) {
+                try {
+                    while( la(offset).isA(Token.NEWLINE) ) {
+                        offset++;
+                    }
+                }
+                catch( Exception e ) {}
+            }
+
+            if( la(offset) == null ) {
+                return true;
+            }
+        }
+        catch( Exception e ) {}
+
+        return false;
+    }
+ 
+
+    /**
+     * A synonym for <code>atEnd(true)</code>.
+     */
+
+    public boolean atEnd() {
+        return atEnd(true);
+    }
+
 }

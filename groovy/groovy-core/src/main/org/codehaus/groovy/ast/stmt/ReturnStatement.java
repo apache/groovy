@@ -58,6 +58,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class ReturnStatement extends Statement {
 
     public static final ReturnStatement RETURN_NULL = new ReturnStatement(ConstantExpression.NULL);
+    public static final ReturnStatement RETURN_VOID = new ReturnStatement(ConstantExpression.VOID);
 
     private Expression expression;
     
