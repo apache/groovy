@@ -52,25 +52,25 @@ package groovy.lang;
  * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
-    private Binding bindings = new Binding();
+    private Binding binding = new Binding();
 
-    public Binding getBindings() {
-        return bindings;
+    public Binding getBinding() {
+        return binding;
     }
 
-    public void setBindings(Binding bindings) {
-        this.bindings = bindings;
+    public void setBinding(Binding binding) {
+        this.binding = binding;
     }
 
     public Object getProperty(String property) {
-        //System.out.println("Script.getProperty for: " + property + " with bindings: " + bindings.getVariables());
-        return bindings.getVariable(property);
+        //System.out.println("Script.getProperty for: " + property + " with binding: " + binding.getVariables());
+        return binding.getVariable(property);
     }
 
     public void setProperty(String property, Object newValue) {
         //System.out.println("Script.setProperty for: " + property + " with newValue: " + newValue);
-        bindings.setVariable(property, newValue);
-        //System.out.println("bindings are now: " + bindings.getVariables());
+        binding.setVariable(property, newValue);
+        //System.out.println("binding are now: " + binding.getVariables());
     }
 
     /**
