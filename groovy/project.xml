@@ -86,13 +86,11 @@
       <url>http://jakarta.apache.org/commons/logging.html</url>
     </dependency>
 
-<!--
     <dependency>
       <id>log4j</id>
       <version>1.2.8</version>
       <url>http://jakarta.apache.org/log4j/</url>
     </dependency>
--->
 
     <dependency>
       <id>asm</id>
