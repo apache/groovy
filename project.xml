@@ -262,8 +262,11 @@
       <name>Steve Goetze</name>
       <email></email>
     </contributor>
+    <contributor>
+      <name>Brian Larson</name>
+      <email></email>
+    </contributor>
   </contributors>
-
   <dependencies>
 
     <!-- core dependencies -->
