@@ -887,6 +887,7 @@ public class Parser
         {
             case ( Token.KEYWORD_TRUE ):
             case ( Token.KEYWORD_FALSE ):
+            case ( Token.KEYWORD_NULL ):
             {
                 expr = rootNode( lt() );
                 break;

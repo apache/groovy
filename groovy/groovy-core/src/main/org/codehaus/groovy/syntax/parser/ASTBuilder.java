@@ -475,6 +475,9 @@ public class ASTBuilder
             case ( Token.DOUBLE_QUOTE_STRING ):
             case ( Token.INTEGER_NUMBER ):
             case ( Token.FLOAT_NUMBER ):
+            case ( Token.KEYWORD_NULL ):
+            case ( Token.KEYWORD_TRUE ):
+            case ( Token.KEYWORD_FALSE ):
             {
                 return constantExpression( expressionRoot );
             }
@@ -510,29 +513,51 @@ public class ASTBuilder
 
     protected ConstantExpression constantExpression(CSTNode expressionRoot)
     {
-        Object value = null;
+        ConstantExpression expr = null;
 
         switch ( expressionRoot.getToken().getType() )
         {
+            case ( Token.KEYWORD_NULL ):
+            {
+                expr = ConstantExpression.NULL;
+                break;
+            }
+            case ( Token.KEYWORD_TRUE ):
+            {
+                expr = ConstantExpression.TRUE;
+                break;
+            }
+            case( Token.KEYWORD_FALSE ):
+            {
+                expr = ConstantExpression.FALSE;
+                break;
+            }
             case ( Token.SINGLE_QUOTE_STRING ):
+            {
+                expr = new ConstantExpression( expressionRoot.getToken().getText() );
+                break;
+            }
             case ( Token.DOUBLE_QUOTE_STRING ):
             {
-                value = expressionRoot.getToken().getText();
+                // FIXME... not really a constant expr
+                // after building string-concat expr from it
+                // but this is just a convenient place for it now.
+                expr = new ConstantExpression( expressionRoot.getToken().getText() );
                 break;
             }
             case ( Token.INTEGER_NUMBER ):
             {
-                value = new Long( expressionRoot.getToken().getText() );
+                expr = new ConstantExpression( new Long( expressionRoot.getToken().getText() ) );
                 break;
             }
             case ( Token.FLOAT_NUMBER ):
             {
-                value = new Double( expressionRoot.getToken().getText() );
+                expr = new ConstantExpression( new Double( expressionRoot.getToken().getText() ) );
                 break;
             }
         }
 
-        return new ConstantExpression( value );
+        return expr;
     }
 
     protected BinaryExpression binaryExpression(CSTNode expressionRoot)
