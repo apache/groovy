@@ -415,7 +415,7 @@ public class MetaClass {
         if (metaMethod != null) {
             return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
         }
-        
+
         if (genericGetMethod != null) {
             Object[] arguments = { property };
             Object answer = doMethodInvoke(object, genericGetMethod, arguments);
@@ -1191,16 +1191,16 @@ public class MetaClass {
                     return value instanceof Integer;
                 }
                 else if (type == double.class) {
-                    return value instanceof Double;
+                    return value instanceof Double || value instanceof Float || value instanceof Integer;
                 }
                 else if (type == boolean.class) {
                     return value instanceof Boolean;
                 }
                 else if (type == long.class) {
-                    return value instanceof Long;
+                    return value instanceof Long || value instanceof Integer;
                 }
                 else if (type == float.class) {
-                    return value instanceof Float;
+                    return value instanceof Float || value instanceof Integer;
                 }
                 else if (type == char.class) {
                     return value instanceof Character;
@@ -1212,8 +1212,14 @@ public class MetaClass {
                     return value instanceof Short;
                 }
             }
-            else if (includeCoerce && type == String.class && value instanceof GString) {
-                return true;
+            else if (includeCoerce) {
+                if (type == String.class && value instanceof GString) {
+                    return true;
+                }
+                else if (value instanceof Number) {
+                    // lets allow numbers to be coerced downwards?
+                    return Number.class.isAssignableFrom(type);
+                }
             }
         }
         return answer;
