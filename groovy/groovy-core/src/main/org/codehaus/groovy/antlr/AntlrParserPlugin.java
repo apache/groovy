@@ -426,59 +426,52 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
                     // core access scope modifiers
                 case LITERAL_private:
-                    answer |= Constants.ACC_PRIVATE;
+                    answer = setModifierBit(node, answer, Constants.ACC_PRIVATE);
                     access = setAccessTrue(node, access);
                     break;
 
                 case LITERAL_protected:
-                    answer |= Constants.ACC_PROTECTED;
+                    answer = setModifierBit(node, answer, Constants.ACC_PROTECTED);
                     access = setAccessTrue(node, access);
                     break;
 
                 case LITERAL_public:
-                    answer |= Constants.ACC_PUBLIC;
+                    answer = setModifierBit(node, answer, Constants.ACC_PUBLIC);
                     access = setAccessTrue(node, access);
                     break;
 
                     // other modifiers
                 case ABSTRACT:
-                    answer |= Constants.ACC_ABSTRACT;
+                    answer = setModifierBit(node, answer, Constants.ACC_ABSTRACT);
                     break;
 
                 case FINAL:
-                    answer |= Constants.ACC_FINAL;
+                    answer = setModifierBit(node, answer, Constants.ACC_FINAL);
                     break;
 
                 case LITERAL_native:
-                    answer |= Constants.ACC_NATIVE;
+                    answer = setModifierBit(node, answer, Constants.ACC_NATIVE);
                     break;
 
                 case LITERAL_static:
-                    answer |= Constants.ACC_STATIC;
+                    answer = setModifierBit(node, answer, Constants.ACC_STATIC);
                     break;
 
                 case STRICTFP:
-                    answer |= Constants.ACC_STRICT;
+                    answer = setModifierBit(node, answer, Constants.ACC_STRICT);
                     break;
 
                 case LITERAL_synchronized:
-                    answer |= Constants.ACC_SYNCHRONIZED;
+                    answer = setModifierBit(node, answer, Constants.ACC_SYNCHRONIZED);
                     break;
 
                 case LITERAL_transient:
-                    answer |= Constants.ACC_TRANSIENT;
+                    answer = setModifierBit(node, answer, Constants.ACC_TRANSIENT);
                     break;
 
                 case LITERAL_volatile:
-                    answer |= Constants.ACC_VOLATILE;
+                    answer = setModifierBit(node, answer, Constants.ACC_VOLATILE);
                     break;
-
-                // TODO: not yet in Antlr AST...
-                /*
-                case LITERAL_def:
-                    // ignore def
-                    break;
-                */
 
                 default:
                     unknownAST(node);
@@ -497,6 +490,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else {
             throw new ASTRuntimeException(node, "Cannot specify modifier: " + node.getText() + " when access scope has already been defined");
         }
+    }
+
+    protected int setModifierBit(AST node, int answer, int bit) {
+        if ((answer & bit) != 0) {
+            throw new ASTRuntimeException(node, "Cannot repeat modifier: " + node.getText());
+        }
+        return answer | bit;
     }
 
     protected AnnotationNode annotation(AST annotationNode) {
