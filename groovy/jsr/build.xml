@@ -28,14 +28,13 @@
   <target name="compile">
     <echo>
 --------------------
-create the parser...
+copies the parser...
 --------------------
     </echo>
-    <ant dir="ideas/parsers/antlr" target="standalone" inheritAll="false"/>
 
     <!-- place parser in tck -->
     <copy todir="tck/testlib">
-      <fileset dir="ideas/parsers/antlr/standalone"/>
+      <fileset dir="../groovy-core/target/install/embeddable"/>
     </copy>
   </target>
 
@@ -68,6 +67,13 @@ render specification...
   <target name="publish" depends="dist" description="publish distributables">
     <copy todir="${publish.dir}/spec">
       <fileset dir="${spec.wiki.dir}"/>
+    </copy>
+
+    <!-- bring grammar over from groovy-core -->
+    <copy todir="ideas/parsers/antlr/src">
+      <fileset dir="../groovy-core/src/main">
+        <include name="**/groovy.g"/>
+      </fileset>
     </copy>
 
     <ant dir="ideas/parsers/antlr" target="docs" inheritAll="false"/>
