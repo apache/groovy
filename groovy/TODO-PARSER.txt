@@ -23,6 +23,12 @@ PARSER CHANGES REQUIRED
 	foo[expression]
 	foo[0];
 	foo["hello"] = 123;
+
+* handle field definitions
+	class Foo {
+		String x;
+		y;
+	}
 	
 * allow new object expressions to take a Map or List expression as a last expression
 
