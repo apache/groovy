@@ -157,7 +157,7 @@
 
       <batchtest todir="${test.reports.dir}">
         <fileset dir="${test.classes.dir}">
-          <include name="**/*Test.class" />
+            <include name="**/*Test.class" /> 
         </fileset>
       </batchtest>
 
@@ -208,9 +208,6 @@
            classpathref="test.classpath" 
            debug="${build.debug}" 
            deprecation="on">
-        <!-- TODO Tests that fail to compile -->
-        <exclude name="**/UnicodeEscapes1Test.java"/>
-
     </javac>
   </target>
 

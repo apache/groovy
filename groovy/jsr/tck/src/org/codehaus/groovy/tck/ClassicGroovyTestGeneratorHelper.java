@@ -25,7 +25,7 @@ public class ClassicGroovyTestGeneratorHelper implements TestGeneratorHelper {
         parse(theSrcText, testName); // fail early with a direct message if possible')
         GroovyShell groovy = new GroovyShell(new CompilerConfiguration());
         groovy.run(theSrcText, "main", new ArrayList());
-        //@todo - check that this will run as if it is a junit style test, i.e. calling testFoo() methods
+        //@todo - work out how to ensure test failures throw exceptions
     }
 
     /** run the JSR parser implementation over the supplied source text*/

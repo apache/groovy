@@ -1,6 +1,11 @@
 package gls.ch03.s10;
 /**
- * GLS 3.10.1
+ * JLS: 3.10.1
+ * An integer literal may be expressed in decimal (base 10), hexadecimal (base
+ * 16), or octal (base 8)...
+ *
+ * An integer literal is of type long if it is suffixed with an ASCII letter L
+ * or l (ell); otherwise it is of type int (§4.2.1)...
  *
  * Integer literals
  * -- explicitly integer if ends with 'i' type specifier
@@ -8,7 +13,7 @@ package gls.ch03.s10;
  * -- come in Decimal, Octal and Hex varieties
  * -- represented in 32 bits, two's complement
  */
-class IntLit extends GroovyTestCase {
+class IntegerLiterals extends GroovyTestCase {
 
     void testDecInt() {
         assertEquals(2i, (1i + 1i))
@@ -69,10 +74,9 @@ class IntLit extends GroovyTestCase {
         //def a = -0x80000000i//@pass
         //def a = -0x80000001i//@fail:parse
 
-        // Check that we handle the unary '-' as a separate token
+        // Check that compiler handles the unary '-' as a separate token
         //def a = - 0x80000000i//@pass
         //def a = -/* */0x80000000i//@pass
-        //def a = - 0x80000001i//@fail:parse
         //def a = - 0x80000001i//@fail:parse
         //def a = -/* */0x80000001i//@fail:parse
     }

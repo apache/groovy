@@ -107,7 +107,7 @@ class TestGenerator{
         while (m.find()) {
             foundText = m.group(1)
             uncommentedSrcText = (srcText.substring(0,m.start()) + "  " + srcText.substring(m.start() + 2))
-            alternatives << [uncommentedSrcText, foundText.replaceAll('"', '\\"')]
+            alternatives << [uncommentedSrcText, foundText.replaceAll('"', '\\\\"')]
         }
         return alternatives
     }
