@@ -24,6 +24,9 @@ Things to Test
 
 * test compiler errors when
 	- unknown class
+		in new expression
+		in exception catching
+		in general class expression
 	- unknown variable
 	
 Core Groovy Tasks
