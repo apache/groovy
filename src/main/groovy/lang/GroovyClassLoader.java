@@ -55,7 +55,6 @@ import org.objectweb.asm.ClassWriter;
  */
 public class GroovyClassLoader extends ClassLoader {
 
-    private Class generatedClass = null;
 	private String outputDir;
 
     public GroovyClassLoader() {
@@ -74,11 +73,10 @@ public class GroovyClassLoader extends ClassLoader {
 	 * @return
 	 */
     public Class defineClass(ClassNode classNode, String file) {
-        generatedClass = null;
         CompileUnit unit = new CompileUnit();
-        CompilerFacade compiler = createCompiler(unit);
+        ClassCollector compiler = new ClassCollector(this, unit);
         compiler.generateClass(new GeneratorContext(unit), classNode, file);
-        return generatedClass;
+        return compiler.generatedClass;
     }
 
     /**
@@ -98,23 +96,41 @@ public class GroovyClassLoader extends ClassLoader {
 	 * @return the main class defined in the given script
 	 */
     public Class parseClass(InputStream in, String file) throws SyntaxException, IOException {
-        generatedClass = null;
         CompileUnit unit = new CompileUnit();
-        CompilerFacade compiler = createCompiler(unit);
+        ClassCollector compiler = new ClassCollector(this, unit);
         compiler.parseClass(in, file);
-        return generatedClass;
+        return compiler.generatedClass;
     }
 
-    protected void onClassNode(ClassWriter classWriter, ClassNode classNode) {
-        byte[] code = classWriter.toByteArray();
+    private static class ClassCollector extends CompilerFacade {
+    	
+    	private Class generatedClass;
+    	private GroovyClassLoader cl;
+    	
+    	
+    	ClassCollector(GroovyClassLoader cl, CompileUnit unit) {
+    		super(cl, unit);
+    		this.cl = cl;
+    	}
+    	
+    	protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
+    		byte[] code = classWriter.toByteArray();
 
-		debugWriteClassfile(classNode, code);
+    		cl.debugWriteClassfile(classNode, code);
 
-        Class theClass = defineClass(classNode.getName(), code, 0, code.length);
+    		Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length);
 
-        if (generatedClass == null) {
-            generatedClass = theClass;
-        }
+    		if (generatedClass == null) {
+    			generatedClass = theClass;
+    		}
+    		
+    		return theClass;
+    	}
+    	
+    	protected void onClass(ClassWriter classWriter, ClassNode classNode) {
+    		onClassNode(classWriter, classNode);
+    	}
+    	
     }
 
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
@@ -139,14 +155,5 @@ public class GroovyClassLoader extends ClassLoader {
 			}
 		}
 	}
-
-	protected CompilerFacade createCompiler(CompileUnit unit) {
-        return new CompilerFacade(this, unit) {
-            protected void onClass(ClassWriter classWriter, ClassNode classNode) {
-                onClassNode(classWriter, classNode);
-            }
-        };
-    }
-
 
 }

@@ -35,12 +35,15 @@ import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
 import groovy.lang.ScriptContext;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Enumeration;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.servlet.ServletConfig;
@@ -76,6 +79,7 @@ public class GroovyServlet extends HttpServlet {
 	private static class ServletCacheEntry {
 		private Class servletScriptClass;
 		private long lastModified;
+		private Map dependencies = new HashMap();
 	}
 
 	public void init(ServletConfig config) {
@@ -94,8 +98,8 @@ public class GroovyServlet extends HttpServlet {
 
 		// Convert the generic servlet request and response to their Http
 		// versions
-		HttpServletRequest httpRequest = (HttpServletRequest) request;
-		HttpServletResponse httpResponse = (HttpServletResponse) response;
+		final HttpServletRequest httpRequest = (HttpServletRequest) request;
+		final HttpServletResponse httpResponse = (HttpServletResponse) response;
 
 		// Get the name of the Groovy script (intern the name so that we can
 		// lock on it)
@@ -141,9 +145,65 @@ public class GroovyServlet extends HttpServlet {
 			long lastModified = groovyScriptConn.getLastModified();
 			// Check the cache for the script
 			entry = (ServletCacheEntry) servletCache.get(scriptFilename);
-			if (entry == null || entry.lastModified < lastModified) {
+			// If the entry isn't null check all the dependencies
+			boolean dependencyOutOfDate = false;
+			if (entry != null) {
+				for (Iterator i = entry.dependencies.keySet().iterator(); i.hasNext(); ) {
+					URLConnection urlc = null;
+					try {
+						URL url = (URL) i.next();
+						urlc = url.openConnection(); 
+						if (urlc.getLastModified() > ((Long)entry.dependencies.get(url)).longValue()) {
+							dependencyOutOfDate = true;
+							break;
+						}	
+					} finally {
+						urlc.getInputStream().close();
+					}
+				}
+			}
+			if (entry == null || entry.lastModified < lastModified || dependencyOutOfDate) {
+				// Make a new entry
+				entry = new ServletCacheEntry();
+				
+				// Closure variable
+				final ServletCacheEntry finalEntry = entry;
+				
 				// Compile the script into an object
-				GroovyClassLoader groovyLoader = new GroovyClassLoader(parent);
+				GroovyClassLoader groovyLoader = new GroovyClassLoader(parent) {
+					protected Class findClass(String className) throws ClassNotFoundException {
+						String filename = className.replace('.', File.separatorChar) + ".groovy";
+						URL dependentScript;
+						try {
+							dependentScript = sc.getResource("/WEB-INF/groovy/" + filename);
+							if (dependentScript == null) {
+								String servletPath = httpRequest.getServletPath();
+								String current = servletPath.substring(0, servletPath.lastIndexOf("/") + 1);
+								dependentScript = sc.getResource(current + filename);
+							}
+						} catch (MalformedURLException e) {
+							throw new ClassNotFoundException(className + ": " + e);
+						}
+						if (dependentScript == null) {
+							throw new ClassNotFoundException("Could not find " + className + " in webapp");
+						} else {
+							URLConnection dependentScriptConn;
+							try {
+								dependentScriptConn = dependentScript.openConnection();
+								finalEntry.dependencies.put(dependentScript, new Long(dependentScriptConn.getLastModified()));
+							} catch (IOException e1) {
+								throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+							}
+							try {
+								return parseClass(dependentScriptConn.getInputStream(), filename);
+							} catch (SyntaxException e2) {
+								throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
+							} catch (IOException e2) {
+								throw new ClassNotFoundException("Problem reading " + className + ": " + e2);
+							}
+						}
+					}
+				};
 				Class scriptClass;
 				try {
 					scriptClass =
@@ -151,7 +211,6 @@ public class GroovyServlet extends HttpServlet {
 				} catch (SyntaxException e) {
 					throw new ServletException("Could not parse script: " + scriptFilename, e);
 				}
-				entry = new ServletCacheEntry();
 				entry.servletScriptClass = scriptClass;
 				entry.lastModified = lastModified;
 				servletCache.put(scriptFilename, entry);
