@@ -396,6 +396,6 @@ public class GroovyMain {
         if (isScriptFile)
             groovy.run(huntForTheScriptFile(script), args);
         else
-            groovy.run(script, "main", args);
+            groovy.run(script, "script_from_command_line", args);
     }
 }

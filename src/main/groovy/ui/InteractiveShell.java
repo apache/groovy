@@ -116,6 +116,8 @@ public class InteractiveShell {
         prompt = PromptFactory.buildPrompt(in, out, err);
         prompt.setPrompt("groovy> ");
         shell = new GroovyShell(binding);
+        Map map = shell.getContext().getVariables();
+        if (map.get("shell")!=null) map.put("shell",shell);
     }
 
     //---------------------------------------------------------------------------
@@ -150,7 +152,8 @@ public class InteractiveShell {
             if (command.length() > 0) {
                 // We have a command that parses, so evaluate it.
                 try {
-                    shell.evaluate(command, "CommandLine" + counter++ + ".groovy");
+                    //shell.evaluate(command, "CommandLine" + counter++ + ".groovy");
+                    shell.evaluate(command, "CommandLine.groovy");
                 } catch (Exception e) {
                     err.println("Exception: " + e.getMessage());
                     e.printStackTrace(err);
@@ -265,6 +268,9 @@ public class InteractiveShell {
                         } else {
                             err.println("statement not complete");
                         }
+                        break;
+                    case COMMAND_ID_DISCARD_LOADED_CLASSES:
+                        resetLoadedClasses();
                         break;
                 }
 
@@ -408,10 +414,11 @@ public class InteractiveShell {
     private static final int COMMAND_ID_EXPLAIN = 4;
     private static final int COMMAND_ID_EXECUTE = 5;
     private static final int COMMAND_ID_BINDING = 6;
+    private static final int COMMAND_ID_DISCARD_LOADED_CLASSES = 7;
 
-    private static final int LAST_COMMAND_ID = 6;
+    private static final int LAST_COMMAND_ID = 7;
 
-    private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding"};
+    private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding", "discardclasses"};
 
     private static final Map COMMAND_MAPPINGS = new HashMap();
 
@@ -429,13 +436,14 @@ public class InteractiveShell {
     private static final Map COMMAND_HELP = new HashMap();
 
     static {
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT], "exit/quit  - terminates processing");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP], "help       - displays this help text");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD], "discard    - discards the current statement");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISPLAY], "display    - displays the current statement");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain    - explains the parsing of the current statement");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXECUTE], "execute/go - temporary command to cause statement execution");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_BINDING], "binding    - shows the binding used by this interactive shell");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXIT], "exit/quit        - terminates processing");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP], "help             - displays this help text");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD], "discard           - discards the current statement");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISPLAY], "display           - displays the current statement");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain           - explains the parsing of the current statement");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXECUTE], "execute/go        - temporary command to cause statement execution");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_BINDING], "binding           - shows the binding used by this interactive shell");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD_LOADED_CLASSES], "discardclasses    - discards all former unbound class definitions");
     }
 
 
@@ -490,6 +498,11 @@ public class InteractiveShell {
         } else {
             out.println("Statement does not parse");
         }
+    }
+    
+    private void resetLoadedClasses() {
+        shell.resetLoadedClasses();
+        out.println("all former unbound class definitions are discarded");
     }
 }
 
