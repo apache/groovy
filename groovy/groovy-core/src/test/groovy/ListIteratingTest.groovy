@@ -28,7 +28,7 @@ class ListIteratingTest extends GroovyTestCase {
         assertSequence([1, 2, 3, 4 ])
     }
     
-    testIteratingWithList() {
+    def testIteratingWithList() {
         s = new ArrayList()
         s.add(1)
         s.add(2)
@@ -37,7 +37,7 @@ class ListIteratingTest extends GroovyTestCase {
         assertSequence(s)
     }
 
-    protected assertSequence(s) {
+    protected void assertSequence(s) {
         result = 0
         for ( i in s ) {
             result = result + i

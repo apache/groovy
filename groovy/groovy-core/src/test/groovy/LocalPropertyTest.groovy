@@ -1,6 +1,6 @@
 class LocalPropertyTest extends GroovyTestCase {
 
-    property x
+    def x
     
 	void testNormalPropertyAccess() {
 	    x = "abc"

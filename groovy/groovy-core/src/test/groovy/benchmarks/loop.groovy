@@ -1,8 +1,8 @@
 import java.util.ArrayList
 
 class Loop {
-  property array = new ArrayList()
-  property pos = 0
+  def array = new ArrayList()
+  def pos = 0
 
   void push(obj){
      array[pos] = obj

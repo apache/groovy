@@ -1,5 +1,5 @@
 /**
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.4 $
  */
 class BlockAsClosureBug extends GroovyTestCase {
     
@@ -35,7 +35,7 @@ class BlockAsClosureBug extends GroovyTestCase {
         assert c == 9
     }
     
-    foo() {
+    def foo() {
         c = 0 
         
         block: { 

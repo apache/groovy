@@ -55,8 +55,7 @@
 
   public void testClosureComparatorForGroovyObjects() {
 
-    comparator = new ClosureComparator() {
-      | one, another|
+    comparator = new ClosureComparator() { | one, another|
       one.greaterThan(another)
     }
 
@@ -71,8 +70,7 @@
 
   public void testClosureComparatorForNumericTypes() {
 
-    comparator = new ClosureComparator() {
-      | one, another|
+    comparator = new ClosureComparator() { | one, another|
       one - another
     }
 
@@ -84,13 +82,13 @@
 }
 
 class ComparableFoo {
-  long value
+  @Property long value
 
   public ComparableFoo(long theValue) {
     this.value = theValue
   }
 
-  greaterThan(anotherFoo) {
+  def greaterThan(anotherFoo) {
     return (this.value - anotherFoo.value)
   }
 }

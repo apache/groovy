@@ -176,30 +176,30 @@ class RangeTest extends GroovyTestCase {
 	    for (it in range) {
 	        list << it
 	    }
-	    assert list == expected : "for loop on ${range}"
+	    assert list == expected , "for loop on ${range}"
 	    
 		list = []
 	    range.each { list << it}
-	    assert list == expected : "each() on ${range}"
+	    assert list == expected , "each() on ${range}"
 	}
 	
 	protected void assertSize(range, expected) {
 	    size = range.size()
-	    assert size == expected : range
+	    assert size == expected , range
 	}
 	
 	protected void assertToString(range, expected) {
 	    text = range.toString()
-	    assert text == expected : "toString() for ${range}"
+	    assert text == expected , "toString() for ${range}"
 	    text = range.inspect()
-	    assert text == expected : "inspect() for ${range}"
+	    assert text == expected , "inspect() for ${range}"
 	}
 	
 	protected void assertToString(range, expectedString, expectedInspect) {
 	    text = range.toString()
-	    assert text == expectedString : "toString() for ${range}"
+	    assert text == expectedString , "toString() for ${range}"
 	    text = range.inspect()
-	    assert text == expectedInspect : "inspect() for ${range}"
+	    assert text == expectedInspect , "inspect() for ${range}"
 	}
 	
 	protected void assertStep(range, stepValue, expected) {

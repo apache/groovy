@@ -16,7 +16,7 @@ class GPathTest extends GroovyTestCase {
         assert tree.people.findAll { it.projects.size() > 1 }.collect { it.name + ' works on ' + it.projects.size() + " project(s)" } == expected
 }
     
-    protected createTree() {       
+    protected def createTree() {       
         return [	
             'people': [
                 ['name' : 'James', 'location':'London', 'projects':['geronimo', 'groovy'] ],

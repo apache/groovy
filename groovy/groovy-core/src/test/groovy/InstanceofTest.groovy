@@ -5,7 +5,7 @@ class InstanceofTest extends GroovyTestCase {
     void testTrue() {
 
         x = false
-		o = 12
+        o = 12
         
         if ( o instanceof Integer ) {
             x = true
@@ -27,7 +27,7 @@ class InstanceofTest extends GroovyTestCase {
     }
     
     void testImportedClass() {
-        m = [1:2]
+        m = ["xyz":2]
         assert m instanceof Map
         assert !(m instanceof Double)
         

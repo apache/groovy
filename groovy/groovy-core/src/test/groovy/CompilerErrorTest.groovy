@@ -3,10 +3,13 @@ class CompilerErrorTest extends GroovyTestCase {
     void testBadMethodName() {
 
         shouldFail {
+            println "About to call shell script"
+            println "Really am about to call shell script"
+
             shell = new GroovyShell()
-            text = 'println ${name}'
+            text = 'badMethod(); println "Called method"'
             println "About to test script ${text}"
-            shell.evaluate text
+            shell.evaluate(text)
         }
     }
 

@@ -4,13 +4,13 @@
  */
 class StaticClosurePropertyBug extends GroovyTestCase {
 
-    static out = {System.out.println(it)}
+    static def out = {System.out.println(it)}
     
     void testCallStaticClosure() {
         callStaticClosure()
     }
     
-    static callStaticClosure() {
+    static def callStaticClosure() {
         out("TEST")
     }
 }

@@ -1,7 +1,7 @@
 import groovy.bugs.TestSupport
 
 /**
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 class IterateOverCustomTypeBug extends TestSupport {
     

@@ -1,6 +1,6 @@
 /**
  * @author Sergey Udovenko 
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 class BadScriptNameBug extends GroovyTestCase {
     

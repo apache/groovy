@@ -62,7 +62,7 @@ class NamespaceDOMTest extends TestXmlSupport {
           /* Stock Keeping Unit, a code for identifying products */
           simpleType(name:'SKU') {
             restriction(base:'xsd:string') {
-              pattern(value:'\d{3}-[A-Z]{2}')
+              pattern(value:'\\d{3}-[A-Z]{2}')
             }
           }
         }        

@@ -10,11 +10,11 @@ class MarkupAndMethodBug extends GroovyTestCase {
     void testBug() {
         tree = createTree()
 
-		name = tree.person[0]['@name']
+        name = tree.person[0]['@name']
         assert name == 'James'
     }
     
-    protected createTree() {       
+    protected def createTree() {
         builder = NodeBuilder.newInstance()
         
         root = builder.people() {
@@ -39,7 +39,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
         return root
     }
     
-    protected getName() {
-    	"James"
+    protected def getName() {
+        "James"
     }
 }

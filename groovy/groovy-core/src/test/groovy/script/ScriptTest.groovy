@@ -16,7 +16,7 @@ class ScriptTest extends GroovyTestCase {
         }
     }
     
-    protected runScript(file) {
+    protected def runScript(file) {
         println("Running script: " + file)
         
         shell = new GroovyShell()

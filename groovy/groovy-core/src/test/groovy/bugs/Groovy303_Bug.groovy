@@ -14,12 +14,12 @@ class Groovy303_Bug extends GroovyTestCase {
     
     void testBug() {
         try {
-			scholastic = new Scholastic()
-       		scholastic.createUI()
-       	}
-       	catch (HeadlessException e) {
-       		// called from a non-UI environment
-       	}
+            scholastic = new Scholastic()
+               scholastic.createUI()
+           }
+           catch (HeadlessException e) {
+               // called from a non-UI environment
+           }
     }
 }
 

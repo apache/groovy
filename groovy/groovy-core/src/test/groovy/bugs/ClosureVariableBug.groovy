@@ -31,10 +31,10 @@ class ClosureVariableBug extends GroovyTestCase {
     }
     
     protected Integer callClosure(collection) {
-    	/** @todo
     	Integer x
-    	*/
+    	/** @todo
     	Integer x = 0
+    	*/
     	collection.each { x = it }
     	return x
     }

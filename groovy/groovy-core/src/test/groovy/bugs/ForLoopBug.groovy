@@ -5,7 +5,7 @@
 class ForLoopBug extends GroovyTestCase {
     
     void testBug() {
-        assertScript( <<<EOF
+        assertScript( """
 list = []
 a = 1
 b = 5
@@ -13,15 +13,15 @@ for (c in a..b) {
     list << c
 }
 assert list == [1, 2, 3, 4, 5]
-EOF)        
+""")
     }
     
     void testSeansBug() {
-        assertScript( <<<EOF
+        assertScript( """
 for (i in 1..10) {
     println i
 }
-EOF)        
+""")        
     }
 
     void testNormalMethod() {
@@ -48,7 +48,7 @@ EOF)
 
 
     void testVisibility() {
-        assertScript( <<<EOF
+        assertScript( """
 
 array = [ true, true, true ];
 for( boolean i in array ) {
@@ -56,7 +56,7 @@ for( boolean i in array ) {
        assert i == true;
    }
 }
-EOF)        
+""")
     }
 
 }

@@ -23,7 +23,7 @@ class NavigationTest extends GroovyTestCase {
         assert names == expected
     }
     
-    protected createTree() {       
+    protected def createTree() {       
         b = NodeBuilder.newInstance()
         
         root = b.a(a:5, b:7) {

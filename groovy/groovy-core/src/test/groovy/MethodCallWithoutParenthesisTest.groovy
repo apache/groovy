@@ -1,7 +1,7 @@
 class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
-    flag = false
-    
+    def flag
+
     void testMethodCallWithOneParam() {
         flag = false
         
@@ -25,19 +25,23 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
     }
     
     void testMethodCallWithTwoParams() {
-        value = methodWithTwoParams 5, 6
-        
+        methodWithTwoParams 5, 6
+
+        // not allowed in New Groovy
+        // value = methodWithTwoParams 5, 6
+        value = methodWithTwoParams(5, 6)
+
         assert value == 11
     }
     
     void testMethodCallWithTwoParamsUsingThis() {
-        value = this.methodWithTwoParams 5, 6
+        value = this.methodWithTwoParams(5, 6)
         
         assert value == 11
     }
-    
-    methodWithTwoParams(a, b) {
+
+    def methodWithTwoParams(a, b) {
         println("Called method with parameters ${a} and ${b}")
-        a + b
+        return a + b
     }
 }

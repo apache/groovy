@@ -3,6 +3,7 @@ package groovy.bugs
 class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
     int[] ia;  // type is not necessary
     int i1;
+
     void testBug() {
         array = getIntArray() // this function returns [I, true primitive array
         
@@ -22,7 +23,7 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
     }
 
     void testGroovyIntArray() {
-        ia = new int[]{1, 2} // this is really Integer[]
+        int[] ia = [1, 2]
         int[] ia1 = ia; // type is not necessary
         i1 = ia1[0]
         int i2 = i1

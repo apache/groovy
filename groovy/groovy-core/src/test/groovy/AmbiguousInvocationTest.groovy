@@ -8,7 +8,7 @@
 import groovy.DummyMethods
 
 class AmbiguousInvocationTest extends GroovyTestCase { 
-    property dummy
+    def dummy
     
     void setUp() {
     	dummy = new DummyMethods()

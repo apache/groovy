@@ -22,12 +22,12 @@ class ClosureParameterPassingBug extends TestSupport {
     }
     
     void testBug() {
-    	assertScript <<<EOF
+    	assertScript """
 c = { x | 
 	y = 123
 	c1 = { 
-		assert x != null : "Could not find a value for x"
-		assert y == 123 : "Could not find a value for y"
+		assert x != null , "Could not find a value for x"
+		assert y == 123 , "Could not find a value for y"
 		println x[0] 
 	} 
 	
@@ -35,7 +35,7 @@ c = { x |
 } 
 
 c([1]) 
-EOF    	
+"""
 	}
    
 }

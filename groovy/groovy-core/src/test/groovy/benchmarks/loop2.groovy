@@ -1,13 +1,14 @@
 import java.util.ArrayList
 
 class Loop2 {
-  private array = new ArrayList()
-  private pos = 0
+  def array = new ArrayList()
+  def pos = 0
 
   void push(obj){
      array[pos] = obj
      pos = pos + 1
   }
+
   Object pop(){
      pos = pos - 1
      return array[pos]

@@ -8,9 +8,9 @@ import java.io.File
  */
 
 class ReadLineTest extends GroovyTestCase {
-    property file
+    def file
     void setUp() {
-        file = new File("src/test/groovy/ReadLineTest.groovy")
+        file = new File("src/test-new/groovy/ReadLineTest.groovy")
     }
     void testReadOneLineFromReader() {
         file.withReader() {line = it.readLine()}

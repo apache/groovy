@@ -1,6 +1,6 @@
 /**
  * @author Mark Volkmann 
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 class PrintlnWithNewBug extends GroovyTestCase {
     

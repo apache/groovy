@@ -5,8 +5,8 @@ class DollarEscapingTest extends GroovyTestCase {
         
         assert foo instanceof String
         
-        c = foo.count("$")
+        c = foo.count('$')
         
-        assert c == 1 : foo
+        assert c == 1 , foo
     }
 }

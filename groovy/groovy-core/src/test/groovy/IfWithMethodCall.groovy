@@ -7,7 +7,7 @@ class IfWithMethodCallTest extends GroovyTestCase {
             // ignore
         }
         else {
-            assert false : "x should contain cheese!"
+            assert false , "x should contain cheese!"
         }
 	}
 }

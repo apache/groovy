@@ -26,7 +26,7 @@ class ClosureReturnTest extends GroovyTestCase {
         assert value == false
     }
     
-    someFunction(x) {
+    def someFunction(x) {
         return x > 5
     }
 }

@@ -19,7 +19,7 @@ class SerializeTest extends GroovyTestCase {
         println("Found ${object}")
         println("Found ${object} with name ${object.name} and location ${object.location}")
         assert object != null
-        assert object.getMetaClass() != null : "Should have a metaclass!"
+        assert object.getMetaClass() != null , "Should have a metaclass!"
         
         assert object.name == "Gromit"
         
@@ -29,7 +29,7 @@ class SerializeTest extends GroovyTestCase {
     }
     
     
-    write(object) {
+    def write(object) {
         buffer = new ByteArrayOutputStream()
         out = new ObjectOutputStream(buffer)
         out.writeObject(object)
@@ -37,7 +37,7 @@ class SerializeTest extends GroovyTestCase {
         return buffer.toByteArray()
     }
     
-    read(buffer) {
+    def read(buffer) {
         input = new ObjectInputStream(new ByteArrayInputStream(buffer))
         object = input.readObject()
         input.close()

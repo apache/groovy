@@ -15,5 +15,5 @@ class BindingTest extends GroovyTestCase {
     	
     	assert b.getVariable("a.b.c") == 'abc'
     	assert b["a.b.c"] == 'abc'
-	}
+    }
 }

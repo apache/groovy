@@ -14,15 +14,15 @@ class ClosureInStaticMethodTest extends GroovyTestCase {
         assertClosure(closure)    
     }
     
-    static closureInStaticMethod() {
+    static def closureInStaticMethod() {
         return { println(it) }
     }
 
-    static methodClosureInStaticMethod() {
+    static def methodClosureInStaticMethod() {
         System.out.println
     }
     
-    static assertClosure(Closure block) {
+    static def assertClosure(Closure block) {
         assert block != null
         block.call("hello!")
     }

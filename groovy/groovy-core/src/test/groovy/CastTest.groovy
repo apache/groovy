@@ -17,7 +17,7 @@ class CastTest extends GroovyTestCase {
         
         println("Created ${x} with type ${x.class}")
         
-        assert x.class == Short : "Type is ${x.class}"
+        assert x.class == Short , "Type is ${x.class}"
         
 		methodWithShort(x)
         
@@ -25,20 +25,20 @@ class CastTest extends GroovyTestCase {
         
         println("Updated ${x} with type ${x.class}")
         
-        assert x.class == Short : "Type is ${x.class}"
+        assert x.class == Short , "Type is ${x.class}"
     }
 
     void testImplicitCastOfField() {
 
         println("Field is ${b} with type ${b.class}")
         
-        assert b.class == Short : "Type is ${b.class}"
+        assert b.class == Short , "Type is ${b.class}"
         
         b = 5
         
         println("Updated field ${b} with type ${b.class}")
  
-        assert b.class == Short : "Type is ${b.class}"
+        assert b.class == Short , "Type is ${b.class}"
     }
     
     void testIntCast() {

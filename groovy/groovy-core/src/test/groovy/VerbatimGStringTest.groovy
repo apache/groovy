@@ -2,77 +2,57 @@ class VerbatimGStringTest extends GroovyTestCase {
 
     void testWithOneVariable() {
         
-        name = <<<EOF
-Bob
-EOF
+        name = "Bob"
         
-        template = <<<EOF
+        template = """
 hello ${name} how are you?
-EOF
-				
-		assert template instanceof GString
-											 
-	 	count = template.getValueCount()
-		assert count == 1
-		assert template.getValue(0) == "Bob"
-											 
-		string = template.toString()
-		assert string == "hello Bob how are you?"
-	}
+"""
+
+        assert template instanceof GString
+
+        count = template.getValueCount()
+        assert count == 1
+
+        value = template.getValue(0)
+        assert value == "Bob"
+        assert template.getValue(0) == "Bob"
+
+        string = template.toString().trim()
+        assert string == "hello Bob how are you?"
+    }
     
     void testWithVariableAtEnd() {
-        name = <<<EOS
-Bob
-EOS
-        template = <<<EOS
-hello ${name}
-EOS
+        name = "Bob"
 
-        string = template.toString()
+        template = """
+hello ${name}
+"""
+
+        string = template.toString().trim()
         
         assert string == "hello Bob"
     }
     
     void testWithVariableAtBeginning() {
-        name = <<<EOS
-Bob
-EOS
+        name = "Bob"
 
-        template = <<<EOS
+        template = """
 ${name} hey,
 hello
-EOS
-        string = template.toString()
+"""
+        string = template.toString().trim()
         
         assert fixEOLs(string) == "Bob hey,\nhello"
     }
 
     void testWithJustVariable() {
-        name = <<<EOS
-Bob
-EOS
+        name = "Bob"
 
-        template = <<<EOS
+        template = """
 ${name}
-EOS
-        string = template.toString()
+"""
+        string = template.toString().trim()
         
         assert string == "Bob"
     }
-
-	void testInterestingCases() {
-		name = <<<EOSEOSEOS
-Bob
-EOS
-EOSEOSEO
-EOSEOSEOS
-
-		assert fixEOLs(name) == "Bob\nEOS\nEOSEOSEO"
-		
-		perl = <<<__END__
-Sam
-__END__
-
-		assert perl == "Sam"
-	}
 }

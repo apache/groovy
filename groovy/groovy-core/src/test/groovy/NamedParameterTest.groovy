@@ -4,7 +4,7 @@ class NamedParameterTest extends GroovyTestCase {
         someMethod(name:"gromit", eating:"nice cheese", times:2)
     }
     
-    protected someMethod(args) {
+    protected void someMethod(args) {
         assert args.name == "gromit"
         assert args.eating == "nice cheese"
         assert args.times == 2

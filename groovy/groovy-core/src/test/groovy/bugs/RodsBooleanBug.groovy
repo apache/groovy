@@ -3,13 +3,13 @@
  */
 class RodsBooleanBug extends GroovyTestCase {
 
-    item = "hi"
+    def item = "hi"
     
     void testBug() {
         assert isIt()
     }
     
-    isIt() {
+    def isIt() {
         return item != null && item == "hi"
     }
     

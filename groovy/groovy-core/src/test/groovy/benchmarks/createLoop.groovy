@@ -1,6 +1,7 @@
-{ n | 
-  for (i in 1..n){
+c = {
+  for (i in 1..it){
     x = new Object()
   }
-}.call(30000)
+}
+c.call(30000)
 

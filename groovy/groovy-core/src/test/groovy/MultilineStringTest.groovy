@@ -1,15 +1,15 @@
 class MultilineStringTest extends GroovyTestCase {
 
     void testMultilineString() {
-        s = "abcd
+        s = """abcd
 efg
 
         hijk
         
-"
+"""
         println(s)
-		assert s != null
+        assert s != null
         idx = s.indexOf("i")
-		assert idx > 0
+        assert idx > 0
     }
 }

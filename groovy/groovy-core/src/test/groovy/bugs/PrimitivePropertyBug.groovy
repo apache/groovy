@@ -8,13 +8,13 @@ package groovy.bugs
  */
 class PrimitivePropertyBug extends GroovyTestCase {
      
-    double x1
-    float x2
-    long x3
-    int x4
-    short x5
-    byte x6
-    char x7
+    @Property double x1
+    @Property float x2
+    @Property long x3
+    @Property int x4
+    @Property short x5
+    @Property byte x6
+    @Property char x7
 
     void testBug() {
         y = new PrimitivePropertyBug() 

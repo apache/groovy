@@ -2,7 +2,7 @@ class SubscriptTest extends GroovyTestCase {
 
     void testListRange() {
         list = ['a', 'b', 'c', 'd', 'e']
-		
+
         sub = list[2..4]
         assert sub == ['c', 'd', 'e']
         
@@ -50,7 +50,7 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testStringArrayRange() {
-        list = new String[] {'a', 'b', 'c', 'd', 'e'}
+        String[] list = ['a', 'b', 'c', 'd', 'e']
         
         sub = list[2..4]
         assert sub == ['c', 'd', 'e']
@@ -90,7 +90,7 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testIntArrayRange() {
-        list = new Integer[] { 10, 11, 12, 13, 14, 15 }
+        Integer[] list = [ 10, 11, 12, 13, 14, 15 ]
         
         sub = list[2..4]
         assert sub == [12, 13, 14]
@@ -148,19 +148,19 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     
-	void testListSubscriptWithListAndRange() {
-	    list = 100..200
-	    
-	    sub = list[1, 3, 20..25, 33]
-	    assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
-	    
-	    // now lets try it on an array
-	    array = list.toArray()
-	    
-	    sub = array[1, 3, 20..25, 33]
-	    assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
-	}
-	
+    void testListSubscriptWithListAndRange() {
+        list = 100..200
+
+        sub = list[1, 3, 20..25, 33]
+        assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
+
+        // now lets try it on an array
+        array = list.toArray()
+
+        sub = array[1, 3, 20..25, 33]
+        assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
+    }
+
     void testStringWithSubscriptList() {
         text = "nice cheese gromit!"
         
@@ -189,15 +189,16 @@ class SubscriptTest extends GroovyTestCase {
         assert sublist == 4..10
         assert sublist == [4, 5, 6, 7, 8, 9, 10]
     }
-    
+
+
     void testBeanProperties() {
-    	foo = new Foo()
-    	
-    	foo['name'] = 'Gromit'
-    	
-    	assert foo.name == 'Gromit'
-    	
-    	value = foo['name']
-    	assert value == 'Gromit'
+        foo = new Foo()
+
+        foo['name'] = 'Gromit'
+
+        assert foo.name == 'Gromit'
+
+        value = foo['name']
+        assert value == 'Gromit'
     }
 }

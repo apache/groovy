@@ -4,11 +4,16 @@ import java.util.HashMap as Goober;
 
 class Cheddar extends Goober implements Runnable
 {
-    property Goober theMap;
-    protected property cheesier;
-    public static property cheesiest;
+    Goober theMap;
+    protected def cheesier;
+    public static def cheesiest;
 
-    cheeseIt() {  }
+    static void main(args) {
+        f = new Cheddar()
+        println f
+    }
+
+    def cheeseIt() {  }
 
     String getStringCheese() { }
     String getOtherCheese(foo,bar) { }
