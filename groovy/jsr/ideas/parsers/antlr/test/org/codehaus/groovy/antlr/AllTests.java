@@ -32,12 +32,6 @@ public class AllTests extends TestSuiteSupport {
 
     static String[] excludedTests = {
 
-        "ArrayTest.groovy",                     // TODO: new type[size]
-        "PropertyTest.groovy",                  // TODO: new type[size]
-
-        "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
-        "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
-
         "LeftShiftTest.groovy",                 // TODO: can't parse foo.bar << something
         "StreamingMarkupTest.groovy",           // TODO: can't parse foo.bar <<
         "BuilderSupportTest.groovy",            // TODO: can't parse foo.bar <<
@@ -55,6 +49,10 @@ public class AllTests extends TestSuiteSupport {
         "DoWhileLoopTest.groovy",               // TODO: do { } while () not supported yet
         "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
+
+        "Groovy252_Bug.groovy",                 // TODO: we should either accept or give a warning
+        "bugs/GuillaumesBug.groovy",            // TODO: we should either accept or give a warning
+
 
 
         // Ignored test cases which can't easily be run in this harness
