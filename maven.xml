@@ -348,10 +348,8 @@
         <exclude name="**/Groovy675_Bug.groovy"/>
 
         <!-- TODO other stuff -->
-        <exclude name="**/MvcDemo.groovy"/>
         <!--
         -->
-        <exclude name="**/SwingDemo.groovy"/>
         <exclude name="**/*Demo.groovy"/>
         <exclude name="**/Html2Wiki.groovy"/>
         <exclude name="**/dom/DOMTest.groovy"/>

@@ -36,7 +36,7 @@ class MvcDemo {
 		frame.show()
     }
  
-    showAbout() {
+    void showAbout() {
  		pane = swing.optionPane(message:'This demo shows how you can create UI models from simple MVC models')
  		dialog = pane.createDialog(frame, 'About MVC Demo')
  		dialog.show()
