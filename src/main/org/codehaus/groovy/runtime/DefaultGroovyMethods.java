@@ -1453,6 +1453,16 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * A convenience method for creating an immutable Collection
+     *
+     * @param self a Collection
+     * @return an immutable Collection
+     */
+    public static Collection asImmutable(Collection self) {
+        return Collections.unmodifiableCollection(self);
+    }
+
+    /**
      * A convenience method for creating a synchronized Map
      *
      * @param self a Map
@@ -3239,7 +3249,7 @@ public class DefaultGroovyMethods {
     /**
      * Read a single, whole line from the given InputStream
      *
-     * @param self an InputStream
+     * @param stream an InputStream
      * @return a line
      * @throws IOException
      */
@@ -3498,6 +3508,15 @@ public class DefaultGroovyMethods {
     public static BufferedReader newReader(File file, String charset)
         throws FileNotFoundException, UnsupportedEncodingException {
         return new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
+    }
+
+    /**
+     * Provides a reader for an arbitrary input stream
+     * @param self an input stream
+     * @return a reader
+     */
+    public static BufferedReader newReader(final InputStream self) {
+        return new BufferedReader(new InputStreamReader(self));
     }
 
     /**
@@ -4025,6 +4044,32 @@ public class DefaultGroovyMethods {
                 bw.newLine();
             }
         }
+        bw.flush();
+    }
+
+    /**
+     * Filters the lines of a File and creates a Writeable in return to stream the filtered lines
+     *
+     * @param self a File
+     * @param closure a closure which returns a boolean indicating to filter the line or not
+     * @return a Writable closure
+     * @throws IOException if <code>self</code> is not readable
+     */
+    public static Writable filterLine(final File self, final Closure closure) throws IOException {
+        return filterLine(newReader(self), closure);
+    }
+
+    /**
+     * Filter the lines from a File and write them on a writer, according to a closure
+     * which returns true or false
+     *
+     * @param self a File
+     * @param writer a writer
+     * @param closure a closure which returns a boolean value and takes a line as input
+     * @throws IOException if <code>self</code> is not readable
+     */
+    public static void filterLine(final File self, final Writer writer, final Closure closure) throws IOException {
+        filterLine(newReader(self), writer, closure);
     }
 
     /**
@@ -4061,6 +4106,30 @@ public class DefaultGroovyMethods {
                 return buffer.toString();
             }
         };
+    }
+
+    /**
+     * Filter lines from an input stream using a closure predicate
+     *
+     * @param self an input stream
+     * @param predicate a closure which returns boolean and takes a line
+     * @return a filtered writer
+     */
+    public static Writable filterLine(final InputStream self, final Closure predicate) {
+        return filterLine(newReader(self), predicate);
+    }
+
+    /**
+     * Filters lines from an input stream, writing to a writer, using a closure which
+     * returns boolean and takes a line.
+     *
+     * @param self an InputStream
+     * @param writer a writer to write output to
+     * @param predicate a closure which returns a boolean and takes a line as input
+     */
+    public static void filterLine(final InputStream self, final Writer writer, final Closure predicate)
+            throws IOException {
+        filterLine(newReader(self), writer, predicate);
     }
 
     /**
