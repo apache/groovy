@@ -22,8 +22,8 @@ class FieldPropertyMethodDisambiguation extends GroovyTestCase {
       assert bar() == "method"
       assert this.bar() == "method"
 
-      // assert @foo == "field"  // TODO ?
-      assert this.@foo == "field
+      // assert @foo == "field"  // @foo is Java 5 annotation; use this.@foo
+      assert this.@foo == "field"
 
       assert bar(1) == "method with param: 1"
 
