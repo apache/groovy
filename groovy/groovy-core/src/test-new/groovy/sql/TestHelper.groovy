@@ -4,7 +4,7 @@ import org.axiondb.jdbc.AxionDataSource
 
 class TestHelper extends GroovyTestCase {
 
-    static counter = 1
+    static def counter = 1
     
     static Sql makeSql() {
         foo = new TestHelper()
@@ -12,11 +12,11 @@ class TestHelper extends GroovyTestCase {
     }
     
     
-    protected createEmptySql() {
+    protected def createEmptySql() {
         return newSql(getURI())
     }
     
-    protected createSql() {
+    protected def createSql() {
         sql = newSql(getURI())
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar, id integer, location_id integer, location_name varchar )")     
@@ -43,7 +43,7 @@ class TestHelper extends GroovyTestCase {
         return sql
     }
     
-    protected getURI() {
+    protected def getURI() {
 		answer = "jdbc:axiondb:foo"
 		name = getMethodName()
 		if (name == null) { name = "" }
@@ -51,7 +51,7 @@ class TestHelper extends GroovyTestCase {
 		return answer + name
     }
     
-    protected newSql(String uri) {
+    protected def newSql(String uri) {
 	    dataSource = new AxionDataSource(uri)
 	    return new Sql(dataSource)
     }
