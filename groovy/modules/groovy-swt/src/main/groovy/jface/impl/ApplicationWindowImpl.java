@@ -1,5 +1,6 @@
 package groovy.jface.impl;
 
+import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.window.ApplicationWindow;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Control;
@@ -17,7 +18,7 @@ public class ApplicationWindowImpl extends ApplicationWindow {
      */
     public ApplicationWindowImpl(Shell parentShell) {
         super(null);
-System.out.println(parentShell + "  " + parentShell.hashCode()+ "  " + parentShell.handle);
+
         // default at all
         addMenuBar();
         addStatusLine();
@@ -35,5 +36,14 @@ System.out.println(parentShell + "  " + parentShell.hashCode()+ "  " + parentShe
      */
     public Control getContents() {
         return super.getContents();
+    }
+    
+    /*
+     * override to make public
+     * 
+     * @see org.eclipse.jface.window.ApplicationWindow#getStatusLineManager()
+     */
+    public StatusLineManager getStatusLineManager() {
+        return super.getStatusLineManager();
     }
 }
