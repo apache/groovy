@@ -522,9 +522,19 @@ public class Parser
     {
         CSTNode statementBlock = rootNode( Token.LEFT_CURLY_BRACE );
 
+        statementsUntilRightCurly( statementBlock );
+
+        consume( Token.RIGHT_CURLY_BRACE );
+
+        return statementBlock;
+    }
+
+    protected void statementsUntilRightCurly(CSTNode root)
+        throws IOException, SyntaxException
+    {
         while ( lt() != Token.RIGHT_CURLY_BRACE )
         {
-            statementBlock.addChild( statement() );
+            root.addChild( statement() );
 
             if ( lt() == Token.RIGHT_CURLY_BRACE )
             {
@@ -535,10 +545,6 @@ public class Parser
                 throwExpected( new int[] { Token.RIGHT_CURLY_BRACE } );
             }
         }
-
-        consume( Token.RIGHT_CURLY_BRACE );
-
-        return statementBlock;
     }
 
     protected CSTNode statement()
@@ -1070,11 +1076,13 @@ public class Parser
 
         expr.addChild( parameterList() );
 
-        consume( Token.PIPE );
+        CSTNode block = rootNode( Token.PIPE );
 
-        expr.addChild( statementBlock() );
+        statementsUntilRightCurly( block );
 
         consume( Token.RIGHT_CURLY_BRACE );
+
+        expr.addChild( block );
 
         return expr;
     }

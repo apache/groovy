@@ -15,14 +15,14 @@ class ClosureTest extends GroovyTestCase {
     void testSimpleBlockCall() {
         callCount = 0;
 
-/** @todo parser        
-        block = {owner| owner.incrementCallCount(); }
+        block = {owner|owner.incrementCallCount(); }
         
-        block.call(this);
+        // block.call(this);
         
-        assert(callCount == 1);
+        // assert(callCount == 1);
     }
 
+/** @todo parser        
 
     testBlockAsParameter() {
         callCount = 0;
@@ -30,8 +30,8 @@ class ClosureTest extends GroovyTestCase {
         callBlock(5, { | owner | owner.incrementCallCount(); });
         
         assert(callCount == 5);
-*/
     }
+*/
 
 
 	incrementCallCount() {
