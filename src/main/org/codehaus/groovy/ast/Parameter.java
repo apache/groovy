@@ -83,7 +83,7 @@ public class Parameter {
     }
 
     public String toString() {
-        return super.toString() + "[name:" + name + "]";
+        return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type) + "]";
     }
 
     public String getName() {

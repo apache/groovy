@@ -45,6 +45,7 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -192,11 +193,27 @@ public class ASTBuilderTest extends TestParserSupport {
         }
     }
 
+    public void testMethodWithArrayTypeParam() throws Exception {
+        ModuleNode module = parse("class Foo { void main(String[] args) { println(args) } }", "Dummy.groovy");
+
+        MethodNode method = getMethod(module, "main");
+
+        System.out.println("Parameters: " + InvokerHelper.toString(method.getParameters()));
+    }
+
     public static Object mockHelperMethod() {
         return "cheese";
     }
 
     protected BlockStatement getCode(ModuleNode module, String name) {
+        MethodNode method = getMethod(module, name);
+
+        BlockStatement statement = (BlockStatement) method.getCode();
+        assertNotNull(statement);
+        return statement;
+    }
+
+    protected MethodNode getMethod(ModuleNode module, String name) {
         assertEquals("class count", 1, module.getClasses().size());
 
         ClassNode node = (ClassNode) module.getClasses().get(0);
@@ -205,9 +222,6 @@ public class ASTBuilderTest extends TestParserSupport {
 
         MethodNode method = node.getMethod(name);
         assertNotNull(method);
-
-        BlockStatement statement = (BlockStatement) method.getCode();
-        assertNotNull(statement);
-        return statement;
+        return method;
     }
 }
