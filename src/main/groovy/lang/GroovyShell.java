@@ -54,6 +54,8 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -224,14 +226,81 @@ public class GroovyShell extends GroovyObjectSupport {
     		}
     	}
 
-        if (isUnitTestCase(scriptClass)) {
-            runTest(scriptClass);
-        } else {
-            InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
-        }
+        runMainOrTestOrRunnable(scriptClass, args);
 
         // Set the context classloader back to what it was.
     	AccessController.doPrivileged(new DoSetContext(currentClassLoader));
+    }
+
+    /**
+     * if (theClass has a main method) {
+     *      run the main method
+     * } else if (theClass instanceof GroovyTestCase) {
+     *      use the test runner to run it
+     * } else if (theClass implements Runnable) {
+     *      if (theClass has a constructor with String[] params)
+     *          instanciate theClass with this constructor and run
+     *      else if (theClass has a no-args constructor)
+     *          instanciate theClass with the no-args constructor and run
+     * }
+     */
+    private void runMainOrTestOrRunnable(Class scriptClass, String[] args) {
+        // first, we try to see if we can call the main() method
+        try {
+            InvokerHelper.invokeMethod(scriptClass, "main", args);
+        }
+        catch (MissingMethodException e) {
+            // if no main() method was found, let's see if it's a unit test
+            // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
+            if (isUnitTestCase(scriptClass)) {
+                runTest(scriptClass);
+            }
+            // no main() method, not a unit test,
+            // if it implements Runnable, try to instanciate it
+            else if (Runnable.class.isAssignableFrom(scriptClass)) {
+                Constructor constructor = null;
+                Runnable runnable = null;
+                Throwable reason = null;
+                try {
+                    // first, fetch the constructor taking String[] as parameter
+                    constructor = scriptClass.getConstructor(new Class[] { (new String[] {}).getClass() });
+                    try {
+                        // instanciate a runnable and run it
+                        runnable = (Runnable) constructor.newInstance(new Object[]{args});
+                    }
+                    catch (Throwable t) {
+                        reason = t;
+                    }
+                }
+                catch (NoSuchMethodException e1) {
+                    try {
+                        // otherwise, find the default constructor
+                        constructor = scriptClass.getConstructor(new Class[]{});
+                        try {
+                            // instanciate a runnable and run it
+                            runnable = (Runnable) constructor.newInstance(new Object[]{});
+                        }
+                        catch (Throwable t) {
+                            reason = t;
+                        }
+                    }
+                    catch (NoSuchMethodException nsme) {
+                        reason = nsme;
+                    }
+                }
+                if (constructor != null && runnable != null) {
+                    runnable.run();
+                } else {
+                    throw new GroovyRuntimeException("This script or class could not be run. ", reason);
+                }
+            } else {
+                throw new GroovyRuntimeException("This script or class could not be run. \n" +
+                                                 "It should either: \n" +
+                                                 "- have a main method, \n" +
+                                                 "- be a class extending GroovyTestCase, \n" +
+                                                 "- or implement the Runnable interface.");
+            }
+        }
     }
 
     /**
@@ -262,9 +331,8 @@ public class GroovyShell extends GroovyObjectSupport {
         // so that it is possible to run it as a JUnit test
         boolean isUnitTestCase = false;
         try {
-            ClassLoader ctxtClassLoader = getClassLoader();
             try {
-                Class testCaseClass = ctxtClassLoader.loadClass("groovy.util.GroovyTestCase");
+                Class testCaseClass = this.loader.loadClass("groovy.util.GroovyTestCase");
                 // if scriptClass extends testCaseClass
                 if (testCaseClass.isAssignableFrom(scriptClass)) {
                     isUnitTestCase = true;
@@ -278,19 +346,6 @@ public class GroovyShell extends GroovyObjectSupport {
             // fall through
         }
         return isUnitTestCase;
-    }
-
-    /**
-     * Retrieves the appropriate class loader.
-     *
-     * @return the class loader
-     */
-    private ClassLoader getClassLoader() {
-        ClassLoader ctxtCL = Thread.currentThread().getContextClassLoader();
-        if (ctxtCL == null) {
-            ctxtCL = GroovyShell.class.getClassLoader();
-        }
-        return ctxtCL;
     }
 
     /**
@@ -318,13 +373,8 @@ public class GroovyShell extends GroovyObjectSupport {
     		}
     	});
         Class scriptClass = parseClass(gcs);
-        if (isUnitTestCase(scriptClass)) {
-            runTest(scriptClass);
-            return null;
-        }
-        else {
-            return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
-        }
+        runMainOrTestOrRunnable(scriptClass, args);
+        return null;
     }
 
     public Object getVariable(String name) {
@@ -418,7 +468,7 @@ public class GroovyShell extends GroovyObjectSupport {
     	return parse(gcs);
     }
 
-    /*
+    /**
      * Parses the groovy code contained in codeSource and returns a java class.
      */
     private Class parseClass(final GroovyCodeSource codeSource) throws CompilationFailedException, IOException {
