@@ -76,7 +76,7 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
         list.add("def");
 
         invoker.invokeMethod(list, "each", new Closure(this) {
-            public Object call(Object arguments) {
+            protected Object doCall(Object arguments) {
                 buffer.append(arguments.toString());
                 return null;
             }
