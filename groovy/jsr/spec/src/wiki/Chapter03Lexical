@@ -196,6 +196,7 @@ The end of a value part is determined either by eagerly parsing a series of dot-
   assert x == "$x"
   assert x == "${x}"
   assert "XoX" == "${x}o$x"
+  assert '$'+'x' == "\$x"
   assert "1" == "$x.length"
   assert "1." == "$x.length."
   assert "1()" == "$x.length()"
