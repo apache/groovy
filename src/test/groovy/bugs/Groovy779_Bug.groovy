@@ -1,5 +1,6 @@
-package groovy.bugs
+// Test of TypeCheckingBug with named parameters
 
+package groovy.bugs
 
 public class Groovy779_Bug extends GroovyTestCase {
 
@@ -12,10 +13,10 @@ public class Groovy779_Bug extends GroovyTestCase {
         finallyCalled = false
 
         try {
-            p = new Person(nameID:"Dave Ford", age:12.2)
+            p = new OnePerson(nameID:"Dave Ford", age:12.2)
             assert p.age == 12
             assert p.nameID == "Dave Ford"
-            p = new Person(nameID:"Dave Ford", age:"12")
+            p = new OnePerson(nameID:"Dave Ford", age:"12")
             println p.age
             println p.nameID
         }
@@ -48,22 +49,22 @@ public class Groovy779_Bug extends GroovyTestCase {
         finally {
             onFinally()
         }
-        assert exceptionCalled , "should have invoked the catch clause"
-        assert finallyCalled , "should have invoked the finally clause"
+        assert exceptionCalled , " should have invoked the catch clause"
+        assert finallyCalled , " should have invoked the finally clause"
         println("Success!")
     }
 
     public void testAutoboxingProperty() {
-        p = new Profit(signal:"abcd", rate:15)
-        assert p.signal == "abcd"
+        p = new OneProfit(signal:"bar", rate:15)
+        assert p.signal == "bar"
         assert p.rate == 15.0
 
-        p = new Profit(signal:111+22, rate:new java.math.BigDecimal("15"))
-        assert p.signal == "133"
+        p = new OneProfit(signal:11+22, rate:new java.math.BigDecimal("15"))
+        assert p.signal == "33"
         assert p.rate == 15.0
 
-        p2 = new AnotherProfit(signal:"abcd", rate:15)
-        assert p2.signal == "abcd"
+        p2 = new AnotherProfit(signal:"fooBar", rate:15)
+        assert p2.signal == "fooBar"
         assert p2.rate == 15.0
 
         p2 = new AnotherProfit(signal:111-22, rate:new java.math.BigDecimal("15"))
@@ -82,7 +83,7 @@ public class Groovy779_Bug extends GroovyTestCase {
 
 }
 
-class Person {
+class OnePerson {
    def public String nameID
    def public int age
 }
@@ -92,7 +93,7 @@ class AnotherPerson {
    @Property def public int age
 }
 
-class Profit {
+class OneProfit {
    public String signal
    public double rate
 }
