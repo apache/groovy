@@ -9,6 +9,7 @@ import org.codehaus.groovy.ast.BooleanExpression;
 import org.codehaus.groovy.ast.CatchStatement;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ConstantExpression;
+import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.ForLoop;
@@ -18,6 +19,7 @@ import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ListExpression;
+import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.StatementBlock;
@@ -528,9 +530,40 @@ public class ASTBuilder
             {
                 return listExpression( expressionRoot );
             }
+            case ( Token.LEFT_PARENTHESIS ):
+            {
+                return methodCallExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected MethodCallExpression methodCallExpression(CSTNode expressionRoot)
+    {
+        Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
+
+        String methodName = expressionRoot.getChild( 1 ).getToken().getText();
+
+        TupleExpression args = tupleExpression( expressionRoot.getChild( 2 ) );
+
+        return new MethodCallExpression( objectExpression,
+                                         methodName,
+                                         args );
+    }
+
+    protected TupleExpression tupleExpression(CSTNode expressionRoot)
+    {
+        TupleExpression tupleExpression = new TupleExpression();
+
+        CSTNode[] exprRoots = expressionRoot.getChildren();
+
+        for ( int i = 0 ; i < exprRoots.length ; ++i )
+        {
+            tupleExpression.addExpression( expression( exprRoots[ i ] ) );
+        }
+
+        return tupleExpression;
     }
 
     protected ListExpression listExpression(CSTNode expressionRoot)
