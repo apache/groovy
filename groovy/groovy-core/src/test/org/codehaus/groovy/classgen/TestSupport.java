@@ -165,10 +165,14 @@ public class TestSupport extends GroovyTestCase implements Constants {
      * @param script
      */
     protected void assertScript(String text) throws Exception {
+        assertScript(text, getTestClassName());
+    }
+    
+    protected void assertScript(String text, String scriptName) throws Exception {
         log.info("About to execute script");
         log.info(text);
         
-        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), getTestClassName());
+        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), scriptName);
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }

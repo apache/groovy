@@ -43,44 +43,25 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.classgen;
 
-import org.codehaus.groovy.ast.CodeVisitorSupport;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.syntax.Token;
-import org.objectweb.asm.Constants;
+package groovy.bugs;
+
+import org.codehaus.groovy.classgen.TestSupport;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
- * Verifies the method code
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants {
+public class IanMaceysBug extends TestSupport {
 
-    private Verifier verifier;
-
-    VerifierCodeVisitor(Verifier verifier) {
-        this.verifier = verifier;
-    }
-
-    public void visitBinaryExpression(BinaryExpression expression) {
-        if (verifier.getClassNode().isScriptClass() && expression.getOperation().getType() == Token.EQUAL) {
-            // lets turn variable assignments into property assignments
-            Expression left = expression.getLeftExpression();
-            if (left instanceof VariableExpression) {
-                VariableExpression varExp = (VariableExpression) left;
-
-                //System.out.println("Converting variable expression: " + varExp.getVariable());
-
-                PropertyExpression propExp =
-                    new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
-                expression.setLeftExpression(propExp);
-            }
+    public void testBug() throws Exception {
+        try {
+            assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
+            fail("Should throw a syntax exception");
         }
-        super.visitBinaryExpression(expression);
-    }    
+        catch (SyntaxException e) {
+            System.out.println("Worked. Caught: " + e);
+        }
+    }
 }

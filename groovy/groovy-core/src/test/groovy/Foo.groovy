@@ -30,7 +30,6 @@ class Foo implements Serializable {
  	}
 	
 	String toString() {
-	    //return super.toString() + " name: " + getName() + " location: " + getLocation()
 		return super.toString() + " name: ${name} location: ${location}"
 	}
 }

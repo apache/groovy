@@ -45,15 +45,11 @@
  */
 package org.codehaus.groovy;
 
-public class GroovyException
-    extends Exception
-{
-    public GroovyException() 
-    {
+public class GroovyException extends Exception {
+    public GroovyException() {
     }
-    
-    public GroovyException(String message) 
-    {
+
+    public GroovyException(String message) {
         super(message);
     }
 }
