@@ -11,6 +11,8 @@ class ByteIndexBug extends GroovyTestCase {
 		}
 		sb.append("\nFOO\n")
 		
-		new GroovyShell().evaluate(sb.toString(),"foo")
+		b = new Binding(x:null)
+		
+		new GroovyShell(b).evaluate(sb.toString(),"foo")
 	}
 }

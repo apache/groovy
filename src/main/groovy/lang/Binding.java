@@ -82,7 +82,13 @@ public class Binding extends GroovyObjectSupport {
      * @return the variable value
      */
     public Object getVariable(String name) {
-        return variables.get(name);
+        Object result = variables.get(name);
+        
+        if (result == null && !variables.containsKey(name)) {
+        		throw new MissingPropertyException(name, Binding.class);
+        }
+        
+        return result;
     }
     
     /**
