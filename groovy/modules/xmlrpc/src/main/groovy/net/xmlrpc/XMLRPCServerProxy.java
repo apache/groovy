@@ -148,7 +148,10 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 				return response.get(0);
 			} else {	
 				// pass the result of the call to the closure
-				return ((Closure)params[numberOfparams]).call(new Object[] {response.get(0)});
+				final Closure closure = (Closure)params[numberOfparams];
+				
+				closure.setDelegate(this);
+				return closure.call(new Object[] {response.get(0)});
 			}
 			
 		} catch (final IOException e) {
