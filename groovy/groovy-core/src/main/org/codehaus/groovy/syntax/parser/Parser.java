@@ -96,7 +96,7 @@ public class Parser
     *  Synonym for module(), the primary entry point.
     */
 
-    public Reduction parse() throws CompilationFailedException 
+    public Reduction parse() throws CompilationFailedException
     {
         try
         {
@@ -106,7 +106,7 @@ public class Parser
         {
             controller.addFatalError( new SyntaxErrorMessage(e) );
         }
-        
+
         throw new GroovyBugError( "this will never happen" );
     }
 
@@ -237,7 +237,7 @@ public class Parser
     *
     */
 
-    public Reduction module() throws SyntaxException, CompilationFailedException 
+    public Reduction module() throws SyntaxException, CompilationFailedException
     {
         Reduction module = Reduction.newContainer();
 
@@ -324,7 +324,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction packageDeclaration() throws SyntaxException, CompilationFailedException 
+    public Reduction packageDeclaration() throws SyntaxException, CompilationFailedException
     {
         Reduction packageDeclaration = consume(Types.KEYWORD_PACKAGE).asReduction( dottedIdentifier() );
         endOfStatement( false );
@@ -358,7 +358,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction importStatement() throws SyntaxException, CompilationFailedException 
+    public Reduction importStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction importStatement = consume(Types.KEYWORD_IMPORT).asReduction();
 
@@ -460,7 +460,7 @@ public class Parser
     *  </pre>
     */
 
-    public CSTNode topLevelStatement() throws SyntaxException, CompilationFailedException 
+    public CSTNode topLevelStatement() throws SyntaxException, CompilationFailedException
     {
         CSTNode result = null;
 
@@ -538,7 +538,7 @@ public class Parser
     *  A synomym for <code>topLevelStatement()</code>.
     */
 
-    public CSTNode typeDeclaration() throws SyntaxException, CompilationFailedException 
+    public CSTNode typeDeclaration() throws SyntaxException, CompilationFailedException
     {
         return topLevelStatement();
     }
@@ -558,7 +558,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction modifierList(boolean allowStatic, boolean allowAbstract) throws CompilationFailedException, SyntaxException 
+    public Reduction modifierList(boolean allowStatic, boolean allowAbstract) throws CompilationFailedException, SyntaxException
     {
         Reduction modifiers = Reduction.newContainer();
 
@@ -602,7 +602,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction classDeclaration( Reduction modifiers ) throws SyntaxException, CompilationFailedException 
+    public Reduction classDeclaration( Reduction modifiers ) throws SyntaxException, CompilationFailedException
     {
         consume( Types.KEYWORD_CLASS );
 
@@ -668,7 +668,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction interfaceDeclaration( Reduction modifiers ) throws SyntaxException, CompilationFailedException 
+    public Reduction interfaceDeclaration( Reduction modifiers ) throws SyntaxException, CompilationFailedException
     {
         consume( Types.KEYWORD_INTERFACE );
 
@@ -716,7 +716,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction typeList(int declarator, boolean optional, int limit) throws SyntaxException, CompilationFailedException 
+    public Reduction typeList(int declarator, boolean optional, int limit) throws SyntaxException, CompilationFailedException
     {
         Reduction typeList = null;
 
@@ -850,7 +850,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction typeBodyStatement(boolean allowStatic, boolean allowAbstract, boolean requireAbstract) throws SyntaxException, CompilationFailedException 
+    public Reduction typeBodyStatement(boolean allowStatic, boolean allowAbstract, boolean requireAbstract) throws SyntaxException, CompilationFailedException
     {
         Reduction statement = null;
 
@@ -1043,7 +1043,7 @@ public class Parser
     *  </pre>
     */
 
-    protected CSTNode optionalDatatype( boolean significantNewlines, boolean allowVoid ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode optionalDatatype( boolean significantNewlines, boolean allowVoid ) throws SyntaxException, CompilationFailedException
     {
         CSTNode type = Reduction.EMPTY;
         Token   next = la(significantNewlines);
@@ -1114,7 +1114,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction propertyDeclaration( Reduction modifiers, CSTNode type, Token identifier ) throws SyntaxException, CompilationFailedException 
+    public Reduction propertyDeclaration( Reduction modifiers, CSTNode type, Token identifier ) throws SyntaxException, CompilationFailedException
     {
         Reduction property = identifier.asReduction( modifiers, type );
         property.setMeaning( Types.SYNTH_PROPERTY );
@@ -1156,7 +1156,7 @@ public class Parser
     *  </pre>
     */
 
-    public Reduction methodDeclaration( Reduction modifiers, CSTNode type, Token identifier, boolean emptyOnly) throws SyntaxException, CompilationFailedException 
+    public Reduction methodDeclaration( Reduction modifiers, CSTNode type, Token identifier, boolean emptyOnly) throws SyntaxException, CompilationFailedException
     {
         Reduction method = identifier.asReduction( modifiers, type );
         method.setMeaning( Types.SYNTH_METHOD );
@@ -1231,7 +1231,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction parameterDeclarationList() throws SyntaxException, CompilationFailedException 
+    protected Reduction parameterDeclarationList() throws SyntaxException, CompilationFailedException
     {
         Reduction list = Reduction.newContainer();
 
@@ -1288,7 +1288,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction parameterDeclaration() throws SyntaxException, CompilationFailedException 
+    protected Reduction parameterDeclaration() throws SyntaxException, CompilationFailedException
     {
         CSTNode   type      = optionalDatatype( false, false );
         Reduction parameter = nameDeclaration( false ).asReduction( type );
@@ -1319,7 +1319,7 @@ public class Parser
     *  </pre>
     */
 
-    protected CSTNode datatype( boolean allowVoid ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode datatype( boolean allowVoid ) throws SyntaxException, CompilationFailedException
     {
         CSTNode datatype = scalarDatatype(allowVoid);
 
@@ -1338,7 +1338,7 @@ public class Parser
     *  A synonym for <code>datatype( true )</code>.
     */
 
-    protected CSTNode datatype() throws SyntaxException, CompilationFailedException 
+    protected CSTNode datatype() throws SyntaxException, CompilationFailedException
     {
         return datatype(true);
     }
@@ -1360,7 +1360,7 @@ public class Parser
     *  </pre>
     */
 
-    protected CSTNode scalarDatatype( boolean allowVoid ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode scalarDatatype( boolean allowVoid ) throws SyntaxException, CompilationFailedException
     {
         CSTNode datatype = null;
 
@@ -1396,7 +1396,7 @@ public class Parser
     *  </pre>
     */
 
-    protected CSTNode statementBody( boolean requireBraces ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode statementBody( boolean requireBraces ) throws SyntaxException, CompilationFailedException
     {
         CSTNode body = null;
 
@@ -1439,7 +1439,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction statementsUntilRightCurly( ) throws SyntaxException, CompilationFailedException 
+    protected Reduction statementsUntilRightCurly( ) throws SyntaxException, CompilationFailedException
     {
         Reduction block = Reduction.newContainer();
 
@@ -1525,7 +1525,7 @@ public class Parser
     *  </pre>
     */
 
-    protected CSTNode statement( boolean allowUnlabelledBlocks ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode statement( boolean allowUnlabelledBlocks ) throws SyntaxException, CompilationFailedException
     {
         CSTNode statement = null;
 
@@ -1697,7 +1697,7 @@ public class Parser
     *  Synonym for <code>statement( false )</code>.
     */
 
-    protected CSTNode statement( ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode statement( ) throws SyntaxException, CompilationFailedException
     {
         return statement( false );
     }
@@ -1718,7 +1718,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction assertStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction assertStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume( Types.KEYWORD_ASSERT ).asReduction( expression() );
 
@@ -1750,7 +1750,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction breakStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction breakStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_BREAK).asReduction();
         if( lt(true) == Types.IDENTIFIER )
@@ -1780,7 +1780,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction continueStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction continueStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_CONTINUE).asReduction();
         if( lt(true) == Types.IDENTIFIER )
@@ -1809,7 +1809,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction throwStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction throwStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_THROW).asReduction( expression() );
         endOfStatement();
@@ -1839,7 +1839,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction ifStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction ifStatement() throws SyntaxException, CompilationFailedException
     {
         //
         // Process the if clause
@@ -1902,7 +1902,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction returnStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction returnStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_RETURN).asReduction();
 
@@ -1938,7 +1938,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction switchStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction switchStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_SWITCH).asReduction();
         consume( Types.LEFT_PARENTHESIS );
@@ -2016,7 +2016,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction synchronizedStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction synchronizedStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_SYNCHRONIZED).asReduction();
 
@@ -2057,7 +2057,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction tryStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction tryStatement() throws SyntaxException, CompilationFailedException
     {
 
         //
@@ -2150,7 +2150,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction forStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction forStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume( Types.KEYWORD_FOR ).asReduction();
 
@@ -2287,7 +2287,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction whileStatement() throws SyntaxException, CompilationFailedException 
+    protected Reduction whileStatement() throws SyntaxException, CompilationFailedException
     {
         Reduction statement = consume(Types.KEYWORD_WHILE).asReduction();
 
@@ -2330,7 +2330,7 @@ public class Parser
     *  is complete.
     */
 
-    protected CSTNode expression( ) throws SyntaxException, CompilationFailedException 
+    protected CSTNode expression( ) throws SyntaxException, CompilationFailedException
     {
         // int id = nestCount++;
         // System.out.println( "ENTERING EXPRESSION " + id );
@@ -2509,7 +2509,7 @@ public class Parser
                     // All other operators are caught during REDUCE, so if it makes
                     // it here, it's either the end of the expression, or an error.
 
-                	if( stack.size() == 1 && stack.topIsAnExpression() )
+                    if( stack.size() == 1 && stack.topIsAnExpression() )
                     {
                         break MAIN_LOOP;                          // <<< FLOW CONTROL <<<<<<<<<
                     }
@@ -3077,7 +3077,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction variableDeclarationExpression( CSTNode datatype ) throws SyntaxException, CompilationFailedException 
+    protected Reduction variableDeclarationExpression( CSTNode datatype ) throws SyntaxException, CompilationFailedException
     {
         Reduction expression = ((Token)datatype.get(0)).dup().asReduction( datatype );  // done for line number on SYNTH
         expression.setMeaning( Types.SYNTH_VARIABLE_DECLARATION );
@@ -3128,7 +3128,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction gstring() throws SyntaxException, CompilationFailedException 
+    protected Reduction gstring() throws SyntaxException, CompilationFailedException
     {
         // int id = nestCount++;
         // System.out.println( "ENTERING GSTRING " + id );
@@ -3190,7 +3190,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction parameterList() throws SyntaxException, CompilationFailedException 
+    protected Reduction parameterList() throws SyntaxException, CompilationFailedException
     {
         // int id = nestCount++;
         // System.out.println( "ENTERING PARAMETER LIST " + id );
@@ -3263,7 +3263,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction newExpression() throws SyntaxException, CompilationFailedException 
+    protected Reduction newExpression() throws SyntaxException, CompilationFailedException
     {
         // int id = nestCount++;
         // System.out.println( "ENTERING NEW " + id );
@@ -3361,7 +3361,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction tupleExpression( int level, int depth ) throws SyntaxException, CompilationFailedException 
+    protected Reduction tupleExpression( int level, int depth ) throws SyntaxException, CompilationFailedException
     {
         Reduction data = consume(Types.LEFT_CURLY_BRACE).asReduction();
         data.setMeaning( Types.SYNTH_TUPLE );
@@ -3403,7 +3403,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction closureExpression( ) throws SyntaxException, CompilationFailedException 
+    protected Reduction closureExpression( ) throws SyntaxException, CompilationFailedException
     {
         // int id = nestCount++;
         // System.out.println( "ENTERING CLOSURE EXPRESSION " + id );
@@ -3498,7 +3498,7 @@ public class Parser
     *  </pre>
     */
 
-    protected Reduction listOrMapExpression( boolean isMap, boolean insist ) throws SyntaxException, CompilationFailedException 
+    protected Reduction listOrMapExpression( boolean isMap, boolean insist ) throws SyntaxException, CompilationFailedException
     {
         Reduction expression = consume(Types.LEFT_SQUARE_BRACKET).asReduction();
         expression.setMeaning( Types.SYNTH_LIST );
@@ -3562,7 +3562,7 @@ public class Parser
     *  Synonym for <code>listOrMapExpression( false, false )</code>.
     */
 
-    protected Reduction listOrMapExpression( ) throws SyntaxException, CompilationFailedException 
+    protected Reduction listOrMapExpression( ) throws SyntaxException, CompilationFailedException
     {
         return listOrMapExpression( false, false );
     }
@@ -3797,7 +3797,7 @@ public class Parser
             {
                 token = getTokenStream().la( streamK );
                 streamK += 1;
-    
+
                 if( token == null  )
                 {
                     token = Token.EOF;
@@ -3946,7 +3946,7 @@ public class Parser
             {
                 error( type );
             }
-    
+
             if( !significantNewlines )
             {
                 while( lt(true) == Types.NEWLINE )
@@ -3954,14 +3954,14 @@ public class Parser
                     getTokenStream().consume(Types.NEWLINE);
                 }
             }
-    
+
             return getTokenStream().consume(type);
         }
         catch( ReadException e )
         {
             controller.addFatalError( new SimpleMessage(e.getMessage()) );
         }
-        
+
         throw new GroovyBugError( "this should never happen" );
     }
 

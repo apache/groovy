@@ -99,8 +99,8 @@ public class ExpressionStack
     */
 
     public boolean isComplete()
- 	{
-    	return size() == 1 && topIsAnExpression();
+    {
+        return size() == 1 && topIsAnExpression();
     }
 
 
@@ -462,17 +462,17 @@ public class ExpressionStack
 
     public String toString( )
     {
-    	StringBuffer buffer = new StringBuffer();
-    	String newline = System.getProperty( "line.separator", "\n" );
-    	int count = stack.size();
+        StringBuffer buffer = new StringBuffer();
+        String newline = System.getProperty( "line.separator", "\n" );
+        int count = stack.size();
 
-    	buffer.append( "ExpressionStack with " ).append( size() ).append( " elements" ).append( newline );
-    	for( int i = count - 1; i >= 0; i-- )
-    	{
-    	    buffer.append( top(i).toString() ).append( newline );
-    	}
+        buffer.append( "ExpressionStack with " ).append( size() ).append( " elements" ).append( newline );
+        for( int i = count - 1; i >= 0; i-- )
+        {
+            buffer.append( top(i).toString() ).append( newline );
+        }
 
-    	return buffer.toString();
+        return buffer.toString();
     }
 
 }

@@ -604,7 +604,7 @@ public class ASTBuilder
                 : new InnerClassNode( context, dot(packageName, name), modifiers, parent, interfaces, MixinNode.EMPTY_ARRAY )
         );
 
-		  classNode.setCSTNode( reduction.get(0) );
+        classNode.setCSTNode( reduction.get(0) );
 
         int propertyModifiers = Constants.ACC_STATIC | Constants.ACC_FINAL | Constants.ACC_PUBLIC;
         int methodModifiers   = Constants.ACC_ABSTRACT;
