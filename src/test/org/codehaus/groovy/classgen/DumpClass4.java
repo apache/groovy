@@ -140,4 +140,8 @@ public class DumpClass4 {
         catch (Throwable t) {
         }
     }
+    
+    public void usePrimitiveType() {
+        System.out.println(int.class);
+    }
 }

@@ -260,7 +260,14 @@ public class BytecodeHelper implements Constants {
 
     public void doCast(String type) {
         if (!type.equals("java.lang.Object")) {
-            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            if (isPrimitiveType(type) && !type.equals("void")) {
+                unbox(type);
+            }
+            else {
+                cv.visitTypeInsn(
+                    CHECKCAST,
+                    type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+            }
         }
     }
 
@@ -292,6 +299,33 @@ public class BytecodeHelper implements Constants {
         }
         else {
             cv.visitVarInsn(ALOAD, idx);
+        }
+    }
+
+    public String getObjectTypeForPrimitive(String type) {
+        if (type.equals("byte")) {
+            return Byte.class.getName();
+        }
+        else if (type.equals("char")) {
+            return Character.class.getName();
+        }
+        else if (type.equals("short")) {
+            return Short.class.getName();
+        }
+        else if (type.equals("int")) {
+            return Integer.class.getName();
+        }
+        else if (type.equals("long")) {
+            return Long.class.getName();
+        }
+        else if (type.equals("float")) {
+            return Float.class.getName();
+        }
+        else if (type.equals("double")) {
+            return Double.class.getName();
+        }
+        else {
+            return null;
         }
     }
 }

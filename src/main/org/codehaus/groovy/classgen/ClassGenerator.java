@@ -599,14 +599,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitTryCatchFinally(TryCatchStatement statement) {
         onLineNumber(statement);
 
-        
         CatchStatement catchStatement = statement.getCatchStatement(0);
 
         Statement tryStatement = statement.getTryStatement();
         if (tryStatement.isEmpty()) {
             return;
         }
-        
+
         if (catchStatement == null) {
             final Label l0 = new Label();
             cv.visitLabel(l0);
@@ -1446,6 +1445,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         else {
             cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), helper.getTypeDescription(type));
+            if (!leftHandExpression && helper.isPrimitiveType(type)) {
+                helper.box(type);
+            }
         }
     }
 
@@ -1590,7 +1592,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         cv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
                     }
                     else {
-                        
+
                         /*
                         //TODO: make work with arrays
                         if (type.equals("double")) {
@@ -1720,23 +1722,29 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     public void visitClassExpression(ClassExpression expression) {
         String type = expression.getText();
 
-        final String staticFieldName =
-            (type.equals(classNode.getName())) ? "class$0" : "class$" + type.replace('.', '$');
+        if (helper.isPrimitiveType(type)) {
+            String objectType = helper.getObjectTypeForPrimitive(type);
+            cv.visitFieldInsn(GETSTATIC, helper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
+        }
+        else {
+            final String staticFieldName =
+                (type.equals(classNode.getName())) ? "class$0" : "class$" + type.replace('.', '$');
 
-        syntheticStaticFields.add(staticFieldName);
+            syntheticStaticFields.add(staticFieldName);
 
-        cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-        Label l0 = new Label();
-        cv.visitJumpInsn(IFNONNULL, l0);
-        cv.visitLdcInsn(type);
-        cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
-        cv.visitInsn(DUP);
-        cv.visitFieldInsn(PUTSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-        Label l1 = new Label();
-        cv.visitJumpInsn(GOTO, l1);
-        cv.visitLabel(l0);
-        cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-        cv.visitLabel(l1);
+            cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+            Label l0 = new Label();
+            cv.visitJumpInsn(IFNONNULL, l0);
+            cv.visitLdcInsn(type);
+            cv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
+            cv.visitInsn(DUP);
+            cv.visitFieldInsn(PUTSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+            Label l1 = new Label();
+            cv.visitJumpInsn(GOTO, l1);
+            cv.visitLabel(l0);
+            cv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+            cv.visitLabel(l1);
+        }
     }
 
     public void visitRangeExpression(RangeExpression expression) {
@@ -2159,7 +2167,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         if (type != null) {
             //System.out.println("### expression: " + leftExpression);
             //System.out.println("### type: " + type);
-            visitCastExpression(new CastExpression(type, rightExpression));
+
+            // lets not cast for primitive types as we handle these in field setting etc
+            if (helper.isPrimitiveType(type)) {
+                rightExpression.visit(this);
+            }
+            else {
+                visitCastExpression(new CastExpression(type, rightExpression));
+            }
         }
         else {
             visitAndAutobox(rightExpression);
@@ -2567,6 +2582,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected String checkValidType(String type, ASTNode node, String message) {
+        if (helper.isPrimitiveType(type)) {
+            return type;
+        }
         String original = type;
         type = resolveClassName(type);
         if (type != null) {
