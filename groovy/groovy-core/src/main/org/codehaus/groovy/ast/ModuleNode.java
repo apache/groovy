@@ -198,9 +198,9 @@ public class ModuleNode extends ASTNode implements Constants {
             new MethodNode(
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
-                Object.class.getName(),
+                "void",
                 new Parameter[] { new Parameter("java.lang.String[]", "args")},
-                new ReturnStatement(
+                new ExpressionStatement(
                     new MethodCallExpression(
                         new ClassExpression(InvokerHelper.class.getName()),
                         "runScript",
