@@ -1,6 +1,6 @@
 /*
  * Created on Feb 27, 2004
- *
+ *  
  */
 package groovy.swt.factory;
 
@@ -13,8 +13,10 @@ import org.codehaus.groovy.GroovyException;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormText;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+import org.eclipse.ui.forms.widgets.ScrolledPageBook;
 import org.eclipse.ui.forms.widgets.Section;
 
 /**
@@ -40,8 +42,10 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      * @see groovy.swt.factory.AbstractSwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent) throws GroovyException {
-        Composite parentComposite = (Composite) SwtUtils.getParentWidget(parent);
+    public Object newInstance(Map properties, Object parent)
+            throws GroovyException {
+        Composite parentComposite = (Composite) SwtUtils
+                .getParentWidget(parent);
         if (toolkit == null) {
             toolkit = new FormToolkit(parentComposite.getDisplay());
         }
@@ -51,17 +55,16 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
         if (styleProperty != null) {
             if (type.equals("formSection")) {
                 style = SwtUtils.parseStyle(Section.class, styleProperty);
-            }
-            else {
+            } else {
                 style = SwtUtils.parseStyle(SWT.class, styleProperty);
             }
         }
         if (parentComposite != null) {
-            Object formWidget = getFormWidget(parentComposite, properties, style, text);
+            Object formWidget = getFormWidget(parentComposite, properties,
+                    style, text);
             setBeanProperties(formWidget, properties);
             return formWidget;
-        }
-        else {
+        } else {
             throw new InvalidParentException("composite instance");
         }
     }
@@ -72,51 +75,53 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
      * @param text
      * @return
      */
-    private Object getFormWidget(final Composite parentComposite, Map properties, int style, 
-    String text) throws GroovyException {
+    private Object getFormWidget(final Composite parentComposite,
+            Map properties, int style, String text) throws GroovyException {
         if ("form".equals(type)) {
-            return toolkit.createForm(parentComposite);
+            Form form = toolkit.createForm(parentComposite);
+            form.setText(text);
+            return form;
         }
-        if ("scrolledForm".equals(type)) {
-            return toolkit.createScrolledForm(parentComposite);
-        }
-        if ("formButton".equals(type)) {
-            return toolkit.createButton(parentComposite, text, style);
-        }
-        if ("formComposite".equals(type)) {
-            return toolkit.createComposite(parentComposite, style);
-        }
-        if ("formCompositeSeparator".equals(type)) {
-            return toolkit
-            .createCompositeSeparator(parentComposite);
-        }
-        if ("formExpandableComposite".equals(type)) {
-            return toolkit.createExpandableComposite(
-            parentComposite, style);
-        }
-        if ("formText".equals(type)) {
-            return toolkit.createText(parentComposite, text);
-        }
-        if ("formHyperlink".equals(type)) {
-            return toolkit.createHyperlink(parentComposite, text, 
-            style);
-        }
-        if ("formImageHyperlink".equals(type)) {
-            return toolkit.createImageHyperlink(
-            parentComposite, style);
-        }
-        if ("formLabel".equals(type)) {
-            return toolkit.createLabel(parentComposite, text);
-        }
-        if ("formPageBook".equals(type)) {
-            return toolkit.createPageBook(parentComposite, style);
+        if ("scrolledForm".equals(type)) { return toolkit
+                .createScrolledForm(parentComposite); }
+        if ("formButton".equals(type)) { return toolkit.createButton(
+                parentComposite, text, style); }
+        if ("formComposite".equals(type)) { return toolkit.createComposite(
+                parentComposite, style); }
+        if ("formCompositeSeparator".equals(type)) { return toolkit
+                .createCompositeSeparator(parentComposite); }
+        if ("formExpandableComposite".equals(type)) { return toolkit
+                .createExpandableComposite(parentComposite, style); }
+        if ("formText".equals(type)) { return toolkit.createText(
+                parentComposite, text); }
+        if ("formHyperlink".equals(type)) { return toolkit.createHyperlink(
+                parentComposite, text, style); }
+        if ("formImageHyperlink".equals(type)) { return toolkit
+                .createImageHyperlink(parentComposite, style); }
+        if ("formLabel".equals(type)) { return toolkit.createLabel(
+                parentComposite, text); }
+        if ("formPageBook".equals(type)) { return toolkit.createPageBook(
+                parentComposite, style); }
+        if ("formPageBookPage".equals(type)) {
+            if (parentComposite instanceof ScrolledPageBook) {
+                ScrolledPageBook pageBook = (ScrolledPageBook) parentComposite;
+                String key = (String) properties.remove("key");
+                if (key != null) {
+                    Composite page = pageBook.createPage(key);
+                    pageBook.registerPage(key, page);
+                    return page;
+                }
+            } else {
+                throw new InvalidParentException("formPageBook");
+            }
         }
         if ("formSection".equals(type)) {
             Section section = toolkit.createSection(parentComposite, style);
             if (text != null) {
                 section.setText(text);
             }
-            section.setSeparatorControl(toolkit.createCompositeSeparator(section));
+            section.setSeparatorControl(toolkit
+                    .createCompositeSeparator(section));
             String description = (String) properties.remove("description");
             if (description != null) {
                 section.setDescription(description);
@@ -126,28 +131,27 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             section.setClient(client);
             return section;
         }
-        if ("formSeparator".equals(type)) {
-            return toolkit.createSeparator(parentComposite, style);
-        }
-        if ("formTable".equals(type)) {
-            return toolkit.createTable(parentComposite, style);
-        }
+        if ("formSeparator".equals(type)) { return toolkit.createSeparator(
+                parentComposite, style); }
+        if ("formTable".equals(type)) { return toolkit.createTable(
+                parentComposite, style); }
         if ("formFormattedText".equals(type)) {
             boolean parseTags = false;
             boolean expandURLs = false;
             if (properties.get("parseTags") != null) {
-                parseTags = ((Boolean) properties.remove("parseTags")).booleanValue();
+                parseTags = ((Boolean) properties.remove("parseTags"))
+                        .booleanValue();
             }
             if (properties.get("expandURLs") != null) {
-                expandURLs = ((Boolean) properties.remove("expandURLs")).booleanValue();
+                expandURLs = ((Boolean) properties.remove("expandURLs"))
+                        .booleanValue();
             }
             FormText formText = toolkit.createFormText(parentComposite, true);
             formText.setText(text, parseTags, expandURLs);
             return formText;
         }
-        if ("formTree".equals(type)) {
-            return toolkit.createTree(parentComposite, style);
-        }
+        if ("formTree".equals(type)) { return toolkit.createTree(
+                parentComposite, style); }
         return null;
     }
 }

@@ -139,7 +139,7 @@ public class SwtBuilder extends BuilderSupport {
                 log.log(Level.WARNING, e.getMessage());
             }
         } else {
-            log.log(Level.WARNING, "Could not find match for name: " + name);
+             log.log(Level.WARNING, "Could not find match for name: " + name);
         }
         return widget;
     }
@@ -265,6 +265,7 @@ public class SwtBuilder extends BuilderSupport {
                 "formImageHyperlink"));
         registerFactory("formLabel", new FormFactory("formLabel"));
         registerFactory("formPageBook", new FormFactory("formPageBook"));
+        registerFactory("formPageBookPage", new FormFactory("formPageBookPage"));
         registerFactory("formSection", new FormFactory("formSection"));
         registerFactory("formSeparator", new FormFactory("formSeparator"));
         registerFactory("formTable", new FormFactory("formTable"));
