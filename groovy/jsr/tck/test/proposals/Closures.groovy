@@ -10,6 +10,7 @@ class Closures {
         // c5 = {|Cool car, funky, Moped yeah| println yeah + funky + car} //@pass
         // c6 = {|String name, age| println "${name) is ${age} years old"} //@pass
         // myList.each{print it}   //@pass
-        // myList.each{foo|print foo} //@pass
+        // myList.each{foo|print foo} //@fail:parse
+        // myList.each{|bar|print bar} //@pass
   }
 }
