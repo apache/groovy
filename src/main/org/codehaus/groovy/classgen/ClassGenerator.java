@@ -1052,8 +1052,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     variable = defineVariable(name, "java.lang.Object");
                 }
                 if (variable == null) {
-                    //System.out.println("No such variable '" + name + "' available, so trying property");
                     visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), variableName));
+                    // We need to store this in a local variable now since it has been looked at in this scope and possibly
+                    // compared and it hasn't been referenced before.
+					cv.visitInsn(DUP);
+					cv.visitVarInsn(ASTORE, idx + 1);
                     return;
                 }
                 String type = variable.getType();
