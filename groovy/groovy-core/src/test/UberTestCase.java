@@ -95,7 +95,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(GetterBug.class);
         suite.addTestSuite(GlobalPrintlnTest.class);
         suite.addTestSuite(Groovy239_Bug.class);
-        // todo suite.addTestSuite(Groovy249_Bug.class);
+        todo suite.addTestSuite(Groovy249_Bug.class);
         suite.addTestSuite(Groovy252_Bug.class);
         suite.addTestSuite(Groovy389_Bug.class);
         suite.addTestSuite(Groovy513_Bug.class);
@@ -118,7 +118,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(IntegerOperationTest.class);
         suite.addTestSuite(IterateOverCustomTypeBug.class);
         suite.addTestSuite(ListIteratingTest.class);
-        //todo suite.addTestSuite(ListTest.class);
+        todo suite.addTestSuite(ListTest.class);
         suite.addTestSuite(LiteralTypesTest.class);
         suite.addTestSuite(LittleClosureTest.class);
         suite.addTestSuite(LocalFieldTest.class);

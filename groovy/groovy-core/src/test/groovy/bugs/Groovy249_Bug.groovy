@@ -59,5 +59,5 @@ EOF
 }
 
 class Bean249 {
-	String b
+	@Property String b
 }
