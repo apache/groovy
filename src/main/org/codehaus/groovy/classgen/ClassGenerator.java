@@ -673,7 +673,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         }
 
-        if (innerClass.getSuperClass().equals("groovy/lang/Closure")) {
+        if (innerClass.getSuperClass().equals("groovy.lang.Closure")) {
             cv.visitVarInsn(ALOAD, 0);
         }
 
@@ -1078,8 +1078,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitArrayExpression(ArrayExpression expression) {
-        // TODO Auto-generated method stub
+        int size = expression.getExpressions().size();
+        pushConstant(size);
 
+        cv.visitTypeInsn(ANEWARRAY, getTypeDescription(expression.getType()));
+
+        for (int i = 0; i < size; i++) {
+            cv.visitInsn(DUP);
+            pushConstant(i);
+            expression.getExpression(i).visit(this);
+            cv.visitInsn(AASTORE);
+        }
     }
 
     public void visitListExpression(ListExpression expression) {
@@ -1116,6 +1125,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         cv.visitTypeInsn(NEW, innerClassinternalName);
         cv.visitInsn(DUP);
+
+        cv.visitMethodInsn(
+            INVOKESPECIAL,
+            innerClassinternalName,
+            "<init>",
+            "([Ljava/lang/Object;)V");
     }
 
     // Implementation methods
@@ -1130,8 +1145,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
         Parameter[] parameters = expression.getParameters();
 
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy/lang/Closure");
-        answer.addMethod("doCall", ACC_PUBLIC, "java/lang/Object", parameters, expression.getCode());
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
+        answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
         FieldNode field = answer.addField("__outerInstance", ACC_PRIVATE, outerClassName, null);
 
         // lets make the constructor
@@ -1151,7 +1166,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Parameter[] contructorParams =
             new Parameter[] {
                 new Parameter(outerClassName, "outerInstance"),
-                new Parameter("java/lang/Object", "delegate")};
+                new Parameter("java.lang.Object", "delegate")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
@@ -1163,19 +1178,19 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy/lang/CompositeStringExpression");
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.CompositeStringExpression");
 
         FieldNode stringsField =
             answer.addField(
                 "strings",
                 ACC_PRIVATE | ACC_STATIC,
-                "java/lang/String[]",
-                new ArrayExpression(expression.getStrings()));
+                "java.lang.String[]",
+                new ArrayExpression("java.lang.String", expression.getStrings()));
 
         answer.addMethod(
             "getStrings",
             ACC_PUBLIC | ACC_STATIC,
-            "java/lang/String[]",
+            "java.lang.String[]",
             Parameter.EMPTY_ARRAY,
             new ReturnStatement(new FieldExpression(stringsField)));
 
@@ -1184,7 +1199,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         block.addStatement(
             new ExpressionStatement(
                 new MethodCallExpression(new VariableExpression("super"), "<init>", new VariableExpression("values"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter("java/lang/Object", "values")};
+        Parameter[] contructorParams = new Parameter[] { new Parameter("java.lang.Object", "values")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }
@@ -1464,7 +1479,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (name.equals("void")) {
             return "V";
         }
-        return "L" + name.replace('.', '/') + ";";
+        String prefix = "";
+        if (name.endsWith("[]")) {
+            prefix = "[";
+            name = name.substring(0, name.length() - 2);
+        }
+        return prefix + "L" + name.replace('.', '/') + ";";
     }
 
     /**

@@ -33,6 +33,7 @@ public class Compiler
     private CompilerClassLoader classLoader;
     private List errors;
     private boolean verbose = false;
+    private boolean debug = false;
 
     public Compiler()
     {
@@ -49,6 +50,11 @@ public class Compiler
     public void setVerbose(boolean verbose) 
     {
         this.verbose = verbose;
+    }
+    
+    public void setDebug(boolean debug) 
+    {
+        this.debug = debug;
     }
     
     public void setClasspath(String classpath)
@@ -192,7 +198,7 @@ public class Compiler
         
         verifier.visitClass(classNode);
         
-        if ( false ) 
+        if ( debug ) 
         {
             DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
 

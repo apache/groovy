@@ -49,16 +49,19 @@ package org.codehaus.groovy.tools;
 import groovy.lang.GroovyTestCase;
 
 import java.io.File;
+import java.io.FileInputStream;
+
+import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 
 /**
- * Tests the compiling & running of GroovyTestCases
+ * A handy unit test case for dumping the output of the compiler
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class FileSystemCompilerTest extends GroovyTestCase {
+public class CompilerTest extends GroovyTestCase {
 
-    FileSystemCompiler compiler = new FileSystemCompiler();
+    Compiler compiler = new Compiler();
     boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
@@ -74,14 +77,14 @@ public class FileSystemCompilerTest extends GroovyTestCase {
         
         assertTrue("Could not find source file: " + file, file.exists());
 
-        compiler.compile(new File[] { file });
+        compiler.compile(new InputStreamCharStream(new FileInputStream(file)));
     }
 
     protected void setUp() throws Exception {
         File dir = new File("target/test-generated-classes");
         dir.mkdirs();
-        compiler.setOutputDir(dir);
-        compiler.setVerbose(dumpClass);
+        //compiler.setOutputDir(dir);
+        compiler.setDebug(dumpClass); 
     }
 
 }

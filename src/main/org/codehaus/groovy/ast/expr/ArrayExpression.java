@@ -96,7 +96,7 @@ public class ArrayExpression extends Expression {
         return (Expression) expressions.get(i);
     }
 
-    protected String getType() {
+    public String getType() {
         return type;
     }
 
