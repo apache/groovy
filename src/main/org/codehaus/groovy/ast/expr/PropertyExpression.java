@@ -73,6 +73,10 @@ public class PropertyExpression extends Expression {
         visitor.visitPropertyExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+    
     public Expression getObjectExpression() {
         return objectExpression;
     }

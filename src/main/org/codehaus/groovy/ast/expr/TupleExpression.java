@@ -86,6 +86,10 @@ public class TupleExpression extends Expression {
         visitor.visitTupleExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new TupleExpression(transformExpressions(getExpressions(), transformer));
+    }
+    
     public Expression getExpression(int i) {
         return (Expression) expressions.get(i);
     }

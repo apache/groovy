@@ -65,23 +65,23 @@ public class ArrayExpression extends Expression {
     public ArrayExpression() {
         this(new ArrayList());
     }
-    
+
     public ArrayExpression(List expressions) {
         this("java/lang/Object", expressions);
     }
-    
+
     public ArrayExpression(String type, List expressions) {
         this.type = type;
         this.expressions = expressions;
-        
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+
+        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
             Object item = iter.next();
-            if (! (item instanceof Expression)) {
+            if (!(item instanceof Expression)) {
                 throw new ClassCastException("Item: " + item + " is not an Expression");
             }
         }
     }
-    
+
     public ArrayExpression(Expression[] expressionArray) {
         this();
         expressions.addAll(Arrays.asList(expressionArray));
@@ -90,13 +90,17 @@ public class ArrayExpression extends Expression {
     public void addExpression(Expression expression) {
         expressions.add(expression);
     }
-    
+
     public List getExpressions() {
         return expressions;
     }
 
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitArrayExpression(this);
+    }
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new ArrayExpression(type, transformExpressions(expressions, transformer));
     }
 
     public Expression getExpression(int i) {
@@ -111,15 +115,15 @@ public class ArrayExpression extends Expression {
     public String getText() {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
             if (first) {
                 first = false;
             }
             else {
                 buffer.append(", ");
             }
-            
-            buffer.append(((Expression)iter.next()).getText());
+
+            buffer.append(((Expression) iter.next()).getText());
         }
         buffer.append("]");
         return buffer.toString();

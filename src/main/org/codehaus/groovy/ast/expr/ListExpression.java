@@ -80,6 +80,10 @@ public class ListExpression extends Expression {
         visitor.visitListExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new ListExpression(transformExpressions(getExpressions(), transformer));
+    }
+    
     public Expression getExpression(int i) {
         return (Expression) expressions.get(i);
     }

@@ -57,11 +57,12 @@ import org.codehaus.groovy.ast.Parameter;
  */
 public class ArgumentListExpression extends TupleExpression {
 
-    public static final Object[] EMPTY_ARRAY = {};
-    
+    public static final Object[] EMPTY_ARRAY = {
+    };
+
     public ArgumentListExpression() {
     }
-    
+
     public ArgumentListExpression(List expressions) {
         super(expressions);
     }
@@ -75,5 +76,9 @@ public class ArgumentListExpression extends TupleExpression {
             Parameter parameter = parameters[i];
             addExpression(new VariableExpression(parameter.getName()));
         }
+    }
+
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new ArgumentListExpression(transformExpressions(getExpressions(), transformer));
     }
 }

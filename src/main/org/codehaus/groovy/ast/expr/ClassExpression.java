@@ -65,7 +65,11 @@ public class ClassExpression extends Expression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitClassExpression(this);
     }
-
+    
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+    
     public String getType() {
         return type;
     }

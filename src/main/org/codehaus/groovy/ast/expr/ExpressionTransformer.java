@@ -45,60 +45,17 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a local variable name, the simplest form of expression. e.g. "foo".
+ * Provides a way to transform expressions
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class VariableExpression extends Expression {
-
-    public static final VariableExpression THIS_EXPRESSION = new VariableExpression("this");
+public interface ExpressionTransformer {
     
-    private String variable;
-    private String type;
-    
-    public VariableExpression(String variable) {
-        this.variable = variable;
-    }
-    
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitVariableExpression(this);
-    }
-
-    public Expression transformExpression(ExpressionTransformer transformer) {
-        return this;
-    }
-
-    public String getVariable() {
-        return variable;
-    }
-
-    public String getText() {
-        return variable;
-    }
-
-    public String getType() {
-        if (type == null) {
-            return "java.lang.Object";
-        }
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    /**
-     * @return true if this variable is dynamically typed
+    /** 
+     * Transforms the given expression into another expression
      */
-    public boolean isDynamic() {
-        return type == null;
-    }
-    
-    public String toString() {
-        return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
-    }
+    public Expression transform(Expression expression);
 }

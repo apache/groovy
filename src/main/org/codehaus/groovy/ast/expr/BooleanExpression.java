@@ -67,7 +67,11 @@ public class BooleanExpression extends Expression {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitBooleanExpression(this);
     }
-
+    
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new BooleanExpression(transformer.transform(expression));
+    }
+    
     public String getText() {
         return expression.getText();
     }

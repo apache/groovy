@@ -67,6 +67,10 @@ public class MapEntryExpression extends Expression {
         visitor.visitMapEntryExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new RangeExpression(transformer.transform(keyExpression), transformer.transform(valueExpression)); 
+    }
+    
     public Expression getKeyExpression() {
         return keyExpression;
     }

@@ -76,6 +76,10 @@ public class BinaryExpression extends Expression {
         visitor.visitBinaryExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new BinaryExpression(transformer.transform(leftExpression), operation, transformer.transform(rightExpression));
+    }
+
     public Expression getLeftExpression() {
         return leftExpression;
     }
@@ -97,6 +101,9 @@ public class BinaryExpression extends Expression {
     }
 
     public String getText() {
+        if (operation.getType() == Token.LEFT_SQUARE_BRACKET) {
+            return leftExpression.getText() + "[" + rightExpression.getText() + "]";
+        }
         return "(" + leftExpression.getText() + " " + operation.getText() + " " + rightExpression.getText() + ")";
     }
 

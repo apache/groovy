@@ -69,6 +69,10 @@ public class StaticMethodCallExpression extends Expression {
         visitor.visitStaticMethodCallExpression(this);
     }
     
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new StaticMethodCallExpression(type, method, transformer.transform(arguments)); 
+    }
+    
     public Expression getArguments() {
         return arguments;
     }

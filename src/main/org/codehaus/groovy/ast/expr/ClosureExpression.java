@@ -71,6 +71,10 @@ public class ClosureExpression extends Expression {
         visitor.visitClosureExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+    
     public Statement getCode() {
         return code;
     }

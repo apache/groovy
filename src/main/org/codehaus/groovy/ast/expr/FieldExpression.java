@@ -66,6 +66,10 @@ public class FieldExpression extends Expression {
         visitor.visitFieldExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return this;
+    }
+    
     public String getFieldName() {
         return field.getName();
     }

@@ -37,9 +37,6 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * @author sam
- *
- * To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Generation - Code and Comments
  */
 public class NegationExpression extends Expression {
 
@@ -57,6 +54,10 @@ public class NegationExpression extends Expression {
 		visitor.visitNegationExpression(this);
 	}
 
+	public Expression transformExpression(ExpressionTransformer transformer) {
+	    return new NegationExpression(transformer.transform(expression));
+	}
+	
 	public String getText() {
 		return expression.getText();
 	}

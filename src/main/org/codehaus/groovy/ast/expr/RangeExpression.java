@@ -59,16 +59,20 @@ public class RangeExpression extends Expression {
 
     private Expression from;
     private Expression to;
-    
+
     public RangeExpression(Expression from, Expression to) {
         this.from = from;
         this.to = to;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitRangeExpression(this);
     }
 
+    public Expression transformExpression(ExpressionTransformer transformer) {
+        return new RangeExpression(transformer.transform(from), transformer.transform(to)); 
+    }
+    
     public Expression getFrom() {
         return from;
     }

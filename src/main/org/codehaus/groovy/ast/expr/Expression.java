@@ -45,6 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.codehaus.groovy.ast.ASTNode;
 
 /**
@@ -53,5 +57,24 @@ import org.codehaus.groovy.ast.ASTNode;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Expression extends ASTNode {
+public abstract class Expression extends ASTNode {
+    
+    /**
+     * Return a copy of the expression calling the transformer on any nested expressions 
+     * @param transformer
+     * @return
+     */
+    public abstract Expression transformExpression(ExpressionTransformer transformer);
+    
+    /**
+     * Transforms the list of expressions
+     * @return a new list of transformed expressions
+     */
+    protected List transformExpressions(List expressions, ExpressionTransformer transformer) {
+        List list = new ArrayList(expressions.size());
+        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+            list.add(transformer.transform((Expression) iter.next()));
+        }
+        return list;
+    }
 }

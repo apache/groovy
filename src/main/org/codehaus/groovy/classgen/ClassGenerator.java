@@ -69,6 +69,7 @@ import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.ExpressionTransformer;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -797,7 +798,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         statement.getExpression().visit(this);
 
-        Expression assignExpr = assignmentExpression(statement.getExpression());
+        Expression assignExpr = createReturnLHSExpression(statement.getExpression());
         if (assignExpr != null) {
             leftHandExpression = false;
             assignExpr.visit(this);
@@ -961,6 +962,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
             case Token.LEFT_SQUARE_BRACKET :
                 evaluateBinaryExpression(leftHandExpression ? "set" : "get", expression);
+                if (leftHandExpression) {
+                    cv.visitInsn(POP);
+                }
                 break;
 
             default :
@@ -1748,6 +1752,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return innerClasses.add(innerClass);
     }
 
+
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode owner = classNode;
         if (owner instanceof InnerClassNode) {
@@ -1981,6 +1986,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                         "put",
                         new ArgumentListExpression(
                             new Expression[] { leftBinExpr.getRightExpression(), expression.getRightExpression()})));
+                cv.visitInsn(POP);
                 return;
             }
         }
@@ -2163,20 +2169,29 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return false;
     }
 
-    protected Expression assignmentExpression(Expression expression) {
+    /**
+     * For assignment expressions, return a safe expression for the LHS we can use
+     * to return the value 
+     */
+    protected Expression createReturnLHSExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExpr = (BinaryExpression) expression;
             if (binExpr.getOperation().isAssignmentToken()) {
-                return binExpr.getLeftExpression();
+                return binExpr.getLeftExpression().transformExpression(new ExpressionTransformer() {
+                    public Expression transform(Expression expression) {
+                        if (expression instanceof PostfixExpression) {
+                            PostfixExpression postfixExp = (PostfixExpression) expression;
+                            return postfixExp.getExpression();
+                        }
+                        else if (expression instanceof PrefixExpression) {
+                            PrefixExpression prefixExp = (PrefixExpression) expression;
+                            return prefixExp.getExpression();
+                        }
+                        return expression;
+                    }
+                });
             }
         }
-        /*
-         * else if (expression instanceof PostfixExpression) {
-         * PostfixExpression expr = (PostfixExpression) expression; return
-         * expr.getExpression(); } else if (expression instanceof
-         * PrefixExpression) { PrefixExpression expr = (PrefixExpression)
-         * expression; return expr.getExpression(); }
-         */
         return null;
     }
 
