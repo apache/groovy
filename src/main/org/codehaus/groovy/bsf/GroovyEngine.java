@@ -72,6 +72,34 @@ public class GroovyEngine extends BSFEngineImpl {
     protected GroovyShell shell;
 
     /**
+     * Convert a non java class name to a java classname
+     * This is used to convert a script name to a name
+     * that can be used as a classname with the script is
+     * loaded in GroovyClassloader#load()
+     * The method simply replaces any invalid characters
+     * with "_".
+     */
+    private String convertToValidJavaClassname(String inName) {
+        if (inName == null || inName == "") {
+            return "_";
+        }
+        StringBuffer output = new StringBuffer(inName.length());
+        boolean firstChar = true;
+        for (int i = 0; i < inName.length(); ++i) {
+            char ch = inName.charAt(i);
+            if (firstChar && !Character.isJavaIdentifierStart(ch)) {
+                ch = '_';
+            } else if (!firstChar
+                       && !(Character.isJavaIdentifierPart(ch) || ch == '.')) {
+                ch = '_';
+            }
+            firstChar = (ch == '.');
+            output.append(ch);
+        }
+        return output.toString();
+    }
+    
+    /**
      * Allow an anonymous function to be declared and invoked
      */
     public Object apply(
@@ -114,6 +142,7 @@ public class GroovyEngine extends BSFEngineImpl {
      */
     public Object eval(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
+            source = convertToValidJavaClassname(source);
             Object result = getEvalShell().evaluate(script.toString(), source);
             return result;
         }
@@ -129,6 +158,7 @@ public class GroovyEngine extends BSFEngineImpl {
     public void exec(String source, int lineNo, int columnNo, Object script) throws BSFException {
         try {
             // use evaluate to pass in the BSF variables
+            source = convertToValidJavaClassname(source);
             getEvalShell().evaluate(script.toString(), source);
             //getEvalShell().run(script.toString(), source, EMPTY_ARGS);
         }
