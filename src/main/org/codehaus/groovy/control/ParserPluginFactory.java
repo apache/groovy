@@ -18,7 +18,6 @@
 package org.codehaus.groovy.control;
 
 
-
 /**
  * A factory of parser plugin instances
  *
@@ -29,17 +28,32 @@ public abstract class ParserPluginFactory {
 
     public static ParserPluginFactory newInstance() {
         if (useNewParser) {
+            Class type = null;
+            String name = "org.codehaus.groovy.antlr.AntlrParserPluginFactory";
             try {
-                Class type = Class.forName("org.codehaus.groovy.antlr.AntlrParserPluginFactory");
+                type = Class.forName(name);
+            }
+            catch (ClassNotFoundException e) {
+                try {
+                    type = Thread.currentThread().getContextClassLoader().loadClass(name);
+                }
+                catch (ClassNotFoundException e1) {
+                    try {
+                        type = ParserPluginFactory.class.getClassLoader().loadClass(name);
+                    }
+                    catch (ClassNotFoundException e2) {
+                        // ignore
+                    }
+                }
+            }
+
+            if (type != null) {
                 try {
                     return (ParserPluginFactory) type.newInstance();
                 }
                 catch (Exception e) {
                     throw new RuntimeException("Could not create AntlrParserPluginFactory: " + e, e);
                 }
-            }
-            catch (ClassNotFoundException e) {
-                // ignore
             }
             // can't find Antlr parser, so lets use the Classic one
         }
