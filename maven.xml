@@ -1,5 +1,9 @@
 <project default="jar:jar" xmlns:j="jelly:core">
 
+  <preGoal name="xdoc:jelly-transform">
+    <attainGoal name="html2xdoc"/>
+  </preGoal>
+
   <goal name="setclasspath" prereqs="java:compile, test:compile">
 	<path id="test.classpath">
 	    <pathelement path="${maven.build.dest}"/>

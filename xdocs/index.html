@@ -1,0 +1,43 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Groovy language for the JVM</title>
+</head>
+<body>
+<h1>Introduction</h1>
+<p>Groovy is a new dynamic language for the JVM combining lots of great features from languages like Python, Ruby and Smalltalk 
+and making them available to the Java developers using a Java-like syntax.<p>
+<p>Groovy can be used as an alternative compiler to javac to generate standard Java bytecode to be used by any Java project
+or it can be used dynamically as an alternative language such as for writing scripts or unit test cases.
+</p>
+<h2>Examples</h2>
+
+<p>Here's a simple example which demonstrates the basic syntax. Notice that Groovy is dynamically typed, has closure support and supports
+something similar to Python's tuple / sequence / dictionary support (List and Map in Java)
+</p>
+
+<source>
+class Foo {
+  doSomething() {
+    data = ["name": "James", "location": "London"];
+    for e in data {
+      println("property ${e.key} is ${e.value}");
+    }
+  }
+  
+  closureExample(collection) {
+    collection.each { i :
+      println("value ${i}");
+    };
+  }
+  
+  static main(args) {
+    values = [1, 2, 3, "abc"];
+    closureExample(values);
+  }
+}
+</source>
+<p>For more examples <a href="http://cvs.codehaus.org/viewcvs.cgi/groovy/src/java/test/groovy/?root=codehaus">please look here</a>
+</p>
+</body>
+</html>

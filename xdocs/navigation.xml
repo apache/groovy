@@ -1,0 +1,22 @@
+<project name="angel" repository="angel" href="http://angel.codehaus.org">
+
+  <title>Angel</title>
+
+  <body>
+    <links>
+      <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
+      <!--
+      <item name="Issue Tracker"       href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=XXX"/>
+      -->
+    </links>
+
+    <menu name="Groovy">
+      <item name="Index"               href="/index.html"/>
+      <!--
+      <item name="License"             href="/license.html"/>
+      <item name="Download"            href="/download.html"/>
+      -->
+    </menu>
+  </body>
+
+</project>
