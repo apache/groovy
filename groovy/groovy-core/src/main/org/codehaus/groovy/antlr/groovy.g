@@ -2874,7 +2874,7 @@ NLS     :
 
 // Single-line comments
 SL_COMMENT
-        :       "//"
+        :       ( "//" | "#" )
                 (
                         options {  greedy = true;  }:
                         // '\uffff' means the EOF character.
