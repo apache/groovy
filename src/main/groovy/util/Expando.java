@@ -43,7 +43,11 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.util;
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Map;

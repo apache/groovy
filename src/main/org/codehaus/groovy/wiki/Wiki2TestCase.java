@@ -71,7 +71,7 @@ public class Wiki2TestCase extends Wiki2Markup {
     }
 
     protected String getExtension() {
-        return "*.groovy";
+        return "*Test.groovy";
     }
 
     protected String filter(String result) {

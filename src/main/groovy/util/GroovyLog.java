@@ -43,7 +43,9 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.util;
+
+import groovy.lang.GroovyObjectSupport;
 
 
 
