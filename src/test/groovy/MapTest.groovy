@@ -43,21 +43,19 @@ class MapTest extends GroovyTestCase {
         assert m.containsValue("cheddar");
 		
 		
-        /** @todo parser - causes OutOfMemoryException
-		if m.contains("cheese") {
+		if m.containsKey("cheese") {
             // ignore
         }
         else {
-            assert fail : "should contain cheese!";
+            assert false : "should contain cheese!";
         }
 		
-        if m.contains(3) {
+        if m.containsKey(3) {
             // ignore
         }
         else {
-            assert fail : "should contain 3!";
+            assert false : "should contain 3!";
         }
-        */
     }
     
     void testEmptyMap() {
