@@ -219,7 +219,7 @@ public class AsmClassGenerator2 extends ClassGenerator {
     private BytecodeHelper helper = new BytecodeHelper(null);
 
     private VariableScope variableScope;
-    public static final boolean CREATE_DEBUG_INFO = true;
+    public static final boolean CREATE_DEBUG_INFO = false;
     private static final boolean MARK_START = true;
 
     public static final String EB_SWITCH_NAME = "static.dispatching";
