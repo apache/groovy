@@ -20,15 +20,7 @@ package org.codehaus.groovy.antlr;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.collections.AST;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.MixinNode;
-import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.Type;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -272,9 +264,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             initialValue = expression(node);
         }
 
-        FieldNode fieldNode = classNode.addField(name, modifiers, type, initialValue);
+
+        FieldNode fieldNode = new FieldNode(name, modifiers, type, classNode, initialValue);
         fieldNode.addAnnotations(annotations);
         configureAST(fieldNode, fieldDef);
+
+        // lets check for a property annotation first
+        if (fieldNode.getAnnotations("property") != null) {
+            // lets set the modifiers on the field
+            int fieldModifiers = Constants.ACC_PRIVATE;
+            int flags = Constants.ACC_STATIC | Constants.ACC_TRANSIENT | Constants.ACC_VOLATILE | Constants.ACC_FINAL;
+
+            // lets pass along any other modifiers we need
+            fieldModifiers |= (modifiers & flags);
+            fieldNode.setModifiers(fieldModifiers);
+            classNode.addProperty(new PropertyNode(fieldNode, modifiers, null, null));
+        }
+        else {
+            classNode.addField(fieldNode);
+        }
     }
 
     protected String[] interfaces(AST node) {
@@ -352,7 +360,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     break;
 
 
-                // core access scope modifiers
+                    // core access scope modifiers
                 case LITERAL_private:
                     answer |= Constants.ACC_PRIVATE;
                     access = setAccessTrue(node, access);
@@ -368,7 +376,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     access = setAccessTrue(node, access);
                     break;
 
-                // other modifiers
+                    // other modifiers
                 case ABSTRACT:
                     answer |= Constants.ACC_ABSTRACT;
                     break;
