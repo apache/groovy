@@ -72,7 +72,7 @@ public class Invoker {
      */
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         if (object == null) {
-            throw new InvokerException("Cannot invoke method: " + methodName + " on null object");
+            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
         Class theClass = object.getClass();

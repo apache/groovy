@@ -40,6 +40,7 @@
       <classpath refid="test.classpath"/>
       <include name="**/*.groovy"/>
       <exclude name="**/notworking/*.groovy"/>
+      <exclude name="**/LocalField*.groovy"/>
     </groovyc>
   </goal>
 

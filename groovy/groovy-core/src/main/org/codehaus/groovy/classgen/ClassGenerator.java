@@ -136,6 +136,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller createListMethod = MethodCaller.newStatic(InvokerHelper.class, "createList");
     MethodCaller createTupleMethod = MethodCaller.newStatic(InvokerHelper.class, "createTuple");
     MethodCaller createMapMethod = MethodCaller.newStatic(InvokerHelper.class, "createMap");
+    MethodCaller createRangeMethod = MethodCaller.newStatic(InvokerHelper.class, "createRange");
 
     MethodCaller assertFailedMethod = MethodCaller.newStatic(InvokerHelper.class, "assertFailed");
 
@@ -262,6 +263,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     //-------------------------------------------------------------------------
 
     public void visitForLoop(ForLoop loop) {
+        
         loop.getCollectionExpression().visit(this);
 
         asIteratorMethod.call(cv);
@@ -409,6 +411,22 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression(compareLessThanEqualMethod, expression);
                 break;
 
+            case Token.PLUS :
+                evaluateBinaryExpression("plus", expression);
+                break;
+                
+            case Token.MINUS :
+                evaluateBinaryExpression("minus", expression);
+                break;
+                
+            case Token.MULTIPLY :
+                evaluateBinaryExpression("multiply", expression);
+                break;
+                
+            case Token.DIVIDE :
+                evaluateBinaryExpression("divide", expression);
+                break;
+                
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
@@ -557,8 +575,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitRangeExpression(RangeExpression expression) {
-        // TODO Auto-generated method stub
+        leftHandExpression = false;
+        expression.getFrom().visit(this);
 
+        leftHandExpression = false;
+        expression.getTo().visit(this);
+
+        createRangeMethod.call(cv);
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {
@@ -630,6 +653,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         if (node.getConstructors().isEmpty()) {
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
+    }
+
+    protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
+        leftHandExpression = false;
+        expression.getLeftExpression().visit(this);
+
+        cv.visitLdcInsn(method);
+
+        leftHandExpression = false;
+        expression.getRightExpression().visit(this);
+
+        invokeMethodMethod.call(cv);
+
+        cv.visitInsn(POP);
     }
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
