@@ -1148,6 +1148,28 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Sorts the given collection into a sorted list
+     *
+     * @param self the collection to be sorted
+     * @return the sorted collection as a List
+     */
+    public static List sort(Collection self) {
+        List answer = asList(self);
+        Collections.sort(answer);
+        return answer;
+    }
+    
+    /**
+     * Avoids doing unnecessary work when sorting an already sorted set
+     *
+     * @param self 
+     * @return the sorted set
+     */
+    public static SortedSet sort(SortedSet self) {
+        return self;
+    }
+    
+    /**
      * A convenience method for sorting a List
      *
      * @param self a List to be sorted
@@ -1186,6 +1208,17 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * A convenience method for sorting a Collection with a specific comparator
+     *
+     * @param self a collection to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return a newly created sorted List
+     */
+    public static List sort(Collection self, Comparator comparator) {
+        return sort(asList(self), comparator);
+    }
+
+    /**
      * A convenience method for sorting a List using a closure as a comparator
      *
      * @param self a List
@@ -1204,6 +1237,32 @@ public class DefaultGroovyMethods {
         return self;
     }
 
+    /**
+     * A convenience method for sorting a Collection using a closure as a comparator
+     *
+     * @param self a Collection to be sorted
+     * @param closure a Closure used as a comparator
+     * @return a newly created sorted List
+     */
+    public static List sort(Collection self, Closure closure) {
+        return sort(asList(self), closure);
+    }
+    
+    /**
+     * Converts the given collection into a List
+     * 
+     * @param self a collection to be converted into a List
+     * @return a newly created List if this collection is not already a List
+     */
+    public static List asList(Collection self) {
+        if (self instanceof List) {
+            return (List) self;
+        }
+        else {
+            return new ArrayList(self);
+        }
+    }
+    
     /**
      * Reverses the list
      *
@@ -1868,6 +1927,18 @@ public class DefaultGroovyMethods {
         return buffer.toString();
     }
 
+    /**
+     * Executes the given string as a command line process. For more control
+     * over the process mechanism in JDK 1.5 you can use java.lang.ProcessBuilder.
+     *
+     * @param self a command line String
+     * @return the Process which has just started for this command line string
+     */
+    public static Process execute(String self) throws IOException {
+        return Runtime.getRuntime().exec(self);
+    }
+
+    
     private static char next(char ch) {
         if (Character.isLetterOrDigit(++ch)) {
             return ch;
