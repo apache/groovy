@@ -1,16 +1,12 @@
 Things to Test
 ==============
 
-* make println() a global method so it can work in static methods too
-
-* document the script stuff and use of Groovy script!
-
 * test compiler errors when
+	- unknown variable
 	- unknown class
 		in new expression
 		in exception catching
 		in general class expression
-	- unknown variable
 
 * tidy up javadoc
 

@@ -219,7 +219,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitConstructor(ConstructorNode node) {
         // creates a MethodWriter for the (implicit) constructor
         //String methodType = Type.getMethodDescriptor(VOID_TYPE, )
-        
+
         this.methodNode = null;
 
         String methodType = getMethodDescriptor("void", node.getParameters());
@@ -926,6 +926,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitVariableExpression(VariableExpression expression) {
         // lets see if the variable is a field
         String variableName = expression.getVariable();
+        if (isStaticMethod() && variableName.equals("this")) {
+            visitClassExpression(new ClassExpression(classNode.getName()));
+            return;
+        }
         String className = classNode.getClassNameForExpression(variableName);
         if (className != null) {
             visitClassExpression(new ClassExpression(className));
@@ -1422,7 +1426,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // lets push this onto the stack
         definingParameters = true;
-        if (! isStaticMethod()) {
+        if (!isStaticMethod()) {
             defineVariable("this", classNode.getName()).getIndex();
         }
 
