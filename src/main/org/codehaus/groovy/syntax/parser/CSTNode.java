@@ -97,4 +97,9 @@ public class CSTNode
     {
         return (CSTNode[]) this.children.toArray( CSTNode.EMPTY_ARRAY );
     }
+    
+    public String toString()
+    {
+        return super.toString() + "[token=" + token + ",children=" + children + "]";
+    }
 }
