@@ -455,7 +455,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         onLineNumber(statement);
 
         //System.out.println("Assert: " + statement.getLineNumber() + " for: "
-		// + statement.getText());
+        // + statement.getText());
 
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
@@ -550,72 +550,115 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         CatchStatement catchStatement = statement.getCatchStatement(0);
 
-        String exceptionType = checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
+        if (catchStatement == null) {
+            final Label l0 = new Label();
+            cv.visitLabel(l0);
 
-        String exceptionVar = (catchStatement != null) ? catchStatement.getVariable() : createVariableName("exception");
+            statement.getTryStatement().visit(this);
 
-        int exceptionIndex = defineVariable(exceptionVar, exceptionType, false).getIndex();
-        int index2 = exceptionIndex + 1;
-        int index3 = index2 + 1;
+            int index1 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
+            int index2 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
 
-        final Label l0 = new Label();
-        cv.visitLabel(l0);
+            final Label l1 = new Label();
+            cv.visitJumpInsn(JSR, l1);
+            final Label l2 = new Label();
+            cv.visitLabel(l2);
+            final Label l3 = new Label();
+            cv.visitJumpInsn(GOTO, l3);
+            final Label l4 = new Label();
+            cv.visitLabel(l4);
+            cv.visitVarInsn(ASTORE, index1);
+            cv.visitJumpInsn(JSR, l1);
+            final Label l5 = new Label();
+            cv.visitLabel(l5);
+            cv.visitVarInsn(ALOAD, index1);
+            cv.visitInsn(ATHROW);
+            cv.visitLabel(l1);
+            cv.visitVarInsn(ASTORE, index2);
 
-        statement.getTryStatement().visit(this);
+            statement.getFinallyStatement().visit(this);
 
-        final Label l1 = new Label();
-        cv.visitLabel(l1);
-        Label l2 = new Label();
-        cv.visitJumpInsn(JSR, l2);
-        final Label l3 = new Label();
-        cv.visitLabel(l3);
-        Label l4 = new Label();
-        cv.visitJumpInsn(GOTO, l4);
-        final Label l5 = new Label();
-        cv.visitLabel(l5);
+            cv.visitVarInsn(RET, index2);
+            cv.visitLabel(l3);
 
-        cv.visitVarInsn(ASTORE, exceptionIndex);
+            exceptionBlocks.add(new Runnable() {
+                public void run() {
+                    cv.visitTryCatchBlock(l0, l2, l4, null);
+                    cv.visitTryCatchBlock(l4, l5, l4, null);
+                }
+            });
 
-        if (catchStatement != null) {
-            catchStatement.visit(this);
         }
+        else {
+            String exceptionVar = catchStatement.getVariable();
+            String exceptionType =
+                checkValidType(catchStatement.getExceptionType(), catchStatement, "in catch statement");
 
-        cv.visitJumpInsn(JSR, l2);
-        final Label l6 = new Label();
-        cv.visitLabel(l6);
-        cv.visitJumpInsn(GOTO, l4);
+            int exceptionIndex = defineVariable(exceptionVar, exceptionType, false).getIndex();
+            int index2 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
+            int index3 = defineVariable(this.createVariableName("exception"), "java.lang.Object").getIndex();
 
-        final Label l7 = new Label();
-        cv.visitLabel(l7);
-        cv.visitVarInsn(ASTORE, index2);
-        cv.visitJumpInsn(JSR, l2);
+            final Label l0 = new Label();
+            cv.visitLabel(l0);
 
-        final Label l8 = new Label();
-        cv.visitLabel(l8);
-        cv.visitVarInsn(ALOAD, index2);
-        cv.visitInsn(ATHROW);
-        cv.visitLabel(l2);
-        cv.visitVarInsn(ASTORE, index3);
+            statement.getTryStatement().visit(this);
 
-        statement.getFinallyStatement().visit(this);
+            final Label l1 = new Label();
+            cv.visitLabel(l1);
+            Label l2 = new Label();
+            cv.visitJumpInsn(JSR, l2);
+            final Label l3 = new Label();
+            cv.visitLabel(l3);
+            Label l4 = new Label();
+            cv.visitJumpInsn(GOTO, l4);
+            final Label l5 = new Label();
+            cv.visitLabel(l5);
 
-        cv.visitVarInsn(RET, index3);
-        cv.visitLabel(l4);
+            cv.visitVarInsn(ASTORE, exceptionIndex);
 
-        // rest of code goes here...
-
-        //final String exceptionTypeInternalName = (catchStatement != null) ?
-		// getTypeDescription(exceptionType) : null;
-        final String exceptionTypeInternalName = (catchStatement != null) ? getClassInternalName(exceptionType) : null;
-
-        exceptionBlocks.add(new Runnable() {
-            public void run() {
-                cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
-                cv.visitTryCatchBlock(l0, l3, l7, null);
-                cv.visitTryCatchBlock(l5, l6, l7, null);
-                cv.visitTryCatchBlock(l7, l8, l7, null);
+            if (catchStatement != null) {
+                catchStatement.visit(this);
             }
-        });
+
+            cv.visitJumpInsn(JSR, l2);
+            final Label l6 = new Label();
+            cv.visitLabel(l6);
+            cv.visitJumpInsn(GOTO, l4);
+
+            final Label l7 = new Label();
+            cv.visitLabel(l7);
+            cv.visitVarInsn(ASTORE, index2);
+            cv.visitJumpInsn(JSR, l2);
+
+            final Label l8 = new Label();
+            cv.visitLabel(l8);
+            cv.visitVarInsn(ALOAD, index2);
+            cv.visitInsn(ATHROW);
+            cv.visitLabel(l2);
+            cv.visitVarInsn(ASTORE, index3);
+
+            statement.getFinallyStatement().visit(this);
+
+            cv.visitVarInsn(RET, index3);
+            cv.visitLabel(l4);
+
+            // rest of code goes here...
+
+            //final String exceptionTypeInternalName = (catchStatement !=
+			// null) ?
+            // getTypeDescription(exceptionType) : null;
+            final String exceptionTypeInternalName =
+                (catchStatement != null) ? getClassInternalName(exceptionType) : null;
+
+            exceptionBlocks.add(new Runnable() {
+                public void run() {
+                    cv.visitTryCatchBlock(l0, l1, l5, exceptionTypeInternalName);
+                    cv.visitTryCatchBlock(l0, l3, l7, null);
+                    cv.visitTryCatchBlock(l5, l6, l7, null);
+                    cv.visitTryCatchBlock(l7, l8, l7, null);
+                }
+            });
+        }
     }
 
     public void visitSwitch(SwitchStatement statement) {
@@ -774,7 +817,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 || returnType.equals("byte")
                 || returnType.equals("int")
                 || returnType.equals("short")) { //byte,short,boolean,int are
-												 // all IRETURN
+            // all IRETURN
             MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
             cv.visitInsn(IRETURN);
         }
@@ -1052,9 +1095,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         subExpression.visit(this);
 
         // This is not the best way to do this. Javac does it by reversing the
-		// underlying expressions but that proved
+        // underlying expressions but that proved
         // fairly complicated for not much gain. Instead we'll just use a
-		// utility function for now.
+        // utility function for now.
         if (comparisonExpression(expression.getExpression())) {
             notBoolean.call(cv);
         }
@@ -1275,7 +1318,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
 
         // lets load an extra one just in case as we may be getting & putting a
-		// field
+        // field
         // @todo this is not ideal; need a better way of doing this
         //cv.visitVarInsn(ALOAD, 0);
         cv.visitVarInsn(ALOAD, 0);
@@ -1341,7 +1384,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                     variable = defineVariable(name, variableType, false);
                     visitPropertyExpression(new PropertyExpression(VariableExpression.THIS_EXPRESSION, name));
                     // We need to store this in a local variable now since it
-					// has been looked at in this scope and possibly
+                    // has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
                     cv.visitInsn(DUP);
                     cv.visitVarInsn(ASTORE, variable.getIndex());
@@ -1829,7 +1872,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
                 // lets replace this assignment to a subscript operator with a
-				// method call
+                // method call
                 // e.g. x[5] = 10
                 // -> (x, [], 5), =, 10
                 // -> methodCall(x, "set", [5, 10])
@@ -2087,7 +2130,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         //        if (!vars.isEmpty()) {
         //            System.out.println(classNode.getName() + " - closure is copying
-		// variables from outer context: " + vars);
+        // variables from outer context: " + vars);
         //        }
 
         Parameter[] answer = new Parameter[vars.size()];
@@ -2330,7 +2373,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 	 * @return the ASM type description
 	 */
     protected String getTypeDescription(String name) { // lets avoid class
-													   // loading
+        // loading
         // return getType(name).getDescriptor();
         if (name == null) {
             return "Ljava/lang/Object;";

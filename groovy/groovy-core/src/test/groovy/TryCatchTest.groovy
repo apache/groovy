@@ -14,12 +14,38 @@ class TryCatchTest extends GroovyTestCase {
             onFinally()
         }
         afterTryCatch()
-    }
+        assert exceptionCalled : "should have invoked the catch clause"        
+        assert finallyCalled : "should have invoked the finally clause"
+        println("After try/catch")
+     }
 
+     void testWorkingMethod() {
+         /** @todo causes inconsistent stack height
+          assert exceptionCalled == false : "should not invoked the catch clause"        
+          */
+         
+         try {
+	    	 workingMethod()
+	     }
+	     catch (AssertionError e) {
+		     onException(e)
+	     }
+	     finally {
+		     onFinally()
+	     }
+	     assert exceptionCalled == false : "should not invoked the catch clause"        
+	     assert finallyCalled : "should have invoked the finally clause"
+	     println("After try/catch")
+    }
+    
     void failingMethod() {
         assert false : "Failing on purpose"
 	}
 	
+    void workingMethod() {
+        assert true : "Should never fail"
+    }
+    
     void onException(e) {
 	    assert e != null
 	    exceptionCalled = true
@@ -33,5 +59,10 @@ class TryCatchTest extends GroovyTestCase {
         assert exceptionCalled : "should have invoked the catch clause"        
         assert finallyCalled : "should have invoked the finally clause"
         println("After try/catch")
+    }
+    
+    protected void setUp() {
+        exceptionCalled = false
+        finallyCalled = false
     }
 }
