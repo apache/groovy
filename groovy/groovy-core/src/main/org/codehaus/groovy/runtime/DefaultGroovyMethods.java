@@ -67,6 +67,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.MalformedURLException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -841,6 +843,17 @@ public class DefaultGroovyMethods {
             buffer.append(self.charAt(i));
         }
         return buffer.toString();
+    }
+
+    /**
+     * Transforms a String representing a URL into a URL object.
+     *
+     * @param self the String representing a URL
+     * @return a URL
+     * @throws MalformedURLException is thrown if the URL is not well formed.
+     */
+    public static URL toURL(String self) throws MalformedURLException {
+        return new URL(self);
     }
 
     private static String getPadding(String padding, int length) {
@@ -2923,6 +2936,36 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Parse a String into a Long
+     *
+     * @param self a String
+     * @return a Long
+     */
+    public static Long toLong(String self) {
+        return Long.valueOf(self);
+    }
+
+    /**
+     * Parse a String into a Float
+     *
+     * @param self a String
+     * @return a Float
+     */
+    public static Float toFloat(String self) {
+        return Float.valueOf(self);
+    }
+
+    /**
+     * Parse a String into a Double
+     *
+     * @param self a String
+     * @return a Double
+     */
+    public static Double toDouble(String self) {
+        return Double.valueOf(self);
+    }
+
+    /**
      * Transform a Number into an Integer
      *
      * @param self a Number
@@ -2979,7 +3022,7 @@ public class DefaultGroovyMethods {
         return plus(self, -days);
     }
 
-    // File based methods
+    // File and stream based methods
     //-------------------------------------------------------------------------
 
     /**
@@ -3126,6 +3169,31 @@ public class DefaultGroovyMethods {
      */
     public static String getText(File file) throws IOException {
         BufferedReader reader = newReader(file);
+        return getText(reader);
+    }
+
+    /**
+     * Reads the content of this URL and returns it as a String
+     *
+     * @param url URL to read content from
+     * @return the text from that URL
+     * @throws IOException
+     */
+    public static String getText(URL url) throws IOException {
+        return getText(url, CharsetToolkit.getDefaultSystemCharset().toString());
+    }
+
+    /**
+     * Reads the content of this URL and returns it as a String
+     *
+     * @param url URL to read content from
+     * @param charset opens the stream with a specified charset
+     * @return the text from that URL
+     * @throws IOException
+     */
+    public static String getText(URL url, String charset) throws IOException {
+        BufferedReader reader = new BufferedReader(
+            new InputStreamReader(url.openConnection().getInputStream(), charset));
         return getText(reader);
     }
 
@@ -3604,6 +3672,28 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Iterates through the lines read from the URL's associated input stream
+     *
+     * @param url a URL to open and read
+     * @param closure a closure to apply on each line
+     * @throws IOException
+     */
+    public static void eachLine(URL url, Closure closure) throws IOException {
+        eachLine(url.openConnection().getInputStream(), closure);
+    }
+
+    /**
+     * Helper method to create a new BufferedReader for a URL and then
+     * passes it into the closure and ensures its closed again afterwords
+     *
+     * @param url a URL
+     * @throws FileNotFoundException
+     */
+    public static void withReader(URL url, Closure closure) throws IOException {
+        withReader(url.openConnection().getInputStream(), closure);
+    }
+
+    /**
      * Helper method to create a new BufferedReader for a stream and then
      * passes it into the closure and ensures its closed again afterwords
      *
@@ -3684,13 +3774,24 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates through the given file byte by byte.
+     * Traverse through each byte of the specified File
      *
      * @param self a File
      * @param closure a closure
      */
     public static void eachByte(File self, Closure closure) throws IOException {
         BufferedInputStream is = newInputStream(self);
+        eachByte(is, closure);
+    }
+
+    /**
+     * Traverse through each byte of the specified stream
+     *
+     * @param is stream to iterate over
+     * @param closure closure to apply to each byte
+     * @throws IOException
+     */
+    public static void eachByte(InputStream is, Closure closure) throws IOException {
         try {
             while (true) {
                 int b = is.read();
@@ -3716,7 +3817,26 @@ public class DefaultGroovyMethods {
         }
     }
 
-    public static void filter(Writer writer, Reader reader, Closure closure) {
+    /**
+     * Traverse through each byte of the specified URL
+     *
+     * @param url url to iterate over
+     * @param closure closure to apply to each byte
+     * @throws IOException
+     */
+    public static void eachByte(URL url, Closure closure) throws IOException {
+        InputStream is = url.openConnection().getInputStream();
+        eachByte(is, closure);
+    }
+
+    /**
+     * Transforms the characters from a reader with a Closure and write them to a writer
+     *
+     * @param reader
+     * @param writer
+     * @param closure
+     */
+    public static void transformChar(Reader reader, Writer writer, Closure closure) {
         int c;
         try {
             char[] chars = new char[1]; 
@@ -3728,6 +3848,83 @@ public class DefaultGroovyMethods {
         }
     }
     
+    /**
+     * Transforms the lines from a reader with a Closure and write them to a writer
+     *
+     * @param reader
+     * @param writer
+     * @param closure
+     */
+    public static void transformLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        BufferedReader br = new BufferedReader(reader);
+        BufferedWriter bw = new BufferedWriter(writer);
+        String line;
+        while ((line = br.readLine()) != null) {
+            Object o = closure.call(line);
+            if (o != null) {
+                bw.write(o.toString());
+                bw.newLine();
+            }
+        }
+    }
+
+    /**
+     * Filter the lines from a reader and write them on the writer, according to a closure
+     * which returns true or false.
+     *
+     * @param reader a reader
+     * @param writer a writer
+     * @param closure the closure which returns booleans
+     * @throws IOException
+     */
+    public static void filterLine(Reader reader, Writer writer, Closure closure) throws IOException {
+        BufferedReader br = new BufferedReader(reader);
+        BufferedWriter bw = new BufferedWriter(writer);
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (InvokerHelper.asBool(closure.call(line))) {
+                bw.write(line);
+                bw.newLine();
+            }
+        }
+    }
+
+    /**
+     * Filter the lines of a Reader and create a Writable in return to stream the filtered lines
+     *
+     * @param reader a reader
+     * @param closure a closure returning a boolean indicating to filter or not a line
+     * @return a Writable closure
+     */
+    public static Writable filterLine(Reader reader, final Closure closure) {
+        final BufferedReader br = new BufferedReader(reader);
+        return new Writable() {
+            public Writer writeTo(Writer out) throws IOException {
+                BufferedWriter bw = new BufferedWriter(out);
+                String line;
+                while ((line = br.readLine()) != null) {
+                    if (InvokerHelper.asBool(closure.call(line))) {
+                        bw.write(line);
+                        bw.newLine();
+                    }
+                }
+                bw.flush();
+                return out;
+            }
+
+            public String toString() {
+                StringWriter buffer = new StringWriter();
+                try {
+                    writeTo(buffer);
+                }
+                catch (IOException e) {
+                    throw new RuntimeException(e); // TODO: change this exception type
+                }
+                return buffer.toString();
+            }
+        };
+    }
+
     /**
      * Reads the content of the file into an array of byte
      *
@@ -3741,6 +3938,8 @@ public class DefaultGroovyMethods {
         fileInputStream.close();
         return bytes;
     }
+
+
 
     // ================================
     // Socket and ServerSocket methods
@@ -3923,6 +4122,7 @@ public class DefaultGroovyMethods {
             closure.call(groups);
     	}
     }
+
     /**
      * Iterates over every element of the collection and return the index of the first object 
      * that matches the condition specified in the closure
