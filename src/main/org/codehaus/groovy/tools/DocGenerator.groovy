@@ -59,7 +59,7 @@ class DocGenerator
 			if (method.isPublic() && method.isStatic())
 			{
 				parameters = method.getParameters()
-				jdkClass = parameters[0]
+				jdkClass = parameters[0].toString()
 				if (jdkEnhancedClasses.containsKey(jdkClass))
 					jdkEnhancedClasses[jdkClass].add(method)
 				else
@@ -84,12 +84,25 @@ class DocGenerator
 			writer.println(" <p>New methods added to the JDK to make it more groovy.</p>")
 
 			writer2 = writer
-			jdkEnhancedClasses.each{e |
-				writer2.print("<h2>${getObjectType(e.key.getType())}</h2>")
+		
+			// lets iterate in sorted class name order
+			sortedClasses = [] + jdkEnhancedClasses.keySet()
+			sortedClasses.sort().each { className |
+				writer2.print("<h2>${getObjectType(className)}</h2>")
 
-				listOfMethods = e.value
-				for (meth in listOfMethods)
-				{
+				listOfMethods = jdkEnhancedClasses[className]
+				
+				// lets sort the methods by name
+				methodNames = []
+				methodMap = [:]
+				for (meth in listOfMethods) {
+				    name = meth.name
+				    methodNames << name
+				    methodMap[name] = meth
+				}
+				
+				for (name in methodNames.sort()) {
+				    meth = methodMap[name]
 				    //writer2.println("<p><b>${e.key.getName()}.${meth.getName()}(${getParametersDecl(meth)})</b></p>")
 				    writer2.println("<p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
 					writer2.println("<p>${getComment(meth)}</p>")
