@@ -13,7 +13,6 @@ import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.GroovyException;

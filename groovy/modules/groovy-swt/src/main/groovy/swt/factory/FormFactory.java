@@ -147,6 +147,8 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
                     Composite page = pageBook.createPage(key);
                     pageBook.registerPage(key, page);
                     return page;
+                } else {
+					 throw new GroovyException("attribute \"key\" is " + key);
                 }
             } else {
                 throw new InvalidParentException("formPageBook");
