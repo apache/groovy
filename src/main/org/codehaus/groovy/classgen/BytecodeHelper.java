@@ -73,6 +73,13 @@ public class BytecodeHelper implements Constants {
         }
     }
 
+    public void box(String type) {
+        if (isPrimitiveType(type) && !type.equals("void")) {
+            String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
+            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "box", returnString);
+        }
+    }
+
     /**
      * Generates the bytecode to unbox the current value on the stack
      */
@@ -263,5 +270,28 @@ public class BytecodeHelper implements Constants {
             name = type.getComponentType().getName() + "[]";
         }
         doCast(name);
+    }
+
+    public void load(String type, int idx) {
+        if (type.equals("double")) {
+            cv.visitVarInsn(DLOAD, idx);
+        }
+        else if (type.equals("float")) {
+            cv.visitVarInsn(FLOAD, idx);
+        }
+        else if (type.equals("long")) {
+            cv.visitVarInsn(LLOAD, idx);
+        }
+        else if (
+            type.equals("boolean")
+                || type.equals("char")
+                || type.equals("byte")
+                || type.equals("int")
+                || type.equals("short")) {
+            cv.visitVarInsn(ILOAD, idx);
+        }
+        else {
+            cv.visitVarInsn(ALOAD, idx);
+        }
     }
 }
