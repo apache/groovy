@@ -4,8 +4,12 @@
 
 <!-- DC currently has trouble creating the wiki pages 
   <goal name="dc" prereqs="clean, test, site:deploy"/>
--->
+  
+  and this seems to run the unit test cases twice for some wierd reason!
+  
   <goal name="dc" prereqs="clean, test, site"/>
+-->
+  <goal name="dc" prereqs="clean, test"/>
 
   <preGoal name="site:deploy">
   	<attainGoal name="javadoc"/>
