@@ -1,19 +1,6 @@
 Things to Test
 ==============
 
-* interative shell for entering commands
-	groovy> x = [1, 2, 3]
-	groovy> print(x)
-	[1, 2, 3]
-	
-* UI shell (eclipse?) for evaluating groovy
-
-* throw statement
-* synchronized statement
-* switch statement
-
-* maybe refactor ScriptContext into GroovyShell?
-
 * test methods which return a specific type
 
 * why do the try/catch tests fail when run inside an IDE?
@@ -54,6 +41,87 @@ Things to Test
 	
 Core Groovy Tasks
 =================
+
+* templating - allow looping & conditionals?
+
+text = "
+<table>
+#for (f in foo)
+<tr>
+<td>${f.name}
+</tr>
+#end
+</table>
+"
+
+
+* SQL builder
+
+sql.table("users") {
+ÊÊÊ column('user-id') { autoinc(), primaryKey(), references('foo'), initialValue(1234) }
+ÊÊÊ column('nickname') { varchar(200) }
+	column(name:'foo', type:'varchar(200)', references:['a', 'b'], initialValue:1234)
+  }
+}
+
+* using mixin for adding using style behaviour to any object??
+
+	mixin Using {
+	
+		static using(yield) {
+			object = this.newInstance()
+			try {
+				yield(object)
+				object.close()
+			}
+			catch (Exception e) {
+				try {
+					object.close()
+				}
+				catch (Exception e2)
+					// ignore e2
+					throw e
+				}
+			}
+		}
+		
+		or
+		
+		using(yield) {
+			try {
+				yield(this)
+				close()
+			}
+			catch (Exception e) {
+				try {
+					close()
+				}
+				catch (Exception e2)
+					// ignore e2
+					throw e
+				}
+			}
+		}
+	}
+	
+	then use it as 
+	
+		new FileInputStream().using { in |
+			...
+		}
+
+* interative shell for entering commands
+	groovy> x = [1, 2, 3]
+	groovy> print(x)
+	[1, 2, 3]
+	
+* UI shell (eclipse?) for evaluating groovy
+
+* throw statement
+* synchronized statement
+* switch statement
+
+* maybe refactor ScriptContext into GroovyShell?
 
 * GroovyServlet - serves up *.groovy files
 
