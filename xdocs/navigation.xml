@@ -5,6 +5,8 @@
   <body>
     <links>
       <item name="Wiki"                href="http://wiki.codehaus.org/groovy/"/>
+      <item name="JavaDoc"             href="apidocs/index.html"/>
+      <item name="CVS"             	   href="cvs-usage.html"/>
       <item name="IRC"				   href="irc://irc.codehaus.org/groovy"/>
       <item name="IRC Log"			   href="http://irc.codehaus.org/channels/groovy/"/>
       <item name="Stats"			   href="http://stats.groovy.codehaus.org/"/>
