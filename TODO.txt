@@ -8,6 +8,8 @@
 * test use of methods-as-closures
 	foo = bean.someMethod;
 	foo.call(arguments);
+
+* test use of assert statements
 	
 * support static new() method for constructors
 
