@@ -101,6 +101,11 @@
     </dependency>
 
     <dependency>
+      <id>classworlds</id>
+      <version>SNAPSHOT</version>
+    </dependency>
+
+    <dependency>
       <id>commons-cli</id>
       <version>1.0</version>
     </dependency>

@@ -23,4 +23,27 @@
         </java>
   </goal>
 
+  <goal name="groovy:make-install" prereqs="jar:jar">
+    <echo>${groovy.install.staging.dest}</echo>
+    <mkdir dir="${groovy.install.staging.dest}"/>
+    <mkdir dir="${groovy.install.staging.dest}/lib"/>
+    <mkdir dir="${groovy.install.staging.dest}/bin"/>
+    <mkdir dir="${groovy.install.staging.dest}/conf"/>
+    <j:forEach var="lib" items="${pom.artifacts}">
+      <copy file="${lib.path}" toDir="${groovy.install.staging.dest}/lib"/>
+    </j:forEach>
+    <copy file="${maven.build.dir}/${maven.final.name}.jar" toDir="${groovy.install.staging.dest}/lib"/>
+    <copy toDir="${groovy.install.staging.dest}/bin">
+      <fileset dir="${maven.src.dir}/bin">
+        <include name="*"/>
+      </fileset>
+    </copy>
+    <chmod perm="ugo+x">
+      <fileset dir="${groovy.install.staging.dest}/bin">
+        <include name="*"/>
+      </fileset>
+    </chmod>
+    <copy file="${maven.src.dir}/conf/classworlds.conf" toDir="${groovy.install.staging.dest}/conf"/>
+  </goal>
+
 </project>
