@@ -25,7 +25,7 @@ class Groovy252_Bug extends GroovyTestCase {
     } 
     
     def g() {
-         count++
+         ++count
          return null
     } 
     
