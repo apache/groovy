@@ -53,6 +53,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.Token;
 
@@ -90,11 +91,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (expression.getOperation().getType() == Token.EQUAL && leftExpression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) leftExpression;
-            String variable = varExp.getVariable();
-            if (!parameterSet.contains(variable)) {
-                declaredVariables.add(variable);
-            }
+            declareVariable((VariableExpression) leftExpression);
         }
         else {
             leftExpression.visit(this);
@@ -115,10 +112,29 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         }
     }
 
+    public void visitPostfixExpression(PostfixExpression expression) {
+        Expression exp = expression.getExpression();
+        if (exp instanceof VariableExpression) {
+            declareVariable((VariableExpression) exp);
+        }
+        else {
+            exp.visit(this);
+        }
+    }
+    
     protected void setParameters(Parameter[] parameters) {
         parameterSet.clear();
         for (int i = 0; i < parameters.length; i++) {
             parameterSet.add(parameters[i].getName());
         }
     }
+
+    protected void declareVariable(VariableExpression varExp) {
+        String variable = varExp.getVariable();
+        if (!parameterSet.contains(variable)) {
+            declaredVariables.add(variable);
+            referencedVariables.add(variable);
+        }
+    }
+
 }

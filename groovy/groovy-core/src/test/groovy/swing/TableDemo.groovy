@@ -14,6 +14,7 @@ class TableDemo {
     void run() {
         swing = new SwingBuilder()
         
+        model = null
         frame = swing.frame(title:'Groovy TableModel Demo', location:[200,200], size:[300,200]) {
             menuBar {
 		        menu(text:'Help') {
@@ -23,9 +24,10 @@ class TableDemo {
 		        }
 		    }
 		    panel(layout:new BorderLayout()) {
-    	        scrollPane(constraints:BorderLayout.CENTER) {
+		        model = [['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]
+		        scrollPane(constraints:BorderLayout.CENTER) {
     	            table() {
-    	                tableModel(list:[['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]) {
+    	                tableModel(list:model) {
                             closureColumn(header:'Name', read:{row| return row.name})
                             closureColumn(header:'Location', read:{row| return row.location})
     	                }

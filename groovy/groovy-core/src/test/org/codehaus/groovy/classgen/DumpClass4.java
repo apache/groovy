@@ -104,4 +104,16 @@ public class DumpClass4 {
     public static void makeInstance() {
         InvokerHelper.invokeConstructorOf(DumpClass4.class, null);
     }
-}
+    
+    public void makeNestedArray() {
+        InvokerHelper.invokeMethod("outer", "foo", new Object[] { InvokerHelper.invokeMethod("inner", "plus", new Object[] { "1" } ) });
+    }
+    
+    public void makeNestedEmptyArray() {
+        InvokerHelper.invokeMethod("outer", "foo", new Object[] { InvokerHelper.invokeMethod("inner", "plus", new Object[] {} ) });
+    }
+    
+    public Object makeAnotherArray(Object a, Object b) {
+        return new Object[] { a, b };
+    }
+   }
