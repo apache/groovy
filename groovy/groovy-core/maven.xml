@@ -46,6 +46,8 @@
 
 <!--    <attainGoal name="antlr:generate"/> -->
 
+    <mkdir dir="${maven.antlr.target.dir}/org/codehaus/groovy/antlr/parser"/>
+    
     <antlr target="${maven.antlr.src.dir}/${maven.antlr.grammars}"
            outputdirectory="${maven.antlr.target.dir}/org/codehaus/groovy/antlr/parser">
       <classpath refid="maven.dependency.classpath"/>
@@ -351,8 +353,6 @@
         <!--
         -->
         <exclude name="**/*Demo.groovy"/>
-        <exclude name="**/Html2Wiki.groovy"/>
-        <exclude name="**/dom/DOMTest.groovy"/>
 
       </fileset>
     </copy>

@@ -805,7 +805,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected CaseStatement caseStatement(AST node) {
         Expression expression = expression(node.getFirstChild());
-        Statement statement = statement(node.getNextSibling());
+        AST nextSibling = node.getNextSibling();
+        Statement statement = EmptyStatement.INSTANCE;
+        if (!isType(LITERAL_default, nextSibling)) {
+             statement = statement(nextSibling);
+        }
         CaseStatement answer = new CaseStatement(expression, statement);
         configureAST(answer, node);
         return answer;
