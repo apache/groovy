@@ -227,11 +227,12 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 	            	            return method.invoke(this, newParameters);
 	            	        }
 	            	        catch (IllegalArgumentException e1) {
-	            	        		// drop through and throw the exception
+	            	        		// curry?
+	            	        		// return curry(newParameters);
 	            	        }
 	        			}
 	        		}
-	        		
+	        		// return curry(arguments);
 	            throw new IncorrectClosureArgumentsException(this, arguments, method.getParameterTypes());
 	        }
         }
@@ -491,7 +492,12 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
          * @see groovy.lang.Closure#call(java.lang.Object)
          */
         public Object call(Object args) {
-            Object[] new_args = (Object[]) args;
+            Object[] new_args;
+            if (args instanceof Object[]) {
+            		new_args = (Object[]) args;
+            } else {
+            		new_args = new Object[] { args };
+            }
             Object[] all_args = new Object[new_args.length + this.curried_args.length];
 
             System.arraycopy(this.curried_args, 0, all_args, 0, this.curried_args.length);
