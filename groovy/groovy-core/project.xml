@@ -115,6 +115,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Matt Foemmel</name>
+      <id>mattf</id>
+      <email></email>
+      <organization>ThoughtWorks</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <dependencies>
@@ -186,6 +195,12 @@
       <properties>
           <bootstrap>true</bootstrap>
       </properties>
+    </dependency>
+
+  <!-- only used for GroovyMock tools -->
+    <dependency>
+      <id>mockobjects</id>
+      <version>core-0.09</version>
     </dependency>
 
   </dependencies>
