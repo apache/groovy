@@ -16,8 +16,6 @@ Things to Test
 
 * home page tester
 
-* why Swing setters stopped working
-
 * do wiki plugin to auto-test the examples
 
 * test synchronized statement
@@ -30,11 +28,6 @@ Things to Test
 	- duplicate methods test
 	- duplicate class in module
 	
-* why line numbers not right?
-
-* why this? java.lang.ClassFormatError: ExceptionInClosureTest (Illegal Class name "Lorg/codehaus/groovy/runtime/InvokerException;")
-	when running it in GroovyClassLoader
-	
 * duplicate class definition: ClosureMethodTest$4
 	<bob>	java.lang.LinkageError: duplicate class definition: ClosureMethodTest$4
 	<bob>	        at java.lang.ClassLoader.defineClass0(Native Method)
@@ -44,8 +37,6 @@ Things to Test
 	<bob>	        at org.codehaus.groovy.classgen.TestSupport$1.onClassNode(TestSupport.java:96)
 
 
-* why do the try/catch tests fail when run inside an IDE?
-
 * test date range using Range object
 
 * test max, min, sort with closure comparator
@@ -53,8 +44,6 @@ Things to Test
 		foo.max { a, b | a.length <=> b.length }
 	- ClosureComparator
 			
-* test use of GroovyClassLoader with importing of other classes (e.g. java.lang.*)
-
 * test Button(actionPerformed:{event| event.println() }
 
 * remove dependency on asm-util on the compiler
