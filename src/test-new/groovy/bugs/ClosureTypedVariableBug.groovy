@@ -12,13 +12,13 @@ class ClosureTypedVariableBug extends GroovyTestCase {
     }
 
 
-    makeClosure(Number count) {
+    def makeClosure(Number count) {
         closure = { count = it }
         closure(1)
         return count
     }
 
-    makeClosure2(Number c) {
+    def makeClosure2(Number c) {
         count = c
         closure = { count = it }
         closure(1)
