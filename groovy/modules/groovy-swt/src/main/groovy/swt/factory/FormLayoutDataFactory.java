@@ -1,6 +1,6 @@
 /*
  * Created on Feb 16, 2004
- *
+ *  
  */
 package groovy.swt.factory;
 
@@ -12,18 +12,19 @@ import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.widgets.Control;
 
-
 /**
- * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> 
- * $Id LayoutDataFactory.java,v 1.2 2004/03/18 08:51:47 ckl Exp $
+ * @author <a href:ckl at dacelo.nl">Christiaan ten Klooster </a> $Id
+ *         LayoutDataFactory.java,v 1.2 2004/03/18 08:51:47 ckl Exp $
  */
-public class FormLayoutDataFactory extends AbstractSwtFactory implements SwtFactory {
+public class FormLayoutDataFactory extends AbstractSwtFactory implements
+        SwtFactory {
 
     /*
      * @see groovy.swt.impl.SwtFactory#newInstance(java.util.Map,
      *      java.lang.Object)
      */
-    public Object newInstance(Map properties, Object parent) throws GroovyException {
+    public Object newInstance(Map properties, Object parent)
+            throws GroovyException {
         // get attachment properties
         List left = (List) properties.remove("left");
         List right = (List) properties.remove("right");
@@ -51,10 +52,12 @@ public class FormLayoutDataFactory extends AbstractSwtFactory implements SwtFact
             control.setLayoutData(formData);
         }
 
+        // set remaining properties
+        setBeanProperties(formData, properties);
+
         // return formdata
         return formData;
     }
-
 
     /**
      * @param list
@@ -69,16 +72,16 @@ public class FormLayoutDataFactory extends AbstractSwtFactory implements SwtFact
             for (int i = 0; i < list.size(); i++) {
                 if (list.get(i).getClass() == Integer.class) {
                     types[i] = int.class;
-                }
-                else if (list.get(i) instanceof Control) {
+                } else if (list.get(i) instanceof Control) {
                     types[i] = Control.class;
-                }
-                else {
-                    throw new GroovyException("list element must be of type 'int' or 'Control': "
-                            + list.get(i));
+                } else {
+                    throw new GroovyException(
+                            "list element must be of type 'int' or 'Control': "
+                                    + list.get(i));
                 }
             }
-            Constructor constructor = FormAttachment.class.getConstructor(types);
+            Constructor constructor = FormAttachment.class
+                    .getConstructor(types);
 
             // invoke constructor
             if (constructor != null) {
@@ -86,10 +89,10 @@ public class FormLayoutDataFactory extends AbstractSwtFactory implements SwtFact
                 for (int i = 0; i < list.size(); i++) {
                     values[i] = list.get(i);
                 }
-                formAttachment = (FormAttachment) constructor.newInstance(values);
+                formAttachment = (FormAttachment) constructor
+                        .newInstance(values);
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new GroovyException(e.getMessage());
         }
         return formAttachment;
