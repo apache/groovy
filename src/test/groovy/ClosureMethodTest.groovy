@@ -137,10 +137,16 @@ class ClosureMethodTest extends GroovyTestCase {
         assert value == 6
     }
     
-    void testInspect() {
-        text = inspect()
-        println(text)
+    void testDump() {
+        text = dump()
+        println("Dumping object ${text}")
         assert text != null && text.startsWith("<")
+    }
+
+    void testInspect() {
+        text = [1, 2, 'three'].inspect()
+        println("Inspecting ${text}")
+        assert text == '[1, 2, "three"]'
     }
 
     void testEachLine() {

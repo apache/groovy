@@ -134,15 +134,27 @@ public class GroovyTestCase extends TestCase {
     }
     
     /**
-     * Asserts that the console output of the given object matches the
+     * Asserts that the value of toString() on the given object matches the
      * given text string
      * 
      * @param value the object to be output to the console
      * @param expected the expected String representation
      */
-    protected void assertConsoleOutput(Object value, String expected) {
-        Object console = InvokerHelper.invokeMethod(value, "toConsoleOutput", null);
-        assertEquals("toConsoleOutput() on value: " + value, expected, console);
+    protected void assertToString(Object value, String expected) {
+        Object console = InvokerHelper.invokeMethod(value, "toString", null);
+        assertEquals("toString() on value: " + value, expected, console);
+    }
+    
+    /**
+     * Asserts that the value of inspect() on the given object matches the
+     * given text string
+     * 
+     * @param value the object to be output to the console
+     * @param expected the expected String representation
+     */
+    protected void assertInspect(Object value, String expected) {
+        Object console = InvokerHelper.invokeMethod(value, "inspect", null);
+        assertEquals("inspect() on value: " + value, expected, console);
     }
     
     

@@ -9,9 +9,6 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
     }
 
     void testSubscriptIncrement() {
-        /** @todo bug
-        foo = [5]
-        */
         foo = [5, 6, 7]
         foo[0] += 5
         
@@ -25,6 +22,21 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         foo[i++] += 5
         assert i == 2
         assert foo[1] == 11
+    }
+
+    void testLargeSubscript() {
+        foo = [1]
+        
+        foo[10] = 123
+        
+        assert foo[10] == 123
+        
+        i = 20
+        foo[i++] += 5
+        
+        assert i == 21
+        assert foo[20] == 5
+        
     }
     
     void testDoubleSubscript() {

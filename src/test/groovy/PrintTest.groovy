@@ -1,15 +1,30 @@
 class PrintTest extends GroovyTestCase {
 
-    void testPrint() {
-        assertConsoleOutput("hello", 'hello')
+    /*
+    void testToString() {
+        assertToString("hello", 'hello')
         
-        assertConsoleOutput([], "[]")
-        assertConsoleOutput([1, 2, "hello"], '[1, 2, hello]')
+        assertToString([], "[]")
+        assertToString([1, 2, "hello"], '[1, 2, hello]')
         
-        assertConsoleOutput([1:20, 2:40, 3:'cheese'], '[1:20, 2:40, 3:cheese]')
-        assertConsoleOutput([:], "[:]")
+        assertToString([1:20, 2:40, 3:'cheese'], '[1=20, 2=40, 3=cheese]')
+        assertToString([:], "[:]")
 
-        assertConsoleOutput([['bob':'drools', 'james':'geronimo']], '[[james:geronimo, bob:drools]]')
-        assertConsoleOutput([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, [bob, james], [james:geronimo, bob:drools], cheese]')
-	}
+        assertToString([['bob':'drools', 'james':'geronimo']], '[[james:geronimo, bob:drools]]')
+        assertToString([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, [bob, james], [james:geronimo, bob:drools], cheese]')
+    }
+    */
+
+    void testInspect() {
+        assertInspect("hello", '"hello"')
+        
+        assertInspect([], "[]")
+        assertInspect([1, 2, "hello"], '[1, 2, "hello"]')
+        
+        assertInspect([1:20, 2:40, 3:'cheese'], '[1:20, 2:40, 3:"cheese"]')
+        assertInspect([:], "[:]")
+
+        assertInspect([['bob':'drools', 'james':'geronimo']], '[["james":"geronimo", "bob":"drools"]]')
+        assertInspect([5, ["bob", "james"], ["bob":"drools", "james":"geronimo"], "cheese"], '[5, ["bob", "james"], ["james":"geronimo", "bob":"drools"], "cheese"]')
+    }
 }

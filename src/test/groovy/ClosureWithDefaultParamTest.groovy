@@ -125,12 +125,6 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
         assert value == [4, 3, 2, 1]
     }
     
-    void testInspect() {
-        text = inspect()
-        println(text)
-        assert text != null && text.startsWith("<")
-    }
-
     void testEachLine() {
         file = new File("src/test/groovy/Bar.groovy")
         

@@ -11,7 +11,7 @@ class SubscriptOnStringArrayBug extends TestSupport {
         
         assert array[0] == "d"
         
-        println("Contents of array are ${array.toConsoleOutput()}")
+        println("Contents of array are ${array.inspect()}")
     }
     
     void testRobsTestCase() {
