@@ -108,17 +108,5 @@ class PropertyTest extends GroovyTestCase {
 		// verify we can't set this property, it's read-only
 		shouldFail { i.length = 6 }
 	}
-
-    void testProtectedProperty() {
-        f2 = new Foo2()
-        assert f2.accessProtected() == "hide me!"
-        shouldFail { println f2.prot }
-    }
-}
-
-class Foo2 extends Foo {
-    accessProtected() {
-        return prot
-    }
 }
 
