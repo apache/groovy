@@ -80,9 +80,11 @@ public class CompilerConfiguration
     private boolean     debug;            // If true, debugging code should be activated
     private int         tolerance;        // The number of non-fatal errors to allow before bailing
     private String      scriptBaseClass;  // Base class name for scripts (must derive from Script)
+    private boolean     useNewGroovy;     // should we use the New JSR Groovy parser or stay with the static one
 
-    
-    
+
+
+
    /**
     *  Sets the Flags to defaults.
     */
