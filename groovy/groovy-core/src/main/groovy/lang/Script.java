@@ -92,6 +92,24 @@ public abstract class Script extends GroovyObjectSupport {
         //System.out.println("binding are now: " + binding.getVariables());
     }
 
+    public Object invokeMethod(String name, Object args)
+    {
+        try
+        {
+            return super.invokeMethod(name, args);
+        }
+        catch (MissingMethodException mme)
+        {
+            Object boundClosure = binding.getVariable(name);
+            if (boundClosure != null && boundClosure instanceof Closure) {
+                return ((Closure)boundClosure).call(args);
+            }
+            else {
+                throw new MissingMethodException(name, this.getClass(), (Object[]) args);
+            }
+        }
+    }
+
     /**
      * The main instance method of a script which has variables in scope
      * as defined by the current {@link Binding} instance.
