@@ -11,4 +11,17 @@ class ClosureVariableBug extends GroovyTestCase {
         count = 1
         closure(1)
     }
+    
+    void testPassingClosureAsNamedParameter() {
+        x = 123
+        
+        foo = new Expando(a:{x}, b:456)
+    
+    	assert foo.a != null
+        
+        println "Foo has a = ${foo.a}"
+        
+    	value = foo.a()
+    	assert value == 123
+    }
 }

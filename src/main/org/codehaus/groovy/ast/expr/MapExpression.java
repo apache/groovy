@@ -83,6 +83,10 @@ public class MapExpression extends Expression {
         return new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
     }
     
+    public String toString() {
+        return super.toString() + mapEntryExpressions;
+    }
+
     public void addMapEntryExpression(Expression keyExpression, Expression valueExpression) {
         addMapEntryExpression(new MapEntryExpression(keyExpression, valueExpression));
     }

@@ -71,6 +71,10 @@ public class MapEntryExpression extends Expression {
         return new MapEntryExpression(transformer.transform(keyExpression), transformer.transform(valueExpression)); 
     }
     
+    public String toString() {
+        return super.toString() + "(key: " + keyExpression + ", value: " + valueExpression + ")";
+    }
+
     public Expression getKeyExpression() {
         return keyExpression;
     }
