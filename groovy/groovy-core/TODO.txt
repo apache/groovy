@@ -1,6 +1,9 @@
 Core Groovy Tasks
 =================
 
+* GroovyAnt...
+	an Ant builder
+
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
 

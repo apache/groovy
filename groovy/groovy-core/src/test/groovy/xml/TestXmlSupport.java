@@ -43,56 +43,33 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+package groovy.xml;
+
+import java.io.IOException;
+
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.codehaus.groovy.classgen.TestSupport;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
- * A helper class for creating nested trees of Node objects for 
- * handling arbitrary data
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NodeBuilder extends BuilderSupport {
+public abstract class TestXmlSupport extends TestSupport {
 
-    public static NodeBuilder newInstance() {
-        return new NodeBuilder();
-    }
-
-    protected void setParent(Object parent, Object child) {
-        Node current = (Node) parent;
-        Node node = (Node) child;
-
-        // lets add it to the parents children
-        Object parentValue = current.value();
-        List parentList = null;
-        if (parentValue instanceof List) {
-            parentList = (List) parentValue;
+    protected void dump(Node node) throws IOException {
+        XMLSerializer printer = new XMLSerializer(System.out, new OutputFormat());
+        if (node instanceof Document) {
+            printer.serialize((Document) node);
         }
         else {
-            parentList = new ArrayList();
-            parentList.add(parentValue);
-            current.setValue(parentList);
+            printer.serialize((Element) node);
         }
-        parentList.add(node);
     }
 
-    protected Object createNode(Object name) {
-        return new Node(getCurrentNode(), name, new ArrayList());
-    }
-
-    protected Object createNode(Object name, Object value) {
-        return new Node(getCurrentNode(), name, value);
-    }
-
-    protected Object createNode(Object name, Map attributes) {
-        return new Node(getCurrentNode(), name, attributes, new ArrayList());
-    }
-
-    protected Node getCurrentNode() {
-        return (Node) getCurrent();
-    }
 }
