@@ -379,7 +379,7 @@ public class Invoker {
      */
     public Object getProperty(Object object, String property) {
         if (object == null) {
-            throw new InvokerException("Cannot get property on null object");
+            throw new NullPointerException("Cannot get property: " + property + " on null object");
         }
         else if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
