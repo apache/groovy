@@ -228,6 +228,21 @@ public class InvokeMethodTest extends GroovyTestCase {
         assertEquals("called with null", param + null, value);
     }
 
+    public void testCallIntMethodWithInteger() throws Throwable {
+        Object value = invoke(this, "overloadedRemove", new Object[] { new Integer(5) });
+        assertEquals("called with integer", "int5", value);
+    }
+
+    public void testCallListRemove() throws Throwable {
+        List list = new ArrayList();
+        list.add("foo");
+        list.add("bar");
+        
+        Object value = invoke(list, "remove", new Object[] { new Integer(0) });
+        
+        assertEquals("Should have just 1 item left: " + list, 1, list.size());
+    }
+
     public void testCoerceGStringToString() throws Throwable {
         GString param = new GString(new Object[] { "James" }) {
             public String[] getStrings() {
@@ -357,6 +372,15 @@ public class InvokeMethodTest extends GroovyTestCase {
         return x;
     }
 
+    public Object overloadedRemove(int idx) {
+        return "int" + idx;
+    }
+
+    public Object overloadedRemove(Object value) {
+        return "Object" + value;
+    }
+
+    
     // Implementation methods
     //-------------------------------------------------------------------------
 

@@ -832,7 +832,7 @@ public class MetaClass {
                     Class mostSpecificType = mostSpecificTypes[i];
                     Class type = paramTypes[i];
 
-                    if (!type.isAssignableFrom(mostSpecificType)) {
+                    if (!isAssignableFrom(mostSpecificType, type)) {
 
                         useThisMethod = true;
                         break;
@@ -906,7 +906,7 @@ public class MetaClass {
             int paramLength = paramTypes.length;
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
-                if (closestClass == null || theType.isAssignableFrom(closestClass)) {
+                if (closestClass == null || isAssignableFrom(closestClass, theType)) {
                     closestClass = theType;
                     answer = method;
                 }
@@ -958,6 +958,41 @@ public class MetaClass {
             }
         }
         return answer;
+    }
+
+    protected boolean isAssignableFrom(Class mostSpecificType, Class type) {
+        boolean answer = type.isAssignableFrom(mostSpecificType);
+        if (!answer) {
+            return autoboxType(type).isAssignableFrom(autoboxType(mostSpecificType));
+        }
+        return answer;
+    }
+
+    private Class autoboxType(Class type) {
+        if (type.isPrimitive()) {
+            if (type == int.class) {
+                return Integer.class;
+            }
+            else if (type == double.class) {
+                return Double.class;
+            }
+            else if (type == long.class) {
+                return Long.class;
+            }
+            else if (type == float.class) {
+                return Float.class;
+            }
+            else if (type == char.class) {
+                return Character.class;
+            }
+            else if (type == byte.class) {
+                return Byte.class;
+            }
+            else if (type == short.class) {
+                return Short.class;
+            }
+        }
+        return type;
     }
 
     protected boolean isGenericSetMethod(Method method) {
