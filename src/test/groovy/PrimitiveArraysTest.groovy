@@ -1,28 +1,28 @@
 class PrimitiveArraysTest extends GroovyTestCase {
 
-    def c1Field = new char[]{}
-    char[] c2Field = new char[]{}
+    def c1Field = new char[0]
+    char[] c2Field = new char[0]
     
-    def i1Field = new int[]{}
-    int[] i2Field = new int[]{}
+    def i1Field = new int[0]
+    int[] i2Field = new int[0]
     
 
-    def d1Field = new double[]{}
-    double[] d2Field = new double[]{}
+    def d1Field = new double[0]
+    double[] d2Field = new double[0]
 
-    def f1Field = new float[]{}
-    float[] f2Field = new float[]{}
+    def f1Field = new float[0]
+    float[] f2Field = new float[0]
     
-    def l1Field = new long[]{}
-    long[] l2Field = new long[]{}    
+    def l1Field = new long[0]
+    long[] l2Field = new long[0]
 
 
-    def b1Field = new byte[]{}
-    byte[] b2Field = new byte[]{}
+    def b1Field = new byte[0]
+    byte[] b2Field = new byte[0]
     
     
-    def s1Field = new short[]{}
-    short[] s2Field = new short[]{}
+    def s1Field = new short[0]
+    short[] s2Field = new short[0]
     
     void testChar() {
         assert c1Field.class == c2Field.class

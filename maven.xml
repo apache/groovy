@@ -351,8 +351,6 @@
         <exclude name="**/MvcDemo.groovy"/>
         <!--
         -->
-        <exclude name="**/MapFromList.groovy"/>
-        <exclude name="**/PrimitiveArraysTest.groovy"/>
         <exclude name="**/SwingDemo.groovy"/>
         <exclude name="**/*Demo.groovy"/>
         <exclude name="**/Html2Wiki.groovy"/>

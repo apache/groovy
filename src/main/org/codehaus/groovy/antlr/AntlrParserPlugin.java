@@ -1472,7 +1472,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST elist = node.getNextSibling();
 
         if (isType(ARRAY_DECLARATOR, elist)) {
-            Expression size = expression(elist.getFirstChild());
+            AST expressionNode = elist.getFirstChild();
+            if (expressionNode == null) {
+                throw new ASTRuntimeException(elist, "No expression for the arrary constructor call");
+            }
+            Expression size = expression(expressionNode);
             ArrayExpression arrayExpression = new ArrayExpression(name, size);
             configureAST(arrayExpression, node);
             return arrayExpression;

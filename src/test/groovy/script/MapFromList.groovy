@@ -1,9 +1,9 @@
 class MapFromList {
-    talk(a) {
+    void talk(a) {
         println("hello "+a)
     }
 
-    doit(args) {
+    void doit(args) {
         i = 1
         l = [:]
         args.each { 
