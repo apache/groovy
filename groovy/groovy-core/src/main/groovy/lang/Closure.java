@@ -139,7 +139,11 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                     } catch (GroovyRuntimeException e1) {
                         if (this.delegate != null && this.delegate != this && this.delegate != this.owner) {
                             // lets try invoke method on the delegate
-                            return InvokerHelper.invokeMethod(this.delegate, method, arguments);
+                            try {
+                                return InvokerHelper.invokeMethod(this.delegate, method, arguments);
+                            } catch (GroovyRuntimeException gre) {
+                                throw new InvokerInvocationException(gre.getCause());
+                            }
                         }
                     }
                 }
@@ -215,7 +219,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     public Object call() {
         return call(emptyArray);
     }
-
+    
     /**
      * Invokes the closure, returning any value if applicable.
      *
