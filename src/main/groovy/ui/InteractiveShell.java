@@ -47,8 +47,6 @@ package groovy.ui;
 
 import groovy.lang.GroovyShell;
 
-import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,12 +54,11 @@ import java.util.Map;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.sandbox.ui.Prompt;
+import org.codehaus.groovy.sandbox.ui.PromptFactory;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.tools.ErrorReporter;
-import org.gnu.readline.Readline;
-import org.gnu.readline.ReadlineLibrary;
-import org.gnu.readline.ReadlineReader;
 
 
 /**
@@ -75,7 +72,7 @@ import org.gnu.readline.ReadlineReader;
  */
 public class InteractiveShell {
     protected GroovyShell shell = new GroovyShell();
-    protected BufferedReader reader;
+    protected Prompt prompt;
 
 
    /**
@@ -99,10 +96,8 @@ public class InteractiveShell {
    * @throws IOException if there was a problem with the history file.
     */
     public InteractiveShell() throws IOException {
-      File history = getHistoryFile();
-      ReadlineReader rr = new ReadlineReader("groovy> ", history, getReadlineLibrary());
-      reader = new BufferedReader(rr);
-      Readline.setCompleter(new ShellCompleter(this.shell));
+      prompt = PromptFactory.buildPrompt();
+      prompt.setPrompt("groovy> ");
     }
 
 
@@ -162,11 +157,7 @@ public class InteractiveShell {
 
 
     protected void close() {
-      try {
-        reader.close();
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      prompt.close();
     }
 
 
@@ -230,7 +221,7 @@ public class InteractiveShell {
             // Read a line.  If IOException or null, or command "exit", terminate
             // processing.  
 
-            try { pending = reader.readLine(); } catch( IOException e ) { }
+            try { pending = prompt.readLine(); } catch( IOException e ) { }
 
             if( pending == null || (COMMAND_MAPPINGS.containsKey(pending) && ((Integer)COMMAND_MAPPINGS.get(pending)).intValue() == COMMAND_ID_EXIT) ) {
                 return null;                                  // <<<< FLOW CONTROL <<<<<<<<
@@ -356,38 +347,6 @@ public class InteractiveShell {
             accepted.setLength(0);
             stale = false;
         }
-    }
-
-
-    //---------------------------------------------------------------------------
-    // READLINE ROUTINES
-    
-    
-    //  PureJava, GnuReadline, Editline, Getline
-    private ReadlineLibrary getReadlineLibrary() {
-      String library = System.getProperty("readline.library");
-      if (library == null || library.trim().length() == 0)
-        library = "PureJava";
-      
-      return ReadlineLibrary.byName(library);
-    }
-    
-    private File getGroovyUserDir() {
-      File dir = new File(System.getProperty("user.home") + "/.groovy");
-      dir.mkdir();
-      return dir;
-    }
-
-    private File getHistoryFile() {
-      File history = new File(getGroovyUserDir(), "groovysh.history");
-      if (!history.exists()) {
-        try {
-          history.createNewFile();
-        } catch (IOException ioe) {
-          ioe.printStackTrace();
-        }
-      }
-      return history;
     }
 
 
