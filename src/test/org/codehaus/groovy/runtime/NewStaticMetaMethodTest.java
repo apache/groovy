@@ -43,39 +43,56 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.runtime;
 
-package groovy.lang;
+import java.lang.reflect.Method;
 
+import junit.framework.TestCase;
 
 /**
- * A mock class for testing writer based code
- * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MockWriter {
+public class NewStaticMetaMethodTest extends TestCase {
 
-    private String output;
-    
-    public String getOutput() {
-        String answer = output;
-        output = null;
-        return answer;
+    public void testInvokeMetaMethod() throws Exception {
+        Method method = getClass().getMethod("dummyMethod", new Class[] { String.class, String.class });
+        assertTrue("Should have found a method", method != null);
+
+        NewStaticMetaMethod metaMethod = createNewMetaMethod(method);
+
+        Object answer = metaMethod.invoke("abc", new Object[] { "xyz" });
+        assertEquals("def", answer);
+
+        assertTrue("Should not appear as static method", metaMethod.isStatic() == false);
     }
 
-    public void setOutput(String output) {
-        this.output = output;
+    public void testInvokeDefaultGroovyMethod() throws Exception {
+        Method method = DefaultGroovyMethods.class.getMethod("plus", new Class[] { String.class, Object.class });
+        assertTrue("Should have found a method", method != null);
+
+        NewStaticMetaMethod metaMethod = createNewMetaMethod(method);
+
+        Object answer = metaMethod.invoke("abc", new Object[] { "123" });
+        assertEquals("abc123", answer);
+
+        System.out.println("Found: " + answer);
     }
 
-    public void println() {
-        setOutput("println()");
-    }
-    
-    public void println(Object object) {
-        setOutput("println(" + object + ")");
+    public void testInvokeDefaultGroovyMethodUsingMetaClass() {
+        Object answer = InvokerHelper.invokeMethod("abc", "plus", new Object[] { "123" });
+        assertEquals("abc123", answer);
+
+        System.out.println("Found: " + answer);
     }
 
-    public void print(Object object) {
-        setOutput("print(" + object + ")");
+    public static String dummyMethod(String foo, String bar) throws Exception {
+        assertEquals("abc", foo);
+        assertEquals("xyz", bar);
+        return "def";
+    }
+
+    protected NewStaticMetaMethod createNewMetaMethod(Method method) {
+        return new NewStaticMetaMethod(new ReflectionMetaMethod(method));
     }
 }
