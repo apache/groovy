@@ -272,11 +272,21 @@ public class InvokerHelper {
         return answer;
     }
 
-    public static List createRange(Object from, Object to) {
+    public static List createRange(Object from, Object to, boolean inclusive) {
+        if (! inclusive) {
+            if (compareGreaterThan(from, to)) {
+                to = invokeMethod(to, "increment", EMPTY_ARGS);
+            }
+            else {
+                to = invokeMethod(to, "decrement", EMPTY_ARGS);
+            }
+        }
         if (from instanceof Integer && to instanceof Integer) {
             return new IntRange(asInt(from), asInt(to));
         }
-        return new ObjectRange((Comparable) from, (Comparable) to);
+        else {
+            return new ObjectRange((Comparable) from, (Comparable) to);
+        }
     }
 
     public static int asInt(Object value) {

@@ -21,4 +21,26 @@ class StringTest extends GroovyTestCase {
         
         assert x == "hello null"
     }
+    
+    void testIncrementDecrement() {
+    	x = 'a'
+    	y = x.increment()
+    	assert y == 'b'
+    
+    	z = 'z'.decrement()
+    	assert z == 'y'
+    	
+    	z = 'z'
+    	b = z.increment()
+    	assert b != 'z'
+    	
+    	println(z.charAt(0))
+    	println(b.charAt(0))
+    	
+    	assert b > z
+    	
+    	println "Incremented z: " + b
+    	
+    	
+	}
 }

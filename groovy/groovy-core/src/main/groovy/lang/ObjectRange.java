@@ -46,6 +46,7 @@
 package groovy.lang;
 
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -63,15 +64,29 @@ public class ObjectRange extends AbstractList implements Range {
     private Comparable from;
     private Comparable to;
     private int size = -1;
+    private boolean reverse;
 
     public ObjectRange(Comparable from, Comparable to) {
+        if (InvokerHelper.compareGreaterThan(from, to)) {
+            this.from = to;
+            this.to = from;
+            this.reverse = true;
+        }
+        else {
+            this.from = from;
+            this.to = to;
+        }
+    }
+
+    public ObjectRange(Comparable from, Comparable to, boolean reverse) {
         this.from = from;
         this.to = to;
+        this.reverse = reverse;
     }
 
     public int hashCode() {
         /** @todo should code this the Josh Bloch way */
-        return from.hashCode() ^ to.hashCode();
+        return from.hashCode() ^ to.hashCode() + (reverse ? 1 : 0);
     }
 
     public boolean equals(Object that) {
@@ -85,14 +100,16 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public boolean equals(ObjectRange that) {
-        return InvokerHelper.compareEqual(this.from, that.from) && InvokerHelper.compareEqual(this.to, that.to);
+        return this.reverse == that.reverse
+            && InvokerHelper.compareEqual(this.from, that.from)
+            && InvokerHelper.compareEqual(this.to, that.to);
     }
 
     public boolean equals(List that) {
         int size = size();
         if (that.size() == size) {
-            for (int i = 0; i < size; i++ ) {
-                if (! InvokerHelper.compareEqual(get(i), that.get(i))) {
+            for (int i = 0; i < size; i++) {
+                if (!InvokerHelper.compareEqual(get(i), that.get(i))) {
                     return false;
                 }
             }
@@ -100,7 +117,7 @@ public class ObjectRange extends AbstractList implements Range {
         }
         return false;
     }
-    
+
     public Comparable getFrom() {
         return from;
     }
@@ -109,18 +126,66 @@ public class ObjectRange extends AbstractList implements Range {
         return to;
     }
 
+    public boolean isReverse() {
+        return reverse;
+    }
+
     public Object get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }
-        Object value = from;
-        for (int i = 0; i < index; i++) {
-            value = increment(value);
-        }
         if (index >= size()) {
             throw new IndexOutOfBoundsException("Index: " + index + " is too big for range: " + this);
         }
+        Object value = null;
+        if (reverse) {
+            value = to;
+            System.out.println("get(" + index + ")");
+            
+            for (int i = 0; i < index; i++) {
+                System.out.println("decrement: " + i + " value: " + value);
+                value = decrement(value);
+            }
+        }
+        else {
+            value = from;
+            for (int i = 0; i < index; i++) {
+                value = increment(value);
+            }
+        }
         return value;
+    }
+
+    public Iterator iterator() {
+        return new Iterator() {
+            int index = 0;
+            Object value = (reverse) ? to : from;
+
+            public boolean hasNext() {
+                return index < size();
+            }
+
+            public Object next() {
+                if (index++ > 0) {
+                    if (index > size()) {
+                        value = null;
+                    }
+                    else {
+                        if (reverse) {
+                            value = decrement(value);
+                        }
+                        else {
+                            value = increment(value);
+                        }
+                    }
+                }
+                return value;
+            }
+
+            public void remove() {
+                ObjectRange.this.remove(index);
+            }
+        };
     }
 
     public int size() {
@@ -148,15 +213,21 @@ public class ObjectRange extends AbstractList implements Range {
             throw new IllegalArgumentException("fromIndex(" + fromIndex + ") > toIndex(" + toIndex + ")");
         }
         if (--toIndex >= size) {
-            return new ObjectRange((Comparable) get(fromIndex), (Comparable) getTo());
+            return new ObjectRange((Comparable) get(fromIndex), (Comparable) getTo(), reverse);
         }
         else {
-            return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex));
+            return new ObjectRange((Comparable) get(fromIndex), (Comparable) get(toIndex), reverse);
         }
     }
 
     public String toString() {
-        return "" + from + ".." + to;
+        return (reverse) ? "" + to + ".." + from : "" + from + ".." + to;
+    }
+
+    public String inspect() {
+        String toText = InvokerHelper.inspect(to);
+        String fromText = InvokerHelper.inspect(from);
+        return (reverse) ? "" + toText + ".." + fromText : "" + fromText + ".." + toText;
     }
 
     public boolean contains(Comparable value) {
@@ -168,6 +239,9 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public void step(int step, Closure closure) {
+        if (reverse) {
+            step = -step;
+        }
         if (step >= 0) {
             Comparable value = from;
             while (value.compareTo(to) <= 0) {
@@ -188,13 +262,13 @@ public class ObjectRange extends AbstractList implements Range {
             }
         }
     }
-    
+
     public List step(int step) {
         IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
         step(step, adapter);
         return adapter.asList();
     }
-    
+
     protected Object increment(Object value) {
         return InvokerHelper.invokeMethod(value, "increment", null);
     }
@@ -202,4 +276,4 @@ public class ObjectRange extends AbstractList implements Range {
     protected Object decrement(Object value) {
         return InvokerHelper.invokeMethod(value, "decrement", null);
     }
-   }
+}

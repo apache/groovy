@@ -374,11 +374,12 @@ public class Invoker {
         }
         else if (arguments instanceof Range) {
             Range range = (Range) arguments;
-            StringBuffer buffer = new StringBuffer();
-            buffer.append(format(range.getFrom(), verbose));
-            buffer.append("..");
-            buffer.append(format(range.getTo(), verbose));
-            return buffer.toString();
+            if (verbose) {
+                return range.inspect();
+            }
+            else {
+                return range.toString();
+            }
         }
         else if (arguments instanceof List) {
             List list = (List) arguments;

@@ -67,4 +67,15 @@ public interface Range extends List {
      */
     public Comparable getTo();
 
+    /**
+     * @return true if this is a reverse range, iterating backwards
+     * starting from the to value and ending on the from value
+     */
+    public boolean isReverse();
+
+    /**
+     * @return the verbose String representation of this Range as would be typed into a console
+     * to create the Range instance
+     */
+    public String inspect();
 }
