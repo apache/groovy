@@ -356,13 +356,7 @@ public class SwingBuilder extends BuilderSupport {
     }
     
     protected Object createNode(Object name, Map attributes) {
-        String widgetName = (String) attributes.remove("name");
-        if (widgetName == null) {
-            Object text = attributes.get("text");
-            if (text != null) {
-                widgetName = text.toString();
-            }
-        }
+        String widgetName = (String) attributes.remove("id");
         constraints = attributes.remove("constraints");
         Object widget = null;
         if (passThroughNodes.containsKey(name)) {
