@@ -18,7 +18,7 @@ import org.apache.commons.cli.PosixParser;
 import org.apache.log4j.Category;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
-import org.codehaus.groovy.classgen.GroovyClassLoader;
+import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 import org.codehaus.groovy.syntax.lexer.Lexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
@@ -189,12 +189,12 @@ public class Compiler
 
         for ( int i = 0 ; i < classNodes.length ; ++i )
         {
-            dumpClass( classNodes[ i ],
-                       file );
+            dumpClass( new GeneratorContext(), classNodes[ i ], file );
         }
     }
 
-    protected void dumpClass(ClassNode classNode,
+    protected void dumpClass(GeneratorContext context, 
+                             ClassNode classNode,
                              File file)
         throws Exception
     {
@@ -203,13 +203,14 @@ public class Compiler
         if (debug) 
         {
             DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-            classGenerator = new ClassGenerator(dumpVisitor, getClassLoader(), file.getName());
+            classGenerator = new ClassGenerator(context, dumpVisitor, getClassLoader(), file.getName());
             classGenerator.visitClass( classNode );
         }
         else 
         {
             ClassWriter    classWriter    = new ClassWriter( true );
-            classGenerator = new ClassGenerator( classWriter,
+            classGenerator = new ClassGenerator( context, 
+                                                 classWriter,
                                                  getClassLoader(),
                                                  file.getName() );
     
@@ -242,7 +243,7 @@ public class Compiler
         LinkedList innerClasses = classGenerator.getInnerClasses();
         while (! innerClasses.isEmpty()) 
         {
-            dumpClass((ClassNode) innerClasses.removeFirst(), file);
+            dumpClass(context, (ClassNode) innerClasses.removeFirst(), file);
         }
     }
 

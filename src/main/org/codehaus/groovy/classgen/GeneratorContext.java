@@ -43,43 +43,20 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.classgen;
 
-package org.codehaus.groovy.tools;
-
-import groovy.lang.GroovyTestCase;
-
-import java.io.File;
 
 /**
- * Tests the compiling & running of GroovyTestCases
+ * A context shared across generations of a class and its inner classes
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class CompilerTest extends GroovyTestCase {
+public class GeneratorContext {
 
-    Compiler compiler = new Compiler();
-    boolean dumpClass = true;
-
-    public void testMethodCall() throws Exception {
-        //runTest("ClosureMethodTest.groovy");
-        runTest("tree/VerboseTreeTest.groovy");
+    int innerClassIdx = 1;
+    
+    public int getNextInnerClassIdx() {
+        return innerClassIdx++;
     }
-
-    protected void runTest(String name) throws Exception {
-        File file = new File("src/test/groovy/" + name);
-        
-        assertTrue("Could not find source file: " + file, file.exists());
-
-        compiler.compile(new File[] { file });
-    }
-
-    protected void setUp() throws Exception {
-        File dir = new File("target/test-generated-classes");
-        dir.mkdirs();
-        compiler.setOutputDir(dir);
-
-        compiler.setDebug(dumpClass);
-    }
-
 }
