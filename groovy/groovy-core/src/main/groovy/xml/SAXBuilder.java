@@ -108,6 +108,7 @@ public class SAXBuilder extends BuilderSupport {
             }
             else {
                 localName = key.toString();
+                qualifiedName = localName;
             }
 
             attributes.addAttribute(uri, localName, qualifiedName, "CDATA", valueText);
@@ -128,6 +129,7 @@ public class SAXBuilder extends BuilderSupport {
         }
         else {
             localName = name.toString();
+            qualifiedName = localName;
         }
         try {
             handler.startElement(uri, localName, qualifiedName, attributes);
@@ -149,6 +151,7 @@ public class SAXBuilder extends BuilderSupport {
         }
         else {
             localName = name.toString();
+            qualifiedName = localName;
         }
         try {
             handler.endElement(uri, localName, qualifiedName);
