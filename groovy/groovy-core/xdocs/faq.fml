@@ -31,6 +31,15 @@
       </answer>
     </faq>
 
+    <faq id="licence">
+      <question>
+        What is the licence for Groovy?
+      </question>
+      <answer>
+		<p>Groovy is open source using a BSD / Apache style <a href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/LICENSE.txt?rev=HEAD&amp;view=auto">licence</a></p>
+      </answer>
+    </faq>
+
     <faq id="contribute">
       <question>
         How can I contribute to Groovy?
