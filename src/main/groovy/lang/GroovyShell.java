@@ -60,6 +60,9 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @version $Revision$
  */
 public class GroovyShell {
+    public static final String[] EMPTY_ARGS = {
+    };
+    
     private GroovyClassLoader loader;
 
     public static void main(String args[]) {
@@ -98,9 +101,9 @@ public class GroovyShell {
      * @param scriptFile the file name of the script to run
      * @param args the command line arguments to pass in
      */
-    public void run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    public Object run(String scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
         Class scriptClass = loader.parseClass(scriptFile);
-        InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
     }
 
     /**
@@ -110,8 +113,8 @@ public class GroovyShell {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args the command line arguments to pass in
      */
-    public void run(String scriptText, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
-        run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
+    public Object run(String scriptText, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+        return run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
     }
 
     /**
@@ -121,8 +124,21 @@ public class GroovyShell {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args the command line arguments to pass in
      */
-    public void run(InputStream in, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    public Object run(InputStream in, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
         Class scriptClass = loader.parseClass(in, fileName);
-        InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+    }
+
+    public void setVariable(String name, Object value) {
+    }
+
+    /**
+     * Evaluates some script
+     * 
+     * @param in the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     */
+    public Object evaluate(String scriptText, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+        return run(scriptText, fileName, EMPTY_ARGS);
     }
 }
