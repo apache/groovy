@@ -110,14 +110,12 @@ public class MetaMethod implements Cloneable {
             return reflector.invoke(this, object, arguments);
         }
         else {
-            log.warning("No reflector available for method so must use reflection: " + method);
-            //throw new RuntimeException("Can't invoke method: " + method + " for index: " + methodIndex);
-	    	AccessController.doPrivileged(new PrivilegedAction() {
-	    		public Object run() {
-	    			method.setAccessible(true);
-	                return null;
-	    		}
-	    	});
+            AccessController.doPrivileged(new PrivilegedAction() {
+	    			public Object run() {
+	    			    method.setAccessible(true);
+	    			    return null;
+	    			}
+	    		});
             return method.invoke(object, arguments);
         }
     }

@@ -126,6 +126,12 @@ public class AntBuilder extends BuilderSupport {
         return task;
     }
 
+    protected Object createNode(Object name, Map attributes, Object value) {
+        Object task = createNode(name, attributes);
+        setText(task, value.toString());
+        return task;
+    }
+    
     protected Object createNode(Object name, Map attributes) {
 
         if (name.equals("fileScanner")) {

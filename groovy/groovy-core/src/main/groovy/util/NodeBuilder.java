@@ -76,6 +76,10 @@ public class NodeBuilder extends BuilderSupport {
         return new Node(getCurrentNode(), name, attributes, new ArrayList());
     }
 
+    protected Object createNode(Object name, Map attributes, Object value) {
+        return new Node(getCurrentNode(), name, attributes, value);
+    }
+
     protected Node getCurrentNode() {
         return (Node) getCurrent();
     }

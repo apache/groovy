@@ -256,6 +256,14 @@ public class SwingBuilder extends BuilderSupport {
         return widget;
     }
 
+    protected Object createNode(Object name, Map attributes, Object value) {
+        Object widget = createNode(name, attributes);
+        if (widget != null) {
+            InvokerHelper.invokeMethod(widget, "setText", value.toString());
+        }
+        return widget;
+    }
+    
     protected Object createNode(Object name, Map attributes) {
         constraints = attributes.remove("constraints");
         Object widget = null;

@@ -54,6 +54,7 @@ import groovy.lang.Tuple;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +67,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -82,6 +89,8 @@ public class Invoker {
 
     private MetaClassRegistry metaRegistry = new MetaClassRegistry();
 
+
+    
     public MetaClass getMetaClass(Object object) {
         return metaRegistry.getMetaClass(object.getClass());
     }
@@ -252,6 +261,22 @@ public class Invoker {
         }
         if (value instanceof Iterator) {
             return (Iterator) value;
+        }
+        if (value instanceof NodeList) {
+            final NodeList nodeList = (NodeList) value;
+            return new Iterator() {
+                private int current = 0;
+                public boolean hasNext() {
+                    	return current < nodeList.getLength();
+                }
+                public Object next() { 
+                    	Node node = nodeList.item(current++);
+                    	return node;
+                }
+                public void remove() {
+                    throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
+                }
+            };
         }
         else if (value instanceof Enumeration) {
             final Enumeration enumeration = (Enumeration) value;
@@ -454,6 +479,22 @@ public class Invoker {
             }
             buffer.append("]");
             return buffer.toString();
+        }
+        else if (arguments instanceof Element) {
+            Element node = (Element) arguments;
+            OutputFormat format = new OutputFormat(node.getOwnerDocument());
+            format.setOmitXMLDeclaration(true);
+            format.setIndenting(true);
+            format.setLineWidth(0);             
+            format.setPreserveSpace(true);
+            StringWriter sw = new StringWriter();
+            XMLSerializer serializer = new XMLSerializer (sw, format);
+            try {
+                serializer.asDOMSerializer();
+                serializer.serialize(node);
+            } catch (IOException e) {
+            }
+            return sw.toString();
         }
         else if (arguments instanceof String) {
             if (verbose) {

@@ -44,9 +44,30 @@ import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
 import groovy.util.OrderBy;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -70,27 +91,11 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.IOException;
-import java.io.Writer;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.BufferedReader;
-import java.io.Reader;
-import java.io.File;
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.FileInputStream;
-import java.io.UnsupportedEncodingException;
-import java.io.FileNotFoundException;
-import java.io.BufferedOutputStream;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.BufferedInputStream;
-import java.net.Socket;
-import java.net.ServerSocket;
+
+import javax.servlet.ServletContext;
+import javax.servlet.ServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -183,6 +188,16 @@ public class DefaultGroovyMethods {
 	    return buffer.toString();
 	}
 
+	/**
+	 * General use method
+	 * 
+	 * @param self
+	 * @param class
+	 */
+	public static void use(Object self, Class clazz) {
+	    GroovyCategorySupport.use(clazz);
+	}
+	
     /**
      * Print to a console in interactive format
      */
@@ -1021,6 +1036,25 @@ public class DefaultGroovyMethods {
             map.put(key, answer);
         }
         return answer;
+    }
+
+    /**
+     * Servlet support
+     */
+    public static Object get(ServletContext context, String key) {
+        return context.getAttribute(key);
+    }
+    
+    public static Object get(HttpSession session, String key) {
+        return session.getAttribute(key);
+    }
+    
+    public static Object get(ServletRequest request, String key) {
+        return request.getAttribute(key);
+    }
+
+    public static Object get(PageContext context, String key) {
+        return context.getAttribute(key);
     }
 
     /**

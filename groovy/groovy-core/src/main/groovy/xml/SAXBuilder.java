@@ -80,6 +80,14 @@ public class SAXBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Object value) {
         doStartElement(name, emptyAttributes);
+        doText(value);
+        return name;
+    }
+
+    /**
+     * @param value
+     */
+    private void doText(Object value) {
         try {
             char[] text = value.toString().toCharArray();
             handler.characters(text, 0, text.length);
@@ -87,10 +95,9 @@ public class SAXBuilder extends BuilderSupport {
         catch (SAXException e) {
             handleException(e);
         }
-        return name;
     }
 
-    protected Object createNode(Object name, Map attributeMap) {
+    protected Object createNode(Object name, Map attributeMap, Object text) {
         AttributesImpl attributes = new AttributesImpl();
         for (Iterator iter = attributeMap.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
@@ -114,6 +121,9 @@ public class SAXBuilder extends BuilderSupport {
             attributes.addAttribute(uri, localName, qualifiedName, "CDATA", valueText);
         }
         doStartElement(name, attributes);
+        if (text != null) {
+            doText(text);
+        }
         return name;
     }
 
@@ -163,5 +173,12 @@ public class SAXBuilder extends BuilderSupport {
 
     protected void handleException(SAXException e) {
         throw new RuntimeException(e);
+    }
+
+    /* (non-Javadoc)
+     * @see groovy.util.BuilderSupport#createNode(java.lang.Object, java.util.Map, java.lang.Object)
+     */
+    protected Object createNode(Object name, Map attributes) {
+        return createNode(name, attributes, null);
     }
 }
