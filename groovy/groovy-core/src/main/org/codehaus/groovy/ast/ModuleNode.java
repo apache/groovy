@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,6 +54,7 @@ import java.util.Map;
 
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.objectweb.asm.Constants;
 
 /**
  * Represents a module, which consists typically of a class declaration
@@ -62,24 +64,30 @@ import org.codehaus.groovy.ast.stmt.Statement;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ModuleNode extends ASTNode {
-    
+public class ModuleNode extends ASTNode implements Constants {
+
     private BlockStatement statementBlock = new BlockStatement();
     private List classes = new ArrayList();
     private Map imports = new HashMap();
     private CompileUnit unit;
     private String packageName;
     private String description;
-    
-    
+    private boolean createClassForStatements = true;
+
     public ModuleNode() {
     }
-    
+
     public BlockStatement getStatementBlock() {
         return statementBlock;
     }
-    
+
     public List getClasses() {
+        if (createClassForStatements && !statementBlock.isEmpty()) {
+            ClassNode mainClass = createStatementsClass();
+            classes.add(mainClass);
+            mainClass.setModule(this);
+            createClassForStatements = false;
+        }
         return classes;
     }
 
@@ -89,20 +97,20 @@ public class ModuleNode extends ASTNode {
     public String getImport(String alias) {
         return (String) imports.get(alias);
     }
-    
+
     public void addImport(String alias, String className) {
         imports.put(alias, className);
     }
-    
+
     public void addStatement(Statement node) {
         statementBlock.addStatement(node);
     }
-    
+
     public void addClass(ClassNode node) {
         classes.add(node);
         node.setModule(this);
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
     }
 
@@ -130,11 +138,12 @@ public class ModuleNode extends ASTNode {
      * module into the given map
      */
     public void addClasses(Map classMap) {
-        for (Iterator iter = classes.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = classes.iterator(); iter.hasNext();) {
             ClassNode node = (ClassNode) iter.next();
             String name = node.getName();
             if (classMap.containsKey(name)) {
-                throw new RuntimeException("Error: duplicate class declaration for name: " + name + " and class: " + node);
+                throw new RuntimeException(
+                    "Error: duplicate class declaration for name: " + name + " and class: " + node);
             }
             classMap.put(name, node);
         }
@@ -146,6 +155,50 @@ public class ModuleNode extends ASTNode {
 
     void setUnit(CompileUnit unit) {
         this.unit = unit;
+    }
+
+    protected ClassNode createStatementsClass() {
+        String name = getPackageName();
+        if (name == null) {
+            name = "";
+        }
+        else {
+            name = name + ".";
+        }
+        // now lets use the file name to determine the class name
+        if (description == null) {
+            throw new RuntimeException("Cannot generate main(String[]) class for statements when we have no file description");
+        }
+        name += extractClassFromFileDescription();
+        
+        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, "java.lang.Object");
+        classNode.addMethod(
+            new MethodNode(
+                "main",
+                ACC_PUBLIC | ACC_STATIC,
+                "void",
+                new Parameter[] { new Parameter("java.lang.String[]", "args")},
+                statementBlock));
+        return classNode;
+    }
+
+    protected String extractClassFromFileDescription() {
+        // lets strip off everything after the last .
+        String answer = description;
+        int idx = answer.lastIndexOf('.');
+        if (idx > 0) {
+            answer = answer.substring(0, idx);
+        }
+        // new lets trip the path separators
+        idx = answer.lastIndexOf('/');
+        if (idx > 0) {
+            answer = answer.substring(idx + 1);
+        }
+        idx = answer.lastIndexOf(File.separatorChar);
+        if (idx > 0) {
+            answer = answer.substring(idx + 1);
+        }
+        return answer;
     }
 
 }

@@ -43,74 +43,30 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.ast.stmt;
+package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.ast.GroovyCodeVisitor;
+import org.codehaus.groovy.syntax.parser.TestParserSupport;
 
 /**
- * A list of statements
+ * Tests the ClassNode
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class BlockStatement extends Statement {
+public class ModuleNodeTest extends TestParserSupport {
 
-    private List statements;
-    
-    public BlockStatement() {
-        this(new ArrayList());
+    public void testStatementClass() throws Exception {
+        ModuleNode module = parse("x = [1, 2, 3]; println(x)", "Cheese.groovy");
+        
+        assertTrue("Should have statements", ! module.getStatementBlock().isEmpty());
+        
+        List classes = module.getClasses();
+        assertEquals("Number of classes", 1, classes.size());
+        
+        ClassNode classNode = (ClassNode) classes.get(0);
+        
+        assertEquals("Class name", "Cheese", classNode.getName());
     }
-    
-    public BlockStatement(List statements) {
-        this.statements = statements;
-    }
-    
-    public void visit(GroovyCodeVisitor visitor) {
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
-            statement.visit(visitor);
-        }
-    }
-
-    public List getStatements() {
-        return statements;
-    }
-
-    public void addStatement(Statement statement) {
-        statements.add(statement);
-    }
-
-    public void addStatements(List listOfStatements) {
-        statements.addAll(listOfStatements);
-    }
-
-    public String toString() {
-        return super.toString() + statements;
-    }
-
-    public String getText() {
-        StringBuffer buffer = new StringBuffer("{ ");
-        boolean first = true;
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            if (first) {
-                first = false;
-            }
-            else {
-                buffer.append("; ");
-            }
-            Statement statement = (Statement) iter.next();
-            buffer.append(statement.getText());
-        }
-        buffer.append(" }");
-        return buffer.toString();
-    }
-
-    public boolean isEmpty() {
-        return statements.isEmpty();
-    }
-
 }

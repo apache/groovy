@@ -672,6 +672,10 @@ public class ParserTest
         }
     }
 
+    /*
+
+    The following is actually now valid...
+    
     public void testTypeDeclaration_UnexpectedToken()
         throws Exception
     {
@@ -698,6 +702,7 @@ public class ParserTest
                             e.getExpectedTypes() );
         }
     }
+    */
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
     //     <compilation unit>

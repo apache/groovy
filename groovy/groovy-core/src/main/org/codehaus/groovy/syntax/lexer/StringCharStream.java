@@ -14,6 +14,13 @@ public class StringCharStream
         this.cur  = 0;
     }
     
+    public StringCharStream(String text, String description)
+    {
+        super(description);
+        this.text = text;
+        this.cur  = 0;
+    }
+    
     public char nextChar()
         throws IOException
     {

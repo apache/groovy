@@ -1,6 +1,11 @@
 Things to Test
 ==============
 
+* write Groovy main that can run a groovy script from an IDE / command line
+* document the script stuff!
+
+* closures in static methods dont' work
+
 * test compiler errors when
 	- unknown class
 		in new expression
