@@ -5,6 +5,8 @@ GroovyBeans are JavaBeans but using a much simpler syntax.
 Here's an example 
 
 {code:gsh}
+import java.util.Date
+
 class Customer {
     // properties
     Integer id
@@ -13,10 +15,7 @@ class Customer {
     
     // sample code
     static void main(args) {
-        customer = new Customer()
-        customer.id = 1
-        customer.name = "Gromit"
-        
+        customer = new Customer(id:1, name:"Gromit", dob:new Date())
         println("Hello ${customer.name}")
     }
 }
@@ -25,16 +24,19 @@ class Customer {
 Hello Gromit
 {code}
 
-Notice how the properties look just like public fields. In Groovy fields and properties
+Notice how the properties look just like public fields. You can also set
+named properties in a bean constructor in Groovy. In Groovy fields and properties
 have been merged so that they act and look the same. So the above is equivlent to the
 following Java code...
 
 {code:java}
+import java.util.Date;
+
 public class Customer {
     // properties
-    private Integer id
-    private String name
-    private Date dob
+    private Integer id;
+    private String name;
+    private Date dob;
     
     public Integer getId() {
         return id;

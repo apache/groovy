@@ -19,6 +19,7 @@ class LocalVariableTest extends GroovyTestCase {
         catch (MissingPropertyException e) {
 			assert e.getProperty() == "x"            
             text = e.message
+			//e.printStackTrace()
             assert text == "No such property: x for class: LocalVariableTest"
         }
     }

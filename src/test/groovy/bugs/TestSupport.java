@@ -67,4 +67,8 @@ public class TestSupport extends GroovyTestCase {
     public static String getMockStaticProperty() {
         return "cheese";
     }
+    
+    public int[] getIntArray() {
+        return new int[] { 1, 2, 3, 4, 5 };
+    }
 }
