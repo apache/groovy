@@ -18,7 +18,7 @@ class ClosureMethodCallTest extends GroovyTestCase {
     
     
     void testSystemOutPrintlnAsAClosure() {
-        closure = System.out.println
+        closure = System.out.&println
         closure("Hello world")
     }
 }

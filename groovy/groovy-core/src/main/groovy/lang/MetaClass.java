@@ -1014,6 +1014,15 @@ public class MetaClass {
     }
 
     /**
+     * Returns a callable object for the given method name on the object.
+     * The object acts like a Closure in that it can be called, like a closure
+     * and passed around - though really its a method pointer, not a closure per se.
+     */
+    public Closure getMethodPointer(Object object, String methodName) {
+        return new MethodClosure(object, methodName);
+    }
+
+    /**
      * @param list
      * @param parameterType
      * @return
@@ -1234,8 +1243,7 @@ public class MetaClass {
     }
     
     /**
-     * @return remove a method of the same matching prototype was found in the
-     *         list
+     * remove a method of the same matching prototype was found in the list
      */
     protected void removeMatchingMethod(List list, MetaMethod method) {
         for (Iterator iter = list.iterator(); iter.hasNext();) {

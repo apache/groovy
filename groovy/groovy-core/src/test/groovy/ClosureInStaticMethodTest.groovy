@@ -19,7 +19,7 @@ class ClosureInStaticMethodTest extends GroovyTestCase {
     }
 
     static def methodClosureInStaticMethod() {
-        System.out.println
+        System.out.&println
     }
     
     static def assertClosure(Closure block) {

@@ -219,6 +219,13 @@ public class InvokerHelper {
     }
 
     /**
+     * Returns the method pointer for the given object name
+     */
+    public static Closure getMethodPointer(Object object, String methodName) {
+        return getInstance().getMethodPointer(object, methodName);
+    }
+
+    /**
      * Provides a hook for type coercion of the given object to the required type
      *
      * @param type   of object to convert the given object to

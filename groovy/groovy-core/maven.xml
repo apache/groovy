@@ -321,16 +321,7 @@
         <exclude name="**/EscapedUnicodeTest.groovy"/>
         <exclude name="**/EscapedMetaCharacterTest.groovy"/>
 
-        <!-- need method pointers syntax -->
-        <exclude name="**/ClosureTest.groovy"/>
-        <exclude name="**/GeneratorTest.groovy"/>
-        <exclude name="**/ClosureMethodCallTest.groovy"/>
-        <exclude name="**/ClosureInStaticMethodTest.groovy"/>
-
-
         <!-- Parser decisions to make -->
-
-        <!-- do {} while() not supported -->
 
         <!-- do {} while() not supported -->
         <exclude name="**/DoWhileLoopTest.groovy"/>

@@ -57,22 +57,22 @@ class Console extends ConsoleSupport implements CaretListener {
             size:[500,400],
             defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
             newAction = action(
-                name:'New', closure: fileNew, mnemonic: 'N', accelerator: menuModifier + 'N'
+                name:'New', closure: this.&fileNew, mnemonic: 'N', accelerator: menuModifier + 'N'
             )
             openAction = action(
-                name:'Open', closure: fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
+                name:'Open', closure: this.&fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
             )
             saveAction = action(
-                name:'Save', closure: fileSave, mnemonic: 'S', accelerator: menuModifier + 'S'
+                name:'Save', closure: this.&fileSave, mnemonic: 'S', accelerator: menuModifier + 'S'
             )
             exitAction = action(
-                name:'Exit', closure: exit, mnemonic: 'x'
+                name:'Exit', closure: this.&exit, mnemonic: 'x'
             )
             runAction = action(
-                name:'Run', closure: runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
+                name:'Run', closure: this.&runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
                 accelerator: 'ctrl R'
             )
-            aboutAction = action(name:'About', closure: showAbout, mnemonic: 'A')
+            aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
             menuBar {
                 menu(text:'File', mnemonic:0x46) {
                     menuItem() { action(newAction) }
@@ -103,7 +103,7 @@ class Console extends ConsoleSupport implements CaretListener {
         }   // end of SwingBuilder use
 
         // add listeners
-        frame.windowClosing = exit
+        frame.windowClosing = this.&exit
         textArea.addCaretListener(this)
         textArea.document.undoableEditHappened = { setDirty(true) }
 

@@ -95,6 +95,7 @@ public interface GroovyCodeVisitor {
     public void visitPropertyExpression(PropertyExpression expression);
     public void visitAttributeExpression(AttributeExpression attributeExpression);
     public void visitFieldExpression(FieldExpression expression);
+    public void visitMethodPointerExpression(MethodPointerExpression expression);
 
     public void visitConstantExpression(ConstantExpression expression);
     public void visitClassExpression(ClassExpression expression);
