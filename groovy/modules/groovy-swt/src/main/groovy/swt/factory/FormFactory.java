@@ -41,7 +41,6 @@ public class FormFactory extends AbstractSwtFactory implements SwtFactory {
             FormColors formColors = new FormColors(Display.getCurrent() == null ? new Display()
                     : Display.getCurrent());
             toolkit = new FormToolkit(formColors);
-            toolkit.setBorderStyle(SWT.BORDER);
         }
         return toolkit;
     }
