@@ -1,0 +1,37 @@
+
+1 Operator overloading in Groovy
+
+Groovy supports operator overloading which makes working with Numbers, 
+Collections, Maps and various other data structures easier to use.
+
+Various operators in Groovy are mapped onto regular Java method calls on objects.
+This allows you the developer to provide your own Java or Groovy objects which can take
+advantage of operator overloading. The following table describes the operators 
+supported in Groovy and the methods they map to.
+
+{table}
+Operator | Method 
+a + b | a.plus(b)
+a - b | a.minus(b)
+a * b | a.multiply(b)
+a / b | a.divide(b)
+a++ or ++a | a.increment()
+a\-\- or \-\-a | a.decrement()
+a\[b\] | a.get(b)
+a\[b\] = c | a.put(b, c)
+{table}
+
+Note that all the following comparison operators handle nulls gracefully avoiding 
+the throwing of {api:java.lang.NullPointerException}
+
+{table}
+Operator | Method 
+a == b | a.equals(b)
+a != b | ! a.equals(b)
+a === b | a == b in Java (i.e. a and b refer to same object instance)
+a <=> b | a.compareTo(b)
+a > b | a.compareTo(b) > 0
+a >= b | a.compareTo(b) >= 0
+a < b | a.compareTo(b) < 0
+a <= b | a.compareTo(b) <= 0
+{table}
