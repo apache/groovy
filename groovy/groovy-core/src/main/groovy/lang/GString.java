@@ -116,22 +116,19 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public GString plus(String that) {
         String[] currentStrings = getStrings();
         String[] newStrings = null;
-        if (getValues().length <= getStrings().length) {
-            newStrings = new String[currentStrings.length + 1];
-            int lastIndex = currentStrings.length;
-            System.arraycopy(currentStrings, 0, newStrings, 0, lastIndex);
-            newStrings[lastIndex] = that;
-            
-        }
-        else {
-            newStrings = new String[currentStrings.length];
-            int lastIndex = currentStrings.length - 1;
-            System.arraycopy(currentStrings, 0, newStrings, 0, lastIndex);
-            newStrings[lastIndex] = currentStrings[lastIndex] + that;
-        }
+        Object[] newValues = null;
+
+        newStrings = new String[currentStrings.length + 1];
+        newValues = new Object[getValues().length + 1];
+        int lastIndex = currentStrings.length;
+        System.arraycopy(currentStrings, 0, newStrings, 0, lastIndex);
+        System.arraycopy(getValues(), 0, newValues, 0, getValues().length);
+        newStrings[lastIndex] = that;
+        newValues[getValues().length] = "";
 
         final String[] finalStrings = newStrings;
-        return new GString(getValues()) {
+        return new GString(newValues) {
+
             public String[] getStrings() {
                 return finalStrings;
             }
