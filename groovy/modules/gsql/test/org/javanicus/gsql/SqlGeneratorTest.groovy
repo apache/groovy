@@ -6,11 +6,16 @@
  */
 package org.javanicus.gsql
 
+import java.io.*
+
 class SqlGeneratorTest extends GroovyTestCase {
     property database
+    property sqlGenerator
               
     void setUp() {
-        build = new RelationalBuilder(new TypeMap())
+        typeMap = new TypeMap()          
+        build = new RelationalBuilder(typeMap)
+        sqlGenerator = new SqlGenerator(typeMap,System.getProperty( "line.separator", "\n" ))
                   
         database = build.database(name:'genealogy') {
           table(name:'event') {
@@ -32,9 +37,10 @@ class SqlGeneratorTest extends GroovyTestCase {
     }
     
     void testGenerateDDL() {
-        sqlGenerator = new SqlGenerator(new TypeMap(),System.getProperty( "line.separator", "\n" ))
-        sqlGenerator.writer = System.out
+        testWriter = new PrintWriter(new FileOutputStream("SqlGeneratorTest.sql"))
+        sqlGenerator.writer = testWriter
         sqlGenerator.createDatabase(database,true)
+        testWriter.flush()
    }
 
 }

@@ -120,7 +120,7 @@ public class SqlGenerator {
       * Outputs the DDL to create the table along with any non-external constraints
       */
     public void createTable(table) { //@todo throws IOException {
-        wprint("create table ${table.name}(")
+        wprintln("create table ${table.name} (")
         
         writeColumnTypes(table)
         
@@ -240,7 +240,7 @@ public class SqlGenerator {
     void writeColumnTypes(Table table) { // @todo throws IOException {
         first = true
         for (column in table.columns) {
-            if (first) { first = false } else { wprint(", ")}
+            if (first) { first = false } else { wprintln(", ")}
             wprintIndent()
             createColumn(table, column)
         }
@@ -281,7 +281,7 @@ public class SqlGenerator {
     void writePrimaryKeysAlterTable(table) { //@todo throws IOException {
     //@todo protected
         if (table.primaryKeyColumns.size() > 0 && shouldGeneratePrimaryKeys(table.primaryKeyColumns)) {
-            wprint("ALTER TABLE ${table.name}")
+            wprintln("ALTER TABLE ${table.name}")
             wprintIndent()
             wprintln("ADD CONSTRAINT ${table.name}_PK")
             writePrimaryKeyStatement(table.primaryKeyColumns);
@@ -345,7 +345,7 @@ public class SqlGenerator {
 //        if (key.foreignTable == null) {
 //            //@todo log.warn( "Foreign key table is null for key: ${key}")
 //        } else {
-//            wprint("ALTER TABLE ${table.name}")
+//            wprintln("ALTER TABLE ${table.name}")
 //            wprintIndent()
 //            wprint("ADD CONSTRAINT ${table.name}_FK_${++counter}  FOREIGN KEY (")
 //            writeLocalReferences(key)
