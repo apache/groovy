@@ -47,6 +47,11 @@
       <item name="Regex"              href="/regex.html"/>
     </menu>
 
+    <menu name="User Guide">
+      <item name="Closures"       	    href="/closures.html"/>
+      <item name="Operator Overloading" href="/operators.html"/>
+    </menu>
+
     <menu name="Presentation">
       <item name="PDF"                 href="http://codehaus.org/~jstrachan/Groovy/Groovy.ppt"/>
       <item name="HTML"                href="http://codehaus.org/~jstrachan/Groovy/html/groovy.html"/>
