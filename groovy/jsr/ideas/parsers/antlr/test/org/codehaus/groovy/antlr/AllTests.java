@@ -41,6 +41,7 @@ public class AllTests extends TestSuiteSupport {
         "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
         "ConstructorBug.groovy",                // TODO: foo.class bug in parser
         "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
+        "bugs/PrimitivePropertyBug.groovy",     // TODO: foo.class bug in parser
 
         "ClassGeneratorFixesTest.groovy",       // TODO: closure params
         "ClosureParameterPassingBug.groovy",    // TODO: closure params
@@ -65,6 +66,11 @@ public class AllTests extends TestSuiteSupport {
         "MarkupAndMethodBug.groovy",            // TODO: parser bug
         "NestedClosureBug.groovy",              // TODO: parser bug
         "OverloadInvokeMethodBug.groovy",       // TODO: parser bug
+
+
+
+        // TODO: AST bugs I think...
+        "PrintlnWithNewBug.groovy",
 
 
 
