@@ -249,6 +249,10 @@
       <name>Brian McCallister</name>
       <email></email>
     </contributor>
+    <contributor>
+      <name>Richard Monson-Haefel</name>
+      <email></email>
+    </contributor>
   </contributors>
 
   <dependencies>
