@@ -1697,7 +1697,7 @@ public class MetaClass {
             answer = chooseEmptyMethodParams(methods);
         }
         else if (arguments.length == 1 && arguments[0] == null) {
-            answer = chooseMostGeneralMethodWith1Param(methods);
+            answer = chooseMostGeneralMethodWith1NullParam(methods);
         }
         else {
             List matchingMethods = new ArrayList();
@@ -1759,6 +1759,11 @@ public class MetaClass {
     }
 
     protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
+        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
+            if (Arrays.equals(arguments, paramTypes)) return method;
+        }
         Object answer = null;
         int size = arguments.length;
         Class[] mostSpecificTypes = null;
@@ -1840,9 +1845,9 @@ public class MetaClass {
 
     /**
      * @return the method with 1 parameter which takes the most general type of
-     *         object (e.g. Object)
+     *         object (e.g. Object) ignoring primitve types
      */
-    protected Object chooseMostGeneralMethodWith1Param(List methods) {
+    protected Object chooseMostGeneralMethodWith1NullParam(List methods) {
         // lets look for methods with 1 argument which matches the type of the
         // arguments
         Class closestClass = null;
@@ -1854,10 +1859,11 @@ public class MetaClass {
             int paramLength = paramTypes.length;
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
+				if (theType.isPrimitive()) continue;
                 if (closestClass == null || isAssignableFrom(closestClass, theType)) {
                     closestClass = theType;
                     answer = method;
-                }
+                }                
             }
         }
         return answer;
