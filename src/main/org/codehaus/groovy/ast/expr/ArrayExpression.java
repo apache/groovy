@@ -69,10 +69,9 @@ public class ArrayExpression extends Expression {
      * Creates an array using an initializer expression
      */
     public ArrayExpression(String type, List expressions) {
-        // there is never primitive element in native groovy code
-        String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-        this.elementType = boxedType;
-        setSuperType(boxedType);
+        if (!type.endsWith("[]")) type += "[]";
+        setSuperType(type);
+        this.elementType = type;
         this.expressions = expressions;
 
         for (Iterator iter = expressions.iterator(); iter.hasNext();) {

@@ -1078,7 +1078,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 cv.visitInsn(IRETURN);
             }
             else {
-                doConvertAndCast(returnType, expression);
+                doConvertAndCast(returnType, expression, false);
                 cv.visitInsn(ARETURN);
 
                 /*
@@ -1106,13 +1106,13 @@ public class AsmClassGenerator extends ClassGenerator {
     /**
      * Casts to the given type unless it can be determined that the cast is unnecessary
      */
-    protected void doConvertAndCast(String type, Expression expression) {
+    protected void doConvertAndCast(String type, Expression expression, boolean ignoreAutoboxing) {
         String expType = getExpressionType(expression);
         // temp resolution: convert all primitive casting to corresponsing Object type
-        if (BytecodeHelper.isPrimitiveType(type)) {
+        if (!ignoreAutoboxing && BytecodeHelper.isPrimitiveType(type)) {
             type = BytecodeHelper.getObjectTypeForPrimitive(type);
         }
-        if (isValidTypeForCast(type) && (expType == null || !type.equals(expType))) {
+        if (expType == null || !type.equals(expType)) {
             doConvertAndCast(type);
         }
     }
@@ -1818,7 +1818,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         visitAndAutoboxBoolean(expression.getExpression());
 
-        doConvertAndCast(type, expression.getExpression());
+        doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing());
     }
 
     public void visitNotExpression(NotExpression expression) {
@@ -3200,7 +3200,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitArrayExpression(ArrayExpression expression) {
         String type = expression.getElementType();
-        String typeName = BytecodeHelper.getClassInternalName(type);
+        if (type!=null && type.endsWith("[]")) type = type.substring(0,type.length()-2);
+        String typeName = BytecodeHelper.getClassInternalName(type);        
         Expression sizeExpression = expression.getSizeExpression();
         if (sizeExpression != null) {
             // lets convert to an int
@@ -3213,7 +3214,29 @@ public class AsmClassGenerator extends ClassGenerator {
             int size = expression.getExpressions().size();
             helper.pushConstant(size);
 
-            cv.visitTypeInsn(ANEWARRAY, typeName);
+            if (BytecodeHelper.isPrimitiveType(type)) {
+                int primType=0;
+                if (type.equals("boolean")) {
+                    primType = T_BOOLEAN;
+                } else if (type.equals("char")) {
+                    primType = T_CHAR;
+                } else if (type.equals("float")) {
+                    primType = T_FLOAT;
+                } else if (type.equals("double")) {
+                    primType = T_DOUBLE;
+                } else if (type.equals("byte")) {
+                    primType = T_BYTE;
+                } else if (type.equals("short")) {
+                    primType = T_SHORT;
+                } else if (type.equals("int")) {
+                    primType = T_INT;
+                } else if (type.equals("long")) {
+                    primType = T_LONG;
+                }
+                cv.visitIntInsn(NEWARRAY, primType);
+            } else {
+                cv.visitTypeInsn(ANEWARRAY, typeName);
+            }
 
             for (int i = 0; i < size; i++) {
                 cv.visitInsn(DUP);
@@ -3223,15 +3246,41 @@ public class AsmClassGenerator extends ClassGenerator {
                     ConstantExpression.NULL.visit(this);
                 }
                 else {
-
                     if(!type.equals(elementExpression.getClass().getName())) {
-                        visitCastExpression(new CastExpression(type, elementExpression));
-                    }
-                    else {
+                        visitCastExpression(new CastExpression(type, elementExpression, true));
+                    } else {
                         visitAndAutoboxBoolean(elementExpression);
                     }
                 }
-                cv.visitInsn(AASTORE);
+                if (type.equals("int")) {
+                    cv.visitInsn(IASTORE);
+                }
+                else if (type.equals("long")) {
+                    cv.visitInsn(LASTORE);
+                }
+                else if (type.equals("short")) {
+                    cv.visitInsn(SASTORE);
+                }
+                else if (type.equals("float")) {
+                    cv.visitInsn(FASTORE);
+                }
+                else if (type.equals("double")) {
+                    cv.visitInsn(DASTORE);
+                }
+                else if (type.equals("byte") || type.equals("boolean")) {
+                    cv.visitInsn(BASTORE);
+                }
+                else if (type.equals("char")) {
+                    cv.visitInsn(CASTORE);
+                }
+                else {
+                    cv.visitInsn(AASTORE);
+                }
+            }
+            if (BytecodeHelper.isPrimitiveType(type)) {
+                int par = defineVariable("par","java.lang.Object").getIndex();
+                cv.visitVarInsn(ASTORE, par);
+                cv.visitVarInsn(ALOAD, par);
             }
         }
     }
@@ -3960,7 +4009,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (elemType.isPrimitive()) {
                     visitClassExpression(new ClassExpression(elemType));
                     convertPrimitiveArray.call(cv);
-                    cast(loadClass(BytecodeHelper.getObjectArrayTypeForPrimitiveArray(elemType.getName() + "[]")));
+                    cast(loadClass(BytecodeHelper.formatNameForClassLoading(elemType.getName() + "[]")));
                 }
             }
 

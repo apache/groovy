@@ -2111,30 +2111,60 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     public static void putAt(byte[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Byte)) {
+            Number n = (Number) newValue;
+            newValue = new Byte(n.byteValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(char[] array, int idx, Object newValue) {
+        if (newValue instanceof String) {
+            String s = (String) newValue;
+            if (s.length()!=1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+            char c = s.charAt(0);
+            newValue = new Character(c);
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(short[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Short)) {
+            Number n = (Number) newValue;
+            newValue = new Short(n.shortValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(int[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Integer)) {
+            Number n = (Number) newValue;
+            newValue = new Integer(n.intValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(long[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Long)) {
+            Number n = (Number) newValue;
+            newValue = new Long(n.longValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(float[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Float)) {
+            Number n = (Number) newValue;
+            newValue = new Float(n.floatValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 
     public static void putAt(double[] array, int idx, Object newValue) {
+        if (!(newValue instanceof Double)) {
+            Number n = (Number) newValue;
+            newValue = new Double(n.doubleValue());
+        }
         primitiveArrayPut(array, idx, newValue);
     }
 

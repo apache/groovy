@@ -62,7 +62,7 @@ public class InvokerInvocationException extends GroovyRuntimeException {
     }
 
     public InvokerInvocationException(Throwable cause) {
-        super(cause.getMessage(),cause);
+        super((cause==null)?"java.lang.NullPointerException":cause.getMessage(),cause);
     }
 
 }

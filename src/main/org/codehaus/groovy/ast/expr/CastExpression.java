@@ -57,12 +57,23 @@ import org.codehaus.groovy.classgen.AsmClassGenerator;
 public class CastExpression extends Expression {
     
     private Expression expression;
+    private boolean ignoreAutoboxing=false;
     
     public CastExpression(String type, Expression expression) {
         super.setType(type);
         this.expression = expression;
     }
 
+    public CastExpression(String type, Expression expression, boolean ignoreAutoboxing) {
+        super.setType(type);
+        this.expression = expression;
+        this.ignoreAutoboxing = ignoreAutoboxing;
+    }
+    
+    public boolean isIgnoringAutoboxing(){
+        return ignoreAutoboxing;
+    }
+    
     public String toString() {
         return super.toString() +"[(" + type + ") " + expression + "]";
     }

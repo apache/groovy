@@ -103,7 +103,6 @@ public class FieldNode extends AnnotatedNode implements Constants {
         }
         else {
             String boxedType = BytecodeHelper.getObjectTypeForPrimitive(type);
-            boxedType = BytecodeHelper.getObjectArrayTypeForPrimitiveArray(boxedType);
             this.type = boxedType;
             dynamicType = false;
         }

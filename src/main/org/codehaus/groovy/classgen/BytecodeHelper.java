@@ -515,27 +515,6 @@ public class BytecodeHelper implements Constants {
     }
 
     /**
-     *
-     * @param type  "int[]" etc
-     * @return "[I" format
-     */
-    public static String getObjectArrayTypeForPrimitiveArray(String type) {
-        String prefix = "";
-        while (type.endsWith("[]")) {
-            prefix += "[";
-            type = type.substring(0, type.length() - 2);
-        }
-
-        if (prefix.length() ==0)
-            return type;
-
-        String suffix = getObjectTypeForPrimitive(type);
-        return prefix + "L" + suffix + ";";
-    }
-
-
-    
-    /**
      * load the constant on the operand stack. primitives auto-boxed.
      */
     void loadConstant (Object value) {
