@@ -1,0 +1,8 @@
+<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" xmlns:maven="jelly:maven">
+
+  <goal name="default" prereqs="clean, groovy:make-install"/>
+  
+  <goal name="generate">
+  </goal>
+ 
+</project>

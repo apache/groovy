@@ -4,7 +4,6 @@ target
 *.properties
 velocity.log
 logs
-lib
 dist
 .externalToolBuilders
 groovy.iml
