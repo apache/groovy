@@ -40,6 +40,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.Range;
 import groovy.util.CharsetToolkit;
 import groovy.util.ClosureComparator;
+import groovy.util.OrderBy;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -1012,7 +1013,14 @@ public class DefaultGroovyMethods {
      * A convenience method for sorting a List using a closure as a comparator
      */
     public static List sort(List self, Closure closure) {
-        Collections.sort(self, new ClosureComparator(closure));
+        // use a comparator of one item or two
+        Class[] params = closure.getParameterTypes();
+        if (params.length == 1) {
+            Collections.sort(self, new OrderBy(closure));
+        }
+        else {
+            Collections.sort(self, new ClosureComparator(closure));
+        }
         return self;
     }
 
