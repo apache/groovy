@@ -15,4 +15,28 @@ class GStringTest extends GroovyTestCase {
 		string = template.toString()
 		assert string == "hello Bob how are you?"
 	}
+    
+    void testWithVariableAtEnd() {
+        name = "Bob"
+        template = "hello ${name}"
+        string = template.toString()
+        
+        assert string == "hello Bob"
+    }
+    
+    void testWithVariableAtBeginning() {
+        name = "Bob"
+        template = "${name} hey"
+        string = template.toString()
+        
+        assert string == "Bob hey"
+    }
+
+    void testWithJustVariable() {
+        name = "Bob"
+        template = "${name}"
+        string = template.toString()
+        
+        assert string == "Bob"
+    }
 }
