@@ -17,7 +17,7 @@ class TernaryOperatorTest extends GroovyTestCase {
         assertCalledWithFoo(z < 100 ? "bar" : "foo")
        }
 
-    assertCalledWithFoo(param) {
+    def assertCalledWithFoo(param) {
         println "called with param ${param}"
         assert param == "foo"
     }
