@@ -1,5 +1,7 @@
-<project default="jar:jar" xmlns:j="jelly:core" xmlns:u="jelly:util" >
+<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" >
 
+  <goal name="default" prereqs="clean, groovy:test, jar:jar"/>
+  
   <preGoal name="xdoc:jelly-transform">
     <attainGoal name="html2xdoc"/>
   </preGoal>
