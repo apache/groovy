@@ -1199,11 +1199,47 @@ public class Parser
     protected CSTNode parameterList(int endOfListDemarc)
         throws IOException, SyntaxException
     {
+        if ( lt() == Token.IDENTIFIER
+             &&
+             lt( 2 ) == Token.COLON )
+        {
+            return namedParameterList( endOfListDemarc );
+        }
+
         CSTNode parameterList = new CSTNode( Token.syntheticList() );
 
         while ( lt() != endOfListDemarc )
         {
             parameterList.addChild( expression() );
+
+            if ( lt() == Token.COMMA )
+            {
+                consume( Token.COMMA );
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return parameterList;
+    }
+
+    protected CSTNode namedParameterList(int endOfListDemarc)
+        throws IOException, SyntaxException
+    {
+        CSTNode parameterList = new CSTNode( Token.syntheticList() );
+
+        while ( lt() != endOfListDemarc )
+        {
+            CSTNode name = rootNode( Token.IDENTIFIER );
+
+            CSTNode namedParam = rootNode( Token.COLON,
+                                           name );
+
+            namedParam.addChild( expression() );
+
+            parameterList.addChild( namedParam );
 
             if ( lt() == Token.COMMA )
             {
