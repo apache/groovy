@@ -165,7 +165,9 @@
 
   <postGoal name="test:compile">
     <attainGoal name="setclasspath"/>
+    <j:if test="context.getVariable('maven.test.skip') != 'true'">
       <attainGoal name="groovy:compile-tests"/>
+    </j:if>
     ${context.setVariable('java.awt.headless', true)}
   </postGoal>
     
