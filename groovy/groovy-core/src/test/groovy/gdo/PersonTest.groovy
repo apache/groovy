@@ -27,10 +27,7 @@ class PersonTest extends GroovyTestCase {
 		
         blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
 		
-        /** @todo bug in Groovy where the && is not parsed
         assertSql(blogs, "select * from person where size < 10 and lastName = 'Bloggs'")
-        */
-        assertSql(blogs, "select * from person where size < 10")
     }
  
     protected compareFn(value) {
