@@ -1374,6 +1374,10 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+    protected static StringBufferWriter createStringBufferWriter(StringBuffer self) {
+        return new StringBufferWriter(self);
+    }
+
     /**
      * Overloads the left shift operator to provide an easy way to append multiple
      * objects as string representations to a StringBuffer
@@ -1382,8 +1386,8 @@ public class DefaultGroovyMethods {
      * @param value a value to append
      * @return a StringWriter
      */
-    public static StringWriter leftShift(StringBuffer self, Object value) {
-        StringWriter answer = createStringWriter(self.toString());
+    public static Writer leftShift(StringBuffer self, Object value) {
+        StringBufferWriter answer = createStringBufferWriter(self);
         try {
             leftShift(answer, value);
         }
