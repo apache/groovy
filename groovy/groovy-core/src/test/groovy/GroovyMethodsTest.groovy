@@ -1,3 +1,5 @@
+import java.io.InputStreamReader
+
 /** 
  * Tests the various new Groovy methods
  * 
@@ -69,5 +71,50 @@ class GroovyMethodsTest extends GroovyTestCase {
         joined = arr.join(", ")
 
         assert joined == "a, b, c, d"
+    }
+
+    
+    void testExecuteCommandLineProcessUsingAString() {
+    	/** @todo why does this not work
+    	javaHome = System.getProperty('java.home', '')
+    	cmd = "${javaHome}/bin/java -version"
+    	*/
+    	
+    	cmd = "ls -l"
+    	if (System.getProperty('os.name', '').contains('Win')) {
+    		cmd = "dir"
+    	}
+    	
+    	println "executing command: ${cmd}"
+    	
+    	process = cmd.execute()
+    	//process = "ls -l".execute()
+    	
+    	// lets have an easier way to do this!
+    	count = 0
+    	
+    	println "Read the following lines..."
+
+    	/** @todo we should simplify the following line!!! */
+    	new InputStreamReader(process.inputStream).eachLine { line |
+    		println line
+    		count++
+    	}
+    	println ""
+    	
+    	process.waitFor()
+    	value = process.exitValue()
+    	println "Exit value of command line is ${value}"
+    	
+    	assert count > 1
+    }
+    
+    void testDisplaySystemProperties() {
+    	println "System properties are..."
+    	properties = System.properties
+    	keys = properties.keySet().sort()
+    	for (k in keys) { 
+    		println "${k} = ${properties[k]}"
+    	}
     }
 }
