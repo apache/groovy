@@ -53,6 +53,8 @@ import java.nio.charset.Charset;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.DefaultLogger;
+import org.apache.tools.ant.listener.AnsiColorLogger;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
@@ -94,6 +96,27 @@ public class Groovyc extends MatchingTask {
     protected boolean failOnError = true;
     protected boolean listFiles = false;
     protected File[] compileList = new File[0];
+
+    public static void main(String[] args) {
+        String dest = ".";
+        String src = ".";
+        if (args.length > 0) {
+            dest = args[0];
+        }
+        if (args.length > 1) {
+            src = args[1];
+        }
+
+        Project project = new Project();
+        project.addBuildListener(new AnsiColorLogger());
+
+        Groovyc compiler = new Groovyc();
+        compiler.setProject(project);
+        compiler.setSrcdir(new Path(project, src));
+        compiler.setDestdir(project.resolveFile(dest));
+        compiler.setListfiles(true);
+        compiler.execute();
+    }
 
     public Groovyc() {
     }
