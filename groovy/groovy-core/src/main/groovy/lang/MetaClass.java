@@ -92,6 +92,8 @@ public class MetaClass {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
 
+    private static boolean useReflection = false;
+
     private MetaClassRegistry registry;
     private Class theClass;
     private ClassNode classNode;
@@ -134,6 +136,20 @@ public class MetaClass {
                 listeners.put(listenerMethod.getName(), metaMethod);
             }
         }
+    }
+
+    public static boolean isUseReflection() {
+        return useReflection;
+    }
+
+    /**
+     * Allows reflection to be enabled in situations where bytecode generation
+     * of method invocations causes issues.
+     * 
+     * @param useReflection
+     */
+    public static void setUseReflection(boolean useReflection) {
+        MetaClass.useReflection = useReflection;
     }
 
     private void addInheritendMethods(Class theClass) {
@@ -1295,6 +1311,9 @@ public class MetaClass {
     protected MetaMethod createMetaMethod(Method method) {
         if (registry.useAccessible()) {
             method.setAccessible(true);
+        }
+        if (useReflection) {
+            return new ReflectionMetaMethod(method);
         }
         MetaMethod answer = new MetaMethod(method);
         if (isValidReflectorMethod(answer)) {
