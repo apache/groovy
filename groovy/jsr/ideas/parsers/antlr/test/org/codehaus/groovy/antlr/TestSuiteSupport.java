@@ -68,17 +68,24 @@ public class TestSuiteSupport implements Test, Protectable {
     /**
      * Adds a single test case or recurses into a directory adding all the test cases
      */
-    protected static void addTests(TestSuite suite, File file) {
+    protected static void addTests(TestSuite suite, File file, String[] excludedTests) {
         if (file.isDirectory()) {
             File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
                 File child = files[i];
-                addTests(suite, child);
+                addTests(suite, child, excludedTests);
             }
         }
         else {
             String path = file.getPath();
             if (path.endsWith(".groovy")) {
+                // lets check it doesn't end with any of the excluded tests
+                for (int i = 0; i < excludedTests.length; i++) {
+                    String excludedTest = excludedTests[i];
+                    if (path.endsWith(excludedTest)) {
+                        return;
+                    }
+                }
                 addTest(suite, path);
             }
         }

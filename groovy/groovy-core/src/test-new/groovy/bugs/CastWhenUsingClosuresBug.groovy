@@ -4,7 +4,9 @@
 class CastWhenUsingClosuresBug extends GroovyTestCase {
 
     void testBug() {
-        a = 1
-        [1].each { a = it }
+        def a = 1
+
+        def list = [1]
+        list.each { a = it }
     }
 }
