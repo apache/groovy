@@ -41,14 +41,30 @@ import junit.textui.TestRunner;
 import org.codehaus.groovy.classgen.GroovyClassLoader;
 
 /**
- * A TestSuite which will run a Groovy unit test case inside any Java IDE.
+ * A TestSuite which will run a Groovy unit test case inside any Java IDE
+ * either as a unit test case or as an application.
+ * 
+ * You can specify the GroovyUnitTest to run by running this class as an appplication
+ * and specifying the script to run on the command line. 
+ * 
+ * <code>
+ * java groovy.util.GroovyTestSuite src/test/Foo.groovy
+ * </code>
+ * 
+ * Or to run the test suite as a unit test suite in an IDE you can use
+ * the 'test' system property to define the test script to run.
+ * e.g. pass this into the JVM when the unit test plugin runs...
+ * 
+ * <code>
+ * -Dtest=src/test/Foo.groovy
+ * </code>
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class GroovyTestSuite extends TestSuite {
     
-    protected static String file = "src/test/groovy/PrintTest.groovy";
+    protected static String file = null;
     
     protected GroovyClassLoader loader = new GroovyClassLoader(GroovyTestSuite.class.getClassLoader());
 
@@ -71,7 +87,7 @@ public class GroovyTestSuite extends TestSuite {
     }
 
     public void loadTestSuite() throws Exception {
-        String fileName = System.getProperty("testScript", file);
+        String fileName = System.getProperty("test", file);
         if (fileName == null) {
             throw new RuntimeException("No filename given so cannot run a Groovy unit test");
         }
