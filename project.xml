@@ -276,7 +276,16 @@
           <role>Developer</role>
         </roles>
    </developer>
-
+    <developer>
+        <name>Jochen Theodorou</name>
+        <id>blackdrag</id>
+        <email>blackdrag@uni.de</email>
+        <organization></organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+   </developer>
+   
   </developers>
 
   <contributors>
