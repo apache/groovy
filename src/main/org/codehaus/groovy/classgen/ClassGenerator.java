@@ -193,6 +193,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private ConstructorNode constructorNode;
     private MethodNode methodNode;
+    private PropertyNode propertyNode;
 
     public ClassGenerator(
         GeneratorContext context,
@@ -336,6 +337,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      */
     public void visitProperty(PropertyNode statement) {
         onLineNumber(statement);
+        this.propertyNode = statement;
+        this.methodNode = null;
     }
 
     // GroovyCodeVisitor interface
@@ -1521,13 +1524,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitTupleExpression(TupleExpression expression) {
         int size = expression.getExpressions().size();
+
+        /*
+        int[] indices = new int[size];
+
+        for (int i = 0; i < size; i++) {
+            indices[i] = defineVariable(createVariableName("array"), "java.util.Iterator", false).getIndex();
+            expression.getExpression(i).visit(this);
+            cv.visitVarInsn(ASTORE, indices[i]);
+        }
+        */
+        
         pushConstant(size);
 
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-
+        
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
             pushConstant(i);
+            //cv.visitVarInsn(ALOAD, indices[i]);
             expression.getExpression(i).visit(this);
             cv.visitInsn(AASTORE);
         }
@@ -1541,7 +1556,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         String typeName = getClassInternalName(expression.getType());
         cv.visitTypeInsn(ANEWARRAY, typeName);
 
+        //int arrayIdx = defineVariable(createVariableName("array"), "java.util.Iterator", false).getIndex();
+        //cv.visitVarInsn(ASTORE, arrayIdx);
+
         for (int i = 0; i < size; i++) {
+            //cv.visitVarInsn(ALOAD, arrayIdx);
             cv.visitInsn(DUP);
             pushConstant(i);
             Expression elementExpression = expression.getExpression(i);
@@ -2008,7 +2027,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor();
         VariableScopeCodeVisitor innerVisitor = new VariableScopeCodeVisitor();
 
-        methodNode.getCode().visit(outerVisitor);
+        if (methodNode != null) {
+            // we must be in a property
+            methodNode.getCode().visit(outerVisitor);
+        }
+        else {
+            // propertyNode.getInitialValueExpression().visit(outerVisitor);
+        }
         expression.getCode().visit(innerVisitor);
 
         // now any variables declared in the outer context that are referred to

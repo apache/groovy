@@ -5,14 +5,23 @@
 class ClosureInStaticMethodTest extends GroovyTestCase {
 
     void testClosureInStaticMethod() {
-        closure = staticMethod()
+        closure = closureInStaticMethod()
         assertClosure(closure)    
     }
-  
-	static staticMethod() {
-	    { println(it) }
-	}
-	
+
+    void testMethodClosureInStaticMethod() {
+        closure = methodClosureInStaticMethod()
+        assertClosure(closure)    
+    }
+    
+    static closureInStaticMethod() {
+        { println(it) }
+    }
+    
+    static methodClosureInStaticMethod() {
+        System.out.println
+    }
+    
     static assertClosure(Closure block) {
         assert block != null
         block.call("hello!")
