@@ -1266,8 +1266,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected ClosureExpression closureExpression(AST node) {
         AST paramNode = node.getFirstChild();
-        Parameter[] parameters = parameters(paramNode);
-        AST codeNode = paramNode.getNextSibling();
+        Parameter[] parameters = Parameter.EMPTY_ARRAY;
+        AST codeNode = paramNode;
+        if (isType(PARAMETERS, paramNode) || isType(IMPLICIT_PARAMETERS, paramNode)) {
+            parameters = parameters(paramNode);
+            codeNode = paramNode.getNextSibling();
+        }
         Statement code = statementListNoChild(codeNode);
         return new ClosureExpression(parameters, code);
     }

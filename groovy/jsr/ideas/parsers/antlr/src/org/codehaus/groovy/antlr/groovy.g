@@ -1210,6 +1210,11 @@ closureParameters
         							nls! BOR!
                 // Yes, you can have a full parameter declaration list.
                 // they can be wrapped in parens to allow complex expressions
+                
+									| BOR! nls! BOR!
+									| LOR!
+																	// allow empty double bar if folks wanna explicitly mean a zero parameter closure
+																	
         |   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
                 {#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
         ;
@@ -1217,6 +1222,7 @@ closureParameters
 /** Lookahead for closureParameters. */
 closureParametersStart!
         :   BOR
+        |   LOR // for empty parameter declaration
         |       parameterIdent! nls! (BOR | COMMA)
         |   LPAREN balancedTokens! RPAREN nls! BOR
         ;
