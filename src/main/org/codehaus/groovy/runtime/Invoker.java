@@ -320,12 +320,20 @@ public class Invoker {
             return 1;
         }
         if (left instanceof Comparable) {
-            if (left instanceof Number) {
-                return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
-            }
-            else {
-                Comparable comparable = (Comparable) left;
-                return comparable.compareTo(right);
+        	if (left instanceof Number) {
+        		return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
+        	}
+        	else if (right instanceof Number) {
+    			return DefaultGroovyMethods.compareTo(asNumber(left), (Number)right);
+    		}
+    		else {
+    			try {
+    				return DefaultGroovyMethods.compareTo(asNumber(left), asNumber(right));
+    			}
+    			catch (Exception e) {
+    				Comparable comparable = (Comparable) left;
+    				return comparable.compareTo(right);
+    			}
             }
         }
         /** todo we might wanna do some type conversion here */
@@ -494,7 +502,15 @@ public class Invoker {
             return (Number) value;
         }
         else if (value instanceof String) {
-            return Double.valueOf((String) value);
+        String s = (String)value;
+        
+        	if (s.length() == 1)
+        		return new Integer(s.charAt(0));
+        	else
+        		return Double.valueOf(s);
+        }
+        else if (value instanceof Character) {
+        	return new Integer(((Character)value).charValue());
         }
         else {
             throw new GroovyRuntimeException("Could not convert object: " + value + " into a Number");
@@ -604,6 +620,18 @@ public class Invoker {
 	            else {
 	                throw new ClassCastException("Cannot cast: " + text + " to a Character");
 	            }
+        	}
+        }
+        if (Number.class.isAssignableFrom(type)) {
+        	if (object instanceof Character) {
+        		return new Integer(((Character)object).charValue());
+        	} else if (object instanceof String) {
+        	String c = (String)object;
+        		if (c.length() == 1) {
+        			return new Integer(c.charAt(0));
+        		} else {
+        			throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
+        		}
         	}
         }
         if (object instanceof Number) {
