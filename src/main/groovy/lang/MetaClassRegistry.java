@@ -80,8 +80,6 @@ public class MetaClassRegistry {
     }
 
     public MetaClass getMetaClass(Class theClass) {
-        /** @todo use static field to get the MetaClass from Groovy classes*/
-
         MetaClass answer = (MetaClass) metaClasses.get(theClass);
         if (answer == null) {
             try {
