@@ -39,6 +39,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
@@ -203,6 +204,27 @@ public class ASTBuilderTest extends TestParserSupport {
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
 
         System.out.println(statement.getStatements());
+    }
+
+    public void testInstanceofBug() throws Exception {
+        ModuleNode module =
+        parse("class Foo { void testMethod() { if (foo instanceof java.util.List) { println('hello') } } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+
+        System.out.println(statement.getStatements());
+        
+        IfStatement ifStmt = (IfStatement) statement.getStatements().get(0);
+        BinaryExpression exp = (BinaryExpression) ifStmt.getBooleanExpression().getExpression();
+        
+        System.out.println("exp: " + exp);
+        
+        Expression rhs = exp.getRightExpression();
+        assertTrue("RHS should be a class expression", rhs instanceof ClassExpression);
+        
+        ClassExpression classExp = (ClassExpression) rhs;
+        assertEquals("java.util.List", classExp.getType());
     }
 
     public void testMethodCallWithoutParensBug() throws Exception {

@@ -1231,7 +1231,19 @@ public class ASTBuilder
     protected BinaryExpression binaryExpression(CSTNode expressionRoot) throws ParserException
     {
         Expression lhsExpression = expression( expressionRoot.getChild( 0 ) );
-        Expression rhsExpression = expression( expressionRoot.getChild( 1 ) );
+        
+        Expression rhsExpression = null;
+        CSTNode classNode = expressionRoot.getChild(1);
+        if (expressionRoot.getToken().getType() == Token.KEYWORD_INSTANCEOF) {
+            String name = resolvedQualifiedName(classNode);
+            if (name == null) {
+                name = identifier(classNode);
+            }
+            rhsExpression = new ClassExpression(name);
+        }
+        else {
+            rhsExpression = expression(classNode);
+        }
 
         return new BinaryExpression( lhsExpression,
                                      expressionRoot.getToken(),
