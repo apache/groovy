@@ -48,6 +48,7 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 
 /**
@@ -70,6 +71,22 @@ public class IntRange extends AbstractList implements Range {
     public boolean equals(Object that) {
         if (that instanceof IntRange) {
             return equals((IntRange) that);
+        }
+        else if (that instanceof List) {
+            return equals((List) that);
+        }
+        return false;
+    }
+
+    public boolean equals(List that) {
+        int size = size();
+        if (that.size() == size) {
+            for (int i = 0; i < size; i++ ) {
+                if (! InvokerHelper.compareEqual(get(i), that.get(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }
