@@ -189,14 +189,21 @@ public class DefaultGroovyMethods {
 	}
 
 	/**
-	 * General use method
+	 * Scoped use method
 	 * 
-	 * @param self
-	 * @param class
 	 */
-	public static void use(Object self, Class clazz) {
-	    GroovyCategorySupport.use(clazz);
+	public static void use(Object self, Class categoryClass, Closure closure) {
+		GroovyCategorySupport.use(categoryClass, closure);
 	}
+	
+	/**
+	 * Scoped use method with list of categories
+	 * 
+	 */
+	public static void use(Object self, List categoryClassList, Closure closure) {
+		GroovyCategorySupport.use(categoryClassList, closure);
+	}
+	
 	
     /**
      * Print to a console in interactive format

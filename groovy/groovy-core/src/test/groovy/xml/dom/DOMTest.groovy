@@ -5,12 +5,14 @@ import org.codehaus.groovy.tools.xml.*;
 
 class DOMTest extends GroovyTestCase {
 
+  benchmark = false;
+
   void testDOMParser() {
     xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");
     doc = DOMBuilder.parse(xml);
     html = doc.documentElement;
     
-    assertCorrect html;
+    if (!benchmark) { assertCorrect html }
   }
 
   void testDOMBuilder() {
@@ -25,7 +27,7 @@ class DOMTest extends GroovyTestCase {
       }
     }
 
-    assertCorrect html;
+    if (!benchmark) { assertCorrect html }
   }
 
   void testStreamingDOMBuilder() {
@@ -43,34 +45,36 @@ class DOMTest extends GroovyTestCase {
 		  }
         }
       }
-	}
+	}()
 
-    assertCorrect doc().documentElement;
+    if (!benchmark) { assertCorrect doc.documentElement }
   }
 
-  assertCorrect(html) {
-    use groovy.xml.dom.DOMCategory;
-
-    assert html.head.title.textContent == "Test";
-    assert html.body.p.textContent == "This is a test.";
-    assert html.find { it.tagName == "body" }.tagName == "body";
-    assert html.getElementsByTagName("*").findAll { if (it["@class"] != "") { return it } }.size() == 2;
+  void assertCorrect(html) {
+    use (groovy.xml.dom.DOMCategory) {
+	  assert html.head.title.textContent == "Test";
+    	  assert html.body.p.textContent == "This is a test.";
+      assert html.find { it.tagName == "body" }.tagName == "body";
+      assert html.getElementsByTagName("*").findAll { if (it["@class"] != "") { return it } }.size() == 2;
+    }
+    shouldFail (MissingPropertyException) { html.head };
   }
   
   static void main(args) {
   	// Relative results:
   	// Test       04/27/2004
   	// Parser:    1.0
-  	// Builder:   1.28
-  	// Streaming: 0.69
-  	
+  	// Builder:   1.06
+  	// Streaming: 0.63
+  	x = Integer.parseInt(args[0]);
   	test = new DOMTest();
   	standard = 0;
+  	test.benchmark = true;
   	[test.testDOMParser, test.testDOMBuilder, test.testStreamingDOMBuilder].each {
   		// Run the method once to fill any caches and to load classes
   		it();
 	  	start = System.currentTimeMillis();
-  		for (i in 1..2000) {
+  		for (i in 1..x) {
   			it();
 	  	}
   		elapsed = System.currentTimeMillis() - start;
