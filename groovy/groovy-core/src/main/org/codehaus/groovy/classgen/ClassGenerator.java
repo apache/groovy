@@ -307,9 +307,9 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
         helper = new BytecodeHelper(cv);
 
-        resetVariableStack(node.getParameters());
-
         findMutableVariables(node);
+
+        resetVariableStack(node.getParameters());
 
         outputReturn = false;
 
@@ -1057,7 +1057,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         List constructors = innerClass.getConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
         Parameter[] localVariableParams = node.getParameters();
-        
+
         //Parameter[] localVariableParams = getClosureSharedVariables(expression);
         for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
@@ -2639,23 +2639,34 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 answer.setHolder(true);
             }
             variableStack.put(name, answer);
-            if (define && !definingParameters) {
-                // using new variable inside a comparison expression
-                // so lets initialize it too
-                if (answer.isHolder()) {
-                    //cv.visitVarInsn(ASTORE, idx + 1);
-
-                    cv.visitTypeInsn(NEW, "groovy/lang/Reference");
-                    cv.visitInsn(DUP);
-                    cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
-
-                    cv.visitVarInsn(ASTORE, idx);
-                    //cv.visitVarInsn(ALOAD, idx + 1);
+            if (define) {
+                if (definingParameters) {
+                    if (answer.isHolder()) {
+                        cv.visitTypeInsn(NEW, "groovy/lang/Reference");
+                        cv.visitInsn(DUP);
+                        cv.visitVarInsn(ALOAD, idx);
+                        cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V");
+                        cv.visitVarInsn(ASTORE, idx);
+                    }
                 }
                 else {
-                    if (!leftHandExpression) {
-                        cv.visitInsn(ACONST_NULL);
+                    // using new variable inside a comparison expression
+                    // so lets initialize it too
+                    if (answer.isHolder()) {
+                        //cv.visitVarInsn(ASTORE, idx + 1);
+
+                        cv.visitTypeInsn(NEW, "groovy/lang/Reference");
+                        cv.visitInsn(DUP);
+                        cv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "()V");
+
                         cv.visitVarInsn(ASTORE, idx);
+                        //cv.visitVarInsn(ALOAD, idx + 1);
+                    }
+                    else {
+                        if (!leftHandExpression) {
+                            cv.visitInsn(ACONST_NULL);
+                            cv.visitVarInsn(ASTORE, idx);
+                        }
                     }
                 }
             }

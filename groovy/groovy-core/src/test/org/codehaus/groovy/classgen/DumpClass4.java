@@ -148,4 +148,8 @@ public class DumpClass4 {
     public String testSuperCall() {
         return super.toString();
     }
+    
+    public Object createReference(Object foo) {
+        return new Reference(foo);
+    }
 }

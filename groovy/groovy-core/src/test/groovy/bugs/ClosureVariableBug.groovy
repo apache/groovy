@@ -24,4 +24,18 @@ class ClosureVariableBug extends GroovyTestCase {
     	value = foo.a()
     	assert value == 123
     }
+    
+    void testPassingInUndefinedVariable() {
+    	value = callClosure([1, 2])
+    	assert value == 2
+    }
+    
+    protected Integer callClosure(collection) {
+    	/** @todo
+    	Integer x
+    	*/
+    	Integer x = 0
+    	collection.each { x = it }
+    	return x
+    }
 }
