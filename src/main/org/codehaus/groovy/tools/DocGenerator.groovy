@@ -59,7 +59,7 @@ class DocGenerator
 			if (method.isPublic() && method.isStatic())
 			{
 				parameters = method.getParameters()
-				jdkClass = parameters[0].toString()
+				jdkClass = parameters[0].type.toString()
 				if (jdkEnhancedClasses.containsKey(jdkClass))
 					jdkEnhancedClasses[jdkClass].add(method)
 				else
@@ -87,7 +87,7 @@ class DocGenerator
 		
 			// lets iterate in sorted class name order
 			sortedClasses = [] + jdkEnhancedClasses.keySet()
-			sortedClasses.sort().each { className |
+			for (className in sortedClasses.sort()) {
 				writer2.print("<h2>${getObjectType(className)}</h2>")
 
 				listOfMethods = jdkEnhancedClasses[className]
