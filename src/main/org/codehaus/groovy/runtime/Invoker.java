@@ -45,8 +45,8 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.Tuple;
@@ -62,8 +62,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.mockobjects.util.NotImplementedException;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -245,7 +243,7 @@ public class Invoker {
 					return matcher.group();
 				}
 				public void remove() {
-					throw new NotImplementedException();
+					throw new UnsupportedOperationException();
 				}
         	};
         }
