@@ -43,58 +43,41 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+package org.codehaus.groovy.ast;
 
-package org.codehaus.groovy.classgen;
-
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.Type;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.ForStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 /**
+ * Represents a type, either a dynamic type or statically defined type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ForTest extends TestSupport {
+public class Type {
 
-    public void testLoop() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
-        classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
+    public static final Type DYNAMIC_TYPE = new Type();
+    
+    private String name;
+    private boolean dynamic;
 
-        Parameter[] parameters = { new Parameter("coll")};
+    public Type() {
+        this.name = "java.lang.Object";
+        this.dynamic = true;
+    }
 
-        Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
+    public Type(String name) {
+        this.name = name;
+        this.dynamic = false;
+    }
 
-        ForStatement statement = new ForStatement("i", Type.DYNAMIC_TYPE, new VariableExpression("coll"), loopStatement);
-        classNode.addMethod(new MethodNode("iterateDemo", ACC_PUBLIC, "void", parameters, statement));
+    public String toString() {
+        return super.toString() + "[name:" + name + " dynamic: " + dynamic + "]";
+    }
 
-        Class fooClass = loadClass(classNode);
-        assertTrue("Loaded a new class", fooClass != null);
+    public String getName() {
+        return name;
+    }
 
-        Object bean = fooClass.newInstance();
-        assertTrue("Managed to create bean", bean != null);
-
-        System.out.println("################ Now about to invoke method");
-
-        Object[] array = { new Integer(1234), "abc", "def" };
-
-        try {
-            InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[] {array});
-        }
-        catch (InvokerInvocationException e) {
-            System.out.println("Caught: " + e.getCause());
-            e.getCause().printStackTrace();
-            fail("Should not have thrown an exception");
-        }
-        System.out.println("################ Done");
+    public boolean isDynamic() {
+        return dynamic;
     }
 }

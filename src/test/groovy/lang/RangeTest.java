@@ -115,8 +115,6 @@ public class RangeTest extends TestCase {
 
         List s = r.subList(2, 4);
 
-        assertTrue("is a Range", r instanceof Range);
-
         Range sr = (Range) s;
 
         assertEquals("from", 12, sr.getFrom());

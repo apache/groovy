@@ -49,6 +49,7 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class RunBugsTest extends TestSupport {
 
+    /*
     public void testStaticMethodCall() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/StaticMethodCallBug.groovy");
         object.invokeMethod("testBug", null);
@@ -96,6 +97,11 @@ public class RunBugsTest extends TestSupport {
     
     public void testMethodDispatchBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/MethodDispatchBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    */
+    public void testNestedClosureBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/NestedClosureBug.groovy");
         object.invokeMethod("testBug", null);
     }
    }

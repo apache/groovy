@@ -71,8 +71,13 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     private Set referencedVariables = new HashSet();
     private VariableScopeCodeVisitor closureVisitor;
     private Set parameterSet = new HashSet();
+    private boolean outer;
 
     public VariableScopeCodeVisitor() {
+    }
+
+    public VariableScopeCodeVisitor(boolean outer) {
+        this.outer = outer;
     }
 
     public Set getDeclaredVariables() {
@@ -94,6 +99,10 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         return closureVisitor;
     }
 
+    public boolean isOuter() {
+        return outer;
+    }
+
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
         if (expression.getOperation().isAssignmentToken() && leftExpression instanceof VariableExpression) {
@@ -112,10 +121,15 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        getClosureVisitor().setParameters(expression.getParameters());
-        expression.getCode().visit(getClosureVisitor());
+        VariableScopeCodeVisitor visitor = getClosureVisitor();
+        visitor.setParameters(expression.getParameters());
+        expression.getCode().visit(visitor);
+        if (! outer) {
+            referencedVariables.addAll(visitor.referencedVariables);
+            declaredVariables.addAll(visitor.declaredVariables);
+        }
     }
-
+    
     public void visitVariableExpression(VariableExpression expression) {
         // check for undeclared variables?
         String variable = expression.getVariable();

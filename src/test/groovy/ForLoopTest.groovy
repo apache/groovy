@@ -16,6 +16,38 @@ class ForLoopTest extends GroovyTestCase {
         assert x == 45
     }
 
+    void testRangeWithType() {
+        x = 0
+
+        for ( Integer i in 0..9 ) {
+        	assert i.class == Integer
+            x = x + i
+        }
+
+        assert x == 45
+    }
+
+	void testRangeWithJdk15Style() {
+        x = 0
+
+        for ( i : 0..9 ) {
+            x = x + i
+        }
+
+        assert x == 45
+	}
+	
+	void testRangeWithJdk15StyleAndType() {
+        x = 0
+
+        for ( Integer i : 0..9 ) {
+        	assert i.class == Integer
+            x = x + i
+        }
+
+        assert x == 45
+	}
+	
     void testList() {
         x = 0
 		
