@@ -5,10 +5,9 @@ class CallingClosuresWithClosuresBug extends GroovyTestCase {
 
     void testBug() {
         a = {1}
-        b = {a.call()}
-        /** @todo this fails
+        // old workaround
+        //b = {a.call()}
         b = {a()}
-        */
         
         value = b()
         
