@@ -53,7 +53,7 @@ package groovy.lang;
  * @version $Revision$
  */
 public abstract class Script extends GroovyObjectSupport {
-    private ScriptContext context;
+    private ScriptContext bindings;
 
     public Script() {
         this(new ScriptContext());
@@ -61,20 +61,24 @@ public abstract class Script extends GroovyObjectSupport {
 
     /** @todo temporary hack until constructor type checking is better */
     public Script(Object object) {
-        ScriptContext binding = (ScriptContext) object;
-        this.context = binding;
+        ScriptContext bindings = (ScriptContext) object;
+        this.bindings = bindings;
     }
 
-    public ScriptContext getBinding() {
-        return context;
+    public ScriptContext getBindings() {
+        return bindings;
     }
     
+    public void setBindings(ScriptContext bindings) {
+        this.bindings = bindings;
+    }
+
     public Object getProperty(String property) {
-        return context.getVariable(property);
+        return bindings.getVariable(property);
     }
 
     public void setProperty(String property, Object newValue) {
-        context.setVariable(property, newValue);
+        bindings.setVariable(property, newValue);
     }
 
     /**
