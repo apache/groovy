@@ -7,12 +7,14 @@
 # (pops result in antlr-runtime.jar)
 #
 # @author "Jeremy Rayner"<groovy@ross-rayner.com>
+# Thanks to Christopher Schultz
 
 jar xvf antlr-2.7.5.jar
 
 mkdir antlr-runtime
 mkdir antlr-runtime/antlr
 mkdir antlr-runtime/antlr/collections
+mkdir antlr-runtime/antlr/collections/impl
 mkdir antlr-runtime/antlr/debug
 mkdir antlr-runtime/antlr/debug/misc
 
@@ -24,6 +26,7 @@ cp antlr/ASTPair.class antlr-runtime/antlr
 cp antlr/BaseAST.class antlr-runtime/antlr
 cp antlr/ByteBuffer.class antlr-runtime/antlr
 cp antlr/CharBuffer.class antlr-runtime/antlr
+cp antlr/CharFormatter.class antlr-runtime/antlr
 cp antlr/CharQueue.class antlr-runtime/antlr
 cp antlr/CharScanner.class antlr-runtime/antlr
 cp antlr/CharStreamException.class antlr-runtime/antlr
@@ -51,8 +54,10 @@ cp antlr/TokenStream.class antlr-runtime/antlr
 cp antlr/Token.class antlr-runtime/antlr
 cp antlr/collections/ASTEnumeration.class antlr-runtime/antlr/collections
 cp antlr/collections/AST.class antlr-runtime/antlr/collections
-cp antlr/collections/impl/ASTArray.class antlr-runtime/antlr/collections
-cp antlr/collections/impl/BitSet.class antlr-runtime/antlr/collections
+cp antlr/collections/impl/ASTArray.class antlr-runtime/antlr/collections/impl
+cp antlr/collections/impl/BitSet.class antlr-runtime/antlr/collections/impl
+cp antlr/collections/impl/IntRange.class antlr-runtime/antlr/collections/impl
+cp antlr/collections/impl/Vector.class antlr-runtime/antlr/collections/impl
 cp antlr/debug/misc/ASTFrame\$1.class antlr-runtime/antlr/debug/misc
 cp antlr/debug/misc/ASTFrame\$MyTreeSelectionListener.class antlr-runtime/antlr/debug/misc
 cp antlr/debug/misc/ASTFrame.class antlr-runtime/antlr/debug/misc
