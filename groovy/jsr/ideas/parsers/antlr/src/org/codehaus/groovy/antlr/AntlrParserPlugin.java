@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -45,6 +46,8 @@ import java.util.List;
  * @version $Revision$
  */
 public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes {
+    private static final Type OBJECT_TYPE = new Type("java.lang.Object", true);
+
     private AST ast;
     private ModuleNode module;
     private ClassNode classNode;
@@ -390,9 +393,31 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return new ContinueStatement(label(node));
     }
 
-    protected Statement forStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
+    protected Statement forStatement(AST forNode) {
+        AST inNode = forNode.getFirstChild();
+        dumpTree(forNode);
+        AST variableNode = inNode.getFirstChild();
+        AST collectionNode = variableNode.getNextSibling();
+
+        Type type = OBJECT_TYPE;
+        if (isType(VARIABLE_DEF, variableNode)) {
+            AST typeNode = variableNode.getFirstChild();
+            assertNodeType(TYPE, typeNode);
+
+            AST typeIdentifierNode = typeNode.getFirstChild();
+            assertNodeType(IDENT, typeIdentifierNode);
+
+            // TODO intern types?
+            type = new Type(typeIdentifierNode.getText());
+            variableNode = typeNode.getNextSibling();
+        }
+        assertNodeType(IDENT, variableNode);
+        String variable = variableNode.getText();
+
+        Expression collectionExpression = expression(collectionNode);
+        Statement block = statement(inNode.getNextSibling());
+
+        return new ForStatement(variable, type, collectionExpression, block);
     }
 
     protected Statement ifStatement(AST ifNode) {

@@ -74,4 +74,19 @@ class HelloWorld extends GroovyTestCase {
         list.each {(e)| println "List contains $e" }
     }
 
+    void testFor() {
+        def list = [1, 2, 3]
+
+        println "normal iteration loop on list $list"
+
+        for (i in list) {
+            println "for item: $i"
+        }
+
+        println "typed iteration loop on list $list"
+
+        for (Integer i in list) {
+            println "for item: $i"
+        }
+    }
 }
