@@ -57,9 +57,14 @@ import java.util.Map;
  * @version $Revision$
  */
 public class Binding extends GroovyObjectSupport {
-    private Map variables = new HashMap();
+    private Map variables;
     
     public Binding() {
+        variables = new HashMap();
+    }
+    
+    public Binding(Map variables) {
+        this.variables = variables;
     }
     
     /**
@@ -68,6 +73,7 @@ public class Binding extends GroovyObjectSupport {
      * @param args are the command line arguments from a main()
      */
     public Binding(String[] args) {
+        this();
         setVariable("args", args);
     }
     

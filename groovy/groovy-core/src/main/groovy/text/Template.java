@@ -33,16 +33,21 @@
  */
 package groovy.text;
 
-import groovy.lang.Binding;
 import groovy.lang.Writable;
+
+import java.util.Map;
 
 
 /**
+<<<<<<< Template.java
+ * A template is a block of text with an associated binding that can be output to a writer or evaluated to a string.
+=======
  * Represents a generic template which can be generated from a binding of variable state
  * to some output stream
+>>>>>>> 1.2
  * 
  * @author sam
  */
 public interface Template extends Writable {
-    void setBinding(Binding binding);
+    void setBinding(Map binding);
 }
