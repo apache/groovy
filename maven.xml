@@ -185,13 +185,13 @@
     <mkdir dir="${basedir}/target/test-classes/wiki"/>
     <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
     
-    <copy todir="${basedir}/target/test-classes">
+    <copy todir="${basedir}/target/classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
         <exclude name="CVS/*"/>
       </fileset>
     </copy>
-    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
+    <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
   </goal>
