@@ -126,6 +126,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
+    MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
 
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
@@ -564,6 +565,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitBooleanExpression(BooleanExpression expression) {
         expression.getExpression().visit(this);
+        
+        if (expression.getExpression() instanceof MethodCallExpression) {
+            // lets convert the return value to a boolean
+            asBool.call(cv);
+        }
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {

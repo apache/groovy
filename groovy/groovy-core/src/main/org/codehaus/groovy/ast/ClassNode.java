@@ -90,8 +90,6 @@ public class ClassNode extends ASTNode implements Constants {
         this.modifiers = modifiers;
         this.superClass = superClass;
         this.interfaces = interfaces;
-
-        System.out.println("Creating class: " + name + " with superclass: " + superClass);
     }
 
     public String getSuperClass() {

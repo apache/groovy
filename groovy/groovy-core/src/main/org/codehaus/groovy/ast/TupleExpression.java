@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -79,6 +80,23 @@ public class TupleExpression extends Expression {
 
     public Expression getExpression(int i) {
         return (Expression) expressions.get(i);
+    }
+
+    public String getText() {
+        StringBuffer buffer = new StringBuffer("(");
+        boolean first = true;
+        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+            if (first) {
+                first = false;
+            }
+            else {
+                buffer.append(", ");
+            }
+            
+            buffer.append(((Expression)iter.next()).getText());
+        }
+        buffer.append(")");
+        return buffer.toString();
     }
 
 }
