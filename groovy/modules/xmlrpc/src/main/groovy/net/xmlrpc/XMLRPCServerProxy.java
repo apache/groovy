@@ -63,7 +63,6 @@ import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
  */
 public class XMLRPCServerProxy extends GroovyObjectSupport {
 	private URL serverURL;
-	private StringBuffer propertyPrefix = new StringBuffer();
 	
 	public XMLRPCServerProxy(final String serverURL) throws MalformedURLException {
 		this.serverURL = new URL(serverURL);
@@ -81,21 +80,27 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 		 * Thanks and credit to Fredrik Lundh
 		 * 
 		 */
-
-		this.propertyPrefix.append(property).append('.');
 		
-		return this;
+		return new GroovyObjectSupport() {
+		private StringBuffer propertyPrefix = new StringBuffer(property + ".");
+		
+			public Object getProperty(final String property) {
+				this.propertyPrefix.append(property).append('.');
+				
+				return this;
+			}
+			
+			public Object invokeMethod(final String name, final Object args) {
+				return XMLRPCServerProxy.this.invokeMethod(this.propertyPrefix + name, args);
+			}
+		};
 	}
 	
 	/* (non-Javadoc)
 	 * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
 	 */
-	public Object invokeMethod(final String name, final Object args) {
-	final String methodName = this.propertyPrefix.append(name).toString();
-	
-		this.propertyPrefix.setLength(0);
-	
-		if ("invokeMethod".equals(methodName)) return super.invokeMethod(methodName, args);
+	public Object invokeMethod(final String name, final Object args) {	
+		if ("invokeMethod".equals(name)) return super.invokeMethod(name, args);
 		
 		try {
 		final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
@@ -109,7 +114,7 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 		
 			
 			try {
-				XMLRPCMessageProcessor.encodeString(buffer, methodName).append("</methodName>\n\t<params>\n");
+				XMLRPCMessageProcessor.encodeString(buffer, name).append("</methodName>\n\t<params>\n");
 				
 				for (int i = 0; i != numberOfparams; i++) {
 				final Object param = params[i];
