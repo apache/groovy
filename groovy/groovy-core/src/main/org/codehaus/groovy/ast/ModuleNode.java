@@ -64,7 +64,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
  */
 public class ModuleNode extends ASTNode {
     
-    private BlockStatement statements = new BlockStatement();
+    private BlockStatement statementBlock = new BlockStatement();
     private List classes = new ArrayList();
     private Map imports = new HashMap();
     private CompileUnit unit;
@@ -75,8 +75,8 @@ public class ModuleNode extends ASTNode {
     public ModuleNode() {
     }
     
-    public BlockStatement getStatements() {
-        return statements;
+    public BlockStatement getStatementBlock() {
+        return statementBlock;
     }
     
     public List getClasses() {
@@ -95,7 +95,7 @@ public class ModuleNode extends ASTNode {
     }
     
     public void addStatement(Statement node) {
-        statements.addStatement(node);
+        statementBlock.addStatement(node);
     }
     
     public void addClass(ClassNode node) {
