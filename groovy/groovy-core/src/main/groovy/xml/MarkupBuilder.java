@@ -43,41 +43,96 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package groovy.xml;
 
-import java.io.IOException;
+import groovy.util.BuilderSupport;
+import groovy.util.IndentPrinter;
 
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
+ * A helper class for creating XML or HTML markup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class TestXmlSupport extends TestSupport {
+public class MarkupBuilder extends BuilderSupport {
 
-    protected void dump(Node node) throws IOException {
-        XMLSerializer printer = createSerializer();
-        if (node instanceof Document) {
-            printer.serialize((Document) node);
+    private IndentPrinter out;
+    private boolean newline;
+
+    public MarkupBuilder() {
+        this(new IndentPrinter());
+    }
+
+    public MarkupBuilder(PrintWriter writer) {
+        this(new IndentPrinter(writer));
+    }
+
+    public MarkupBuilder(IndentPrinter out) {
+        this.out = out;
+    }
+
+    protected void setParent(Object parent, Object child) {
+    }
+
+    protected Object createNode(Object name) {
+        out.printIndent();
+        out.print("<");
+        print(name);
+        out.println(">");
+        out.incrementIndent();
+        newline = true;
+        return name;
+    }
+
+    protected Object createNode(Object name, Object value) {
+        out.printIndent();
+        out.print("<");
+        print(name);
+        out.print(">");
+        print(value);
+        newline = false;
+        return name;
+    }
+
+    protected Object createNode(Object name, Map attributes) {
+        out.printIndent();
+        out.print("<");
+        out.print(name.toString());
+        for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            out.print(" ");
+            print(entry.getKey());
+            out.print("='");
+            print(entry.getValue());
+            out.print("'");
+        }
+        out.println(">");
+        out.incrementIndent();
+        newline = true;
+        return name;
+    }
+
+    protected void nodeCompleted(Object node) {
+        if (newline) {
+            out.decrementIndent();
+            out.printIndent();
+        }
+        out.print("</");
+        print(node);
+        out.println(">");
+        out.flush();
+    }
+
+    protected void print(Object node) {
+        if (node != null) {
+            out.print(node.toString());
         }
         else {
-            printer.serialize((Element) node);
+            out.print("null");
         }
-        System.out.println();
-    }
-
-    protected XMLSerializer createSerializer() {
-        return new XMLSerializer(System.out, new OutputFormat());
-    }
-
-    protected SAXBuilder createSAXBuilder() throws IOException {
-        return new SAXBuilder(createSerializer().asContentHandler());
     }
 }

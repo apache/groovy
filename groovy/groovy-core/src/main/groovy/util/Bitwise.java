@@ -1,4 +1,4 @@
-package groovy.lang;
+package groovy.util;
 
 /** Support for bitwise operations.
  *

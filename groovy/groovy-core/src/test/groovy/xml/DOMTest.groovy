@@ -6,8 +6,6 @@ package groovy.xml
  */
 class DOMTest extends TestXmlSupport {
     
-    property b
-
     void testSmallTree() {
         b = DOMBuilder.newInstance()
         

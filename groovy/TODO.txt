@@ -1,9 +1,26 @@
 Core Groovy Tasks
 =================
 
-* join(String) method on Collection which does a string concat. e.g.
-	>>> [1, 2, 3].join("-")
-	1-2-3
+* bob - interpreter parser JIRA issue
+
+* add  [identity name, foo] to a class to auto-generate the equals & hashcode 
+	according to Josh Bloch
+
+	class Customer {
+	   [identity name, foo]
+	
+	   int foo
+	   Address* addresses
+	   PhoneNumber+  numbers
+	   String! name
+	   Employee? employee
+	   Date{d| assert d > 1000} dob
+	}
+	
+	
+* test while, do while
+
+* go through all not-working @todo tests in src/test
 	
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
@@ -19,6 +36,14 @@ Core Groovy Tasks
 	
 	comparable = new Sorter(false) { i | i.lastName }
 	
+* validator for things like 
+  - undeclared variables
+  - duplicate methods
+  
+
+* closures need to be able to access fields of outer class
+
+* closures - handle passing in of variables from outer scope?	
 	
 * groovy dynamic proxy of any Java object in Java-land?
 
@@ -39,10 +64,6 @@ Core Groovy Tasks
 		}
 	}	
 
-* refactor to groovy.test + groovy.util?	
-
-* SAX builder
-
 * add the following symbols...
 	class = current class
 	super = parent class
@@ -53,10 +74,6 @@ Core Groovy Tasks
 * how could aspects & mixins merged together...
 
 * why does using the GroovyClassLoader cause the illegal access violation?
-
-* closure methods on Node
-	
-* more tests of field and property initialisers
 
 * test closure with no argument, once bob's done the parser. both
     foo = { someMethod() }
@@ -79,15 +96,6 @@ Core Groovy Tasks
 	so rather than just doing 'hasMethod' or 'understandsMethod' we can return
 	a Closure or MethodProxy or something or null if a method is not understood
 
-* integer.times() method?
-
-* validator for things like - undeclared variables
-
-* closures need to be able to access properties of outer class
-
-* closures - handle passing in of variables from outer scope?
-
-* remove log4j dependency
 
 * constructors with map / tuple expressions, named parameter calling
  
@@ -96,8 +104,6 @@ Core Groovy Tasks
 * test try / catch with multiple exception types
 
 * test [] on lists & maps?
-
-* constructors - test use of super()
 
 * test use of method calls: foo() this.foo() class.foo() for local, inherited & global methods
 
@@ -121,8 +127,6 @@ Core Groovy Tasks
 	a.b = c.d
 	
 * support static newInstance() method for constructors
-
-* finish expression support in classgen
 
 * support metadata (like JDK 1.5) as well as tree based metadata...
 

@@ -43,8 +43,12 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.util;
 
+
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
 
 import java.util.List;
 import java.util.Map;

@@ -5,8 +5,6 @@
  */
 class TreeTest extends GroovyTestCase {
     
-    property b
-
     void testSmallTree() {
         b = NodeBuilder.newInstance()
         

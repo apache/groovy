@@ -43,56 +43,76 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+package groovy.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.PrintWriter;
 
 /**
- * A helper class for creating nested trees of Node objects for 
- * handling arbitrary data
+ * A helper class for printing indented text
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NodeBuilder extends BuilderSupport {
+public class IndentPrinter {
 
-    public static NodeBuilder newInstance() {
-        return new NodeBuilder();
+    private int indentLevel;
+    private String indent;
+    private PrintWriter out;
+
+    public IndentPrinter() {
+        this(new PrintWriter(System.out), "  ");
     }
 
-    protected void setParent(Object parent, Object child) {
-        Node current = (Node) parent;
-        Node node = (Node) child;
+    public IndentPrinter(PrintWriter out) {
+        this(out, "  ");
+    }
 
-        // lets add it to the parents children
-        Object parentValue = current.value();
-        List parentList = null;
-        if (parentValue instanceof List) {
-            parentList = (List) parentValue;
+    public IndentPrinter(PrintWriter out, String indent) {
+        if (out == null) {
+            /** @todo temporary hack */
+            out = new PrintWriter(System.out);
+            //throw new IllegalArgumentException("Must specify a PrintWriter");
         }
-        else {
-            parentList = new ArrayList();
-            parentList.add(parentValue);
-            current.setValue(parentList);
+        this.out = out;
+        this.indent = indent;
+    }
+
+    public void println(String text) {
+        out.print(text);
+        out.println();
+    }
+
+    public void print(String text) {
+        out.print(text);
+    }
+
+    public void printIndent() {
+        for (int i = 0; i < indentLevel; i++) {
+            out.print(indent);
         }
-        parentList.add(node);
     }
 
-    protected Object createNode(Object name) {
-        return new Node(getCurrentNode(), name, new ArrayList());
+    public void println() {
+        out.println();
     }
 
-    protected Object createNode(Object name, Object value) {
-        return new Node(getCurrentNode(), name, value);
+    public void incrementIndent() {
+        ++indentLevel;
     }
 
-    protected Object createNode(Object name, Map attributes) {
-        return new Node(getCurrentNode(), name, attributes, new ArrayList());
+    public void decrementIndent() {
+        --indentLevel;
     }
 
-    protected Node getCurrentNode() {
-        return (Node) getCurrent();
+    public int getIndentLevel() {
+        return indentLevel;
+    }
+
+    public void setIndentLevel(int indentLevel) {
+        this.indentLevel = indentLevel;
+    }
+
+    public void flush() {
+        out.flush();
     }
 }

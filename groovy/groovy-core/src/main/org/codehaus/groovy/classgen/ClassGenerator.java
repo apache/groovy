@@ -198,7 +198,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         this.classNode = classNode;
         this.internalClassName = getClassInternalName(classNode.getName());
         this.internalBaseClassName = getClassInternalName(classNode.getSuperClass());
-        
+
         cw.visit(
             classNode.getModifiers(),
             internalClassName,
@@ -354,15 +354,32 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     public void visitWhileLoop(WhileStatement loop) {
         onLineNumber(loop);
 
-        // TODO Auto-generated method stub
+        Label l0 = new Label();
+        cv.visitJumpInsn(GOTO, l0);
+        Label l1 = new Label();
+        cv.visitLabel(l1);
 
+        loop.getLoopBlock().visit(this);
+
+        cv.visitLabel(l0);
+        cv.visitVarInsn(ALOAD, 0);
+
+        loop.getBooleanExpression().visit(this);
+
+        cv.visitJumpInsn(IFNE, l1);
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
         onLineNumber(loop);
 
-        // TODO Auto-generated method stub
+        Label l0 = new Label();
+        cv.visitLabel(l0);
 
+        loop.getLoopBlock().visit(this);
+
+        loop.getBooleanExpression().visit(this);
+
+        cv.visitJumpInsn(IFNE, l0);
     }
 
     public void visitIfElse(IfStatement ifElse) {
@@ -1120,10 +1137,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             expression.getValue(i).visit(this);
             cv.visitInsn(AASTORE);
         }
-        
+
         int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, paramIdx);
-        
+
         ClassNode innerClass = createCompositeStringClass(expression);
         innerClasses.add(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
@@ -1132,11 +1149,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitInsn(DUP);
         cv.visitVarInsn(ALOAD, paramIdx);
 
-        cv.visitMethodInsn(
-            INVOKESPECIAL,
-            innerClassinternalName,
-            "<init>",
-            "([Ljava/lang/Object;)V");
+        cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", "([Ljava/lang/Object;)V");
     }
 
     // Implementation methods

@@ -45,7 +45,7 @@
  */
 package groovy.ant;
 
-import groovy.lang.BuilderSupport;
+import groovy.util.BuilderSupport;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;

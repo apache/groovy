@@ -534,6 +534,10 @@ public class MetaClass {
                 Error error = (Error) t;
                 throw error;
             }
+            if (t instanceof RuntimeException) {
+                RuntimeException runtimeEx = (RuntimeException) t;
+                throw runtimeEx;
+            }
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
@@ -575,6 +579,10 @@ public class MetaClass {
                 Error error = (Error) t;
                 throw error;
             }
+            if (t instanceof RuntimeException) {
+                RuntimeException runtimeEx = (RuntimeException) t;
+                throw runtimeEx;
+            }
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
@@ -613,7 +621,7 @@ public class MetaClass {
             return null;
         }
         else if (methodCount == 1) {
-            return (Method) methods.get(0);
+            return methods.get(0);
         }
         Object answer = null;
         if (arguments == null) {
