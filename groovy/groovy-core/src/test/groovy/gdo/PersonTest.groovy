@@ -9,7 +9,7 @@ class PersonTest extends GroovyTestCase {
 		
         blogs = persons.findAll { it.lastName == "Bloggs" }
 		
-        assertSql(blogs, "select * from person where lastName = 'Bloggs'")
+        assertSql(blogs, "select * from person where lastName = ?", ['Bloggs'])
     }
 
     void testWhereWithAndClause() {
@@ -19,7 +19,7 @@ class PersonTest extends GroovyTestCase {
         
         bigBlogs = blogs.findAll { it.size > 100 }
 		
-        assertSql(bigBlogs, "select * from person where lastName = 'Bloggs' and size > 100")
+        assertSql(bigBlogs, "select * from person where lastName = ? and size > ?", ['Bloggs', 100])
     }
 
     void testWhereClosureWithAnd() {
@@ -27,16 +27,18 @@ class PersonTest extends GroovyTestCase {
 		
         blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
 		
-        assertSql(blogs, "select * from person where size < 10 and lastName = 'Bloggs'")
+        assertSql(blogs, "select * from person where size < ? and lastName = ?", [10, 'Bloggs'])
     }
  
     protected compareFn(value) {
         value > 1 && value < 10
     }
     
-    protected assertSql(dataSet, expectedSql) {
+    protected assertSql(dataSet, expectedSql, expectedParams) {
         sql = dataSet.sql
+        params = dataSet.parameters
         assert sql == expectedSql
+        assert params == expectedParams
     }
     
     protected createDataSet() {
