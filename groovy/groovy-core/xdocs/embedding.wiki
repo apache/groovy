@@ -15,7 +15,7 @@ The following Java code shows an example...
 {code:java}
 ClassLoader parent = getClass().getClassLoader();
 GroovyClassLoader loader = new GroovyClassLoader(parent);
-Class groovyClass = loader.parse("src/test/groovy/script/HelloWorld.groovy");
+Class groovyClass = loader.parseClass(new File("src/test/groovy/script/HelloWorld.groovy"));
 
 // lets call some method on an instance
 GroovyObject groovyObject = (GroovyObject) groovyClass.newInstance();

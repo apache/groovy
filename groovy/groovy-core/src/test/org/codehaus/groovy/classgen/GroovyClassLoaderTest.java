@@ -49,6 +49,8 @@ package org.codehaus.groovy.classgen;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 
+import java.io.File;
+
 
 /**
  * Tests dynamically compiling a new class
@@ -59,7 +61,7 @@ import groovy.lang.MetaClass;
 public class GroovyClassLoaderTest extends TestSupport {
 
     public void testCompile() throws Exception {
-        Class groovyClass = loader.parseClass("src/test/org/codehaus/groovy/classgen/Main.groovy");
+        Class groovyClass = loader.parseClass(new File("src/test/org/codehaus/groovy/classgen/Main.groovy"));
 
         System.out.println("Invoking main...");
         

@@ -54,11 +54,12 @@ import org.objectweb.asm.ClassWriter;
  * A ClassLoader which can load Groovy classes
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Guillaume Laforge
  * @version $Revision$
  */
 public class GroovyClassLoader extends ClassLoader {
 
-	private String outputDir;
+    private String outputDir;
     private Map cache = new HashMap();
 
     public GroovyClassLoader() {
@@ -67,15 +68,15 @@ public class GroovyClassLoader extends ClassLoader {
 
     public GroovyClassLoader(ClassLoader loader) {
         super(loader);
-		outputDir = System.getProperty("groovy.output.dir");
+        outputDir = System.getProperty("groovy.output.dir");
     }
 
     /**
-	 * Loads the given class node returning the implementation Class
-	 * 
-	 * @param classNode
-	 * @return
-	 */
+     * Loads the given class node returning the implementation Class
+     *
+     * @param classNode
+     * @return
+     */
     public Class defineClass(ClassNode classNode, String file) {
         CompileUnit unit = new CompileUnit();
         ClassCollector compiler = createCollector(unit);
@@ -84,40 +85,61 @@ public class GroovyClassLoader extends ClassLoader {
     }
 
     /**
-     * Parses the given file name into a Java class capable of being run
+     * Parses the given file into a Java class capable of being run
      * 
      * @param file the file name to parse
      * @return the main class defined in the given script
      */
-    public Class parseClass(String file) throws SyntaxException, IOException {
-        return parseClass(new FileInputStream(file), file);
+    public Class parseClass(File file) throws SyntaxException, IOException {
+        return parseClass(new FileInputStream(file), file.getName());
     }
 
     /**
      * Parses the given text into a Java class capable of being run
      * 
      * @param text the text of the script/class to parse
-     * @param file the file name to use as the name of the class
+     * @param fileName the file name to use as the name of the class
      * @return the main class defined in the given script
      */
-    public Class parseClass(String text, String file) throws SyntaxException, IOException {
-        return parseClass(new ByteArrayInputStream(text.getBytes()), file);
+    public Class parseClass(String text, String fileName) throws SyntaxException, IOException {
+        return parseClass(new ByteArrayInputStream(text.getBytes()), fileName);
     }
 
     /**
-	 * Parses the given character stream into a Java class capable of being run
-	 * 
-	 * @param charStream
-	 * @return the main class defined in the given script
-	 */
-    public Class parseClass(InputStream in, String file) throws SyntaxException, IOException {
-        Class answer = (Class) cache.get(file);
+     * Parses the given text into a Java class capable of being run
+     *
+     * @param text the text of the script/class to parse
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(String text) throws SyntaxException, IOException {
+        return parseClass(new ByteArrayInputStream(text.getBytes()), "script" + System.currentTimeMillis() + ".groovy");
+    }
+
+    /**
+     * Parses the given character stream into a Java class capable of being run
+     *
+     * @param in an InputStream
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(InputStream in) throws SyntaxException, IOException {
+        return parseClass(in, "script" + System.currentTimeMillis() + ".groovy");
+    }
+
+    /**
+     * Parses the given character stream into a Java class capable of being run
+     *
+     * @param in an InputStream
+     * @param fileName the file name to use as the name of the class
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(InputStream in, String fileName) throws SyntaxException, IOException {
+        Class answer = (Class) cache.get(fileName);
         if (answer == null) {
             CompileUnit unit = new CompileUnit();
             ClassCollector compiler = createCollector(unit);
-            compiler.parseClass(in, file);
+            compiler.parseClass(in, fileName);
             answer = compiler.generatedClass;
-            cache.put(file, answer);
+            cache.put(fileName, answer);
         }
         return answer;
     }
@@ -135,57 +157,58 @@ public class GroovyClassLoader extends ClassLoader {
 
     
     protected static class ClassCollector extends CompilerFacade {
-    	
-    	private Class generatedClass;
-    	private GroovyClassLoader cl;
-    	
-    	
-    	protected ClassCollector(GroovyClassLoader cl, CompileUnit unit) {
-    		super(cl, unit);
-    		this.cl = cl;
-    	}
-    	
-    	protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
-    		byte[] code = classWriter.toByteArray();
 
-    		cl.debugWriteClassfile(classNode, code);
+        private Class generatedClass;
+        private GroovyClassLoader cl;
 
-    		Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length);
 
-    		if (generatedClass == null) {
-    			generatedClass = theClass;
-    		}
-    		
-    		return theClass;
-    	}
-    	
-    	protected void onClass(ClassWriter classWriter, ClassNode classNode) {
-    		onClassNode(classWriter, classNode);
-    	}
-    	
+        protected ClassCollector(GroovyClassLoader cl, CompileUnit unit) {
+            super(cl, unit);
+            this.cl = cl;
+        }
+
+        protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
+            byte[] code = classWriter.toByteArray();
+
+            cl.debugWriteClassfile(classNode, code);
+
+            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length);
+
+            if (generatedClass == null) {
+                generatedClass = theClass;
+            }
+
+            return theClass;
+        }
+
+        protected void onClass(ClassWriter classWriter, ClassNode classNode) {
+            onClassNode(classWriter, classNode);
+        }
     }
 
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
-		if (outputDir != null) {
-			String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
-			int index = filename.lastIndexOf(File.separator);
-			String dirname;
-			if (index != -1) {
-				dirname = filename.substring(0, index);
-			} else {
-				dirname = "";
-			}
-			File outputFile = new File(new File(outputDir), filename);
-			System.err.println("Writing: " + outputFile);
-			try {
-				new File(new File(outputDir), dirname).mkdirs();
-				FileOutputStream fos = new FileOutputStream(outputFile);
-				fos.write(code, 0, code.length);
-				fos.close();
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-		}
-	}
+        if (outputDir != null) {
+            String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
+            int index = filename.lastIndexOf(File.separator);
+            String dirname;
+            if (index != -1) {
+                dirname = filename.substring(0, index);
+            }
+            else {
+                dirname = "";
+            }
+            File outputFile = new File(new File(outputDir), filename);
+            System.err.println("Writing: " + outputFile);
+            try {
+                new File(new File(outputDir), dirname).mkdirs();
+                FileOutputStream fos = new FileOutputStream(outputFile);
+                fos.write(code, 0, code.length);
+                fos.close();
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
+        }
+    }
 
 }
