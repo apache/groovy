@@ -42,13 +42,6 @@
     </java>
   </goal>
 
-  <goal name="jmx:demo" prereqs="test:compile"
-		description="Runs the JMX demo">
-    <java classname="org.apache.geronimo.explorer.ExplorerMain" fork="yes">
-      <classpath refid="test.classpath"/>
-    </java>
-  </goal>
-
 
   <goal name="groovy:compile-tests" prereqs="java:compile, setclasspath"
   		description="Compiles the Groovy unit test cases">
