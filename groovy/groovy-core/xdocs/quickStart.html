@@ -15,29 +15,33 @@ Probably the easiest way to get groovy is to try working with collections. In Gr
 are both first class objects in the syntax. So to create a List of objects you can do the following...
 </p>
 
+<p>
+Note that in the following snippets of Groovy code, the <i>groovy&gt;</i> means a command line prompt - you don't need to type this.
+</p>
+
 <source>
-  &gt;&gt;&gt; list = [1, 2, 'hello', new Date()]
-  &gt;&gt;&gt; list.size()
+  groovy&gt; list = [1, 2, 'hello', new Date()]
+  groovy&gt; list.size()
   4
-  &gt;&gt;&gt; list.get(2)
+  groovy&gt; list.get(2)
   'hello'
 </source>
 
 Notice that everything is an object (or that auto-boxing takes place when working with numbers). To create maps...
 
 <source>
-  &gt;&gt;&gt; map = ['name':'James', 'location':'London']
-  &gt;&gt;&gt; list.size()
+  groovy&gt; map = ['name':'James', 'location':'London']
+  groovy&gt; list.size()
   2
-  &gt;&gt;&gt; map.get('name')
+  groovy&gt; map.get('name')
   'James'
 </source>
 
 Iterating over collections is easy...
 
 <source>
-  &gt;&gt;&gt; list = [1, 2, 3]
-  &gt;&gt;&gt; for (i in list) { i.println() }
+  groovy&gt; list = [1, 2, 3]
+  groovy&gt; for (i in list) { i.println() }
   1
   2
   3
@@ -52,19 +56,19 @@ Closures are similar to Java's inner classes, except they are a single method wh
 A closure can have as many parameters as you wish...
 
 <source>
-  &gt;&gt;&gt; closure = { param | System.out.println("hello " + param) }
-  &gt;&gt;&gt; closure.call("world!")
+  groovy&gt; closure = { param | println("hello " + param) }
+  groovy&gt; closure.call("world!")
   hello world!
-  &gt;&gt;&gt; closure = { greeting, name | System.out.println(greeting + param) }
-  &gt;&gt;&gt; closure.call("hello ", "world!")
+  groovy&gt; closure = { greeting, name | println(greeting + param) }
+  groovy&gt; closure.call("hello ", "world!")
   hello world!
 </source>
 
 If no parameter(s) is(are) specified before the | symbol then a default named parameter, called 'it' can be used. e.g.
 
 <source>
-  &gt;&gt;&gt; closure = { System.out.println("hello " + it) }
-  &gt;&gt;&gt; closure.call("world!")
+  groovy&gt; closure = { println("hello " + it) }
+  groovy&gt; closure.call("world!")
   hello world!
 </source>
 
@@ -77,7 +81,7 @@ Here are a number of helper methods available on collections &amp; strings...
 iterate via a closure
 
 <source>
-  &gt;&gt;&gt;[1, 2, 3].each { item | item.print(); "-".print() }
+  groovy&gt;[1, 2, 3].each { item | item.print(); "-".print() }
   1-2-3
 </source>
 
@@ -86,7 +90,7 @@ iterate via a closure
 convert values to new list using closure
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].map { it * 2 }
+  groovy&gt; [1, 2, 3].map { it * 2 }
   [2, 4, 6]
 </source>
 
@@ -95,7 +99,7 @@ convert values to new list using closure
 finds first item matching closure predicate
   
 <source>
-  &gt;&gt;&gt; [1, 2, 3].find { it &gt; 1 }
+  groovy&gt; [1, 2, 3].find { it &gt; 1 }
   2
 </source>
 
@@ -104,20 +108,37 @@ finds first item matching closure predicate
  finds all items matching closure predicate
   
 <source>
-  &gt;&gt;&gt; [1, 2, 3].findAll { it &gt; 1 }
+  groovy&gt; [1, 2, 3].findAll { it &gt; 1 }
   [2, 3]
 </source>
 
+<h3>inject</h3>
 
+<p>
+ allows you to pass a value into the first iteration and then
+ pass the result of that iteration into the next iteration and so
+ on. This is ideal for counting and other forms of processing
+</p>
+  
+<source>
+  groovy&gt; [1, 2, 3].inject('counting: ') { str, item | str + item }
+  "counting: 123"
+  groovy&gt; [1, 2, 3].inject(0) { count, item | count + item }
+  6
+</source>
+
+
+<p>
 In addition there's 2 new methods for doing boolean logic on some collection...
+</p>
 
 <h3>every</h3>
  returns true if all items match the closure predicate
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].every { it &lt; 5 }
+  groovy&gt; [1, 2, 3].every { it &lt; 5 }
   true
-  &gt;&gt;&gt; [1, 2, 3].every { item | item &lt; 3 }
+  groovy&gt; [1, 2, 3].every { item | item &lt; 3 }
   false
 </source>
 
@@ -125,9 +146,9 @@ In addition there's 2 new methods for doing boolean logic on some collection...
  returns true if any item match the closure predicate
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].every { it &gt; 2 }
+  groovy&gt; [1, 2, 3].every { it &gt; 2 }
   true
-  &gt;&gt;&gt; [1, 2, 3].every { item | item &gt; 3 }
+  groovy&gt; [1, 2, 3].every { item | item &gt; 3 }
   false
 </source>
 
@@ -138,18 +159,18 @@ Other helper methods include
  returns the max/min values of the collection - for Comparable objects
 
 <source>
-  &gt;&gt;&gt; [9, 4, 2, 10, 5].max()
+  groovy&gt; [9, 4, 2, 10, 5].max()
   10
-  &gt;&gt;&gt;   [9, 4, 2, 10, 5].min()
+  groovy&gt;   [9, 4, 2, 10, 5].min()
   2
-  &gt;&gt;&gt; ['x', 'y', 'a', 'z'].min()
+  groovy&gt; ['x', 'y', 'a', 'z'].min()
   'a'
 </source>
 
 <h3>join</h3> concatenates the values of the collection together with a string value
 
 <source>
-  &gt;&gt;&gt; [1, 2, 3].join('-')
+  groovy&gt; [1, 2, 3].join('-')
   '1-2-3'
 </source>
 
@@ -161,9 +182,9 @@ rather than using a yield statement, we're just using closures.
 <source>
 class Foo {
   myGenerator(Closure yield) {
-  yield.call("A")
-  yield.call("B")
-  yield.call("C")
+    yield.call("A")
+    yield.call("B")
+    yield.call("C")
   }
 }
 
@@ -184,9 +205,9 @@ equivalent. Especially if parentheses are optional...
 <source>
 class Foo {
   myGenerator(yield) {
-  yield "A"
-  yield "B"
-  yield("C") 
+    yield "A"
+    yield "B"
+    yield("C") 
   }
 }
 </source>
