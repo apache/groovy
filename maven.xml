@@ -70,6 +70,7 @@
     <copy toDir="${maven.dist.bin.assembly.dir}">
       <fileset dir="${groovy.install.staging.dest}">
         <include name="**/*"/>
+        <exclude name="**/*.groovy"/>
       </fileset>
     </copy>
   </postGoal>
