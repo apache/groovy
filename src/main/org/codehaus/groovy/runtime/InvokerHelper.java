@@ -116,7 +116,19 @@ public class InvokerHelper {
         getInstance().setProperty(object, property, newValue);
     }
 
-    public static Object getProperty(Object object, String property) {
+	/**
+	 * This is so we don't have to reorder the stack when we call this method.
+	 * At some point a better name might be in order.
+	 * 
+	 * @param newValue
+	 * @param object
+	 * @param property
+	 */
+	public static void setProperty2(Object newValue, Object object, String property) {
+		getInstance().setProperty(object, property, newValue);
+	}
+
+	public static Object getProperty(Object object, String property) {
         return getInstance().getProperty(object, property);
     }
 

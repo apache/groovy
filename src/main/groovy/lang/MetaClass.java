@@ -617,9 +617,9 @@ public class MetaClass {
     }
 
     protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
-//        System.out.println("Evaluating method: " + method);
-//        System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
-//        System.out.println(this.theClass);
+        //System.out.println("Evaluating method: " + method);
+        //System.out.println("on object: " + object + " with arguments: " + InvokerHelper.toString(argumentArray));
+        //System.out.println(this.theClass);
 
         try {
             if (registry.useAccessible()) {
@@ -921,11 +921,11 @@ public class MetaClass {
     }
 
     protected boolean isGenericSetMethod(Method method) {
-        return method.getName().equals("set") && method.getParameterTypes().length == 2;
+        return (method.getName().equals("set") || method.getName().equals("setAttribute")) && method.getParameterTypes().length == 2;
     }
 
     protected boolean isGenericGetMethod(Method method) {
-        if (method.getName().equals("get")) {
+        if (method.getName().equals("get") || method.getName().equals("getAttribute")) {
             Class[] parameterTypes = method.getParameterTypes();
             return parameterTypes.length == 1 && parameterTypes[0] == String.class;
         }
