@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 // JSR parser
 // @todo - refactor pulling generic parser interface up
-import org.codehaus.groovy.antlr.GroovyLexer;
-import org.codehaus.groovy.antlr.GroovyRecognizer;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
 // codehaus reference implementation usage
 // @todo - remove classic references from the TCK
