@@ -347,7 +347,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                // ignore 
+                log.error("Caught exception closing resultSet: " + e, e);
             }
         }
         closeResources(connection, statement);
@@ -358,13 +358,13 @@ public class Sql {
             statement.close();
         }
         catch (SQLException e) {
-            // ignore 
+            log.error("Caught exception closing statement: " + e, e);
         }
         try {
             connection.close();
         }
         catch (SQLException e) {
-            // ignore 
+            log.error("Caught exception closing connection: " + e, e);
         }
     }
 
