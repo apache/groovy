@@ -408,9 +408,9 @@ public class XMLRPCMessageProcessor extends MinML {
 			this.inArray = (Boolean)this.aggregateStack.pop();
 		} else if ("fault".equals(name)) {
 			throw new RuntimeException("XML-RPC call Failure: " +
-					                   (String)((Map)this.params).get("faultString") +
+					                   ((Map)this.params).get("faultString") +
 					                   ", fault code = " +
-					                   ((Integer)((Map)this.params).get("faultCode")).toString());
+					                   ((Map)this.params).get("faultCode"));
 		}
 	}
 }
