@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<classpath>
+  <classpathentry kind="src" path="src/java/main">
+  </classpathentry>
+  <classpathentry kind="src" path="src/java/test">
+  </classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar">
+  </classpathentry>
+  <classpathentry kind="var" rootpath="JRE_SRCROOT" path="JRE_LIB" sourcepath="JRE_SRC">
+  </classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/xerces/jars/xerces-2.4.0.jar">
+  </classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/xml-apis/jars/xml-apis-1.0.b2.jar">
+  </classpathentry>
+  <classpathentry kind="var" path="MAVEN_REPO/log4j/jars/log4j-1.2.8.jar">
+  </classpathentry>
+  <classpathentry kind="lib" path="target/test-classes">
+  </classpathentry>
+  <classpathentry kind="output" path="bin">
+  </classpathentry>
+</classpath>
