@@ -59,6 +59,8 @@ import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 
+import org.codehaus.groovy.syntax.Types;
+
 /**
  * A visitor which figures out which variables are in scope
  * 
@@ -85,7 +87,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        if (expression.getOperation().isAssignmentToken() && leftExpression instanceof VariableExpression) {
+        if (expression.getOperation().isA(Types.ASSIGNMENT_OPERATOR) && leftExpression instanceof VariableExpression) {
             declareVariable((VariableExpression) leftExpression);
         }
         else {

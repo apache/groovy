@@ -45,32 +45,32 @@
  */
 package org.codehaus.groovy.syntax.parser;
 
-import java.util.Iterator;
-
-import org.codehaus.groovy.syntax.ReadException;
-import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.TokenStream;
-import org.codehaus.groovy.syntax.lexer.Lexer;
+import org.codehaus.groovy.syntax.*;
+import org.codehaus.groovy.syntax.lexer.GroovyLexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.lexer.StringCharStream;
+import org.codehaus.groovy.syntax.lexer.CharStream;
 import org.codehaus.groovy.tools.ExceptionCollector;
+import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.GroovyException;
+import org.codehaus.groovy.GroovyBugError;
 
 /**
- *  Reads the source text and produces a hierarchy of Concrete Syntax Trees
- *  (CSTs).  Exceptions are collected during processing, and parsing will
- *  continue for while possible, in order to report as many problems as 
- *  possible.   <code>compilationUnit()</code> is the primary entry point.
+ *  Reads the source text and produces a Concrete Syntax Tree.  Exceptions
+ *  are collected during processing, and parsing will continue for while
+ *  possible, in order to report as many problems as possible.
+ *  <code>module()</code> is the primary entry point.
  *
  *  @author Bob McWhirter
  *  @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
   */
 
-public class Parser {
-
-    private TokenStream tokenStream = null;
-    private ExceptionCollector collector = null;
+public class Parser
+{
+    private TokenStream        tokenStream = null;   // Our token source
+    private ExceptionCollector collector   = null;   // Enables error reporting and recovery
+    private int                nestCount   = 1;      // Simplifies tracing of nested calls
 
 
 
@@ -81,7 +81,8 @@ public class Parser {
     *  Sets the <code>Parser</code> to process a <code>TokenStream</code>.
     */
 
-    public Parser(TokenStream tokenStream) {
+    public Parser(TokenStream tokenStream)
+    {
         this.tokenStream = tokenStream;
         this.collector = new ExceptionCollector(1);
     }
@@ -92,35 +93,101 @@ public class Parser {
     *  Exceptions will be collected in the specified collector.
     */
 
-    public Parser(TokenStream tokenStream, ExceptionCollector collector) {
+    public Parser(TokenStream tokenStream, ExceptionCollector collector)
+    {
         this.tokenStream = tokenStream;
         this.collector = collector;
     }
 
 
    /**
+    *  Convenience routine to wrap a <code>CharStream</code> in a <code>Parser</code>.
+    */
+
+    public static Parser create( CharStream source, ExceptionCollector collector )
+    {
+        GroovyLexer lexer  = new GroovyLexer( source );
+        TokenStream stream = new LexerTokenStream( lexer );
+//        Parser      parser = new Parser( stream, collector );
+        Parser      parser = new Parser( stream );
+
+        return parser;
+    }
+
+
+
+   /**
+    *  Convenience routine to wrap a <code>CharStream</code> in a <code>Parser</code>.
+    */
+
+    public static Parser create( CharStream source, int errorTolerance )
+    {
+        return create( source, new ExceptionCollector(errorTolerance) );
+    }
+
+
+
+   /**
     *  Convenience routine to wrap a <code>String</code> in a <code>Parser</code>.
     */
 
-    public static Parser create( String text, int errorTolerance ) {
-
-        ExceptionCollector collector = new ExceptionCollector( errorTolerance );
-
-        Lexer       lexer  = new Lexer( new StringCharStream(text) );
-        TokenStream stream = new LexerTokenStream(lexer );
-        Parser      parser = new Parser( stream, collector );
-
-        return parser;
-
+    public static Parser create( String source, int errorTolerance )
+    {
+        return create( new StringCharStream(source), errorTolerance );
     }
+
+
+
+   /**
+    *  Convenience routine to parse a source as a module(), and build
+    *  an AST from the results.
+    */
+
+    public ModuleNode parse( ClassLoader loader, String descriptor ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction reduction = module();
+        // System.out.println( reduction.toString() );
+        collector.throwUnlessEmpty();
+
+        try
+        {
+            ASTBuilder builder = new ASTBuilder( loader );
+            ModuleNode module  = builder.build( reduction );
+            module.setDescription( descriptor );
+            return module;
+        }
+        // catch( ExceptionCollector e )
+        // {
+        //     collector.merge( e, false );
+        // }
+        catch( GroovyException e )
+        {
+            collector.add( e, false );
+        }
+
+        throw collector;
+    }
+
 
 
    /**
     *  Returns the <code>TokenStream</code> being parsed.
     */
 
-    public TokenStream getTokenStream() {
+    public TokenStream getTokenStream()
+    {
         return this.tokenStream;
+    }
+
+
+
+   /**
+    *  Returns the <code>ExceptionCollector</code> used by this parser.
+    */
+
+    public ExceptionCollector getExceptionCollector()
+    {
+        return this.collector;
     }
 
 
@@ -134,109 +201,87 @@ public class Parser {
     *  Eats any optional newlines.
     */
 
-    public void optionalNewlines() throws ReadException, SyntaxException {
-        while (lt_bare() == Token.NEWLINE) {
-            consume_bare(lt_bare());
+    public void optionalNewlines() throws ReadException, SyntaxException
+    {
+        while( lt(false) == Types.NEWLINE)
+        {
+            consume( Types.NEWLINE );
         }
     }
 
 
 
    /**
-    *  Eats a required end-of-statement (semicolon or newline) from
-    *  the stream.  Throws an <code>UnexpectedTokenException</code> 
-    *  if anything else is found.
+    *  Eats a required end-of-statement (semicolon or newline) from the stream.
+    *  Throws an <code>UnexpectedTokenException</code> if anything else is found.
     */
 
-    public void endOfStatement( boolean allowRightCurlyBrace ) throws ReadException, SyntaxException {
-        int lt_bare = lt_bare();
+    public void endOfStatement( boolean allowRightCurlyBrace ) throws ReadException, SyntaxException
+    {
+        Token next = la( true );
 
-        if (lt_bare == Token.SEMICOLON || lt_bare == Token.NEWLINE) {
-            consume_bare(lt_bare);
+        if( next.isA(Types.GENERAL_END_OF_STATEMENT) )
+        {
+            consume( true );
         }
-        else {
-            if( allowRightCurlyBrace ) {
-                if( lt_bare != -1 && lt_bare != Token.RIGHT_CURLY_BRACE ) {
-                    throwExpected(new int[] { Token.SEMICOLON, Token.NEWLINE, Token.RIGHT_CURLY_BRACE });
+        else
+        {
+            if( allowRightCurlyBrace )
+            {
+                if( !next.isA(Types.RIGHT_CURLY_BRACE) )
+                {
+                    error( new int[] { Types.SEMICOLON, Types.NEWLINE, Types.RIGHT_CURLY_BRACE } );
                 }
             }
-            else {
-                if( lt_bare != -1 ) {
-                    throwExpected(new int[] { Token.SEMICOLON, Token.NEWLINE });
-                }
+            else
+            {
+                error( new int[] { Types.SEMICOLON, Types.NEWLINE } );
             }
         }
     }
 
 
-    
+
    /**
     *  A synonym for <code>endOfStatement( true )</code>.
     */
 
-    public void endOfStatement() throws ReadException, SyntaxException {
+    public void endOfStatement() throws ReadException, SyntaxException
+    {
         endOfStatement( true );
     }
 
 
 
-   /**
-    *  Attempts to recover from an error by discarding input until a
-    *  known token is found.  It further guarantees that /at least/ 
-    *  one token will be eaten.
-    */
-
-    public void recover( int[] safe, boolean useBare ) throws ReadException, SyntaxException {
-        Token leading = (useBare ? la_bare() : la());
-
-        while( (useBare ? lt_bare() : lt()) != -1 && !(useBare ? la_bare() : la()).isA(safe) ) {
-            if( useBare ) { consume_bare(lt_bare()); } else { consume(lt()); }
-        }
-
-        if( (useBare ? la_bare() : la()) == leading ) {
-
-            if( useBare ) { consume_bare(lt_bare()); } else { consume(lt()); }
-        }
-    }
-
-
- 
-   /**
-    *  A synonym for <code>recover( safe, false )</code>.
-    */
-
-    public void recover( int[] safe ) throws ReadException, SyntaxException {
-        recover( safe, false );
-    }
-
-
-
-   /**
-    *  A synonym for <code>recover( STATEMENT_TERMNINATORS, true )</code>.
-    */
-
-    public void recover( ) throws ReadException, SyntaxException {
-        recover( STATEMENT_TERMINATORS, true );
-    }
-
-
-
-   /**
-    *  Various generally useful type sets.
-    */
-
-    protected static final int[] TYPE_DEFINERS         = new int[] { Token.KEYWORD_CLASS, Token.KEYWORD_INTERFACE };
-    protected static final int[] STATEMENT_TERMINATORS = new int[] { Token.SEMICOLON, Token.NEWLINE, Token.RIGHT_CURLY_BRACE };
-
-    protected static final int[] GENERAL_CLAUSE_TERMINATOR = new int[] { Token.RIGHT_PARENTHESIS };
-    protected static final int[] PARAMETER_TERMINATORS     = new int[] { Token.RIGHT_PARENTHESIS, Token.COMMA };
-    protected static final int[] ARRAY_ITEM_TERMINATORS    = new int[] { Token.RIGHT_SQUARE_BRACKET, Token.COMMA };
-
-
-
 
   //---------------------------------------------------------------------------
-  // PRODUCTIONS
+  // PRODUCTIONS: PRIMARY STRUCTURES
+
+
+   /**
+    *  Processes a dotted identifer.  Used all over the place.
+    *  <p>
+    *  Grammar: <pre>
+    *     dottedIdentifier = <identifier> ("." <identifier>)*
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     dotted = { "." dotted <identifier> } | <identifier>
+    *  </pre>
+    */
+
+    public CSTNode dottedIdentifier() throws ReadException, SyntaxException
+    {
+        CSTNode identifier = consume(Types.IDENTIFIER);
+
+        while (lt() == Types.DOT)
+        {
+            identifier = consume(Types.DOT).asReduction( identifier, consume(Types.IDENTIFIER) );
+        }
+
+        return identifier;
+    }
+
 
 
    /**
@@ -245,129 +290,124 @@ public class Parser {
     *  exceptions and attempts to continue.
     *  <p>
     *  Grammar: <pre>
-    *     compilationUnit = [packageStatement]
-    *                       (usingStatement)*
-    *                       (topLevelStatement)*
-    *                       <eof>
+    *     module = [packageStatement]
+    *              (usingStatement)*
+    *              (topLevelStatement)*
+    *              <eof>
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     compilationUnit = { <null> package imports (topLevelStatement)* }
-    *     
+    *     module = { <null> package imports (topLevelStatement)* }
+    *
     *     package           see packageDeclaration()
     *     imports           see importStatement()
     *     topLevelStatement see topLevelStatement()
     *  </pre>
-    * 
+    *
     */
 
-    public CSTNode compilationUnit() throws ReadException, SyntaxException, ExceptionCollector, ExceptionCollector {
-
-        CSTNode compilationUnit = new CSTNode();
+    public Reduction module() throws ReadException, SyntaxException, ExceptionCollector, ExceptionCollector
+    {
+        Reduction module = Reduction.newContainer();
 
         //
         // First up, the package declaration
 
-        CSTNode packageDeclaration = null;
+        Reduction packageDeclaration = null;
 
-        if (lt() == Token.KEYWORD_PACKAGE) {
-
-            try {
+        if( lt() == Types.KEYWORD_PACKAGE )
+        {
+            try
+            {
                 packageDeclaration = packageDeclaration();
             }
 
-            catch (SyntaxException e) {
+            catch (SyntaxException e)
+            {
                 collector.add(e);
                 recover();
             }
         }
 
-        if (packageDeclaration == null) {
-            packageDeclaration = new CSTNode(Token.keyword(-1, -1, "package"));
-            packageDeclaration.addChild(new CSTNode());
+        if( packageDeclaration == null )
+        {
+            packageDeclaration = Reduction.EMPTY;
         }
 
-        compilationUnit.addChild(packageDeclaration);
+        module.add( packageDeclaration );
+
 
         //
         // Next, handle import statements
 
-        CSTNode imports = new CSTNode();
-        compilationUnit.addChild(imports);
+        Reduction imports = (Reduction)module.add( Reduction.newContainer() );
 
-        while (lt() == Token.KEYWORD_IMPORT) {
-
-            try {
-                imports.addChild(importStatement());
+        while( lt() == Types.KEYWORD_IMPORT )
+        {
+            try
+            {
+                imports.add( importStatement() );
             }
 
-            catch (SyntaxException e) {
+            catch( SyntaxException e )
+            {
                 collector.add(e);
                 recover();
             }
         }
+
 
         //
-        // With that taken care of, process everything else.  
+        // With that taken care of, process everything else.
 
-        while (lt() != -1) {
-
-            try {
-                compilationUnit.addChild(topLevelStatement());
+        while( lt() != Types.EOF )
+        {
+            try
+            {
+                module.add( topLevelStatement() );
             }
-
-            catch (SyntaxException e) {
+            catch (SyntaxException e)
+            {
                 collector.add(e);
                 recover();
             }
         }
 
-        return compilationUnit;
+        return module;
     }
 
 
 
    /**
-    *  Processes a package declaration.  Called by <code>compilationUnit()</code>.
+    *  Processes a package declaration.  Called by <code>module()</code>.
     *  <p>
     *  Grammar: <pre>
-    *     packageDeclaration = "package" <identifier> ("." <identifier>)* <eos>
+    *     packageDeclaration = "package" dottedIdentifier <eos>
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     package = { "package" classes }
-    *     classes = { "." classes class } | class
-    *     class   = { <identifier> }
+    *     package = { "package" dottedIdentifier }
+    *
+    *     see dottedIdentifier()
     *  </pre>
     */
 
-    public CSTNode packageDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode packageDeclaration = rootNode(Token.KEYWORD_PACKAGE);
-
-        CSTNode cur = rootNode(Token.IDENTIFIER);
-
-        while (lt() == Token.DOT) {
-            CSTNode dot = rootNode(Token.DOT, cur);
-
-            consume(dot, Token.IDENTIFIER);
-
-            cur = dot;
-        }
-
+    public Reduction packageDeclaration() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction packageDeclaration = consume(Types.KEYWORD_PACKAGE).asReduction( dottedIdentifier() );
         endOfStatement( false );
 
-        packageDeclaration.addChild(cur);
         return packageDeclaration;
     }
 
 
 
    /**
-    *  Processes an import statement.  Called by <code>compilationUnit()</code>.
+    *  Processes an import statement.  Called by <code>module()</code>.
     *  <p>
     *  Grammar: <pre>
     *     importStatement = "import" (all|specific) <eos>
-    * 
+    *
     *     all      = package "." (package ".")* "*"
     *
     *     specific = (package "." (package ".")*)? classes
@@ -379,64 +419,69 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     import   = { "import" (package|{}) ({"*"} | clause*) }
+    *     import   = { "import" (package|{}) ({"*"} | clause+) }
     *
-    *     package  = { "." package element } | element
-    *     element  = { <identifier> }
-    *
-    *     clause   = { <identifier> alias }
-    *     alias    = { <identifer> } | {}
+    *     package  = { "." package <identifier> } | <identifier>
+    *     clause   = { <identifier> <alias>? }
     *  </pre>
     */
 
-    public CSTNode importStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode importStatement = rootNode(Token.KEYWORD_IMPORT);
+    public Reduction importStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction importStatement = consume(Types.KEYWORD_IMPORT).asReduction();
 
         //
-        // First, pull process any package name.  
+        // First, process any package name.
 
         CSTNode packageNode = null;
-        if( lt(2) == Token.DOT ) {
-            packageNode = rootNode( Token.IDENTIFIER );
+        if( lt(2) == Types.DOT )
+        {
+            packageNode = consume(Types.IDENTIFIER).asReduction();
 
-            while( lt(3) == Token.DOT ) {
-                packageNode = rootNode( Token.DOT, packageNode );
-                packageNode.addChild( rootNode(Token.IDENTIFIER) );
-            };
+            while( lt(3) == Types.DOT )
+            {
+                packageNode = consume(Types.DOT).asReduction( packageNode );
+                packageNode.add( consume(Types.IDENTIFIER) );
+            }
 
-            consume( Token.DOT );
+            consume( Types.DOT );
         }
 
-        if( packageNode == null ) {
-            packageNode = new CSTNode();
+        if( packageNode == null )
+        {
+            packageNode = Reduction.EMPTY;
         }
 
-        importStatement.addChild( packageNode );
+        importStatement.add( packageNode );
 
 
         //
         // Then process the class list.
 
-        if( !packageNode.isEmpty() && lt() == Token.MULTIPLY ) { 
-            importStatement.addChild( rootNode(Token.MULTIPLY) );
+        if( !packageNode.isEmpty() && lt() == Types.STAR )
+        {
+            importStatement.add( consume(Types.STAR) );
         }
-        else {
-
+        else
+        {
            boolean done = false;
-           while( !done ) {
-               CSTNode clause = rootNode( Token.IDENTIFIER );
-               if( lt() == Token.KEYWORD_AS ) {
-                   consume( Token.KEYWORD_AS );
-                   clause.addChild( rootNode(Token.IDENTIFIER) );
+           while( !done )
+           {
+               Reduction clause = consume(Types.IDENTIFIER).asReduction();
+               if( lt() == Types.KEYWORD_AS )
+               {
+                   consume( Types.KEYWORD_AS );
+                   clause.add( consume(Types.IDENTIFIER) );
                }
 
-               importStatement.addChild( clause );
+               importStatement.add( clause );
 
-               if( lt() == Token.COMMA ) {
-                   consume( Token.COMMA );
-               } 
-               else {
+               if( lt() == Types.COMMA )
+               {
+                   consume( Types.COMMA );
+               }
+               else
+               {
                    done = true;
                }
            }
@@ -453,20 +498,21 @@ public class Parser {
 
 
    /**
-    *  Processes a top level statement (classes, interfaces, unattached methods, and 
-    *  unattached code).  Called by <code>compilationUnit()</code>.
+    *  Processes a top level statement (classes, interfaces, unattached methods, and
+    *  unattached code).  Called by <code>module()</code>.
     *  <p>
     *  Grammar: <pre>
     *     topLevelStatement
-    *       = methodDeclaration 
+    *       = methodDeclaration
     *       | typeDeclaration
     *       | statement
-    *     
-    *     typeDeclaration = classDefinition | interfaceDeclaration
+    *
+    *     typeDeclaration = classDeclaration | interfaceDeclaration
     *  </pre>
     *  <p>
     *  Recognition: <pre>
     *     "def"                    => methodDeclaration
+    *     "synchronized" "("       => synchronizedStatement
     *     modifierList "class"     => classDeclaration
     *     modifierList "interface" => interfaceDeclaration
     *     modifierList             => <error>
@@ -478,26 +524,28 @@ public class Parser {
     *     see classDeclaration()
     *     see interfaceDeclaration()
     *     see statement()
+    *     see synchronizedStatement()
     *  </pre>
     */
 
-    public CSTNode topLevelStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
+    public CSTNode topLevelStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
         CSTNode result = null;
 
         //
         // If it starts "def", it's a method declaration.  Methods
-        // declared this way cannot be abstract.  Note that "def" 
+        // declared this way cannot be abstract.  Note that "def"
         // is required because the return type is not, and it would
-        // be very hard to tell the difference between a function 
+        // be very hard to tell the difference between a function
         // def and a function invokation with closure...
 
-        if (lt() == Token.KEYWORD_DEF) {
-            consume(lt());
+        if (lt() == Types.KEYWORD_DEF)
+        {
+            consume();
 
-            CSTNode modifiers = modifierList(false, false);
-            CSTNode type = optionalDatatype(false, true);
-            CSTNode identifier = nameDeclaration(false);
+            Reduction modifiers  = modifierList( false, false );
+            CSTNode   type       = optionalDatatype( false, true );
+            Token     identifier = nameDeclaration( false );
 
             result = methodDeclaration(modifiers, type, identifier, false);
         }
@@ -506,43 +554,46 @@ public class Parser {
         // If it starts "synchronized(", it's a statement.  This check
         // is necessary because "synchronized" is also a class modifier.
 
-        else if( lt() == Token.KEYWORD_SYNCHRONIZED && lt(2) == Token.LEFT_PARENTHESIS ) {
+        else if( lt() == Types.KEYWORD_SYNCHRONIZED && lt(2) == Types.LEFT_PARENTHESIS )
+        {
             result = synchronizedStatement();
         }
 
         //
-        // If it starts with a modifier, "class", or "interface", 
+        // If it starts with a modifier, "class", or "interface",
         // it's a type declaration.
 
-        else if( lt() != -1 && (la().isModifier() || lt() == Token.KEYWORD_CLASS || lt() == Token.KEYWORD_INTERFACE) ) {
+        else if( la().isA(Types.DECLARATION_MODIFIER) || la().isA(Types.TYPE_DECLARATION) )
+        {
+            Reduction modifiers = modifierList( true, true );
 
-            CSTNode modifiers = modifierList(true, true);
+            switch( lt() )
+            {
+                case Types.KEYWORD_CLASS:
+                {
+                    result = classDeclaration( modifiers );
+                    break;
+                }
 
-            switch (lt()) {
-                case Token.KEYWORD_CLASS :
-                    {
-                        result = classDeclaration(modifiers);
-                        break;
-                    }
+                case Types.KEYWORD_INTERFACE:
+                {
+                    result = interfaceDeclaration( modifiers );
+                    break;
+                }
 
-                case Token.KEYWORD_INTERFACE :
-                    {
-                        result = interfaceDeclaration(modifiers);
-                        break;
-                    }
-
-                default :
-                    {
-                        throwExpected(new int[] { Token.KEYWORD_CLASS, Token.KEYWORD_INTERFACE });
-                        break;
-                    }
+                default:
+                {
+                    error( new int[] { Types.KEYWORD_CLASS, Types.KEYWORD_INTERFACE } );
+                    break;
+                }
             }
         }
 
         //
         // Otherwise, it's a statement.
 
-        else {
+        else
+        {
             result = statement();
         }
 
@@ -555,7 +606,8 @@ public class Parser {
     *  A synomym for <code>topLevelStatement()</code>.
     */
 
-    public CSTNode typeDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
+    public CSTNode typeDeclaration() throws ReadException, SyntaxException, ExceptionCollector
+    {
         return topLevelStatement();
     }
 
@@ -570,37 +622,30 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     modifiers = { <null> {<modifier>}* }
+    *     modifiers = { <null> <modifier>* }
     *  </pre>
     */
 
-    public CSTNode modifierList(boolean allowStatic, boolean allowAbstract)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode modifiers = new CSTNode();
+    public Reduction modifierList(boolean allowStatic, boolean allowAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction modifiers = Reduction.newContainer();
 
-        while( lt() != -1 && la().isModifier() ) {
-            if (lt() == Token.KEYWORD_ABSTRACT && !allowAbstract) {
+        while( la().isA(Types.DECLARATION_MODIFIER) )
+        {
+            if( lt() == Types.KEYWORD_ABSTRACT && !allowAbstract)
+            {
                 collector.add(new ParserException("keyword 'abstract' not valid in this setting", la()));
             }
-            else if (lt() == Token.KEYWORD_STATIC && !allowStatic) {
+            else if (lt() == Types.KEYWORD_STATIC && !allowStatic)
+            {
                 collector.add(new ParserException("keyword 'static' not valid in this setting", la()));
             }
-            consume(modifiers, lt());
+            modifiers.add( consume() );
         }
 
         return modifiers;
     }
-
-
-
-   /**
-    *  End markers for use by classDeclaration(), interfaceDeclaration(),
-    *  and methodDeclaration().
-    */
-
-    protected static final int[] EXTENDS_CLAUSE_TERMINATORS    = new int[] { Token.KEYWORD_IMPLEMENTS, Token.LEFT_CURLY_BRACE };
-    protected static final int[] IMPLEMENTS_CLAUSE_TERMINATORS = new int[] { Token.LEFT_CURLY_BRACE };
-    protected static final int[] THROWS_CLAUSE_TERMINATORS     = new int[] { Token.LEFT_CURLY_BRACE };
 
 
 
@@ -616,7 +661,7 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     class      = { "class" modifiers {<identifier>} extends implements body }
+    *     class      = { <identifier>:SYNTH_CLASS modifiers extends implements body }
     *     extends    = { "extends"    datatype  } | {}
     *     implements = { "implements" datatype* } | {}
     *
@@ -626,40 +671,46 @@ public class Parser {
     *  </pre>
     */
 
-    public CSTNode classDeclaration(CSTNode modifiers) throws ReadException, SyntaxException, ExceptionCollector {
+    public Reduction classDeclaration( Reduction modifiers ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        consume( Types.KEYWORD_CLASS );
 
-        CSTNode classDeclaration = rootNode(Token.KEYWORD_CLASS);
-        classDeclaration.addChild(modifiers);
-        consume(classDeclaration, Token.IDENTIFIER);
+        Reduction classDeclaration = consume(Types.IDENTIFIER).asReduction( modifiers );
+        classDeclaration.setMeaning( Types.SYNTH_CLASS );
+
 
         //
         // Process any extends clause.
 
-        try {
-            CSTNode extendsNode = typeList(Token.KEYWORD_EXTENDS, EXTENDS_CLAUSE_TERMINATORS, true, 1);
-            classDeclaration.addChild(extendsNode);
+        try
+        {
+            classDeclaration.add( typeList(Types.KEYWORD_EXTENDS, true, 1) );
         }
-        catch (SyntaxException e) {
+        catch (SyntaxException e)
+        {
             collector.add(e);
-            classDeclaration.addChild(new CSTNode());
+            classDeclaration.add( Reduction.EMPTY );
         }
+
 
         //
         // Process any implements clause.
 
-        try {
-            CSTNode implementsNode = typeList(Token.KEYWORD_IMPLEMENTS, IMPLEMENTS_CLAUSE_TERMINATORS, true, 0);
-            classDeclaration.addChild(implementsNode);
+        try
+        {
+            classDeclaration.add( typeList(Types.KEYWORD_IMPLEMENTS, true, 0) );
         }
-        catch (SyntaxException e) {
+        catch (SyntaxException e)
+        {
             collector.add(e);
-            classDeclaration.addChild(new CSTNode());
+            classDeclaration.add( Reduction.EMPTY );
         }
+
 
         //
         // Process the declaration body.  We currently ignore the abstract keyword.
 
-        classDeclaration.addChild(typeBody(true, true, false));
+        classDeclaration.add( typeBody(true, true, false) );
 
         return classDeclaration;
     }
@@ -667,7 +718,7 @@ public class Parser {
 
 
    /**
-    *  Processes a interface declaration.  Caller has already processed the 
+    *  Processes a interface declaration.  Caller has already processed the
     *  declaration modifiers, and passes them in.
     *  <p>
     *  Grammar: <pre>
@@ -677,7 +728,7 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     class      = { "interface" modifiers {<identifier>} {} extends body }
+    *     interface  = { <identifier>:SYNTH_INTERFACE modifiers {} extends body }
     *     extends    = { "extends" datatype* } | {}
     *
     *     modifiers see modifierList()
@@ -686,42 +737,45 @@ public class Parser {
     *  </pre>
     */
 
-    public CSTNode interfaceDeclaration(CSTNode modifiers) throws ReadException, SyntaxException, ExceptionCollector {
+    public Reduction interfaceDeclaration( Reduction modifiers ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        consume( Types.KEYWORD_INTERFACE );
 
-        CSTNode interfaceDeclaration = rootNode(Token.KEYWORD_INTERFACE);
-        interfaceDeclaration.addChild(modifiers);
-        consume(interfaceDeclaration, Token.IDENTIFIER);
-        interfaceDeclaration.addChild(new CSTNode());
+        Reduction interfaceDeclaration = consume(Types.IDENTIFIER).asReduction( modifiers, Reduction.EMPTY );
+        interfaceDeclaration.setMeaning( Types.SYNTH_INTERFACE );
+
 
         //
         // Process any extends clause.
 
-        try {
-            CSTNode extendsNode = typeList(Token.KEYWORD_EXTENDS, IMPLEMENTS_CLAUSE_TERMINATORS, true, 0);
-            interfaceDeclaration.addChild(extendsNode);
+        try
+        {
+            interfaceDeclaration.add( typeList(Types.KEYWORD_EXTENDS, true, 0) );
         }
-        catch (SyntaxException e) {
+        catch (SyntaxException e)
+        {
             collector.add(e);
-            interfaceDeclaration.addChild(new CSTNode());
+            interfaceDeclaration.add( Reduction.EMPTY );
         }
+
 
         //
         // Process the declaration body.  All methods must be abstract.
         // Static methods are not allowed.
 
-        interfaceDeclaration.addChild(typeBody(false, true, true));
+        interfaceDeclaration.add( typeBody(false, true, true) );
         return interfaceDeclaration;
     }
 
 
 
    /**
-    *  Processes a type list, like the ones that occur after "extends" or 
+    *  Processes a type list, like the ones that occur after "extends" or
     *  implements.  If the list is optional, the returned CSTNode will
     *  be empty.
     *  <p>
     *  Grammar: <pre>
-    *     typeList = datatype (, datatype)*
+    *     typeList = <declarator> datatype (, datatype)*
     *  </pre>
     *  <p>
     *  CST: <pre>
@@ -731,54 +785,37 @@ public class Parser {
     *  </pre>
     */
 
-    public CSTNode typeList(int declarator, int[] until, boolean optional, int limit)
-        throws ReadException, SyntaxException, ExceptionCollector {
+    public Reduction typeList(int declarator, boolean optional, int limit)
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction typeList = null;
 
-        CSTNode typeList = null;
-
-        if (lt() == declarator) {
-            typeList = rootNode(declarator);
+        if( lt() == declarator )
+        {
+            typeList = consume(declarator).asReduction();
 
             //
             // Loop, reading one datatype at a time.  On error, attempt
             // recovery until the end of the clause is found.
 
-            while (limit == 0 || typeList.children() < limit) {
-
+            while( limit == 0 || typeList.children() < limit )
+            {
                 //
                 // Try for a list entry, and correct if missing
 
-                try {
-
-                    if (typeList.children() > 0) {
-                        consume(Token.COMMA);
+                try
+                {
+                    if( typeList.children() > 0)
+                    {
+                        consume( Types.COMMA );
                     }
 
-                    CSTNode datatype = datatype(false);
-                    typeList.addChild(datatype);
+                    typeList.add( datatype(false) );
                 }
-                catch (SyntaxException e) {
+                catch (SyntaxException e)
+                {
                     collector.add(e);
-
-                    //
-                    // If we are at the limit, consume until the end of the clause
-
-                    if (limit > 0 && typeList.children() >= limit) {
-                        recover( until );
-                    }
-
-                    //
-                    // Otherwise, consume until the end of the clause or a comma
-
-                    else {
-                        int[] safe = new int[until.length + 1];
-                        safe[0] = Token.COMMA;
-                        for( int i = 0; i < until.length; i++ ) {
-                            safe[i+1] = until[i];
-                        }
-
-                        recover( safe );
-                    }
+                    recover( Types.TYPE_LIST_TERMINATORS );
                 }
 
                 //
@@ -786,18 +823,22 @@ public class Parser {
                 // done at the bottom of the loop to ensure that there
                 // is at least one datatype in the list
 
-                if( lt() == -1 || la().isA(until) ) {
+                if( !la().isA(Types.COMMA) )
+                {
                     break;
                 }
             }
         }
 
-        else {
-            if (optional) {
-                typeList = new CSTNode();
+        else
+        {
+            if (optional)
+            {
+                typeList = Reduction.EMPTY;
             }
-            else {
-                throwExpected(new int[] { declarator });
+            else
+            {
+                error( declarator );
             }
         }
 
@@ -820,24 +861,27 @@ public class Parser {
     *  </pre>
     */
 
-    public CSTNode typeBody(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
-        throws ReadException, SyntaxException, ExceptionCollector {
+    public Reduction typeBody(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction body = Reduction.newContainer();
 
-        CSTNode body = new CSTNode();
+        consume( Types.LEFT_CURLY_BRACE );
 
-        consume(Token.LEFT_CURLY_BRACE);
-
-        while (lt() != -1 && lt() != Token.RIGHT_CURLY_BRACE) {
-            try {
-                body.addChild(typeBodyStatement(allowStatic, allowAbstract, requireAbstract));
+        while( lt() != Types.EOF && lt() != Types.RIGHT_CURLY_BRACE )
+        {
+            try
+            {
+                body.add( typeBodyStatement(allowStatic, allowAbstract, requireAbstract) );
             }
-            catch (SyntaxException e) {
+            catch (SyntaxException e)
+            {
                 collector.add(e);
                 recover();
             }
         }
 
-        consume(Token.RIGHT_CURLY_BRACE);
+        consume( Types.RIGHT_CURLY_BRACE );
 
         return body;
     }
@@ -851,7 +895,7 @@ public class Parser {
     *  <p>
     *  Grammar: <pre>
     *     typeBodyStatement
-    *       = staticInitializer 
+    *       = staticInitializer
     *       | classDeclaration
     *       | interfaceDeclaration
     *       | propertyDeclaration
@@ -877,114 +921,114 @@ public class Parser {
     *  </pre>
     */
 
-    public CSTNode typeBodyStatement(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode statement = null;
+    public Reduction typeBodyStatement(boolean allowStatic, boolean allowAbstract, boolean requireAbstract)
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = null;
 
         //
         // As "static" can be both a modifier and a static initializer, we
         // handle the static initializer first.
 
-        if (lt() == Token.KEYWORD_STATIC && lt(2) == Token.LEFT_CURLY_BRACE) {
-
-            if (!allowStatic) {
-                collector.add(new ParserException("static initializers not valid in this context", la()));
+        if( lt() == Types.KEYWORD_STATIC && lt(2) == Types.LEFT_CURLY_BRACE )
+        {
+            if (!allowStatic)
+            {
+                collector.add( new ParserException("static initializers not valid in this context", la()) );
             }
 
-            CSTNode modifiers = modifierList(true, false);
-            CSTNode identifier = new CSTNode(Token.identifier(-1, -1, ""));
-            statement = methodDeclaration(modifiers, new CSTNode(), identifier, false);
+            Reduction modifiers  = modifierList( true, false );
+            Token     identifier = Token.NULL;
+            statement = methodDeclaration( modifiers, Reduction.EMPTY, identifier, false );
         }
 
         //
         // Otherwise, it is a property, constructor, method, class, or interface.
 
-        else {
-
-            CSTNode modifiers = modifierList(allowStatic, allowAbstract);
+        else
+        {
+            Reduction modifiers = modifierList( allowStatic, allowAbstract );
 
             //
             // Check for inner types
 
-            if (lt() == Token.KEYWORD_CLASS) {
-                statement = classDeclaration(modifiers);
+            if( lt() == Types.KEYWORD_CLASS )
+            {
+                statement = classDeclaration( modifiers );
             }
 
-            else if (lt() == Token.KEYWORD_INTERFACE) {
-                statement = interfaceDeclaration(modifiers);
+            else if( lt() == Types.KEYWORD_INTERFACE )
+            {
+                statement = interfaceDeclaration( modifiers );
             }
 
             //
             // Otherwise, it is a property, constructor, or method.
 
-            else {
-
+            else
+            {
                 //
                 // Ignore any property keyword, if present (it's deprecated)
 
-                if (lt() == Token.KEYWORD_PROPERTY) {
-                    consume(lt());
+                if( lt() == Types.KEYWORD_PROPERTY )
+                {
+                    consume();
                 }
 
                 //
                 // All processing here is whitespace sensitive, in order
                 // to be consistent with the way "def" functions work (due
                 // to the optionality of the semicolon).  One of the
-                // consequences is that the left parenthesis of a 
+                // consequences is that the left parenthesis of a
                 // method declaration /must/ appear on the same line.
 
-                while (lt_bare() == Token.NEWLINE) {
-                    consume_bare(lt_bare());
+                while( lt(true) == Types.NEWLINE)
+                {
+                    consume( Types.NEWLINE );
                 }
 
                 //
                 // We don't yet know about void, so we err on the side of caution
 
-                CSTNode type = optionalDatatype(true, true);
-                CSTNode identifier = nameDeclaration(true);
+                CSTNode   type       = optionalDatatype( true, true );
+                Token     identifier = nameDeclaration( true );
 
-                switch (lt_bare()) {
-                    case Token.LEFT_PARENTHESIS :
+                switch( lt(true) )
+                {
+                    case Types.LEFT_PARENTHESIS :
+                    {
+                        //
+                        // We require abstract if specified on call or the
+                        // "abstract" modifier was supplied.
+
+                        boolean methodIsAbstract = requireAbstract;
+
+                        if( !methodIsAbstract )
                         {
-
-                            //
-                            // We require abstract if specified on call or the 
-                            // "abstract" modifier was supplied.
-
-                            boolean methodIsAbstract = requireAbstract;
-
-                            if (!methodIsAbstract) {
-                                Iterator iterator = modifiers.childIterator();
-                                while (iterator.hasNext()) {
-                                    CSTNode child = (CSTNode) iterator.next();
-                                    if (child.getToken().getType() == Token.KEYWORD_ABSTRACT) {
-                                        methodIsAbstract = true;
-                                        break;
-                                    }
+                            for( int i = 1; i < modifiers.size(); i++ )
+                            {
+                                if( modifiers.get(i).getMeaning() == Types.KEYWORD_ABSTRACT )
+                                {
+                                    methodIsAbstract = true;
+                                    break;
                                 }
                             }
-
-                            statement = methodDeclaration(modifiers, type, identifier, methodIsAbstract);
-                            break;
                         }
 
-                    case Token.EQUAL :
-                    case Token.SEMICOLON :
-                    case Token.NEWLINE :
-                    case Token.RIGHT_CURLY_BRACE :
-                    case -1 :
-                        statement = propertyDeclaration(modifiers, type, identifier);
-                        endOfStatement();
+                        statement = methodDeclaration( modifiers, type, identifier, methodIsAbstract );
+                        break;
+                    }
+
+                    case Types.EQUAL:
+                    case Types.SEMICOLON:
+                    case Types.NEWLINE:
+                    case Types.RIGHT_CURLY_BRACE:
+                    case Types.EOF:
+                        statement = propertyDeclaration( modifiers, type, identifier );
                         break;
 
-                    default :
-                        throwExpected(
-                            new int[] {
-                                Token.LEFT_PARENTHESIS,
-                                Token.EQUAL,
-                                Token.SEMICOLON,
-                                Token.NEWLINE,
-                                Token.RIGHT_CURLY_BRACE });
+                    default:
+                        error( new int[] { Types.LEFT_PARENTHESIS, Types.EQUAL, Types.SEMICOLON, Types.NEWLINE, Types.RIGHT_CURLY_BRACE } );
                 }
             }
         }
@@ -998,14 +1042,14 @@ public class Parser {
     *  A synonym for <code>typeBodyStatement( true, true, false )</code>.
     */
 
-    public CSTNode bodyStatement() throws ReadException, SyntaxException, ExceptionCollector {
-        return typeBodyStatement(true, true, false);
+    public Reduction bodyStatement() throws ReadException, SyntaxException, ExceptionCollector {
+        return typeBodyStatement( true, true, false );
     }
 
 
 
    /**
-    *  Processes a name that is valid for declarations.  Newlines can be made 
+    *  Processes a name that is valid for declarations.  Newlines can be made
     *  significant, if required for disambiguation.
     *  <p>
     *  Grammar: <pre>
@@ -1013,23 +1057,19 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     name = { <identifier> }
+    *     name = <identifier>
     *  </pre>
     */
 
-    protected CSTNode nameDeclaration(boolean useBare) throws ReadException, SyntaxException {
-        if (useBare) {
-            return new CSTNode(consume_bare(Token.IDENTIFIER));
-        }
-        else {
-            return new CSTNode(consume(Token.IDENTIFIER));
-        }
+    protected Token nameDeclaration( boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        return consume( Types.IDENTIFIER, significantNewlines );
     }
 
 
 
    /**
-    *  Processes a reference to a declared name.  Newlines can be made significant, 
+    *  Processes a reference to a declared name.  Newlines can be made significant,
     *  if required for disambiguation.
     *  <p>
     *  Grammar: <pre>
@@ -1037,31 +1077,35 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     name = { <identifier> }
+    *     name = <identifier>
     *  </pre>
     */
 
-    protected CSTNode nameReference(boolean useBare) throws ReadException, SyntaxException {
+    protected Token nameReference( boolean significantNewlines ) throws ReadException, SyntaxException
+    {
 
-        Token token = (useBare ? la_bare() : la());
-
-        if( token == null || !token.isValidNameReference() ) {
-            throwExpected( new int[] { Token.IDENTIFIER } );
+        Token token = la( significantNewlines );
+        if( !token.canMean(Types.IDENTIFIER) )
+        {
+            error( Types.IDENTIFIER );
         }
 
-        return new CSTNode( consume(lt()).toIdentifier() );
+        consume();
+        token.setMeaning( Types.IDENTIFIER );
+
+        return token;
 
     }
 
 
 
    /**
-    *  Processes an optional data type marker (for a parameter, method return type, 
+    *  Processes an optional data type marker (for a parameter, method return type,
     *  etc.).  Newlines can be made significant, if required for disambiguation.
     *  <p>
     *  Grammar: <pre>
     *     optionalDatatype = datatype? (?=<identifier>)
-    *  </pre>
+    *  </pre>h
     *  <p>
     *  CST: <pre>
     *     result = datatype | {}
@@ -1070,43 +1114,57 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode optionalDatatype(boolean useBare, boolean allowVoid)
-        throws ReadException, SyntaxException, ExceptionCollector {
+    protected CSTNode optionalDatatype( boolean significantNewlines, boolean allowVoid )
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        CSTNode type = Reduction.EMPTY;
+        Token   next = la(significantNewlines);
 
-        CSTNode type = new CSTNode();
-        Token la = (useBare ? la_bare() : la());
+        //
+        // If the next token is an identifier, it could be an untyped
+        // variable/method name.  If it is followed by another identifier,
+        // we'll assume type.  Otherwise, we'll attempt a datatype and
+        // restore() the stream if there is a problem.
 
-        if( la == null ) {
-            // no op
-        }
+        if( next.isA(Types.IDENTIFIER) )
+        {
+            if( lt(2, significantNewlines) == Types.IDENTIFIER )
+            {
+                type = datatype( allowVoid );
+            }
+            else
+            {
+                getTokenStream().checkpoint();
 
-        else if( la.isA(Token.IDENTIFIER) ) {
-
-            //
-            // If it is an identifier, it could be an untyped variable/method
-            // name.  We test this by verifying that it a) isn't a simple
-            // identifier or b) that it is followed by another identifier.
-
-            if( useBare ) {
-                if( lt_bare(2) != -1 && la_bare(2).isA(OPTIONAL_DATATYPE_FOLLOWER) ) {
-                    type = datatype(allowVoid);
+                try
+                {
+                    type = datatype( allowVoid );
+                    if( lt(significantNewlines) != Types.IDENTIFIER )
+                    {
+                        throw new Exception();
+                    }
+                }
+                catch( Exception e )
+                {
+                    getTokenStream().restore();
+                    type = Reduction.EMPTY;
                 }
             }
-            else {
-                if( lt(2) != -1 && la(2).isA(OPTIONAL_DATATYPE_FOLLOWER) ) {
-                    type = datatype(allowVoid);
-                }
-            }
         }
 
-        else if( la.isPrimitiveTypeKeyword(true) ) {
-            type = datatype(allowVoid);
+        //
+        // If it is a primitive type name, it must be a datatype.  If void
+        // is present but not allowed, it is an error, and we let datatype()
+        // catch it.
+
+        else if( next.isA(Types.PRIMITIVE_TYPE) )
+        {
+            type = datatype( allowVoid );
         }
 
         return type;
     }
 
-    public static final int[] OPTIONAL_DATATYPE_FOLLOWER = { Token.IDENTIFIER, Token.LEFT_SQUARE_BRACKET, Token.DOT };
 
 
 
@@ -1116,91 +1174,85 @@ public class Parser {
     *  by the caller, and are passed in.
     *  <p>
     *  Grammar: <pre>
-    *     propertyDeclaration = (modifierList optionalDatatype identifier ["=" expression])
+    *     propertyDeclaration = (modifierList optionalDatatype nameDeclaration ["=" expression]) <eos>
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     property = { "property" modifierList methodIdentifier methodReturnType expression? }
-    *     
+    *     property = { <identifier>:SYNTH_PROPERTY modifierList optionalDatatype expression? }
+    *
     *     see modifierList()
-    *     see methodIdentifier()
-    *     see methodReturnType()
+    *     see optionalDatatype()
     *     see expression()
     *  </pre>
     */
 
-    public CSTNode propertyDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier)
-        throws ReadException, SyntaxException, ExceptionCollector {
+    public Reduction propertyDeclaration( Reduction modifiers, CSTNode type, Token identifier )
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction property = identifier.asReduction( modifiers, type );
+        property.setMeaning( Types.SYNTH_PROPERTY );
 
-        CSTNode property = new CSTNode(Token.keyword(-1, -1, "property"));
-
-        property.addChild(modifiers);
-        property.addChild(identifier);
-        property.addChild(type);
-
-        if (lt() == Token.EQUAL) {
-            consume(lt());
-            property.addChild(expression());
+        if( lt() == Types.EQUAL )
+        {
+            consume();
+            property.add( expression() );
         }
 
+        endOfStatement();
         return property;
     }
 
 
 
    /**
-    *  Processes a class/interface method.  The modifiers, type, and identifier have 
+    *  Processes a class/interface method.  The modifiers, type, and identifier have
     *  already been identified by the caller, and are passed in.  If <code>emptyOnly</code>
     *  is set, no method body will be allowed.
     *  <p>
     *  Grammar: <pre>
-    *     methodDeclaration = modifierList optionalDatatype identifier 
-    *                         "(" parameterDeclarationList ")" 
+    *     methodDeclaration = modifierList optionalDatatype identifier
+    *                         "(" parameterDeclarationList ")"
     *                         [ "throws" typeList ]
-    *                         ( statementBody | <eos> )?
+    *                         ( statementBody | <eos> )
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     property = { "method" modifierList methodIdentifier methodReturnType 
-    *                   parameterDeclarationList statementBody throwsClause }
+    *     method = { <identifier>:SYNTH_METHOD modifierList optionalDatatype
+    *                 parameterDeclarationList throwsClause statementBody }
     *
     *     throwsClause = { "throws" datatype+ } | {}
-    *     
+    *
     *     see modifierList()
-    *     see methodIdentifier()
-    *     see methodReturnType()
+    *     see optionalDatatype()
     *     see parameterDeclarationList()
     *     see statementBody()
     *  </pre>
     */
 
-    public CSTNode methodDeclaration(CSTNode modifiers, CSTNode type, CSTNode identifier, boolean emptyOnly)
-        throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode method = new CSTNode(Token.syntheticMethod());
-        method.addChild(modifiers);
-        method.addChild(identifier);
-        method.addChild(type);
+    public Reduction methodDeclaration( Reduction modifiers, CSTNode type, Token identifier, boolean emptyOnly)
+        throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction method = identifier.asReduction( modifiers, type );
+        method.setMeaning( Types.SYNTH_METHOD );
 
         //
         // Process the parameter list
 
-        Token label = consume(Token.LEFT_PARENTHESIS);
-        CSTNode parameters = parameterDeclarationList();
-        parameters.setToken(label);
-
-        method.addChild(parameters);
-        consume(Token.RIGHT_PARENTHESIS);
+        consume(Types.LEFT_PARENTHESIS);
+        method.add( parameterDeclarationList() );
+        consume(Types.RIGHT_PARENTHESIS);
 
         //
         // Process the optional "throws" clause
 
-        CSTNode throwsClause = new CSTNode();
-        try {
-            throwsClause = typeList(Token.KEYWORD_THROWS, THROWS_CLAUSE_TERMINATORS, true, 0);
+        try
+        {
+            method.add( typeList( Types.KEYWORD_THROWS, true, 0 ) );
         }
-        catch (SyntaxException e) {
+        catch (SyntaxException e)
+        {
             collector.add(e);
+            method.add( Reduction.EMPTY );
         }
 
         //
@@ -1209,28 +1261,27 @@ public class Parser {
 
         CSTNode body = null;
 
-        if (emptyOnly) {
-            if (lt() == Token.LEFT_CURLY_BRACE) {
+        if( emptyOnly )
+        {
+            if( lt() == Types.LEFT_CURLY_BRACE )
+            {
                 collector.add(new ParserException("abstract and interface methods cannot have a body", la()));
             }
-            else {
-                body = new CSTNode();
+            else
+            {
+                body = Reduction.EMPTY;
                 endOfStatement();
             }
 
         }
 
-        if( body == null ) {
+        if( body == null )
+        {
             body = statementBody(true);
         }
 
-        method.addChild( body );
+        method.add( body );
 
-
-        //
-        // Finally, tack on the throws clause and return.
-
-        method.addChild(throwsClause);
 
         return method;
     }
@@ -1242,52 +1293,52 @@ public class Parser {
     *  It loops as long as it finds a comma as the next token.
     *  <p>
     *  Grammar: <pre>
-    *     parameterDeclarationList 
+    *     parameterDeclarationList
     *        = (parameterDeclaration ("," parameterDeclaration)* ("," parameterDeclaration "=" expression)* )?
     *        | (parameterDeclaration "=" expression ("," parameterDeclaration "=" expression)* )?
     *  </pre>
     *  <p>
     *  CST: <pre>
     *     parameters = { <null> parameter* }
-    *     parameter  = { <null> datatype nameDeclaration default }
-    *     default    = { } | expression
+    *     parameter  = { <identifier>:SYNTH_PARAMETER_DECLARATION optionalDatatype default? }
+    *     default    = expression
     *  </pre>
     */
 
-    protected CSTNode parameterDeclarationList() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode list = new CSTNode();
+    protected Reduction parameterDeclarationList() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction list = Reduction.newContainer();
 
         boolean expectDefaults = false;
-        while( lt() != -1 && la().isIdentifierOrPrimitiveTypeKeyword() ) {
-            
+        while( la().isA(Types.TYPE_NAME) )  // TYPE_NAME includes <identifier>, and so does double duty
+        {
+
             //
             // Get the declaration
 
-            CSTNode parameter = parameterDeclaration();
-            list.addChild(parameter);
+            Reduction parameter = (Reduction)list.add( parameterDeclaration() );
 
             //
             // Process any default parameter (it is required on every parameter
             // after the first occurrance).
 
-            CSTNode value = new CSTNode();
-            if( expectDefaults || lt() == Token.EQUAL ) {
+            if( expectDefaults || lt() == Types.EQUAL )
+            {
                 expectDefaults = true;
-                consume( Token.EQUAL );
+                consume( Types.EQUAL );
 
-                value = expression();
+                parameter.add( expression() );
             }
-
-            parameter.addChild( value );
 
             //
             // Check if we are done.
 
-            if (lt() == Token.COMMA) {
-                consume(Token.COMMA);
+            if( lt() == Types.COMMA )
+            {
+                consume( Types.COMMA );
             }
-            else {
+            else
+            {
                 break;
             }
         }
@@ -1305,18 +1356,17 @@ public class Parser {
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     parameter = { <null> datatype nameDeclaration }
-    *     
-    *     see datatype()
-    *     see nameDeclaration()
+    *     parameter = { <identifier>:SYNTH_PARAMETER_DECLARATION optionalDatatype }
+    *
+    *     see optionalDatatype()
     *  </pre>
     */
 
-    protected CSTNode parameterDeclaration() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode parameter = new CSTNode(Token.syntheticParameterDeclaration());
-        parameter.addChild(optionalDatatype(false, false));
-        parameter.addChild(nameDeclaration(false));
+    protected Reduction parameterDeclaration() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        CSTNode   type      = optionalDatatype( false, false );
+        Reduction parameter = nameDeclaration( false ).asReduction( type );
+        parameter.setMeaning( Types.SYNTH_PARAMETER_DECLARATION );
 
         return parameter;
     }
@@ -1325,35 +1375,32 @@ public class Parser {
 
    /**
     *  Processes a datatype specification.  For reasons of disambiguation,
-    *  the array marker ([]) must never be on a separate line from the 
+    *  the array marker ([]) must never be on a separate line from the
     *  base datatype.
     *  <p>
     *  Grammar: <pre>
     *     datatype = scalarDatatype ( "[" "]" )*
-    *     
-    *     scalarDatatype 
-    *       = (<identifier> ("." <identifier>)*)
-    *       | "void" | "int" | ...
+    *
+    *     scalarDatatype = dottedIdentifier | "void" | "int" | ...
     *  </pre>
     *  <p>
     *  CST: <pre>
     *     datatype  = { "[" datatype } | scalar
-    *     scalar    = typename | primitive
-    *     typename  = { "." typename name } | name 
-    *     name      = { <identifier> }
-    *     primitive = { "void" } | { "int" } | ...
+    *     scalar    = dottedIdentifier | primitive
+    *     primitive = "void" | "int" | ...
+    *
+    *     see dottedIdentifier()
     *  </pre>
     */
 
-    protected CSTNode datatype(boolean allowVoid) throws ReadException, SyntaxException, ExceptionCollector {
-
+    protected CSTNode datatype( boolean allowVoid ) throws ReadException, SyntaxException, ExceptionCollector
+    {
         CSTNode datatype = scalarDatatype(allowVoid);
 
-        while (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
-            CSTNode array = rootNode(Token.LEFT_SQUARE_BRACKET, datatype);
-            consume_bare(Token.RIGHT_SQUARE_BRACKET);
-
-            datatype = array;
+        while( lt(true) == Types.LEFT_SQUARE_BRACKET )
+        {
+            datatype = consume(Types.LEFT_SQUARE_BRACKET).asReduction( datatype );
+            consume( Types.RIGHT_SQUARE_BRACKET );
         }
 
         return datatype;
@@ -1365,43 +1412,39 @@ public class Parser {
     *  A synonym for <code>datatype( true )</code>.
     */
 
-    protected CSTNode datatype() throws ReadException, SyntaxException, ExceptionCollector {
+    protected CSTNode datatype() throws ReadException, SyntaxException, ExceptionCollector
+    {
         return datatype(true);
     }
 
 
 
    /**
-    *  Processes a scalar datatype specification.  
+    *  Processes a scalar datatype specification.
     *  <p>
     *  Grammar: <pre>
-    *     scalarDatatype 
-    *       = (<identifier> ("." <identifier>)*)
-    *       | "void" | "int" | ...
+    *     scalarDatatype = dottedIdentifier | "void" | "int" | ...
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     scalar    = typename | primitive
-    *     typename  = { "." typename name } | name 
-    *     name      = { <identifier> }
-    *     primitive = { "void" } | { "int" } | ...
+    *     scalar    = dottedIdentifier | primitive
+    *     primitive = "void" | "int" | ...
+    *
+    *     see dottedIdentifier()
     *  </pre>
     */
 
-    protected CSTNode scalarDatatype(boolean allowVoid) throws ReadException, SyntaxException, ExceptionCollector {
+    protected CSTNode scalarDatatype( boolean allowVoid ) throws ReadException, SyntaxException, ExceptionCollector
+    {
         CSTNode datatype = null;
 
-        if( lt() != -1 && la().isPrimitiveTypeKeyword(allowVoid) ) {
-            datatype = rootNode(lt());
+        if( la().isA(allowVoid ? Types.PRIMITIVE_TYPE : Types.CREATABLE_PRIMITIVE_TYPE) )
+        {
+            datatype = consume();
         }
-        else {
-            datatype = rootNode(Token.IDENTIFIER);
-
-            while (lt() == Token.DOT) {
-                CSTNode dot = rootNode(Token.DOT, datatype);
-                consume(dot, Token.IDENTIFIER);
-                datatype = dot;
-            }
+        else
+        {
+            datatype = dottedIdentifier();
         }
 
         return datatype;
@@ -1427,20 +1470,28 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode statementBody( boolean requireBraces ) throws ReadException, SyntaxException, ExceptionCollector {
+    protected CSTNode statementBody( boolean requireBraces ) throws ReadException, SyntaxException, ExceptionCollector
+    {
         CSTNode body = null;
 
+        if (lt() == Types.LEFT_CURLY_BRACE)
+        {
+            Token brace = consume( Types.LEFT_CURLY_BRACE );
+            brace.setMeaning( Types.SYNTH_BLOCK );
 
-        if (lt() == Token.LEFT_CURLY_BRACE) {
-            body = statementsUntilRightCurly( rootNode(Token.LEFT_CURLY_BRACE) );
-            body.getToken().setInterpretation( Token.SYNTH_BLOCK );
-            consume(Token.RIGHT_CURLY_BRACE);
+            body = statementsUntilRightCurly();
+            body.set( 0, brace );
+
+            consume( Types.RIGHT_CURLY_BRACE );
         }
-        else {
-            if( requireBraces ) {
-                throwExpected( new int[] { Token.LEFT_CURLY_BRACE } );
+        else
+        {
+            if( requireBraces )
+            {
+                error( Types.LEFT_CURLY_BRACE );
             }
-            else {
+            else
+            {
                body = statement();
             }
         }
@@ -1451,34 +1502,42 @@ public class Parser {
 
 
    /**
-    *  Reads statements until a "}" is met.  Adds each statement as a child of the
-    *  root node, which you must supply.
+    *  Reads statements until a "}" is met.
     *  <p>
     *  Grammar: <pre>
     *     statementsUntilRightCurly = statement* (?= "}")
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     statements added as children of supplied root node
+    *     statements = { <null> statement* }
     *  </pre>
     */
 
-    protected CSTNode statementsUntilRightCurly(CSTNode root) throws ReadException, SyntaxException, ExceptionCollector {
+    protected Reduction statementsUntilRightCurly( ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction block = Reduction.newContainer();
 
-        while (lt() != Token.RIGHT_CURLY_BRACE) {
-            try {
-                root.addChild(statement());
+        while( lt() != Types.EOF && lt() != Types.RIGHT_CURLY_BRACE )
+        {
+            try
+            {
+                block.add( statement() );
             }
-            catch( SyntaxException e ) {
+            catch( SyntaxException e )
+            {
                 collector.add( e );
                 recover();
             }
         }
 
 
-        return root;
+        return block;
     }
 
+
+
+  //---------------------------------------------------------------------------
+  // PRODUCTIONS: STATEMENTS
 
 
    /**
@@ -1487,25 +1546,25 @@ public class Parser {
     *  a variety of types, and pretty much anything you can put inside a method.
     *  <p>
     *  Grammar: <pre>
-    *     statement     = (label ":")? bareStatement
-    *     bareStatement = (emptyStatement|pureStatement|blockStatement)
+    *     statement      = (label ":")? bareStatement
+    *     bareStatement  = (emptyStatement|basicStatement|blockStatement)
     *
-    *     pureStatement = forStatement 
-    *                   | whileStatement
-    *                   | doStatement
-    *                   | continueStatement
-    *                   | breakStatement
-    *                   | ifStatement
-    *                   | tryStatement
-    *                   | throwStatement
-    *                   | synchronizedStatement
-    *                   | switchStatement
-    *                   | returnStatement
-    *                   | assertStatement
-    *                   | expression <eos>
+    *     basicStatement = forStatement
+    *                    | whileStatement
+    *                    | doStatement
+    *                    | continueStatement
+    *                    | breakStatement
+    *                    | ifStatement
+    *                    | tryStatement
+    *                    | throwStatement
+    *                    | synchronizedStatement
+    *                    | switchStatement
+    *                    | returnStatement
+    *                    | assertStatement
+    *                    | expression <eos>
     *
     *     label          = <identifier>
-    *     blockStatement = "{" statement* "}" 
+    *     blockStatement = "{" statement* "}"
     *     emptyStatement = ";"
     *  </pre>
     *  <p>
@@ -1514,12 +1573,13 @@ public class Parser {
     *     <keyword> => <keyword>Statement
     *     "{"       => expression, then:
     *                    if it is a closureExpression and has no parameters => blockStatement
+    *
     *     *         => expression
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     labelled       = { ":" <identifier> bareStatement }
-    *     bareStatement  = emptyStatement | blockStatement | pureStatement
+    *     labelled       = { <identifier>:SYNTH_LABEL bareStatement }
+    *     bareStatement  = emptyStatement | blockStatement | basicStatement
     *     emptyStatement = { "{" }
     *     blockStatement = { "{" statement* }
     *
@@ -1539,149 +1599,166 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode statement( boolean allowUnlabelledBlocks ) throws ReadException, SyntaxException, ExceptionCollector {
+    protected CSTNode statement( boolean allowUnlabelledBlocks ) throws ReadException, SyntaxException, ExceptionCollector
+    {
         CSTNode statement = null;
 
         //
         // Check for and grab any label for the statement
 
         CSTNode label = null;
-        if( lt() == Token.IDENTIFIER && lt(2) == Token.COLON )
+        if( lt() == Types.IDENTIFIER && lt(2) == Types.COLON )
         {
-            label = rootNode( Token.COLON, rootNode(lt()) );
-            label.getToken().setInterpretation( Token.SYNTH_LABEL );
+            label = consume( Types.IDENTIFIER ).asReduction();
+            label.setMeaning( Types.SYNTH_LABEL );
+
+            consume( Types.COLON );
         }
 
         //
         // Process the statement
 
-        switch (lt()) {
-            case (Token.KEYWORD_FOR) :
-                {
-                    statement = forStatement();
-                    break;
-                }
-            case (Token.KEYWORD_WHILE) :
-                {
-                    statement = whileStatement();
-                    break;
-                }
-            case (Token.KEYWORD_DO) :
-                {
-                    statement = doWhileStatement();
-                    break;
-                }
-            case (Token.KEYWORD_CONTINUE) :
-                {
-                    statement = continueStatement();
-                    break;
-                }
-            case (Token.KEYWORD_BREAK) :
-                {
-                    statement = breakStatement();
-                    break;
-                }
-            case (Token.KEYWORD_IF) :
-                {
-                    statement = ifStatement();
-                    break;
-                }
-            case (Token.KEYWORD_TRY) :
-                {
-                    statement = tryStatement();
-                    break;
-                }
-            case (Token.KEYWORD_THROW) :
-                {
-                    statement = throwStatement();
-                    break;
-                }
-            case (Token.KEYWORD_SYNCHRONIZED) :
-                {
-                    statement = synchronizedStatement();
-                    break;
-                }
-            case (Token.KEYWORD_SWITCH) :
-                {
-                    statement = switchStatement();
-                    break;
-                }
-            case (Token.KEYWORD_RETURN) :
-                {
-                    statement = returnStatement();
-                    break;
-                }
-            case (Token.KEYWORD_ASSERT) :
-                {
-                    statement = assertStatement();
-                    break;
-                }
-            case (Token.SEMICOLON) :
-                {
-                    Token token = consume(lt());
-                    token.setInterpretation( Token.SYNTH_BLOCK );
-                    statement = new CSTNode( token );
-                    break;
-                }
-            case (Token.LEFT_CURLY_BRACE) :
-                {
-                    //
-                    // Bare blocks are no longer generally supported, due to the ambiguity 
-                    // with closures.  Further, closures and blocks can look identical 
-                    // until after parsing, so we process first as a closure expression,
-                    // then, if the expression is a parameter-less, bare closure, recast
-                    // it as a block (which generally requires a label).  Joy.
+        switch( lt() )
+        {
+            case Types.KEYWORD_ASSERT:
+            {
+                statement = assertStatement();
+                break;
+            }
 
-                    statement = expression();
-                    if( statement.getToken().isA(Token.LEFT_CURLY_BRACE) ) {
+            case Types.KEYWORD_BREAK:
+            {
+                statement = breakStatement();
+                break;
+            }
 
-                        if( statement.getChild(0).isEmpty() ) {
+            case Types.KEYWORD_CONTINUE:
+            {
+                statement = continueStatement();
+                break;
+            }
 
-                            CSTNode block = new CSTNode( statement.getToken() );
-                            block.getToken().setInterpretation( Token.SYNTH_BLOCK );
+            case Types.KEYWORD_IF:
+            {
+                statement = ifStatement();
+                break;
+            }
 
-                            Iterator children = statement.getChild(1).childIterator();
-                            while( children.hasNext() ) {
-                                block.addChild( (CSTNode)children.next() );
-                            }
+            case Types.KEYWORD_RETURN:
+            {
+                statement = returnStatement();
+                break;
+            }
 
-                            statement = block;
+            case Types.KEYWORD_SWITCH:
+            {
+                statement = switchStatement();
+                break;
+            }
 
-                            if( label == null && !allowUnlabelledBlocks ) {
-                                collector.add( new ParserException("groovy does not support anonymous blocks; please add a label", statement.getToken()) );
-                            }
+            case Types.KEYWORD_SYNCHRONIZED:
+            {
+                statement = synchronizedStatement();
+                break;
+            }
+
+            case Types.KEYWORD_THROW:
+            {
+                statement = throwStatement();
+                break;
+            }
+
+            case Types.KEYWORD_TRY:
+            {
+                statement = tryStatement();
+                break;
+            }
+
+            case Types.KEYWORD_FOR:
+            {
+                statement = forStatement();
+                break;
+            }
+
+            case Types.KEYWORD_DO:
+            {
+                statement = doWhileStatement();
+                break;
+            }
+
+            case Types.KEYWORD_WHILE:
+            {
+                statement = whileStatement();
+                break;
+            }
+
+            case Types.SEMICOLON:
+            {
+                statement = consume().asReduction();
+                statement.setMeaning( Types.SYNTH_BLOCK );
+                break;
+            }
+
+            case Types.LEFT_CURLY_BRACE:
+            {
+
+                //
+                // Bare blocks are no longer generally supported, due to the ambiguity
+                // with closures.  Further, closures and blocks can look identical
+                // until after parsing, so we process first as a closure expression,
+                // then, if the expression is a parameter-less, bare closure, rebuild
+                // it as a block (which generally requires a label).  Joy.
+
+                statement = expression();
+                if( statement.isA(Types.SYNTH_CLOSURE) )
+                {
+                    if( !statement.get(1).hasChildren() )
+                    {
+                        Reduction block = statement.getRoot().asReduction();
+                        block.setMeaning( Types.SYNTH_BLOCK );
+                        block.addChildrenOf( statement.get(2) );
+
+                        if( label == null && !allowUnlabelledBlocks )
+                        {
+                            collector.add( new ParserException("groovy does not support anonymous blocks; please add a label", statement.getRoot()) );
                         }
+
+                        statement = block;
                     }
-                    else {
-
-                       //
-                       // It's a closure expression, and must be a statement
-
-                       endOfStatement();
-                    }
-
-                    break;
                 }
-            default :
+                else
                 {
-                    try {
-                        statement = expression();
-                        endOfStatement();
-                    }
+                   //
+                   // It's a closure expression, and must be a statement
 
-                    catch (SyntaxException e) {
-                        collector.add(e);
-                        recover();
-                    }
+                   endOfStatement();
                 }
+
+                break;
+            }
+
+            default:
+            {
+                try
+                {
+                    statement = expression();
+                    endOfStatement();
+                }
+                catch (SyntaxException e)
+                {
+                    collector.add(e);
+                    recover();
+                }
+            }
         }
 
 
         //
         // Wrap the statement in the label, if necessary.
 
-        if( label != null ) {
-            label.addChild( statement );
+        if( label != null )
+        {
+            label.add( statement );
             statement = label;
         }
 
@@ -1694,108 +1771,65 @@ public class Parser {
     *  Synonym for <code>statement( false )</code>.
     */
 
-    protected CSTNode statement( ) throws ReadException, SyntaxException, ExceptionCollector {
-        return statement(false);
+    protected CSTNode statement( ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        return statement( false );
     }
 
 
+
    /**
-    *  Processes a switch statement.  
+    *  Processes an assert statement.
     *  <p>
     *  Grammar: <pre>
-    *     switchStatment = "switch" "(" expression ")" "{" switchBody "}"
-    *
-    *     switchBody = caseSet*
-    *     caseSet = (("case" expression ":")+ | ("default" ":")) statement+
+    *     assertStatement = "assert" expression (":" expression) <eos>
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     switch = { "switch" expression case* }
-    *     case   = { "case" expression statement* } 
-    *            | { "default" statement* }
+    *     assert = { "assert" expression expression? }
     *
     *     see expression()
-    *     see statement()
     *  </pre>
     */
 
-    protected CSTNode switchStatement() throws ReadException, SyntaxException, ExceptionCollector {
+    protected Reduction assertStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume( Types.KEYWORD_ASSERT ).asReduction( expression() );
 
-        CSTNode statement = rootNode(Token.KEYWORD_SWITCH);
-        consume(Token.LEFT_PARENTHESIS);
-        statement.addChild(expression());
-        consume(Token.RIGHT_PARENTHESIS);
-
-        //
-        // Process the switch body.  Labels can be pretty much anything,
-        // but we'll duplicate-check for default.
-
-        consume(Token.LEFT_CURLY_BRACE);
-
-        boolean defaultFound = false;
-        while( lt() == Token.KEYWORD_CASE || lt() == Token.KEYWORD_DEFAULT ) {
-
-            //
-            // Read the label
-
-            CSTNode caseBlock = null;
-            if( lt() == Token.KEYWORD_CASE ) {
-                caseBlock = rootNode( Token.KEYWORD_CASE );
-                caseBlock.addChild( expression() );
-            }
-            else {
-                if( defaultFound ) {
-                    collector.add( new ParserException("duplicate default entry in switch", la()) );
-                }
-                     
-                caseBlock = rootNode( Token.KEYWORD_DEFAULT );
-                defaultFound = true;
-            }
-
-            consume( Token.COLON );
-
-            //
-            // Process the statements, if any
-
-            boolean first = true;
-            while( lt() != -1 && !la().isA(SWITCH_STATEMENT_BLOCK_TERMINATORS) ) {
-                caseBlock.addChild(statement(first));
-                first = false;
-            }
-
-            statement.addChild(caseBlock);
+        if( lt() == Types.COLON )
+        {
+            consume( Types.COLON );
+            statement.add( expression() );
         }
 
-        consume(Token.RIGHT_CURLY_BRACE);
+        endOfStatement();
 
         return statement;
     }
 
-    public static final int[] SWITCH_STATEMENT_BLOCK_TERMINATORS = { Token.RIGHT_CURLY_BRACE, Token.KEYWORD_CASE, Token.KEYWORD_DEFAULT };
-
 
 
    /**
-    *  Processes a break statement.  
+    *  Processes a break statement.  We require the label on the same line.
     *  <p>
     *  Grammar: <pre>
     *     breakStatement = "break" label? <eos>
-    *     
+    *
     *     label = <identifier>
     *  </pre>
     *  <p>
     *  CST: <pre>
     *     statement = { "break" label? }
-    *     
-    *     label = { <identifier> }
+    *     label     = <identifier>
     *  </pre>
     */
 
-    protected CSTNode breakStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode statement = rootNode(Token.KEYWORD_BREAK);
-        if (lt() == Token.IDENTIFIER) {
-            statement.addChild(rootNode(lt()));
+    protected Reduction breakStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_BREAK).asReduction();
+        if( lt(true) == Types.IDENTIFIER )
+        {
+            statement.add( consume() );
         }
 
         endOfStatement();
@@ -1806,26 +1840,26 @@ public class Parser {
 
 
    /**
-    *  Processes a continue statement.  
+    *  Processes a continue statement.  We require the label on the same line.
     *  <p>
     *  Grammar: <pre>
     *     continueStatement = "continue" label? <eos>
-    *     
+    *
     *     label = <identifier>
     *  </pre>
     *  <p>
     *  CST: <pre>
     *     statement = { "continue" label? }
-    *     
-    *     label = { <identifier> }
+    *     label     = <identifier>
     *  </pre>
     */
 
-    protected CSTNode continueStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode statement = rootNode(Token.KEYWORD_CONTINUE);
-        if (lt() == Token.IDENTIFIER) {
-            statement.addChild(rootNode(lt()));
+    protected Reduction continueStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_CONTINUE).asReduction();
+        if( lt(true) == Types.IDENTIFIER )
+        {
+            statement.add( consume() );
         }
 
         endOfStatement();
@@ -1836,7 +1870,7 @@ public class Parser {
 
 
    /**
-    *  Processes a throw statement.  
+    *  Processes a throw statement.
     *  <p>
     *  Grammar: <pre>
     *     throwStatement = "throw" expression <eos>
@@ -1849,11 +1883,9 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode throwStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode statement = rootNode(Token.KEYWORD_THROW);
-        statement.addChild(expression());
-
+    protected Reduction throwStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_THROW).asReduction( expression() );
         endOfStatement();
         return statement;
 
@@ -1862,38 +1894,7 @@ public class Parser {
 
 
    /**
-    *  Processes a synchronized statement.  
-    *  <p>
-    *  Grammar: <pre>
-    *     synchronizedStatement = "synchronized" "(" expression ")" statementBody 
-    *  </pre>
-    *  <p>
-    *  CST: <pre>
-    *     statement = { "synchronized" expression statementBody }
-    *
-    *     see expression()
-    *     see statementBody()
-    *  </pre>
-    */
-
-    protected CSTNode synchronizedStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
-        CSTNode statement = rootNode(Token.KEYWORD_SYNCHRONIZED);
-
-        consume( Token.LEFT_PARENTHESIS );
-        statement.addChild(expression());
-        consume( Token.RIGHT_PARENTHESIS );
-
-        statement.addChild( statementBody(true) );
-
-        return statement;
-
-    }
-
-
-
-   /**
-    *  Processes an if statement.  
+    *  Processes an if statement.
     *  <p>
     *  Grammar: <pre>
     *     ifStatement  = ifClause elseIfClause* elseClause?
@@ -1905,33 +1906,35 @@ public class Parser {
     *  <p>
     *  CST: <pre>
     *     if   = { "if" expression statementBody else? }
-    *     else = if | { "else" statementBody } 
+    *     else = if | { "else" statementBody }
     *
     *     see expression()
     *     see statementBody()
     *  </pre>
     */
 
-    protected CSTNode ifStatement() throws ReadException, SyntaxException, ExceptionCollector {
-
+    protected Reduction ifStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
         //
         // Process the if clause
 
-        CSTNode statement = rootNode(Token.KEYWORD_IF);
+        Reduction statement = consume(Types.KEYWORD_IF).asReduction();
 
-        consume(Token.LEFT_PARENTHESIS);
+        consume( Types.LEFT_PARENTHESIS );
 
-        try {
-            statement.addChild(expression());
+        try
+        {
+            statement.add( expression() );
         }
-        catch( SyntaxException e ) {
+        catch( SyntaxException e )
+        {
             collector.add( e );
-            recover( GENERAL_CLAUSE_TERMINATOR );
+            recover( Types.RIGHT_PARENTHESIS );
         }
 
-        consume(Token.RIGHT_PARENTHESIS);
+        consume( Types.RIGHT_PARENTHESIS );
 
-        statement.addChild( statementBody(false) );
+        statement.add( statementBody(false) );
 
 
         //
@@ -1939,15 +1942,17 @@ public class Parser {
         //   if it is an else if, recurse
         //   otherwise, build the else node directly.
 
-        if( lt() == Token.KEYWORD_ELSE ) {
-            if( lt(2) == Token.KEYWORD_IF ) {
-                consume(Token.KEYWORD_ELSE);
-                statement.addChild( ifStatement() );
+        if( lt() == Types.KEYWORD_ELSE )
+        {
+            if( lt(2) == Types.KEYWORD_IF )
+            {
+                consume( Types.KEYWORD_ELSE );
+                statement.add( ifStatement() );
             }
-            else {
-                CSTNode last = rootNode(Token.KEYWORD_ELSE);
-                statement.addChild( last );
-                last.addChild( statementBody(false) );
+            else
+            {
+                Reduction last = (Reduction)statement.add( consume(Types.KEYWORD_ELSE).asReduction() );
+                last.add( statementBody(false) );
             }
         }
 
@@ -1957,87 +1962,8 @@ public class Parser {
 
 
    /**
-    *  Processes an try statement.  
-    *  <p>
-    *  Grammar: <pre>
-    *     tryStatement  = "try" statementBody catchClause* finallyClause?
-    *
-    *     catchClause   = "catch" "(" datatype identifier ")" statementBody
-    *     finallyClause = "finally" statementBody
-    *  </pre>
-    *  <p>
-    *  CST: <pre>
-    *     try     = { "try" statementBody finally catches }
-    *
-    *     catches = { <null> catch* }
-    *
-    *     catch   = { "catch" datatype identifier statementBody }
-    *
-    *     finally = {} | statementBody
-    *
-    *     see datatype()
-    *     see identifier()
-    *     see statementBody()
-    *  </pre>
-    */
-
-    protected CSTNode tryStatement() throws ReadException, SyntaxException, ExceptionCollector {
-    
-        //
-        // Set up the statement with the try clause
-
-        CSTNode statement = rootNode(Token.KEYWORD_TRY);
-        statement.addChild( statementBody(true) );
-
-        //
-        // Process the catch clauses, saving them in a node for 
-        // later appending (it goes in /after/ the finally clause).
-
-        CSTNode catches = new CSTNode();
-        while (lt() == Token.KEYWORD_CATCH) {
-            try {
-                CSTNode catchBlock = rootNode(Token.KEYWORD_CATCH);
-
-                consume(Token.LEFT_PARENTHESIS);
-                try {
-                    catchBlock.addChild(datatype(false));
-                    consume(catchBlock, Token.IDENTIFIER);
-                }
-                catch( SyntaxException e ) {
-                    collector.add( e );
-                    recover( GENERAL_CLAUSE_TERMINATOR );
-                }
-                consume(Token.RIGHT_PARENTHESIS);
-
-                catchBlock.addChild( statementBody(true) );
-
-                catches.addChild(catchBlock);
-            }
-            catch( SyntaxException e ) {
-                collector.add( e );
-            }
-        }
-
-        //
-        // Process the finally clause, if available.
-
-        if (lt() == Token.KEYWORD_FINALLY) {
-            consume(Token.KEYWORD_FINALLY);
-            statement.addChild( statementBody(true) );
-        }
-        else {
-            statement.addChild(new CSTNode());
-        }
-
-        statement.addChild(catches);
-
-        return statement;
-    }
-
-
-
-   /**
-    *  Processes a return statement.  
+    *  Processes a return statement.  Any expression must start on the same line
+    *  as the "return".
     *  <p>
     *  Grammar: <pre>
     *     returnStatement = "return" expression? <eos>
@@ -2050,12 +1976,13 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode returnStatement() throws ReadException, SyntaxException, ExceptionCollector {
+    protected Reduction returnStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_RETURN).asReduction();
 
-        CSTNode statement = rootNode(Token.KEYWORD_RETURN);
-
-        if( lt_bare() != -1 && !la_bare().isA(STATEMENT_TERMINATORS) ) {
-            statement.addChild(expression());
+        if( !la(true).isA(Types.ANY_END_OF_STATEMENT) )
+        {
+            statement.add( expression() );
         }
 
         endOfStatement();
@@ -2066,36 +1993,113 @@ public class Parser {
 
 
    /**
-    *  Processes a while statement.  
+    *  Processes a switch statement.
     *  <p>
     *  Grammar: <pre>
-    *     whileStatement = "while" "(" expression ")" statementBody
+    *     switchStatment = "switch" "(" expression ")" "{" switchBody "}"
+    *
+    *     switchBody = caseSet*
+    *     caseSet = (("case" expression ":")+ | ("default" ":")) statement+
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     while = { "while" expression statementBody }
+    *     switch = { "switch" expression case* }
+    *     case   = { "case" expression statement* }
+    *            | { "default" statement* }
+    *
+    *     see expression()
+    *     see statement()
+    *  </pre>
+    */
+
+    protected Reduction switchStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_SWITCH).asReduction();
+        consume( Types.LEFT_PARENTHESIS );
+        statement.add( expression() );
+        consume( Types.RIGHT_PARENTHESIS );
+
+        //
+        // Process the switch body.  Labels can be pretty much anything,
+        // but we'll duplicate-check for default.
+
+        consume( Types.LEFT_CURLY_BRACE );
+
+        boolean defaultFound = false;
+        while( lt() == Types.KEYWORD_CASE || lt() == Types.KEYWORD_DEFAULT )
+        {
+            //
+            // Read the label
+
+            Reduction caseBlock = null;
+            if( lt() == Types.KEYWORD_CASE )
+            {
+                caseBlock = consume( Types.KEYWORD_CASE ).asReduction( expression() );
+            }
+            else if( lt() == Types.KEYWORD_DEFAULT )
+            {
+                if( defaultFound )
+                {
+                    collector.add( new ParserException("duplicate default entry in switch", la()) );
+                }
+
+                caseBlock = consume( Types.KEYWORD_DEFAULT ).asReduction();
+                defaultFound = true;
+            }
+            else
+            {
+                error( new int[] { Types.KEYWORD_DEFAULT, Types.KEYWORD_CASE } );
+                recover( Types.SWITCH_ENTRIES );
+            }
+
+            consume( Types.COLON );
+
+
+            //
+            // Process the statements, if any
+
+            boolean first = true;
+            while( !la().isA(Types.SWITCH_BLOCK_TERMINATORS) )
+            {
+                caseBlock.add( statement(first) );
+                first = false;
+            }
+
+            statement.add( caseBlock );
+        }
+
+        consume( Types.RIGHT_CURLY_BRACE );
+
+        return statement;
+    }
+
+
+
+   /**
+    *  Processes a synchronized statement.
+    *  <p>
+    *  Grammar: <pre>
+    *     synchronizedStatement = "synchronized" "(" expression ")" statementBody
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     statement = { "synchronized" expression statementBody }
     *
     *     see expression()
     *     see statementBody()
     *  </pre>
     */
 
-    protected CSTNode whileStatement() throws ReadException, SyntaxException, ExceptionCollector {
+    protected Reduction synchronizedStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_SYNCHRONIZED).asReduction();
 
-        CSTNode statement = rootNode(Token.KEYWORD_WHILE);
+        consume( Types.LEFT_PARENTHESIS );
+        statement.add( expression() );
+        consume( Types.RIGHT_PARENTHESIS );
 
-        consume(Token.LEFT_PARENTHESIS);
+        statement.add( statementBody(true) );
 
-        try {
-            statement.addChild(expression());
-        }
-        catch( SyntaxException e ) {
-            collector.add( e );
-            recover( GENERAL_CLAUSE_TERMINATOR );
-        }
-        consume(Token.RIGHT_PARENTHESIS);
-
-        statement.addChild( statementBody(false) );
         return statement;
 
     }
@@ -2103,7 +2107,208 @@ public class Parser {
 
 
    /**
-    *  Processes a do ... while statement.  
+    *  Processes a try statement.
+    *  <p>
+    *  Grammar: <pre>
+    *     tryStatement  = "try" statementBody catchClause* finallyClause?
+    *
+    *     catchClause   = "catch" "(" datatype identifier ")" statementBody
+    *     finallyClause = "finally" statementBody
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     try     = { "try" statementBody catches finally }
+    *
+    *     catches = { <null> catch* }
+    *
+    *     catch   = { "catch" datatype <identifier> statementBody }
+    *
+    *     finally = {} | statementBody
+    *
+    *     see datatype()
+    *     see identifier()
+    *     see statementBody()
+    *  </pre>
+    */
+
+    protected Reduction tryStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+
+        //
+        // Set up the statement with the try clause
+
+        Reduction statement = consume(Types.KEYWORD_TRY).asReduction();
+        statement.add( statementBody(true) );
+
+
+        //
+        // Process the catch clauses
+
+        Reduction catches = (Reduction)statement.add( Reduction.newContainer() );
+        while( lt() == Types.KEYWORD_CATCH )
+        {
+            try
+            {
+                Reduction catchBlock = (Reduction)catches.add( consume(Types.KEYWORD_CATCH).asReduction() );
+
+                consume( Types.LEFT_PARENTHESIS );
+                try
+                {
+                    catchBlock.add( datatype(false) );
+                    catchBlock.add( nameDeclaration(false) );
+                }
+                catch( SyntaxException e )
+                {
+                    collector.add( e );
+                    recover( Types.RIGHT_PARENTHESIS );
+                }
+                consume( Types.RIGHT_PARENTHESIS );
+
+                catchBlock.add( statementBody(true) );
+            }
+            catch( SyntaxException e )
+            {
+                collector.add( e );
+                recover();
+            }
+        }
+
+        //
+        // Process the finally clause, if available.
+
+        if( lt() == Types.KEYWORD_FINALLY )
+        {
+            consume( Types.KEYWORD_FINALLY );
+            statement.add( statementBody(true) );
+        }
+        else
+        {
+            statement.add( Reduction.EMPTY );
+        }
+
+        return statement;
+    }
+
+
+
+  //---------------------------------------------------------------------------
+  // PRODUCTIONS: LOOP STATEMENTS
+
+
+   /**
+    *  Processes a for statement.
+    *  <p>
+    *  Grammar: <pre>
+    *     forStatement = "for" "(" normal | each ")" statementBody
+    *
+    *     normal = multi ";" expression ";" multi
+    *     multi  = (expression ["," expression]*)
+    *
+    *     each   = optionalDatatype nameDeclaration ("in"|":") expression
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     for    = { "for" header statementBody }
+    *
+    *     header = normal | each
+    *     each   = { ("in"|":") optionalDatatype nameDeclaration expression }
+    *
+    *     normal = { <null> init test incr }
+    *     init   = { <null> expression* }
+    *     test   = expression
+    *     incr   = { <null> expression* }
+    *
+    *     see expression()
+    *     see nameDeclaration()
+    *     see statementBody()
+    *  </pre>
+    */
+
+    protected Reduction forStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume( Types.KEYWORD_FOR ).asReduction();
+
+        //
+        // The for loop is a little tricky.  There are three forms,
+        // and the first two can't be processed with expression().
+        // In order to avoid complications, we are going to checkpoint()
+        // the stream before processing optionalDatatype(), then restore
+        // it if we need to use expression().
+        //
+        // Anyway, after processing the optionalDatatype(), if KEYWORD_IN
+        // or a COLON is at la(2), it's an each loop.  Otherwise, it's the
+        // standard for loop.
+
+        consume( Types.LEFT_PARENTHESIS );
+
+        getTokenStream().checkpoint();
+
+        Reduction header   = null;
+        CSTNode   datatype = optionalDatatype( false, false );
+
+        if( lt(2) == Types.KEYWORD_IN || lt(2) == Types.COLON )
+        {
+            Token name = nameDeclaration( false );
+            header = consume().asReduction( datatype, name, expression() );
+        }
+        else
+        {
+            getTokenStream().restore();
+            header = Reduction.newContainer();
+
+            Reduction init = Reduction.newContainer();
+            while( lt() != Types.SEMICOLON && lt() != Types.EOF )
+            {
+                init.add( expression() );
+
+                if( lt() != Types.SEMICOLON )
+                {
+                    consume( Types.COMMA );
+                }
+            }
+
+            consume( Types.SEMICOLON );
+
+            header.add( init );
+
+
+            //
+            // Next up, a single expression is the test clause, followed
+            // by a semicolon.
+
+            header.add( expression() );
+            consume( Types.SEMICOLON );
+
+
+            //
+            // Finally, the increment section is a (possibly empty) comma-
+            // separated list of expressions followed by the RIGHT_PARENTHESIS.
+
+            Reduction incr = (Reduction)header.add( Reduction.newContainer() );
+
+            while( lt() != Types.RIGHT_PARENTHESIS && lt() != Types.EOF )
+            {
+                incr.add( expression() );
+
+                if( lt() != Types.RIGHT_PARENTHESIS )
+                {
+                    consume( Types.COMMA );
+                }
+            }
+        }
+
+        consume( Types.RIGHT_PARENTHESIS );
+
+        statement.add( header );
+        statement.add( statementBody(false) );
+
+        return statement;
+    }
+
+
+
+   /**
+    *  Processes a do ... while statement.
     *  <p>
     *  Grammar: <pre>
     *     doWhileStatement = "do" statementBody "while" "(" expression ")" <eos>
@@ -2117,21 +2322,23 @@ public class Parser {
     *  </pre>
     */
 
-    protected CSTNode doWhileStatement() throws ReadException, SyntaxException, ExceptionCollector {
+    protected Reduction doWhileStatement() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction statement = consume(Types.KEYWORD_DO).asReduction();
+        statement.add( statementBody(false) );
+        consume( Types.KEYWORD_WHILE );
 
-        CSTNode statement = rootNode(Token.KEYWORD_DO);
-        statement.addChild( statementBody(false) );
-        consume(Token.KEYWORD_WHILE);
-
-        consume(Token.LEFT_PARENTHESIS);
-        try {
-            statement.addChild(expression());
-        } 
-        catch( SyntaxException e ) {
-            collector.add( e );
-            recover( GENERAL_CLAUSE_TERMINATOR );
+        consume( Types.LEFT_PARENTHESIS );
+        try
+        {
+            statement.add( expression() );
         }
-        consume(Token.RIGHT_PARENTHESIS);
+        catch( SyntaxException e )
+        {
+            collector.add( e );
+            recover( Types.RIGHT_PARENTHESIS );
+        }
+        consume( Types.RIGHT_PARENTHESIS );
 
         return statement;
 
@@ -2140,1085 +2347,1687 @@ public class Parser {
 
 
    /**
-    *  Processes a for statement.  
+    *  Processes a while statement.
     *  <p>
     *  Grammar: <pre>
-    *     forStatement = "for" statementBody "while" "(" expression ")" <eos>
+    *     whileStatement = "while" "(" expression ")" statementBody
     *  </pre>
     *  <p>
     *  CST: <pre>
-    *     do = { "do" statementBody expression }
+    *     while = { "while" expression statementBody }
     *
     *     see expression()
     *     see statementBody()
     *  </pre>
     */
 
-    protected CSTNode forStatement() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode statement = rootNode(Token.KEYWORD_FOR);
-
-        consume(Token.LEFT_PARENTHESIS);
-
-        CSTNode identifierOrType = new CSTNode(consume(Token.IDENTIFIER));
-        if (la_bare().getType() == Token.COLON) {
-            consume(Token.COLON);
-        }
-        else {
-            Token potentialIn = consume(Token.IDENTIFIER);
-            if (!potentialIn.getText().equals("in")) {
-                // we could be a type declaration
-
-                // our next token must either be a colon or 'in'
-                if (la_bare().getType() == Token.COLON) {
-                    consume(Token.COLON);
-                }
-                else {
-                    // must be followed by 'in'
-                    Token inToken = consume(Token.IDENTIFIER);
-                    if (!inToken.getText().equals("in")) {
-                        throw new UnexpectedTokenException(inToken, new int[] { Token.COLON, Token.IDENTIFIER });
-                    }
-                }
-                CSTNode identifier = new CSTNode(potentialIn);
-                identifier.addChild(identifierOrType);
-                identifierOrType = identifier;
-            }
-        }
-
-        statement.addChild(identifierOrType);
-
-        CSTNode expr = expression();
-
-        statement.addChild(expr);
-
-        consume(Token.RIGHT_PARENTHESIS);
-
-        statement.addChild( statementBody(false) );
-
-        return statement;
-    }
-
-    protected CSTNode assertStatement() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode statement = rootNode(Token.KEYWORD_ASSERT);
-
-        statement.addChild(ternaryExpression());
-
-        if (lt() == Token.COLON) {
-            consume(Token.COLON);
-
-            statement.addChild(expression());
-        }
-        else {
-            statement.addChild(new CSTNode());
-        }
-
-        endOfStatement();
-
-        return statement;
-    }
-
-    // ----------------------------------------------------------------------
-    // ----------------------------------------------------------------------
-
-    protected CSTNode expression() throws ReadException, SyntaxException, ExceptionCollector {
-        optionalNewlines();
-
-        return assignmentExpression();
-    }
-
-    protected CSTNode assignmentExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = null;
-
-        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.IDENTIFIER && lt_bare(3) == Token.EQUAL) {
-            // a typed variable declaration
-            CSTNode typeExpr = new CSTNode(consume_bare(lt_bare()));
-            expr = new CSTNode(consume_bare(lt_bare()));
-            expr.addChild(typeExpr);
-        }
-        else {
-            expr = ternaryExpression();
-        }
-
-        switch (lt_bare()) {
-            case (Token.EQUAL) :
-            case (Token.PLUS_EQUAL) :
-            case (Token.MINUS_EQUAL) :
-            case (Token.DIVIDE_EQUAL) :
-            case (Token.MULTIPLY_EQUAL) :
-            case (Token.MOD_EQUAL) :
-                {
-                    expr = rootNode(lt_bare(), expr);
-                    optionalNewlines();
-                    expr.addChild(ternaryExpression());
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode ternaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = logicalOrExpression();
-
-        if (lt_bare() == Token.QUESTION) {
-            expr = rootNode(Token.QUESTION, expr);
-            optionalNewlines();
-            expr.addChild(assignmentExpression());
-
-            optionalNewlines();
-
-            consume(Token.COLON);
-
-            optionalNewlines();
-            expr.addChild(ternaryExpression());
-        }
-
-        return expr;
-    }
-
-    protected CSTNode logicalOrExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = logicalAndExpression();
-
-        while (lt_bare() == Token.LOGICAL_OR) {
-            expr = rootNode(Token.LOGICAL_OR, expr);
-            optionalNewlines();
-            expr.addChild(logicalAndExpression());
-        }
-
-        return expr;
-    }
-
-    protected CSTNode logicalAndExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = equalityExpression();
-
-        while (lt_bare() == Token.LOGICAL_AND) {
-            expr = rootNode(Token.LOGICAL_AND, expr);
-            optionalNewlines();
-            expr.addChild(equalityExpression());
-        }
-
-        return expr;
-    }
-
-    protected CSTNode equalityExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = relationalExpression();
-
-        switch (lt_bare()) {
-            case (Token.COMPARE_EQUAL) :
-            case (Token.COMPARE_NOT_EQUAL) :
-            case (Token.COMPARE_IDENTICAL) :
-                {
-                    expr = rootNode(lt_bare(), expr);
-                    optionalNewlines();
-                    expr.addChild(relationalExpression());
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode relationalExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = rangeExpression();
-
-        switch (lt_bare()) {
-            case (Token.COMPARE_LESS_THAN) :
-            case (Token.COMPARE_LESS_THAN_EQUAL) :
-            case (Token.COMPARE_GREATER_THAN) :
-            case (Token.COMPARE_GREATER_THAN_EQUAL) :
-            case (Token.FIND_REGEX) :
-            case (Token.MATCH_REGEX) :
-            case (Token.KEYWORD_INSTANCEOF) :
-                {
-                    expr = rootNode(lt_bare(), expr);
-                    optionalNewlines();
-                    expr.addChild(rangeExpression());
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode rangeExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = additiveExpression();
-
-        if (lt_bare() == Token.DOT_DOT) {
-            expr = rootNode(Token.DOT_DOT, expr);
-            optionalNewlines();
-            expr.addChild(additiveExpression());
-        }
-        else if (lt_bare() == Token.DOT_DOT_DOT) {
-            expr = rootNode(Token.DOT_DOT_DOT, expr);
-            optionalNewlines();
-            expr.addChild(additiveExpression());
-        }
-        return expr;
-    }
-
-    protected CSTNode additiveExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = multiplicativeExpression();
-
-        LOOP : while (true) {
-            SWITCH : switch (lt_bare()) {
-                case (Token.PLUS) :
-                case (Token.MINUS) :
-                case (Token.LEFT_SHIFT) :
-                case (Token.RIGHT_SHIFT) :
-                    {
-                        expr = rootNode(lt_bare(), expr);
-                        optionalNewlines();
-                        expr.addChild(multiplicativeExpression());
-                        break SWITCH;
-                    }
-                default :
-                    {
-                        break LOOP;
-                    }
-            }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode multiplicativeExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = unaryExpression();
-
-        LOOP : while (true) {
-            SWITCH : switch (lt_bare()) {
-                case (Token.MULTIPLY) :
-                case (Token.DIVIDE) :
-                case (Token.MOD) :
-                case (Token.COMPARE_TO) :
-                    {
-                        expr = rootNode(lt_bare(), expr);
-                        optionalNewlines();
-                        expr.addChild(unaryExpression());
-                        break SWITCH;
-                    }
-                default :
-                    {
-                        break LOOP;
-                    }
-            }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode unaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = null;
-
-        switch (lt_bare()) {
-            case (Token.MINUS) :
-            case (Token.NOT) :
-            case (Token.PLUS) :
-                {
-                    expr = rootNode(lt_bare());
-                    expr.addChild(postfixExpression());
-                    break;
-                }
-            case (Token.PLUS_PLUS) :
-            case (Token.MINUS_MINUS) :
-                {
-                    expr = new CSTNode(Token.syntheticPrefix());
-                    CSTNode prefixExpr = rootNode(lt_bare());
-                    expr.addChild(prefixExpr);
-                    prefixExpr.addChild(primaryExpression());
-                    break;
-                }
-            default :
-                {
-                    expr = postfixExpression();
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode postfixExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = primaryExpression();
-
-        Token laToken = la();
-        if (laToken != null) {
-            switch (laToken.getType()) {
-                case (Token.PLUS_PLUS) :
-                case (Token.MINUS_MINUS) :
-                    {
-                        CSTNode primaryExpr = expr;
-                        expr = new CSTNode(Token.syntheticPostfix());
-                        expr.addChild(rootNode(lt_bare(), primaryExpr));
-                    }
-            }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode primaryExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = null;
-        CSTNode identifier = null;
-
-        PREFIX_SWITCH : switch (lt_bare()) {
-            case (Token.KEYWORD_TRUE) :
-            case (Token.KEYWORD_FALSE) :
-            case (Token.KEYWORD_NULL) :
-                {
-                    expr = rootNode(lt_bare());
-                    break PREFIX_SWITCH;
-                }
-            case (Token.KEYWORD_NEW) :
-                {
-                    expr = newExpression();
-                    break PREFIX_SWITCH;
-                }
-            case (Token.LEFT_PARENTHESIS) :
-                {
-                    expr = parentheticalExpression();
-                    break PREFIX_SWITCH;
-                }
-            case (Token.INTEGER_NUMBER) :
-            case (Token.FLOAT_NUMBER) :
-            case (Token.SINGLE_QUOTE_STRING) :
-                {
-                    expr = rootNode(lt_bare());
-                    break PREFIX_SWITCH;
-                }
-            case (Token.DOUBLE_QUOTE_STRING) :
-                {
-                    expr = doubleQuotedString();
-                    break PREFIX_SWITCH;
-                }
-            case (Token.LEFT_SQUARE_BRACKET) :
-                {
-                    expr = listOrMapExpression();
-                    break PREFIX_SWITCH;
-                }
-            case (Token.LEFT_CURLY_BRACE) :
-                {
-                    expr = closureExpression();
-                    break PREFIX_SWITCH;
-                }
-            case (Token.KEYWORD_THIS) :
-                {
-                    expr = thisExpression();
-                    identifier = rootNode(lt_bare());
-                    break PREFIX_SWITCH;
-                }
-            case (Token.KEYWORD_SUPER) :
-                {
-                    expr = new CSTNode(Token.keyword(-1, -1, "super"));
-                    identifier = rootNode(lt_bare());
-                    break PREFIX_SWITCH;
-                }
-            case (Token.PATTERN_REGEX) :
-                {
-                    expr = regexPattern();
-                    break PREFIX_SWITCH;
-                }
-            default :
-                {
-                    identifier = nameReference(true);
-                    expr = identifier;
-
-                    break PREFIX_SWITCH;
-                }
-        }
-
-        if (identifier != null) {
-            if (lt_bare() == Token.LEFT_PARENTHESIS || lt_bare() == Token.LEFT_CURLY_BRACE) {
-                if (expr == identifier) {
-                    CSTNode replacementExpr = new CSTNode();
-                    CSTNode resultExpr = sugaryMethodCallExpression(replacementExpr, identifier, null);
-                    if (resultExpr != replacementExpr) {
-                        expr = resultExpr;
-                    }
-                }
-                else {
-                    expr = sugaryMethodCallExpression(expr, identifier, null);
-                }
-            }
-            else {
-                CSTNode methodCall = tryParseMethodCallWithoutParenthesis(thisExpression(), identifier);
-                if (methodCall != null) {
-                    expr = methodCall;
-                }
-            }
-        }
-
-        while (lt_bare() == Token.LEFT_SQUARE_BRACKET || lookAheadForMethodCall()) {
-            if (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
-                expr = subscriptExpression(expr);
-            }
-            else {
-                expr = methodCallOrPropertyExpression(expr);
-            }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode thisExpression() {
-        return new CSTNode(Token.keyword(-1, -1, "this"));
-    }
-
-    protected CSTNode subscriptExpression(CSTNode expr) throws ReadException, SyntaxException, ExceptionCollector {
-        expr = rootNode_bare(lt_bare(), expr);
-
-        optionalNewlines();
-        CSTNode rangeExpr = rangeExpression();
-
-        // lets support the list notation inside subscript operators
-        if (lt_bare() != Token.COMMA) {
-            expr.addChild(rangeExpr);
-        }
-        else {
-            consume_bare(Token.COMMA);
-            CSTNode listExpr = new CSTNode(Token.syntheticList());
-            expr.addChild(listExpr);
-            listExpr.addChild(rangeExpr);
-
-            while (true) {
-                optionalNewlines();
-                listExpr.addChild(rangeExpression());
-                if (lt_bare() == Token.COMMA) {
-                    consume_bare(Token.COMMA);
-                }
-                else {
-                    break;
-                }
-            }
-        }
-        optionalNewlines();
-        consume(Token.RIGHT_SQUARE_BRACKET);
-        return expr;
-    }
-
-    protected CSTNode methodCallOrPropertyExpression(CSTNode expr)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode dotExpr = rootNode_bare(lt_bare());
-        CSTNode identifier = rootNode_bare(lt_bare());
-
-        switch (lt_bare()) {
-            case (Token.LEFT_PARENTHESIS) :
-            case (Token.LEFT_CURLY_BRACE) :
-                {
-                    expr = sugaryMethodCallExpression(expr, identifier, dotExpr);
-                    break;
-                }
-            default :
-                {
-                    // lets try parse a method call
-                    CSTNode methodCall = tryParseMethodCallWithoutParenthesis(expr, identifier);
-                    if (methodCall != null) {
-                        expr = methodCall;
-                    }
-                    else {
-                        dotExpr.addChild(expr);
-                        dotExpr.addChild(identifier);
-                       expr = dotExpr;
-                    }
-                    break;
-                }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode sugaryMethodCallExpression(CSTNode expr, CSTNode identifier, CSTNode dotExpr)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode methodExpr = null;
-        CSTNode paramList = null;
-
-        if (lt_bare() == Token.LEFT_PARENTHESIS) {
-            methodExpr = rootNode_bare(Token.LEFT_PARENTHESIS);
-            optionalNewlines();
-            methodExpr.addChild(expr);
-            methodExpr.addChild(identifier);
-            paramList = parameterList(Token.RIGHT_PARENTHESIS);
-            methodExpr.addChild(paramList);
-            optionalNewlines();
-            consume_bare(Token.RIGHT_PARENTHESIS);
-        }
-
-        if (lt_bare() == Token.LEFT_CURLY_BRACE) {
-            if (methodExpr == null) {
-                methodExpr = new CSTNode(Token.leftParenthesis(-1, -1));
-                methodExpr.addChild(expr);
-                methodExpr.addChild(identifier);
-                paramList = parameterList(Token.LEFT_CURLY_BRACE);
-                methodExpr.addChild(paramList);
-            }
-
-            paramList.addChild(closureExpression());
-        }
-
-        if (methodExpr != null) {
-            expr = methodExpr;
-            if (dotExpr != null) {
-                expr.addChild(dotExpr);
-            }
-        }
-
-        return expr;
-    }
-
-    protected CSTNode tryParseMethodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
-        throws SyntaxException, ReadException {
-        switch (lt_bare()) {
-            case Token.IDENTIFIER :
-            case Token.DOUBLE_QUOTE_STRING :
-            case Token.SINGLE_QUOTE_STRING :
-            case Token.FLOAT_NUMBER :
-            case Token.INTEGER_NUMBER :
-            case Token.KEYWORD_NEW :
-                // lets try parse a method call
-                getTokenStream().checkpoint();
-                try {
-                    return methodCallWithoutParenthesis(expr, identifier);
-                }
-                catch (Exception e) {
-                    getTokenStream().restore();
-                }
-        }
-        return null;
-    }
-
-    protected CSTNode methodCallWithoutParenthesis(CSTNode expr, CSTNode identifier)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode methodExpr = new CSTNode(Token.leftParenthesis(-1, -1));
-        methodExpr.addChild(expr);
-        methodExpr.addChild(identifier);
-
-        CSTNode parameterList = new CSTNode(Token.syntheticList());
-
-        parameterList.addChild(expression());
-
-        while (lt_bare() == Token.COMMA) {
-            consume_bare(lt_bare());
-            optionalNewlines();
-            parameterList.addChild(expression());
-        }
-
-        methodExpr.addChild(parameterList);
-        return methodExpr;
-    }
-
-    protected boolean lookAheadForMethodCall() throws ReadException, SyntaxException, ExceptionCollector {
-        return (lt_bare() == Token.DOT || lt_bare() == Token.NAVIGATE) && (lt(2) != -1 && la(2).isValidNameReference());
-    }
-
-
-    protected CSTNode regexPattern() throws ReadException, SyntaxException, ExceptionCollector {
-        Token token = consume(Token.PATTERN_REGEX);
-        CSTNode expr = new CSTNode(token);
-        CSTNode regexString = doubleQuotedString();
-        expr.addChild(regexString);
-        return expr;
-    }
-
-    protected CSTNode doubleQuotedString() throws ReadException, SyntaxException, ExceptionCollector {
-        Token token = consume(Token.DOUBLE_QUOTE_STRING);
-        String text = token.getText();
-
-        CSTNode expr = new CSTNode(token);
-
-        int textStart = 0;
-        int cur = 0;
-        int len = text.length();
-
-        while (cur < len) {
-            int exprStart = text.indexOf("${", cur);
-
-            if (exprStart < 0) {
-                break;
-            }
-
-            if (exprStart > 0) {
-                if (text.charAt(exprStart - 1) == '$') {
-                    StringBuffer buf = new StringBuffer(text);
-                    buf.replace(exprStart - 1, exprStart, "");
-                    text = buf.toString();
-                    cur = exprStart + 1;
-                    continue;
-                }
-            }
-
-            expr.addChild(
-                new CSTNode(
-                    Token.singleQuoteString(
-                        token.getStartLine(),
-                        token.getStartColumn() + cur + 1,
-                        text.substring(textStart, exprStart))));
-
-            int exprEnd = text.indexOf("}", exprStart);
-
-            String exprText = text.substring(exprStart + 2, exprEnd);
-
-            StringCharStream exprStream = new StringCharStream(exprText);
-
-            Lexer lexer = new Lexer(exprStream);
-            Parser parser = new Parser(new LexerTokenStream(lexer));
-
-            CSTNode embeddedExpr = parser.expression();
-
-            expr.addChild(embeddedExpr);
-
-            cur = exprEnd + 1;
-            textStart = cur;
-        }
-
-        if (textStart < len) {
-            expr.addChild(
-                new CSTNode(
-                    Token.singleQuoteString(
-                        token.getStartLine(),
-                        token.getStartColumn() + textStart + 1,
-                        text.substring(textStart))));
-        }
-
-        return expr;
-
-    }
-
-    protected CSTNode parentheticalExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        consume(Token.LEFT_PARENTHESIS);
-
-        if (lt_bare() == Token.IDENTIFIER && lt_bare(2) == Token.RIGHT_PARENTHESIS) {
-            // we could be a cast
-            boolean valid = true;
-            switch (lt_bare(3)) {
-                case Token.SEMICOLON :
-                case Token.NEWLINE :
-                case Token.RIGHT_CURLY_BRACE :
-                case -1 :
-                    valid = false;
-            }
-            if (valid) {
-                // lets assume we're a cast expression
-                CSTNode castExpr = new CSTNode(Token.syntheticCast());
-                castExpr.addChild(new CSTNode(consume_bare(lt_bare())));
-                consume_bare(lt_bare());
-                castExpr.addChild(expression());
-                return castExpr;
-            }
-        }
-
-        CSTNode expr = expression();
-
-        consume(Token.RIGHT_PARENTHESIS);
-
-        return expr;
-    }
-
-    protected CSTNode parameterList(int endOfListDemarc) throws ReadException, SyntaxException, ExceptionCollector {
-        if( lt_bare() != -1 && la_bare().isValidNameReference() && lt_bare(2) == Token.COLON ) {
-            return namedParameterList(endOfListDemarc);
-        }
-
-        CSTNode parameterList = new CSTNode(Token.syntheticList());
-
-        while (lt_bare() != endOfListDemarc) {
-            parameterList.addChild(expression());
-
-            if (lt_bare() == Token.COMMA) {
-                consume_bare(Token.COMMA);
-                optionalNewlines();
-            }
-            else {
-                break;
-            }
-        }
-
-        return parameterList;
-    }
-
-    protected CSTNode namedParameterList(int endOfListDemarc)
-        throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode parameterList = new CSTNode(Token.syntheticList());
-
-        while (lt() != endOfListDemarc) {
-            CSTNode name = nameReference(true);
-
-            CSTNode namedParam = rootNode_bare(Token.COLON, name);
-
-            namedParam.addChild(expression());
-
-            parameterList.addChild(namedParam);
-
-            if (lt_bare() == Token.COMMA) {
-                consume_bare(Token.COMMA);
-                optionalNewlines();
-            }
-            else {
-                break;
-            }
-        }
-
-        return parameterList;
-    }
-
-    protected CSTNode newExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = rootNode(Token.KEYWORD_NEW);
-
-        expr.addChild(scalarDatatype(false));
-
-        /*
-        consume( Token.LEFT_PARENTHESIS );
-        
-        expr.addChild( parameterList( Token.RIGHT_PARENTHESIS ) );
-        
-        consume( Token.RIGHT_PARENTHESIS );
-        */
-
-        if (lt_bare() == Token.LEFT_PARENTHESIS) {
-            consume_bare(Token.LEFT_PARENTHESIS);
-
-            expr.addChild(parameterList(Token.RIGHT_PARENTHESIS));
-
-            consume(Token.RIGHT_PARENTHESIS);
-        }
-        else if (lt_bare() == Token.LEFT_CURLY_BRACE) {
-            consume_bare(Token.LEFT_CURLY_BRACE);
-
-            CSTNode paramList = parameterList(Token.RIGHT_CURLY_BRACE);
-            expr.addChild(paramList);
-            paramList.addChild(closureExpression());
-        }
-        else if (lt_bare() == Token.LEFT_SQUARE_BRACKET) {
-            expr.addChild(new CSTNode(consume_bare(Token.LEFT_SQUARE_BRACKET)));
-
-            if (lt_bare() == Token.RIGHT_SQUARE_BRACKET) {
-                // no size so must use a size expression
-                consume_bare(Token.RIGHT_SQUARE_BRACKET);
-                expr.addChild(new CSTNode(consume_bare(Token.LEFT_CURLY_BRACE)));
-                CSTNode paramList = parameterList(Token.RIGHT_CURLY_BRACE);
-                consume(Token.RIGHT_CURLY_BRACE);
-
-                expr.addChild(paramList);
-            }
-            else {
-                expr.addChild(expression());
-                consume_bare(Token.RIGHT_SQUARE_BRACKET);
-            }
-        }
-        else {
-           // STUFF GOES HERE FOR THE new Object; CASE!!!
-            
-        }
-
-        return expr;
-    }
-
-    // 
-    // **TEMPORARY**
-
-    protected CSTNode closureExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        return closureExpression(false);
-    }
-
-    protected CSTNode closureExpression( boolean pipeRequired ) throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = rootNode(Token.LEFT_CURLY_BRACE);
-        expr.getToken().setInterpretation( Token.SYNTH_CLOSURE );
-
-        // { statement();
-        // { a |
-        // { a, b |
-        // { A a |
-        // { A a, B b |
-        // { int[] a, char b |
-        // but not { a }, 
-
-        int value = lt(1);
-
-        boolean canBeParamList = false;
-
-        if( lt() != -1 && la().isIdentifierOrPrimitiveTypeKeyword() ) {
-            if( lt(2) != -1 && la(2).isIdentifierOrPrimitiveTypeKeyword() ) {
-                canBeParamList = lt(3) == Token.PIPE || lt(3) == Token.COMMA;
-            }
-            else {
-                canBeParamList = lt(2) == Token.PIPE || lt(2) == Token.COMMA;
-            }
-        }
-        if (canBeParamList) {
-            expr.addChild(parameterDeclarationList());
-            pipeRequired = true;
-        }
-        else {
-            expr.addChild(new CSTNode());
-        }
-
-        CSTNode block = new CSTNode();
-
-        if (lt_bare() != Token.RIGHT_CURLY_BRACE) {
-            if (pipeRequired || lt() == Token.PIPE) {
-                consume(Token.PIPE);
-            }
-
-            statementsUntilRightCurly(block);
-        }
-
-        consume(Token.RIGHT_CURLY_BRACE);
-
-        expr.addChild(block);
-
-        return expr;
-    }
-
-    protected CSTNode listOrMapExpression() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = null;
-
-        consume(Token.LEFT_SQUARE_BRACKET);
-
-        if (lt() == Token.COLON) {
-            // it is an empty map
-            consume(Token.COLON);
-            expr = new CSTNode(Token.syntheticMap());
-        }
-        else if (lt() == Token.RIGHT_SQUARE_BRACKET) {
-            // it is an empty list
-            expr = new CSTNode(Token.syntheticList());
-        }
-        else {
-            CSTNode firstExpr = expression();
-
-            if (lt() == Token.COLON) {
-                expr = mapExpression(firstExpr);
-            }
-            else {
-                expr = listExpression(firstExpr);
-            }
-        }
-
-        consume(Token.RIGHT_SQUARE_BRACKET);
-
-        return expr;
-    }
-
-    protected CSTNode mapExpression(CSTNode key) throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = new CSTNode(Token.syntheticMap());
-
-        CSTNode entry = rootNode(Token.COLON, key);
-
-        CSTNode value = expression();
-
-        entry.addChild(value);
-
-        expr.addChild(entry);
-
-        while (lt() == Token.COMMA) {
-            consume(Token.COMMA);
-
-            key = expression();
-
-            entry = rootNode(Token.COLON, key);
-
-            entry.addChild(expression());
-
-            expr.addChild(entry);
-        }
-
-        return expr;
-    }
-
-    protected CSTNode listExpression(CSTNode entry) throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode expr = new CSTNode(Token.syntheticList());
-
-        expr.addChild(entry);
-
-        while (lt() == Token.COMMA) {
-            consume(Token.COMMA);
-
-            entry = expression();
-
-            expr.addChild(entry);
-        }
-
-        return expr;
-    }
-
-    /*
-    protected CSTNode listExpression()
-        throws ReadException, SyntaxException, ExceptionCollector
+    protected Reduction whileStatement() throws ReadException, SyntaxException, ExceptionCollector
     {
-        CSTNode expr = rootNode( Token.LEFT_SQUARE_BRACKET );
-    
-        while ( lt() != Token.RIGHT_SQUARE_BRACKET )
+        Reduction statement = consume(Types.KEYWORD_WHILE).asReduction();
+
+        consume( Types.LEFT_PARENTHESIS );
+
+        try
         {
-            expr.addChild( expression() );
-    
-            if ( lt() == Token.COMMA )
+            statement.add( expression() );
+        }
+        catch( SyntaxException e )
+        {
+            collector.add( e );
+            recover( Types.RIGHT_PARENTHESIS );
+        }
+        consume( Types.RIGHT_PARENTHESIS );
+
+        statement.add( statementBody(false) );
+        return statement;
+
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // PRODUCTIONS: EXPRESSIONS
+
+
+   /**
+    *  Processes a single (sub-)expression into a CSTNode.  No assumption is
+    *  made about what follows the expression.
+    *  <p>
+    *  Note that the expression parser is rather stupid, in that it cannot
+    *  resolve names.  Therefore it is little more than a pre-filter, removing
+    *  statements that can't possibly be right, but leaving everything that
+    *  might be right for semantic analysis by the <code>Analyzer</code> (which
+    *  has access to the symbol table.  There was some thought given to eliminating
+    *  the CSTs and going right to ASTs, but that option was rejected because
+    *  inner classes mean that class name resolution won't work before parsing
+    *  is complete.
+    */
+
+    protected CSTNode expression( ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        // int id = nestCount++;
+        // System.out.println( "ENTERING EXPRESSION " + id );
+
+        ExpressionStack stack = new ExpressionStack( this );
+        CSTNode expression = null;
+
+        boolean bareMode = false;
+
+        MAIN_LOOP: do
+        {
+            //
+            // Valid at the start of an (sub)expression, a typed variable declaration
+            // is handled separately.  It has the form
+
+            //
+            // In the SHIFT phase, we move stuff onto the stack that can have
+            // multiple meanings and/or precedence issues, and leave the interpretation
+            // for a later REDUCE.  No lookahead is used.  When structures are found that
+            // have a consistent form, we use LL techniques (the new operator, for instance).
+
+            Token next = la(stack);
+            int type = next.getMeaningAs( EXPRESSION_SHIFT_HANDLERS );
+
+            // System.out.println( "expression() status:" );
+            // System.out.println( stack.toString() );
+            // System.out.println( "next: " );
+            // System.out.println( next.toString() );
+            // System.out.println( la(2).toString() );
+
+            SHIFT: switch( type )
             {
-                consume( Token.COMMA );
+                case Types.GSTRING_START:
+                {
+                    if( stack.topIsAnExpression() )
+                    {
+                        error( "gstring cannot directly follow another expression" );
+                    }
+
+                    stack.push( gstring() );
+                    break;
+                }
+
+
+                case Types.CREATABLE_PRIMITIVE_TYPE:
+                {
+                    if( stack.atStartOfExpression() )
+                    {
+                        stack.push( variableDeclarationExpression(consume()) );
+                    }
+                    else
+                    {
+                        error( "type name not valid in this context" );
+                    }
+                    break;
+                }
+
+
+                case Types.SIMPLE_EXPRESSION:
+                {
+
+                    //
+                    // Method parameters don't make it here (see REDUCE)...
+
+                    stack.shiftUnlessTopIsAnExpression( "literal cannot directly follow another expression" );
+                    break;
+                }
+
+
+                case Types.KEYWORD_IDENTIFIER:
+                {
+                    if( stack.top().isA(Types.DEREFERENCE_OPERATOR) && stack.topIsAnOperator() )
+                    {
+                        la().setMeaning( Types.IDENTIFIER );
+                        stack.shift();
+                    }
+                    else
+                    {
+                        error( "not valid as an identifier in this context" );
+                    }
+                    break;
+                }
+
+
+                case Types.ASSIGNMENT_OPERATOR:
+                {
+                    stack.shiftIf( stack.topIsAModifiableExpression(), "left-hand-side of assignment must be modifiable" );
+                    break;
+                }
+
+
+                case Types.PREFIX_OR_INFIX_OPERATOR:
+                {
+                    if( stack.topIsAnOperator(0, true) )
+                    {
+                        Types.makePrefix( next, false );
+                    }
+                    stack.shift( );
+                    break;
+                }
+
+
+                case Types.PREFIX_OPERATOR:
+                {
+                    Types.makePrefix( next, false );
+                    stack.shift( );
+                    break;
+                }
+
+
+                case Types.QUESTION:
+                case Types.INFIX_OPERATOR:
+                {
+                    stack.shiftIfTopIsAnExpression( "infix operators may only follow expressions" );
+                    break;
+                }
+
+
+                case Types.LEFT_PARENTHESIS:
+                {
+                    //
+                    // Method calls don't make it here (see REDUCE).  It is
+                    // either a sub-expression or a cast.
+
+                    boolean condition = stack.atStartOfExpression() || (stack.topIsAnOperator() && !stack.top().isA(Types.DEREFERENCE_OPERATOR));
+                    stack.shiftIf( condition, "sub-expression not valid at this position" );
+                    break;
+                }
+
+
+
+                case Types.LEFT_CURLY_BRACE:
+                {
+                    if( stack.atStartOfExpression() || stack.topIsAnOperator() || stack.top().isA(Types.SYNTH_METHOD_CALL) )
+                    {
+                        stack.push( closureExpression() );
+                    }
+                    else
+                    {
+                        error( "closure not valid in this context" );
+                    }
+                    break;
+                }
+
+
+                case Types.LEFT_SQUARE_BRACKET:
+                {
+                    boolean isMap = false, insist = false;
+                    if( stack.topIsAnExpression() )
+                    {
+                        insist = true;
+                    }
+                    stack.push( listOrMapExpression(isMap, insist) );
+                    break;
+                }
+
+
+                case Types.KEYWORD_NEW:
+                {
+                    if( stack.atStartOfExpression() || stack.topIsAnOperator() )
+                    {
+                        stack.push( newExpression() );
+                    }
+                    else
+                    {
+                        error( "new can follow the start of an expression or another operator" );
+                    }
+                    break;
+                }
+
+
+                case Types.KEYWORD_INSTANCEOF:
+                {
+                    stack.shiftIf( stack.topIsAnExpression(), "instanceof may only follow an expression" );
+                    break;
+                }
+
+
+                default:
+                {
+
+                    //
+                    // All other operators are caught during REDUCE, so if it makes
+                    // it here, it's either the end of the expression, or an error.
+
+                	if( stack.size() == 1 && stack.topIsAnExpression() )
+                    {
+                        break MAIN_LOOP;                          // <<< FLOW CONTROL <<<<<<<<<
+                    }
+                    else
+                    {
+                        error();
+                    }
+                }
+
+
+            }
+
+
+
+            //
+            // In the REDUCE phase, we try to find ways to convert several stack
+            // elements (and maybe one lookahead token) into a single expression.
+            // We retry the REDUCE as long as it succeeds.  Note that reductions
+            // are ONLY possible when the top of the stack is an expression.
+
+            boolean checkAgain = false, skipPatterns = false;
+            CSTNode top0 = null, top1 = null, top2 = null;
+            int nextPrecedence = 0, top1Precedence = 0;
+
+            REDUCE: do
+            {
+                if( !stack.topIsAnExpression() )
+                {
+                    break;
+                }
+
+
+                //
+                // We reduce at most once per iteration, so we collect info here.
+
+                checkAgain   = false;
+                skipPatterns = false;
+
+                top0 = stack.top();
+                top1 = stack.top(1);
+                top2 = stack.top(2);
+
+                next = la( stack );
+
+                // System.out.println( "expression() stack for reduce: " + stack );
+                // System.out.println( "expression() next token for reduce: " + next );
+
+                nextPrecedence = Types.getPrecedence( next.getMeaning(), false );
+                top1Precedence = Types.getPrecedence( top1.getMeaning(), false );
+
+
+
+              //---------------------------------------------------------------
+              // UNUSUAL STUFF FIRST
+
+
+                //
+                // Not really an operator at all, if top1 is a "(" and next is an ")",
+                // we should reduce.  Extra processing is needed because the "(" is not
+                // the type of an expression.
+
+                if( top1.isA(Types.LEFT_PARENTHESIS) )
+                {
+                    if( next.isA(Types.RIGHT_PARENTHESIS) )
+                    {
+                        consume();
+
+                        //
+                        // To simplify things, cast operators MUST appear on the same line
+                        // as the start of their operands.  Without name lookup, we can't
+                        // be sure that even things that look like casts are, but we assume
+                        // they are and let later phases correct, where necessary.
+
+                        next = la(true);
+                        boolean castPrecluded = next.isA(Types.NEWLINE) || next.isA(Types.PRECLUDES_CAST_OPERATOR);
+
+                        if( ExpressionSupport.isAPotentialTypeName(top0, false) && !castPrecluded )
+                        {
+                            CSTNode   name = stack.pop();
+                            Reduction cast = ((Token)stack.pop()).asReduction( name );
+                            cast.setMeaning( Types.SYNTH_CAST );
+                            stack.push( cast );
+                        }
+                        else
+                        {
+                            CSTNode subexpression = stack.pop();
+                            stack.pop();
+                            stack.push( subexpression );
+                        }
+
+                        checkAgain = true;
+                        continue;                             // <<< LOOP CONTROL <<<<<<<<<
+                    }
+                    else
+                    {
+                        skipPatterns = true;
+                    }
+                }
+
+
+                //
+                // Highest precedence: "new".  If it is preceeded on the stack by
+                // a ".", what preceeds the "." is the context for the new, and
+                // we'll have to do some rewriting....  Note that SHIFT will only
+                // shift a "new" if it is preceeded by nothing or an operator,
+                // and it will only shift a "." if it is preceeded by an expression.
+                // Therefore, we can assume any preceeding "." is an operator.
+
+                if( top0.isA(Types.KEYWORD_NEW) && !top0.isAnExpression() )
+                {
+                    top0.markAsExpression();
+
+                    if( top1.isA(Types.DOT) )
+                    {
+                        CSTNode theNew  = stack.pop();
+                        CSTNode theDot  = stack.pop();
+                        CSTNode context = stack.pop();
+
+                        theNew.set( 1, context );
+                        stack.push( theNew );
+
+                        checkAgain = true;
+                        continue;                             // <<< LOOP CONTROL <<<<<<<<<
+                    }
+                }
+
+
+                //
+                // Not unusual, but handled here to simplify precendence handling for
+                // the rest of the unusual stuff: dereference operators are left-associative.
+
+                if( top1.isA(Types.DEREFERENCE_OPERATOR) && !top0.hasChildren() )
+                {
+                    stack.reduce( 3, 1, true );
+
+                    checkAgain = true;
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+
+                //
+                // Next precedence, array offsets.  Because we allow lists and ranges
+                // and such inside list expressions, all lists will have been processed
+                // to a SYNTH_LISTH during SHIFT.  Here we do some rewriting, where
+                // necessary.  Empty array offsets are only allowed on types, and we
+                // run the appropriate conversion in that case.
+
+                if( top0.isA(Types.SYNTH_LIST) && top1.isAnExpression() )
+                {
+                    //
+                    // Empty list is an array type
+
+                    if( !top0.hasChildren() )
+                    {
+                        boolean typePreceeds   = ExpressionSupport.isAPotentialTypeName(top1, false);
+                        boolean potentialCast  = top2.isA(Types.LEFT_PARENTHESIS);
+                        boolean potentialDecl  = top2.isA(Types.LEFT_PARENTHESIS) || top2.isA(Types.UNKNOWN);
+                        boolean classReference = next.isA(Types.DOT) && la(2).isA(Types.KEYWORD_CLASS);
+                        if( !(typePreceeds && (potentialCast || potentialDecl || classReference)) )
+                        {
+                            error( "empty square brackets are only valid on type names" );
+                        }
+
+                        //
+                        // Okay, we have an array type.  We now convert the list and
+                        // expression to an array type, and slurp any further dimensions
+                        // off the lookahead.
+
+                        Reduction array = stack.pop().asReduction();
+                        array.setMeaning( Types.LEFT_SQUARE_BRACKET );
+                        array.add( stack.pop() );
+
+                        while( lt(true) == Types.LEFT_SQUARE_BRACKET )
+                        {
+                            array = consume( Types.LEFT_SQUARE_BRACKET ).asReduction( array );
+                            consume( Types.RIGHT_SQUARE_BRACKET );
+                        }
+
+
+                        //
+                        // One last decision: variable type declaration, or
+                        // cast, or class reference...
+
+                        if( classReference )
+                        {
+                            CSTNode reference = consume(Types.DOT).asReduction(array, consume(Types.KEYWORD_CLASS));
+                            reference.markAsExpression();
+                            stack.push( reference );
+
+                        }
+                        else if( lt(true) == Types.IDENTIFIER && lt(2) == Types.EQUAL )
+                        {
+                            stack.push( variableDeclarationExpression(array) );
+                        }
+                        else if( stack.top().isA(Types.LEFT_PARENTHESIS) && la(true).isA(Types.RIGHT_PARENTHESIS) )
+                        {
+                            CSTNode cast = ((Token)stack.pop()).asReduction( array );
+                            cast.setMeaning( Types.SYNTH_CAST );
+                            stack.push( cast );
+                            consume( Types.RIGHT_PARENTHESIS );
+                        }
+                        else
+                        {
+                            error( "found array type where none expected" );
+                        }
+                    }
+
+
+                    //
+                    // Non-empty list is an offset (probably)
+
+                    else
+                    {
+                        CSTNode list = stack.pop();
+                        CSTNode base = stack.pop();
+
+                        Reduction result = ((Token)list.get(0)).dup().asReduction();
+                        result.setMeaning( Types.LEFT_SQUARE_BRACKET );
+                        result.add( base );
+
+                        if( list.children() == 1 )
+                        {
+                            result.add( list.get(1) );
+                        }
+                        else
+                        {
+                            result.add( list );
+                        }
+
+                        result.markAsExpression();
+                        stack.push( result );
+                    }
+
+                    checkAgain = true;
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+
+                }
+
+
+
+                //
+                // Next precedence: typed variable declarations.  If the top of stack
+                // isAPotentialTypeName(), la(true) is an identifier, and la(2) is
+                // an "=", it's a declaration.
+
+                if( la(true).isA(Types.IDENTIFIER) && lt(2) == Types.EQUALS && ExpressionSupport.isAPotentialTypeName(top0, false) )
+                {
+                    stack.push( variableDeclarationExpression(stack.pop()) );
+
+                    checkAgain = true;
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+                //
+                // Before getting to method call handling proper, we should check for any
+                // pending bookkeeping.  If the top of stack is a closure and the element
+                // before it is a method call, the closure is either one of its parameters
+                // or an error.
+
+                if( top1.isA(Types.SYNTH_METHOD_CALL) && top0.isA(Types.SYNTH_CLOSURE) )
+                {
+                    CSTNode parameters = top1.get(2);
+
+                    int last = parameters.size() - 1;
+                    if( last > 0 && parameters.get(last).isA(Types.SYNTH_CLOSURE) )
+                    {
+                        error( "you may only pass one closure to a method implicitly" );
+                    }
+
+                    parameters.add( stack.pop() );
+
+                    checkAgain = true;
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+                //
+                // Next precedence: method calls and typed declarations.  If the top of stack
+                // isInvokable() and la(stack) is an "(", an "{", or a simple expression, it's
+                // a method call.  We leave the closure for the next SHIFT.
+
+                if( ExpressionSupport.isInvokable(top0) && (next.isA(Types.LEFT_CURLY_BRACE) || la(true).isA(Types.METHOD_CALL_STARTERS)) )
+                {
+                    // System.out.println( "making a method call of " + top0 );
+
+                    CSTNode name = stack.pop();
+
+                    Reduction method = null;
+                    switch( next.getMeaning() )
+                    {
+                        case Types.LEFT_PARENTHESIS:
+                            method = consume().asReduction();
+                            method.add( name );
+                            method.add( la().isA(Types.RIGHT_PARENTHESIS) ? Reduction.newContainer() : parameterList() );
+                            consume( Types.RIGHT_PARENTHESIS );
+                            break;
+
+                        case Types.LEFT_CURLY_BRACE:
+                            method = Token.newSymbol( Types.LEFT_PARENTHESIS, next.getStartLine(), next.getStartColumn() ).asReduction();
+                            method.add( name );
+                            method.add( Reduction.newContainer() );
+                            break;
+
+                        default:
+                            method = Token.newSymbol( Types.LEFT_PARENTHESIS, next.getStartLine(), next.getStartColumn() ).asReduction();
+                            method.add( name );
+                            method.add( parameterList() );
+                            break;
+                    }
+
+                    method.setMeaning( Types.SYNTH_METHOD_CALL );
+                    method.markAsExpression();
+
+                    stack.push( method );
+
+                    if( lt() != Types.LEFT_CURLY_BRACE )
+                    {
+                        checkAgain = true;
+                    }
+
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+                //
+                // Handle postfix operators next.  We have to check for acceptable
+                // precedence before doing it.  All the higher precedence reductions
+                // have already been checked.
+
+                if( next.isA(Types.POSTFIX_OPERATOR) && stack.topIsAnExpression() )
+                {
+                    if( !ExpressionSupport.isAVariable(stack.top()) )
+                    {
+                        error( "increment/decrement operators can only be applied to variables" );
+                    }
+
+                    Types.makePostfix( next, true );
+
+                    stack.shift();
+                    stack.reduce( 2, 0, true );
+
+                    checkAgain = true;
+                    continue;                                 // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+                //
+                // The ternary operator will be seen twice.  The first reduction is
+                // infix when there is a ":" on lookahed.  The second reduction is
+                // prefix when there is a lower-precedence operator on lookahed.
+                // The ternary operator is right-associative.  Note that
+                // Types.getPrecedence() on a ternary operator returns 10.
+
+                if( top1.isA(Types.QUESTION) )
+                {
+                    boolean reduce = false;
+
+                    if( la().isA(Types.COLON) )
+                    {
+                        if( top1.hasChildren() )
+                        {
+                            error( "ternary operator can have only three clauses" );
+                        }
+
+                        consume();
+                        stack.reduce( 3, 1, false );
+                        checkAgain = true;
+                    }
+                    else if( Types.getPrecedence(next.getMeaning(), false) < 10 )
+                    {
+                        stack.reduce( 2, 1, false );
+                        stack.top().setMeaning( Types.SYNTH_TERNARY );
+                        checkAgain = true;
+                    }
+
+
+                    if( checkAgain )
+                    {
+                        continue;                             // <<< LOOP CONTROL <<<<<<<<<
+                    }
+                }
+
+
+
+
+              //---------------------------------------------------------------
+              // PATTERN STUFF SECOND
+
+
+                //
+                // Note that because of the loop control above, we get here only if none
+                // of the above options matched.
+                //
+                // So, everything else we handle generically: top1 will be an operator, and
+                // will be reduced or not with top0 and possibly top2, depending on the
+                // cardinality and associativity of the operator, and the type of la().
+
+                if( skipPatterns || !ExpressionSupport.isAnOperator(top1, false) )
+                {
+                    break;                                    // <<< LOOP CONTROL <<<<<<<<<
+                }
+
+
+                switch( top1.getMeaningAs(EXPRESSION_REDUCE_HANDLERS) )
+                {
+                    //
+                    // Prefix increment/decrement operators aren't always valid, so we
+                    // handle the separately from the other prefix operators.
+
+                    case Types.PREFIX_PLUS_PLUS:
+                    case Types.PREFIX_MINUS_MINUS:
+                    {
+                        if( nextPrecedence < top1Precedence )
+                        {
+                            if( !ExpressionSupport.isAVariable(stack.top()) )
+                            {
+                                error( "increment/decrement operators can only be applied to variables" );
+                            }
+
+                            stack.reduce( 2, 1, true );
+                            checkAgain = true;
+                       }
+
+                       break;
+                    }
+
+
+                    //
+                    // All other prefix operators.  They are all right-associative.
+
+                    case Types.PURE_PREFIX_OPERATOR:
+                    {
+                        if( nextPrecedence < top1Precedence )
+                        {
+                            stack.reduce( 2, 1, true );
+                            checkAgain = true;
+                        }
+
+                        break;
+                    }
+
+
+                    //
+                    // Handle the assignment operators.  They are all right-associative.
+
+                    case Types.ASSIGNMENT_OPERATOR:
+                    {
+                        if( nextPrecedence < top1Precedence )
+                        {
+                            stack.reduce( 3, 1, true );
+                            checkAgain = true;
+                        }
+
+                        break;
+                    }
+
+
+                    //
+                    // Handle the instenceof keyword.  The rhs has to be a potential type.
+
+                    case Types.KEYWORD_INSTANCEOF:
+                    {
+                        if( nextPrecedence < top1Precedence )
+                        {
+                            if( !ExpressionSupport.isAPotentialTypeName(top0, false) )
+                            {
+                                error( "instanceof right-hand side must be a valid type name" );
+                            }
+
+                            stack.reduce( 3, 1, true );
+                            checkAgain = true;
+                        }
+
+                        break;
+                    }
+
+
+                    //
+                    // Handle all other infix operators.  They are all left-associative.
+
+                    case Types.INFIX_OPERATOR:
+                    {
+                        if( nextPrecedence <= top1Precedence )
+                        {
+                            stack.reduce( 3, 1, true );
+                            checkAgain = true;
+                        }
+
+                        break;
+                    }
+
+
+                    //
+                    // Anything else in top1 is an bug.
+
+                    default:
+                    {
+                        throw new GroovyBugError( "found unexpected token during REDUCE [" + top1.getMeaning() + "]" );
+                    }
+                }
+
+            } while( checkAgain );
+
+        } while( true );
+
+
+        if( stack.size() == 1 && stack.topIsAnExpression() )
+        {
+            expression = stack.pop();
+        }
+        else
+        {
+            error( "expression incomplete" );
+        }
+
+
+        // System.out.println( "EXITING EXPRESSION " + id );
+        return expression;
+    }
+
+
+    private static final int EXPRESSION_SHIFT_HANDLERS[] = {
+          Types.GSTRING_START
+        , Types.CREATABLE_PRIMITIVE_TYPE
+        , Types.SIMPLE_EXPRESSION
+        , Types.KEYWORD_IDENTIFIER
+        , Types.ASSIGNMENT_OPERATOR
+        , Types.PREFIX_OR_INFIX_OPERATOR
+        , Types.PREFIX_OPERATOR
+        , Types.QUESTION
+        , Types.INFIX_OPERATOR
+        , Types.LEFT_PARENTHESIS
+        , Types.LEFT_CURLY_BRACE
+        , Types.LEFT_SQUARE_BRACKET
+        , Types.KEYWORD_NEW
+        , Types.KEYWORD_INSTANCEOF
+    };
+
+    private static final int EXPRESSION_REDUCE_HANDLERS[] = {
+          Types.PREFIX_PLUS_PLUS
+        , Types.PREFIX_MINUS_MINUS
+        , Types.PURE_PREFIX_OPERATOR
+        , Types.ASSIGNMENT_OPERATOR
+        , Types.KEYWORD_INSTANCEOF
+        , Types.INFIX_OPERATOR
+    };
+
+
+
+   /**
+    *  Processes a typed variable declaration.  Without the type, it's a
+    *  assignment expression instead (no comma support).  The datatype
+    *  has already been identified and is passed in.
+    *  <p>
+    *  Grammar: <pre>
+    *     variableDeclarationExpression
+    *        = datatype (nameDeclaration "=" expression)
+    *                   ("," nameDeclaration "=" expression)*
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     statement   = { :<SYNTH_VARIABLE_DECLARATION> datatype declaration+ }
+    *     declaration = { <identifier> expression }
+    *
+    *     see expression()
+    *  </pre>
+    */
+
+    protected Reduction variableDeclarationExpression( CSTNode datatype ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction expression = ((Token)datatype.get(0)).dup().asReduction( datatype );  // done for line number on SYNTH
+        expression.setMeaning( Types.SYNTH_VARIABLE_DECLARATION );
+
+        boolean done = false;
+        do
+        {
+            try
+            {
+                Reduction declaration = (Reduction)expression.add( nameDeclaration(false).asReduction() );
+                consume( Types.EQUAL );
+                declaration.add( expression() );
+            }
+            catch( SyntaxException e )
+            {
+                collector.add( e );
+                recover( Types.ANY_END_OF_STATEMENT );
+            }
+
+            if( lt() == Types.COMMA )
+            {
+                consume( Types.COMMA );
             }
             else
             {
-                break;
-            }
-        }
-    
-        consume( Token.RIGHT_SQUARE_BRACKET );
-    
-        return expr;
-    }
-    */
-
-    protected CSTNode argumentList() throws ReadException, SyntaxException, ExceptionCollector {
-        CSTNode argumentList = new CSTNode();
-
-        while (lt() != Token.RIGHT_PARENTHESIS) {
-            argumentList.addChild(expression());
-
-            if (lt() == Token.COMMA) {
-                consume(Token.COMMA);
-            }
-            else {
-                break;
-            }
-        }
-
-        return argumentList;
-    }
-
-
-
-  //---------------------------------------------------------------------------
-  // SUPPORT ROUTINES
-
-
-   /**
-    *  Throws an <code>UnexpectedTokenException</code>.
-    */
-
-    protected void throwExpected(int[] expectedTypes) throws ReadException, SyntaxException {
-        throw new UnexpectedTokenException(la(), expectedTypes);
-    }
-
-
-   /** 
-    *  Ensures that a <code>Token</code> is not null.  Throws a 
-    *  <code>ParserException</code> on error.
-    */
-
-    protected Token require( Token token ) throws ReadException, SyntaxException {
-        if( token == null ) {
-            throw new ParserException( "unexpected end of stream", null );
-        }
-
-        return token;
-    }
-
-
-
-
-  //---------------------------------------------------------------------------
-  // VANILLA TOKEN LOOKAHEAD -- NEWLINES IGNORED
-
-
-   /**
-    *  Returns (without consuming) the next non-newline token in the 
-    *  underlying token stream.  
-    */
-
-    protected Token la() throws ReadException, SyntaxException {
-        return la(1);
-    }
-
-
-
-   /**
-    *  Returns (without consuming any tokens) the next <code>k</code>th
-    *  non-newline token from the underlying token stream.
-    */
-
-    protected Token la(int k) throws ReadException, SyntaxException {
-        Token token = null;
-        for (int pivot = 1, count = 0; count < k; pivot++) {
-            token = getTokenStream().la(pivot);
-            if (token == null || token.getType() != Token.NEWLINE) {
-                count++;
-            }
-        }
-        return token;
-    }
-
-
-
-   /**
-    *  Returns the type of the <code>la()</code> token, or -1.
-    */
-
-    protected int lt() throws ReadException, SyntaxException {
-        return lt(1);
-    }
-
-
-
-   /**
-    *  Returns the type of the <code>la(k)</code> token, or -1.
-    */
-
-    protected int lt(int k) throws ReadException, SyntaxException {
-        Token token = la(k);
-
-        if (token == null) {
-            return -1;
-        }
-
-        return token.getType();
-    }
-
-
-
-
-  //---------------------------------------------------------------------------
-  // VANILLA TOKEN CONSUMPTION -- NEWLINES IGNORED
-
-
-   /**
-    *  Consumes tokens until one of the specified type is consumed.
-    */
-
-    protected void consumeUntil(int type) throws ReadException, SyntaxException {
-        boolean done = false;
-
-        while (lt() != -1 && !done) {
-
-            if (lt() == type) {
                 done = true;
             }
 
-            consume(lt());
-        }
+        } while( !done );
+
+
+        return expression;
     }
 
 
 
    /**
-    *  Consumes (and returns) the next token if it is of the specified type, or 
-    *  throws an <code>UnexpectedTokenException</code>.  If the specified type 
-    *  is Token.NEWLINE, eats all available newlines, and consumes (and returns)
-    *  the next (non-newline) token.
+    *  Processes a GString.
+    *  <p>
+    *  Grammar: <pre>
+    *     gstring = (<text>? "$" "{" expression "}" <text>?)*
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     gstring = { <full-text>:SYNTH_GSTRING (segment|expression)* }
+    *
+    *     see expression()
+    *  </pre>
     */
 
-    protected Token consume(int type) throws ReadException, SyntaxException {
-        if (lt() != type) {
-            throw new UnexpectedTokenException(la(), type);
+    protected Reduction gstring() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        // int id = nestCount++;
+        // System.out.println( "ENTERING GSTRING " + id );
+
+        Reduction data = Reduction.newContainer();
+
+        consume( Types.GSTRING_START );
+
+        while( lt() != Types.GSTRING_END && lt() != Types.EOF )
+        {
+            switch( lt() )
+            {
+                case Types.STRING:
+                    data.add( consume() );
+                    break;
+
+                case Types.GSTRING_EXPRESSION_START:
+                    consume();
+                    data.add( expression() );
+                    consume( Types.GSTRING_EXPRESSION_END );
+                    break;
+
+                default:
+                    throw new GroovyBugError( "gstring found invalid token: " + la() );
+            }
         }
+
+        Reduction complete = consume( Types.GSTRING_END ).asReduction();
+        complete.addChildrenOf( data );
+
+        complete.setMeaning( Types.SYNTH_GSTRING );
+
+        // System.out.println( "EXITING GSTRING " + id );
+        return complete;
+    }
+
+
+
+
+   /**
+    *  Processes a NON-EMPTY parameter list, as supplied on either a method invokation or
+    *  a closure invokation.  Reads parameters until something that doesn't belong
+    *  is found.
+    *  <p>
+    *  Grammar: <pre>
+    *     parameterList = (regular "," named) | named
+    *     regular = parameter ("," parameter)*
+    *     named   = nameReference ":" parameter ("," nameReference ":" parameter)*
+    *
+    *     parameter = expression
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     parameterList = { <null> regular* named* }
+    *     regular = expression
+    *     named   = { ":" <identifier> expression }
+    *
+    *     see expression()
+    *  </pre>
+    */
+
+    protected Reduction parameterList() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        // int id = nestCount++;
+        // System.out.println( "ENTERING PARAMETER LIST " + id );
+
+        Reduction list  = Reduction.newContainer();
+        Reduction named = null;
+
+        boolean done = false;
+
+        do
+        {
+            if( la().canMean(Types.IDENTIFIER) && la(2).isA(Types.COLON) )
+            {
+                if( named == null )
+                {
+                    named = Token.newPlaceholder(Types.SYNTH_MAP).asReduction();
+                    list.add( named );
+                }
+
+                Token name = nameReference(false);
+                name.setMeaning( Types.STRING );
+
+                named.add( consume(Types.COLON).asReduction(name, expression()) );
+            }
+            else
+            {
+                list.add( expression() );
+            }
+
+
+            if( lt() == Types.COMMA )
+            {
+                consume();
+            }
+            else
+            {
+                done = true;
+            }
+
+
+        } while( !done );
+
+        // System.out.println( "EXITING PARAMETER LIST " + id );
+        return list;
+    }
+
+
+
+   /**
+    *  Processes a "new" expression.  Handles optional constructors, array
+    *  initializations, closure arguments, and anonymous classes.  In order
+    *  to support anonymous classes, anonymous closures are not allowed.
+    *  <p>
+    *  Grammar: <pre>
+    *     newExpression = "new" scalarDatatype (array|init)?
+    *     array = ( "[" expression "]" )+ | ( ("[" "]")+ newArrayInitializer )
+    *     init  = "(" parameterList? ")" (typeBody | closureExpression)?
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     new = { "new" arrayType     dimensions newArrayInitializer? }
+    *         | { "new" scalarDataype (parameterList|{<null>}) typeBody? }
+    *
+    *     arrayType  = { "{" (arrayType | scalarDatatype) }
+    *     dimensions = { <null> expression+ } | {}
+    *
+    *     see expression()
+    *     see scalarDatatype()
+    *     see typeBody()
+    *  </pre>
+    */
+
+    protected Reduction newExpression() throws ReadException, SyntaxException, ExceptionCollector
+    {
+        // int id = nestCount++;
+        // System.out.println( "ENTERING NEW " + id );
+
+        Reduction expression = consume(Types.KEYWORD_NEW).asReduction();
+        CSTNode   scalarType = scalarDatatype(false);
+
+        if( lt(true) == Types.LEFT_SQUARE_BRACKET )
+        {
+            //
+            // First up, figure out the actual type and any
+            // stated dimensions.
+
+            boolean   implicit   = (lt(2) == Types.RIGHT_SQUARE_BRACKET);
+            Reduction dimensions = implicit ? Reduction.EMPTY : Reduction.newContainer();
+            int       count      = 0;
+            CSTNode   arrayType  = scalarType;
+
+            while( lt(true) == Types.LEFT_SQUARE_BRACKET )
+            {
+                arrayType = consume(Types.LEFT_SQUARE_BRACKET).asReduction( arrayType );
+                count++;
+
+                if( !implicit )
+                {
+                    dimensions.add( expression() );
+                }
+
+                consume(Types.RIGHT_SQUARE_BRACKET);
+            }
+
+            expression.add( arrayType );
+            expression.add( dimensions );
+
+            //
+            // If implicit, there must be initialization data
+
+            if( implicit )
+            {
+                expression.add( tupleExpression(0, count) );
+            }
+
+        }
+
+        else
+        {
+            expression.add( scalarType );
+
+
+            //
+            // Process the constructor call
+
+            Reduction parameters = null;
+
+            consume( Types.LEFT_PARENTHESIS );
+            parameters = (lt() == Types.RIGHT_PARENTHESIS ? Reduction.newContainer() : parameterList());
+            consume( Types.RIGHT_PARENTHESIS );
+
+            expression.add( parameters );
+
+
+            //
+            // If a "{" follows, it's a class body or a closure...
+
+            if( lt() == Types.LEFT_CURLY_BRACE )
+            {
+                if( lt(2) == Types.PIPE )
+                {
+                    parameters.add( closureExpression() );
+                }
+                else
+                {
+                    expression.add( typeBody(true, false, false) );
+                }
+            }
+        }
+
+        // System.out.println( "EXITING NEW " + id );
+        return expression;
+    }
+
+
+
+   /**
+    *  Processes a "new" array initializer expression.
+    *  <p>
+    *  Grammar: <pre>
+    *     tupleExpression = "{" (tupleExpression | (expression ("," expression))? "}"
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     initializer = { "{":SYNTH_TUPLE (initializer*|expression*) }
+    *
+    *     see expression()
+    *  </pre>
+    */
+
+    protected Reduction tupleExpression( int level, int depth ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction data = consume(Types.LEFT_CURLY_BRACE).asReduction();
+        data.setMeaning( Types.SYNTH_TUPLE );
+
+        if( lt() != Types.RIGHT_CURLY_BRACE )
+        {
+            int    child = level + 1;
+            boolean leaf = (child == depth);
+
+            do
+            {
+                data.add( leaf ? expression() : tupleExpression(child, depth) );
+
+            } while( lt() == Types.COMMA && (consume() != null) );
+        }
+
+        consume( Types.RIGHT_CURLY_BRACE );
+
+        return data;
+    }
+
+
+
+   /**
+    *  Processes a closure expression.
+    *  <p>
+    *  Grammar: <pre>
+    *     closureExpression = "{" parameters statement* "}"
+    *     parameters = ("|" parameterDeclarationList "|")?
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     initializer = { "{":SYNTH_CLOSURE parameters statements }
+    *     parameters  = parameterDeclarationList | { <null> }
+    *     statements  = { <null> statement* }
+    *
+    *     see parameterDeclarationList()
+    *     see statement()
+    *  </pre>
+    */
+
+    protected Reduction closureExpression( ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        // int id = nestCount++;
+        // System.out.println( "ENTERING CLOSURE EXPRESSION " + id );
+
+        Reduction closure = consume(Types.LEFT_CURLY_BRACE).asReduction();
+        closure.setMeaning( Types.SYNTH_CLOSURE );
+        boolean specified = (lt() == Types.PIPE) || (lt() == Types.DOUBLE_PIPE);
 
         //
-        // lt() has told us there is a valid token somewhere, but it ignores
-        // newlines, and we have to consume them from the underlying stream
-        // before getting to the token lt() found.
+        // DEPRECATED: the old syntax for parameters had a | only
+        // at the end of the parameter list.  The new syntax has
+        // two pipes or none.  For now, we attempt to support the
+        // old syntax.  It can mistake a variable declaration
+        // for a parameter declaration, though, so it may cause more
+        // trouble than it's worth.  This if() and the one below
+        // (also marked) should be removed before v1.0.
 
-        while (true) {
-            Token token = getTokenStream().la();
-            if (token == null || token.getType() != Token.NEWLINE) {
+        if( !specified )
+        {
+            getTokenStream().checkpoint();
+            CSTNode type = optionalDatatype( true, false );
+            if( lt() == Types.IDENTIFIER && (lt(2) == Types.PIPE || lt(2) == Types.COMMA) )
+            {
+                specified = true;
+            }
+
+            getTokenStream().restore();
+        }
+
+
+        //
+        // If the parameter list is specified, process it.
+
+        if( specified )
+        {
+            if( lt() == Types.DOUBLE_PIPE )
+            {
+                consume( Types.DOUBLE_PIPE );
+                closure.add( Reduction.newContainer() );
+            }
+            else
+            {
+                //
+                // DEPRECATED: further support for note above, this consume()
+                // should not be conditional after the above code is removed.
+
+                if( lt() == Types.PIPE )
+                {
+                    consume(Types.PIPE);
+                }
+
+                closure.add( parameterDeclarationList() );
+                consume(Types.PIPE);
+            }
+        }
+        else
+        {
+            closure.add( Reduction.newContainer() );
+        }
+
+
+        //
+        // Finally, process the statements.
+
+        closure.add( statementsUntilRightCurly() );
+        consume( Types.RIGHT_CURLY_BRACE );
+
+        // System.out.println( "EXITING CLOSURE EXPRESSION " + id );
+        return closure;
+    }
+
+
+
+   /**
+    *  Processes a list or map expression.
+    *  <p>
+    *  Grammar: <pre>
+    *     listOrMapExpression = list | map
+    *
+    *     list = "[" (expression ("," expression)*)? "]"
+    *
+    *     map     = "[" (":" | mapping+) "]"
+    *     mapping = expression ":" expression
+    *  </pre>
+    *  <p>
+    *  CST: <pre>
+    *     list    = { "[":SYNTH_LIST expression* }
+    *     map     = { "[":SYNTH_MAP  mapping* }
+    *     mapping = { ":" expression expression }
+    *
+    *     see expression()
+    *  </pre>
+    */
+
+    protected Reduction listOrMapExpression( boolean isMap, boolean insist ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        Reduction expression = consume(Types.LEFT_SQUARE_BRACKET).asReduction();
+        expression.setMeaning( Types.SYNTH_LIST );
+
+        if( lt() == Types.COLON )
+        {
+            if( !isMap && insist )
+            {
+                error( "expected list" );
+            }
+
+            isMap = true;
+            expression.setMeaning( Types.SYNTH_MAP );
+            consume();
+            if( lt() != Types.RIGHT_SQUARE_BRACKET )
+            {
+                error( "expected empty map" );
+            }
+        }
+
+
+        //
+        // Process the data.  On the first one, check if we are
+        // processing a map.  We assume not going in, as the empty
+        // map isn't relevant...
+
+        boolean done = (lt() == Types.RIGHT_SQUARE_BRACKET);
+
+        while( !done )
+        {
+            CSTNode element = expression();
+
+            if( !insist )
+            {
+                insist = true;
+                if( lt() == Types.COLON )
+                {
+                    isMap = true;
+                    expression.setMeaning(Types.SYNTH_MAP);
+                }
+            }
+
+            if( isMap )
+            {
+                element = consume(Types.COLON).asReduction( element, expression() );
+            }
+
+            expression.add( element );
+
+            if( lt() == Types.COMMA ) { consume(); } else { done = true; }
+        }
+
+        consume(Types.RIGHT_SQUARE_BRACKET);
+
+        return expression;
+    }
+
+
+
+   /**
+    *  Synonym for <code>listOrMapExpression( false, false )</code>.
+    */
+
+    protected Reduction listOrMapExpression( ) throws ReadException, SyntaxException, ExceptionCollector
+    {
+        return listOrMapExpression( false, false );
+    }
+
+
+
+
+
+
+  //---------------------------------------------------------------------------
+  // ERROR REPORTING
+
+
+   /**
+    *  Reports an error assembled from parts.
+    */
+
+    protected UnexpectedTokenException error( Token found, int[] expectedTypes, boolean throwIt, String comment ) throws UnexpectedTokenException
+    {
+        UnexpectedTokenException e = new UnexpectedTokenException( found, expectedTypes, comment );
+
+        if( throwIt )
+        {
+            throw e;
+        }
+
+        return e;
+    }
+
+
+   /**
+    *  Reports an error by generating and optionally throwing an
+    *  <code>UnexpectedTokenException</code>.
+    */
+
+    protected UnexpectedTokenException error( int[] expectedTypes, boolean throwIt, int k, String comment ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        return error( la(k), expectedTypes, throwIt, comment );
+    }
+
+
+
+   /**
+    *  A synonym for <code>error( expectedTypes, throwIt, k, null )</code>.
+    */
+
+    protected UnexpectedTokenException error( int[] expectedTypes, boolean throwIt, int k ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        return error( expectedTypes, throwIt, k, null );
+    }
+
+
+
+   /**
+    *  A synonym for <code>error( expectedTypes, true, 1, null )</code>.
+    */
+
+    protected void error( int[] expectedTypes ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        throw error( expectedTypes, false, 1, null );
+    }
+
+
+
+   /**
+    *  A synonym for <code>error( null, true, 1, null )</code>.
+    */
+
+    protected void error() throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        throw error( null, true, 1, null );
+    }
+
+
+
+   /**
+    *  A synonym for <code>error( null, true, 1, comment )</code>.
+    */
+
+    protected void error( String comment ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        throw error( null, true, 1, comment );
+    }
+
+
+
+   /**
+    *  A synonym for <code>error( found, null, true, comment )</code>.
+    */
+
+    protected void error( Token found, String comment ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        throw error( found, null, true, comment );
+    }
+
+
+
+   /**
+    *  A scalar synonym of <code>error( expectedTypes )</code>.
+    */
+
+    protected void error( int expectedType ) throws UnexpectedTokenException, ReadException, SyntaxException
+    {
+        error( new int[] { expectedType } );
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // ERROR RECOVERY
+
+
+   /**
+    *  Attempts to recover from an error by discarding input until a
+    *  known token is found.  It further guarantees that /at least/
+    *  one token will be eaten.
+    */
+
+    public void recover( int[] safe, boolean ignoreNewlines ) throws ReadException, SyntaxException
+    {
+        Token leading = la( ignoreNewlines );
+
+        while( true )
+        {
+            Token next = la( ignoreNewlines );
+            if( next.isA(Types.EOF) || next.isOneOf(safe) )
+            {
                 break;
             }
-            getTokenStream().consume(Token.NEWLINE);
+            else
+            {
+                consume( ignoreNewlines );
+            }
+        }
+
+        if( la(ignoreNewlines) == leading )
+        {
+            consume( ignoreNewlines );
+        }
+    }
+
+
+
+   /**
+    *  A scalar version of <code>recover( int[], boolean )</code>.
+    */
+
+    public void recover( int safe, boolean ignoreNewlines ) throws ReadException, SyntaxException
+    {
+        Token leading = la( ignoreNewlines );
+
+        while( true )
+        {
+            Token next = la( ignoreNewlines );
+            if( next.isA(Types.EOF) || next.isA(safe) )
+            {
+                break;
+            }
+            else
+            {
+                consume( ignoreNewlines );
+            }
+        }
+
+        if( la(ignoreNewlines) == leading )
+        {
+            consume( ignoreNewlines );
+        }
+    }
+
+
+
+   /**
+    *  A synonym for <code>recover( safe, false )</code>.
+    */
+
+    public void recover( int[] safe ) throws ReadException, SyntaxException
+    {
+        recover( safe, false );
+    }
+
+
+
+   /**
+    *  A synonm for the scalar <code>recover( safe, false )</code>.
+    */
+
+    public void recover( int safe ) throws ReadException, SyntaxException
+    {
+        recover( safe, false );
+    }
+
+
+
+   /**
+    *  A synonym for <code>recover( Types.ANY_END_OF_STATMENT, true )</code>.
+    */
+
+    public void recover( ) throws ReadException, SyntaxException
+    {
+        recover( Types.ANY_END_OF_STATEMENT, true );
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // TOKEN LOOKAHEAD
+
+
+   /**
+    *  Returns (without consuming) the next kth token in the underlying
+    *  token stream.  You can make newlines significant as needed.
+    *  Returns Token.EOF on end of stream.  k is counted from 1.
+    */
+
+    protected Token la( int k, boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        Token token = Token.NULL;
+
+        //
+        // Count down on k while counting up on streamK.
+        // NOTE: k starting at less than 1 is a mistake...
+        // This routine will reliably NOT return Token.NULL
+        // /unless/ it is actually in the stream.
+
+        int streamK = 1;
+        while( k > 0 && token.getMeaning() != Types.EOF )
+        {
+            token = getTokenStream().la( streamK );
+            streamK += 1;
+
+            if( token == null  )
+            {
+                token = Token.EOF;
+            }
+            else if( token.getMeaning() == Types.NEWLINE )
+            {
+                if( significantNewlines )
+                {
+                    k -= 1;
+                }
+            }
+            else
+            {
+                k -= 1;
+            }
+        }
+
+        return token;
+    }
+
+
+
+   /**
+    *  Synonym for <code>la( k, false )</code>.
+    */
+
+    protected Token la( int k ) throws ReadException, SyntaxException
+    {
+        return la( k, false );
+    }
+
+
+
+   /**
+    *  Synonym for <code>la( 1, significantNewlines )</code>.
+    */
+
+    protected Token la( boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        return la( 1, significantNewlines );
+    }
+
+
+
+   /**
+    * Synonym for <code>la( 1, false )</code>.
+    */
+
+    protected Token la() throws ReadException, SyntaxException
+    {
+        return la( 1, false );
+    }
+
+
+
+   /**
+    *  Special <code>la()</code> used by the expression parser.  It will get the next token
+    *  in the current statement.  If the next token is past a line boundary and might be
+    *  the start of the next statement, it won't cross the line to get it.
+    */
+
+    protected Token la( ExpressionStack stack ) throws ReadException, SyntaxException
+    {
+        Token next = la();
+
+        if( stack.canComplete() && next.isA(Types.UNSAFE_OVER_NEWLINES) )
+        {
+            if( la(true).getMeaning() == Types.NEWLINE )
+            {
+                next = la(true);
+            }
+        }
+
+        return next;
+    }
+
+
+
+
+   /**
+    *  Returns the meaning of the <code>la( k, significantNewlines )</code> token.
+    */
+
+    protected int lt( int k, boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        return la(k, significantNewlines).getMeaning();
+    }
+
+
+
+   /**
+    *  Returns the meaning of the <code>la( k )</code> token.
+    */
+
+    protected int lt( int k ) throws ReadException, SyntaxException
+    {
+        return la(k).getMeaning();
+    }
+
+
+
+   /**
+    *  Returns the meaning of the <code>la( significantNewlines )</code> token.
+    */
+
+    protected int lt( boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        return la(significantNewlines).getMeaning();
+    }
+
+
+
+   /**
+    *  Returns the meaning of the <code>la()</code> token.
+    */
+
+    protected int lt() throws ReadException, SyntaxException
+    {
+        return la().getMeaning();
+    }
+
+
+
+
+  //---------------------------------------------------------------------------
+  // TOKEN CONSUMPTION
+
+
+   /**
+    *  Consumes (and returns) the next token if it is of the specified type.
+    *  If <code>significantNewlines</code> is set, newlines will not automatically
+    *  be consumed; otherwise they will.  Throws <code>UnexpectedTokenException</code>
+    *  if the type doesn't match.
+    */
+
+    protected Token consume( int type, boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        if( !la(significantNewlines).isA(type) )
+        {
+            error( type );
+        }
+
+        if( !significantNewlines )
+        {
+            while( lt(true) == Types.NEWLINE )
+            {
+                getTokenStream().consume(Types.NEWLINE);
+            }
         }
 
         return getTokenStream().consume(type);
@@ -3227,162 +4036,37 @@ public class Parser {
 
 
    /**
-    *  Adds a <code>CSTNode</code> of the result of <code>consume(type)</code> 
-    *  as a child of <code>root</code>.  Throws <code>UnexpectedTokenException</code>
-    *  if the next token is not of the correct type.
+    *  A synonym for <code>consume( type, false )</code>.  If type is Types.NEWLINE,
+    *  equivalent to <code>consume( Types.NEWLINE, true )</code>.
     */
 
-    protected void consume(CSTNode root, int type) throws ReadException, SyntaxException {
-        root.addChild(new CSTNode(consume(type)));
+    protected Token consume( int type ) throws ReadException, SyntaxException
+    {
+        return consume( type, type == Types.NEWLINE );
     }
 
 
 
    /**
-    *  Returns a new <code>CSTNode</code> that holds the result of 
-    *  <code>consume(type)</code>.   Throws <code>UnexpectedTokenException</code>
-    *  if the next token is not of the correct type.
+    *  A synonym for <code>consume( Types.ANY, false )</code>.
     */
 
-    protected CSTNode rootNode(int type) throws ReadException, SyntaxException {
-        return new CSTNode(consume(type));
+    protected Token consume() throws ReadException, SyntaxException
+    {
+        return consume( lt(), false );
     }
 
 
 
    /**
-    *  Identical to <code>rootNode(type)</code>, but adds <code>child</child> as
-    *  a child of the newly created node.
+    *  A synonym for <code>consume( Types.ANY, significantNewlines )</code>.
+    *  If you pass true, it will consume exactly the next token from the
+    *  stream.
     */
 
-    protected CSTNode rootNode(int type, CSTNode child) throws ReadException, SyntaxException {
-        CSTNode root = new CSTNode(consume(type));
-        root.addChild(child);
-        return root;
+    protected Token consume( boolean significantNewlines ) throws ReadException, SyntaxException
+    {
+        return consume( lt(significantNewlines), significantNewlines );
     }
 
-
-
-  //---------------------------------------------------------------------------
-  // RAW TOKEN LOOKAHEAD -- NEWLINES INCLUDED
-
-
-   /**
-    *  Returns (without consuming) the next token in the underlying token 
-    *  stream (newlines included).  
-    */
-
-    protected Token la_bare() throws ReadException, SyntaxException {
-        return la_bare(1);
-    }
-
-
-
-   /**
-    *  Returns (without consuming any tokens) the next <code>k</code>th
-    *  token from the underlying token stream (newlines included).
-    */
-
-    protected Token la_bare(int k) throws ReadException, SyntaxException {
-        return getTokenStream().la(k);
-    }
-
-
-
-   /**
-    *  Returns the type of the <code>la_bare()</code> token, or -1.
-    */
-
-    protected int lt_bare() throws ReadException, SyntaxException {
-        return lt_bare(1);
-    }
-
-
-
-   /**
-    *  Returns the type of the <code>la_bare(k)</code> token, or -1.
-    */
-
-    protected int lt_bare(int k) throws ReadException, SyntaxException {
-        Token token = la_bare(k);
-
-        if (token == null) {
-            return -1;
-        }
-
-        return token.getType();
-    }
-
-
-
-
-  //---------------------------------------------------------------------------
-  // RAW TOKEN CONSUMPTION -- NEWLINES INCLUDED
-
-
-   /**
-    *  Consumes tokens until one of the specified type is consumed.  Newlines
-    *  are treated as normal tokens.
-    */
-
-    protected void consumeUntil_bare(int type) throws ReadException, SyntaxException {
-        while (lt_bare() != -1) {
-            consume_bare(lt_bare());
-
-            if (lt_bare() == type) {
-                consume(lt_bare());
-                break;
-            }
-        }
-    }
-
-
-
-   /**
-    *  Consumes (and returns) the next token if it is of the specified type, or 
-    *  throws <code>UnexpectedTokenException</code>.  
-    */
-
-    protected Token consume_bare(int type) throws ReadException, SyntaxException {
-        if (lt_bare() != type) {
-            throw new UnexpectedTokenException(la_bare(), type);
-        }
-
-        return getTokenStream().consume(type);
-    }
-
-
-
-   /**
-    *  Analogous to <code>consume(root, type)</code>, exception consumes with
-    *  <code>consume_bare</code>.
-    */
-
-    protected void consume_bare(CSTNode root, int type) throws ReadException, SyntaxException {
-        root.addChild(new CSTNode(consume_bare(type)));
-    }
-
-
-
-   /**
-    *  Analagous to <code>rootNode(type)</code>, except consumes with 
-    *  <code>consume_bare</code>.
-    */
-
-    protected CSTNode rootNode_bare(int type) throws ReadException, SyntaxException {
-        return new CSTNode(consume_bare(type));
-    }
-
-
-
-   /**
-    *  Analagous to <code>rootNode(type, child)</code>, except consumes with
-    *  <code>consume_bare()</code>.
-    */
-
-    protected CSTNode rootNode_bare(int type, CSTNode child) throws ReadException, SyntaxException {
-        CSTNode root = new CSTNode(consume_bare(type));
-        root.addChild(child);
-        return root;
-    }
 }

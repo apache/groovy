@@ -51,17 +51,9 @@ import org.codehaus.groovy.syntax.lexer.StringCharStream;
 public abstract class TestParserSupport extends GroovyTestCase {
     
     public ModuleNode parse(String text, String description) throws Exception {
-        CharStream chars = new StringCharStream(text, description);
-        Lexer lexer = new Lexer(chars);
-        TokenStream tokens = new LexerTokenStream(lexer);
+        Parser     parser = Parser.create( text, 1 );
+        ModuleNode module = parser.parse( getClass().getClassLoader(), description );
 
-        Parser parser = new Parser(tokens);
-
-        CSTNode root = parser.compilationUnit();
-
-        ASTBuilder builder = new ASTBuilder(getClass().getClassLoader());
-        ModuleNode answer = builder.build(root);
-        answer.setDescription(chars.getDescription());
-        return answer;
+        return module;
     }
 }

@@ -40,9 +40,9 @@ class SerializeTest extends GroovyTestCase {
     }
     
     read(buffer) {
-        in = new ObjectInputStream(new ByteArrayInputStream(buffer))
-        object = in.readObject()
-        in.close()
+        input = new ObjectInputStream(new ByteArrayInputStream(buffer))
+        object = input.readObject()
+        input.close()
         return object
     }
 

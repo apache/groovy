@@ -1,7 +1,7 @@
 class DollarEscapingTest extends GroovyTestCase {
 
     void testEscaping() {
-        foo = "hello $${foo}"
+        foo = "hello \${foo}"
         
         assert foo instanceof String
         

@@ -66,7 +66,7 @@ public class TestCaseRenderEngineTest extends TestCase {
     public void testRenderWithScript() {
         assertRender(
             "blah blah {code:groovysh}x = 1; println 'hello ${x}'{code} whatnot",
-             "package wiki\nclass someFileTest extends GroovyTestCase {\n\n/*\nblah blah */ \n\n  void testScript1() {\n    assertScript( <<<SCRIPT_EOF1\nx = 1; println 'hello $${x}'\nSCRIPT_EOF1 )\n}    \n\n /* whatnot\n*/\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n}\n");
+             "package wiki\nclass someFileTest extends GroovyTestCase {\n\n/*\nblah blah */ \n\n  void testScript1() {\n    assertScript( <<<SCRIPT_EOF1\nx = 1; println 'hello \\${x}'\nSCRIPT_EOF1 )\n}    \n\n /* whatnot\n*/\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n}\n");
     }
 
     protected void assertRender(String input, String expected) {

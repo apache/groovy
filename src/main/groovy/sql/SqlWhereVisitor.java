@@ -11,6 +11,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 
 /**
  * @author James Strachan
@@ -62,11 +63,11 @@ public class SqlWhereVisitor extends CodeVisitorSupport {
     
     protected String tokenAsSql(Token token) {
         switch (token.getType()) {
-            case Token.COMPARE_EQUAL :
+            case Types.COMPARE_EQUAL :
                 return "=";
-            case Token.LOGICAL_AND :
+            case Types.LOGICAL_AND :
                 return "and";
-            case Token.LOGICAL_OR :
+            case Types.LOGICAL_OR :
                 return "or";
             default :
                 return token.getText();

@@ -60,7 +60,7 @@ public class TestCaseRenderEngine implements RenderEngine {
     Pattern groovyCodePattern = Pattern.compile("\\{code:groovy\\}");
     Pattern groovyShellPattern = Pattern.compile("\\{code:groovysh\\}");
     Pattern codePattern = Pattern.compile("\\{code\\}");
-    
+
     public TestCaseRenderEngine() {
     }
 
@@ -78,25 +78,25 @@ public class TestCaseRenderEngine implements RenderEngine {
             name = name.substring(0, idx);
         }
         name = name + "Test";
-        
+
         // lets replace {code:groovy} with a unit test case method name
         StringBuffer buf = new StringBuffer();
 
         String[] parts = groovyCodePattern.split(content);
-        
+
         buf.append( "package wiki\nclass " + name + " extends GroovyTestCase {\n\n");
         buf.append("/*\n");
         buf.append(processShellScripts(parts[0]));
 
         for (int count = 1; count < parts.length; count++ ) {
             buf.append("*/ \n\n  void testCase" + count + "() {\n");
-            
+
             buf.append(processShellScripts(removeCloseCode(parts[count])));
         }
-       
+
         buf.append("\n*/\n\n");
         buf.append("void testDummy() {\n// this is a dummy test case\n}\n\n}\n");
-        
+
         return buf.toString();
     }
 
@@ -109,15 +109,15 @@ public class TestCaseRenderEngine implements RenderEngine {
         StringBuffer buf = new StringBuffer();
 
         String[] parts = groovyShellPattern.split(text);
-        
+
         buf.append(parts[0]);
 
         for (int count = 1; count < parts.length; count++ ) {
             buf.append("*/ \n\n  void testScript" + count + "() {\n");
             buf.append("    assertScript( <<<SCRIPT_EOF" + count + "\n");
-            
+
             String code = parts[count].replaceFirst("\\{code\\}", "\nSCRIPT_EOF" + count + " )\n}    \n\n /*");
-            
+
             // lets escape ${foo} expressions
             StringBuffer temp = new StringBuffer(code);
             for (int idx = 0; true; idx++) {
@@ -125,15 +125,23 @@ public class TestCaseRenderEngine implements RenderEngine {
                 if (idx >= 0) {
                     String next = temp.substring(++idx, idx+1);
                     if (next.equals("{")) {
-                        temp.insert(idx, "$");
-                        idx++;
+
+                        //
+                        // It's a hack, but we aren't escaping all \, so
+                        // we just let \${ stand...
+
+                        if( idx-2 >= 0 && !temp.substring(idx-2,idx-1).equals("\\") )
+                        {
+                            temp.insert(idx-1, "\\");
+                            idx++;
+                        }
                     }
                 }
                 else {
                     break;
                 }
             }
-            
+
             buf.append(temp.toString());
         }
         return buf.toString();

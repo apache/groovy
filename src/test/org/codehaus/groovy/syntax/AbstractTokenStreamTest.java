@@ -2,6 +2,7 @@ package org.codehaus.groovy.syntax;
 
 
 import groovy.util.GroovyTestCase;
+import org.codehaus.groovy.GroovyBugError;
 
 
 public class AbstractTokenStreamTest
@@ -49,8 +50,8 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.leftParenthesis( 1, 1 ),
-                Token.rightParenthesis( 1, 2 )
+                Token.newSymbol( "(", 1, 1 ),
+                Token.newSymbol( ")", 1, 2 )
             };
 
         MockTokenStream in = new MockTokenStream( tokens );
@@ -71,8 +72,8 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.leftParenthesis( 1, 1 ),
-                Token.rightParenthesis( 1, 2 )
+                Token.newSymbol( "(", 1, 1 ),
+                Token.newSymbol( ")", 1, 2 )
             };
 
         MockTokenStream in = new MockTokenStream( tokens );
@@ -102,8 +103,8 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.leftParenthesis( 1, 1 ),
-                Token.rightParenthesis( 1, 2 )
+                Token.newSymbol( "(", 1, 1 ),
+                Token.newSymbol( ")", 1, 2 )
             };
         
         MockTokenStream in = new MockTokenStream( tokens );
@@ -123,7 +124,7 @@ public class AbstractTokenStreamTest
         assertSame( tokens[1],
                     in.la( 2 ) );
 
-        in.consume( Token.LEFT_PARENTHESIS );
+        in.consume( Types.LEFT_PARENTHESIS );
 
         assertSame( tokens[1],
                     in.la() );
@@ -143,13 +144,9 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.identifier( 1,
-                                  1,
-                                  "cheeseIt" ),
-                Token.leftParenthesis( 1,
-                                       10 ),
-                Token.rightParenthesis( 1,
-                                        11 )
+                Token.newIdentifier( "cheeseIt", 1, 1 ),
+                Token.newSymbol( "(", 1, 10 ),
+                Token.newSymbol( ")", 1, 11 )
             };
 
         MockTokenStream in = new MockTokenStream( tokens );
@@ -190,12 +187,12 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.leftParenthesis( 1, 1 ),
-                Token.rightParenthesis( 1, 2 ),
-                Token.leftSquareBracket( 1, 3 ),
-                Token.rightSquareBracket( 1, 4 ),
-                Token.leftCurlyBrace( 1, 5 ),
-                Token.rightCurlyBrace( 1, 6 )
+                Token.newSymbol( "(", 1, 1 ),
+                Token.newSymbol( ")", 1, 2 ),
+                Token.newSymbol( "[", 1, 3 ),
+                Token.newSymbol( "]", 1, 4 ),
+                Token.newSymbol( "{", 1, 5 ),
+                Token.newSymbol( "}", 1, 6 )
             };
         
         MockTokenStream in = new MockTokenStream( tokens );
@@ -217,13 +214,13 @@ public class AbstractTokenStreamTest
         try
         {
             in.la( 6 );
-            fail( "should have thrown LookAheadExhaustionError" );
+            fail( "should have thrown GroovyBugError" );
         }
-        catch (LookAheadExhaustionError e)
+        catch (GroovyBugError e)
         {
             // expected and correct
-            assertEquals( 6,
-                          e.getLookAhead() );
+//            assertEquals( 6,
+//                          e.getLookAhead() );
         }
     }
 
@@ -232,15 +229,15 @@ public class AbstractTokenStreamTest
     {
         Token[] tokens = new Token[]
             {
-                Token.leftParenthesis( 1, 1 ),
-                Token.rightParenthesis( 1, 2 )
+                Token.newSymbol( "(", 1, 1 ),
+                Token.newSymbol( ")", 1, 2 )
             };
         
         MockTokenStream in = new MockTokenStream( tokens );
         
         try
         {
-            in.consume( Token.RIGHT_PARENTHESIS );
+            in.consume( Types.RIGHT_PARENTHESIS );
             fail( "should have thrown TokenMismatchException" );
         }
         catch (TokenMismatchException e)
@@ -250,7 +247,7 @@ public class AbstractTokenStreamTest
             assertSame( tokens[0],
                         e.getUnexpectedToken() );
 
-            assertEquals( Token.RIGHT_PARENTHESIS,
+            assertEquals( Types.RIGHT_PARENTHESIS,
                           e.getExpectedType() );
         }
     }

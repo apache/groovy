@@ -1,5 +1,7 @@
 package org.codehaus.groovy.syntax;
 
+import org.codehaus.groovy.GroovyBugError;
+
 
 /**
  *  Provides the common code for <code>{@link TokenStream}</code> implementations.
@@ -14,10 +16,10 @@ public abstract class AbstractTokenStream
 
     private int checkpoint_first;    // last checkpoint() copy of first
     private int checkpoint_avail;    // last checkpoint() copy of avail
- 
+
     private String sourceLocator;    // A descriptor of the source of the stream
 
-   
+
    /**
     *  Default constructor.
     */
@@ -81,7 +83,7 @@ public abstract class AbstractTokenStream
     {
         if ( k > buf.length )
         {
-            throw new LookAheadExhaustionError( k );   // Parser tried to look too far ahead for our buffer size
+            throw new GroovyBugError( "Lookahead [" + k + "] is larger than lookahead buffer [" + buf.length + "]" );
         }
 
 
@@ -101,6 +103,7 @@ public abstract class AbstractTokenStream
                 int pop = ( ( this.first + this.avail ) % this.buf.length );
                 this.buf[ pop ] = nextToken();
                 ++this.avail;
+                ++this.checkpoint_avail;
             }
         }
 
@@ -124,7 +127,12 @@ public abstract class AbstractTokenStream
     {
         Token token = la();
 
-        if ( token.getType() != type )
+        if( token == null )
+        {
+            return null;
+        }
+
+        if( !token.isA(type) )
         {
             throw new TokenMismatchException( token, type );
         }
@@ -136,6 +144,19 @@ public abstract class AbstractTokenStream
 
         return token;
     }
+
+
+
+   /**
+    *  Removes and returns the first token in the stream, provided it
+    *  isn't the EOF.
+    */
+
+    public Token consume() throws ReadException, SyntaxException
+    {
+        return consume( Types.NOT_EOF );
+    }
+
 
 
    /**
@@ -169,7 +190,7 @@ public abstract class AbstractTokenStream
 
             if( ignoringWhitespace ) {
                 try {
-                    while( la(offset).isA(Token.NEWLINE) ) {
+                    while( la(offset).isA(Types.NEWLINE) ) {
                         offset++;
                     }
                 }
@@ -184,7 +205,7 @@ public abstract class AbstractTokenStream
 
         return false;
     }
- 
+
 
     /**
      * A synonym for <code>atEnd(true)</code>.

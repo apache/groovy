@@ -57,7 +57,7 @@ import java.util.Map;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.TokenStream;
-import org.codehaus.groovy.syntax.parser.CSTNode;
+import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.parser.Parser;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.ExceptionCollector;
@@ -382,7 +382,7 @@ public class InteractiveShell {
         try {
             parser = Parser.create( code, tolerance );
             stream = parser.getTokenStream();
-            tree   = parser.compilationUnit();
+            tree   = parser.module();
 
             /* see note on read(): tree   = parser.topLevelStatement(); */
 

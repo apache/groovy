@@ -81,7 +81,7 @@ public class IfElseTest extends TestSupport {
                 new BinaryExpression(
                     new FieldExpression(
                         new FieldNode("bar", ACC_PRIVATE, "java.lang.String", "Foo", ConstantExpression.NULL)),
-                    Token.newToken(Token.COMPARE_EQUAL, 0, 0),
+                    Token.newSymbol("==", 0, 0),
                     new ConstantExpression("abc")));
 
         Statement trueStatement =
@@ -89,7 +89,7 @@ public class IfElseTest extends TestSupport {
                 new BinaryExpression(
                     new FieldExpression(
                         new FieldNode("result", ACC_PRIVATE, "java.lang.String", "Foo", ConstantExpression.NULL)),
-                    Token.newToken(Token.EQUAL, 0, 0),
+                    Token.newSymbol("=", 0, 0),
                     new ConstantExpression("worked")));
 
         Statement falseStatement = createPrintlnStatement(new ConstantExpression("false"));
