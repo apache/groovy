@@ -1421,7 +1421,7 @@ public class MetaClass {
                 e);
         }
         catch (InvocationTargetException e) {
-            Throwable t = e.getTargetException();
+            /*Throwable t = e.getTargetException();
             if (t instanceof Error) {
                 Error error = (Error) t;
                 throw error;
@@ -1429,7 +1429,7 @@ public class MetaClass {
             if (t instanceof RuntimeException) {
                 RuntimeException runtimeEx = (RuntimeException) t;
                 throw runtimeEx;
-            }
+            }*/
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
@@ -1619,7 +1619,7 @@ public class MetaClass {
             return constructor.newInstance(argumentArray);
         }
         catch (InvocationTargetException e) {
-            Throwable t = e.getTargetException();
+            /*Throwable t = e.getTargetException();
             if (t instanceof Error) {
                 Error error = (Error) t;
                 throw error;
@@ -1627,7 +1627,7 @@ public class MetaClass {
             if (t instanceof RuntimeException) {
                 RuntimeException runtimeEx = (RuntimeException) t;
                 throw runtimeEx;
-            }
+            }*/
             throw new InvokerInvocationException(e);
         }
         catch (IllegalArgumentException e) {
