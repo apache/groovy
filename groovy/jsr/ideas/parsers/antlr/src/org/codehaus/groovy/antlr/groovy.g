@@ -415,7 +415,7 @@ singleDeclaration
  *  things like {List<String> foo}.
  *  Right now it only knows how to skip square brackets after the type, not
  *  angle brackets.
- *  This probably turns out to be tricky because of >> vs. > >. ÊIf so,
+ *  This probably turns out to be tricky because of >> vs. > >. If so,
  *  just put a TO DO comment in.
  *   
  */
@@ -433,14 +433,14 @@ declarationStart!
 just stop at '@', because variable and method declarations can also be
 annotated.
 > typeDeclarationStart!
-> Ê Ê : Ê (modifier!)* ("class" | "interface" | "enum" | AT )
+>     :   (modifier!)* ("class" | "interface" | "enum" | AT )
 S.B. something like
-> Ê Ê : Ê (modifier! | annotationTokens!)* ("class" | "interface" |
+>     :   (modifier! | annotationTokens!)* ("class" | "interface" |
 > "enum" )
-(And maybe @interface, if Java 5 allows nested annotation types? ÊDon't
+(And maybe @interface, if Java 5 allows nested annotation types? Don't
 know offhand.)
 Where annotationTokens can be a quick paren-skipper, as in other
-places: Ê'@' ident '(' balancedTokens ')'.
+places: '@' ident '(' balancedTokens ')'.
 */
 
 typeDeclarationStart!
