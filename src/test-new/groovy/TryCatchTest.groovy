@@ -1,7 +1,7 @@
 class TryCatchTest extends GroovyTestCase {
 
-    @Property exceptionCalled
-    @Property finallyCalled
+    def exceptionCalled
+    def finallyCalled
 	
     void testTryCatch() {
         try {

@@ -8,7 +8,7 @@ import java.io.File
  */
 
 class ReadLineTest extends GroovyTestCase {
-    @Property file
+    def file
     void setUp() {
         file = new File("src/test/groovy/ReadLineTest.groovy")
     }

@@ -7,7 +7,7 @@
  */
 
 class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implements Cloneable { 
-    @Property foo
+    def foo
     private bar
               
     public PrivateVariableAccessFromAnotherInstanceTest() {

@@ -1,7 +1,7 @@
 class DoubleOperationTest extends GroovyTestCase {
 
-    @Property x
-    @Property y
+    def x
+    def y
     
     void testPlus() {
         x = 2.1 + 2.1

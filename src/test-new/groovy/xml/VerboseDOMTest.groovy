@@ -6,7 +6,7 @@ package groovy.xml
  */
 class VerboseDOMTest extends TestXmlSupport {
     
-    @Property b
+    def b
 
     void testSmallTree() {
         b = DOMBuilder.newInstance()

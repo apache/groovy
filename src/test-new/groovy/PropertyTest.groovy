@@ -67,7 +67,7 @@ class PropertyTest extends GroovyTestCase {
     void testCannotSeePrivateProperties() {
 	    foo = new Foo()
 	    
-	    // @Property access fails on non-existent @Property
+	    // def access fails on non-existent def
 		shouldFail { x = foo.invisible }														
 	    
 	    // methods should fail on non-existent method calls
@@ -102,10 +102,10 @@ class PropertyTest extends GroovyTestCase {
 		assert i.length == 5
 		assert s.length == 10
 		
-		// this @Property does not mean there is a getLength() method
+		// this def does not mean there is a getLength() method
 		shouldFail { i.getLength() }
 		
-		// verify we can't set this @Property, it's read-only
+		// verify we can't set this def, it's read-only
 		shouldFail { i.length = 6 }
 	}
 

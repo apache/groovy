@@ -1,5 +1,5 @@
 /**
- * check that text @Property is available on...
+ * check that text def is available on...
  *
  * myFile.text,  myFile.text(charset),  
  * myURL.text,  myURL.text(charset),
@@ -15,9 +15,9 @@
 import java.io.*
 
 class TextPropertyTest extends GroovyTestCase {
-    @Property myReader
-    @Property myInputStream
-    @Property myBigEndianEncodedInputStream
+    def myReader
+    def myInputStream
+    def myBigEndianEncodedInputStream
     
     void setUp() {
         myReader = new StringReader("digestive")

@@ -6,7 +6,7 @@
  */
 
 class OverridePropertyGetterTest extends GroovyTestCase { 
-    @Property cheese
+    def cheese
        
     void testSimpleMethodParameterAccess() { 
         o = new OverridePropertyGetterTest()

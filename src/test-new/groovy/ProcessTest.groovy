@@ -9,7 +9,7 @@ import java.io.*
 import java.util.*
 
 class ProcessTest extends GroovyTestCase {
-    @Property myProcess
+    def myProcess
     
     void setUp() {
         myProcess = new MockProcess()

@@ -3,16 +3,17 @@ import java.math.BigInteger;
 
 class BigDecimalOperationTest extends GroovyTestCase {
 
-    @Property x
-    @Property y
+    def x, y
 
     void testPlus() {
+
         x = .1 + 1.1
         assert x == 1.2
         assert x instanceof BigDecimal;
 
         x = 3 + 2.2
         assert x == 5.2
+        assert x instanceof BigDecimal;
 
         x = 2.2 + 4
         assert x == 6.2

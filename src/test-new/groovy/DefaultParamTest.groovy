@@ -29,15 +29,15 @@ class DefaultParamTest extends GroovyTestCase {
     }
 
 
-	doSomething(a, b = 'defB', c = 'defC') {
-		println "Called with a: ${a}, b ${b}, c ${c}"
-		
-		return a + "-" + b + "-" + c
-	}
+    def doSomething(a, b = 'defB', c = 'defC') {
+        println "Called with a: ${a}, b ${b}, c ${c}"
 
-	String doTypedSomething(String a = 'defA', String b = 'defB', String c = 'defC') {
-		println "Called typed method with a: ${a}, b ${b}, c ${c}"
-		
-		return a + "-" + b + "-" + c
-	}
+        return a + "-" + b + "-" + c
+    }
+
+    String doTypedSomething(String a = 'defA', String b = 'defB', String c = 'defC') {
+        println "Called typed method with a: ${a}, b ${b}, c ${c}"
+
+        return a + "-" + b + "-" + c
+    }
 }

@@ -9,7 +9,7 @@ import java.io.*
 import java.net.*
 
 class SocketTest extends GroovyTestCase {
-    @Property mySocket
+    def mySocket
     
     void setUp() {
         mySocket = new MockSocket()

@@ -4,9 +4,9 @@ import java.util.HashMap as Goober;
 
 class Cheddar extends Goober implements Runnable
 {
-    @Property Goober theMap;
-    protected @Property cheesier;
-    public static @Property cheesiest;
+    def Goober theMap;
+    protected def cheesier;
+    public static def cheesiest;
 
     cheeseIt() {  }
 
