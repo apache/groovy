@@ -147,7 +147,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 	}
 
 	public GroovyScriptEngine(String[] args) throws IOException {
-		URL[] roots = new URL[args.length];
+		roots = new URL[args.length];
 		for (int i = 0; i < roots.length; i++) {
 			roots[i] = new File(args[i]).toURL();
 		}
@@ -155,7 +155,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 	}
 
 	public GroovyScriptEngine(String arg) throws IOException {
-		this.roots = new URL[1];
+		roots = new URL[1];
 		roots[0] = new File(arg).toURL();
 		this.rc = this;
 	}
