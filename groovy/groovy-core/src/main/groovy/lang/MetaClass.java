@@ -486,7 +486,7 @@ public class MetaClass {
         if (descriptor != null) {
             Method method = descriptor.getWriteMethod();
             if (method == null) {
-                throw new GroovyRuntimeException("Cannot set read-only property: " + property);
+                throw new ReadOnlyPropertyException(property, theClass);
             }
             MetaMethod metaMethod = findMethod(method);
             Object[] arguments = { newValue };
@@ -509,30 +509,36 @@ public class MetaClass {
                         }
                     }
                 }
-                throw e;
+                throw new MissingPropertyException(property, theClass, e);
             }
             return;
         }
 
-        MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
-        if (addListenerMethod != null && newValue instanceof Closure) {
-            // lets create a dynamic proxy
-            Object proxy = createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
-            doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
-            return;
+        try {
+            MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
+            if (addListenerMethod != null && newValue instanceof Closure) {
+                // lets create a dynamic proxy
+                Object proxy =
+                    createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
+                doMethodInvoke(object, addListenerMethod, new Object[] { proxy });
+                return;
+            }
+
+            if (genericSetMethod != null) {
+                Object[] arguments = { property, newValue };
+                doMethodInvoke(object, genericSetMethod, arguments);
+                return;
+            }
+
+            /** @todo or are we an extensible class? */
+
+            // lets try invoke the set method
+            String method = "set" + capitalize(property);
+            invokeMethod(object, method, new Object[] { newValue });
         }
-
-        if (genericSetMethod != null) {
-            Object[] arguments = { property, newValue };
-            doMethodInvoke(object, genericSetMethod, arguments);
-            return;
+        catch (GroovyRuntimeException e) {
+            throw new MissingPropertyException(property, theClass, e);
         }
-
-        /** @todo or are we an extensible class? */
-
-        // lets try invoke the set method
-        String method = "set" + capitalize(property);
-        invokeMethod(object, method, new Object[] { newValue });
     }
 
     public ClassNode getClassNode() {
