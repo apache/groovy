@@ -45,7 +45,14 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MissingMethodException;
+import groovy.lang.Range;
+import groovy.lang.Tuple;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Element;
@@ -55,12 +62,22 @@ import org.w3c.dom.NodeList;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.math.BigDecimal;
 
 /**
  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
@@ -125,8 +142,7 @@ public class Invoker {
                 return metaClass.invokeMethod(object, methodName, asArray(arguments));
             }
             // it's an object implementing GroovyObject
-            else
-            {
+            else {
                 // if it's a closure, use the closure's invokeMethod()
                 if (object instanceof Closure) {
                     Closure closure = (Closure) object;
@@ -134,20 +150,18 @@ public class Invoker {
                 }
                 // it's some kind of wacky object that overrides invokeMethod() to do some groovy stuff
                 // (like a proxy, a builder, some custom funny object which controls the invokation mechanism)
-                else
-                {
+                else {
                     GroovyObject groovy = (GroovyObject) object;
-                    try
-                    {
+                    try {
                         // if there's a statically typed method or a GDK method
                         return groovy.getMetaClass().invokeMethod(object, methodName, arguments);
                     }
-                    catch (MissingMethodException e)
-                    {
+                    catch (MissingMethodException e) {
                         if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                             // in case there's nothing else, invoke the object's own invokeMethod()
                             return groovy.invokeMethod(methodName, arguments);
-                        } else {
+                        }
+                        else {
                             throw e;
                         }
                     }
@@ -197,7 +211,8 @@ public class Invoker {
         }
         if (arguments instanceof Object[]) {
             return (Object[]) arguments;
-        } else {
+        }
+        else {
             return new Object[]{arguments};
         }
     }
@@ -205,17 +220,21 @@ public class Invoker {
     public List asList(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;
-        } else if (value instanceof List) {
+        }
+        else if (value instanceof List) {
             return (List) value;
-        } else if (value.getClass().isArray()) {
+        }
+        else if (value.getClass().isArray()) {
             return Arrays.asList((Object[]) value);
-        } else if (value instanceof Enumeration) {
+        }
+        else if (value instanceof Enumeration) {
             List answer = new ArrayList();
             for (Enumeration e = (Enumeration) value; e.hasMoreElements();) {
                 answer.add(e.nextElement());
             }
             return answer;
-        } else {
+        }
+        else {
             // lets assume its a collection of 1
             return Collections.singletonList(value);
         }
@@ -228,30 +247,38 @@ public class Invoker {
     public Collection asCollection(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;
-        } else if (value instanceof Collection) {
+        }
+        else if (value instanceof Collection) {
             return (Collection) value;
-        } else if (value instanceof Map) {
+        }
+        else if (value instanceof Map) {
             Map map = (Map) value;
             return map.entrySet();
-        } else if (value.getClass().isArray()) {
+        }
+        else if (value.getClass().isArray()) {
             if (value.getClass().getComponentType().isPrimitive()) {
                 return InvokerHelper.primitiveArrayToList(value);
             }
             return Arrays.asList((Object[]) value);
-        } else if (value instanceof MethodClosure) {
+        }
+        else if (value instanceof MethodClosure) {
             MethodClosure method = (MethodClosure) value;
             IteratorClosureAdapter adapter = new IteratorClosureAdapter(method.getDelegate());
             method.call(adapter);
             return adapter.asList();
-        } else if (value instanceof String) {
+        }
+        else if (value instanceof String) {
             return DefaultGroovyMethods.toList((String) value);
-        } else if (value instanceof File) {
+        }
+        else if (value instanceof File) {
             try {
                 return DefaultGroovyMethods.readLines((File) value);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
-        } else {
+        }
+        else {
             // lets assume its a collection of 1
             return Collections.singletonList(value);
         }
@@ -282,7 +309,8 @@ public class Invoker {
                     throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
                 }
             };
-        } else if (value instanceof Enumeration) {
+        }
+        else if (value instanceof Enumeration) {
             final Enumeration enumeration = (Enumeration) value;
             return new Iterator() {
                 private Object last;
@@ -300,19 +328,22 @@ public class Invoker {
                     throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
                 }
             };
-        } else if (value instanceof Matcher) {
+        }
+        else if (value instanceof Matcher) {
             final Matcher matcher = (Matcher) value;
             return new Iterator() {
                 private boolean found = false;
                 private boolean done = false;
 
                 public boolean hasNext() {
-                    if (done)
+                    if (done) {
                         return false;
+                    }
                     if (!found) {
                         found = matcher.find();
-                        if (!found)
+                        if (!found) {
                             done = true;
+                        }
                     }
                     return found;
                 }
@@ -331,7 +362,8 @@ public class Invoker {
                     throw new UnsupportedOperationException();
                 }
             };
-        } else {
+        }
+        else {
             try {
                 // lets try see if there's an iterator() method
                 final Method method = value.getClass().getMethod("iterator", EMPTY_TYPES);
@@ -346,7 +378,8 @@ public class Invoker {
 
                     return (Iterator) method.invoke(value, EMPTY_ARGUMENTS);
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 //  ignore
             }
         }
@@ -366,7 +399,8 @@ public class Invoker {
             }
             if (left instanceof Comparable) {
                 return compareTo(left, right) == 0;
-            } else {
+            }
+            else {
                 return left.equals(right);
             }
         }
@@ -387,7 +421,8 @@ public class Invoker {
         }
         if (left == null) {
             return -1;
-        } else if (right == null) {
+        }
+        else if (right == null) {
             return 1;
         }
         if (left instanceof Comparable) {
@@ -396,18 +431,22 @@ public class Invoker {
                     return asCharacter((Number) left).compareTo(asCharacter((String) right));
                 }
                 return DefaultGroovyMethods.compareTo((Number) left, asNumber(right));
-            } else if (left instanceof Character) {
+            }
+            else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
                     return ((Character) left).compareTo(asCharacter((String) right));
-                } else if (right instanceof Number) {
+                }
+                else if (right instanceof Number) {
                     return ((Character) left).compareTo(asCharacter((Number) right));
                 }
-            } else if (right instanceof Number) {
+            }
+            else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
                     return asCharacter((String) left).compareTo(asCharacter((Number) right));
                 }
                 return DefaultGroovyMethods.compareTo(asNumber(left), (Number) right);
-            } else if (left instanceof String && right instanceof Character) {
+            }
+            else if (left instanceof String && right instanceof Character) {
                 return ((String) left).compareTo(right.toString());
             }
             Comparable comparable = (Comparable) left;
@@ -441,8 +480,9 @@ public class Invoker {
         }
         StringBuffer argBuf = new StringBuffer();
         for (int i = 0; i < arguments.length; i++) {
-            if (i > 0)
+            if (i > 0) {
                 argBuf.append(", ");
+            }
             argBuf.append(arguments[i] != null ? arguments[i].getClass().getName() : "null");
         }
         return argBuf.toString();
@@ -451,30 +491,36 @@ public class Invoker {
     protected String format(Object arguments, boolean verbose) {
         if (arguments == null) {
             return "null";
-        } else if (arguments.getClass().isArray()) {
+        }
+        else if (arguments.getClass().isArray()) {
             return format(asCollection(arguments), verbose);
-        } else if (arguments instanceof Range) {
+        }
+        else if (arguments instanceof Range) {
             Range range = (Range) arguments;
             if (verbose) {
                 return range.inspect();
-            } else {
+            }
+            else {
                 return range.toString();
             }
-        } else if (arguments instanceof List) {
+        }
+        else if (arguments instanceof List) {
             List list = (List) arguments;
             StringBuffer buffer = new StringBuffer("[");
             boolean first = true;
             for (Iterator iter = list.iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
-                } else {
+                }
+                else {
                     buffer.append(", ");
                 }
                 buffer.append(format(iter.next(), verbose));
             }
             buffer.append("]");
             return buffer.toString();
-        } else if (arguments instanceof Map) {
+        }
+        else if (arguments instanceof Map) {
             Map map = (Map) arguments;
             if (map.isEmpty()) {
                 return "[:]";
@@ -484,7 +530,8 @@ public class Invoker {
             for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
                 if (first) {
                     first = false;
-                } else {
+                }
+                else {
                     buffer.append(", ");
                 }
                 Map.Entry entry = (Map.Entry) iter.next();
@@ -494,7 +541,8 @@ public class Invoker {
             }
             buffer.append("]");
             return buffer.toString();
-        } else if (arguments instanceof Element) {
+        }
+        else if (arguments instanceof Element) {
             Element node = (Element) arguments;
             OutputFormat format = new OutputFormat(node.getOwnerDocument());
             format.setOmitXMLDeclaration(true);
@@ -506,16 +554,20 @@ public class Invoker {
             try {
                 serializer.asDOMSerializer();
                 serializer.serialize(node);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
             }
             return sw.toString();
-        } else if (arguments instanceof String) {
+        }
+        else if (arguments instanceof String) {
             if (verbose) {
                 return "\"" + arguments + "\"";
-            } else {
+            }
+            else {
                 return (String) arguments;
             }
-        } else {
+        }
+        else {
             return arguments.toString();
         }
     }
@@ -526,13 +578,16 @@ public class Invoker {
     public Object getProperty(Object object, String property) {
         if (object == null) {
             throw new NullPointerException("Cannot get property: " + property + " on null object");
-        } else if (object instanceof GroovyObject) {
+        }
+        else if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
-        } else if (object instanceof Map) {
+        }
+        else if (object instanceof Map) {
             Map map = (Map) object;
             return map.get(property);
-        } else {
+        }
+        else {
             return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
         }
     }
@@ -543,13 +598,16 @@ public class Invoker {
     public void setProperty(Object object, String property, Object newValue) {
         if (object == null) {
             throw new GroovyRuntimeException("Cannot set property on null object");
-        } else if (object instanceof GroovyObject) {
+        }
+        else if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
-        } else if (object instanceof Map) {
+        }
+        else if (object instanceof Map) {
             Map map = (Map) object;
             map.put(property, newValue);
-        } else {
+        }
+        else {
             metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
         }
     }
@@ -561,15 +619,16 @@ public class Invoker {
         if (object == null) {
             throw new NullPointerException("Cannot get attribute: " + attribute + " on null object");
 
-        /**
-        } else if (object instanceof GroovyObject) {
-            GroovyObject pogo = (GroovyObject) object;
-            return pogo.getAttribute(attribute);
-        } else if (object instanceof Map) {
-            Map map = (Map) object;
-            return map.get(attribute);
-         */
-        } else {
+            /**
+             } else if (object instanceof GroovyObject) {
+             GroovyObject pogo = (GroovyObject) object;
+             return pogo.getAttribute(attribute);
+             } else if (object instanceof Map) {
+             Map map = (Map) object;
+             return map.get(attribute);
+             */
+        }
+        else {
             return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
         }
     }
@@ -588,33 +647,9 @@ public class Invoker {
             Map map = (Map) object;
             map.put(attribute, newValue);
             */
-        } else {
+        }
+        else {
             metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
-        }
-    }
-
-    public int asInt(Object value) {
-        if (value instanceof Number) {
-            Number n = (Number) value;
-            return n.intValue();
-        }
-        throw new GroovyRuntimeException("Could not convert object: " + value + " into an int");
-    }
-
-    public Number asNumber(Object value) {
-        if (value instanceof Number) {
-            return (Number) value;
-        } else if (value instanceof String) {
-            String s = (String) value;
-
-            if (s.length() == 1)
-                return new Integer(s.charAt(0));
-            else
-                return Double.valueOf(s);
-        } else if (value instanceof Character) {
-            return new Integer(((Character) value).charValue());
-        } else {
-            throw new GroovyRuntimeException("Could not convert object: " + value + " into a Number");
         }
     }
 
@@ -625,13 +660,16 @@ public class Invoker {
     protected Class loadClass(String type) {
         try {
             return getClass().getClassLoader().loadClass(type);
-        } catch (ClassNotFoundException e) {
+        }
+        catch (ClassNotFoundException e) {
             try {
                 return Thread.currentThread().getContextClassLoader().loadClass(type);
-            } catch (ClassNotFoundException e2) {
+            }
+            catch (ClassNotFoundException e2) {
                 try {
                     return Class.forName(type);
-                } catch (ClassNotFoundException e3) {
+                }
+                catch (ClassNotFoundException e3) {
                 }
             }
             throw new GroovyRuntimeException("Could not load type: " + type, e);
@@ -649,16 +687,19 @@ public class Invoker {
         String stringToCompare;
         if (left instanceof String) {
             stringToCompare = (String) left;
-        } else {
+        }
+        else {
             stringToCompare = toString(left);
         }
         String regexToCompareTo;
         if (right instanceof String) {
             regexToCompareTo = (String) right;
-        } else if (right instanceof Pattern) {
+        }
+        else if (right instanceof Pattern) {
             Pattern pattern = (Pattern) right;
             return pattern.matcher(stringToCompare);
-        } else {
+        }
+        else {
             regexToCompareTo = toString(right);
         }
         Matcher matcher = Pattern.compile(regexToCompareTo).matcher(stringToCompare);
@@ -676,7 +717,8 @@ public class Invoker {
         Pattern pattern;
         if (right instanceof Pattern) {
             pattern = (Pattern) right;
-        } else {
+        }
+        else {
             pattern = Pattern.compile(toString(right));
         }
         String stringToCompare = toString(left);
@@ -699,8 +741,35 @@ public class Invoker {
         if (object == null) {
             return null;
         }
+        // TODO we should move these methods to groovy method, like g$asType() so that
+        // we can use operator overloading to customize on a per-type basis
+        if (type.isArray()) {
+            return asArray(object, type);
+
+        }
         if (type.isInstance(object)) {
             return object;
+        }
+        if (type.isAssignableFrom(Collection.class)) {
+            if (object.getClass().isArray()) {
+                // lets call the collections constructor
+                // passing in the list wrapper
+                Collection answer = null;
+                try {
+                    answer = (Collection) type.newInstance();
+                }
+                catch (Exception e) {
+                    throw new ClassCastException("Could not instantiate instance of: " + type.getName() + ". Reason: " + e);
+                }
+
+                // we cannot just wrap in a List as we support primitive type arrays
+                int length = Array.getLength(object);
+                for (int i = 0; i < length; i++) {
+                    Object element = Array.get(object, i);
+                    answer.add(element);
+                }
+                return answer;
+            }
         }
         if (type.equals(String.class)) {
             return object.toString();
@@ -708,11 +777,13 @@ public class Invoker {
         if (type.equals(Character.class)) {
             if (object instanceof Number) {
                 return asCharacter((Number) object);
-            } else {
+            }
+            else {
                 String text = object.toString();
                 if (text.length() == 1) {
                     return new Character(text.charAt(0));
-                } else {
+                }
+                else {
                     throw new ClassCastException("Cannot cast: " + text + " to a Character");
                 }
             }
@@ -720,11 +791,13 @@ public class Invoker {
         if (Number.class.isAssignableFrom(type)) {
             if (object instanceof Character) {
                 return new Integer(((Character) object).charValue());
-            } else if (object instanceof String) {
+            }
+            else if (object instanceof String) {
                 String c = (String) object;
                 if (c.length() == 1) {
                     return new Integer(c.charAt(0));
-                } else {
+                }
+                else {
                     throw new ClassCastException("Cannot cast: '" + c + "' to an Integer");
                 }
             }
@@ -760,7 +833,8 @@ public class Invoker {
                     }
                     return answer;
                 }
-            } else {
+            }
+            else {
                 if (Number.class.isAssignableFrom(type)) {
                     if (type == Byte.class) {
                         return new Byte(n.byteValue());
@@ -800,21 +874,143 @@ public class Invoker {
         return object;
     }
 
+    public Object asArray(Object object, Class type) {
+        Collection list = asCollection(object);
+        int size = list.size();
+        Class elementType = type.getComponentType();
+        Object array = Array.newInstance(elementType, size);
+        int idx = 0;
+
+        if (boolean.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setBoolean(array, idx, asBool(element));
+            }
+        }
+        else if (byte.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setByte(array, idx, asByte(element));
+            }
+        }
+        else if (char.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setChar(array, idx, asChar(element));
+            }
+        }
+        else if (double.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setDouble(array, idx, asDouble(element));
+            }
+        }
+        else if (float.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setFloat(array, idx, asFloat(element));
+            }
+        }
+        else if (int.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setInt(array, idx, asInt(element));
+            }
+        }
+        else if (long.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setLong(array, idx, asLong(element));
+            }
+        }
+        else if (short.class.equals(elementType)) {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Array.setShort(array, idx, asShort(element));
+            }
+        }
+        else {
+            for (Iterator iter = list.iterator(); iter.hasNext(); idx++) {
+                Object element = iter.next();
+                Object coercedElement = asType(element, elementType);
+                Array.set(array, idx, coercedElement);
+            }
+        }
+        return array;
+    }
+
+    public Number asNumber(Object value) {
+        if (value instanceof Number) {
+            return (Number) value;
+        }
+        else if (value instanceof String) {
+            String s = (String) value;
+
+            if (s.length() == 1) {
+                return new Integer(s.charAt(0));
+            }
+            else {
+                return new BigDecimal(s);
+            }
+        }
+        else if (value instanceof Character) {
+            return new Integer(((Character) value).charValue());
+        }
+        else {
+            throw new GroovyRuntimeException("Could not convert object: " + value + " into a Number");
+        }
+    }
+
+    public byte asByte(Object element) {
+        return asNumber(element).byteValue();
+    }
+
+    public char asChar(Object element) {
+        if (element instanceof String) {
+            return asCharacter((String) element).charValue();
+        }
+        return asCharacter(asNumber(element)).charValue();
+    }
+
+    public float asFloat(Object element) {
+        return asNumber(element).floatValue();
+    }
+
+    public double asDouble(Object element) {
+        return asNumber(element).doubleValue();
+    }
+
+    public short asShort(Object element) {
+        return asNumber(element).shortValue();
+    }
+
+    public int asInt(Object element) {
+        return asNumber(element).intValue();
+    }
+
+    public long asLong(Object element) {
+        return asNumber(element).longValue();
+    }
+
     public boolean asBool(Object object) {
         if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
-        } else if (object instanceof Matcher) {
+        }
+        else if (object instanceof Matcher) {
             Matcher matcher = (Matcher) object;
             RegexSupport.setLastMatcher(matcher);
             return matcher.find();
-        } else if (object instanceof Collection) {
+        }
+        else if (object instanceof Collection) {
             Collection collection = (Collection) object;
             return !collection.isEmpty();
-        } else if (object instanceof Number) {
+        }
+        else if (object instanceof Number) {
             Number n = (Number) object;
             return n.doubleValue() != 0;
-        } else {
+        }
+        else {
             return object != null;
         }
     }
