@@ -136,7 +136,6 @@ public class InteractiveShell {
         out.println("Type 'help' for command help");
         out.println("Type 'go' to execute the statements");
 
-        int counter = 1;
         boolean running = true;
         while (running) {
             // Read a single top-level statement from the command line,
@@ -152,8 +151,7 @@ public class InteractiveShell {
             if (command.length() > 0) {
                 // We have a command that parses, so evaluate it.
                 try {
-                    shell.evaluate(command, "CommandLine" + counter++ + ".groovy");
-                    //shell.evaluate(command, "CommandLine.groovy");
+                    shell.evaluate(command, "CommandLine.groovy");
                 } catch (Exception e) {
                     err.println("Exception: " + e.getMessage());
                     e.printStackTrace(err);
@@ -501,8 +499,7 @@ public class InteractiveShell {
     }
     
     private void resetLoadedClasses() {
-        // GroovyShell.resetLoadedClasses() is not implemented yet.
-        // shell.resetLoadedClasses();
+        shell.resetLoadedClasses();
         out.println("all former unbound class definitions are discarded");
     }
 }
