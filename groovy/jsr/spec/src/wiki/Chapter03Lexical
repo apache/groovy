@@ -51,7 +51,7 @@ In both Groovy and Java, a line terminator is either an ASCII CR or an ASCII LF 
 
 In Groovy, some line terminators are syntactically significant.  As a result, the lexical grammar differs from that of Java.
 Inside a few specific contexts (comments and brackets) line terminators are deemed to be insignificant and are classified as whitespae, as in Java.
-Other line terminators are called _significant newlines_, and are reclassified as the token {{SignificantNewline}}.
+Other line terminators are called ??significant newlines??, and are reclassified as the token {{SignificantNewline}}.
 
 This reclassification is part of the the third lexical transformation phase.  See [&#167;3.11.1|#3.11.1].
 
@@ -148,14 +148,18 @@ Groovy has no {{CharacterLiteral}} token.  All literals with character data in t
 h3. 3.10.5 String Literals
 (Cf. ??[JLS. &#167;3.10.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#101084]??.)
 
-Groovy string literals have a syntax inspired by other scripting languages.  A string literal may be delimited by either single or double quotes.  String literals with double quotes may incorporate substring substitution expressions, while singly-quoted string literals are always constants.
+Groovy string literals have a syntax inspired by other scripting languages.  A string literal may be delimited by single or double.  When following certain operators and punctuation characters, a string literal may also be delimited by forward-slash characters, in which case it is also called a ??regular expression literal??.
 
-If a double-quoted string contains an unescaped dollar sign, it is more properly called a ??string constructor??, since it evaluates to a non-constant string, whose contents depend on expressions following the dollar signs.
-Indeed, a string constructor is really an expression composed of a number of tokens, only some of which are string literals.
+Double-quoted literals and regular expression literals may incorporate substring substitution expressions, which are introduced by unescaped dollar signs.
 
-Independently, the quote marks may be tripled, allowing the string to span multiple lines.  If the quote marks are used singly, the string may not contain a line terminator.
+Independently, single or double quote marks may be tripled, allowing the string to span multiple lines.  Whenever string delimiters are used singly, the string may not contain an unescaped line terminator.
 
-Regardless of the spelling of a line terminator found inside a string literal or constructor, it is always equivalent to an escaped newline '\\\n'.
+Regardless of the spelling of a line terminator found inside a string literal or constructor, it is always taken to represent a newline character, regardless of the local newline conventions.
+
+To avoid conflict with comment syntaxes, a regular expression literal cannot be empty and cannot begin with a star character.
+There is also a potential conflict with division operators (those beginning with a forward slash).  Division operators are only recognized after certain tokens:  Identifiers, keywords, numeric and string constants, right brackets, and unary increment operators ({{++}}, {{--}}).
+Any amount of whitespace and line terminators may also occur before a division operator.
+In other contexts, a slash introduces a regular expression literal.
 
 (Note:  The grammar of single-quoted and triple-quoted strings differs only in their processing of line terminators.
 We express this by means of a grammatical parameter {{LT}}, which is true if line terminators are allowed.)
@@ -166,20 +170,30 @@ StringLiteral:
   \"   (DStringCharacter[LT=false])*   \"
   \'\'\' (CStringCharacter[LT=true])*  \'\'\'
   \"\"\" (DStringCharacter[LT=true])*  \"\"\"
+  \/   (RStringCharacter (\*)*)+   \/
 
 CStringCharacter[LT]:
-  InputCharacter but not a closing quote or \\\
+  InputCharacter but not \' or \\\
   EscapeSequence[LT]
   LineTerminator  when(LT)
 
 DStringCharacter[LT]:
-  InputCharacter but not a closing quote or \\\ or \$
+  InputCharacter but not \" or \\\ or \$
   EscapeSequence[LT]
   LineTerminator  when(LT)
 
 EscapeSequence[LT]:  (add the following new productions)
   \\\ \$
-  \\\ LineTerminator  when(LT)
+  \\\ LineTerminator
+
+RStringCharacter:
+  InputCharacter but not a closing quote or \\\ or \$
+  RStringEscape
+
+RStringEscape:
+  \$ (unless part of a match for GStringValuePart)
+  \\\ LineTerminator
+  \\\ InputCharacter (but not \r or \n)
 {code}
 
 Note that a triple-quoted string may contain isolated single or double occurrences of its close-quote.
@@ -193,29 +207,39 @@ For example:
 {anchor:3.10.5.1}
 h3. 3.10.5.1 String Constructors
 
-If a double-quoted string contains an unescaped dollar character ('$'), then it is not a string literal, but rather a _string constructor_, which is a sequence of tokens that comprise an expression for a string containing constant and non-constant parts.
-Each unescaped dollar character must be followed by a _value part_, which is a Groovy expression or statement.
-The value part is parsed and evaluated as if it had occured in expression parentheses.
-Apart from such dollars and value parts, every other character between the opening and closing string quotes is treated literally, as in the case of normal string literals.
+If a double-quoted string literal or regular expression literal contains an unescaped dollar character ('$'), then it is not a string literal, but rather a ??string constructor??, which is a sequence of tokens that comprise an expression for a string containing constant and non-constant parts.
+Each unescaped dollar character must be followed by a ??value part??, which is a Groovy expression in the form of a name or a block.
+There may also be a star {{*}} between the dollar and the expression, which serves as a ??spread operator?? that modifies the manner in which the value is inserted.  (The semantics of spreading are defined by the {{GString}} class and its users.)
+
+The value part is parsed and evaluated as an ordinary expression.
+If it is in the form of a block without explicit closure arguments, it is taken to be a closure of no parameters, and is immediately called.  In the simplest case, an expression surrounded by braces stands for the value of the expression itself.
+Apart from such dollars and value parts, every other character between the opening and closing string quotes is treated as in the case of normal string literals.
 
 Thus, string constructor expression consists of alternating literal parts and values.
 During the tokenization phase of translation, the end of a literal part is determined by the occurrence of an unescaped dollar character, or (at the end) by the appropriate closing quote.
-The end of a value part is determined either by eagerly parsing a series of dot-separated identifiers, or by parsing a compound block, with its balanced curly braces.
+The end of a value part is determined either by eagerly parsing a series of dot-separated identifiers, or by parsing a block, with its balanced curly braces.
+
+In a double-quoted string constructor, an unescaped dollar sign must be followed either by a dot-separated series of keywords or identifiers, or by a block.
+In a regular expression literal, if a dollar sign is not followed by an identifier character or a left curly brace, perhaps after an intervening star, the dollar is deemed to be escaped.
+(Note that in standard regular expression syntaxes, the dollar sign is never meaningfully followed by a star, a brace, or a letter, so these notations are available for use as string constructor value parts.)
 
 {code}
   String x = "X"
-  assert x == "$x"
-  assert x == "${x}"
-  assert "XoX" == "${x}o$x"
-  assert '$'+'x' == "\\\$x"
-  assert "1" == "$x.length"
-  assert "1." == "$x.length."
-  assert "1()" == "$x.length()"
-  assert "1+2" == "$x.length+2"
-  assert "x . length" == "$x . length"
+  def xx = [length:1]
+  assert "$x" == x
+  assert "${x}" == x
+  assert "${x}o$x" == "XoX"
+  assert "\\\$x" == '$'+'x'
+  assert "$xx.length" == "1"
+  assert "$xx.length." == "1."
+  assert "$xx.length()" == "1()"
+  assert "$xx.length+2" == "1+2"
+  assert "$xx . length" == "[length:1] . length"
   assert "zXY;" == """z${
       String y = "Y"
-      ("$x$y") };"""
+      ("$x$y") };""" as String
+  assert 'EUOUAE'.matches(/^[aeiou]*$/)
+  assert 'football'.replaceAll(/foo/, "Bar").startsWith('Bart')
 {code}
 
 The process of parsing an embedded block may be viewed as an approximate parse which attends only to the balancing of curly brace tokens.
@@ -223,40 +247,43 @@ The process of parsing an embedded block may be viewed as an approximate parse w
 The tokenization of a string constructor must follow the format of a {{GStringLexicalForm}}.
 This is not a production of the Groovy expression grammar, but rather a syntax which must govern the separation of literal parts from expressions.
 
-(Note:  The term {{GString}} refers to a class of string-like object created by a string constructor expression.)
+(Note:  The term {{GString}} refers to a class of string-like objects created by a string constructor expression.)
 
 {code}
-GStringLexicalForm[LT]:
-  GStringStart[LT] GStringValuePart[LT]
-        (GStringMiddle[LT] GStringValuePart[LT])*
-              GStringEnd[LT]
+GStringLexicalForm[LT,RE]:
+  GStringStart[LT,RE] GStringValuePart[LT,RE]
+        (GStringMiddle[LT,RE] GStringValuePart[LT,RE])*
+              GStringEnd[LT,RE]
 
-GStringStart[LT]
-  \"   (DStringCharacter[LT])*  when(!LT)
-  \"\"\" (DStringCharacter[LT])*  when(LT)
+GStringStart[LT,RE]
+  \"   (DStringCharacter[LT])*  when(!LT & !RE)
+  \"\"\" (DStringCharacter[LT])*  when(LT & !RE)
+  \/   (DStringCharacter[LT])*  when(RE & !LT)
 
 GStringMiddle[LT]
   (DStringCharacter[LT])*
 
 GStringEnd[LT]
-  (DStringCharacter[LT])* \"    when(!LT)
-  (DStringCharacter[LT])* \"\"\"  when(!LT)
+  (DStringCharacter[LT])* \"    when(!LT & !RE)
+  (DStringCharacter[LT])* \"\"\"  when(!LT & !RE)
+  (DStringCharacter[LT])* \/    when(RE & !LT)
 
-GStringValuePart[LT]:
-  \$ RawIdentifier ( \. RawIdentifier )*
-  \$ \{ (GStringToken[LT])* \}
+GStringValuePart[LT,RE]:
+  \$ (\*)? RawIdentifier ( \. RawIdentifier )*
+  \$ (\*)? \{ (GStringToken[LT])* \}
 
-GStringLiteralPart[LT]:
-  GStringStart[LT]
-  GStringMiddle[LT]
-  GStringEnd[LT]
+GStringLiteralPart[LT,RE]:
+  GStringStart[LT,RE]
+  GStringMiddle[LT,RE]
+  GStringEnd[LT,RE]
 
-GStringToken[LT]:
+GStringToken[LT,RE]:
   InputElement but not \{ \} LineTerminator
-  \{ GStringToken[LT]* \}
-  GStringLexicalForm[LT=false]
-  GStringLexicalForm[LT=true]  when(LT)
-  LineTerminator               when(LT)
+  \{ GStringToken[LT,RE]* \}
+  GStringLexicalForm[LT=false,RE=false]
+  GStringLexicalForm[LT=false,RE=true]
+  GStringLexicalForm[LT=true,RE=false]  when(LT)
+  LineTerminator                        when(LT)
 
 {code}
 
@@ -268,13 +295,14 @@ At that point, the dollar signs are insignificant, but are left in the grammar f
 
 {code}
 Token:
-  GStringLiteralPart[LT=false]
-  GStringLiteralPart[LT=true]
+  GStringLiteralPart[LT=false,RE=false]
+  GStringLiteralPart[LT=true,RE=false]
+  GStringLiteralPart[LT=false,RE=true]
 
-StringConstructorExpression[LT]:
-  GStringStart[LT] \$ Statement
-        ( GStringMiddle[LT] \$ Statement )*
-              GStringEnd[LT]
+StringConstructorExpression[LT,RE]:
+  GStringStart[LT,RE] \$ Expression
+        ( GStringMiddle[LT,RE] \$ Expression )*
+              GStringEnd[LT,RE]
 {code}
 
 Identifiers and dots after a dollar sign are parsed into {{GStringToken}}s eagerly, even though their characters could also be validly parsed as string characters inside a following {{GStringValuePart}}.
@@ -287,7 +315,7 @@ The following program fragment may not be accepted as a valid Groovy program, be
   String x = "", y = "$x.int"
 {code}
 
-A string constructor expression which is introduced with a single double-quote character must occur all on one line.
+A string constructor expression which is introduced with a single double-quote character or forward-slash character must occur all on one line.
 It is an error for the value parts of such an expression to contain line terminators of any sort.
 The following program fragment may not be accepted as a valid Groovy program, unless the double quotes are tripled:
 {code}
@@ -301,10 +329,15 @@ Reference: http://archive.groovy.codehaus.org/jsr/threads/iakbeiefedohmiddhked
 h3. 3.10.6 Escape Sequences for Character and String Literals
 (Cf. ??[JLS. &#167;3.10.6|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230359]??.)
 
-(Same as in Java.)
+(Same as in Java, with a few additions.)
 
-In all strings, the escape sequence '\\\$' is legal, and stands for the ASCII dollar character.
-(Such an escaped dollar does not introduce a string constructor value part.)
+Within the various kinds of strings, most characters stand for themselves, but a few have special functions.  The backslash character serves as an escape, which turns off the special function of the following character.  In quoted string literals, an escaping backslash itself is removed, while in regular expression literals both the backslash and the escaped character are retained.
+In quoted string literals, a backslash may only be followed by a limited set of characters, the ones which need escaping, or ones which when escaped serve as symbols for certain non-printing characters, such as newline.
+A backkslash may be followed by one of the letters {{nrtbf}}, either of the quotes {{'"}}, another backslash, a dollar sign, or line terminator, or an octal digit.  Any other character following a backslash is reserved for future use.
+
+In regular expression literals, an escaping backslash can be followed by any character, and both characters are preserved as significant.
+
+If a line terminator is escaped by a backslash, both the backslash and the line terminator are disregarded,  except within a regular expression literal, where only the backslash is disregarded.
 
 {anchor:3.10.7}
 h3. 3.10.7 The Null Literal
@@ -336,7 +369,7 @@ Significant newlines are specifically allowed to occur inside non-parenthesized 
 
 (As in Java, no newline of any sort may occur within plain string quotes.  The meaning of newlines in strings is described in 3.10.5.)
 
-A significant newline is _lexically_ significant, in that the grammar must somehow account for it in the token stream.  However, in many places in the grammar, significant newlines are accepted but discarded.
+A significant newline is ??lexically?? significant, in that the grammar must somehow account for it in the token stream.  However, in many places in the grammar, significant newlines are accepted but discarded.
 
 Many tokens can be regarded as "leaning rightward" (i.e., they are linguistically proclitic) because they clearly require additional tokens to complete a statement.
 For example, a colon or plus sign never ends a statement, but always requires further tokens.
