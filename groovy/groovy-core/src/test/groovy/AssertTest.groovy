@@ -30,9 +30,9 @@ class AssertTest extends GroovyTestCase {
 	    
         runCode = false;
         /*
-	    try {
+        try {
 	        runCode = true;
-	    	//assert x := 5;
+	    	assert x := 5;
 	    	
 	    	fail("Should have thrown an exception");
 	    }
@@ -42,7 +42,6 @@ class AssertTest extends GroovyTestCase {
 	        //assert e.message := msg;
 	    }
 	    assert runCode : "has not ran the try / catch block code";
-        
 	    */
 	}
 }

@@ -86,7 +86,7 @@ public class MetaClass {
         this.registry = registry;
         this.theClass = theClass;
 
-        Method[] methodArray = theClass.getDeclaredMethods();
+        Method[] methodArray = theClass.getMethods();
         for (int i = 0; i < methodArray.length; i++) {
             Method method = methodArray[i];
 
@@ -199,7 +199,8 @@ public class MetaClass {
             return doMethodInvoke(null, method, staticArgumentList.toArray());
         }
 
-        throw new InvokerException("Could not find matching method called: " + methodName);
+        // lets try a static method then
+        return invokeStaticMethod(methodName, arguments, argumentList);
     }
 
     public Object invokeStaticMethod(String methodName, Object arguments, List argumentList) {
@@ -211,7 +212,7 @@ public class MetaClass {
                 return doMethodInvoke(null, method, argumentList.toArray());
             }
         }
-        throw new InvokerException("Could not find matching method called: " + methodName);
+        throw new InvokerException("Could not find matching method called: " + methodName + " for class: " + theClass.getName());
     }
 
     /**
