@@ -38,6 +38,6 @@ class AssertTest extends GroovyTestCase {
             //assert e.getMessage() == msg
             //assert e.message == msg
         }
-        assert runCode : "has not ran the try / catch block code"
+        assert runCode, "has not ran the try / catch block code"
     }
 }
