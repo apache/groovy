@@ -78,6 +78,7 @@ import org.codehaus.groovy.tools.FileSystemCompiler;
  */
 public class Groovyc extends MatchingTask {
     
+    private FileSystemCompiler compiler = new FileSystemCompiler();
     private Path src;
     private File destDir;
     private Path compileClasspath;
@@ -143,6 +144,15 @@ public class Groovyc extends MatchingTask {
         this.destDir = destDir;
     }
 
+    /**
+     * Enable verbose compiling which will display which files
+     * are being compiled
+     * @param verbose
+     */
+    public void setVerbose(boolean verbose) {
+        compiler.setVerbose(verbose);
+    }
+    
     /**
      * Gets the destination directory into which the java source files
      * should be compiled.
@@ -354,7 +364,6 @@ public class Groovyc extends MatchingTask {
     }
 
     protected void compile() {
-        FileSystemCompiler compiler = new FileSystemCompiler();
 
         if (compileList.length > 0) {
             log("Compiling "

@@ -38,7 +38,7 @@ class ClosureMethodTest extends GroovyTestCase {
         answer = list.find( {| item | return item := "b" })
         assert answer := "b"
         
-        answer = list.find( {| item | return item := "z" })
+        answer = list.find{| item | return item := "z" }
         assert answer == null
     }
     
@@ -49,7 +49,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.key := 3
         assert answer.value := 6
         
-        answer = map.find( {| entry | return entry.value := 0 })
+        answer = map.find{| entry | return entry.value := 0 }
         assert answer == null
     }
 
@@ -68,7 +68,7 @@ class ClosureMethodTest extends GroovyTestCase {
         assert answer.size() := 2
         
         keys = answer.collect( {| entry | return entry.key })
-        values = answer.collect( {| entry | return entry.value })
+        values = answer.collect {| entry | return entry.value }
         
         // maps are in hash order so lets sort the results            
         assert keys.sort() := [3, 4]
@@ -82,6 +82,10 @@ class ClosureMethodTest extends GroovyTestCase {
         list.each({| item | count = count + item })
 		
         assert count := 10
+
+        list.each{| item | count = count + item }
+		
+        assert count := 20
     }
 
     void testMapEach() {

@@ -70,6 +70,7 @@ public abstract class TestXmlSupport extends TestSupport {
         else {
             printer.serialize((Element) node);
         }
+        System.out.println();
     }
 
 }

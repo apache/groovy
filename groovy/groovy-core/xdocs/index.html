@@ -19,21 +19,21 @@ something similar to Python's tuple / sequence / dictionary support (List and Ma
 <source>
 class Foo {
   doSomething() {
-    data = ["name": "James", "location": "London"];
+    data = ["name": "James", "location": "London"]
     for e in data {
-      println("property ${e.key} is ${e.value}");
+      println("property ${e.key} is ${e.value}")
     }
   }
   
   closureExample(collection) {
-    collection.each { i :
-      println("value ${i}");
+    collection.each { |i|
+      println("value ${i}")
     };
   }
   
   static main(args) {
-    values = [1, 2, 3, "abc"];
-    closureExample(values);
+    values = [1, 2, 3, "abc"]
+    closureExample(values)
   }
 }
 </source>

@@ -24,6 +24,11 @@
       <item name="Download"            href="/download.html"/>
       -->
     </menu>
+
+    <menu name="Presentation">
+      <item name="PDF"                 href="http://codehaus.org/~jstrachan/Groovy/Groovy.ppt"/>
+      <item name="HTML"                href="http://codehaus.org/~jstrachan/Groovy/html/groovy.html"/>
+    </menu>
   </body>
 
 </project>

@@ -22,6 +22,11 @@ public class FileSystemCompiler
         this.compiler = new Compiler();
     }
 
+    public void setVerbose(boolean verbose)
+    {
+        compiler.setVerbose(verbose);
+    }
+    
     protected Compiler getCompiler()
     {
         return this.compiler;
