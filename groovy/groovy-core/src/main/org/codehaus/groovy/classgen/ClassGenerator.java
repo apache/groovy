@@ -639,6 +639,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression(compareLessThanEqualMethod, expression);
                 break;
 
+            case Token.LOGICAL_AND :
+                evaluateLogicalAndExpression(expression);
+                break;
+
+            case Token.LOGICAL_OR :
+                evaluateLogicalOrExpression(expression);
+                break;
+
             case Token.PLUS :
                 evaluateBinaryExpression("plus", expression);
                 break;
@@ -662,6 +670,47 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    protected void evaluateLogicalOrExpression(BinaryExpression expression) {
+        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
+        Label l0 = new Label();
+        Label l2 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+
+        cv.visitLabel(l2);
+
+        cv.visitLdcInsn(new Integer(1));
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
+
+        cv.visitJumpInsn(IFNE, l2);
+
+        cv.visitLdcInsn(new Integer(0));
+        cv.visitLabel(l1);
+    }
+
+    protected void evaluateLogicalAndExpression(BinaryExpression expression) {
+        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+
+        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
+
+        cv.visitJumpInsn(IFEQ, l0);
+
+        cv.visitLdcInsn(new Integer(1));
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        cv.visitLdcInsn(new Integer(0));
+        cv.visitLabel(l1);
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
@@ -849,10 +898,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
 
         String type = call.getType();
-        
+
         // lets check that the type exists
         checkValidType(type);
-        
+
         cv.visitLdcInsn(type);
         arguments.visit(this);
 
@@ -1339,10 +1388,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftExpression.visit(this);
         leftHandExpression = false;
     }
-    
+
     protected void evaluateInstanceof(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
-        
+
         Expression rightExp = expression.getRightExpression();
         String className = null;
         if (rightExp instanceof ClassExpression) {
@@ -1350,10 +1399,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             className = classExp.getType();
         }
         else {
-            throw new RuntimeException("Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
+            throw new RuntimeException(
+                "Right hand side of the instanceof keyworld must be a class name, not: " + rightExp);
         }
         String classInternalName = getClassInternalName(className);
-        
+
         cv.visitTypeInsn(INSTANCEOF, classInternalName);
     }
 
