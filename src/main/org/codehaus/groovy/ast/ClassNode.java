@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -53,6 +54,8 @@ import org.objectweb.asm.Constants;
  */
 public class ClassNode extends MetadataNode implements Constants {
 
+    private Logger log = Logger.getLogger(getClass().getName());
+    
     private String name;
     private int modifiers;
     private String superClass;
@@ -182,12 +185,24 @@ public class ClassNode extends MetadataNode implements Constants {
         methods.add(node);
     }
 
+    /**
+     * IF a method with the given name and parameters is already defined then it is returned
+     * otherwise the given method is added to this node. This method is useful for
+     * default method adding like getProperty() or invokeMethod() where there may already
+     * be a method defined in a class and  so the default implementations should not be added
+     * if already present.
+     */
     public MethodNode addMethod(
         String name,
         int modifiers,
         String returnType,
         Parameter[] parameters,
         Statement code) {
+        MethodNode other = getMethod(name, parameters);
+        // lets not add duplicate methods
+        if (other != null) {
+            return other;
+        }
         MethodNode node = new MethodNode(name, modifiers, returnType, parameters, code);
         addMethod(node);
         return node;
@@ -282,6 +297,36 @@ public class ClassNode extends MetadataNode implements Constants {
             }
         }
         return null;
+    }
+
+    /**
+     * @return the method matching the given name and parameters or null
+     */
+    public MethodNode getMethod(String name, Parameter[] parameters) {
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (name.equals(method.getName()) && parametersEqual(method.getParameters(), parameters)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @return true if the two arrays are of the same size and have the same contents
+     */
+    protected boolean parametersEqual(Parameter[] a, Parameter[] b) {
+        if (a.length == b.length) {
+            boolean answer = true;
+            for ( int i = 0; i < a.length; i++) {
+                if (! a[i].getType().equals(b[i].getType())) {
+                    answer = false;
+                    break;
+                }
+            }
+            return answer;
+        }
+        return false;
     }
 
     /**
