@@ -100,6 +100,6 @@ public class CSTNode
     
     public String toString()
     {
-        return "[CSTNode [token=" + token + ",children=" + children + "]]";
+        return "[CSTNode: token=" + token + ",children=" + children + "]";
     }
 }
