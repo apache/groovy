@@ -156,12 +156,12 @@ public class ReflectorGenerator implements Constants {
         cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "toString", "()Ljava/lang/String;");
         */
         Class ownerClass = method.getInterfaceClass();
+        boolean useInterface = false;
         if (ownerClass == null) {
             ownerClass = method.getDeclaringClass();
         }
         else {
-            System.out.println("#### Using the interface on which this method is defined!");
-            System.out.println("For method: " + method);
+            useInterface = true;
         }
         String type = helper.getClassInternalName(ownerClass.getName());
         String descriptor = helper.getMethodDescriptor(method.getReturnType(), method.getParameterTypes());
@@ -177,7 +177,7 @@ public class ReflectorGenerator implements Constants {
             cv.visitVarInsn(ALOAD, 2);
             helper.doCast(ownerClass);
             loadParameters(method, 3);
-            cv.visitMethodInsn(INVOKEVIRTUAL, type, method.getName(), descriptor);
+            cv.visitMethodInsn((useInterface) ? INVOKEINTERFACE : INVOKEVIRTUAL, type, method.getName(), descriptor);
         }
 
         helper.box(method.getReturnType());
