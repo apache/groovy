@@ -1281,7 +1281,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // lets load an extra one just in case as we may be getting & putting a field
         // @todo this is not ideal; need a better way of doing this
-        cv.visitVarInsn(ALOAD, 0);
+        //cv.visitVarInsn(ALOAD, 0);
         cv.visitVarInsn(ALOAD, 0);
         cv.visitFieldInsn(GETFIELD, internalClassName, "owner", getTypeDescription(outerClassNode.getName()));
 
@@ -1299,6 +1299,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
+        /*
+        if (leftHandExpression) {
+            cv.visitVarInsn(ALOAD, valueIdx);
+        }
+        */
     }
 
     public void visitVariableExpression(VariableExpression expression) {
@@ -1963,10 +1968,26 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected Expression assignmentExpression(Expression expression) {
         if (expression instanceof BinaryExpression) {
-            BinaryExpression binExp = (BinaryExpression) expression;
-            if (binExp.getOperation().getType() == Token.EQUAL) {
-                return binExp.getLeftExpression();
+            BinaryExpression binExpr = (BinaryExpression) expression;
+            switch (binExpr.getOperation().getType()) {
+                case Token.EQUAL :
+                case Token.PLUS_EQUAL :
+                case Token.MINUS_EQUAL :
+                case Token.MULTIPLY_EQUAL :
+                case Token.DIVIDE_EQUAL :
+                case Token.MOD_EQUAL :
+                    return binExpr.getLeftExpression();
             }
+        }
+        /*
+        else if (expression instanceof PostfixExpression) {
+            PostfixExpression expr = (PostfixExpression) expression;
+            return expr.getExpression();
+        }
+        */
+        else if (expression instanceof PrefixExpression) {
+            PrefixExpression expr = (PrefixExpression) expression;
+            return expr.getExpression();
         }
         return null;
     }

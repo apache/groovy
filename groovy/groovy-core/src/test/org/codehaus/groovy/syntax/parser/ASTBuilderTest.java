@@ -134,6 +134,20 @@ public class ASTBuilderTest extends TestParserSupport {
         
     }
 
+    public void testNoReturn() throws Exception {
+        ModuleNode module = parse("class Foo { void testMethod() { x += 5 } }", "Dummy.groovy");
+        BlockStatement statement = getCode(module, "testMethod");
+
+        assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
+        
+        System.out.println(statement.getStatements());
+        
+        ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
+        Expression exp = exprStmt.getExpression();
+        
+        System.out.println("expr: " + exp);
+    }
+
     protected BlockStatement getCode(ModuleNode module, String name) {
         assertEquals("class count", 1, module.getClasses().size());
 
