@@ -5,13 +5,15 @@ import javax.swing.BorderFactory
 import groovy.model.MvcDemo
 
 class SwingDemo {
-    
-    property frame
-    property swing
-    
-    void run() {
-        swing = new SwingBuilder()
 
+    swing = new SwingBuilder()
+
+	static void main(args) {
+		demo = new SwingDemo()
+		demo.run()
+	}
+	
+    void run() {
         frame = swing.frame(title:'This is a Frame', location:[100,100], size:[800,400]) {
             menuBar {
 		        menu(text:'File') {
