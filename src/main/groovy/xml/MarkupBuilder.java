@@ -65,6 +65,7 @@ public class MarkupBuilder extends BuilderSupport {
     private IndentPrinter out;
     private boolean nospace;
     private int state;
+    private boolean nodeIsEmpty = true;
 
     public MarkupBuilder() {
         this(new IndentPrinter());
@@ -120,7 +121,11 @@ public class MarkupBuilder extends BuilderSupport {
             print(transformValue(entry.getValue().toString()));
             out.print("'");
         }
-        // FIXME: the current state model doesn't allow for nodes with attributes and values
+        if (value != null)
+        {
+            nodeIsEmpty = false;
+            out.print(">" + value + "</" + name + ">");
+        }
         return name;
     }
 
@@ -152,76 +157,78 @@ public class MarkupBuilder extends BuilderSupport {
 
     private void toState(int next, Object name) {
         switch (state) {
-        case 0:
-            switch (next) {
-            case 1:
-            case 2:
-                out.print("<");
-                print(name);
-                break;
-            case 3:
-                throw new Error();
-            }
-            break;
-        case 1:
-            switch (next) {
-            case 1:
-            case 2:
-                out.print(">");
-                if (nospace) {
-                    nospace = false;
-                } else {
-                    out.println();
-                    out.incrementIndent();
-                    out.printIndent();
+            case 0:
+                switch (next) {
+                    case 1:
+                    case 2:
+                        out.print("<");
+                        print(name);
+                        break;
+                    case 3:
+                        throw new Error();
                 }
-                out.print("<");
-                print(name);
                 break;
-            case 3:
-                out.print(" />");
-                break;
-            }
-            break;
-        case 2:
-            switch (next) {
             case 1:
-            case 2:
-                throw new Error();
-            case 3:
-                out.print("</");
-                print(name);
-                out.print(">");
-                break;
-            }
-            break;
-        case 3:
-            switch (next) {
-            case 1:
-            case 2:
-                if (nospace) {
-                    nospace = false;
-                } else {
-                    out.println();
-	                out.printIndent();
+                switch (next) {
+                    case 1:
+                    case 2:
+                        out.print(">");
+                        if (nospace) {
+                            nospace = false;
+                        } else {
+                            out.println();
+                            out.incrementIndent();
+                            out.printIndent();
+                        }
+                        out.print("<");
+                        print(name);
+                        break;
+                    case 3:
+                        if (nodeIsEmpty) {
+                            out.print(" />");
+                        }
+                        break;
                 }
-                out.print("<");
-                print(name);
+                break;
+            case 2:
+                switch (next) {
+                    case 1:
+                    case 2:
+                        throw new Error();
+                    case 3:
+                        out.print("</");
+                        print(name);
+                        out.print(">");
+                        break;
+                }
                 break;
             case 3:
-                if (nospace) {
-                    nospace = false;
-                } else {
-                    out.println();
-                    out.decrementIndent();
-                    out.printIndent();
+                switch (next) {
+                    case 1:
+                    case 2:
+                        if (nospace) {
+                            nospace = false;
+                        } else {
+                            out.println();
+                            out.printIndent();
+                        }
+                        out.print("<");
+                        print(name);
+                        break;
+                    case 3:
+                        if (nospace) {
+                            nospace = false;
+                        } else {
+                            out.println();
+                            out.decrementIndent();
+                            out.printIndent();
+                        }
+                        out.print("</");
+                        print(name);
+                        out.print(">");
+                        break;
                 }
-                out.print("</");
-                print(name);
-                out.print(">");
                 break;
-            }
-            break;
         }
         state = next;
     }
