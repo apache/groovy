@@ -6,78 +6,80 @@ Indeed each Groovy class can be used inside normal Java code - since it is a Jav
 Probably the easiest way to get groovy is to try working with collections. In Groovy List (java.util.List) and Map (java.util.Map)
 are both first class objects in the syntax. So to create a List of objects you can do the following... 
 
-Note that in the following snippets of Groovy code, the ~~groovy>~~ means a command line prompt - you don't need to type this. 
-
 {code:groovysh}
-groovy> list = [1, 2, 'hello', new java.util.Date()]
-  groovy> list.size()
-  4
-  groovy> list.get(2)
-  'hello'
+list = [1, 2, 'hello', new java.util.Date()]
+assert list.size() == 4
+assert list.get(2) == 'hello'
 {code}
 
-Notice that everything is an object (or that auto-boxing takes place when working with numbers). To create maps... {code:groovysh}
-groovy> map = ['name':'James', 'location':'London']
-  groovy> map.size()
-  2
-  groovy> map.get('name')
-  'James'
+Notice that everything is an object (or that auto-boxing takes place when working with numbers). To create maps... 
+{code:groovysh}
+map = ['name':'James', 'location':'London']
+assert map.size() == 2
+assert map.get('name') == 'James'
 {code}
 
-Iterating over collections is easy... {code:groovysh}
-groovy> list = [1, 2, 3]
-  groovy> for (i in list) { println(i) }
-  1
-  2
-  3
+Iterating over collections is easy... 
+{code:groovysh}
+list = [1, 2, 3]
+for (i in list) { println i }
 {code}
 
 Once you have some collections you can then use some of the new collection helper methods or try working with closures... 1.1 Working with closures
 
 Closures are similar to Java's inner classes, except they are a single method which is invokable, with arbitrary parameters.
-A closure can have as many parameters as you wish... {code:groovysh}
-groovy> closure = { param | println("hello ${param}") }
-  groovy> closure.call("world!")
-  hello world!
-  groovy> closure = { greeting, name | println(greeting + name) }
-  groovy> closure.call("hello ", "world!")
-  hello world!
+A closure can have as many parameters as you wish... 
+
+{code:groovysh}
+closure = { param | println("hello ${param}") }
+closure.call("world!")
+
+closure = { greeting, name | println(greeting + name) }
+closure.call("hello ", "world!")
 {code}
 
-If no parameter(s) is(are) specified before the | symbol then a default named parameter, called 'it' can be used. e.g. {code:groovysh}
-groovy> closure = { println("hello " + it) }
-  groovy> closure.call("world!")
-  hello world!
+If no parameter(s) is(are) specified before the | symbol then a default named parameter, called 'it' can be used. e.g. 
+
+{code:groovysh}
+closure = { println "hello " + it }
+closure.call("world!")
 {code}
 
 Using closures allows us to process collections (arrays, maps, strings, files, SQL connections and so forth) in a clean way.
 
 Here are a number of helper methods available on collections & strings... 1.1.1 each
 
-iterate via a closure {code:groovysh}
-groovy>[1, 2, 3].each { item | print("${item}-" }
-  1-2-3-
+iterate via a closure 
+
+{code:groovysh}
+[1, 2, 3].each { item | print "${item}-" }
 {code}
 
 1.1.1 map
 
-convert values to new list using closure {code:groovysh}
-groovy> [1, 2, 3].map { it * 2 }
-  [2, 4, 6]
+convert values to new list using closure 
+
+{code:groovysh}
+value = [1, 2, 3].map { it * 2 }
+assert value == [2, 4, 6]
 {code}
 
 1.1.1 find
 
-finds first item matching closure predicate {code:groovysh}
-groovy> [1, 2, 3].find { it > 1 }
-  2
+finds first item matching closure predicate 
+
+{code:groovysh}
+value = [1, 2, 3].find { it > 1 }
+assert value == 2
 {code}
 
 1.1.1 findAll
 
-finds all items matching closure predicate {code:groovysh}
-groovy> [1, 2, 3].findAll { it > 1 }
-  [2, 3]
+finds all items matching closure predicate 
+
+{code:groovysh}
+value = [1, 2, 3].findAll { it > 1 }
+assert value == [2, 3]
 {code}
 
 1.1.1 inject
@@ -87,53 +89,66 @@ allows you to pass a value into the first iteration and then
  on. This is ideal for counting and other forms of processing 
 
 {code:groovysh}
-groovy> [1, 2, 3].inject('counting: ') { str, item | str + item }
-  "counting: 123"
-  groovy> [1, 2, 3].inject(0) { count, item | count + item }
-  6
+value = [1, 2, 3].inject('counting: ') { str, item | str + item }
+assert value == "counting: 123"
+
+value = [1, 2, 3].inject(0) { count, item | count + item }
+assert value == 6
 {code}
 
 In addition there's 2 new methods for doing boolean logic on some collection... 
 
 1.1.1 every
 
-returns true if all items match the closure predicate {code:groovysh}
-groovy> [1, 2, 3].every { it < 5 }
-  true
-  groovy> [1, 2, 3].every { item | item < 3 }
-  false
+returns true if all items match the closure predicate 
+
+{code:groovysh}
+value = [1, 2, 3].every { it < 5 }
+assert value
+
+value = [1, 2, 3].every { item | item < 3 }
+assert ! value
 {code}
 
 1.1.1 any
 
-returns true if any item match the closure predicate {code:groovysh}
-groovy> [1, 2, 3].any { it > 2 }
-  true
-  groovy> [1, 2, 3].any { item | item > 3 }
-  false
+returns true if any item match the closure predicate 
+
+{code:groovysh}
+value = [1, 2, 3].any { it > 2 }
+assert value
+
+value = [1, 2, 3].any { item | item > 3 }
+assert value == false
 {code}
 
 Other helper methods include 1.1.1 max / min
 
-returns the max/min values of the collection - for Comparable objects {code:groovysh}
-groovy> [9, 4, 2, 10, 5].max()
-  10
-  groovy>   [9, 4, 2, 10, 5].min()
-  2
-  groovy> ['x', 'y', 'a', 'z'].min()
-  'a'
+returns the max/min values of the collection - for Comparable objects 
+
+{code:groovysh}
+value = [9, 4, 2, 10, 5].max()
+assert value == 10
+value = [9, 4, 2, 10, 5].min()
+assert value == 2
+value = ['x', 'y', 'a', 'z'].min()
+assert value == 'a'
 {code}
 
 1.1.1 join
 
-concatenates the values of the collection together with a string value {code:groovysh}
-groovy> [1, 2, 3].join('-')
-  '1-2-3'
+concatenates the values of the collection together with a string value 
+
+{code:groovysh}
+value = [1, 2, 3].join('-')
+assert value == '1-2-3'
 {code}
 
 Also the 'yield' style of creating iterators, available in Python and
 Ruby via the yield statement, is available. The only difference is
-rather than using a yield statement, we're just using closures. {code:groovysh}
+rather than using a yield statement, we're just using closures. 
+
+{code:groovysh}
 class Foo {
   myGenerator(Closure yield) {
     yield.call("A")
@@ -154,7 +169,9 @@ outputs
 The use of Closure in the method prototype is optional. If we have
 syntax sugar for invoking closures as if they are method calls, then
 the generator method could look even more like the python/ruby
-equivalent. Especially if parentheses are optional... {code:groovysh}
+equivalent. Especially if parentheses are optional... 
+
+{code:groovysh}
 class Foo {
   myGenerator(yield) {
     yield "A"
@@ -163,6 +180,3 @@ class Foo {
   }
 }
 {code}
-
-
-

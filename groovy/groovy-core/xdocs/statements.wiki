@@ -169,10 +169,7 @@ If you are walking a complex object graph and don't want to have NullPointerExce
 you can use the -> operator rather than . to perform your navigation.
 
 {code:groovysh}
-bean = new Expando(name:"James", location:"London", id:123)
-name = bean.name
-println("Hey ${name}")
-bean.location = "Vegas"
-println bean.name + " is now in " + bean.location
-assert bean.location == "Vegas"
+foo = null
+bar = foo->something->myMethod()
+assert bar == null
 {code}

@@ -60,7 +60,7 @@ Probably the best way to get started on Groovy is to install Maven, get a {link:
 try running the unit tests & looking at them to see how Groovy works.
 e.g. 
 
-{code:groovysh}
+{code:shell}
 maven clean test
 {code}
 
@@ -70,13 +70,13 @@ and backwards through commands etc.
 
 To run the Swing console type... 
 
-{code:groovysh}
+{code:shell}
 maven console
 {code}
 
 Or to see a simple example of how Groovy can be used to script things like creating Swing user interfaces try... 
 
-{code:groovysh}
+{code:shell}
 maven swing:demo
 {code}
 

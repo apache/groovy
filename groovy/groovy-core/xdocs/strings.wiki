@@ -9,7 +9,8 @@ println "he said 'cheese' once"
 println 'he said "cheese!" again'
 {code}
 
-Also strings support the \u001234 style mechanism for unicode.
+The groovy parser supports the notation \uab12 (i.e. a leading backslash and precisely four hex digits after the 'u' ).
+This notation can be used in strings oranywhere in the program like the Java parser does.
 
 1.1 Multi-line strings
 

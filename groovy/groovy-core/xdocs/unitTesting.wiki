@@ -6,13 +6,13 @@ for *.java files to find unit tests with pattern matching, rather than *.class f
 There's an option in Maven to ensure you search for classes (and so find any Groovy 
 unit test cases) via this property 
 
-{code:groovysh}
+{code:shell}
 maven.test.search.classdir = true
 {code}
 
 Once you've got this enabled you can use Maven goals to run individual test cases like this 
 
-{code:groovysh}
+{code:shell}
 maven test:single -Dtestcase=foo.MyGroovyTest
 {code}
 
@@ -34,14 +34,14 @@ when run as a JUnit test suite.
 
 To run the GroovyUnitTest as an application, just do the equivalent of this in your IDE 
 
-{code:groovysh}
+{code:shell}
 java groovy.util.GroovyTestSuite src/test/Foo.groovy
 {code}
 
 Or to run the test suite inside your IDE, just run the GroovyTestSuite test 
 with this system property defined 
 
-{code:groovysh}
+{code:shell}
 -Dtest=src/test/Foo.groovy
 {code}
 

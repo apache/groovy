@@ -12,20 +12,20 @@ the distribution
 the following in a command shell... 
 
 
-{code:groovysh}
+{code:shell}
 groovysh
 {code}
 
 Which should create an interactive groovy shell where you can type Groovy statements.
 Or to run the Swing interactive console type 
 
-{code:groovysh}
+{code:shell}
 groovyConsole
 {code}
 
 To run a specific groovy script type 
 
-{code:groovysh}
+{code:shell}
 groovysh SomeScript.groovy
 {code}
 

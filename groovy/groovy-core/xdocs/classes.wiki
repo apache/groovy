@@ -9,7 +9,7 @@ One difference with Groovy is that by default things are public unless you speci
 Groovy also merges the idea of fields and properties together to make code simpler, please refer
 to the {link:GroovyBeans|beans.html} section for details of how they work. 
 
-Each class in Groovy a Java classe at the bytecode / JVM level. Any methods declared will
+Each class in Groovy is a Java class at the bytecode / JVM level. Any methods declared will
 be available to Java and vice versa. You can specify the types of parameters or return types
 on methods so that they work nicely in normal Java code. Also you can implement interfaces
 or overload Java methods using this approach.
