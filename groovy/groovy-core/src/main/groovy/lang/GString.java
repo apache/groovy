@@ -153,7 +153,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
             for (int i = 0, size = s.length; i < size; i++) {
                 buffer.append(s[i]);
                 if (i < numberOfValues) {
-                    buffer.append(values[i]);
+                    buffer.append(InvokerHelper.toString(values[i]));
                 }
             }
             text = buffer.toString();

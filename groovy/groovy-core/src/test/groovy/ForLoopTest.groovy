@@ -1,3 +1,5 @@
+import groovy.bugs.TestSupport
+
 class ForLoopTest extends GroovyTestCase {
 
 	property x
@@ -35,4 +37,18 @@ class ForLoopTest extends GroovyTestCase {
 
         assert x == 10
 	}
+    
+    void testIntArray() {
+        array = TestSupport.getIntArray()
+        
+        println "Class: ${array.class} for array ${array}"
+        
+        x = 0
+        
+        for ( i in array ) {
+            x = x + i
+        }
+
+        assert x == 15
+    }
 }

@@ -204,6 +204,9 @@ public class Invoker {
             return map.entrySet();
         }
         else if (value.getClass().isArray()) {
+            if (value.getClass().getComponentType().isPrimitive()) {
+                return InvokerHelper.primitiveArrayToList(value);
+            }
             return Arrays.asList((Object[]) value);
         }
         else if (value instanceof MethodClosure) {
@@ -329,16 +332,7 @@ public class Invoker {
             return "null";
         }
         else if (arguments.getClass().isArray()) {
-            Object[] array = (Object[]) arguments;
-            StringBuffer buffer = new StringBuffer("[");
-            for (int i = 0; i < array.length; i++) {
-                if (i > 0) {
-                    buffer.append(", ");
-                }
-                buffer.append(format(array[i], verbose));
-            }
-            buffer.append("]");
-            return buffer.toString();
+            return format(asCollection(arguments), verbose);
         }
         else if (arguments instanceof Range) {
             Range range = (Range) arguments;
