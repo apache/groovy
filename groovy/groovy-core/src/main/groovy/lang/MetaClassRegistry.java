@@ -73,11 +73,7 @@ public class MetaClassRegistry {
     private GroovyClassLoader loader =  
     	(GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
     		public Object run() {
-                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                    if (null == loader) {
-                        loader = MetaClassRegistry.this.getClass().getClassLoader();
-                    }
-                    return new GroovyClassLoader(loader);
+    			return new GroovyClassLoader(getClass().getClassLoader()); 
     		}
     	});
 
