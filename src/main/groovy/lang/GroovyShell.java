@@ -54,12 +54,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
- * Represents a groovy script runner
+ * Represents a groovy shell capable of running arbitrary groovy scripts
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Groovy {
+public class GroovyShell {
     private GroovyClassLoader loader;
 
     public static void main(String args[]) {
@@ -75,7 +75,7 @@ public class Groovy {
         }
 
         try {
-            Groovy groovy = new Groovy();
+            GroovyShell groovy = new GroovyShell();
             groovy.run(script, newArgs);
         }
         catch (Exception e) {
@@ -84,11 +84,11 @@ public class Groovy {
         }
     }
 
-    public Groovy() {
-        this(Groovy.class.getClassLoader());
+    public GroovyShell() {
+        this(GroovyShell.class.getClassLoader());
     }
 
-    public Groovy(ClassLoader parent) {
+    public GroovyShell(ClassLoader parent) {
         loader = new GroovyClassLoader(parent);
     }
 

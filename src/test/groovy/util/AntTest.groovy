@@ -6,11 +6,12 @@ class AntTest extends GroovyTestCase {
     
     void testAnt() {
         ant = new AntBuilder()
-        
+
+        // lets just call one task
         ant.echo('hello')
         
-        /** @todo change to concise syntax when its available */
-        ant.sequential() {
+        // here's an example of a block of Ant inside GroovyMarkup
+        ant.sequential {
 			echo('inside sequential')
 			
 			myDir = 'target/AntTest/'
@@ -25,6 +26,7 @@ class AntTest extends GroovyTestCase {
             echo('done')
         }
         
+        // now lets do some normal Groovy again
         file = new File('target/AntTest/groovy/util/AntTest.groovy')
         assert file.exists()
     }

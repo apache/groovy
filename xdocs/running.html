@@ -1,0 +1,58 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head><title>Running Groovy scripts</title></head>
+<body>
+
+<h1>Running Groovy scripts</h1>
+
+<p>
+Groovy scripts are a number of statements and class declarations in a text file.
+Groovy scripts can be used similarly to other scripting languages.
+There are various ways of running Groovy scripts...
+</p>
+
+<h2>Running Groovy scripts from your IDE</h2>
+
+<p>
+There is a helper class called <a href="apidocs/groovy/lang/GroovyShell.html">GroovyShell</a> 
+which has a main(String[]) method for running any Groovy script. 
+You can run any groovy script as follows
+</p>
+
+<source>
+java groovy.lang.GroovyShell foo/MyScript.groovy [arguments]
+</source>
+
+<p>
+You can then run the above Groovy main() in your IDE to run or debug any Groovy script.
+</p>
+
+<h2>Running Groovy scripts from the command line</h2>
+
+<p>
+There are shell scripts called 'groovy' or 'groovy.bat' depending on your platform
+which is part of the Groovy runtime.
+Once the runtime is installed (see below for more detail) 
+you can just run groovy like any other script...
+</p>
+
+<source>
+groovy foo/MyScript.groovy [arguments]
+</source>
+
+<p>
+To work from the latest and greatest Groovy, do a cvs checkout and then type
+</p>
+
+<source>
+maven groovy:make-install
+</source>
+
+<p>
+You'll then have a full binary distribution made for you in groovy/target/install.
+You can then add groovy/target/install/bin to your path and you can then run groovy scripts
+easily from the command line.
+</p>
+
+</body>
+</html>
