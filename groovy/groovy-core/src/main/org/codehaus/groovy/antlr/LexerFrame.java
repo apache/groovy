@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.text.BadLocationException;
+import org.codehaus.groovy.antlr.parser.*;
 
 import antlr.*;
 

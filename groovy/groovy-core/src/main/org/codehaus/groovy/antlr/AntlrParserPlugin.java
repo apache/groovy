@@ -23,6 +23,7 @@ import antlr.collections.AST;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.antlr.parser.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
@@ -472,9 +473,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     answer |= Constants.ACC_VOLATILE;
                     break;
 
+                // TODO: not yet in Antlr AST...
+                /*
                 case LITERAL_def:
                     // ignore def
                     break;
+                */
 
                 default:
                     unknownAST(node);

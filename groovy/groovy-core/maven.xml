@@ -33,6 +33,7 @@
   <goal name="generate">
     <j:set var="maven.antlr.grammars" value="groovy.g"/>
     <j:set var="maven.antlr.src.dir" value="${basedir}/src/main/org/codehaus/groovy/antlr"/>
+    <j:set var="maven.antlr.target.dir" value="${basedir}/src/main"/>
     <attainGoal name="antlr:generate"/>
   </goal>
 
