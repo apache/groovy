@@ -9,7 +9,10 @@ Core Groovy Tasks
 
 * while / do - while statements
 
-* use of properties within a class should use setteres / getters.
+* test use of field & property initializers
+ 
+* test use of overloaded setter methods & use of property notation
+  so that the use of properties within a class should use setteres / getters.
 
 * test the use of PropertyExpression
 	a.b = c.d
@@ -19,8 +22,6 @@ Core Groovy Tasks
 * support static new() method for constructors
 
 * add methods plus(), minus(), multiply and so forth to Number etc
-
-* AST's to handle null for types & set the isDynamic flag
 
 * finish expresssion support in classgen
 
@@ -75,9 +76,14 @@ We really need to start work on the Eclipse plugin. I *so* want neat Eclipse sup
 * a WYSIWYG editor for Groovy. Though right now I've found that the Java Scrapbook editor is fine
 
 
-OTHER STUFF
-===========
+JUNIT WORK
+==========
 
 * patch GroovyTestCase so that methods which return Object are included in the test. This avoids us having to
 specify void for method return types.
+
+
+OTHER STUFF
+===========
+
 
