@@ -40,22 +40,22 @@ import java.lang.reflect.Modifier;
 
 /**
  * A MetaMethod implementation where the underlying method is really a static
- * helper method on some class.
+ * helper method on some class but it appears to be an instance method on a class.
  * 
- * This implementation is used to add new static methods to the JDK writing them as normal
+ * This implementation is used to add new methods to the JDK writing them as normal
  * static methods with the first parameter being the class on which the method is added.
  * 
- * @author Guillaume Laforge
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NewStaticMetaMethod extends MetaMethod {
+public class NewInstanceMetaMethod extends MetaMethod {
 
     private static final Class[] EMPTY_TYPE_ARRAY = {};
     
     private MetaMethod metaMethod;
     private Class[] logicalParameterTypes;
 
-    public NewStaticMetaMethod(MetaMethod metaMethod) {
+    public NewInstanceMetaMethod(MetaMethod metaMethod) {
         super(metaMethod);
         this.metaMethod = metaMethod;
         Class[] realParameterTypes = metaMethod.getParameterTypes();
@@ -74,11 +74,12 @@ public class NewStaticMetaMethod extends MetaMethod {
     }
 
     public boolean isStatic() {
-        return true;
+        return false;
     }
 
     public int getModifiers() {
-        return super.getModifiers();
+        // lets clear the static bit
+        return super.getModifiers() ^ Modifier.STATIC;
     }
 
     public Class[] getParameterTypes() {
@@ -90,11 +91,11 @@ public class NewStaticMetaMethod extends MetaMethod {
     }
 
     public Object invoke(Object object, Object[] arguments) throws Exception {
+        // we need to cheat using the type
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];
+        newArguments[0] = object;
         System.arraycopy(arguments, 0, newArguments, 1, size);
-        Object obj = ((Class)object).newInstance();
-        newArguments[0] = null;
-        return metaMethod.invoke(obj, newArguments);
+        return metaMethod.invoke(null, newArguments);
     }
 }
