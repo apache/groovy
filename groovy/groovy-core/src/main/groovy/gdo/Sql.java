@@ -67,13 +67,18 @@ import org.apache.commons.logging.LogFactory;
  */
 public class Sql {
 
-    private Log log = LogFactory.getLog(getClass());
+    protected Log log = LogFactory.getLog(getClass());
+    
     private DataSource dataSource;
 
     public Sql(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
+    public DataSet dataSet(String table) { 
+        return new DataSet(dataSource, table);
+    }
+    
     /**
      * Performs the given SQL query calling the closure with the result set
      */
@@ -91,28 +96,81 @@ public class Sql {
             throw e;
         }
         finally {
-            if (results != null) {
-                try {
-                    results.close();
-                }
-                catch (SQLException e) {
-                    // ignore 
-                }
-            }
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
-            try {
-                connection.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
+            closeResources(connection, statement, results);
         }
     }
+
+    /**
+     * Performs the given SQL query calling the closure with each row of the result set
+     */
+    public void queryEach(String sql, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = connection.createStatement();
+        ResultSet results = null;
+        try {
+            log.debug(sql);
+            results = statement.executeQuery(sql);
+
+            GroovyResultSet groovyRS = new GroovyResultSet(results);
+            while (groovyRS.next()) {
+                closure.call(groovyRS);
+            }
+        }
+        catch (SQLException e) {
+            log.warn("Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }
+
+    /**
+     * Performs the given SQL query calling the closure with the result set
+     */
+    public void query(GString sql, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+        try {
+            statement = createPreparedStatement(connection, sql);
+            results = statement.executeQuery();
+            closure.call(results);
+        }
+        catch (SQLException e) {
+            log.warn("Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }
+
+    /**
+     * Performs the given SQL query calling the closure with the result set
+     */
+    public void queryEach(GString sql, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+        try {
+            statement = createPreparedStatement(connection, sql);
+            results = statement.executeQuery();
+
+            GroovyResultSet groovyRS = new GroovyResultSet(results);
+            while (groovyRS.next()) {
+                closure.call(groovyRS);
+            }
+        }
+        catch (SQLException e) {
+            log.warn("Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }
+
     
     /**
      * Executes the given piece of SQL
@@ -129,18 +187,7 @@ public class Sql {
             throw e;
         }
         finally {
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
-            try {
-                connection.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
+            closeResources(connection, statement);
         }
     }
 
@@ -149,30 +196,17 @@ public class Sql {
      */
     public int execute(GString gstring) throws Exception {
         Connection connection = createConnection();
-        String sql = asSql(gstring);
-        PreparedStatement statement = connection.prepareStatement(sql);
+        PreparedStatement statement = null;
         try {
-            log.debug(gstring);
-            setParameters(gstring, statement);
+            statement = createPreparedStatement(connection, gstring);
             return statement.executeUpdate();
         }
         catch (SQLException e) {
-            log.warn("Failed to execute: " + sql, e);
+            log.warn("Failed to execute: " + gstring, e);
             throw e;
         }
         finally {
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
-            try {
-                connection.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
+            closeResources(connection, statement);
         }
     }
 
@@ -193,23 +227,35 @@ public class Sql {
             throw e;
         }
         finally {
-            try {
-                statement.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
-            try {
-                connection.close();
-            }
-            catch (SQLException e) {
-                // ignore 
-            }
+            closeResources(connection, statement);
         }
     }
 
     public DataSource getDataSource() {
         return dataSource;
+    }
+
+    protected PreparedStatement createPreparedStatement(Connection connection, GString gstring) throws SQLException {
+        log.debug(gstring);
+        String sql = asSql(gstring);
+        PreparedStatement statement = connection.prepareStatement(sql);
+        setParameters(gstring, statement);
+        return statement;
+    }
+
+    protected String asSql(GString gstring) {
+        String[] strings = gstring.getStrings();
+        if (strings.length <= 0) {
+            throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
+        }
+        StringBuffer buffer = new StringBuffer(strings[0]);
+        for (int i = 1; i < strings.length; i++) {
+            buffer.append("?");
+            buffer.append(strings[i]);
+        }
+
+        String sql = buffer.toString();
+        return sql;
     }
 
     protected void setParameters(GString gstring, PreparedStatement statement) throws SQLException {
@@ -220,21 +266,6 @@ public class Sql {
         }
     }
 
-    protected String asSql(GString gstring) {
-        String[] strings = gstring.getStrings();
-        if (strings.length <= 0) {
-            throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
-        } 
-        StringBuffer buffer = new StringBuffer(strings[0]);
-        for (int i = 1; i < strings.length; i++ ) {
-            buffer.append("?");
-            buffer.append(strings[i]);
-        }
-
-        String sql = buffer.toString();
-        return sql;
-    }
-
     /**
      * Strategy method allowing derived classes to handle types differently 
      * such as for CLOBs etc.
@@ -243,9 +274,35 @@ public class Sql {
         statement.setObject(i, value);
     }
 
-
     protected Connection createConnection() throws SQLException {
         return dataSource.getConnection();
+    }
+
+    protected void closeResources(Connection connection, Statement statement, ResultSet results) {
+        if (results != null) {
+            try {
+                results.close();
+            }
+            catch (SQLException e) {
+                // ignore 
+            }
+        }
+        closeResources(connection, statement);
+    }
+
+    protected void closeResources(Connection connection, Statement statement) {
+        try {
+            statement.close();
+        }
+        catch (SQLException e) {
+            // ignore 
+        }
+        try {
+            connection.close();
+        }
+        catch (SQLException e) {
+            // ignore 
+        }
     }
 
 }
