@@ -7,8 +7,10 @@ Welcome to the Groovy User Guide. We hope you find it useful.
 * {link:Statements      	|statements.html}
 * {link:Strings      		|strings.html}
 * {link:Collections      	|collections.html}
-* {link:Classes      	    |classes.html}
+* {link:Logical branching   |branches.html}
+* {link:Looping      		|loops.html}
 * {link:Closures      	    |closures.html}
+* {link:Classes      	    |classes.html}
 * {link:Operator Overloading|operators.html}
 * {link:Groovy JDK          |groovy-jdk.html} for all the new methods added to the JDK to make it more groovy
 

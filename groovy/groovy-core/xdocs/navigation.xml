@@ -58,8 +58,10 @@
       <item name="Statements"       	href="/statements.html"/>
       <item name="Strings"       		href="/strings.html"/>
       <item name="Collections"       	href="/collections.html"/>
-      <item name="Classes"       	    href="/classes.html"/>
+      <item name="Logical Branching"    href="/branches.html"/>
+      <item name="Looping"       	    href="/loops.html"/>
       <item name="Closures"       	    href="/closures.html"/>
+      <item name="Classes"       	    href="/classes.html"/>
       <item name="Operator Overloading" href="/operators.html"/>
       <item name="Groovy JDK"           href="/groovy-jdk.html"/>
     </menu>
