@@ -176,8 +176,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     public void setProperty(String property, Object newValue) {
-        	if ("delegate".equals(property)) {
-        		setDelegate(newValue);
+	    	if ("delegate".equals(property)) {
+	    		setDelegate(newValue);
+	    	} else if ("metaClass".equals(property)) {
+        		setMetaClass((MetaClass)newValue);
         	} else {
             try {
                 // lets try setting the property on the owner
@@ -192,10 +194,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
                     } catch (GroovyRuntimeException e2) {
                         // ignore, we'll throw e1
                     }
-                    
-                    throw e1;
-                }
-            }
+                 }
+                
+                throw e1;
+           }
         }
     }
 
