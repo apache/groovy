@@ -1,5 +1,3 @@
-
-
 class SmallTreeTest extends GroovyTestCase {
     
     property b
@@ -11,7 +9,7 @@ class SmallTreeTest extends GroovyTestCase {
             elem1('hello1')
         })
         
-        //assert root != null
+        assert root != null
         
         root.print()
     }

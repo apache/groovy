@@ -50,8 +50,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
@@ -67,6 +72,7 @@ public class ClassNode extends ASTNode implements Constants {
     private int modifiers;
     private String superClass;
     private String[] interfaces;
+    private MixinNode[] mixins;
     private List constructors = new ArrayList();
     private List methods = new ArrayList();
     private List fields = new ArrayList();
@@ -79,7 +85,7 @@ public class ClassNode extends ASTNode implements Constants {
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
     public ClassNode(String name, int modifiers, String superClass) {
-        this(name, modifiers, superClass, EMPTY_STRING_ARRAY);
+        this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
     }
 
     /**
@@ -87,11 +93,12 @@ public class ClassNode extends ASTNode implements Constants {
      * @param modifiers the modifiers, @see org.objectweb.asm.Constants
      * @param superClass the base class name - use "java.lang.Object" if no direct base class
      */
-    public ClassNode(String name, int modifiers, String superClass, String[] interfaces) {
+    public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
         this.name = name;
         this.modifiers = modifiers;
         this.superClass = superClass;
         this.interfaces = interfaces;
+        this.mixins = mixins;
     }
 
     public String getSuperClass() {
@@ -104,6 +111,10 @@ public class ClassNode extends ASTNode implements Constants {
 
     public String[] getInterfaces() {
         return interfaces;
+    }
+
+    public MixinNode[] getMixins() {
+        return mixins;
     }
 
     public List getMethods() {
@@ -217,6 +228,23 @@ public class ClassNode extends ASTNode implements Constants {
             System.arraycopy(interfaces, 0, newInterfaces, 0, interfaces.length);
             newInterfaces[interfaces.length] = name;
             interfaces = newInterfaces;
+        }
+    }
+
+    public void addMixin(MixinNode mixin) {
+        // lets check if it already uses a mixin
+        boolean skip = false;
+        String name = mixin.getName();
+        for (int i = 0; i < mixins.length; i++) {
+            if (name.equals(mixins[i].getName())) {
+                skip = true;
+            }
+        }
+        if (!skip) {
+            MixinNode[] newMixins = new MixinNode[mixins.length + 1];
+            System.arraycopy(mixins, 0, newMixins, 0, mixins.length);
+            newMixins[mixins.length] = mixin;
+            mixins = newMixins;
         }
     }
 
