@@ -98,4 +98,14 @@ public interface TokenStream
         throws IOException, SyntaxException;
 
     String getSourceLocator();
+
+    /**
+     * Checkpoints a point in the stream that we can go back to
+     */
+    void checkpoint();
+
+    /**
+     * Restores to the previous checkpoint
+     */
+    void restore();
 }

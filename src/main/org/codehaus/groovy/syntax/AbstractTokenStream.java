@@ -8,7 +8,10 @@ public abstract class AbstractTokenStream
     private Token[] buf;
     private int first;
     private int avail;
+    private int checkpoint;
     private String sourceLocator;
+    private int checkpoint_first;
+    private int checkpoint_avail;
 
     public AbstractTokenStream()
     {
@@ -83,5 +86,15 @@ public abstract class AbstractTokenStream
         this.first %= this.buf.length;
 
         return token;
+    }
+
+    public void checkpoint() {
+        checkpoint_first = first;
+        checkpoint_avail = avail;
+    }
+
+    public void restore() {
+        first = checkpoint_first;
+        avail = checkpoint_avail;
     }
 }
