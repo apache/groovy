@@ -24,6 +24,10 @@
     <attainGoal name="javadoc"/>
   </preGoal>
 
+  <preGoal name="java:compile">
+    <attainGoal name="generate"/>
+  </preGoal>
+
   <postGoal name="dist:prepare-src-filesystem">
     <!-- lets zap the build.xml -->
     <delete file="${maven.dist.src.assembly.dir}/build.xml"/>

@@ -1,4 +1,4 @@
-// $ANTLR 2.7.5 (20050128): groovy.g -> GroovyTokenTypes.txt$
+// $ANTLR 2.7.2: groovy.g -> GroovyTokenTypes.txt$
 Groovy    // output token vocab name
 BLOCK=4
 MODIFIERS=5
