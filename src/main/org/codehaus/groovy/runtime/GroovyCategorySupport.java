@@ -86,30 +86,22 @@ public class GroovyCategorySupport {
      */
     private static void use(Class categoryClass) {
         Map properties = getProperties();
-        Map methodMaps = getMetaClassMap(properties);
-        Object classDefined = methodMaps.get(categoryClass);
-        if (classDefined == null) {
-            classDefined = new Object();
-            methodMaps.put(categoryClass, classDefined);
-            
-            Method[] methods = categoryClass.getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                Method method = methods[i];
-                if (Modifier.isStatic(method.getModifiers())) {
-                    Class[] paramTypes = method.getParameterTypes();
-                    if (paramTypes.length > 0) {
-                        Class metaClass = paramTypes[0];
-                        Map metaMethodsMap = getMetaMethods(properties, metaClass);
-                        List methodList = getMethodList(metaMethodsMap, method.getName());
-                        MetaMethod mmethod = new NewInstanceMetaMethod(new MetaMethod(method));
-                        methodList.add(mmethod);
-                    }                    
+        Method[] methods = categoryClass.getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (Modifier.isStatic(method.getModifiers())) {
+                Class[] paramTypes = method.getParameterTypes();
+                if (paramTypes.length > 0) {
+                    Class metaClass = paramTypes[0];
+                    Map metaMethodsMap = getMetaMethods(properties, metaClass);
+                    List methodList = getMethodList(metaMethodsMap, method.getName());
+                    MetaMethod mmethod = new NewInstanceMetaMethod(new MetaMethod(method)) {
+                        public boolean isCacheable() { return false; }
+                    };
+                    methodList.add(mmethod);
                 }
             }
-            
-        } else {
-            return;
-        }        
+        }
     }
     
 	/**
@@ -152,14 +144,19 @@ public class GroovyCategorySupport {
     };
     
     private static void newScope() {
+        System.out.println("before: " + getProperties());
         List stack = (List) local.get();
-    		Map properties = new WeakHashMap(getProperties());
-    		stack.add(properties);
+    	Map properties = new WeakHashMap(getProperties());
+    	stack.add(properties);
+        System.out.println("newScope");
     }
     
     private static void endScope() {
+        System.out.println("during: " + getProperties());
         List stack = (List) local.get();
-    		stack.remove(stack.size() - 1);   		
+    	stack.remove(stack.size() - 1);
+        System.out.println("after: " + getProperties());
+        System.out.println("endScope");
     }
     
     private static Map getProperties() {
@@ -194,32 +191,6 @@ public class GroovyCategorySupport {
             properties.put(metaClass, metaMethodsMap);
         }
         return metaMethodsMap;
-    }
-
-    /**
-     * @param properties
-     * @param metaClass
-     */
-    private static void getMetaClassMethods(Map properties, Class metaClass) {
-        Map metaMethodsMap = (Map) properties.get(metaClass);
-        if (metaMethodsMap == null) {
-            metaMethodsMap = new HashMap();
-            properties.put(metaClass, metaMethodsMap);
-        }
-    }
-
-    /**
-     * @param properties
-     * @return
-     */
-    private static Map getMetaClassMap(Map properties) {
-        Map methodMaps = (Map) properties.get(MetaClass.class);
-        if (methodMaps == null) {
-            // If the class is no longer in use, drop the category definition
-            methodMaps = new HashMap();
-            properties.put(MetaClass.class, methodMaps);
-        }
-        return methodMaps;
     }
 
 }

@@ -305,7 +305,7 @@ public class MetaClass {
         MetaMethod method = (MetaMethod) methodCache.get(methodKey);
         if (method == null) {
             method = pickMethod(object, methodName, arguments);
-            if (method != null) {
+            if (method != null && method.isCacheable()) {
                 methodCache.put(methodKey.createCopy(), method);
             }
         }

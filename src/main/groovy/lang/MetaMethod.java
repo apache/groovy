@@ -233,4 +233,8 @@ public class MetaMethod implements Cloneable {
         this.interfaceClass = interfaceClass;
     }
 
+    public boolean isCacheable() {
+        return true;
+    }
+
 }
