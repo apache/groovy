@@ -61,6 +61,13 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public abstract class Script extends GroovyObjectSupport {
     private Binding binding = new Binding();
 
+    protected Script() {
+    }
+
+    protected Script(Binding binding) {
+        this.binding = binding;
+    }
+
     public Binding getBinding() {
         return binding;
     }
