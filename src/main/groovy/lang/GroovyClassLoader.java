@@ -539,32 +539,34 @@ public class GroovyClassLoader extends SecureClassLoader {
 			}
 		}
         Class cls = super.loadClass(name, resolve);
-        
-        Class[] inters = cls.getInterfaces();
-        boolean isGroovyObject  = false;
-        for (int i = 0; i < inters.length; i++) {
-        	if (inters[i].getName().equals (GroovyObject.class.getName())) {
-        		isGroovyObject = true;
-        		break;
-        	}
-        }
-        
-        if (isGroovyObject) {
-            try {
-                File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return getSourceFile(name);
+
+        if (getTimeStamp(cls) < Long.MAX_VALUE) {
+            Class[] inters = cls.getInterfaces();
+            boolean isGroovyObject  = false;
+            for (int i = 0; i < inters.length; i++) {
+                if (inters[i].getName().equals (GroovyObject.class.getName())) {
+                    isGroovyObject = true;
+                    break;
+                }
+            }
+
+            if (isGroovyObject) {
+                try {
+                    File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                        public Object run() {
+                            return getSourceFile(name);
+                        }
+                    });
+                    if (source != null && cls != null && isSourceNewer(source, cls)) {
+                        cls = parseClass(source);
                     }
-                });
-                if (source != null && cls != null && isSourceNewer(source, cls)) {
-                    cls = parseClass(source);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    synchronized(cache) {
+                        cache.put(name, NOT_RESOLVED.class);
+                    }
+                    throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                synchronized(cache) {
-                    cache.put(name, NOT_RESOLVED.class);
-                }
-                throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
             }
         }
         return cls;
@@ -577,7 +579,8 @@ public class GroovyClassLoader extends SecureClassLoader {
 			field = cls.getField(Verifier.__TIMESTAMP);
 			o = (Long) field.get(null);
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			//throw new RuntimeException(e);
+            return Long.MAX_VALUE;
 		}
 		return o.longValue();
 	}
