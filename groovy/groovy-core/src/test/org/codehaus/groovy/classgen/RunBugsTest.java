@@ -114,13 +114,19 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/OverloadInvokeMethodBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    */
-    
-    
-    
     public void testClosureVariableBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/ClosureVariableBug.groovy");
         object.invokeMethod("testBug", null);
     }
+    
+    public void testClosureParameterPassingBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ClosureParameterPassingBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    */
         
-   }
+    public void testNestedClosure2Bug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/NestedClosure2Bug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+}

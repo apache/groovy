@@ -65,6 +65,7 @@ public class Reference extends GroovyObjectSupport {
     }
 
     public Object getProperty(String property) {
+        Object value = get();
         if (value != null) {
             return InvokerHelper.getProperty(value, property);
         }
@@ -72,6 +73,7 @@ public class Reference extends GroovyObjectSupport {
     }
 
     public void setProperty(String property, Object newValue) {
+        Object value = get();
         if (value != null) {
             InvokerHelper.setProperty(value, property, newValue);
         }
@@ -81,6 +83,7 @@ public class Reference extends GroovyObjectSupport {
     }
 
     public Object invokeMethod(String name, Object args) {
+        Object value = get();
         if (value != null) {
             try {
                 return InvokerHelper.invokeMethod(value, name, args);
