@@ -1,5 +1,0 @@
-target
-maven.log
-bin
-*.properties
-velocity.log
