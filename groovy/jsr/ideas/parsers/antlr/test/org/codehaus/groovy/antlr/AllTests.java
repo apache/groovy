@@ -40,6 +40,7 @@ public class AllTests extends TestSuiteSupport {
 
         "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
         "ConstructorBug.groovy",                // TODO: foo.class bug in parser
+        "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
 
         "ClassGeneratorFixesTest.groovy",       // TODO: closure params
         "ClosureParameterPassingBug.groovy",    // TODO: closure params
@@ -49,13 +50,17 @@ public class AllTests extends TestSuiteSupport {
         "bugs/ForAndSqlBug.groovy",             // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
+
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
+        "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
+
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "Groovy308_Bug.groovy",                 // TODO: parser bug
 
         // Not sure of bug yet
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "DoubleSizeParametersBug.groovy",       // TODO: parser bug
+        "InconsistentStackHeightBug.groovy",    // TODO: parser bug
 
 
 

@@ -867,7 +867,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return new ConstantExpression(Integer.valueOf(node.getText()));
 
             case NUM_LONG:
-                return new ConstantExpression(Long.valueOf(node.getText()));
+                return new ConstantExpression(parseLong(node));
 
             case LITERAL_this:
                 return VariableExpression.THIS_EXPRESSION;
@@ -1242,6 +1242,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST codeNode = paramNode.getNextSibling();
         Statement code = statementListNoChild(codeNode);
         return new ClosureExpression(parameters, code);
+    }
+
+    protected Long parseLong(AST node) {
+        String text = node.getText();
+        if (text.endsWith("L")) {
+            text = text.substring(0, text.length() - 1);
+        }
+        return Long.valueOf(text);
     }
 
     protected Expression gstring(AST gstringNode) {
