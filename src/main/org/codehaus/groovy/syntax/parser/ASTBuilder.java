@@ -741,6 +741,12 @@ public class ASTBuilder
     {
         switch ( expressionRoot.getToken().getType() )
         {
+        	case ( Token.MINUS ):
+        	{
+        		if ( expressionRoot.getChildren().length == 1) {
+        			return negationExpression(expressionRoot);
+        		}
+        	}
             case ( Token.COMPARE_EQUAL ):
             case ( Token.COMPARE_NOT_EQUAL ):
             case ( Token.COMPARE_IDENTICAL ):
@@ -750,7 +756,6 @@ public class ASTBuilder
             case ( Token.COMPARE_GREATER_THAN_EQUAL ):
             case ( Token.PLUS ):
             case ( Token.PLUS_EQUAL ):
-            case ( Token.MINUS ):
             case ( Token.MINUS_EQUAL ):
             case ( Token.MULTIPLY ):
             case ( Token.MULTIPLY_EQUAL ):
@@ -871,6 +876,12 @@ public class ASTBuilder
 		return notExpression;
 	}
 
+    protected Expression negationExpression(CSTNode expressionRoot) throws ParserException {
+    	Expression negationExpression = new NegationExpression( expression( expressionRoot.getChild( 0 )));
+    	
+    	return negationExpression;
+    }
+    
 	protected GStringExpression compositeStringExpression(CSTNode expressionRoot)
         throws ParserException
     {

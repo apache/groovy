@@ -73,6 +73,7 @@ import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.NegationExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
 import org.codehaus.groovy.ast.expr.PrefixExpression;
@@ -153,7 +154,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
     MethodCaller notObject = MethodCaller.newStatic(InvokerHelper.class, "notObject");
     MethodCaller regexPattern = MethodCaller.newStatic(InvokerHelper.class, "regexPattern");
-
+    MethodCaller negation = MethodCaller.newStatic(InvokerHelper.class, "negate");
+    
     MethodCaller compareIdenticalMethod = MethodCaller.newStatic(InvokerHelper.class, "compareIdentical");
     MethodCaller compareEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareEqual");
     MethodCaller compareNotEqualMethod = MethodCaller.newStatic(InvokerHelper.class, "compareNotEqual");
@@ -174,7 +176,6 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
     MethodCaller iteratorHasNextMethod = MethodCaller.newInterface(Iterator.class, "hasNext");
-
     // current stack index
     private int idx;
 
@@ -1090,6 +1091,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
     }
 
+    public void visitNegationExpression(NegationExpression expression) {
+    	Expression subExpression = expression.getExpression();
+    	subExpression.visit(this);
+   		negation.call(cv);
+    }
+    
     public void visitNotExpression(NotExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
