@@ -45,6 +45,8 @@
  */
 package groovy.lang;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -227,6 +229,13 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     public Class[] getParameterTypes() {
         return getDoCallMethod().getParameterTypes();
     }
+    
+    /**
+     * @return a version of this closure which implements Writable
+     */
+    public Closure asWritable() {
+    	return new WritableClosure(this.delegate);
+    }
 
     /**
      * Allows the closure to be cloned
@@ -235,4 +244,103 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         return super.clone();
     }
 
+    private class WritableClosure extends Closure implements Writable {
+		/**
+		 * @param delegate
+		 */
+		public WritableClosure(Object delegate) {
+			super(delegate);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#asWritable()
+		 */
+		public Closure asWritable() {
+			return this;
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#call()
+		 */
+		public Object call() {
+			return Closure.this.call();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#call(java.lang.Object)
+		 */
+		public Object call(Object arguments) {
+			return Closure.this.call(arguments);
+		}
+		
+		/* (non-Javadoc)
+		 * @see java.lang.Object#clone()
+		 */
+		public Object clone() throws CloneNotSupportedException {
+			return Closure.this.clone();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#getDelegate()
+		 */
+		public Object getDelegate() {
+			return Closure.this.getDelegate();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#getDoCallMethod()
+		 */
+		protected MetaMethod getDoCallMethod() {
+			return Closure.this.getDoCallMethod();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#getParameterTypes()
+		 */
+		public Class[] getParameterTypes() {
+			return Closure.this.getParameterTypes();
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#getProperty(java.lang.String)
+		 */
+		public Object getProperty(String property) {
+			return Closure.this.getProperty(property);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#invokeMethod(java.lang.String, java.lang.Object)
+		 */
+		public Object invokeMethod(String name, Object args) {
+			return Closure.this.invokeMethod(name, args);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#setDelegate(java.lang.Object)
+		 */
+		public void setDelegate(Object delegate) {
+			Closure.this.setDelegate(delegate);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#setProperty(java.lang.String, java.lang.Object)
+		 */
+		public void setProperty(String property, Object newValue) {
+			Closure.this.setProperty(property, newValue);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Closure#throwRuntimeException(java.lang.Throwable)
+		 */
+		protected Object throwRuntimeException(Throwable throwable) {
+			return Closure.this.throwRuntimeException(throwable);
+		}
+
+		/* (non-Javadoc)
+		 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+		 */
+		public void writeTo(Writer out) throws IOException {
+			call(new Object[]{out});		
+		}
+    }
 }

@@ -47,6 +47,9 @@ import groovy.util.OrderBy;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -68,6 +71,8 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.IOException;
@@ -3284,7 +3289,24 @@ public class DefaultGroovyMethods {
         fileInputStream.close();
         return bytes;
     }
-
+    
+    /**
+     * @param file a File
+     * @return a File which wraps the input file and which implements Writable
+     */
+    public static File asWritable(File file) {
+    	return new WritableFile(file);
+    }
+    
+    /**
+     * @param file a File
+     * @param encoding the encoding to be used when reading the file's contents
+     * @returna File which wraps the input file and which implements Writable
+     */
+    public static File asWritable(File file, String encoding) {
+    	return new WritableFile(file, encoding);
+    }
+    
     /**
      * Converts the given String into a List of strings of one character
      *
@@ -3394,5 +3416,302 @@ public class DefaultGroovyMethods {
                 }
             }
         }
+    }
+    
+    private static class WritableFile extends File implements Writable {
+    	private final File delegate;
+    	private final String encoding;
+
+    	public WritableFile(File delegate) {
+    		this(delegate, null);
+    	}
+
+    	public WritableFile(File delegate, String encoding) {
+    		super("");
+    		this.delegate = delegate;
+    		this.encoding = encoding;
+    	}
+    	
+		/* (non-Javadoc)
+		 * @see groovy.lang.Writable#writeTo(java.io.Writer)
+		 */
+		public void writeTo(Writer out) throws IOException {
+		final Reader reader = (this.encoding == null) ?
+								DefaultGroovyMethods.newReader(this.delegate)
+							  :
+								DefaultGroovyMethods.newReader(this.delegate, this.encoding);
+		
+			try {
+			int c = reader.read();
+			
+				while (c != -1) {
+					out.write(c);
+					c = reader.read();
+				}
+			}
+			finally {
+				reader.close();
+			}
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#canRead()
+		 */
+		public boolean canRead() {
+			return delegate.canRead();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#canWrite()
+		 */
+		public boolean canWrite() {
+			return delegate.canWrite();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#compareTo(java.io.File)
+		 */
+		public int compareTo(File arg0) {
+			return delegate.compareTo(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#compareTo(java.lang.Object)
+		 */
+		public int compareTo(Object arg0) {
+			return delegate.compareTo(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#createNewFile()
+		 */
+		public boolean createNewFile() throws IOException {
+			return delegate.createNewFile();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#delete()
+		 */
+		public boolean delete() {
+			return delegate.delete();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#deleteOnExit()
+		 */
+		public void deleteOnExit() {
+			delegate.deleteOnExit();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#equals(java.lang.Object)
+		 */
+		public boolean equals(Object arg0) {
+			return delegate.equals(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#exists()
+		 */
+		public boolean exists() {
+			return delegate.exists();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getAbsoluteFile()
+		 */
+		public File getAbsoluteFile() {
+			return delegate.getAbsoluteFile();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getAbsolutePath()
+		 */
+		public String getAbsolutePath() {
+			return delegate.getAbsolutePath();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getCanonicalFile()
+		 */
+		public File getCanonicalFile() throws IOException {
+			return delegate.getCanonicalFile();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getCanonicalPath()
+		 */
+		public String getCanonicalPath() throws IOException {
+			return delegate.getCanonicalPath();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getName()
+		 */
+		public String getName() {
+			return delegate.getName();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getParent()
+		 */
+		public String getParent() {
+			return delegate.getParent();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getParentFile()
+		 */
+		public File getParentFile() {
+			return delegate.getParentFile();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#getPath()
+		 */
+		public String getPath() {
+			return delegate.getPath();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#hashCode()
+		 */
+		public int hashCode() {
+			return delegate.hashCode();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#isAbsolute()
+		 */
+		public boolean isAbsolute() {
+			return delegate.isAbsolute();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#isDirectory()
+		 */
+		public boolean isDirectory() {
+			return delegate.isDirectory();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#isFile()
+		 */
+		public boolean isFile() {
+			return delegate.isFile();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#isHidden()
+		 */
+		public boolean isHidden() {
+			return delegate.isHidden();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#lastModified()
+		 */
+		public long lastModified() {
+			return delegate.lastModified();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#length()
+		 */
+		public long length() {
+			return delegate.length();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#list()
+		 */
+		public String[] list() {
+			return delegate.list();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#list(java.io.FilenameFilter)
+		 */
+		public String[] list(FilenameFilter arg0) {
+			return delegate.list(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#listFiles()
+		 */
+		public File[] listFiles() {
+			return delegate.listFiles();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#listFiles(java.io.FileFilter)
+		 */
+		public File[] listFiles(FileFilter arg0) {
+			return delegate.listFiles(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#listFiles(java.io.FilenameFilter)
+		 */
+		public File[] listFiles(FilenameFilter arg0) {
+			return delegate.listFiles(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#mkdir()
+		 */
+		public boolean mkdir() {
+			return delegate.mkdir();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#mkdirs()
+		 */
+		public boolean mkdirs() {
+			return delegate.mkdirs();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#renameTo(java.io.File)
+		 */
+		public boolean renameTo(File arg0) {
+			return delegate.renameTo(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#setLastModified(long)
+		 */
+		public boolean setLastModified(long arg0) {
+			return delegate.setLastModified(arg0);
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#setReadOnly()
+		 */
+		public boolean setReadOnly() {
+			return delegate.setReadOnly();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#toString()
+		 */
+		public String toString() {
+			return delegate.toString();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#toURI()
+		 */
+		public URI toURI() {
+			return delegate.toURI();
+		}
+
+		/* (non-Javadoc)
+		 * @see java.io.File#toURL()
+		 */
+		public URL toURL() throws MalformedURLException {
+			return delegate.toURL();
+		}
+
     }
 }
