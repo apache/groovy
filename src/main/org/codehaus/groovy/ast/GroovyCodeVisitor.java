@@ -88,6 +88,6 @@ public interface GroovyCodeVisitor {
     public void visitPropertyExpression(PropertyExpression expression);
     public void visitFieldExpression(FieldExpression expression);
     public void visitRegexExpression(RegexExpression expression);
-    public void visitCompositeStringExpression(CompositeStringExpression expression);
+    public void visitGStringExpression(GStringExpression expression);
     public void visitArrayExpression(ArrayExpression expression);
 }

@@ -89,6 +89,7 @@ public class DefaultGroovyMethods {
     public static void print(Object self) {
         /** @todo should re-enable this */
         //InvokerHelper.invokeMethod(self, "print", new PrintWriter(System.out));
+        System.out.println("### About to invoke InvokerHelper.toString()");
         System.out.print(InvokerHelper.toString(self));
     }
 
@@ -121,6 +122,26 @@ public class DefaultGroovyMethods {
         }
         out.print(InvokerHelper.toString(self));
     }
+
+    /**
+     * Print to a console in interactive format
+     */
+    /*
+    public static void print(Collection self, PrintWriter out) {
+        out.print("[");
+        boolean first = true;
+        for (Iterator iter = self.iterator(); iter.hasNext(); ) {
+            if (first) {
+                first = false;
+            }
+            else {
+                out.print(", ");
+            }
+            InvokerHelper.invokeMethod(iter.next(), "print", out);
+        }
+        out.print("]");
+    }
+    */
 
     /**
      * Print to a console in interactive format

@@ -45,6 +45,8 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GString;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -68,7 +70,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.CompositeStringExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -1125,7 +1127,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         createListMethod.call(cv);
     }
 
-    public void visitCompositeStringExpression(CompositeStringExpression expression) {
+    public void visitGStringExpression(GStringExpression expression) {
         int size = expression.getValues().size();
         pushConstant(size);
 
@@ -1141,7 +1143,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, paramIdx);
 
-        ClassNode innerClass = createCompositeStringClass(expression);
+        ClassNode innerClass = createGStringClass(expression);
         innerClasses.add(innerClass);
         String innerClassinternalName = getClassInternalName(innerClass.getName());
 
@@ -1190,14 +1192,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         return answer;
     }
 
-    protected ClassNode createCompositeStringClass(CompositeStringExpression expression) {
+    protected ClassNode createGStringClass(GStringExpression expression) {
         ClassNode owner = classNode;
         if (owner instanceof InnerClassNode) {
             owner = owner.getOuterClass();
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.CompositeString");
+        InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, GString.class.getName());
 
         FieldNode stringsField =
             answer.addField(

@@ -54,19 +54,21 @@ package groovy.lang;
  * special processing, such as for performing SQL operations, the
  * values can be substituted for ? and the actual value objects
  * can be bound to a JDBC statement.
+ * The lovely name of this class was suggested by Jules Gosnell
+ * and was such a good idea, I couldn't resist :)
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class CompositeString implements GroovyObject {
+public abstract class GString implements GroovyObject {
 
     private Object[] values;
 
-    public CompositeString(Object values) {
+    public GString(Object values) {
         this.values = (Object[]) values;
     }
     
-    public CompositeString(Object[] values) {
+    public GString(Object[] values) {
         this.values = values;
     }
     

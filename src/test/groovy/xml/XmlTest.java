@@ -58,7 +58,7 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class XmlTest extends TestSupport {
 
     public void testTree() throws Exception {
-        GroovyObject object = compile("src/test/groovy/xml/MarkupTest.groovy");
+        GroovyObject object = compile("src/test/groovy/xml/SmallNamespaceDOMTest.groovy");
         object.invokeMethod("testTree", null);
     }
 }

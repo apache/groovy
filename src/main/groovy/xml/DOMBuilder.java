@@ -142,15 +142,25 @@ public class DOMBuilder extends BuilderSupport {
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             Object key = entry.getKey();
-            if (!(key instanceof QName)) {
-                throw new IllegalArgumentException("The key: " + key + " should be an instanceof of " + QName.class);
-            }
             Object value = entry.getValue();
             if (value == null) {
                 throw new IllegalArgumentException("The value of key: " + key + " cannot be null");
             }
-            QName qname = (QName) key;
-            element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
+            if (key instanceof String) {
+                String prefix = (String) key;
+                
+                //System.out.println("Creating namespace for prefix: " + prefix + " with value: " + value);
+                
+                //element.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xmlns:" + prefix, value.toString());
+                element.setAttributeNS("", prefix, value.toString());
+            }
+            else if (key instanceof QName) {
+                QName qname = (QName) key;
+                element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
+            }
+            else {
+                throw new IllegalArgumentException("The key: " + key + " should be an instanceof of " + QName.class);
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.CompositeStringExpression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -387,7 +387,7 @@ public class Interpreter implements GroovyCodeVisitor {
 
     }
 
-    public void visitCompositeStringExpression(CompositeStringExpression expression) {
+    public void visitGStringExpression(GStringExpression expression) {
         // TODO Auto-generated method stub
 
     }
