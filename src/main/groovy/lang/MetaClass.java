@@ -411,6 +411,7 @@ public class MetaClass {
                             arguments = list.toArray();
                             argClasses = convertToTypeArray(arguments);
                             method = (MetaMethod) chooseMethod(methodName, methods, argClasses, true);
+                            if (method==null) return null;
                             return new TransformMetaMethod(method) {
                                 public Object invoke(Object object, Object[] arguments) throws Exception {
                                     Object firstArgument = arguments[0];
