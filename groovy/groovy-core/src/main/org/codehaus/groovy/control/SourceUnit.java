@@ -70,9 +70,12 @@ import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.parser.UnexpectedTokenException;
 import org.codehaus.groovy.tools.Utilities;
 
+import com.thoughtworks.xstream.XStream;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.io.FileWriter;
 import java.net.URL;
 import java.util.List;
 
@@ -310,7 +313,22 @@ public class SourceUnit extends ProcessingUnit {
             addError(new SyntaxErrorMessage(e));
         }
 
+        if ("xml".equals(System.getProperty("groovy.ast"))) {
+            saveAsXML(name,ast);
+        }
+
         completePhase();
+    }
+
+    private void saveAsXML(String name, ModuleNode ast) {
+        XStream xstream = new XStream();
+        try {
+            xstream.toXML(ast,new FileWriter(name + ".xml"));
+            System.out.println("Written AST to " + name + ".xml");
+        } catch (Exception e) {
+            System.out.println("Couldn't write to " + name + ".xml");
+            e.printStackTrace();
+        }
     }
 
 

@@ -65,7 +65,7 @@ public class ClassNode extends AnnotatedNode implements Constants {
 
     private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
 
-    private Logger log = Logger.getLogger(getClass().getName());
+    private transient Logger log = Logger.getLogger(getClass().getName());
 
     private String name;
     private int modifiers;
