@@ -233,10 +233,10 @@ public class GroovyMain {
                 processOnce();
             }
             return true;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (e instanceof InvokerInvocationException) {
                 InvokerInvocationException iie = (InvokerInvocationException) e;
-                e = (Exception) iie.getCause();
+                e = iie.getCause();
             }
             System.err.println("Caught: " + e);
             if (debug) {
