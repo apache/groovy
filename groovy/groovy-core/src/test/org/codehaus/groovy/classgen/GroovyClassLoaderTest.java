@@ -46,10 +46,12 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyObject;
+
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
 
 /**
  * Tests dynamically compiling a new class
@@ -62,25 +64,17 @@ public class GroovyClassLoaderTest extends TestSupport {
     protected GroovyClassLoader loader = new GroovyClassLoader();
 
     public void testCompile() throws Exception {
-        InputStream in = getClass().getResourceAsStream("Main.groovy");
-        assertTrue(in != null);
+        InputStream in = new FileInputStream("src/test/org/codehaus/groovy/classgen/Main.groovy");
+        Class groovyClass = loader.parseClass(in);
 
-        Class groovyClass = null;
-        try {
-            groovyClass = loader.parseClass(new InputStreamCharStream(in));
-        }
-        finally {
-            try {
-                in.close();
-            }
-            catch (Exception e) {
-                // ignore
-            }
-        }
-        
-        Object object = groovyClass.newInstance();
-        
         System.out.println("Invoking main...");
+        
+
+        Object object = groovyClass.newInstance();
         InvokerHelper.invokeMethod(object, "main", null);
+
+        /** @todo once GroovyObject is implemented by the compiler */        
+//        GroovyObject object = (GroovyObject) groovyClass.newInstance();
+//        object.invokeMethod("main", null);
     }
 }
