@@ -10,6 +10,7 @@ public class UberTestCase extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(AmbiguousInvocationTest.class);
+        suite.addTestSuite(ArrayAutoboxingTest.class);        
         suite.addTestSuite(ArrayParamMethodTest.class);
         suite.addTestSuite(ArrayTest.class);
         suite.addTestSuite(AssertNumberTest.class);
