@@ -52,7 +52,7 @@ public class SecurityTestSupport extends GroovyTestCase {
 			if (new File(groovyLibDir).exists()) {
 				securityAvailable = true;
 				System.setProperty("groovy.lib", groovyLibDir);
-				System.setProperty("java.security.policy", "=src/security/groovy.policy");
+				System.setProperty("java.security.policy", "=security/groovy.policy");
 			} else {
 				securityAvailable = false;
 			}

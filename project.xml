@@ -465,7 +465,7 @@
       </includes>
     	
       <excludes>
-        <exclude>**/SecurityTest.*</exclude>
+        <exclude>**/SignedJarTest.*</exclude>
       </excludes>
     	
     </unitTest>

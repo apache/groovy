@@ -110,7 +110,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public GroovyShell(ClassLoader parent, Binding binding) {
-        this(parent, binding, new CompilerConfiguration());
+        this(parent, binding, null);
     }
 
     public GroovyShell(final ClassLoader parent, Binding binding, final CompilerConfiguration config) {
@@ -124,7 +124,7 @@ public class GroovyShell extends GroovyObjectSupport {
             	            	pcl = GroovyShell.class.getClassLoader();
             	            }
             	        }
-            			return new GroovyClassLoader(pcl, config);
+            			return new GroovyClassLoader(pcl, (config == null) ? new CompilerConfiguration() : config);
             		}
             	});
         this.context = binding;
