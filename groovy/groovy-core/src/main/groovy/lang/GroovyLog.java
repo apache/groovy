@@ -45,6 +45,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * Represents an arbitrary logging service. By default this outputs to
  * System.out though derivations of this class could log to Jakarta Commons Logging
@@ -55,6 +57,8 @@ package groovy.lang;
  */
 public class GroovyLog implements GroovyObject {
 
+    MetaClass metaClass = InvokerHelper.getMetaClass(this);
+    
     String prefix;
 
     /** 
@@ -80,4 +84,9 @@ public class GroovyLog implements GroovyObject {
         System.out.println(prefix + name + "] " + args);
         return null;
     }
+    
+    public MetaClass getMetaClass() {
+        return metaClass;
+    }
+
 }

@@ -60,6 +60,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class NodeBuilder implements GroovyObject {
 
     private Node current;
+    MetaClass metaClass = InvokerHelper.getMetaClass(this);
     
     public static NodeBuilder newInstance() {
         return new NodeBuilder();
@@ -115,10 +116,17 @@ public class NodeBuilder implements GroovyObject {
             // push new node on stack
             Node oldCurrent = current;
             current = node;
+            
+            // lets register the builder as the delegate
+            closure.setDelegate(this);
             closure.call();
             
             current = oldCurrent;
         }    
         return node;
+    }
+
+    public MetaClass getMetaClass() {
+        return metaClass;
     }
 }

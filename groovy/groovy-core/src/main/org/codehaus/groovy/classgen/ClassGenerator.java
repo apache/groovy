@@ -241,11 +241,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         resetVariableStack(node.getParameters());
 
-        // invokes the super class constructor
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
-
         Statement code = node.getCode();
+        if (code == null || !firstStatementIsSuperMethodCall(code)) {
+            // invokes the super class constructor
+            cv.visitVarInsn(ALOAD, 0);
+            cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
+        }
         if (code != null) {
             code.visit(this);
         }
@@ -581,7 +582,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         Expression expression = statement.getExpression();
         expression.visit(this);
 
-        if (expression instanceof MethodCallExpression) {
+        if (expression instanceof MethodCallExpression && !MethodCallExpression.isSuperMethodCall((MethodCallExpression) expression)) {
             cv.visitInsn(POP);
         }
     }
@@ -667,13 +668,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cv.visitVarInsn(ALOAD, 0);
 
         }
+        
+        if (innerClass.getSuperClass().equals("groovy/lang/Closure")) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
 
         // we may need to pass in some other constructors
         cv.visitMethodInsn(
             INVOKESPECIAL,
             innerClassinternalName,
             "<init>",
-            "(L" + getClassInternalName(owner.getName()) + ";)V");
+            "(L" + getClassInternalName(owner.getName()) + ";Ljava/lang/Object;)V");
     }
 
     public void visitRegexExpression(RegexExpression expression) {
@@ -739,28 +744,37 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             }
         }
 
-        if (argumentsUseStack(arguments)) {
-            int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
-
-            arguments.visit(this);
-
-            cv.visitVarInsn(ASTORE, paramIdx);
-
-            call.getObjectExpression().visit(this);
-
-            cv.visitLdcInsn(call.getMethod());
-
-            cv.visitVarInsn(ALOAD, paramIdx);
-
-            idx--;
+        if (MethodCallExpression.isSuperMethodCall(call)) {
+            /** @todo handle method types! */
+            cv.visitVarInsn(ALOAD, 0);
+            cv.visitVarInsn(ALOAD, 1);
+            cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "(Ljava/lang/Object;)V");
         }
         else {
-            call.getObjectExpression().visit(this);
-            cv.visitLdcInsn(call.getMethod());
-            arguments.visit(this);
-        }
 
-        invokeMethodMethod.call(cv);
+            if (argumentsUseStack(arguments)) {
+                int paramIdx = defineVariable(createArgumentsName(), "java.lang.Object", false).getIndex();
+
+                arguments.visit(this);
+
+                cv.visitVarInsn(ASTORE, paramIdx);
+
+                call.getObjectExpression().visit(this);
+
+                cv.visitLdcInsn(call.getMethod());
+
+                cv.visitVarInsn(ALOAD, paramIdx);
+
+                idx--;
+            }
+            else {
+                call.getObjectExpression().visit(this);
+                cv.visitLdcInsn(call.getMethod());
+                arguments.visit(this);
+            }
+
+            invokeMethodMethod.call(cv);
+        }
     }
 
     public void visitStaticMethodCallExpression(StaticMethodCallExpression call) {
@@ -922,6 +936,23 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
     }
 
+    protected boolean firstStatementIsSuperMethodCall(Statement code) {
+        if (code instanceof StatementBlock) {
+            StatementBlock block = (StatementBlock) code;
+            if (!block.getStatements().isEmpty()) {
+                Object expr = block.getStatements().get(0);
+                if (expr instanceof ExpressionStatement) {
+                    ExpressionStatement expStmt = (ExpressionStatement) expr;
+                    expr = expStmt.getExpression();
+                    if (expr instanceof MethodCallExpression) {
+                        return MethodCallExpression.isSuperMethodCall((MethodCallExpression) expr);
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     protected void createSyntheticStaticFields() {
         for (Iterator iter = syntheticStaticFields.iterator(); iter.hasNext();) {
             String staticFieldName = (String) iter.next();
@@ -1061,11 +1092,17 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         StatementBlock block = new StatementBlock();
         block.addStatement(
             new ExpressionStatement(
+                new MethodCallExpression(
+                    new VariableExpression("super"),
+                    "<init>",
+                    new VariableExpression("outerInstance"))));
+        block.addStatement(
+            new ExpressionStatement(
                 new BinaryExpression(
                     new FieldExpression(field),
                     Token.equal(-1, -1),
                     new VariableExpression("outerInstance"))));
-        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "outerInstance", null)};
+        Parameter[] contructorParams = new Parameter[] { new Parameter(outerClassName, "outerInstance"), new Parameter("java/lang/Object", "delegate")};
         answer.addConstructor(ACC_PUBLIC, contructorParams, block);
         return answer;
     }

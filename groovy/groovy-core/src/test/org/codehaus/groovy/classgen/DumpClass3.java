@@ -43,28 +43,24 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.lang;
+
+package org.codehaus.groovy.classgen;
 
 
 
 /**
- * The interface implemented by all Groovy objects which is handy for
- * using Groovy objects when in the Java world
+ * This is a scratch class used to experiment with ASM to see what kind of 
+ * stuff is output for normal Java code
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface GroovyObject {
+public class DumpClass3 extends DumpClass2 {
 
-
-    /** 
-     * Invokes the given method
-     * 
-     */
-    public Object invokeMethod(String name, Object args);
+    String blah;
     
-    /**
-     * @return the metaClass of this instance
-     */
-    public MetaClass getMetaClass();
+    public DumpClass3(Object foo) {
+        super(foo);
+        this.blah = (String) foo;
+    }
 }

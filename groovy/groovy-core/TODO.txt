@@ -1,6 +1,34 @@
 Core Groovy Tasks
 =================
 
+* add mixin syntax
+
+	mixin Foo {
+		private x
+		
+		bar() {
+			return "hello"
+		}
+	}
+	
+	class X extends A mixin Foo, Whatnot {
+	}
+
+* DOM and SAX builders
+
+* add the following symbols...
+	class = current class
+	super = parent class
+
+* add setMetaClass() method to GroovyObject
+
+* MetaClass.deriveMetaClass()
+	MetaClass.addMixin(mixin)
+
+* how could aspects & mixins merged together...
+
+* why does using the GroovyClassLoader cause the illegal access violation?
+
 * closure methods on Node
 	
 * more tests of field and property initialisers

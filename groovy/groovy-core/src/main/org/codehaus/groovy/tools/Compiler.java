@@ -36,6 +36,7 @@ public class Compiler
 
     private static final Category LOG = Category.getInstance( Compiler.class );
 
+    private Verifier verifier = new Verifier();
     private CompilerClassLoader classLoader;
     private List sourceDirs;
     private File outputDir;
@@ -186,13 +187,10 @@ public class Compiler
         LOG.info( "stage-3 compiling: " + file );
         ASTBuilder astBuilder = new ASTBuilder( getClassLoader() );
 
-        Verifier verifier = new Verifier();
-        
         ClassNode[] classNodes = astBuilder.build( compilationUnit );
 
         for ( int i = 0 ; i < classNodes.length ; ++i )
         {
-            verifier.visitClass(classNodes[ i ]);
             dumpClass( new GeneratorContext(), classNodes[ i ], file );
         }
     }
@@ -203,6 +201,8 @@ public class Compiler
         throws Exception
     {
         ClassGenerator classGenerator = null;
+        
+        verifier.visitClass(classNode);
         
         if (debug) 
         {

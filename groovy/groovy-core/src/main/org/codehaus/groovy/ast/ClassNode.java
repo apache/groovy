@@ -159,6 +159,16 @@ public class ClassNode extends ASTNode implements Constants {
         properties.add(node);
     }
 
+    public void addProperty(
+        String name,
+        int modifiers,
+        String type,
+        Expression initialValueExpression,
+        Statement getterBlock,
+        Statement setterBlock) {
+        addProperty(new PropertyNode(name, modifiers, type, initialValueExpression, getterBlock, setterBlock));
+    }
+
     public void addConstructor(ConstructorNode node) {
         constructors.add(node);
     }
@@ -173,7 +183,12 @@ public class ClassNode extends ASTNode implements Constants {
         methods.add(node);
     }
 
-    public MethodNode addMethod(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
+    public MethodNode addMethod(
+        String name,
+        int modifiers,
+        String returnType,
+        Parameter[] parameters,
+        Statement code) {
         MethodNode node = new MethodNode(name, modifiers, returnType, parameters, code);
         addMethod(node);
         return node;
@@ -184,7 +199,6 @@ public class ClassNode extends ASTNode implements Constants {
         addField(node);
         return node;
     }
-
 
     public void addInterface(String name) {
         // lets check if it already implements an interface

@@ -47,6 +47,7 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.Closure;
+import groovy.lang.MetaClass;
 
 import java.util.Iterator;
 import java.util.List;
@@ -214,9 +215,14 @@ public class DumpClass {
     }
     
     public void doClosure() {
-        x = new Closure() {
+        x = new Closure(this) {
             public Object call(Object arguments) {
                 System.out.println();
+                return null;
+            }
+
+            public MetaClass getMetaClass() {
+                // TODO Auto-generated method stub
                 return null;
             }
         };

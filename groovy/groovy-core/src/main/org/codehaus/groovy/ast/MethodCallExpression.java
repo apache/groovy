@@ -86,4 +86,14 @@ public class MethodCallExpression extends Expression {
     public String toString() {
         return super.toString() + "[object: " + objectExpression + " method: " + method + " arguments: " + arguments + "]";
     }
+
+    public static boolean isSuperMethodCall(MethodCallExpression call) {
+        Expression expression = call.getObjectExpression();
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            String variable = varExp.getVariable();
+            return variable.equals("super");
+        }
+        return false;
+    }
 }

@@ -1,6 +1,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.MetaClass;
 
 
 /**
@@ -12,11 +13,15 @@ import groovy.lang.Closure;
  */
 public class MethodClosure extends Closure {
 
-    private Object owner;
     private String method;
+    MetaClass metaClass = InvokerHelper.getMetaClass(this);
+    
+    public MethodClosure(Object delegate) {
+        super(delegate);
+    }
     
     public MethodClosure(Object owner, String method) {
-        this.owner = owner;
+        super(owner);
         this.method = method;
     }
     
@@ -24,11 +29,11 @@ public class MethodClosure extends Closure {
         return method;
     }
 
-    public Object getOwner() {
-        return owner;
-    }
-
     public Object call(Object arguments) {
-        return InvokerHelper.invokeMethod(owner, method, arguments);
+        return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+    }
+    
+    public MetaClass getMetaClass() {
+        return metaClass;
     }
 }

@@ -48,6 +48,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyTestCase;
+import groovy.lang.MetaClass;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,9 +75,14 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
         list.add("abc");
         list.add("def");
         
-        invoker.invokeMethod(list, "each", new Closure() {
+        invoker.invokeMethod(list, "each", new Closure(this) {
             public Object call(Object arguments) {
                 buffer.append(arguments.toString());
+                return null;
+            }
+
+            public MetaClass getMetaClass() {
+                // TODO Auto-generated method stub
                 return null;
             }
         });

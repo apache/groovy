@@ -1,6 +1,6 @@
 package groovy.tree;
 
-class SmallVerboseTreeTest extends GroovyTestCase {
+class SmallTreeTest extends GroovyTestCase {
     
     property b
 
@@ -8,7 +8,7 @@ class SmallVerboseTreeTest extends GroovyTestCase {
         b = NodeBuilder.newInstance()
         
         root = b.root1( { i |
-            b.elem1('hello1')
+            elem1('hello1')
         })
         
         //assert root != null

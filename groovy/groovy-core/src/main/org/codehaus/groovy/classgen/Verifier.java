@@ -47,7 +47,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -56,13 +55,13 @@ import java.util.List;
 import org.codehaus.groovy.ast.ArgumentListExpression;
 import org.codehaus.groovy.ast.BinaryExpression;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.FieldExpression;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
@@ -100,79 +99,113 @@ public class Verifier implements GroovyClassVisitor, Constants {
                     new VariableExpression("this")));
 
         // lets add the invokeMethod implementation
-        node.addMethod(
-            "invokeMethod",
-            ACC_PUBLIC,
-            Object.class.getName(),
-            new Parameter[] {
-                new Parameter(String.class.getName(), "name"),
-                new Parameter(Object.class.getName(), "arguments")},
-            new ReturnStatement(
-                new MethodCallExpression(
-                    new FieldExpression(metaClassField),
-                    "invokeMethod",
-                    new ArgumentListExpression(
-                        new Expression[] { new VariableExpression("this"), new VariableExpression("name"), new VariableExpression("arguments")}))));
-
+        boolean addDelegateObject = node instanceof InnerClassNode && node.getSuperClass().equals("groovy/lang/Closure");
+        if (addDelegateObject) {
+            // don't do anything as the base class implements the invokeMethod
+        }
+        else {
+            node.addMethod(
+                "invokeMethod",
+                ACC_PUBLIC,
+                Object.class.getName(),
+                new Parameter[] {
+                    new Parameter(String.class.getName(), "name"),
+                    new Parameter(Object.class.getName(), "arguments")},
+                new ReturnStatement(
+                    new MethodCallExpression(
+                        new FieldExpression(metaClassField),
+                        "invokeMethod",
+                        new ArgumentListExpression(
+                            new Expression[] {
+                                new VariableExpression("this"),
+                                new VariableExpression("name"),
+                                new VariableExpression("arguments")}))));
+        }
 
         if (node.getConstructors().isEmpty()) {
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
-        
+
+        node.addMethod(
+            "getMetaClass",
+            ACC_PUBLIC,
+            MetaClass.class.getName(),
+            Parameter.EMPTY_ARRAY,
+            new ReturnStatement(new FieldExpression(metaClassField)));
+
         addFieldInitialization(node);
     }
 
+    protected void addClosureCode(InnerClassNode node) {
+        // add a new invoke
+    }
+
     protected void addFieldInitialization(ClassNode node) {
-        for (Iterator iter = node.getConstructors().iterator(); iter.hasNext(); ) {
+        for (Iterator iter = node.getConstructors().iterator(); iter.hasNext();) {
             addFieldInitialization(node, (ConstructorNode) iter.next());
         }
     }
 
     protected void addFieldInitialization(ClassNode node, ConstructorNode constructorNode) {
         List statements = new ArrayList();
-        for (Iterator iter = node.getFields().iterator(); iter.hasNext(); ) {
+        for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
             addFieldInitialization(statements, constructorNode, (FieldNode) iter.next());
         }
-        if (! statements.isEmpty()) {
+        if (!statements.isEmpty()) {
             Statement code = constructorNode.getCode();
+            List otherStatements = new ArrayList();
             if (code instanceof StatementBlock) {
                 StatementBlock block = (StatementBlock) code;
-                statements.addAll(block.getStatements());
+                otherStatements.addAll(block.getStatements());
             }
             else if (code != null) {
-                statements.add(code);
+                otherStatements.add(code);
+            }
+            if (! otherStatements.isEmpty()) {
+                Statement first = (Statement) otherStatements.get(0);
+                if (isSuperMethodCall(first)) {
+                    otherStatements.remove(0);
+                    statements.add(0, first);
+                }
+                statements.addAll(otherStatements);
             }
             constructorNode.setCode(new StatementBlock(statements));
         }
     }
 
+    protected boolean isSuperMethodCall(Statement first) {
+        if (first instanceof ExpressionStatement) {
+            ExpressionStatement exprStmt = (ExpressionStatement) first;
+            Expression expr = exprStmt.getExpression();
+            if (expr instanceof MethodCallExpression) {
+                return MethodCallExpression.isSuperMethodCall((MethodCallExpression) expr);
+            }
+        }
+        return false;
+    }
+
     protected void addFieldInitialization(List list, ConstructorNode constructorNode, FieldNode fieldNode) {
         Expression expression = fieldNode.getInitialValueExpression();
         if (expression != null) {
-            list.add(new ExpressionStatement(new BinaryExpression(new FieldExpression(fieldNode), Token.equal(fieldNode.getLineNumber(), fieldNode.getColumnNumber()), expression)));
+            list.add(
+                new ExpressionStatement(
+                    new BinaryExpression(
+                        new FieldExpression(fieldNode),
+                        Token.equal(fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
+                        expression)));
         }
-        // TODO Auto-generated method stub
-        
     }
 
     public void visitConstructor(ConstructorNode node) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitMethod(MethodNode node) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitField(FieldNode node) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitProperty(PropertyNode node) {
-        // TODO Auto-generated method stub
-
     }
 
 }
