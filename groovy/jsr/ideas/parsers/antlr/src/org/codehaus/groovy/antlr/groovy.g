@@ -612,9 +612,10 @@ builtInTypeArraySpec[boolean addImagNode]
 // afterwards (which would make it an array type).
 builtInTypeSpec[boolean addImagNode]
 	:	t:builtInType
-		(ata:arrayOrTypeArgs[#t])?
+	 	(options{greedy=true;}: // match as many as possible
+	 		lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
+		 )*
 		{
-			if (#ata != null)  #builtInTypeSpec = #ata;
 			if ( addImagNode ) {
 				#builtInTypeSpec = #(#[TYPE,"TYPE"], #builtInTypeSpec);
 			}
