@@ -36,13 +36,9 @@ public class IntegerMath extends NumberMath {
 	}
 	
 	protected int compareToImpl(Number left, Number right) {
-		int diff = left.intValue() - right.intValue();
-		if (diff == 0) {
-			return 0;
-		}
-		else {
-			return (diff > 0) ? 1 : -1;
-		}
+		int leftVal = left.intValue();
+		int rightVal = right.intValue();
+		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));
 	}
 
     protected Number orImpl(Number left, Number right) {
