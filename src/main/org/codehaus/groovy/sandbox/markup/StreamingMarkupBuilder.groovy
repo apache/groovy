@@ -131,10 +131,23 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 		               'comment':commentClosure,
 		               'declareNamespace':namespaceSetupClosure]
 		
-		builder = new BaseMarkupBuilder(this.tagClosure, this.specialTags)
+		StreamingMarkupBuilder() {
+		}
+		
+		StreamingMarkupBuilder(extraTags) {
+			this.specialTags.putAll(extraTags)
+		}
+		
+		renameTag(oldName, newName) {
+			if (!this.specialTags.containsKey(oldName)) {
+				new GroovyRuntimeException("can't rename ${oldName} to ${newName}, ${oldName} not an existing tag")
+			}
+			
+			this.specialTags[newName] = this.specialTags.remove(oldName)
+		}
 		
 		bind(closure) {
-			boundClosure = this.builder.bind closure
+			boundClosure = (new BaseMarkupBuilder(this.tagClosure, this.specialTags)).bind closure
 			
 			{out |
 			    out = new StreamingMarkupWriter(out)
