@@ -495,6 +495,26 @@ public class ASTBuilder
                 statement = ifStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_THROW ):
+            {
+                statement = throwStatement( statementRoot );
+                break;
+            }
+            case ( Token.KEYWORD_BREAK ):
+            {
+                statement = breakStatement( statementRoot );
+                break;
+            }
+            case ( Token.KEYWORD_CONTINUE ):
+             {
+                statement = continueStatement( statementRoot );
+                break;
+            }
+            case ( Token.KEYWORD_SYNCHRONIZED ):
+            {
+                statement = synchronizedStatement( statementRoot );
+                break;
+            }
             default:
             {
                 statement = expressionStatement( statementRoot );
@@ -573,8 +593,31 @@ public class ASTBuilder
 
     protected CaseStatement caseStatement(CSTNode statementRoot) throws ParserException {
         CSTNode[] children = statementRoot.getChildren();
-        Expression caseExpr = expression(children[0]);
-        return new CaseStatement(caseExpr, statementBlock(statementRoot, 1));
+        Expression expression = expression(children[0]);
+        return new CaseStatement(expression, statementBlock(statementRoot, 1));
+    }
+
+    protected ThrowStatement throwStatement(CSTNode statementRoot) throws ParserException {
+        CSTNode[] children = statementRoot.getChildren();
+        return new ThrowStatement(expression(children[0]));
+    }
+
+    protected BreakStatement breakStatement(CSTNode statementRoot) throws ParserException {
+        CSTNode[] children = statementRoot.getChildren();
+        String label = null; /** @todo */
+        return new BreakStatement();
+    }
+
+    protected ContinueStatement continueStatement(CSTNode statementRoot) throws ParserException {
+        CSTNode[] children = statementRoot.getChildren();
+        String label = null; /** @todo */
+        return new ContinueStatement();
+    }
+
+    protected SynchronizedStatement synchronizedStatement(CSTNode statementRoot) throws ParserException {
+        CSTNode[] children = statementRoot.getChildren();
+        Expression expression = expression(children[0]);
+        return new SynchronizedStatement(expression, statementBlock(statementRoot, 1));
     }
 
     protected TryCatchStatement tryStatement(CSTNode statementRoot) throws ParserException
