@@ -184,6 +184,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>John Wilson/name>
+      <id>jwilson</id>
+      <email>tug@wilson.co.uk</email>
+      <organization>The Wilson Partnership</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
@@ -209,10 +218,6 @@
     </contributor>
     <contributor>
       <name>James Birchfield</name>
-      <email></email>
-    </contributor>
-    <contributor>
-      <name>John Wilson</name>
       <email></email>
     </contributor>
     <contributor>
