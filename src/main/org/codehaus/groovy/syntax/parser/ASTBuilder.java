@@ -434,12 +434,17 @@ public class ASTBuilder
 
     protected BlockStatement statementBlock(CSTNode blockRoot) throws ParserException
     {
+        return statementBlock(blockRoot, 0);
+    }
+
+    protected BlockStatement statementBlock(CSTNode blockRoot, int startIndex) throws ParserException
+    {
         BlockStatement statementBlock = new BlockStatement();
 
         CSTNode[] statementRoots = blockRoot.getChildren();
 
-        for ( int i = 0 ; i < statementRoots.length ; ++i )
-        {
+        for ( int i = startIndex ; i < statementRoots.length ; ++i )
+           {
             CSTNode statementRoot = statementRoots[ i ];
             Statement statement = statement( statementRoot );
             statementBlock.addStatement( statement );
@@ -545,33 +550,31 @@ public class ASTBuilder
 
         Expression expression = expression( children[ 0 ] );
         
-        
-        /*
-        BlockStatement    ifBlock    = statementBlock( children[ 1 ] );
-
-        Statement elseBlock = null;
-
-        if ( children.length == 3
-                &&
-                matches( children[ 2 ],
-                        Token.KEYWORD_IF ) )
-           {
-            elseBlock = ifStatement( children[ 2 ] );
-        }
-        else if ( children.length == 3 )
-           {
-            elseBlock = statementBlock( children[ 2 ].getChild( 0 ) );
-        }
-        else
-           {
-            elseBlock = EmptyStatement.INSTANCE;
-        }
-        */
+        SwitchStatement answer = new SwitchStatement( expression );
         Statement defaultBlock = null;
-        if (defaultBlock == null) {
-            defaultBlock = EmptyStatement.INSTANCE;
+        for (int i = 1; i < children.length; i++) 
+        {
+            CSTNode child = children[i];
+            if (matches( child, Token.KEYWORD_CASE)) 
+            {
+                answer.addCase(caseStatement(child));
+            }
+            else if (matches( child, Token.KEYWORD_DEFAULT))
+            {
+                answer.setDefaultStatement(statementBlock(child));
+            }
+            else 
+            {
+                throw new ParserException("Expecting case or default block", child.getToken());
+            }
         }
-        return new SwitchStatement( expression, defaultBlock );
+        return answer;
+    }
+
+    protected CaseStatement caseStatement(CSTNode statementRoot) throws ParserException {
+        CSTNode[] children = statementRoot.getChildren();
+        Expression caseExpr = expression(children[0]);
+        return new CaseStatement(caseExpr, statementBlock(statementRoot, 1));
     }
 
     protected TryCatchStatement tryStatement(CSTNode statementRoot) throws ParserException

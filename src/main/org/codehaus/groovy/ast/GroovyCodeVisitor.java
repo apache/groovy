@@ -67,7 +67,12 @@ public interface GroovyCodeVisitor {
     public void visitAssertStatement(AssertStatement statement);
     public void visitTryCatchFinally(TryCatchStatement finally1);
     public void visitSwitch(SwitchStatement statement);
-
+    public void visitCaseStatement(CaseStatement statement);
+    public void visitBreakStatement(BreakStatement statement);
+    public void visitContinueStatement(ContinueStatement statement);
+    public void visitThrowStatement(ThrowStatement statement);
+    public void visitSynchronizedStatement(SynchronizedStatement statement);
+    
     // expressions
     //-------------------------------------------------------------------------
     public void visitMethodCallExpression(MethodCallExpression call);
