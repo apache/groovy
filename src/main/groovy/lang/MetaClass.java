@@ -68,9 +68,12 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.MethodKey;
 import org.codehaus.groovy.runtime.NewStaticMetaMethod;
 import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
+import org.codehaus.groovy.runtime.TemporaryMethodKey;
+import org.codehaus.groovy.runtime.TransformMetaMethod;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -83,20 +86,22 @@ public class MetaClass {
 
     private static final Logger log = Logger.getLogger(MetaClass.class.getName());
 
-    protected static final Object[] EMPTY_ARRAY = {
+    public static final Object[] EMPTY_ARRAY = {
+    };
+    public static Class[] EMPTY_TYPE_ARRAY = {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
-    protected static Class[] EMPTY_TYPE_ARRAY = {
-    };
 
     private MetaClassRegistry registry;
     private Class theClass;
     private ClassNode classNode;
     private Map methodIndex = new HashMap();
     private Map staticMethodIndex = new HashMap();
-    private Map newStaticInstanceMethodIndex = new HashMap();
+    private List newGroovyMethodsList = new ArrayList();
     private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
     private Map listeners = new HashMap();
+    private Map methodCache = Collections.synchronizedMap(new HashMap());
+    private Map staticMethodCache = Collections.synchronizedMap(new HashMap());
     private MetaMethod genericGetMethod;
     private MetaMethod genericSetMethod;
     private List constructors;
@@ -154,8 +159,10 @@ public class MetaClass {
 
         // lets add Object methods after interfaces, as all interfaces derive from Object. 
         // this ensures List and Collection methods come before Object etc
-        addMethods(Object.class);
-        addNewStaticMethodsFrom(Object.class);
+        if (theClass != Object.class) {
+            addMethods(Object.class);
+            addNewStaticMethodsFrom(Object.class);
+        }
 
         if (theClass.isArray() && !theClass.equals(Object[].class)) {
             addNewStaticMethodsFrom(Object[].class);
@@ -204,13 +211,7 @@ public class MetaClass {
     }
 
     protected void addNewStaticInstanceMethod(MetaMethod method) {
-        String name = method.getName();
-        List list = (List) newStaticInstanceMethodIndex.get(name);
-        if (list == null) {
-            list = new ArrayList();
-            newStaticInstanceMethodIndex.put(name, list);
-        }
-        list.add(method);
+        newGroovyMethodsList.add(method);
     }
 
     public Object invokeMethod(Object object, String methodName, Object arguments) {
@@ -222,65 +223,65 @@ public class MetaClass {
      *  
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
-        checkInitialised();
-
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
-        List methods = getMethods(methodName);
-        if (!methods.isEmpty()) {
-            MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+        // lets try use the cache to find the method
+        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+        MetaMethod method = (MetaMethod) methodCache.get(methodKey);
+        if (method == null) {
+            method = pickMethod(object, methodName, arguments);
             if (method != null) {
-                return doMethodInvoke(object, method, arguments);
-            }
-            else {
-                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
-                if (method != null) {
-                    return doMethodInvoke(object, method, arguments);
-                }
+                methodCache.put(methodKey.createCopy(), method);
             }
         }
 
-        // lets see if there's a new static method we've added in groovy-land
-        // to this class
-        List newStaticInstanceMethods = getNewStaticInstanceMethods(methodName);
-        int size = (arguments != null) ? arguments.length : 0;
-        Object[] staticArguments = new Object[size + 1];
-        staticArguments[0] = object;
-        if (size > 0) {
-            System.arraycopy(arguments, 0, staticArguments, 1, size);
+        if (method != null) {
+            return doMethodInvoke(object, method, arguments);
         }
+
+        throw new MissingMethodException(methodName, theClass, arguments);
+    }
+
+    /**
+     * Picks which method to invoke for the given object, method name and arguments
+     */
+    protected MetaMethod pickMethod(Object object, String methodName, Object[] arguments) {
+        checkInitialised();
 
         MetaMethod method = null;
-        if (!newStaticInstanceMethods.isEmpty()) {
-            method = (MetaMethod) chooseMethod(methodName, newStaticInstanceMethods, staticArguments, false);
-        }
-        if (method == null) {
-            method = findNewStaticInstanceMethod(methodName, staticArguments);
-        }
-        if (method != null) {
-            return doMethodInvoke(null, method, staticArguments);
-        }
+        List methods = getMethods(methodName);
+        if (!methods.isEmpty()) {
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            if (method == null) {
+                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+                if (method == null) {
+                    int size = (arguments != null) ? arguments.length : 0;
+                    if (size == 1) {
+                        Object firstArgument = arguments[0];
+                        if (firstArgument instanceof List) {
+                            // lets coerce the list arguments into an array of
+                            // arguments
+                            // e.g. calling JFrame.setLocation( [100, 100] )
 
-        // lets try a static method then
-        try {
-            return invokeStaticMethod(object, methodName, arguments);
-        }
-        catch (MissingMethodException e) {
-            if (size == 1) {
-                Object firstArgument = arguments[0];
-                if (firstArgument instanceof List) {
-                    // lets coerce the list arguments into an array of
-                    // arguments
-                    // e.g. calling JFrame.setLocation( [100, 100] )
-
-                    List list = (List) firstArgument;
-                    return invokeMethod(object, methodName, list.toArray());
+                            List list = (List) firstArgument;
+                            arguments = list.toArray();
+                            method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
+                            return new TransformMetaMethod(method) {
+                                public Object invoke(Object object, Object[] arguments) throws Exception {
+                                    Object firstArgument = arguments[0];
+                                    List list = (List) firstArgument;
+                                    arguments = list.toArray();
+                                    return super.invoke(object, arguments);
+                                }
+                            };
+                        }
+                    }
                 }
             }
-            throw e;
         }
+        return method;
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
@@ -291,15 +292,29 @@ public class MetaClass {
         //        System.out.println("Argument  type: " + type);
         //        System.out.println("Type of first arg: " + arguments[0] + " type: " + arguments[0].getClass());
 
-        List methods = getStaticMethods(methodName);
+        // lets try use the cache to find the method
+        MethodKey methodKey = new TemporaryMethodKey(methodName, arguments);
+        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
+        if (method == null) {
+            method = pickStaticMethod(object, methodName, arguments);
+            if (method != null) {
+                staticMethodCache.put(methodKey.createCopy(), method);
+            }
+        }
 
+        if (method != null) {
+            return doMethodInvoke(object, method, arguments);
+        }
+        /*
+        List methods = getStaticMethods(methodName);
+        
         if (!methods.isEmpty()) {
             MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(theClass, method, arguments);
             }
         }
-
+        
         if (theClass != Class.class) {
             try {
                 return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments);
@@ -308,7 +323,23 @@ public class MetaClass {
                 // throw our own exception
             }
         }
+        */
         throw new MissingMethodException(methodName, theClass, arguments);
+    }
+
+    protected MetaMethod pickStaticMethod(Object object, String methodName, Object[] arguments) {
+        MetaMethod method = null;
+        List methods = getStaticMethods(methodName);
+
+        if (!methods.isEmpty()) {
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+        }
+
+        if (method == null && theClass != Class.class) {
+            MetaClass classMetaClass = registry.getMetaClass(Class.class);
+            method = classMetaClass.pickMethod(object, methodName, arguments);
+        }
+        return method;
     }
 
     public Object invokeConstructor(Object[] arguments) {
@@ -350,17 +381,6 @@ public class MetaClass {
             Object value = entry.getValue();
             setProperty(bean, key, value);
         }
-    }
-
-    /**
-     * @return the currently registered static methods against this class
-     */
-    public List getNewStaticInstanceMethods(String methodName) {
-        List newStaticInstanceMethods = (List) newStaticInstanceMethodIndex.get(methodName);
-        if (newStaticInstanceMethods == null) {
-            return Collections.EMPTY_LIST;
-        }
-        return newStaticInstanceMethods;
     }
 
     /**
@@ -603,6 +623,9 @@ public class MetaClass {
 
     protected void addMethod(MetaMethod method) {
         String name = method.getName();
+
+        //System.out.println(theClass.getName() + " == " + name + Arrays.asList(method.getParameterTypes()));
+
         if (isGenericGetMethod(method) && genericGetMethod == null) {
             genericGetMethod = method;
         }
@@ -622,17 +645,16 @@ public class MetaClass {
                 }
             }
         }
+
+        List list = (List) methodIndex.get(name);
+        if (list == null) {
+            list = new ArrayList();
+            methodIndex.put(name, list);
+            list.add(method);
+        }
         else {
-            List list = (List) methodIndex.get(name);
-            if (list == null) {
-                list = new ArrayList();
-                methodIndex.put(name, list);
+            if (!containsMatchingMethod(list, method)) {
                 list.add(method);
-            }
-            else {
-                if (!containsMatchingMethod(list, method)) {
-                    list.add(method);
-                }
             }
         }
     }
@@ -671,26 +693,11 @@ public class MetaClass {
     protected void addNewStaticMethodsFrom(Class theClass) {
         MetaClass interfaceMetaClass = registry.getMetaClass(theClass);
         interfaceMetaClass.checkInitialised();
-        Iterator iter = interfaceMetaClass.newStaticInstanceMethodIndex.entrySet().iterator();
+        Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
         while (iter.hasNext()) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            String name = (String) entry.getKey();
-            List values = (List) entry.getValue();
-
-            // lets add each method
-            for (Iterator iter2 = values.iterator(); iter2.hasNext();) {
-                addMethod((MetaMethod) iter2.next());
-            }
-
-            if (values != null) {
-                // lets add these methods to me
-                List list = (List) newStaticInstanceMethodIndex.get(name);
-                if (list == null) {
-                    list = new ArrayList();
-                    newStaticInstanceMethodIndex.put(name, list);
-                }
-                list.addAll(values);
-            }
+            MetaMethod method = (MetaMethod) iter.next();
+            addMethod(method);
+            newGroovyMethodsList.add(method);
         }
     }
 
@@ -790,29 +797,6 @@ public class MetaClass {
         catch (Exception e) {
             return null;
         }
-    }
-
-    /**
-     * Lets walk the base class & interfaces list to see if we can find the
-     * method
-     */
-    protected MetaMethod findNewStaticInstanceMethod(String methodName, Object[] staticArguments) {
-        if (theClass.equals(Object.class)) {
-            return null;
-        }
-        MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
-        List list = superClass.getNewStaticInstanceMethods(methodName);
-        if (!list.isEmpty()) {
-            MetaMethod method = (MetaMethod) chooseMethod(methodName, list, staticArguments, false);
-            if (method != null) {
-                // lets cache it for next invocation
-                // @todo is it OK to comment this out?
-                addNewStaticInstanceMethod(method);
-            }
-
-            return method;
-        }
-        return superClass.findNewStaticInstanceMethod(methodName, staticArguments);
     }
 
     protected Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
@@ -1300,7 +1284,7 @@ public class MetaClass {
         return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
     }
 
-    protected void checkInitialised() {
+    protected synchronized void checkInitialised() {
         if (!initialised) {
             initialised = true;
             addInheritendMethods(theClass);
@@ -1419,7 +1403,7 @@ public class MetaClass {
         return allMethods;
     }
 
-    protected List getInterfaceMethods() {
+    protected synchronized List getInterfaceMethods() {
         if (interfaceMethods == null) {
             interfaceMethods = new ArrayList();
             Class type = theClass;

@@ -34,33 +34,25 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 
 /**
- * A temporary implementation of MethodKey used to perform a fast lookup
- * for a method using a set of arguments to a method
+ * A MetaMethod implementation useful for implementing coercion based invocations
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TemporaryMethodKey extends MethodKey {
 
-    private Object[] parameterValues;
+public class TransformMetaMethod extends MetaMethod {
+    
+    private MetaMethod metaMethod;
 
-    public TemporaryMethodKey(String name, Object[] parameterValues) {
-        super(name);
-        if (parameterValues == null) {
-            parameterValues = MetaClass.EMPTY_ARRAY;
-        }
-        this.parameterValues = parameterValues;
+    public TransformMetaMethod(MetaMethod metaMethod) {
+        super(metaMethod);
+        this.metaMethod = metaMethod;
     }
 
-    public int getParameterCount() {
-        return parameterValues.length;
-    }
-
-    public Class getParameterType(int index) {
-        Object value = parameterValues[index];
-        return value != null ? value.getClass() : Object.class;
+    public Object invoke(Object object, Object[] arguments) throws Exception {
+        return metaMethod.invoke(object, arguments);
     }
 }

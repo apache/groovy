@@ -68,6 +68,21 @@ public class MethodKeyTest extends TestCase {
         assertCompare(b, c, false);
     }
 
+    public void testTemporaryImplementation() throws Exception {
+        MethodKey a = new DefaultMethodKey("foo", new Class[] { Object.class, Integer.class });
+        MethodKey a2 = new TemporaryMethodKey("foo", new Object[] { new Object(), new Integer(1) });
+        MethodKey b = new TemporaryMethodKey("foo", new Object[] { new Object() });
+        MethodKey c = new TemporaryMethodKey("bar", new Object[] { new Object(), new Integer(1) });
+
+        assertCompare(a, a, true);
+        assertCompare(a, a2, true);
+        assertCompare(b, b, true);
+
+        assertCompare(a, b, false);
+        assertCompare(a, c, false);
+        assertCompare(b, c, false);
+    }
+
     protected void assertCompare(Object a, Object b, boolean expected) {
         assertEquals("Compare " + a + " to " + b, expected, a.equals(b));
         if (expected) {

@@ -47,6 +47,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.MissingMethodException;
 import groovy.util.GroovyTestCase;
 import groovy.util.Node;
 
@@ -159,6 +160,11 @@ public class PropertyTest extends GroovyTestCase {
         }
         catch (HeadlessException e) {
             // its fine to not run this test on headless environments
+        }
+        catch (MissingMethodException e) {
+            System.out.println("Failed with cause: " + e);
+            e.printStackTrace();
+            fail("Should not have throw: " + e);
         }
     }
 

@@ -70,7 +70,7 @@ public abstract class MethodKey {
         if (this == that) {
             return true;
         }
-        else if (that instanceof MethodKey) {
+        else if (hashCode() == that.hashCode() && that instanceof MethodKey) {
             return equals((MethodKey) that);
         }
         return false;
@@ -78,7 +78,7 @@ public abstract class MethodKey {
 
     public boolean equals(MethodKey that) {
         int size = getParameterCount();
-        if (this.name.equals(that.name) && size == that.getParameterCount()) {
+        if (name.equals(that.name) && size == that.getParameterCount()) {
             for (int i = 0; i < size; i++) {
                 if (!getParameterType(i).equals(that.getParameterType(i))) {
                     return false;
