@@ -334,7 +334,7 @@ tokens {
     /* This symbol is used to work around a known ANTLR limitation.
      * In a loop with syntactic predicate, ANTLR needs help knowing
      * that the loop exit is a second alternative.
-     * Example usage:  ( (LBRACE)=> block | {ANTLR_LOOP_EXIT}? )*
+     * Example usage:  ( (LCURLY)=> block | {ANTLR_LOOP_EXIT}? )*
      * Probably should be an ANTLR RFE.
      */
     ////// Original comment in Java grammar:
@@ -1757,6 +1757,7 @@ expressionStatement[int prevToken]
         |
             head:pathExpression!
             commandArguments[#head]
+            {#expressionStatement = #(#[EXPR,"EXPR"],#expressionStatement);}
         )
     ;
         
@@ -2406,7 +2407,7 @@ closureConstructorExpression
     :   closedBlock
     ;
 
-// Groovy syntax for "$x $y".
+// Groovy syntax for "$x $y" or /$x $y/.
 stringConstructorExpression
     :   cs:STRING_CTOR_START
         { #cs.setType(STRING_LITERAL); }
@@ -2686,7 +2687,7 @@ newArrayDeclarator
         )+
     ;
 
-/** Numeric, string, boolean, or null constant. */
+/** Numeric, string, regexp, boolean, or null constant. */
 constant
     :   constantNumber
     |   STRING_LITERAL
@@ -2811,14 +2812,15 @@ options {
 /** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
     protected int parenLevel = 0;
     protected int suppressNewline = 0;  // be really mean to newlines inside strings
-    protected static final int SCS_TRIPLE = 1, SCS_VAL = 2, SCS_LIT = 4, SCS_LIMIT = 8;
-    protected int stringCtorState = 0;  // hack string constructor boundaries
+    protected static final int SCS_TYPE = 3, SCS_VAL = 4, SCS_LIT = 8, SCS_LIMIT = 16;
+    protected static final int SCS_SQ_TYPE = 0, SCS_TQ_TYPE = 1, SCS_RE_TYPE = 2;
+    protected int stringCtorState = 0;  // hack string and regexp constructor boundaries
     /** Push parenLevel here and reset whenever inside '{x}'. */
     protected ArrayList parenLevelStack = new ArrayList();
-    protected Token lastToken = Token.badToken;
+    protected int lastSigTokenType = EOF;  // last returned non-whitespace token
 
     protected void pushParenLevel() {
-        parenLevelStack.add(new Integer(parenLevel*8 + stringCtorState));
+        parenLevelStack.add(new Integer(parenLevel*SCS_LIMIT + stringCtorState));
         parenLevel = 0;
         stringCtorState = 0;
     }
@@ -2832,11 +2834,98 @@ options {
 
     protected void restartStringCtor(boolean expectLiteral) {
         if (stringCtorState != 0) {
-            stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TRIPLE);
+            stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TYPE);
+        }
+    }
+    
+    protected boolean allowRegexpLiteral() {
+        return !isExpressionEndingToken(lastSigTokenType);
+    }
+
+    /** Return true for an operator or punctuation which can end an expression.
+     *  Return true for keywords, identifiers, and literals.
+     *  Return true for tokens which can end expressions (right brackets, ++, --).
+     *  Return false for EOF and all other operator and punctuation tokens.
+     *  Used to suppress the recognition of /foo/ as opposed to the simple division operator '/'.
+     */
+    // Cf. 'constant' and 'balancedBrackets' rules in the grammar.)
+    protected static boolean isExpressionEndingToken(int ttype) {
+        switch (ttype) {
+        case INC:               // x++ / y
+        case DEC:               // x-- / y
+        case RPAREN:            // (x) / y
+        case RBRACK:            // f[x] / y
+        case RCURLY:            // f{x} / y
+        case STRING_LITERAL:    // "x" / y
+        case STRING_CTOR_END:   // "$x" / y
+        case NUM_INT:           // 0 / y
+        case NUM_FLOAT:         // 0f / y
+        case NUM_LONG:          // 0l / y
+        case NUM_DOUBLE:        // 0.0 / y
+        case NUM_BIG_INT:       // 0g / y
+        case NUM_BIG_DECIMAL:   // 0.0g / y
+        case IDENT:             // x / y
+        // and a bunch of keywords (all of them; no sense picking and choosing):
+        case LITERAL_any:
+        case LITERAL_as:
+        case LITERAL_assert:
+        case LITERAL_boolean:
+        case LITERAL_break:
+        case LITERAL_byte:
+        case LITERAL_case:
+        case LITERAL_catch:
+        case LITERAL_char:
+        case LITERAL_class:
+        case LITERAL_continue:
+        case LITERAL_def:
+        case LITERAL_default:
+        case LITERAL_double:
+        case LITERAL_else:
+        case LITERAL_enum:
+        case LITERAL_extends:
+        case LITERAL_false:
+        case LITERAL_finally:
+        case LITERAL_float:
+        case LITERAL_for:
+        case LITERAL_if:
+        case LITERAL_implements:
+        case LITERAL_import:
+        case LITERAL_in:
+        case LITERAL_instanceof:
+        case LITERAL_int:
+        case LITERAL_interface:
+        case LITERAL_long:
+        case LITERAL_native:
+        case LITERAL_new:
+        case LITERAL_null:
+        case LITERAL_package:
+        case LITERAL_private:
+        case LITERAL_protected:
+        case LITERAL_public:
+        case LITERAL_return:
+        case LITERAL_short:
+        case LITERAL_static:
+        case LITERAL_super:
+        case LITERAL_switch:
+        case LITERAL_synchronized:
+        case LITERAL_this:
+        case LITERAL_threadsafe:
+        case LITERAL_throw:
+        case LITERAL_throws:
+        case LITERAL_transient:
+        case LITERAL_true:
+        case LITERAL_try:
+        case LITERAL_void:
+        case LITERAL_volatile:
+        case LITERAL_while:
+        case LITERAL_with:
+            return true;
+        default:
+            return false;
         }
     }
 
-    void newlineCheck() throws RecognitionException {
+    protected void newlineCheck() throws RecognitionException {
         if (suppressNewline > 0) {
             suppressNewline = 0;
             require(suppressNewline == 0,
@@ -2844,6 +2933,16 @@ options {
                 "for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
         }
         newline();
+    }
+    
+    protected boolean atValidDollarEscape() throws CharStreamException {
+        // '$' (('*')? ('{' | LETTER)) =>
+        int k = 1;
+        char lc = LA(k++);
+        if (lc != '$')  return false;
+        lc = LA(k++);
+        if (lc == '*')  lc = LA(k++);
+        return (lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)));
     }
 
     /** This is a bit of plumbing which resumes collection of string constructor bodies,
@@ -2855,12 +2954,21 @@ options {
             public Token nextToken() throws TokenStreamException {
                 if (stringCtorState >= SCS_LIT) {
                     // This goo is modeled upon the ANTLR code for nextToken:
-                    boolean tripleQuote = (stringCtorState & SCS_TRIPLE) != 0;
+                    int quoteType = (stringCtorState & SCS_TYPE);
                     stringCtorState = 0;  // get out of this mode, now
                     resetText();
                     try {
-                        mSTRING_CTOR_END(true, /*fromStart:*/false, tripleQuote);
-                        return lastToken = _returnToken;
+                        switch (quoteType) {
+                        case SCS_SQ_TYPE:
+                            mSTRING_CTOR_END(true, /*fromStart:*/false, false); break;
+                        case SCS_TQ_TYPE:
+                            mSTRING_CTOR_END(true, /*fromStart:*/false, true); break;
+                        case SCS_RE_TYPE:
+                            mREGEXP_CTOR_END(true, /*fromStart:*/false); break;
+                        default:  assert(false);
+                        }
+                        lastSigTokenType = _returnToken.getType();
+                        return _returnToken;
                     } catch (RecognitionException e) {
                         throw new TokenStreamRecognitionException(e);
                     } catch (CharStreamException cse) {
@@ -2872,7 +2980,19 @@ options {
                         }
                     }
                 }
-                return lastToken = GroovyLexer.this.nextToken();
+                Token token = GroovyLexer.this.nextToken();
+                int lasttype = token.getType();
+                if (whitespaceIncluded) {
+                    switch (lasttype) {  // filter out insignificant types
+                    case WS:
+                    case ONE_NL:
+                    case SL_COMMENT:
+                    case ML_COMMENT:
+                        lasttype = lastSigTokenType;  // back up!
+                    }
+                }
+                lastSigTokenType = lasttype;
+                return token;
             }
         };
     }
@@ -2912,15 +3032,10 @@ options {
     private void require(boolean z, String problem, String solution) throws SemanticException {
         // TODO: Direct to a common error handler, rather than through the parser.
         if (!z)  parser.requireFailed(problem, solution);
-    }
+    }    
 }
 
-// TODO:  Regexp ops, range ops, Borneo-style ops.
-
-/* *TODO*
-DOT (with double and triple dot) is an ordinary operator
-token; it doesn't need to be commented out.
-*/
+// TODO:  Borneo-style ops.
 
 // OPERATORS
 QUESTION                :   '?'             ;
@@ -2939,7 +3054,9 @@ EQUAL                   :   "=="            ;
 LNOT                    :   '!'             ;
 BNOT                    :   '~'             ;
 NOT_EQUAL               :   "!="            ;
+protected  //switched from combined rule
 DIV                     :   '/'             ;
+protected  //switched from combined rule
 DIV_ASSIGN              :   "/="            ;
 PLUS                    :   '+'             ;
 PLUS_ASSIGN             :   "+="            ;
@@ -3109,6 +3226,7 @@ STRING_LITERAL
 protected
 STRING_CTOR_END[boolean fromStart, boolean tripleQuote]
 returns [int tt=STRING_CTOR_END]
+        { boolean dollarOK = false; }
     :
         (
             options {  greedy = true;  }:
@@ -3120,22 +3238,19 @@ returns [int tt=STRING_CTOR_END]
             )
             {
                 if (fromStart)      tt = STRING_LITERAL;  // plain string literal!
-                if (!tripleQuote)       {--suppressNewline;}
+                if (!tripleQuote)   {--suppressNewline;}
                 // done with string constructor!
                 //assert(stringCtorState == 0);
             }
-        |   '$'!
+        |   {dollarOK = atValidDollarEscape();}
+            '$'!
             {
-                // (('*')? ('{' | LETTER)) =>
-                int k = 1;
-                char lc = LA(k);
-                if (lc == '*')  lc = LA(++k);
-                require(lc == '{' || (lc != '$' && Character.isJavaIdentifierStart(lc)),
+                require(dollarOK,
                     "illegal string body character after dollar sign",
                     "either escape a literal dollar sign \"\\$5\" or bracket the value expression \"${5}\"");
                 // Yes, it's a string constructor, and we've got a value part.
                 tt = (fromStart ? STRING_CTOR_START : STRING_CTOR_MIDDLE);
-                stringCtorState = SCS_VAL + (tripleQuote? SCS_TRIPLE: 0);
+                stringCtorState = SCS_VAL + (tripleQuote? SCS_TQ_TYPE: SCS_SQ_TYPE);
             }
         )
         {   $setType(tt);  }
@@ -3144,6 +3259,70 @@ returns [int tt=STRING_CTOR_END]
 protected
 STRING_CH
     :   ~('"'|'\''|'\\'|'$'|'\n'|'\r')
+    ;
+
+REGEXP_LITERAL
+        {int tt=0;}
+    :   {allowRegexpLiteral()}?
+        '/'!
+        {++suppressNewline;}
+        //Do this, but require it to be non-trivial:  REGEXP_CTOR_END[true]
+        // There must be at least one symbol or $ escape, lest the regexp collapse to '//'.
+        // (This should be simpler, but I don't know how to do it w/o ANTLR warnings vs. '//' comments.)
+        (
+            (   REGEXP_SYMBOL
+            |   {!atValidDollarEscape()}? '$'
+            )
+            tt=REGEXP_CTOR_END[true]
+        |   '$'!
+            {
+                // Yes, it's a regexp constructor, and we've got a value part.
+                tt = STRING_CTOR_START;
+                stringCtorState = SCS_VAL + SCS_RE_TYPE;
+            }
+        )
+        {$setType(tt);}
+
+    |   DIV                 {$setType(DIV);}
+    |   DIV_ASSIGN          {$setType(DIV_ASSIGN);}
+    ;
+
+protected
+REGEXP_CTOR_END[boolean fromStart]
+returns [int tt=STRING_CTOR_END]
+    :
+        (
+            options {  greedy = true;  }:
+            REGEXP_SYMBOL
+        |
+            {!atValidDollarEscape()}? '$'
+        )*
+        (   '/'!
+            {
+                if (fromStart)      tt = STRING_LITERAL;  // plain regexp literal!
+                {--suppressNewline;}
+                // done with regexp constructor!
+                //assert(stringCtorState == 0);
+            }
+        |   '$'!
+            {
+                // Yes, it's a regexp constructor, and we've got a value part.
+                tt = (fromStart ? STRING_CTOR_START : STRING_CTOR_MIDDLE);
+                stringCtorState = SCS_VAL + SCS_RE_TYPE;
+            }
+        )
+        {   $setType(tt);  }
+    ;
+
+protected
+REGEXP_SYMBOL
+    :
+        (
+            ~('*'|'/'|'$'|'\\'|'\n'|'\r')
+        |   '\\' ~('\n'|'\r')   // most backslashes are passed through unchanged
+        |!  '\\' ONE_NL         { $setText('\n'); }     // always normalize to newline
+        )
+        ('*')*      // stars handled specially to avoid ambig. on /**/
     ;
 
 // escape sequence -- note that this is protected; it can only be called
@@ -3232,7 +3411,7 @@ IDENT
             int ttype = testLiteralsTable(IDENT);
         /* The grammar allows a few keywords to follow dot.
          * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
-            if (ttype != IDENT && lastToken.getType() == DOT) {
+            if (ttype != IDENT && lastSigTokenType == DOT) {
                 // A few keywords can follow a dot:
                 switch (ttype) {
                 case LITERAL_this: case LITERAL_super: case LITERAL_class:

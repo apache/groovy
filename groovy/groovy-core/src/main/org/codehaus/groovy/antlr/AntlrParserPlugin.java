@@ -916,6 +916,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case ELIST:
                 return expressionList(node);
 
+            case SLIST:
+                return blockExpression(node);
+
             case CLOSED_BLOCK:
                 return closureExpression(node);
 
@@ -1592,6 +1595,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return closureExpression;
     }
 
+    protected Expression blockExpression(AST node) {
+        AST codeNode = node.getFirstChild();
+        if (codeNode == null)  return ConstantExpression.NULL;
+        if (codeNode.getType() == EXPR && codeNode.getNextSibling() == null) {
+            // Simplify common case of {expr} to expr.
+            return expression(codeNode);
+        }
+        Parameter[] parameters = Parameter.EMPTY_ARRAY;
+        Statement code = statementListNoChild(codeNode);
+        ClosureExpression closureExpression = new ClosureExpression(parameters, code);
+        configureAST(closureExpression, node);
+        // Call it immediately.
+        String callName = "call";
+        Expression noArguments = new ArgumentListExpression();
+        MethodCallExpression call = new MethodCallExpression(closureExpression, callName, noArguments);
+        configureAST(call, node);
+        return call;
+    }
+
     protected Expression negateExpression(AST negateExpr) {
         AST node = negateExpr.getFirstChild();
 
@@ -1639,6 +1661,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List values = new ArrayList();
 
         StringBuffer buffer = new StringBuffer();
+        
+        boolean isPrevString = false;
 
         for (AST node = gstringNode.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
@@ -1646,6 +1670,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             switch (type) {
 
                 case STRING_LITERAL:
+                    if (isPrevString)  assertNodeType(IDENT, node);  // parser bug
+                    isPrevString = true;
                     text = node.getText();
                     ConstantExpression constantExpression = new ConstantExpression(text);
                     configureAST(constantExpression, node);
@@ -1653,37 +1679,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     buffer.append(text);
                     break;
 
-                    // TODO is this correct?
-                case IDENT:
-                    text = node.getText();
-                    VariableExpression variableExpression = new VariableExpression(text);
-                    configureAST(variableExpression, node);
-                    values.add(variableExpression);
-                    buffer.append("$");
-                    buffer.append(text);
-                    break;
-
-                case DOT:
+                default:
                     {
+                        if (!isPrevString)  assertNodeType(IDENT, node);  // parser bug
+                        isPrevString = false;
                         Expression expression = expression(node);
                         values.add(expression);
                         buffer.append("$");
                         buffer.append(expression.getText());
                     }
                     break;
-
-                case SLIST:
-                    {
-                        Expression valueExpression = expression(node.getFirstChild());
-                        values.add(valueExpression);
-                        buffer.append("${");
-                        buffer.append(valueExpression.getText());
-                        buffer.append("}");
-                    }
-                    break;
-
-                default:
-                    unknownAST(node);
             }
         }
         GStringExpression gStringExpression = new GStringExpression(buffer.toString(), strings, values);
