@@ -47,9 +47,11 @@ package org.codehaus.groovy.classgen;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
@@ -156,7 +158,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     private boolean definingParameters;
 
-    private List syntheticStaticFields = new ArrayList();
+    private Set syntheticStaticFields = new HashSet();
 
     public ClassGenerator(ClassVisitor classVisitor, ClassLoader classLoader, String sourceFile) {
         this.cw = classVisitor;
