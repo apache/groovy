@@ -1793,12 +1793,28 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     protected void evaluateEqual(BinaryExpression expression) {
-        // lets evaluate the RHS then hopefully the LHS will be a field
         Expression leftExpression = expression.getLeftExpression();
+        if (leftExpression instanceof BinaryExpression) {
+            BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
+            if (leftBinExpr.getOperation().getType() == Token.LEFT_SQUARE_BRACKET) {
+                // lets replace this assignment to a subscript operator with a method call
+                // e.g. x[5] = 10
+                // -> (x, [], 5), =, 10 
+                // -> methodCall(x, "set", [5, 10])
+                visitMethodCallExpression(
+                    new MethodCallExpression(
+                        leftBinExpr.getLeftExpression(),
+                        "put",
+                        new ArgumentListExpression(
+                            new Expression[] { leftBinExpr.getRightExpression(), expression.getRightExpression()})));
+                return;
+            }
+        }
         if (isNonStaticField(leftExpression)) {
             cv.visitVarInsn(ALOAD, 0);
         }
 
+        // lets evaluate the RHS then hopefully the LHS will be a field
         leftHandExpression = false;
         Expression rightExpression = expression.getRightExpression();
         rightExpression.visit(this);

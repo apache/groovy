@@ -228,6 +228,26 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
+     * A helper method to allow lists to work with subscript operators
+     */
+    public static void put(List self, Number n, Object value) {
+        int i = n.intValue();
+        int size = self.size();
+        while (i < 0) {
+            i += size;
+        }
+        if (i < size) { 
+            self.set(i, value);
+        }
+        else {
+            while (size < i) {
+                self.add(size++, null);
+            }
+            self.add(i, value);
+        }
+    }
+    
+    /**
      * Allows objects to be iterated through using a closure
      * @param source
      * @param closure
