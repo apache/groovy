@@ -20,13 +20,23 @@ public class Parser
         return this.tokenStream;
     }
 
+    public void optionalSemicolon()
+        throws IOException, SyntaxException
+    {
+        if ( lt() == Token.SEMICOLON )
+        {
+            consume( Token.SEMICOLON );
+        }
+    }
+
     public CSTNode compilationUnit()
         throws IOException, SyntaxException
     {
         CSTNode compilationUnit = new CSTNode();
 
         compilationUnit.addChild( packageDeclaration() );
-        consume( Token.SEMICOLON );
+        optionalSemicolon();
+        //consume( Token.SEMICOLON );
 
         CSTNode imports = new CSTNode();
 
@@ -35,7 +45,8 @@ public class Parser
         while ( lt() == Token.KEYWORD_IMPORT )
         {
             imports.addChild( importStatement() );
-            consume( Token.SEMICOLON );
+            optionalSemicolon();
+            //consume( Token.SEMICOLON );
         }
 
         while ( lt() != -1 )
@@ -274,7 +285,8 @@ public class Parser
             case ( Token.KEYWORD_PROPERTY ):
             {
                 bodyStatement = propertyDeclaration( modifiers );
-                consume( Token.SEMICOLON );
+                optionalSemicolon();
+                //consume( Token.SEMICOLON );
                 break;
             }
             case ( Token.IDENTIFIER ):
@@ -577,19 +589,22 @@ public class Parser
             case ( Token.KEYWORD_RETURN ):
             {
                 statement = returnStatement();
-                consume( Token.SEMICOLON );
+                optionalSemicolon();
+                //consume( Token.SEMICOLON );
                 break;
             }
             case ( Token.KEYWORD_ASSERT ):
             {
                 statement = assertStatement();
-                consume( Token.SEMICOLON );
+                optionalSemicolon();
+                //consume( Token.SEMICOLON );
                 break;
             }
             default:
             {
                 statement = expression();
-                consume( Token.SEMICOLON );
+                optionalSemicolon();
+                //consume( Token.SEMICOLON );
             }
         }
 
