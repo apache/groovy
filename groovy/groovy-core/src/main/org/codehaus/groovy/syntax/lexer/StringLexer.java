@@ -58,6 +58,11 @@ public class StringLexer extends TextLexerBase
             {
                 string.append( consume() );
             }
+            
+            if( la(1) == CharStream.EOS && string.length() == 0 )
+            {
+                finished = true;
+            }
 
             return Token.newString( string.toString(), getStartLine(), getStartColumn() );
         }

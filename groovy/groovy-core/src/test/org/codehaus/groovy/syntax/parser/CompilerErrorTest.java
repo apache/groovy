@@ -52,7 +52,7 @@ public class CompilerErrorTest extends TestSupport {
 
     public void testUnknownClassCatch() throws Exception {
         MissingClassException e =
-            assertCompileFailed(
+            assertCompileFailed_WithMCE(
                 "class UnknownClass {\n"
                     + "    main() {\n"
                     + "        try {\n"
@@ -69,7 +69,7 @@ public class CompilerErrorTest extends TestSupport {
 
     public void testUnknownClassInNew() throws Exception {
         MissingClassException e =
-            assertCompileFailed(
+            assertCompileFailed_WithMCE(
                 "class UnknownClass {\n" + "    main() {\n" + "        x = new UnknownThingy()\n" + "    }\n" + "}\n");
         assertEquals("UnknownThingy", e.getType());
     }
@@ -92,13 +92,27 @@ public class CompilerErrorTest extends TestSupport {
         */
     }
 
+
+
+    public void testUnterminatedConstantGString() throws Exception {
+        assertCompileFailed( "println \"d" );
+    }
+
+    public void testUnterminatedGString() throws Exception {
+        assertCompileFailed( "println \"${1+2\"\nprintln \"c\"" );
+    }
+
+
+
+
+
     protected GroovyObject assertCompileWorks(String code) throws Exception {
         Class type =
             loader.parseClass(new ByteArrayInputStream(code.getBytes()), "ValidClass_" + getMethodName() + ".groovy");
         return (GroovyObject) type.newInstance();
     }
 
-    protected MissingClassException assertCompileFailed(String code) throws Exception {
+    protected MissingClassException assertCompileFailed_WithMCE(String code) throws Exception {
         try {
             assertCompileWorks(code);
 
@@ -113,6 +127,19 @@ public class CompilerErrorTest extends TestSupport {
             }
             throw e;
         }
+        return null;
+    }
+
+    protected CompilationFailedException assertCompileFailed(String code) throws Exception {
+        try {
+            assertCompileWorks(code);
+ 
+            fail("Should have thrown an exception");
+        }
+        catch( CompilationFailedException e ) {
+            return e;
+        }
+
         return null;
     }
 
