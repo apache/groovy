@@ -127,6 +127,7 @@ public class AntBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name, Map attributes) {
+
         String tagName = name.toString();
         Object answer = null;
 

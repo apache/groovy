@@ -715,28 +715,55 @@ public class ASTBuilder
         return paramList;
     }
 
-    protected NamedArgumentListExpression namedActualParameterList(CSTNode paramRoot)
+    protected Expression namedActualParameterList(CSTNode paramRoot)
     {
-        NamedArgumentListExpression paramList = new NamedArgumentListExpression();
+        //NamedArgumentListExpression paramList = new NamedArgumentListExpression();
+        //ListExpression paramList = new ListExpression();
+        TupleExpression paramList = new TupleExpression();
 
         CSTNode[] paramRoots = paramRoot.getChildren();
 
+        MapExpression map = new MapExpression();
+
+        paramList.addExpression( map );
+
         for ( int i = 0 ; i < paramRoots.length ; ++i )
         {
-            CSTNode keyRoot = paramRoots[ i ].getChild( 0 );
-            CSTNode valueRoot = paramRoots[ i ].getChild( 1 );
-
-            Expression keyExpr   = new ConstantExpression( keyRoot.getToken().getText() );
-            Expression valueExpr = expression( paramRoot );
-
-            paramList.addMapEntryExpression( keyExpr,
-                                             valueExpr );
+            if ( matches( paramRoots[ i ],
+                          Token.COLON ) )
+            {
+                CSTNode keyRoot = paramRoots[ i ].getChild( 0 );
+                CSTNode valueRoot = paramRoots[ i ].getChild( 1 );
+                
+                System.err.println( "param: " + paramRoots[i] );
+                
+                Expression keyExpr   = new ConstantExpression( keyRoot.getToken().getText() );
+                Expression valueExpr = expression( valueRoot );
+                
+                //paramList.addMapEntryExpression( keyExpr,
+                //valueExpr );
+                
+                map.addMapEntryExpression( keyExpr,
+                                           valueExpr );
+            }
+            else
+            {
+                if ( matches( paramRoots[ i ],
+                              Token.LEFT_CURLY_BRACE ) )
+                {
+                    paramList.addExpression( closureExpression( paramRoots[ i ] ) );
+                }
+                              
+                break;
+            }
         }
+
+        System.err.println( "paramList: " + paramList );
 
         return paramList;
     }
 
-    protected TupleExpression nonNamedActualParameterList(CSTNode paramRoot)
+    protected Expression nonNamedActualParameterList(CSTNode paramRoot)
     {
         return tupleExpression( paramRoot );
     }
