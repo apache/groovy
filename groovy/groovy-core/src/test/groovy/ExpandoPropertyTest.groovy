@@ -11,4 +11,16 @@ class ExpandoPropertyTest extends GroovyTestCase {
         
         assert foo.expandoProperties.size() == 2
     }
+    
+    void testExpandoMethods() {
+        foo = new Expando()
+
+        foo.cheese = "Cheddar"
+        foo.name = "Gromit"
+        foo.nameLength = { return name.length() }
+
+        assert foo.cheese == "Cheddar"
+        assert foo.name == "Gromit"
+        assert foo.nameLength() == 6
+    }
 }
