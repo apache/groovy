@@ -20,7 +20,7 @@ class Groovy239_Bug extends GroovyTestCase {
 		}
 	}
 
-	def makeClosure() {
+	makeClosure() {
 		return { it() }
 	}
 		
