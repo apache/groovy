@@ -27,7 +27,7 @@ class Html2Wiki {
         new File(outputName).eachPrintWriter { out = it; makeWikiPage(node) }
     }
 
-    getOutputName(fileName) {
+    def getOutputName(fileName) {
 	    lastIdx = fileName.lastIndexOf(".")
 	    if (lastIdx > 0) {
 	        fileName = fileName.substring(0, lastIdx)
