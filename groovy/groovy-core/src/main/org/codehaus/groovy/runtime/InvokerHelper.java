@@ -130,6 +130,10 @@ public class InvokerHelper {
         return getInstance().invokeConstructorOf(type, arguments);
     }
 
+    public static Object invokeNoArgumentsConstructorOf(Class type) {
+        return getInstance().invokeConstructorOf(type, EMPTY_ARGS);
+    }
+
     public static Object invokeClosure(Object closure, Object arguments) {
         return getInstance().invokeMethod(closure, "doCall", arguments);
     }
