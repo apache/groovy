@@ -275,7 +275,13 @@ public class DefaultGroovyMethods {
     }
 
     public static boolean isCase(Pattern caseValue, Object switchValue) {
-        return caseValue.matcher(switchValue.toString()).matches();
+        Matcher matcher = caseValue.matcher(switchValue.toString());
+        if (matcher.matches()) {
+            RegexSupport.setLastMatcher(matcher);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     // Collection based methods

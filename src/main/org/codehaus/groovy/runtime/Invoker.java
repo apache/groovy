@@ -670,7 +670,9 @@ public class Invoker {
             pattern = Pattern.compile(toString(right));
         }
         String stringToCompare = toString(left);
-        return pattern.matcher(stringToCompare).matches();
+        Matcher matcher = pattern.matcher(stringToCompare);
+        RegexSupport.setLastMatcher(matcher);
+        return matcher.matches();
     }
 
     /**
@@ -794,12 +796,13 @@ public class Invoker {
     }
 
     public boolean asBool(Object object) {
-        if (object instanceof Boolean) {
+       if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
         }
         else if (object instanceof Matcher) {
             Matcher matcher = (Matcher) object;
+            RegexSupport.setLastMatcher(matcher);
             return matcher.find();
         }
         else if (object instanceof Collection) {

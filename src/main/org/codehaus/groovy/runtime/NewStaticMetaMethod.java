@@ -91,8 +91,7 @@ public class NewStaticMetaMethod extends MetaMethod {
         int size = arguments.length;
         Object[] newArguments = new Object[size + 1];
         System.arraycopy(arguments, 0, newArguments, 1, size);
-        Object obj = ((Class)object).newInstance();
         newArguments[0] = null;
-        return metaMethod.invoke(obj, newArguments);
+        return metaMethod.invoke(null, newArguments);
     }
 }
