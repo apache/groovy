@@ -11,7 +11,7 @@ class SqlTest extends GroovyTestCase {
     void testSqlQuery() {
         sql = createSql()     
         
-        sql.queryEach("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
+        sql.eachRow("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
     }
     
     void testQueryUsingColumnIndices() {
@@ -19,7 +19,7 @@ class SqlTest extends GroovyTestCase {
     	
     	answer = null
     	
-    	sql.queryEach("select count(*) from PERSON") { answer = it[1] }
+    	sql.eachRow("select count(*) from PERSON") { answer = it[1] }
     	
     	println "Found the count of ${answer}"
     	
@@ -30,7 +30,7 @@ class SqlTest extends GroovyTestCase {
         sql = createSql()     
         
         foo = "drink"
-        sql.queryEach("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
+        sql.eachRow("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
@@ -38,7 +38,7 @@ class SqlTest extends GroovyTestCase {
         
         foo = "cheese"
         bar = "edam"
-        sql.queryEach("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
+        sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
     }
     
     void testDataSet() {

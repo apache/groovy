@@ -11,7 +11,7 @@ import groovy.sql.TestHelper
 foo = 'cheese'
 sql = TestHelper.makeSql()
 
-sql.queryEach("select * from FOOD where type=${foo}") { 
+sql.eachRow("select * from FOOD where type=${foo}") { 
     println "Gromit likes ${it.name}" 
 }
 {code}
@@ -27,7 +27,7 @@ foo = 'cheese'
 sql = TestHelper.makeSql()
 
 answer = 0
-sql.queryEach("select count(*) from FOOD where type=${foo}") { row |
+sql.eachRow("select count(*) from FOOD where type=${foo}") { row |
 	answer = row[1]
 }
 assert answer > 0

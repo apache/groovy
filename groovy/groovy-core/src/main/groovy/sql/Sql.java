@@ -261,11 +261,23 @@ public class Sql {
         query(sql, params, closure);
     }
 
+    /** 
+     * @deprecated please use eachRow instead 
+     */
+    public void queryEach(String sql, Closure closure) throws SQLException {
+        warnDeprecated();
+        eachRow(sql, closure);
+    }
+    
+    private void warnDeprecated() {
+        log.warning("queryEach() is deprecated, please use eachRow() instead");
+    }
+
     /**
      * Performs the given SQL query calling the closure with each row of the
      * result set
      */
-    public void queryEach(String sql, Closure closure) throws SQLException {
+    public void eachRow(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
         ResultSet results = null;
@@ -287,10 +299,18 @@ public class Sql {
         }
     }
 
+    /** 
+     * @deprecated please use eachRow instead 
+     */
+    public void queryEach(String sql, List params, Closure closure) throws SQLException {
+        warnDeprecated();
+        eachRow(sql, params, closure);
+    }
+
     /**
      * Performs the given SQL query calling the closure with the result set
      */
-    public void queryEach(String sql, List params, Closure closure) throws SQLException {
+    public void eachRow(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -317,12 +337,21 @@ public class Sql {
     /**
      * Performs the given SQL query calling the closure with the result set
      */
-    public void queryEach(GString gstring, Closure closure) throws SQLException {
+    public void eachRow(GString gstring, Closure closure) throws SQLException {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
-        queryEach(sql, params, closure);
-
+        eachRow(sql, params, closure);
     }
+    
+    /** 
+     * @deprecated please use eachRow instead 
+     */
+    public void queryEach(GString gstring, Closure closure) throws SQLException {
+        warnDeprecated();
+        eachRow(gstring, closure);
+    }
+    
+    
 
     /**
      * Executes the given piece of SQL
