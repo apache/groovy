@@ -111,6 +111,7 @@ public class ColumnInfo {
         answer.add("java.lang.Double");
         answer.add("java.math.BigInteger");
         answer.add("java.math.BigDecimal");
+        answer.add("java.lang.String");
         answer.add("java.util.Date");
         answer.add("java.sql.Date");
         answer.add("java.sql.Time");
