@@ -4,7 +4,7 @@
     <attainGoal name="html2xdoc"/>
   </preGoal>
 
-  <goal name="setclasspath" prereqs="java:compile, test:compile">
+  <goal name="setclasspath">
 	<path id="test.classpath">
 	    <pathelement path="${maven.build.dest}"/>
 	    <pathelement path="target/classes"/>
@@ -12,19 +12,35 @@
 	    <path refid="maven.dependency.classpath"/>
 	</path>
   </goal>
+  
+  <postGoal name="test:compile">
+    <attainGoal name="setclasspath"/>
+    <attainGoal name="groovy:compile-tests"/>
+  </postGoal>
+    
 
-    <goal name="asm:dump" prereqs="setclasspath"
+  <goal name="asm:dump" prereqs="test:compile"
 		description="Dumps the ASM instructions to generate the given class using the name property">
 
-		<j:if test="${empty(name)}">
-			<j:set var="name" value="org.codehaus.groovy.classgen.DumpClass"/>
-		</j:if>
-		
-		<echo>Dumping class $$name = ${name}</echo>
-        <java classname="org.objectweb.asm.util.DumpClassVisitor" fork="yes">
-            <classpath refid="test.classpath"/>
-            <arg value="${name}"/>
-        </java>
+	<j:if test="${empty(name)}">
+      <j:set var="name" value="org.codehaus.groovy.classgen.DumpClass"/>
+	</j:if>
+	
+	<echo>Dumping class $$name = ${name}</echo>
+    <java classname="org.objectweb.asm.util.DumpClassVisitor" fork="yes">
+      <classpath refid="test.classpath"/>
+      <arg value="${name}"/>
+    </java>
+  </goal>
+
+  <goal name="groovy:compile-tests"
+  		description="Compiles the Groovy unit test cases">
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/src/java/test">
+      <classpath refid="test.classpath"/>
+      <include name="**/*.groovy"/>
+      <exclude name="**/notworking/*.groovy"/>
+    </groovyc>
   </goal>
 
   <goal name="groovy:make-install" prereqs="jar:jar">

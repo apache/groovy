@@ -117,6 +117,12 @@
       <version>1.0</version>
     </dependency>
 
+	<!-- only used for maven plugin-->
+    <dependency>
+      <id>ant</id>
+      <version>1.5.2</version>
+    </dependency>
+
 	<!-- only used for testing-->
     <dependency>
       <id>asm+util</id>
