@@ -235,6 +235,10 @@
 		<source>
 		maven test:match -Dtestmatch=Foo*Test.* 
 		</source>
+		
+		<p>
+		There is more details on unit testing groovy scripts <a href="unitTesting.html">here</a>
+		</p>
       </answer>
     </faq>   
   </part>
