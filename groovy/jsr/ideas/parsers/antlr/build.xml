@@ -8,7 +8,7 @@
   <!--                   compile settings                -->
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <property name="build.debug" value="on"/>
-  <property name="version.number" value="0.0.1"/>
+  <property name="version.number" value="0.0.2"/>
   
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <!--                   directories                     -->
@@ -62,6 +62,7 @@
   />
 
   <target name="clean" description="remove all built files">
+    <delete dir="${test.reports.dir}"/>
     <delete dir="${standalone.dir}"/>
     <delete dir="${javadoc.dir}" />
     <delete dir="${generated.src.dir}" />
@@ -82,7 +83,7 @@
   <target name="docs" depends="generate" description="generate documentation">
     <mkdir dir="${javadoc.dir}" />
 
-    <antlr target="${src.dir}/groovy.g"
+    <antlr target="${src.dir}/org/codehaus/groovy/antlr/groovy.g"
            html="true"
            outputdirectory="${javadoc.dir}">
       <classpath>
@@ -91,24 +92,19 @@
         </fileset>
       </classpath>
     </antlr>
+    <move file="doc/GroovyLexer.txt" tofile="doc/GroovyLexer.html"/>
 
-
-<!-- todo             packagenames="${javadoc.packages}" -->
     <copy todir="${generated.src.dir}">
       <fileset dir="${src.dir}"/>
     </copy>
 
     <javadoc sourcepath="${generated.src.dir}" 
              destdir="${javadoc.dir}" 
+             packagenames="${javadoc.packages}"
+             classpathref="compile.classpath"
              use="true"
              windowtitle="groovyc"
              private="true"/>
-  </target>
-
-  <target name="run" depends="compile" description="compile and run">
-    <java classname="Main"
-          fork="yes" 
-          classpathref="compile.classpath"/>
   </target>
 
   <target name="test" 
@@ -163,7 +159,7 @@
         <fileset dir="licenses"/>
     </copy>
     <mkdir dir="standalone"/>
-    <jar jarfile="standalone/groovyc.jar" 
+    <jar jarfile="standalone/groovyc-${version.number}.jar" 
          manifest="${src.dir}/manifest.txt">
     <fileset dir="${standalone.working.dir}"/>
   </jar>
@@ -173,9 +169,9 @@
 
 
   <target name="generate" depends="init" description="generate sources from a grammar file">
-    <mkdir dir="${generated.src.dir}"/>
-    <antlr target="${src.dir}/groovy.g"
-           outputdirectory="${generated.src.dir}">
+    <mkdir dir="${generated.src.dir}/org/codehaus/groovy/antlr"/>
+    <antlr target="${src.dir}/org/codehaus/groovy/antlr/groovy.g"
+           outputdirectory="${generated.src.dir}/org/codehaus/groovy/antlr">
       <classpath>
         <fileset dir="${lib.dir}">
           <include name="**/*.jar"/>

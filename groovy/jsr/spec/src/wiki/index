@@ -19,6 +19,7 @@ h1. Table of Contents
 * Chapter 15: [Expressions|Chapter15Expressions.html]
 * Chapter 16: Definite Assignment
 * Chapter 17: Threads and Locks
-* Chapter 18: Syntax
+* Chapter 18: [Syntax|Chapter18Syntax.html]
 * Notes for spec. developers.
 * [Java Language Specification Differences|JLSDifferences.html]
+* [Test Compatibility Kit|../tck/index.html]

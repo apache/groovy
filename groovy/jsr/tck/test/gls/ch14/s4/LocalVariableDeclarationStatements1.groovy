@@ -1,5 +1,5 @@
 /**
- * A local variable declaration statement declares one or more local variable names.
+ * A local variable declaration statement declares one or more local variable names
  */
 class Foo {
     def run() {

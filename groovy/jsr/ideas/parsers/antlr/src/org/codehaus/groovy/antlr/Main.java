@@ -1,3 +1,4 @@
+package org.codehaus.groovy.antlr;
 import java.io.*;
 import antlr.collections.AST;
 import antlr.collections.impl.*;
@@ -10,7 +11,7 @@ class Main {
 	static boolean showTree = false;
 	static boolean verbose = false;
     public static void main(String[] args) {
-	System.out.println("groovy compiler - JSR 241 preview - v0.0.0.0.1");
+	System.out.println("groovy compiler - JSR 241 preview - v0.0.2");
 	System.out.println("");
 		// Use a try/catch block for parser exceptions
 		try {

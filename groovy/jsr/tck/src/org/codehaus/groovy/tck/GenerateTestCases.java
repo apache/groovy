@@ -78,6 +78,7 @@ public class GenerateTestCases extends MatchingTask {
         else {
             src.append(srcDir);
         }
+        batchGenerate.setSrcdirPath(src.toString());
     }
 
     /**

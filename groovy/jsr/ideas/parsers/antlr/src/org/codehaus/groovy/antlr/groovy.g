@@ -3,6 +3,7 @@
 /* See TO DO, DECIDE, PROPOSAL markers throughout this file. */
 
 header {
+    package org.codehaus.groovy.antlr;
     import java.util.ArrayList;
 	import java.io.InputStream;
 	import java.io.Reader;

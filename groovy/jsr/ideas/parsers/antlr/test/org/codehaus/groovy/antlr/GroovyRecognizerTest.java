@@ -1,3 +1,4 @@
+package org.codehaus.groovy.antlr;
 import junit.framework.*;
 
 import java.io.Reader;

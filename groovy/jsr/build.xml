@@ -61,6 +61,15 @@ render specification...
     <copy todir="${publish.dir}/spec">
       <fileset dir="${spec.wiki.dir}"/>
     </copy>
+
+    <ant dir="ideas/parsers/antlr" target="docs" inheritAll="false"/>
+    <copy todir="${publish.dir}/spec">
+      <fileset dir="ideas/parsers/antlr/doc/">
+        <include name="GroovyRecognizer.html"/>
+        <include name="GroovyLexer.html"/>
+      </fileset>
+    </copy>
+
     <copy todir="${publish.dir}/tck">
       <fileset dir="tck/reports"/>
     </copy>

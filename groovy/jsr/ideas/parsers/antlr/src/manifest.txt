@@ -1,2 +1,2 @@
 Manifest-Version: 1.0
-Main-Class: Main
+Main-Class: org.codehaus.groovy.antlr.Main
