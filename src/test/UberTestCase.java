@@ -22,6 +22,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(BenchmarkBug.class);
         suite.addTestSuite(BigDecimalOperationTest.class);
         suite.addTestSuite(BindingTest.class);
+        suite.addTestSuite(BitwiseOperationsTest.class);
         suite.addTestSuite(BlockAsClosureBug.class);
         suite.addTestSuite(BooleanBug.class);
         suite.addTestSuite(BooleanOperationTest.class);
