@@ -81,7 +81,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
             }
             catch (MissingMethodException e) {
                 Object delegate = getDelegate();
-                if (delegate != this) {
+                if (delegate != this && delegate != null) {
                     try {
                         // lets try invoke method on delegate
                         return InvokerHelper.invokeMethod(delegate, method, arguments);
@@ -101,7 +101,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         }
         catch (GroovyRuntimeException e) {
             Object delegate = getDelegate();
-            if (delegate != this) {
+            if (delegate != this && delegate != null) {
                 try {
                     // lets try invoke method on delegate
                     return InvokerHelper.getProperty(delegate, property);
@@ -121,7 +121,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
         }
         catch (GroovyRuntimeException e) {
             Object delegate = getDelegate();
-            if (delegate != this) {
+            if (delegate != this && delegate != null) {
                 try {
                     // lets try invoke method on delegate
                     InvokerHelper.setProperty(delegate, property, newValue);

@@ -144,4 +144,8 @@ public class DumpClass4 {
     public void usePrimitiveType() {
         System.out.println(int.class);
     }
+    
+    public String testSuperCall() {
+        return super.toString();
+    }
 }
