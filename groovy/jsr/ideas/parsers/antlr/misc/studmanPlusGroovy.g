@@ -1,3 +1,7 @@
+header {
+package org.codehaus.groovy.antlr;
+}
+ 
 /** JSR-241 Groovy Recognizer
  *
  * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -277,14 +281,19 @@ importStatement
 //	|	SEMI!
 //	;
 
-// TODO REMOVE
+// Added this production, even though 'typeDefinition' seems to be obsolete,
+// as this is referenced by many other parts of the grammar.
 // Protected type definitions production for reuse in other productions
-//protected typeDefinitionInternal[AST mods]
-	//:	classDefinition[#mods]		// inner class
-	//|	interfaceDefinition[#mods]	// inner interface
-	//|	enumDefinition[#mods]		// inner enum
-	//|	annotationDefinition[#mods]	// inner annotation
-	//;
+protected typeDefinitionInternal[AST mods]
+	:	cd:classDefinition[#mods]		// inner class
+	  {#field = #cd;}
+	|	id:interfaceDefinition[#mods]	// inner interface
+	  {#field = #id;}
+	|	ed:enumDefinition[#mods]		// inner enum
+	  {#field = #ed;}
+	|	ad:annotationDefinition[#mods]	// inner annotation
+	  {#field = #ad;}
+	;
 
 /** A declaration is the creation of a reference or primitive-type variable,
  *  or (if arguments are present) of a method.
@@ -345,7 +354,7 @@ declarationStart!
 
 /** Used only as a lookahead predicate for nested type declarations. */
 typeDeclarationStart!
-    :   (modifier!)* ("class" | "interface")
+    :   (modifier!)* ("class" | "interface" | "enum" | AT )
     ;
 
 /** An IDENT token whose spelling is required to start with an uppercase letter.
@@ -756,7 +765,7 @@ annotationField!
 
 				LPAREN! RPAREN!
 
-				rt:declaratorBrackets[#t]
+				/*OBS* rt:declaratorBrackets[#t] *OBS*/
 
 				( "default" amvi:annotationMemberValueInitializer )?
 
@@ -797,12 +806,14 @@ enumConstantBlock
 
 //An enum constant field is just like a class field but without
 //the posibility of a constructor definition or a static initializer
+
+// TODO - maybe allow 'declaration' production within this production, 
+// but how to disallow constructors and static initializers...
 enumConstantField!
 	:	mods:modifiers
 		(	td:typeDefinitionInternal[#mods]
 			{#enumConstantField = #td;}
-
-		|	// A generic method has the typeParameters before the return type.
+	|	// A generic method has the typeParameters before the return type.
 			// This is not allowed for variable definitions, but this production
 			// allows it, a semantic check could be used if you wanted.
 			(tp:typeParameters)? t:typeSpec[false]		// method or variable declaration(s)
@@ -811,7 +822,7 @@ enumConstantField!
 				// parse the formal parameter declarations.
 				LPAREN! param:parameterDeclarationList RPAREN!
 
-				rt:declaratorBrackets[#t]
+	/*OBS*			rt:declaratorBrackets[#t] *OBS*/
 
 				// get the list of exceptions that this method is
 				// declared to throw
@@ -826,7 +837,8 @@ enumConstantField!
 							 param,
 							 tc,
 							 s2);}
-			|	v:variableDefinitions[#mods,#t] SEMI
+			
+			 |	v:variableDefinitions[#mods,#t] SEMI
 				{#enumConstantField = #v;}
 			)
 		)
@@ -1079,9 +1091,9 @@ parameterDeclaration!
 // TODO - possibly add nls! somewhere within variableLengthParameterDeclaration
 variableLengthParameterDeclaration!
 	:	pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
-		pd:declaratorBrackets[#t]
+		/*OBS* pd:declaratorBrackets[#t]*/
 		{#variableLengthParameterDeclaration = #(#[VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF"],
-												pm, #([TYPE,"TYPE"],pd), id);}
+												pm, #([TYPE,"TYPE"],t), id);}
 	;
 
 parameterModifier
@@ -2454,7 +2466,6 @@ BAND_ASSIGN		:	"&="	;
 LAND			:	"&&"	;
 SEMI			:	';'		;
 DOLLAR                  :       '$'             ;
-ATSIGN                  :       '@'             ;
 RANGE_INCLUSIVE		:       ".."    ;
 
 // Whitespace -- ignored
@@ -2780,6 +2791,7 @@ NUM_INT
 	;
 
 // JDK 1.5 token for annotations and their declarations
+// also a groovy operator for actual field access e.g. 'telson.@age' 
 AT
 	:	'@'
 	;
