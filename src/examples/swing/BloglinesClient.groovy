@@ -1,0 +1,167 @@
+/*
+ * BloglinesClient.groovy - an example of the Bloglines Web Services
+ *
+ * Written by Marc Hedlund <marc@precipice.org>, September 2004.
+ *
+ * Used in Marc's article at:
+ *    http://www.oreillynet.com/pub/a/network/2004/09/28/bloglines.html
+ *
+ * Requirements:
+ *   - install Groovy as detailed at <http://groovy.codehaus.org/>.
+ *   - put commons-httpclient-2.0.1.jar into GROOVY_HOME/lib
+ *       see <http://jakarta.apache.org/commons/httpclient/>.
+ *       note: this is currently designed for HttpClient2.x and not HttpClient3.x
+ *
+ * To Launch:
+ *   groovy BloglinesClient.groovy
+ *
+ * This work is licensed under the Creative Commons Attribution
+ * License. To view a copy of this license, visit
+ * <http://creativecommons.org/licenses/by/2.0/> or send a letter to
+ * Creative Commons, 559 Nathan Abbott Way, Stanford, California 94305, USA.
+ */
+
+import groovy.swing.SwingBuilder;
+import java.awt.BorderLayout;
+import java.net.URL;
+import javax.swing.BorderFactory;
+import javax.swing.JOptionPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTree;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeSelectionModel;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.methods.GetMethod;
+
+// Set up global variables and data types
+server   = 'rpc.bloglines.com';
+apiUrl   = { method | "http://${server}/${method}" };
+class Feed { name; id; unread; String toString() { 
+    return (unread == "0" ? name : "${name} (${unread})");
+  } 
+}
+class Item { title; contents; String toString() { return title; } }
+
+// Ask the user for account information (using simple dialogs)
+email = 
+  JOptionPane.showInputDialog(null, "Email address:", "Log in to Bloglines", 
+			      JOptionPane.QUESTION_MESSAGE);
+password = 
+  JOptionPane.showInputDialog(null, "Password:", "Log in to Bloglines", 
+			      JOptionPane.QUESTION_MESSAGE);
+
+// Use HTTPClient for web requests since the server requires authentication
+client = new HttpClient();
+credentials = new UsernamePasswordCredentials(email, password);
+client.getState().setCredentials("Bloglines RPC", server, credentials);
+
+// Get the list of subscriptions and parse it into a GPath structure
+opml = new XmlParser().parseText(callBloglines(apiUrl('listsubs')));
+
+def callBloglines(url) {
+  try {
+    get = new GetMethod(url);
+    get.setDoAuthentication(true);
+    client.executeMethod(get);
+    return get.getResponseBodyAsString();
+  } catch (Exception e) {
+    println "Error retrieving <${url}>: ${e}";
+    return "";
+  }
+}
+
+// Descend into the subscription outline, adding to the feed tree as we go
+treeTop = new DefaultMutableTreeNode("My Feeds");
+parseOutline(opml.body.outline.outline, treeTop);
+
+def parseOutline(parsedXml, treeLevel) {
+  parsedXml.each() { outline |
+    if (outline['@xmlUrl'] != null) {  // this is an individual feed
+      feed = new Feed(name:outline['@title'], id:outline['@BloglinesSubId'], 
+		      unread:outline['@BloglinesUnread']);
+      treeLevel.add(new DefaultMutableTreeNode(feed));
+
+    } else {  // this is a folder of feeds
+      folder = new DefaultMutableTreeNode(outline['@title']);
+      parseOutline(outline.outline, folder);
+      treeLevel.add(folder);
+    }
+  }
+}
+
+// Build the base user interface objects and configure them
+swing = new SwingBuilder();
+feedTree = new JTree(treeTop);
+itemList = swing.list();
+itemText = swing.textPane(contentType:'text/html', editable:false);
+model = feedTree.getSelectionModel();
+model.setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+itemList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+// Set up the action closures that will react to user selections
+listItems = { feed |
+  rssText = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0");  
+  if (rssText != null) {
+    try {
+      rss = new XmlParser().parseText(rssText);
+      items = new Vector();
+      rss.channel.item.each() {
+	item = new Item(title:it.title[0].text(), 
+			contents:it.description[0].text());
+	items.add(item);
+      }
+      itemList.setListData(items);
+      feed.unread = "0";  // update the unread item count in the feed list
+    } catch (Exception e) {
+      println "Error during <${feed.name}> RSS parse: ${e}";
+    }
+  }
+}
+
+feedTree.valueChanged = { event |
+  itemText.setText("");  // clear any old item text
+  node = (DefaultMutableTreeNode) feedTree.getLastSelectedPathComponent();
+  if (node != null) {
+    feed = node.getUserObject();
+    if (feed instanceof Feed && feed.unread != "0") {
+      listItems(feed);
+    }
+  }
+}
+
+itemList.valueChanged = { event |
+  item = event.getSource().getSelectedValue();
+  if (item != null && item instanceof Item) {
+    itemText.setText("<html><body>${item.contents}</body></html>");
+  }
+}
+
+// Put the user interface together and display it
+gui = 
+  swing.frame(title:'Bloglines Client', location:[100,100], size:[800,600], 
+	      defaultCloseOperation:WindowConstants.EXIT_ON_CLOSE) {
+
+    panel(layout:new BorderLayout()) {
+      splitPane(orientation:JSplitPane.HORIZONTAL_SPLIT, dividerLocation:200) {
+        scrollPane() {
+	  widget(feedTree);
+	}
+
+        splitPane(orientation:JSplitPane.VERTICAL_SPLIT, dividerLocation:150) {
+          scrollPane(constraints:BorderLayout.CENTER) {
+	    widget(itemList);
+	  }
+
+	  scrollPane(constraints:BorderLayout.CENTER) {
+	    widget(itemText);
+	  }
+        }
+      }
+    }
+  }
+
+gui.show();
