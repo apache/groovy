@@ -10,7 +10,7 @@ Core Groovy Tasks
 
 * test tree builder - calling of nested methods
 
-* refactor the MetaClass to use an Object[] rather than Object?
+* refactor the MetaClass to use an Object[] rather than Object for arguments?
 
 * have some kinda way to do this
 

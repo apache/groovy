@@ -96,7 +96,7 @@ public class NodeBuilder implements GroovyObject {
         }
         if (current != null) {
             // lets add it to the parents children
-            Object parentValue = current.getValue();
+            Object parentValue = current.value();
             List parentList = null;
             if (parentValue instanceof List) {
                 parentList = (List) parentValue;
@@ -109,7 +109,7 @@ public class NodeBuilder implements GroovyObject {
             parentList.add(node);
         }    
         
-        System.out.println("Created node: " + node);
+        //System.out.println("Created node: " + node);
         
         if (closure != null) {
             // push new node on stack
