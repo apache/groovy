@@ -153,6 +153,11 @@ class ListTest extends GroovyTestCase {
         assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
     }
     
+    void testFlattenWithRanges() {
+        flat = [1, 3, 20..24, 33].flatten()
+        assert flat == [1, 3, 20, 21, 22, 23, 33]
+    }
+    
     void testRemove() {
         l = ['a', 'b', 'c']
         
