@@ -76,4 +76,8 @@ public class CaseStatement extends Statement {
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitCaseStatement(this);
     }
+    
+    public String toString() {
+        return super.toString() + "[expression: " + expression + "; code: " + code + "]";
+    }
 }

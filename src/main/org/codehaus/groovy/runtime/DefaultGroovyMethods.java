@@ -78,6 +78,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -201,6 +202,24 @@ public class DefaultGroovyMethods {
         return InvokerHelper.invokeMethod(object, method, arguments);
     }
 
+    // matches methods
+    //-------------------------------------------------------------------------
+    public static boolean matches(Object caseValue, Object switchValue) {
+        return caseValue.equals(switchValue);
+    }
+    
+    public static boolean matches(Class caseValue, Object switchValue) {
+        return caseValue.isInstance(switchValue);
+    }
+    
+    public static boolean matches(Collection caseValue, Object switchValue) {
+        return caseValue.contains(switchValue);
+    }
+    
+    public static boolean matches(Pattern caseValue, Object switchValue) {
+        return caseValue.matcher(switchValue.toString()).matches();
+    }
+    
     // Collection based methods
     //-------------------------------------------------------------------------
 

@@ -51,8 +51,8 @@ import groovy.lang.MetaClass;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
 
 /**
  * Tests method invocation
@@ -64,17 +64,17 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
 
     protected Invoker invoker = new Invoker();
     private StringBuffer buffer;
-    
+
     // Method invocation tests
     //-------------------------------------------------------------------------
-    
+
     public void testInvokeMethodNoParams() throws Throwable {
         buffer = new StringBuffer();
-        
-        List list = new ArrayList();    
+
+        List list = new ArrayList();
         list.add("abc");
         list.add("def");
-        
+
         invoker.invokeMethod(list, "each", new Closure(this) {
             public Object call(Object arguments) {
                 buffer.append(arguments.toString());
@@ -88,13 +88,33 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
             public void setMetaClass(MetaClass metaClass) {
             }
         });
-        
+
         assertEquals("buffer", "abcdef", buffer.toString());
     }
 
+    public void testMatchesWithObject() throws Throwable {
+        assertMatches(new Integer(1), new Integer(1), true);
+        assertMatches(new Integer(1), new Integer(2), false);
+    }
 
-    
+    public void testMatchesWithClass() throws Throwable {
+        assertMatches(new Integer(1), Integer.class, true);
+        assertMatches(new Integer(1), Number.class, true);
+        assertMatches(new Integer(1), Double.class, false);
+    }
+
+    public void testMatchesWithList() throws Throwable {
+        assertMatches(new Integer(1), Arrays.asList(new Object[] { new Integer(2), new Integer(1)}), true);
+        assertMatches(new Integer(1), Arrays.asList(new Object[] { new Integer(2), new Integer(3)}), false);
+    }
+
     // Implementation methods
     //-------------------------------------------------------------------------
-    
+    protected void assertMatches(Object switchValue, Object caseValue, boolean expected) {
+        assertEquals(
+            "Switch on: " + switchValue + " Case: " + caseValue,
+            expected,
+            InvokerHelper.matches(switchValue, caseValue));
+    }
+
 }
