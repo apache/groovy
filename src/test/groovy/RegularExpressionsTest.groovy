@@ -5,6 +5,8 @@
  * @version
  */
  
+ import java.util.regex.Pattern
+ 
  class RegularExpressionsTest extends GroovyTestCase {
  	
  	void testFindRegex() {
@@ -46,5 +48,20 @@
  		i = 0
  		("cheesecheese" ~= "cheese").each({value | println(value) i = i + 1});
  		assert i == 2
+ 	}
+ 	
+ 	void testPatterns() {
+ 		pattern = ~"foo"
+ 		assert pattern instanceof Pattern
+ 		assert pattern.matcher("foo").matches()
+ 		assert !pattern.matcher("bar").matches()
+ 		
+ 		pattern = ~<<<EOS
+foo
+EOS
+ 		assert pattern.matcher("foo").matches()
+ 		assert !pattern.matcher("bar").matches()
+ 		
+ 		assert "foofoofoo" ~= ~"foo"
  	}
  }

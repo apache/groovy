@@ -100,6 +100,9 @@ public class Token
 
     /**	Token type for "~==". */
     public static final int MATCH_REGEX = 106;
+    
+    /** Token type for "~" */
+    public static final int PATTERN_REGEX = 107;
 
     /** Token type for "==". */
     public static final int COMPARE_IDENTICAL = 110;
@@ -435,6 +438,12 @@ public class Token
                              "!=" );
         addTokenDescription( EQUAL,
                              "=" );
+        addTokenDescription( FIND_REGEX,
+                             "~=");
+        addTokenDescription( MATCH_REGEX,
+                             "~==");
+        addTokenDescription( PATTERN_REGEX,
+                             "~");
         addTokenDescription( COMPARE_EQUAL,
                              "==" );
         addTokenDescription( COMPARE_IDENTICAL,
@@ -1214,6 +1223,21 @@ public class Token
                          text,
                          startLine,
                          startColumn );
+    }
+
+    /** Factory method for token for double-quoted string.
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token patternRegex(int startLine,
+									 int startColumn)
+    {
+    	return newToken( PATTERN_REGEX,
+    					 startLine,
+						 startColumn );
     }
 
     /** Factory method for token for single-quoted string.
