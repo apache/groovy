@@ -60,6 +60,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
 
     private static final Object noParameters[] = new Object[] { null };
+    private static final Object zeroLengthObjectArray[] = new Object[0];
 
     private Object delegate;
     private Object owner;
@@ -177,7 +178,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call() {
-        return call(null);
+        return call(zeroLengthObjectArray);
     }
 
     /**
@@ -188,15 +189,25 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      */
     public Object call(Object arguments) {
         MetaMethod method = getDoCallMethod();
-        Object[] parameters = getParameters(arguments);
+    		Class[] formalParameters = method.getParameterTypes();
+        Object[] parameters;
+        
+        	if (arguments instanceof Object[] &&
+			((Object[])arguments).length == 0 &&
+        	    formalParameters.length == 1 &&
+			formalParameters[0] == Object[].class)
+        	{
+        		// no parameters passed to a varags closure
+        		parameters = zeroLengthObjectArray;
+        	} else {
+        		parameters = getParameters(arguments);
+        	}
         try {
 	        try {
 	            method.checkParameters(parameters);
 	            return method.invoke(this, parameters);
 	        }
-	        catch (IllegalArgumentException e) {
-	        	Class[] formalParameters = method.getParameterTypes();
-	        	
+	        catch (IllegalArgumentException e) {    	
 	        		if (formalParameters[formalParameters.length - 1] == Object[].class) {
 	        			//
 	        			//	last parameter is Object[] pass excess parameters in that array
@@ -206,9 +217,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 	        			Object[] newParameters = new Object[formalParameters.length];
 	        			Object[] restOfTheParameters = new Object[parameters.length - formalParameters.length + 1];
 	    	        	
-	        			System.arraycopy(parameters, 0, newParameters, 0, newParameters.length - 1);
-	        			System.arraycopy(parameters, newParameters.length - 1, restOfTheParameters, 0, restOfTheParameters.length);
-		        		newParameters[newParameters.length - 1] = restOfTheParameters;
+		        			System.arraycopy(parameters, 0, newParameters, 0, newParameters.length - 1);
+		        			System.arraycopy(parameters, newParameters.length - 1, restOfTheParameters, 0, restOfTheParameters.length);
+			        		newParameters[newParameters.length - 1] = restOfTheParameters;
 		        			
 	        			
 	            	        try {
