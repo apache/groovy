@@ -3,6 +3,10 @@ Core Groovy Tasks
 
 * write a Node pretty printer
 
+* test print()
+
+* closure methods on Node
+	
 * more tests of field and property initialisers
 
 * test closure with no argument, once bob's done the parser. both

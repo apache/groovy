@@ -45,8 +45,10 @@
  */
 package org.codehaus.groovy.classgen;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -67,11 +69,9 @@ import org.objectweb.asm.ClassWriter;
  */
 public class GroovyClassLoader extends ClassLoader {
 
-    private ClassWriter classWriter;
     private Verifier verifier = new Verifier();
 
     public GroovyClassLoader() {
-        this.classWriter = new ClassWriter(true);
     }
 
     /**
@@ -80,8 +80,18 @@ public class GroovyClassLoader extends ClassLoader {
      * @param classNode
      * @return
      */
-    public Class defineClass(ClassNode classNode) {
-        return defineClass(new GeneratorContext(), classNode);
+    public Class defineClass(ClassNode classNode, String file) {
+        return defineClass(new GeneratorContext(), classNode, file);
+    }
+
+    /**
+     * Parses the given file name into a Java class capable of being run
+     * 
+     * @param charStream
+     * @return the main class defined in the given script
+     */
+    public Class parseClass(String file) throws SyntaxException, IOException {
+        return parseClass(new FileInputStream(file), file);
     }
 
     /**
@@ -90,10 +100,10 @@ public class GroovyClassLoader extends ClassLoader {
      * @param charStream
      * @return the main class defined in the given script
      */
-    public Class parseClass(InputStream in) throws SyntaxException, IOException {
+    public Class parseClass(InputStream in, String file) throws SyntaxException, IOException {
         Class answer = null;
         try {
-            answer = parseClass(new InputStreamCharStream(in));
+            answer = parseClass(new InputStreamCharStream(in), file);
         }
         catch (SyntaxException e) {
             try {
@@ -116,8 +126,8 @@ public class GroovyClassLoader extends ClassLoader {
         in.close();
         return answer;
     }
-    
-    protected Class parseClass(CharStream charStream) throws SyntaxException, IOException {
+
+    protected Class parseClass(CharStream charStream, String file) throws SyntaxException, IOException {
         Lexer lexer = new Lexer(charStream);
         Parser parser = new Parser(new LexerTokenStream(lexer));
         CSTNode compilationUnit = parser.compilationUnit();
@@ -128,7 +138,7 @@ public class GroovyClassLoader extends ClassLoader {
         GeneratorContext context = new GeneratorContext();
         Class answer = null;
         for (int i = 0; i < classNodes.length; ++i) {
-            Class aClass = defineClass(context, classNodes[i]);
+            Class aClass = defineClass(context, classNodes[i], file);
             if (i == 0) {
                 answer = aClass;
             }
@@ -136,14 +146,24 @@ public class GroovyClassLoader extends ClassLoader {
         return answer;
     }
 
-    protected Class defineClass(GeneratorContext context, ClassNode classNode) {
+    protected Class defineClass(GeneratorContext context, ClassNode classNode, String file) {
         verifier.visitClass(classNode);
-        ClassGenerator visitor = new ClassGenerator(context, classWriter, this, null);
-        visitor.visitClass(classNode);
+
+        ClassWriter classWriter = new ClassWriter(true);
+        ClassGenerator generator = new ClassGenerator(context, classWriter, this, file);
+        generator.visitClass(classNode);
 
         byte[] code = classWriter.toByteArray();
 
-        return defineClass(classNode.getName(), code, 0, code.length);
-    }
+        //System.out.println("About to load class: " + classNode.getName());
 
+        Class answer = defineClass(classNode.getName(), code, 0, code.length);
+
+        // now lets do inner classes
+        LinkedList innerClasses = generator.getInnerClasses();
+        while (!innerClasses.isEmpty()) {
+            defineClass(context, (ClassNode) innerClasses.removeFirst(), file);
+        }
+        return answer;
+    }
 }

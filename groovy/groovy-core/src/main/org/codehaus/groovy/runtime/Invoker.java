@@ -218,15 +218,53 @@ public class Invoker {
         }
         else if (arguments.getClass().isArray()) {
             Object[] array = (Object[]) arguments;
-            StringBuffer buffer = new StringBuffer("{");
+            StringBuffer buffer = new StringBuffer("[");
             for (int i = 0; i < array.length; i++) {
                 if (i > 0) {
-                    buffer.append(",");
+                    buffer.append(", ");
                 }
                 buffer.append(toString(array[i]));
             }
-            buffer.append("}");
+            buffer.append("]");
             return buffer.toString();
+        }
+        else if (arguments instanceof List) {
+            List list = (List) arguments;
+            StringBuffer buffer = new StringBuffer("[");
+            boolean first = true;
+            for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    buffer.append(", ");
+                }
+                buffer.append(toString(iter.next()));
+            }
+            buffer.append("]");
+            return buffer.toString();
+        }
+        else if (arguments instanceof Map) {
+            Map map = (Map) arguments;
+            StringBuffer buffer = new StringBuffer("[");
+            boolean first = true;
+            for (Iterator iter = map.entrySet().iterator(); iter.hasNext(); ) {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    buffer.append(", ");
+                }
+                Map.Entry entry = (Map.Entry) iter.next();
+                buffer.append(toString(entry.getKey()));
+                buffer.append(":");
+                buffer.append(toString(entry.getValue()));
+            }
+            buffer.append("]");
+            return buffer.toString();
+        }
+        else if (arguments instanceof String) {
+            return "'" + arguments + "'";
         }
         else {
             return arguments.toString();

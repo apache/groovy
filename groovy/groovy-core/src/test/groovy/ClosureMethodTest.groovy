@@ -1,7 +1,5 @@
 package groovy;
 
-
-
 /** 
  * Tests the various Closure methods in Groovy
  * 

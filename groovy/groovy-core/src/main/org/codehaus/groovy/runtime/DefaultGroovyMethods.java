@@ -55,6 +55,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -80,6 +81,22 @@ import java.util.SortedSet;
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
+
+    /**
+     * Print to a console in interactive format
+     */
+    public static void print(Object self) {
+        /** @todo should re-enable this */
+        // InvokerHelper.invokeMethod(self, "print", new PrintWriter(System.out));
+        System.out.print(InvokerHelper.toString(self));
+    }
+
+    /**
+     * Print to a console in interactive format
+     */
+    public static void print(Object self, PrintWriter out) {
+        out.print(InvokerHelper.toString(self));
+    }
 
     /**
      * Provide a dynamic method invocation method which can be overloaded in classes

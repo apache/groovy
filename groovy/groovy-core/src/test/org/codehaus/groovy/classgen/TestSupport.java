@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.GroovyTestCase;
 
 import java.beans.BeanInfo;
@@ -78,7 +79,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
 
     protected static boolean CHECK_CLASS = true;
     protected static boolean DUMP_CLASS = false;
-    
+
     protected GroovyClassLoader loader = new GroovyClassLoader();
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
     protected DumpClassVisitor invisibleDumpVisitor = new DumpClassVisitor(new PrintWriter(new StringWriter()));
@@ -94,7 +95,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
             dumper.visitClass(classNode);
         }
         
-        Class fooClass = loader.defineClass(classNode);
+        Class fooClass = loader.defineClass(classNode, classNode.getName() + ".groovy");
         return fooClass;
     }
 
@@ -161,5 +162,15 @@ public class TestSupport extends GroovyTestCase implements Constants {
                 new FieldExpression(FieldNode.newStatic(System.class, "out")),
                 "println",
                 expression));
+    }
+
+    protected GroovyObject compile(String fileName) throws Exception {
+        Class groovyClass = loader.parseClass(fileName);
+    
+        GroovyObject object = (GroovyObject) groovyClass.newInstance();
+        
+        assertTrue(object != null);
+        
+        return object;
     }
 }
