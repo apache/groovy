@@ -34,30 +34,12 @@ public class AllTests extends TestSuiteSupport {
 
         // TODO the following are all parser bugs
 
-        "ClassGeneratorFixesTest.groovy",       // TODO: closure params
-        "ClosureParameterPassingBug.groovy",    // TODO: closure params
-        "ClosureTypedVariableBug.groovy",       // TODO: closure params
-        "ClosureWithStaticVariablesBug.groovy", // TODO: closure params
-        "bugs/Bytecode4Bug.groovy",             // TODO: closure params
-        "bugs/ForAndSqlBug.groovy",             // TODO: closure params
-        "bugs/VariblePrecedence.groovy",        // TODO: closure params
-        "ClosureAsParamTest.groovy",            // TODO: closure params
-        "ClosureComparatorTest.groovy",         // TODO: closure params
-        "ClosureCurryTest.groovy",              // TODO: closure params
-        "ClosureMethodCallTest.groovy",         // TODO: closure params
-        "ClosureReturnTest.groovy",             // TODO: closure params
-        "ClosureReturnWithoutReturnStatementTest.groovy",             // TODO: closure params
-        "ClosureSugarTest.groovy",              // TODO: closure params
-        "ClosureTest.groovy",                   // TODO: closure params
-        "ExpandoPropertyTest.groovy",           // TODO: closure params
-        "GeneratorTest.groovy",                 // TODO: closure params
-        "InvokeNormalMethodsFirstTest.groovy",  // TODO: closure params
-        "MockTest.groovy",                      // TODO: closure params
-        "RegularExpressionsTest.groovy",        // TODO: closure params
-        "SqlTest.groovy",                       // TODO: closure params
-        "AntTest.groovy",                       // TODO: closure params
-        "BuilderSupportTest.groovy",            // TODO: closure params (and the use of the << operator)
         "VerboseDOMTest.groovy",                // TODO: closure params (explicit {|| to denote closure start)
+
+        "ClosureTest.groovy",                   // TODO: closure params - doesn't seem to like typed parameters
+
+
+        "ClosureComparatorTest.groovy",         // TODO: cannot pass closure into new expression
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "SuperMethod2Bug.groovy",               // TODO: constructor bug
@@ -93,7 +75,7 @@ public class AllTests extends TestSuiteSupport {
         "MapConstructionTest.groovy",           // TODO: map keys cannot be numeric literals
         "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
         "PrintTest.groovy",                     // TODO: map keys cannot be numeric literals
-        
+
         "TernaryOperatorTest.groovy",           // TODO: ternary operator not supported
 
         "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
@@ -117,6 +99,10 @@ public class AllTests extends TestSuiteSupport {
 
         "CompareToTest.groovy",                 // TODO: can't parse <=>
         "StreamingMarkupTest.groovy",           // TODO: can't parse <<
+        "BuilderSupportTest.groovy",            // TODO: can't parse <<
+        "bugs/ForAndSqlBug.groovy",             // TODO: can't parse <<
+
+        "RegularExpressionsTest.groovy",        // TODO: regex issue
 
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
 
@@ -140,12 +126,16 @@ public class AllTests extends TestSuiteSupport {
 
 
         // Not sure of bug yet
+        "ClassGeneratorFixesTest.groovy",       // TODO: some kinda return bug... maybe AST?
+        "InvokeNormalMethodsFirstTest.groovy",  // TODO: not sure
+
         "ProcessTest.groovy",                   // TODO: is this a parser bug or just a not very good compiler error?
         "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "SafeNavigationTest.groovy",            // TODO: should we support -> safe navigation token?
 
         // TODO: AST bugs I think...
         "PrintlnWithNewBug.groovy",
+        "AntTest.groovy",                       // TODO: closure params
 
 
         // Ignored test cases

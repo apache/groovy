@@ -63,6 +63,7 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
     void returnVoid() {
         return
     }
+
     void testReturnVoid() { // groovy-405, 387
         returnVoid()
     }
