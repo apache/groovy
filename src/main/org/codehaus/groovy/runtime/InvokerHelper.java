@@ -170,8 +170,8 @@ public class InvokerHelper {
      * @param object the object to be converted
      * @return the original object or a new converted value
      */
-    public static Object asType(Class type, Object object) {
-        return getInstance().asType(type, object);
+    public static Object asType(Object object, Class type) {
+        return getInstance().asType(object, type);
     }
         
     public static boolean asBool(Object object) {

@@ -526,7 +526,7 @@ public class Invoker {
         return Pattern.compile(regex);
     }
 
-    public Object asType(Class type, Object object) {
+    public Object asType(Object object, Class type) {
         if (type.isInstance(object)) {
             return object;
         }
