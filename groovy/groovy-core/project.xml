@@ -158,6 +158,7 @@
 
       <includes>
         <include>**/*Test.*</include>
+        <include>**/*Bug.*</include>
       </includes>
 
     </unitTest>
