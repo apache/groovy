@@ -17,7 +17,7 @@
  **/
 package org.codehaus.groovy.control;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+
 
 /**
  * A factory of parser plugin instances
@@ -25,21 +25,24 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @version $Revision$
  */
 public abstract class ParserPluginFactory {
+    protected static final boolean useNewParser = true;
 
     public static ParserPluginFactory newInstance() {
-        try {
-            Class type = Class.forName("org.codehaus.groovy.antlr.AntlrParserPluginFactory");
+        if (useNewParser) {
             try {
-                return (ParserPluginFactory) type.newInstance();
+                Class type = Class.forName("org.codehaus.groovy.antlr.AntlrParserPluginFactory");
+                try {
+                    return (ParserPluginFactory) type.newInstance();
+                }
+                catch (Exception e) {
+                    throw new RuntimeException("Could not create AntlrParserPluginFactory: " + e, e);
+                }
             }
-            catch (Exception e) {
-                throw new RuntimeException("Could not create AntlrParserPluginFactory: " + e, e);
+            catch (ClassNotFoundException e) {
+                // ignore
             }
+            // can't find Antlr parser, so lets use the Classic one
         }
-        catch (ClassNotFoundException e) {
-            // ignore
-        }
-        // can't find Antlr parser, so lets use the Classic one
         return new ClassicParserPluginFactory();
     }
 
