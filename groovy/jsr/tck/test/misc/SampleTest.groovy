@@ -1,5 +1,8 @@
 class SampleTest extends GroovyTestCase {
 
+    String foo = "John"
+    String bar = "Jez"
+
     void testNew() {
         x = new ArrayList()
         x.add(123)
@@ -8,9 +11,6 @@ class SampleTest extends GroovyTestCase {
 
         println "created list $x"
     }
-
-    String foo = "John"
-    String bar = "Jez"
 
     void testCase() {
         println "Hello"
@@ -100,6 +100,7 @@ class SampleTest extends GroovyTestCase {
         }
     }
 
+
     void testTryCatch() {
         try {
             methodThatDoesNotThrowException()
@@ -125,7 +126,17 @@ class SampleTest extends GroovyTestCase {
         println "Normal method invocation..."
     }
 
+
     /* TODO when parser fixed
+
+
+    void testMap() {
+        m = [1:2, "foo":"bar", "x":4.2]
+
+        println "Created map $m"
+
+        m.each { (k, v)| println "key $k and value $v" }
+    }
 
 
     void testTryCatchWithException() {
@@ -143,7 +154,7 @@ class SampleTest extends GroovyTestCase {
         // TODO parser doesn't return the thrown expression
         throw new Exception("Test exception")
     }
-    
+
     void testIf() {
         def x = 123
         def y = 1
