@@ -29,8 +29,6 @@ PARSER CHANGES REQUIRED
 	foo = new MySpecialMap(123, 10) [a:1, b:2];
 	blah = new LinkedList [1, 2, 3, 4];
 	
-* make ; optional
-
 * support for sequences...
 
 	sequence Foo { int x, String y, Bar b };
