@@ -62,11 +62,11 @@ import org.codehaus.groovy.runtime.NoSuchPropertyException;
 public class GroovyResultSet extends GroovyObjectSupport {
 
     private ResultSet resultSet;
+    private boolean updated;
 
     public GroovyResultSet(ResultSet resultSet) {
         this.resultSet = resultSet;
     }
-
 
     public Object getProperty(String property) {
         try {
@@ -78,12 +78,20 @@ public class GroovyResultSet extends GroovyObjectSupport {
     }
 
     public void setProperty(String property, Object newValue) {
-        // TODO Auto-generated method stub
-        super.setProperty(property, newValue);
+        try {
+            resultSet.updateObject(property, newValue);
+            updated = true;
+        }
+        catch (SQLException e) {
+            throw new NoSuchPropertyException(property, GroovyResultSet.class, e);
+        }
     }
 
-
     public boolean next() throws SQLException {
+        if (updated) {
+            resultSet.updateRow();
+            updated = false;
+        }
         return resultSet.next();
     }
 
