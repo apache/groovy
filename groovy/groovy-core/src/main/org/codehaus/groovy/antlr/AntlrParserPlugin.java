@@ -377,7 +377,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected String[] interfaces(AST node) {
         List interfaceList = new ArrayList();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
-            interfaceList.add(resolveTypeName(implementNode.getText()));
+            interfaceList.add(resolveTypeName(qualifiedName(implementNode)));
         }
         String[] interfaces = {};
         if (!interfaceList.isEmpty()) {

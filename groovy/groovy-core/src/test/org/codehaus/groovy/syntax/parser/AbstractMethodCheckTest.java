@@ -80,7 +80,7 @@ public class AbstractMethodCheckTest extends TestSupport {
 	      "	return 5;\n" +
 	      "    }\n" +
 	      "\n" +
-	      "   java.lang.CharSequence subSequence(int start, int end) {\n" +
+	      "   CharSequence subSequence(int start, int end) {\n" +
 	      "	return null;\n" +
 	      "    }\n" +
 	      "}\n");
