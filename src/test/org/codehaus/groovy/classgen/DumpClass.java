@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.lang.Closure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -218,5 +219,14 @@ public class DumpClass {
     public void doPrintln() {
         Object value = InvokerHelper.getProperty(System.class, "out");
         InvokerHelper.invokeMethod(value, "println", "Hello");
+    }
+    
+    public void doClosure() {
+        x = new Closure() {
+            public Object call(Object arguments) {
+                System.out.println();
+                return null;
+            }
+        };
     }
 }

@@ -76,7 +76,7 @@ import org.objectweb.asm.util.DumpClassVisitor;
 public class TestSupport extends GroovyTestCase implements Constants {
 
     protected static boolean CHECK_CLASS = true;
-    protected static boolean DUMP_CLASS = false;
+    protected static boolean DUMP_CLASS = true;
     
     protected GroovyClassLoader loader = new GroovyClassLoader();
     protected DumpClassVisitor dumpVisitor = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));

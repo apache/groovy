@@ -1,30 +1,29 @@
 package org.codehaus.groovy.tools;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.classgen.ClassGenerator;
-import org.codehaus.groovy.syntax.lexer.Lexer;
-import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
-import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
-import org.codehaus.groovy.syntax.parser.Parser;
-import org.codehaus.groovy.syntax.parser.CSTNode;
-import org.codehaus.groovy.syntax.parser.ASTBuilder;
-import org.codehaus.groovy.syntax.parser.SemanticVerifier;
-
-import org.objectweb.asm.ClassWriter;
-
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.log4j.Category;
-
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.BufferedInputStream;
-import java.util.StringTokenizer;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.apache.log4j.Category;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.classgen.ClassGenerator;
+import org.codehaus.groovy.syntax.lexer.InputStreamCharStream;
+import org.codehaus.groovy.syntax.lexer.Lexer;
+import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
+import org.codehaus.groovy.syntax.parser.ASTBuilder;
+import org.codehaus.groovy.syntax.parser.CSTNode;
+import org.codehaus.groovy.syntax.parser.Parser;
+import org.codehaus.groovy.syntax.parser.SemanticVerifier;
+import org.objectweb.asm.ClassWriter;
 
 public class Compiler
 {
@@ -213,6 +212,13 @@ public class Compiler
         finally
         {
             out.close();
+        }
+        
+        // now lets process inner classes
+        LinkedList innerClasses = classGenerator.getInnerClasses();
+        while (! innerClasses.isEmpty()) 
+        {
+            dumpClass((ClassNode) innerClasses.removeFirst(), file);
         }
     }
 
