@@ -1390,6 +1390,45 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param splice  the subset of the list to set
+     * @param values the value to put at the given sublist
+     */
+    public static void putAt(List self, List splice, List values) {
+        List sublist = getSubList(self, splice);
+        sublist.clear();
+        sublist.addAll(values);
+    }
+
+    /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param splice  the subset of the list to set
+     * @param value the value to put at the given sublist
+     */
+    public static void putAt(List self, List splice, Object value) {
+        List sublist = getSubList(self, splice);
+        sublist.clear();
+        sublist.add(value);
+    }
+
+    protected static List getSubList(List self, List splice) {
+        if (splice.size() != 2) {
+            throw new IllegalArgumentException("You must specify a list of 2 indexes to create a sub-list");
+        }
+        int left = InvokerHelper.asInt(splice.get(0));
+        int right = InvokerHelper.asInt(splice.get(1));
+        int size = self.size();
+        left = normaliseIndex(left, size);
+        right = normaliseIndex(right, size);
+        List sublist = self.subList(left, right + 1);
+        return sublist;
+    }
+
+    /**
      * Support the subscript operator for a List
      *
      * @param self a Map
