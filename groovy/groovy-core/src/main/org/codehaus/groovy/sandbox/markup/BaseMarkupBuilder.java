@@ -72,7 +72,7 @@ public class BaseMarkupBuilder extends Builder {
 		public Document(final Closure root, final Closure defaultTag, final Map tagMap) {
 			super(root, defaultTag, tagMap);
 			
-			this.namespaces.put("xml", "");	// built in namespace
+			this.namespaces.put("xml", "http://www.w3.org/XML/1998/namespace");	// built in namespace
 		}
 		
 		/* (non-Javadoc)
