@@ -1,3 +1,4 @@
 target
 maven.log
 bin
+*.properties
