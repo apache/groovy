@@ -51,7 +51,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
  * This simple template engine uses JSP <% %> script and <%= %> expression syntax.  It also lets you use normal groovy expressions in
- * the template text much like the new JSP EL functionality.
+ * the template text much like the new JSP EL functionality.  The variable 'out' is bound to the writer that the template is being written to.
  * 
  * @author sam
  */
