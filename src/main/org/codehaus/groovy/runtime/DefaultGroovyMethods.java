@@ -3122,7 +3122,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
-
+    
     /**
      * Iterates through the given file line by line, splitting on the seperator
      *
@@ -3180,7 +3180,36 @@ public class DefaultGroovyMethods {
             }
         }
     }
+    
+    /**
+     * Read a single, whole line from the given Reader
+     *
+     * @param self a Reader
+     * @return a line 
+     * @throws IOException
+     */
+    public static String readLine(Reader self) throws IOException {
+        BufferedReader br = null;
 
+        if (self instanceof BufferedReader) {
+            br = (BufferedReader) self;
+        } else {
+            br = new BufferedReader(self);
+        }
+        return br.readLine();
+    }
+    
+    /**
+     * Read a single, whole line from the given InputStream
+     *
+     * @param self an InputStream
+     * @return a line
+     * @throws IOException
+     */
+    public static String readLine(InputStream stream) throws IOException {
+        return readLine(new InputStreamReader(stream));
+    }
+    
     /**
      * Reads the file into a list of Strings for each line
      *
