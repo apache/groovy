@@ -101,6 +101,7 @@ import org.objectweb.asm.ClassWriter;
  * Allows methods to be dynamically added to existing classes at runtime
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Guillaume Laforge
  * @version $Revision$
  */
 public class MetaClass {
@@ -317,7 +318,21 @@ public class MetaClass {
         if (method != null) {
             return doMethodInvoke(object, method, arguments);
         } else {
-            throw new MissingMethodException(methodName, theClass, arguments);
+            // if no method was found, try to find a closure defined as a field of the class and run it
+            try {
+                Object value = this.getProperty(object, methodName);
+                if (value instanceof Closure) {
+                    Closure closure = (Closure) value;
+                    closure.setDelegate(this);
+                    return closure.call(arguments);
+                }
+                else {
+                    throw new MissingMethodException(methodName, theClass, arguments);
+                }
+            }
+            catch (Exception e) {
+                throw new MissingMethodException(methodName, theClass, arguments);
+            }
         }
     }
 
@@ -2246,6 +2261,10 @@ public class MetaClass {
 
     public List getMethods() {
         return allMethods;
+    }
+
+    public List getMetaMethods() {
+        return (List) ((ArrayList)newGroovyMethodsList).clone();
     }
 
     protected synchronized List getInterfaceMethods() {
