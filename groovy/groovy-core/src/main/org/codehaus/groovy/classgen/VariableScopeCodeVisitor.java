@@ -54,8 +54,8 @@ import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.syntax.Token;
 
 /**
  * A visitor which figures out which variables are in scope
@@ -94,7 +94,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     public void visitBinaryExpression(BinaryExpression expression) {
         Expression leftExpression = expression.getLeftExpression();
-        if (expression.getOperation().getType() == Token.EQUAL && leftExpression instanceof VariableExpression) {
+        if (expression.getOperation().isAssignmentToken() && leftExpression instanceof VariableExpression) {
             declareVariable((VariableExpression) leftExpression);
         }
         else {
@@ -120,6 +120,16 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
+        Expression exp = expression.getExpression();
+        if (exp instanceof VariableExpression) {
+            declareVariable((VariableExpression) exp);
+        }
+        else {
+            exp.visit(this);
+        }
+    }
+
+    public void visitPrefixExpression(PrefixExpression expression) {
         Expression exp = expression.getExpression();
         if (exp instanceof VariableExpression) {
             declareVariable((VariableExpression) exp);

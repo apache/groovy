@@ -1443,4 +1443,21 @@ public class Token
                           startLine,
                           startColumn );
     }
+
+    /**
+     * @return true if this token performs an assignment to the LHS such as
+     * = or += or *= etc
+     */
+    public boolean isAssignmentToken() {
+        switch (type) {
+            case Token.EQUAL :
+            case Token.PLUS_EQUAL :
+            case Token.MINUS_EQUAL :
+            case Token.MULTIPLY_EQUAL :
+            case Token.DIVIDE_EQUAL :
+            case Token.MOD_EQUAL :
+                return true;
+        }
+        return false;
+    }
 }
