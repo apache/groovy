@@ -98,6 +98,10 @@
 
 
   <preGoal name="xdoc:jelly-transform">
+  	<attainGoal name="groovy:xdoc-stuff"/>
+  </preGoal>
+  	
+  <goal name="xdoc:jelly-transform" prereqs="java:compile, setclasspath, groovy:make-new-javadoc">
     <mkdir dir="${maven.html2xdoc.dir}"/>
   	<!--
     <copy toDir="${maven.html2xdoc.dir}">
@@ -108,8 +112,10 @@
   	-->
   	
   	<!-- now lets run the wiki plugin -->
+  	<!--
   	<attainGoal name="java:compile"/>
   	<attainGoal name="setclasspath"/>
+  	-->
   	
   	<wiki2html srcdir="${basedir}/xdocs" destdir="${maven.html2xdoc.dir}"/>
 
@@ -118,7 +124,7 @@
 	
     <attainGoal name="html2xdoc"/>
     <attainGoal name="faq"/>
-  </preGoal>
+  </goal>
 
   <goal name="groovy:make-new-javadoc" prereqs="test:compile"
 		description="Generates the HTML of the new JavaDoc added to the JDK">
