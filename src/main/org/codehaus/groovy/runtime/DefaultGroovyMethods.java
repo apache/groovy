@@ -81,7 +81,9 @@ import java.util.regex.Pattern;
  * first parameter the destination class.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Sam Pullara
  * @author Rod Cope
+ * @author Guillaume Laforge
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
