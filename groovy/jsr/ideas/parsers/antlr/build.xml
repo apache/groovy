@@ -134,7 +134,21 @@
     </junit>
   </target>
         
-  <target name="pretty-test" 
+  <target name="test-classic"
+          depends="test-compile"
+          description="run all the classic test cases">
+    <junit haltonfailure="true" fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest>
+        <fileset dir="${test.src.dir}">
+          <include name="**/AllTests.java" />
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="pretty-test"
           depends="test-compile" 
           description="HTML output of test cases">
     <mkdir dir="${test.reports.dir}"/>

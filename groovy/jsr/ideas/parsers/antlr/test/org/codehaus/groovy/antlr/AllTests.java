@@ -32,7 +32,7 @@ public class AllTests extends TestSuiteSupport {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
-        addTests(suite, new File("../../../../groovy-core/src/test-new/"));
+        addTests(suite, new File("../../../../groovy-core/src/test-new"));
         return suite;
     }
 

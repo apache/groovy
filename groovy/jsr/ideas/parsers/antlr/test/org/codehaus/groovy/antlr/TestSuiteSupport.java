@@ -22,6 +22,7 @@ import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import junit.framework.AssertionFailedError;
+import junit.framework.Protectable;
 
 import java.io.File;
 
@@ -30,7 +31,7 @@ import java.io.File;
  *
  * @version $Revision$
  */
-public class TestSuiteSupport implements Test {
+public class TestSuiteSupport implements Test, Protectable {
     private String fullName;
 
     public int countTestCases() {
@@ -39,9 +40,12 @@ public class TestSuiteSupport implements Test {
 
     public void run(TestResult result) {
         result.startTest(this);
+        result.runProtected(this, this);
+
+        /*
+        result.startTest(this);
         try {
-            System.out.println("Running test: " + fullName);
-            GroovyMain.main(new String[]{fullName});
+            protect();
         }
         catch (AssertionFailedError e) {
             result.addFailure(this, e);
@@ -50,6 +54,13 @@ public class TestSuiteSupport implements Test {
             result.addError(this, t);
         }
         result.endTest(this);
+        */
+        result.endTest(this);
+    }
+
+    public void protect() throws Throwable {
+        System.out.println("Running test: " + fullName);
+        GroovyMain.main(new String[]{fullName});
     }
 
     public String toString() {
@@ -91,8 +102,8 @@ public class TestSuiteSupport implements Test {
         TestSuiteSupport childTest = new TestSuiteSupport();
         childTest.fullName = fullName;
         TestSuite childSuite = new TestSuite(fullName);
+
         childSuite.addTest(childTest);
         suite.addTest(childSuite);
     }
-
 }
