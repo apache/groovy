@@ -1,0 +1,27 @@
+
+1 Closures
+
+Think of closures as being like anonymous inner classes in Java that have only a single (anonymous) method.
+They are very handy for passing blocks of code around from method to method.
+
+One difference from inner classes is that Groovy supports ~~true closures<~~
+where state can be passed into and out of closures. Any local variables in scope
+when the closure is created can be used and modified and any variables created within
+the closure are visible outside as local variables. No 'final' keyword is required
+like with Java.
+
+{code:groovy}
+count = 0 
+[1, 2, 3, 4].each { count += it; last = it } 
+println("the sum is ${count} and the last item was ${last}") 
+{code}
+
+Notice that ~~count~~ goes from the outer scope to the inner scope and back out again after being modified.
+The ~~last~~ variable goes from inside scope out.
+
+You can see more documentation on closures {link:here|http://wiki.codehaus.org/groovy/BlocksAndClosures}
+
+
+
+
+
