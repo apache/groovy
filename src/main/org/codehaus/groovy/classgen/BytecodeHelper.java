@@ -79,8 +79,34 @@ public class BytecodeHelper implements Constants {
     public void unbox(Class type) {
         if (type.isPrimitive() && type != void.class) {
             String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type.getName());
-            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", type.getName() + "Unbox", returnString);
+            cv.visitMethodInsn(
+                INVOKESTATIC,
+                "org/codehaus/groovy/runtime/InvokerHelper",
+                type.getName() + "Unbox",
+                returnString);
         }
+    }
+
+    /**
+     * Generates the bytecode to unbox the current value on the stack
+     */
+    public void unbox(String type) {
+        if (isPrimitiveType(type) && !type.equals("void")) {
+            String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
+            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", type + "Unbox", returnString);
+        }
+    }
+
+    public boolean isPrimitiveType(String type) {
+        return type != null
+            && (type.equals("boolean")
+                || type.equals("byte")
+                || type.equals("char")
+                || type.equals("short")
+                || type.equals("int")
+                || type.equals("long")
+                || type.equals("float")
+                || type.equals("double"));
     }
 
     /**
