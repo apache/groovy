@@ -75,25 +75,31 @@
       <tag>GROOVY_1_0_BETA_5</tag>
     </version>
   	  </versions>
- 
+
   <mailingLists>
     <mailingList>
-      <name>groovy dev</name>
-      <archive>http://lists.codehaus.org/pipermail/groovy-dev/</archive>
-      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-dev</subscribe>
-      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-dev</unsubscribe>
+      <name>Groovy JSR Discussion List</name>
+      <subscribe>jsr-subscribe@groovy.codehaus.org</subscribe>
+      <unsubscribe>jsr-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <archive>http://archive.groovy.codehaus.org/jsr/</archive>
     </mailingList>
     <mailingList>
-      <name>groovy users</name>
-      <archive>http://lists.codehaus.org/pipermail/groovy-user/</archive>
-      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-user</subscribe>
-      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-user</unsubscribe>
+      <name>Groovy Developer List</name>
+      <subscribe>dev-subscribe@groovy.codehaus.org</subscribe>
+      <unsubscribe>dev-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <archive>http://archive.groovy.codehaus.org/dev/</archive>
     </mailingList>
     <mailingList>
-      <name>groovy cvs messages</name>
-      <archive>http://lists.codehaus.org/pipermail/groovy-scm/</archive>
-      <subscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</subscribe>
-      <unsubscribe>http://lists.codehaus.org/mailman/listinfo/groovy-scm</unsubscribe>
+      <name>Groovy User List</name>
+      <subscribe>user-subscribe@groovy.codehaus.org</subscribe>
+      <unsubscribe>user-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <archive>http://archive.groovy.codehaus.org/user/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Groovy SCM List</name>
+      <subscribe>scm-subscribe@groovy.codehaus.org</subscribe>
+      <unsubscribe>scm-unsubscribe@groovy.codehaus.org</unsubscribe>
+      <archive>http://archive.groovy.codehaus.org/scm/</archive>
     </mailingList>
   </mailingLists>
 
@@ -343,15 +349,8 @@
     <dependency>
       <groupId>ant</groupId>
       <artifactId>ant</artifactId>    
-      <version>1.6</version>
+      <version>1.6.1</version>
     </dependency>
-    <!--
-    <dependency>
-      <groupId>ant</groupId>
-      <artifactId>ant-optional</artifactId>    
-      <version>1.6</version>
-    </dependency>
-    -->
     <dependency>
       <groupId>ant</groupId>
       <artifactId>ant-junit</artifactId>    
