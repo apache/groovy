@@ -330,10 +330,9 @@ public class Lexer
                     	}
                     	default:
                     	{
-                    		throw new UnexpectedCharacterException( getStartLine(),
-                    												getStartColumn()+1,
-                    												c,
-																	new char[] { '=' } );
+                    		// Support ~<double quoted string>
+                    		token = Token.patternRegex( getStartLine(),
+                    									getStartColumn() );
                     	}
                     }
                     break ROOT_SWITCH;
