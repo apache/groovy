@@ -118,8 +118,11 @@ public class ASTBuilder
         {
             return name;
         }
-
-        if ( "void".equals( name ) )
+        else if ( name.equals( "void" )
+                  ||
+                  name.equals( "int" )
+                  ||
+                  name.equals( "float" ) )
         {
             return name;
         }
@@ -169,6 +172,21 @@ public class ASTBuilder
             }
             
             qualifiedName = cur.getToken().getText() + qualifiedName;
+        }
+        else if ( matches( nameRoot,
+                           Token.KEYWORD_VOID ) )
+        {
+            return "void";
+        }
+        else if ( matches( nameRoot,
+                           Token.KEYWORD_INT ) )
+        {
+            return "int";
+        }
+        else if ( matches( nameRoot,
+                           Token.KEYWORD_FLOAT ) )
+        {
+            return "float";
         }
         else
         {
@@ -315,8 +333,6 @@ public class ASTBuilder
 
         Parameter[] parameters = parameters( methodRoot.getChild( 3 ).getChildren() );
 
-        System.err.println( "paramarmaa: " + Arrays.asList( parameters ) );
-
         MethodNode methodNode = new MethodNode( identifier,
                                                 modifiers,
                                                 returnType,
@@ -337,8 +353,6 @@ public class ASTBuilder
 
             parameters[i] = new Parameter( type,
                                            identifier );
-
-            System.err.println( "PARAM: " + parameters[i] );
         }
 
         return parameters;

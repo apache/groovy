@@ -221,6 +221,10 @@ public class Token
     public static final int KEYWORD_TRUE = 539;
     public static final int KEYWORD_FALSE = 540;
     public static final int KEYWORD_ASSERT = 541;
+    public static final int KEYWORD_NULL = 542;
+    public static final int KEYWORD_VOID = 543;
+    public static final int KEYWORD_INT = 544;
+    public static final int KEYWORD_FLOAT = 545;
 
     public static final int SYNTH_METHOD = 800;
     public static final int SYNTH_PARAMETER_DECLARATION = 801;
@@ -323,6 +327,14 @@ public class Token
                     KEYWORD_FALSE );
         addKeyword( "assert",
                     KEYWORD_ASSERT );
+        addKeyword( "null",
+                    KEYWORD_NULL );
+        addKeyword( "void",
+                    KEYWORD_VOID );
+        addKeyword( "int",
+                    KEYWORD_INT );
+        addKeyword( "float",
+                    KEYWORD_FLOAT );
     }
 
     private static final Map TOKEN_DESCRIPTIONS = new HashMap();
