@@ -1,6 +1,8 @@
 Core Groovy Tasks
 =================
 
+* validator for things like - undeclared variables
+
 * sort out the packages & default imports
 
 * test use of constructors

@@ -34,21 +34,19 @@ class ListTest extends GroovyTestCase {
 		*/
 		
 		
-		/** @todo parser - seems to hang the parser
 		if x.contains("cheese") {
             // ignore
         }
         else {
-            assert fail : "x should contain cheese!";
+            assert false : "x should contain cheese!";
         }
 		
-        if x.contains(1) {
+        if x.contains(10) {
             // ignore
         }
         else {
-            assert fail : "x should contain 1!";
+            assert false : "x should contain 1!";
         }
-        */
     }
     
     void testEmptyList() {
