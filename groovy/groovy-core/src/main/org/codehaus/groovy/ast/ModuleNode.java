@@ -80,6 +80,7 @@ public class ModuleNode extends ASTNode implements Constants {
     private List classes = new ArrayList();
     private List methods = new ArrayList();
     private List imports = new ArrayList();
+    private List importPackages = new ArrayList();
     private Map importIndex = new HashMap();
     private CompileUnit unit;
     private String packageName;
@@ -111,6 +112,10 @@ public class ModuleNode extends ASTNode implements Constants {
         return imports;
     }
 
+    public List getImportPackages() {
+        return importPackages;
+    }
+
     /**
      * @return the class name for the given alias or null if none is available
      */
@@ -121,6 +126,10 @@ public class ModuleNode extends ASTNode implements Constants {
     public void addImport(String alias, String className) {
         imports.add(new ImportNode(className, alias));
         importIndex.put(alias, className);
+    }
+
+    public void addImportPackage(String packageName) {
+        importPackages.add(packageName);
     }
 
     public void addStatement(Statement node) {
