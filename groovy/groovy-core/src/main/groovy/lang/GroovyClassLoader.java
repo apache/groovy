@@ -56,6 +56,7 @@ public class GroovyClassLoader extends ClassLoader {
     private Class generatedClass = null;
 
     public GroovyClassLoader() {
+        this(Thread.currentThread().getContextClassLoader());
     }
 
     public GroovyClassLoader(ClassLoader loader) {
