@@ -15,7 +15,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 public class RuntimeParserException extends GroovyRuntimeException {
     
     public RuntimeParserException(String message, ASTNode node) {
-        super(message + ". Node: " + node, node);
+        super(message + ".\nNode: " + node.getClass().getName(), node);
     }
 
     public void throwParserException() throws SyntaxException {

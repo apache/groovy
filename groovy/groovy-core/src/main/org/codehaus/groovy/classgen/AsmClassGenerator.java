@@ -2980,7 +2980,7 @@ public class AsmClassGenerator extends ClassGenerator {
             String className = resolveClassName(variableName);
             if (className != null) {
                 if (leftHandExpression) {
-                    throwException("Cannot use a class expression on the left hand side of an assignment");
+                    throwException("The variable name '"+variableName+"' conflicts with the class name '"+className+"'. Please use another variable name");
                 }
                 visitClassExpression(new ClassExpression(className));
                 return;                                               // <<< FLOW CONTROL <<<<<<<<<
