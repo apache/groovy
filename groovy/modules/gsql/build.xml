@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+<project name="gsql" default="default">
+
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   compile settings                -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="build.debug" value="on"/>
+  
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                   directories                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <property name="src.dir" value="src"/>
+  <property name="build.dir" value="build"/>
+  <property name="build.classes.dir" value="${build.dir}/classes"/>
+  <property name="dist.dir" value="dist"/>
+  <property name="lib.dir" value="../../groovy-core/target/install/lib"/>
+  		
+  <!-- javadoc properties -->
+  <property name="javadoc.dir" value="doc"/>
+  <property name="javadoc.packages" value="org.javanicus.*"/>
+
+  <!-- junit properties -->
+  <property name="test.src.dir"	value="test"/>
+  <property name="test.classes.dir" value="${build.dir}/classes"/>
+  <property name="test.reports.dir" value="reports"/>
+  
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                     datatypes                     -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <path id="compile.classpath">
+    <pathelement location="${build.classes.dir}"/>
+    <fileset dir="${lib.dir}">
+      <include name="**/*.jar" />
+      <include name="**/*.zip" />
+    </fileset>
+  </path>
+  
+  <path id="test.classpath">
+    <path refid="compile.classpath"/>
+    <pathelement location="${test.classes.dir}"/>  
+  </path>
+  
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/>
+
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <!--                  targets                          -->
+  <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
+  <target name="default" 
+          depends="run" 
+          description="default: run this groovy stuff"
+  />
+  
+  <target name="all" 
+          depends="test,dist" 
+          description="build and test everything"
+  />
+
+  <target name="clean" description="remove all built files">
+    <delete dir="${javadoc.dir}" />
+    <delete dir="${build.dir}" />
+    <delete dir="${dist.dir}" />
+    <delete dir="${test.reports.dir}" />
+  </target>
+
+  <target name="dist" 
+          depends="compile" 
+          description="create distributables (jars etc)">
+    <mkdir dir="${dist.dir}" />
+    <jar jarfile="${dist.dir}/gsql.jar" 
+         manifest="${src.dir}/manifest.txt">
+      <fileset dir="${build.classes.dir}"/>
+    </jar>
+  </target>
+
+  <target name="docs" depends="init" description="generate documentation">
+    <mkdir dir="${javadoc.dir}" />
+    <javadoc sourcepath="${src.dir}" 
+             destdir="${javadoc.dir}" 
+             packagenames="${javadoc.packages}"
+             use="true"
+             windowtitle="gsql"
+             private="true"/>
+  </target>
+
+  <target name="run" depends="compile" description="compile and run">
+    <java classname="org.javanicus.gsql.Column" 
+          fork="yes" 
+          classpathref="compile.classpath"/>
+  </target>
+
+  <target name="beautify" 
+          depends="init" 
+          description="apply jacobe beautifier to the java sources">
+    <apply executable="jacobe">
+      <arg value="-nobackup"/>
+      <arg value="-overwrite"/>
+      <srcfile/>
+      <fileset dir="." includes = "**/*.java"/>
+    </apply>
+  </target>
+
+  <target name="test" 
+          depends="test-compile" 
+          description="run all test cases">
+    <junit haltonfailure="true" fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="plain" usefile="false"/>
+      <batchtest>
+        <fileset dir="${test.classes.dir}">
+          <include name="**/*Test.class" />
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+        
+  <target name="pretty-test" 
+          depends="test-compile" 
+          description="HTML output of test cases">
+    <mkdir dir="${test.reports.dir}"/>
+    <junit haltonfailure="true" fork="yes">
+      <classpath refid="test.classpath"/>
+      <formatter type="xml" usefile="true"/>
+
+      <batchtest todir="${test.reports.dir}">
+        <fileset dir="${test.classes.dir}">
+          <include name="**/*Test.class" />
+        </fileset>
+      </batchtest>
+
+    </junit>
+
+    <junitreport todir="${test.reports.dir}">
+      <fileset dir="${test.reports.dir}">
+        <include name="TEST-*.xml"/>
+      </fileset>
+      <report format="frames" todir="${test.reports.dir}"/>
+    </junitreport>
+  </target>
+  
+  <target name="compile" depends="init" description="compile java and groovy sources">
+    <mkdir dir="${build.classes.dir}" />
+    <groovyc destdir="${build.classes.dir}" 
+             srcdir="${src.dir}"
+             listfiles="true">          
+        <classpath refid="test.classpath"/>
+    </groovyc>
+    <javac srcdir="${src.dir}" 
+           destdir="${build.classes.dir}" 
+           classpathref="compile.classpath" 
+           debug="${build.debug}" 
+           deprecation="on"/>
+  </target>
+  
+  <target name="test-compile" depends="compile" description="compile tests">
+    <mkdir dir="${test.classes.dir}" />
+    <groovyc destdir="${test.classes.dir}" 
+             srcdir="${test.src.dir}"
+             listfiles="true">          
+        <classpath refid="test.classpath"/>
+    </groovyc>
+    <javac srcdir="${test.src.dir}" 
+           destdir="${test.classes.dir}" 
+           classpathref="test.classpath" 
+           debug="${build.debug}" 
+           deprecation="on"/>
+  </target>
+
+  <target name="init">
+    <tstamp />
+  </target>
+       
+</project>
