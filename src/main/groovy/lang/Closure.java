@@ -189,13 +189,40 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     public Object call(Object arguments) {
         MetaMethod method = getDoCallMethod();
         Object[] parameters = getParameters(arguments);
-
         try {
-            method.checkParameters(parameters);
-            return method.invoke(this, parameters);
-        }
-        catch (IllegalArgumentException e) {
-            throw new IncorrectClosureArgumentsException(this, arguments, method.getParameterTypes());
+	        try {
+	            method.checkParameters(parameters);
+	            return method.invoke(this, parameters);
+	        }
+	        catch (IllegalArgumentException e) {
+	        	Class[] formalParameters = method.getParameterTypes();
+	        	
+	        		if (formalParameters[formalParameters.length - 1] == Object[].class) {
+	        			//
+	        			//	last parameter is Object[] pass excess parameters in that array
+	        			//
+	        			
+	        			if (formalParameters.length - 1 <= parameters.length) {
+	        			Object[] newParameters = new Object[formalParameters.length];
+	        			Object[] restOfTheParameters = new Object[parameters.length - formalParameters.length + 1];
+	    	        	
+	        			System.arraycopy(parameters, 0, newParameters, 0, newParameters.length - 1);
+	        			System.arraycopy(parameters, newParameters.length - 1, restOfTheParameters, 0, restOfTheParameters.length);
+		        		newParameters[newParameters.length - 1] = restOfTheParameters;
+		        			
+	        			
+	            	        try {
+	            	            method.checkParameters(newParameters);
+	            	            return method.invoke(this, newParameters);
+	            	        }
+	            	        catch (IllegalArgumentException e1) {
+	            	        		// drop through and throw the exception
+	            	        }
+	        			}
+	        		}
+	        		
+	            throw new IncorrectClosureArgumentsException(this, arguments, method.getParameterTypes());
+	        }
         }
         catch (Exception e) {
             Throwable cause = e.getCause();
