@@ -52,8 +52,10 @@ import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -233,6 +235,10 @@ public class GroovyMain {
             }
             return true;
         } catch (Exception e) {
+            if (e instanceof InvokerInvocationException) {
+                InvokerInvocationException iie = (InvokerInvocationException) e;
+                e = (Exception) iie.getCause();
+            }
             System.err.println("Caught: " + e);
             if (debug) {
                 e.printStackTrace();
