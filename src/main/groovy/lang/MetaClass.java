@@ -211,7 +211,7 @@ public class MetaClass {
         */
 
         if (object == null) {
-            throw new InvokerException("Cannot invoke method: " + methodName + " on null object");
+            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
 
         List methods = getMethods(methodName);
