@@ -1,4 +1,4 @@
-class StringOperationTest extends GroovyTestCase {
+class StringIncrementAndDecrementTest extends GroovyTestCase {
 
   void testIncrement() {
     str="9"
