@@ -56,11 +56,12 @@ import org.codehaus.groovy.syntax.parser.CSTNode;
  */
 public class ASTNode {
 
-    protected static final String[] EMPTY_STRING_ARRAY = {};
+    protected static final String[] EMPTY_STRING_ARRAY = {
+    };
 
     private int lineNumber = -1;
     private int columnNumber = -1;
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         throw new RuntimeException("No visit() method implemented for class: " + getClass().getName());
     }
@@ -76,7 +77,7 @@ public class ASTNode {
     public void setLineNumber(int lineNumber) {
         this.lineNumber = lineNumber;
     }
-    
+
     public int getColumnNumber() {
         return columnNumber;
     }
@@ -87,7 +88,23 @@ public class ASTNode {
 
     public void setCSTNode(CSTNode node) {
         Token token = node.getToken();
-        setColumnNumber(token.getStartColumn());
-        setLineNumber(token.getStartLine());
+        if (token != null) {
+            setColumnNumber(token.getStartColumn());
+            setLineNumber(token.getStartLine());
+        }
+        if (getLineNumber() < 0) {
+            System.out.println("No line number for token: " + token);
+            if (node.children() > 0) {
+                for (int i = 0; i < node.children(); i++) {
+                    CSTNode child = node.getChild(i);
+                    if (child != null) {
+                        setCSTNode(child);
+                        if (getLineNumber() >= 0) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

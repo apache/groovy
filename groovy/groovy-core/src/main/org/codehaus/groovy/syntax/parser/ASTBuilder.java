@@ -789,11 +789,16 @@ public class ASTBuilder {
 
     protected Statement expressionStatement(CSTNode statementRoot) throws ParserException {
         Expression expression = expression(statementRoot);
-        expression.setCSTNode(statementRoot);
         return new ExpressionStatement(expression);
     }
 
     protected Expression expression(CSTNode expressionRoot) throws ParserException {
+        Expression expression = makeExpression(expressionRoot);
+        expression.setCSTNode(expressionRoot);
+        return expression;
+    }
+    
+    protected Expression makeExpression(CSTNode expressionRoot) throws ParserException {
         switch (expressionRoot.getToken().getType()) {
             case (Token.MINUS) :
                 {
@@ -1005,7 +1010,9 @@ public class ASTBuilder {
     protected ClosureExpression closureExpression(CSTNode expressionRoot) throws ParserException {
         Parameter[] parameters = parameters(expressionRoot.getChild(0).getChildren());
 
-        return new ClosureExpression(parameters, statementBlock(expressionRoot.getChild(1)));
+        ClosureExpression answer = new ClosureExpression(parameters, statementBlock(expressionRoot.getChild(1)));
+        answer.setCSTNode(expressionRoot);
+        return answer;
     }
 
     protected MethodCallExpression methodCallExpression(CSTNode expressionRoot) throws ParserException {
@@ -1074,6 +1081,7 @@ public class ASTBuilder {
                 //System.err.println( "param: " + paramRoots[i] );
 
                 Expression keyExpr = new ConstantExpression(keyRoot.getToken().getText());
+                keyExpr.setCSTNode(keyRoot);
                 Expression valueExpr = expression(valueRoot);
 
                 //paramList.addMapEntryExpression( keyExpr,
