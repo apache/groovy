@@ -2,13 +2,9 @@ package groovy;
 
 import org.codehaus.groovy.GroovyTestCase;
 
-/**
- * A number of things which break the compiler today
- */
-class CompilerBugsTest extends GroovyTestCase {
+class LocalFieldTest extends GroovyTestCase {
 
-	//  declare private variables
-    property x;
+    private x;
     
 	void testAssert() {
         this.x = "abc";
