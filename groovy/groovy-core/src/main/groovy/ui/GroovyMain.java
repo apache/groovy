@@ -75,6 +75,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 /**
  * A Command line to execute groovy.
  * 
+ * @author Jeremy Rayner
  * @author Yuri Schimke
  * @version $Revision$
  */
