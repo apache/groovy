@@ -698,13 +698,26 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        this.leftHandExpression = false;
+        boolean left = leftHandExpression;
+        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE rather than ALOAD
+        leftHandExpression = false;
+        int i = idx + 1;                    
 
-        expression.getObjectExpression().visit(this);
+        if (left) {
+            cv.visitVarInsn(ASTORE, i);
+        }
+        Expression objectExpression = expression.getObjectExpression();
+        objectExpression.visit(this);
 
         cv.visitLdcInsn(expression.getProperty());
 
-        getPropertyMethod.call(cv);
+        if (left) {
+            cv.visitVarInsn(ALOAD, i);
+            setPropertyMethod.call(cv);
+        }
+        else {
+            getPropertyMethod.call(cv);
+        }
 
         //cv.visitInsn(POP);
     }
@@ -795,27 +808,29 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             cw.visitField(ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null);
         }
 
-        cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null);
-        Label l0 = new Label();
-        cv.visitLabel(l0);
-        cv.visitVarInsn(ALOAD, 0);
-        cv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
-        Label l1 = new Label();
-        cv.visitLabel(l1);
-        cv.visitInsn(ARETURN);
-        Label l2 = new Label();
-        cv.visitLabel(l2);
-        cv.visitVarInsn(ASTORE, 1);
-        cv.visitTypeInsn(NEW, "java/lang/NoClassDefFoundError");
-        cv.visitInsn(DUP);
-        cv.visitVarInsn(ALOAD, 1);
-        cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "getMessage", "()Ljava/lang/String;");
-        cv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V");
-        cv.visitInsn(ATHROW);
-        cv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
-        cv.visitMaxs(3, 2);
+        if (!syntheticStaticFields.isEmpty()) {
+            cv = cw.visitMethod(ACC_STATIC + ACC_SYNTHETIC, "class$", "(Ljava/lang/String;)Ljava/lang/Class;", null);
+            Label l0 = new Label();
+            cv.visitLabel(l0);
+            cv.visitVarInsn(ALOAD, 0);
+            cv.visitMethodInsn(INVOKESTATIC, "java/lang/Class", "forName", "(Ljava/lang/String;)Ljava/lang/Class;");
+            Label l1 = new Label();
+            cv.visitLabel(l1);
+            cv.visitInsn(ARETURN);
+            Label l2 = new Label();
+            cv.visitLabel(l2);
+            cv.visitVarInsn(ASTORE, 1);
+            cv.visitTypeInsn(NEW, "java/lang/NoClassDefFoundError");
+            cv.visitInsn(DUP);
+            cv.visitVarInsn(ALOAD, 1);
+            cv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ClassNotFoundException", "getMessage", "()Ljava/lang/String;");
+            cv.visitMethodInsn(INVOKESPECIAL, "java/lang/NoClassDefFoundError", "<init>", "(Ljava/lang/String;)V");
+            cv.visitInsn(ATHROW);
+            cv.visitTryCatchBlock(l0, l1, l2, "java/lang/ClassNotFoundException");
+            cv.visitMaxs(3, 2);
 
-        cw.visitEnd();
+            cw.visitEnd();
+        }
     }
 
     public void visitClassExpression(ClassExpression expression) {
@@ -982,6 +997,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         if (field != null) {
             return !field.isStatic();
+        }
+        return false;
+    }
+
+    protected boolean isThisExpression(Expression expression) {
+        if (expression instanceof VariableExpression) {
+            VariableExpression varExp = (VariableExpression) expression;
+            return varExp.getVariable().equals("this");
         }
         return false;
     }
