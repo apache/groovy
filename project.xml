@@ -36,13 +36,13 @@
   <url>http://groovy.codehaus.org/</url>
   
   <siteAddress>groovy.codehaus.org</siteAddress>
-  <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
+  <siteDirectory>/home/projects/groovy/public_html</siteDirectory>
   <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
 
   <repository>
-    <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</connection>
-    <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</developerConnection>
-    <url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/</url>
+    <connection>scm:cvs:pserver:anonymous@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</connection>
+    <developerConnection>scm:cvs:ext:${maven.username}@cvs.groovy.codehaus.org:/home/projects/groovy/scm:groovy/groovy-core</developerConnection>
+    <url>http://cvs.groovy.codehaus.org/groovy/groovy-core/</url>
   </repository>
   
   <versions>

@@ -80,7 +80,7 @@
     <menu name="Useful Links">
       <item name="Articles"           href="/articles.html"/>
       <item name="Just Groovy"        href="http://justgroovy.org/"/>
-	  <item name="Japenese Site"      href="http://www.sekiyas.net/groovylab/">
+	    <item name="Japenese Site"      href="http://www.sekiyas.net/groovylab/"/>
     </menu>
     
     <menu name="Modules">
