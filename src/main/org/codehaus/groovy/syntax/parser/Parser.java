@@ -856,8 +856,6 @@ public class Parser
 
         switch ( lt() )
         {
-            case ( Token.KEYWORD_THIS ):
-            case ( Token.KEYWORD_SUPER ):
             case ( Token.KEYWORD_TRUE ):
             case ( Token.KEYWORD_FALSE ):
             {
@@ -873,9 +871,11 @@ public class Parser
                 consume( Token.RIGHT_PARENTHESIS );
                 break;
             }
+            case ( Token.KEYWORD_THIS ):
+            case ( Token.KEYWORD_SUPER ):
             case ( Token.IDENTIFIER ):
             {
-                CSTNode cur = rootNode( Token.IDENTIFIER );
+                CSTNode cur = rootNode( lt() );
 
                 while ( lt() == Token.DOT )
                 {

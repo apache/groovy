@@ -161,11 +161,13 @@ public class Lexer
                                         {
                                             consume();
                                         }
+                                        eol();
                                         break CONSUME_LOOP;
                                     }
                                     case ( '\n' ):
                                     {
                                         consume();
+                                        eol();
                                         break CONSUME_LOOP;
                                     }
                                     default:
@@ -193,6 +195,22 @@ public class Lexer
                                             consume();
                                             break CONSUME_LOOP;
                                         }
+                                        break CONSUME_SWITCH;
+                                    }
+                                    case ( '\r' ):
+                                    {
+                                        consume();
+                                        if ( la() == '\n' )
+                                        {
+                                            consume();
+                                        }
+                                        eol();
+                                        break CONSUME_SWITCH;
+                                    }
+                                    case ( '\n' ):
+                                    {
+                                        eol();
+                                        consume();
                                         break CONSUME_SWITCH;
                                     }
                                     default:
