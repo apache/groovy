@@ -132,7 +132,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(InvokerHelper.class, "invokeConstructor");
     MethodCaller getPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "getProperty");
-    MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
+	MethodCaller setPropertyMethod = MethodCaller.newStatic(InvokerHelper.class, "setProperty");
+	MethodCaller setPropertyMethod2 = MethodCaller.newStatic(InvokerHelper.class, "setProperty2");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(InvokerHelper.class, "asIterator");
     MethodCaller asBool = MethodCaller.newStatic(InvokerHelper.class, "asBool");
 	MethodCaller notBoolean = MethodCaller.newStatic(InvokerHelper.class, "notBoolean");
@@ -963,19 +964,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
         // rather than ALOAD
         leftHandExpression = false;
-        int i = idx + 1;
 
-        if (left) {
-            cv.visitVarInsn(ASTORE, i);
-        }
         Expression objectExpression = expression.getObjectExpression();
         objectExpression.visit(this);
 
         cv.visitLdcInsn(expression.getProperty());
 
         if (left) {
-            cv.visitVarInsn(ALOAD, i);
-            setPropertyMethod.call(cv);
+            setPropertyMethod2.call(cv);
         }
         else {
             getPropertyMethod.call(cv);
@@ -1068,12 +1064,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     variable = defineVariable(name, "java.lang.Object");
                 }
                 if (variable == null) {
-                    visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), variableName));
+                	variable = defineVariable(name, "java.lang.Object", false);
+                	visitPropertyExpression(new PropertyExpression(new VariableExpression("this"), name));
                     // We need to store this in a local variable now since it has been looked at in this scope and possibly
                     // compared and it hasn't been referenced before.
-					cv.visitInsn(DUP);
-					cv.visitVarInsn(ASTORE, idx + 1);
-                    return;
+                	cv.visitInsn(DUP);
+					cv.visitVarInsn(ASTORE, variable.getIndex());
+					return;
                 }
                 String type = variable.getType();
                 int index = variable.getIndex();

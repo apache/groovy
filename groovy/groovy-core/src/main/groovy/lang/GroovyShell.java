@@ -91,10 +91,18 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public GroovyShell() {
-        this(GroovyShell.class.getClassLoader(), new ScriptContext());
+        this(null, new ScriptContext());
     }
 
+    public GroovyShell(ScriptContext binding) {
+    	this(null, binding);
+    }
+    
     public GroovyShell(ClassLoader parent, ScriptContext binding) {
+    	if (parent == null) {
+    		parent = Thread.currentThread().getContextClassLoader();
+    		if (parent == null) parent = GroovyShell.class.getClassLoader();
+    	}
         this.loader = new GroovyClassLoader(parent);
         this.context = binding;
     }
@@ -102,8 +110,6 @@ public class GroovyShell extends GroovyObjectSupport {
     public ScriptContext getContext() {
         return context;
     }
-    
-    
     
     public Object getProperty(String property) {
         Object answer = getVariable(property);
