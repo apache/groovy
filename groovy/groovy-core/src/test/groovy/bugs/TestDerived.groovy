@@ -10,4 +10,8 @@ class TestDerived extends TestBase {
         super(aFoo)
     }
     */
+    
+    doSomething() {
+    	"TestDerived" + super.doSomething()
+    }
 }
