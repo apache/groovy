@@ -116,6 +116,10 @@ public class FieldNode extends MetadataNode implements Constants {
         return dynamicType;
     }
 
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
+    }
+
     /**
      * @return true if the field is static
      */
