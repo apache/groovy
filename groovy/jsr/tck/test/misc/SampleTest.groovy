@@ -9,6 +9,11 @@ class SampleTest extends GroovyTestCase {
 
     String foo = "John"
     String bar = "Jez"
+    private static  dummyx = 123
+    protected final dummyY = 456
+
+    protected synchronized static void something() {
+    }
 
     void testListClosure() {
         def list = [1, 2, 3]
