@@ -1,8 +1,8 @@
 <project>
     <pomVersion>3</pomVersion>
+    <name>groovy-swt</name>
     <groupId>groovy-swt</groupId>
     <artifactId>groovy-swt</artifactId>
-    <name>groovy-swt</name>
     <currentVersion>0.2</currentVersion>
     <organization>
         <name>The Codehaus</name>
@@ -26,8 +26,8 @@
     <mailingLists/>
     <developers>
         <developer>
-            <id>ckl</id>
             <name>Christiaan ten Klooster</name>
+            <id>ckl</id>
             <email>ckl@dacelo.nl</email>
             <organization>Dacelo WebDevelopment</organization>
             <roles>
@@ -85,35 +85,35 @@
         <dependency>
             <groupId>swt</groupId>
             <artifactId>swt-${platform}</artifactId>
-            <version>3.0m8</version>
+            <version>3.0</version>
             <type>jar</type>
             <properties/>
         </dependency>
         <dependency>
             <groupId>swt</groupId>
             <artifactId>jface</artifactId>
-            <version>3.0m8</version>
+            <version>3.0</version>
             <type>jar</type>
             <properties/>
         </dependency>
         <dependency>
             <groupId>swt</groupId>
             <artifactId>forms</artifactId>
-            <version>3.0m9-dev</version>
+            <version>3.0</version>
             <type>jar</type>
             <properties/>
         </dependency>
         <dependency>
             <groupId>swt</groupId>
             <artifactId>runtime</artifactId>
-            <version>3.0m8</version>
+            <version>3.0</version>
             <type>jar</type>
             <properties/>
         </dependency>
         <dependency>
             <groupId>swt</groupId>
             <artifactId>osgi</artifactId>
-            <version>3.0m8</version>
+            <version>3.0</version>
             <type>jar</type>
             <properties/>
         </dependency>
@@ -137,22 +137,22 @@
             <resources>
                 <resource>
                     <directory>src/test</directory>
-                    <filtering>false</filtering>
                     <includes>
                         <include>**/*.properties</include>
                         <include>**/*.xml</include>
                     </includes>
+                    <filtering>false</filtering>
                 </resource>
             </resources>
         </unitTest>
         <resources>
             <resource>
                 <directory>src/main</directory>
-                <filtering>false</filtering>
                 <includes>
                     <include>**/*.properties</include>
                     <include>**/*.xml</include>
                 </includes>
+                <filtering>false</filtering>
             </resource>
         </resources>
     </build>
@@ -171,4 +171,5 @@
         <report>maven-clover-plugin</report>
         <report>maven-changes-plugin</report>
     </reports>
+    <properties/>
 </project>
