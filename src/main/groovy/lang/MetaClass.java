@@ -852,10 +852,14 @@ public class MetaClass {
                 mp.setProperty(object, newValue);
                 return;
             }
-			catch(ReadOnlyPropertyException e) {
-				// just rethrow it; there's nothing left to do here
-				throw e;
-			}
+            catch(ReadOnlyPropertyException e) {
+                // just rethrow it; there's nothing left to do here
+                throw e;
+            }
+            catch (TypeMissMatchException e) {
+                // tried to access to mismatched object.
+                throw e;
+            }
             catch (Exception e) {
                 // if the value is a List see if we can construct the value
                 // from a constructor

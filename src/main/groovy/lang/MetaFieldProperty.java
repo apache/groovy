@@ -36,6 +36,7 @@
 package groovy.lang;
 
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import java.lang.reflect.Field;
 
 /**
@@ -70,11 +71,30 @@ public class MetaFieldProperty extends MetaProperty {
      * @throws Exception if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
-		try {
-			field.set(object, newValue);
-		}
-		catch(Exception e) {
-			throw new GroovyRuntimeException("cannot set property " + name, e);
-		}
+        try {
+            field.set(object, newValue);
+        }
+        catch (IllegalArgumentException e) {
+            try {
+                field.set(object, InvokerHelper.asType(newValue, field.getType()));
+            }
+            catch (Exception ex) {
+                throw new TypeMissMatchException( "'" + toName(object.getClass()) + "." + field.getName()
+                                                  + "' can not refer to the value '"
+                                                  + newValue + "' (type " + toName(newValue.getClass())
+                                                  + "), because it is of the type " + toName(field.getType()) );
+            }
+        }
+        catch (Exception e) {
+            throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", e);
+        }
+    }
+
+    private String toName(Class c) {
+        String s = c.toString();
+        if (s.startsWith("class ") && s.length() > 6)
+            return s.substring(6);
+        else
+            return s;
     }
 }

@@ -34,6 +34,9 @@
  */
 package groovy.lang;
 
+
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * Represents a property on a bean which may have a getter and/or a setter
  * 
@@ -131,12 +134,32 @@ public class MetaBeanProperty extends MetaProperty {
 
 			setter.invoke(object, new Object[] { newValue });
 		}
-		catch(Exception e) {
+                catch (IllegalArgumentException e) {
+                    try {
+                        newValue = InvokerHelper.asType(newValue, getType());
+                        setter.invoke(object, new Object[] { newValue });
+                    }
+		    catch (Exception ex) {
+		        throw new TypeMismatchException( "The property '" + toName(object.getClass()) + "." + name
+                                                         + "' can not refer to the value '"
+                                                         + newValue + "' (type " + toName(newValue.getClass())
+                                                         + "), because it is of the type " + toName(getType()) );
+	            }
+                }
+		catch (Exception e) {
 			throw new GroovyRuntimeException("Cannot set property: " + name +
 				" reason: " + e.getMessage(), e);
 		}
     }
 
+    private String toName(Class c) {
+        String s = c.toString();
+        if (s.startsWith("class ") && s.length() > 6)
+            return s.substring(6);
+        else
+            return s;
+     }
+     
     public MetaMethod getGetter() {
         return getter;
     }
