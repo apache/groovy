@@ -5,6 +5,7 @@
 package groovy.swt;
 
 import groovy.lang.Closure;
+import groovy.swt.factory.AwtSwtFactory;
 import groovy.swt.factory.FormFactory;
 import groovy.swt.factory.FormLayoutDataFactory;
 import groovy.swt.factory.ImageFactory;
@@ -12,6 +13,7 @@ import groovy.swt.factory.LayoutDataFactory;
 import groovy.swt.factory.LayoutFactory;
 import groovy.swt.factory.ListenerFactory;
 import groovy.swt.factory.SwtFactory;
+import groovy.swt.factory.TrayFactory;
 import groovy.swt.factory.WidgetFactory;
 import groovy.util.BuilderSupport;
 
@@ -71,6 +73,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.swt.widgets.Tracker;
+import org.eclipse.swt.widgets.TrayItem;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.forms.events.ExpansionListener;
@@ -164,6 +167,7 @@ public class SwtBuilder extends BuilderSupport {
     protected void registerWidgets() {
 
         // widgets
+        registerFactory("awtFrame", new AwtSwtFactory());
         registerBeanFactory("button", Button.class, SWT.BORDER | SWT.PUSH | SWT.CENTER);
         registerBeanFactory("canvas", Canvas.class);
         registerBeanFactory("caret", Caret.class);
@@ -198,6 +202,8 @@ public class SwtBuilder extends BuilderSupport {
         registerBeanFactory("toolBar", ToolBar.class, SWT.VERTICAL);
         registerBeanFactory("toolItem", ToolItem.class);
         registerBeanFactory("tracker", Tracker.class);
+        registerFactory("tray", new TrayFactory());
+        registerBeanFactory("trayItem", TrayItem.class);
         registerBeanFactory("tree", Tree.class, SWT.MULTI);
         registerBeanFactory("treeItem", TreeItem.class);
 

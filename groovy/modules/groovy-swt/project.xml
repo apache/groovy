@@ -77,38 +77,38 @@
 		<dependency>
 			<id>swt-${platform}</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>
 		<dependency>
 			<id>jface</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>
 		<dependency>
 			<id>forms</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>
 		<dependency>
 			<id>runtime</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>
 		<dependency>
 			<id>osgi</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>           
 		<!-- swt-gtk dependencies , disabled by default -->
 		<!-- dependency>
 			<id>swt-gtk-pi</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency>
 		<dependency>
 			<id>swt-mozilla</id>
 			<groupId>swt</groupId>
-			<version>3.0m7</version>
+			<version>3.0m8</version>
 		</dependency -->       
   
 		<!-- only used for testing/demos -->

@@ -41,6 +41,9 @@ class SwtBuilderTest1 {
 				toolItem()
 			}
 			tracker()
+			tray() {
+				trayItem()
+			}
 			tree(){
 				treeItem()
 			}
