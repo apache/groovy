@@ -10,7 +10,7 @@ Things to Test
 * test do while
 
 * test compiler errors when
-	- duplicate methods test
+	- duplicate methods testno 
 	- duplicate class in module
 	
 * test date range using Range object
@@ -255,17 +255,6 @@ sql.table("users") {
 
 * test [] on lists & maps?
 
-* should we implement + and - for collections and maps?
-
-	l = [1, 2] + [3, 4];
-	assert l := [1, 2, 3, 4];
-	
-* test use of overloaded setter methods & use of property notation
-  so that the use of properties within a class should use setteres / getters.
-
-* test the use of PropertyExpression
-	a.b = c.d
-	
 * support static newInstance() method for constructors
 
 * maybe split up ClassGenerator - do code gen & class gen separately
