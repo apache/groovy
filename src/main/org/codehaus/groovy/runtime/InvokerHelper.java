@@ -71,7 +71,7 @@ import java.util.regex.Pattern;
 public class InvokerHelper {
     public static final Object[] EMPTY_ARGS = {
     };
-    
+
     private static final Invoker singleton = new Invoker();
 
     public static MetaClass getMetaClass(Object object) {
@@ -84,6 +84,13 @@ public class InvokerHelper {
 
     public static Object invokeMethod(Object object, String methodName, Object arguments) {
         return getInstance().invokeMethod(object, methodName, arguments);
+    }
+
+    public static Object invokeMethodSafe(Object object, String methodName, Object arguments) {
+        if (object != null) {
+            return getInstance().invokeMethod(object, methodName, arguments);
+        }
+        return null;
     }
 
     public static Object invokeStaticMethod(String type, String methodName, Object arguments) {
@@ -118,24 +125,37 @@ public class InvokerHelper {
         return getInstance().toString(arguments);
     }
 
+    public static Object getProperty(Object object, String property) {
+        return getInstance().getProperty(object, property);
+    }
+
+    public static Object getPropertySafe(Object object, String property) {
+        if (object != null) {
+            return getInstance().getProperty(object, property);
+        }
+        return null;
+    }
+
     public static void setProperty(Object object, String property, Object newValue) {
         getInstance().setProperty(object, property, newValue);
     }
 
-	/**
-	 * This is so we don't have to reorder the stack when we call this method.
-	 * At some point a better name might be in order.
-	 * 
-	 * @param newValue
-	 * @param object
-	 * @param property
-	 */
-	public static void setProperty2(Object newValue, Object object, String property) {
-		getInstance().setProperty(object, property, newValue);
-	}
+    /**
+     * This is so we don't have to reorder the stack when we call this method.
+     * At some point a better name might be in order.
+     */
+    public static void setProperty2(Object newValue, Object object, String property) {
+        getInstance().setProperty(object, property, newValue);
+    }
 
-	public static Object getProperty(Object object, String property) {
-        return getInstance().getProperty(object, property);
+    /**
+     * This is so we don't have to reorder the stack when we call this method.
+     * At some point a better name might be in order.
+     */
+    public static void setPropertySafe2(Object newValue, Object object, String property) {
+        if (object != null) {
+            setProperty2(newValue, object, property);
+        }
     }
 
     public static boolean asBool(Object object) {
@@ -144,31 +164,30 @@ public class InvokerHelper {
             return booleanValue.booleanValue();
         }
         else if (object instanceof Matcher) {
-        	Matcher matcher = (Matcher) object;
-        	return matcher.find();
+            Matcher matcher = (Matcher) object;
+            return matcher.find();
         }
         else if (object instanceof Collection) {
-        	Collection collection = (Collection) object;
-        	return !collection.isEmpty();
+            Collection collection = (Collection) object;
+            return !collection.isEmpty();
         }
         else if (object instanceof String) {
             String text = (String) object;
             return text.equalsIgnoreCase("true");
         }
-        throw new InvokerException(object.getClass().getName() +
-        						   "(" + object + ") cannot be converted to a boolean.");
+        throw new InvokerException(object.getClass().getName() + "(" + object + ") cannot be converted to a boolean.");
     }
 
-	public static boolean notObject(Object object) {
-		return !asBool(object);
-	}
+    public static boolean notObject(Object object) {
+        return !asBool(object);
+    }
 
-	public static boolean notBoolean(boolean bool) {
-		return !bool;
-	}
-	
+    public static boolean notBoolean(boolean bool) {
+        return !bool;
+    }
+
     public static boolean isCase(Object switchValue, Object caseExpression) {
-        return asBool(invokeMethod(caseExpression, "isCase", new Object[] { switchValue}));
+        return asBool(invokeMethod(caseExpression, "isCase", new Object[] { switchValue }));
     }
 
     public static boolean compareIdentical(Object left, Object right) {
@@ -178,17 +197,17 @@ public class InvokerHelper {
     public static boolean compareEqual(Object left, Object right) {
         return getInstance().objectsEqual(left, right);
     }
-    
+
     public static Matcher findRegex(Object left, Object right) {
-    	return getInstance().objectFindRegex(left, right);
+        return getInstance().objectFindRegex(left, right);
     }
 
     public static boolean matchRegex(Object left, Object right) {
-    	return getInstance().objectMatchRegex(left, right);
+        return getInstance().objectMatchRegex(left, right);
     }
-    
+
     public static Pattern regexPattern(String regex) {
-    	return getInstance().regexPattern(regex);
+        return getInstance().regexPattern(regex);
     }
 
     public static boolean compareNotEqual(Object left, Object right) {
@@ -251,7 +270,7 @@ public class InvokerHelper {
             throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
-    
+
     public static Object runScript(Class scriptClass, String[] args) {
         ScriptContext context = new ScriptContext(args);
         Script script = createScript(scriptClass, context);
@@ -264,7 +283,9 @@ public class InvokerHelper {
             return (Script) constructor.newInstance(new Object[] { context });
         }
         catch (Exception e) {
-            throw new InvokerException("Failed to create Script instance for class: " + scriptClass + ". Reason: " + e, e);
+            throw new InvokerException(
+                "Failed to create Script instance for class: " + scriptClass + ". Reason: " + e,
+                e);
         }
     }
 }

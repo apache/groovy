@@ -57,12 +57,18 @@ public class PropertyExpression extends Expression {
 
     private Expression objectExpression;
     private String property;
-    
+    private boolean safe;
+
     public PropertyExpression(Expression objectExpression, String property) {
+        this(objectExpression, property, false);
+    }
+
+    public PropertyExpression(Expression objectExpression, String property, boolean safe) {
         this.objectExpression = objectExpression;
         this.property = property;
+        this.safe = safe;
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitPropertyExpression(this);
     }
@@ -77,6 +83,14 @@ public class PropertyExpression extends Expression {
 
     public String getText() {
         return objectExpression.getText() + "." + property;
+    }
+
+    /**
+     * @return is this a safe navigation, i.e. if true then if the source object is null
+     * then this navigation will return null
+     */
+    public boolean isSafe() {
+        return safe;
     }
 
     public String toString() {

@@ -777,6 +777,10 @@ public class ASTBuilder
             {
                 return propertyExpression( expressionRoot );
             }
+            case ( Token.NAVIGATE ):
+            {
+                return safePropertyExpression( expressionRoot );
+            }
             case ( Token.SYNTH_LIST ):
             {
                 return listExpression( expressionRoot );
@@ -888,9 +892,17 @@ public class ASTBuilder
 
         Expression paramList = actualParameterList( expressionRoot.getChild( 2 ) );
 
-        return new MethodCallExpression( objectExpression,
-                                         methodName,
-                                         paramList );
+        MethodCallExpression answer = new MethodCallExpression(objectExpression, methodName, paramList);
+        
+        if (expressionRoot.getChildren().length > 3) 
+        {
+            CSTNode notExpr = expressionRoot.getChild(3);
+            if (notExpr != null && notExpr.getToken().getType() == Token.NAVIGATE) 
+            {
+                answer.setSafe(true);
+            }
+        }
+        return answer;
     }
 
     protected Expression actualParameterList(CSTNode paramRoot) throws ParserException
@@ -1027,7 +1039,17 @@ public class ASTBuilder
         String propertyName = expressionRoot.getChild( 1 ).getToken().getText();
 
         return new PropertyExpression ( objectExpression,
-                                        propertyName );
+                propertyName );
+    }
+
+    protected Expression safePropertyExpression(CSTNode expressionRoot) throws ParserException
+    {
+        Expression objectExpression = expression( expressionRoot.getChild( 0 ) );
+
+        String propertyName = expressionRoot.getChild( 1 ).getToken().getText();
+
+        return new PropertyExpression ( objectExpression,
+                propertyName, true );
     }
 
     protected Expression variableOrClassExpression(CSTNode expressionRoot)

@@ -58,6 +58,7 @@ public class MethodCallExpression extends Expression {
     private Expression objectExpression;
     private String method;
     private Expression arguments;
+    private boolean safe;
     
     public MethodCallExpression(Expression objectExpression, String method, Expression arguments) {
         this.objectExpression = objectExpression;
@@ -83,6 +84,18 @@ public class MethodCallExpression extends Expression {
 
     public String getText() {
         return objectExpression.getText() + "." + method + arguments.getText();
+    }
+
+    /**
+     * @return is this a safe method call, i.e. if true then if the source object is null
+     * then this method call will return null rather than throwing a null pointer exception
+     */
+    public boolean isSafe() {
+        return safe;
+    }
+
+    public void setSafe(boolean safe) {
+        this.safe = safe;
     }
 
     public String toString() {
