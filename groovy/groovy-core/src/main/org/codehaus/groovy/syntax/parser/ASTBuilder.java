@@ -117,9 +117,15 @@ public class ASTBuilder
 
     protected String resolveName(String name)
     {
+        String original = name;
+        name = removeTypeModifiers(name);
+        String postfix = "";
+        if (original.length() > name.length()) {
+            postfix = original.substring(name.length());
+        }
         if ( name.indexOf( "." ) >= 0 )
         {
-            return name;
+            return original;
         }
         else if ( name.equals( "void" )
                   ||
@@ -139,12 +145,12 @@ public class ASTBuilder
         		  ||
                   name.equals( "float" ) )
         {
-            return name;
+            return original;
         }
 
         if ( this.imports.containsKey( name ) )
         {
-            return (String) this.imports.get( name );
+            return (String) this.imports.get( name ) + postfix;
         }
 
         if (packageName != null && packageName.length() > 0)
@@ -153,7 +159,7 @@ public class ASTBuilder
             {
                 getClassLoader().loadClass( packageName + "." + name );
 
-                return packageName + "." + name;
+                return packageName + "." + name + postfix;
             }
             catch (Exception e)
             {
@@ -170,7 +176,7 @@ public class ASTBuilder
             {
                 String fullName = DEFAULT_IMPORTS[i] + name;
                 getClassLoader().loadClass( fullName );
-                return fullName;
+                return fullName + postfix;
             }
             catch (Exception e)
             {
@@ -184,6 +190,16 @@ public class ASTBuilder
         return null;
     }
 
+    /**
+     * Strips any trailing type modifiers from the name; like [] or * or ! or ? or +
+     */
+    protected String removeTypeModifiers(String name) {
+        if (name.endsWith("[]")) {
+            return removeTypeModifiers(name.substring(0, name.length() - 2));
+        }
+        return name;
+    }
+
     protected boolean isDatatype(String name)
     {
         return resolveName(name) != null;
@@ -192,7 +208,11 @@ public class ASTBuilder
     protected String qualifiedName(CSTNode nameRoot)
     {
         String qualifiedName = "";
-
+        
+        if (matches(nameRoot, Token.LEFT_SQUARE_BRACKET)) {
+        	CSTNode child = nameRoot.getChild(0);
+    	    return qualifiedName(child) + "[]";
+		}
         if ( matches( nameRoot,
                       Token.DOT ) )
         {

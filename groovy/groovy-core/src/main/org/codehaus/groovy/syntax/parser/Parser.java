@@ -2,7 +2,6 @@ package org.codehaus.groovy.syntax.parser;
 
 import java.io.IOException;
 
-import org.codehaus.groovy.ast.expr.NegationExpression;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenStream;
@@ -423,6 +422,7 @@ public class Parser
             {
                 case ( Token.DOT ):
                 case ( Token.IDENTIFIER ):
+                case ( Token.LEFT_SQUARE_BRACKET ):
                 {
                     type = datatype();
                     break;
@@ -561,6 +561,19 @@ public class Parser
                     
                     datatype = dot;
                 }
+            }
+        }
+        
+        if (datatype != null) {
+            if (lt_bare() == Token.LEFT_SQUARE_BRACKET && lt_bare(2) == Token.RIGHT_SQUARE_BRACKET) {
+                CSTNode newRoot = new CSTNode(Token.leftSquareBracket(-1, -1));
+                newRoot.addChild(datatype);
+                datatype = newRoot;
+                
+                //datatype = rootNode( Token.LEFT_SQUARE_BRACKET, datatype );
+                
+                consume_bare(datatype, Token.LEFT_SQUARE_BRACKET);
+                consume_bare(Token.RIGHT_SQUARE_BRACKET);
             }
         }
 
