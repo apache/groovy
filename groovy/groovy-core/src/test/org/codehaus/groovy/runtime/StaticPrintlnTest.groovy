@@ -5,6 +5,6 @@ class StaticPrintlnTest extends GroovyTestCase {
 	}
 	
     static void main(args) {
-        println("Works!")
+        println("called with: " + args)
     }
 }

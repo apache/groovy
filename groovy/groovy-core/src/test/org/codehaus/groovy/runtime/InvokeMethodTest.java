@@ -208,6 +208,12 @@ public class InvokeMethodTest extends GroovyTestCase {
             System.out.println("Caught: " + e);
         }
     }
+    
+    public void testPlusWithNull() throws Throwable {
+        String param = "called with: ";
+        Object value = invoke(param, "plus", new Object[] { null });
+        assertEquals("called with null", param + null, value);
+    }
 
     public void testClassMethod() throws Throwable {
         Class c = String.class;
