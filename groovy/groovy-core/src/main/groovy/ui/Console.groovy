@@ -28,18 +28,18 @@ import org.codehaus.groovy.runtime.InvokerHelper
  */
 class Console extends ConsoleSupport implements CaretListener {
 
-    frame
-    swing
-    textArea
-    outputArea
-    scriptList
-    scriptFile
+    def frame
+    def swing
+    def textArea
+    def outputArea
+    def scriptList
+    def scriptFile
     private boolean dirty
     private int textSelectionStart  // keep track of selections in textArea
     private int textSelectionEnd
 
     static void main(args) {
-        console = new Console()
+        def console = new Console()
         console.run()
     }
 
@@ -48,8 +48,7 @@ class Console extends ConsoleSupport implements CaretListener {
         // if menu modifier is two keys we are out of luck as the javadocs
         // indicates it returns "Control+Shift" instead of "Control Shift"
         menuModifier = KeyEvent.getKeyModifiersText( 
-            Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())
-            .toLowerCase() + ' '
+            Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toLowerCase() + ' '
 
         swing = new SwingBuilder()
         frame = swing.frame(
@@ -122,7 +121,7 @@ class Console extends ConsoleSupport implements CaretListener {
         updateTitle()
     }
 
-    updateTitle() {
+    void updateTitle() {
         if (scriptFile != null) {
             frame.title = scriptFile.name + (dirty?" * ":"") + " - GroovyConsole"
         } else {
@@ -130,7 +129,7 @@ class Console extends ConsoleSupport implements CaretListener {
         }
     }
 
-    selectFilename(name = "Open") {
+    def selectFilename(name = "Open") {
         fc = new JFileChooser()
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
         if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
@@ -140,11 +139,11 @@ class Console extends ConsoleSupport implements CaretListener {
         }
     }
 
-    fileNew(EventObject evt = null) {
+    void fileNew(EventObject evt = null) {
       (new Console()).run()
     }
 
-    fileOpen(EventObject evt = null) {
+    void fileOpen(EventObject evt = null) {
         scriptFile = selectFilename();
         if (scriptFile != null) {
             textArea.text = scriptFile.readLines().join('\n');
@@ -166,11 +165,11 @@ class Console extends ConsoleSupport implements CaretListener {
         }
     }
 
-    append(doc, text, style){
+    void append(doc, text, style){
         doc.insertString(doc.getLength(), text, style)
     }
     
-    runScript(EventObject evt = null) {
+    void runScript(EventObject evt = null) {
         text = textArea.getText()
         if (textSelectionStart != textSelectionEnd) {   // we have a real selection
             text = textArea.getText()[textSelectionStart...textSelectionEnd]
@@ -203,14 +202,14 @@ class Console extends ConsoleSupport implements CaretListener {
         dialog.show()
     }
 
-    showAbout(EventObject evt = null) {
+    void showAbout(EventObject evt = null) {
         version = InvokerHelper.getVersion()
         pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
         dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
 
-    exit(EventObject evt = null) {
+    void exit(EventObject evt = null) {
         if (scriptFile != null && dirty) {
             switch (JOptionPane.showConfirmDialog(frame,
                 "Save changes to " + scriptFile.name + "?",
