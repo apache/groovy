@@ -16,6 +16,7 @@ import org.codehaus.groovy.syntax.Token;
 public class Lexer {
     private final char[] buf = new char[5];
     private final int[] charWidth = new int[buf.length];
+    private final boolean[] isEol = new boolean[buf.length];
     private int cur = 0;
     private int charsInBuffer = 0;
     private boolean eosRead = false;
@@ -998,8 +999,13 @@ public class Lexer {
             fillBuffer();
 
         this.charsInBuffer--;
-
-        this.column += this.charWidth[this.cur];
+        
+        if (this.isEol[this.cur]) {
+        	this.line++;
+        	this.column = 1;
+        } else {
+        	this.column += this.charWidth[this.cur];
+        }
 
         return this.buf[this.cur++];
     }
@@ -1016,6 +1022,7 @@ public class Lexer {
 
                 this.escapeLookahead = false;
                 this.charWidth[this.charsInBuffer] = 1;
+                this.isEol[this.charsInBuffer] = false;
 
                 if (c == CharStream.EOS)
                     this.eosRead = true;
@@ -1023,7 +1030,16 @@ public class Lexer {
                 if (c == '\\') {
                     c = charStream.consume();
 
-                    if (c == 'u') {
+                    if (c == '\n' || c == '\r') {
+                    	if (c == '\r') {
+                    		c = charStream.consume();
+                    		if (c == '\n') c = charStream.consume();
+                    	} else {
+                    		c = charStream.consume();
+                    	}
+                    	
+                    	this.isEol[this.charsInBuffer] = true;
+                    } else if (c == 'u') {
                         do {
                             this.charWidth[this.charsInBuffer]++;
                             c = charStream.consume();
