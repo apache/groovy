@@ -141,6 +141,7 @@ public class InteractiveShell
         out.println("Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
         out.println("Type 'exit' to terminate the shell");
         out.println("Type 'help' for command help");
+        out.println("Type 'go' to execute the statements");
 
         int counter = 1;
         boolean running = true;
