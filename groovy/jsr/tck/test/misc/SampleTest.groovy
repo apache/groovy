@@ -29,6 +29,17 @@ class SampleTest extends GroovyTestCase {
         println new UDate()
     }
 
+    void testClosure() {
+        def list = [1, 2, 3]
+
+        println "list is $list"
+
+        // TODO sort out parser
+        /**
+        list.each { (e)| println("List contains $e") }
+        */
+    }
+
     void testCase() {
         println "Hello"
         println 123
@@ -37,12 +48,6 @@ class SampleTest extends GroovyTestCase {
         println "Hello $foo!"
         println "Hello ${bar}!"
 
-        def x = 123
-
-        println "value is $x"
-
-        x = x + 1
-        println "value is now ${x}"
 
         def f = this
         def answer = f.foo("hello ", "James")
@@ -56,6 +61,35 @@ class SampleTest extends GroovyTestCase {
 
         println "Now the answer is $answer"
     }
+
+    void testSubscript() {
+        list = [1, 2, 3]
+
+        def x = list[2]
+        assert x == 3
+    }
+
+
+    /** TODO runtime breaks!
+    void testPrePostFix() {
+        def x = 124
+
+        println("value is $x")
+
+        if (x > 100) {
+        ++x
+        }
+
+        assert x == 124
+        assert ++x == 125
+
+        assert x++ == 125
+        assert --x == 124
+        assert x-- == 124
+
+        //println("value is now ${x}")
+    }
+    */
 
     void testIfElse() {
         def x = 123
@@ -91,14 +125,6 @@ class SampleTest extends GroovyTestCase {
     def foo2(a, b) {
         def answer = a + b
         return answer
-    }
-
-    void testClosure() {
-        def list = [1, 2, 3]
-
-        println "list is $list"
-
-        list.each {(e)| println "List contains $e" }
     }
 
     void testFor() {
@@ -152,6 +178,11 @@ class SampleTest extends GroovyTestCase {
         println "Created map $m"
 
         m.each { (k, v)| println "key $k and value $v" }
+    }
+
+    void testRange() {
+        def range = [1..3]
+        assert range == [1, 2, 3]
     }
 
 

@@ -656,6 +656,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case EXPR:
                 return expression(node.getFirstChild());
 
+            case ELIST:
+                return expressionList(node);
+
             case CLOSED_BLOCK:
                 return closureExpression(node);
 
@@ -679,6 +682,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
             case MAP_CONSTRUCTOR:
                 return mapExpression(node);
+
+            case INDEX_OP:
+            return indexExpression(node);
+
 
                 // literals
 
@@ -718,6 +725,27 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_this:
                 return VariableExpression.THIS_EXPRESSION;
 
+
+                // Unary expressions
+            case LNOT:
+                return new NotExpression(expression(node.getFirstChild()));
+
+            case BNOT:
+                return new NegationExpression(expression(node.getFirstChild()));
+
+                // Prefix expressions
+            case INC:
+                return prefixExpression(node, Types.PLUS);
+
+            case DEC:
+                return prefixExpression(node, Types.MINUS);
+
+                // Postfix expressions
+            case POST_INC:
+                return postfixExpression(node, Types.PLUS);
+
+            case POST_DEC:
+                return postfixExpression(node, Types.MINUS);
 
                 // Binary expressions
 
@@ -781,6 +809,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case MOD_ASSIGN:
                 return binaryExpression(Types.MOD_EQUAL, node);
 
+
             default:
                 onUnknownAST(node);
         }
@@ -817,6 +846,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new MapEntryExpression(keyExpression, valueExpression);
     }
 
+    protected Expression indexExpression(AST indexNode) {
+        AST leftNode = indexNode.getFirstChild();
+        Expression leftExpression = expression(leftNode);
+
+        AST rightNode = leftNode.getNextSibling();
+        Expression rightExpression = expression(rightNode);
+
+        return new BinaryExpression(leftExpression, makeToken(Types.LEFT_SQUARE_BRACKET, indexNode), rightExpression);
+    }
+
     protected Expression binaryExpression(int type, AST node) {
         Token token = makeToken(type, node);
 
@@ -832,6 +871,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression rightExpression = expression(rightNode);
         return new BinaryExpression(leftExpression, token, rightExpression);
     }
+
+    protected Expression prefixExpression(AST node, int token) {
+        Expression expression = expression(node.getFirstChild());
+        return new PrefixExpression(makeToken(token, node), expression);
+    }
+
+    protected Expression postfixExpression(AST node, int token) {
+        Expression expression = expression(node.getFirstChild());
+        return new PostfixExpression(expression, makeToken(token, node));
+    }
+
 
     protected BooleanExpression booleanExpression(AST node) {
         BooleanExpression booleanExpression = new BooleanExpression(expression(node));
@@ -912,6 +962,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         ArgumentListExpression arguments = new ArgumentListExpression(expressionList);
         return arguments;
+    }
+
+    protected Expression expressionList(AST node) {
+        List expressionList = new ArrayList();
+        for (AST child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+            expressionList.add(expression(child));
+        }
+        if (expressionList.size() == 1) {
+            return (Expression) expressionList.get(0);
+        }
+        else {
+            return new TupleExpression(expressionList);
+        }
     }
 
     protected ClosureExpression closureExpression(AST node) {
