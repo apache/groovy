@@ -60,7 +60,12 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class RunBugsTest extends TestSupport {
 
-    public void test1() throws Exception {
+    public void testStaticMethodCall() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/StaticMethodCallBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+
+    public void testGuillaumesMapBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/GuillaumesMapBug.groovy");
         object.invokeMethod("testBug", null);
     }
