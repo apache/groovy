@@ -111,7 +111,8 @@
 	    <path refid="maven.dependency.classpath"/>
 	</path>
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
-    <taskdef name="wiki2html" classname="org.codehaus.groovy.ant.Wiki2Markup" classpathref="test.classpath"/> 
+    <taskdef name="wiki2html" classname="org.codehaus.groovy.wiki.Wiki2Markup" classpathref="test.classpath"/> 
+    <taskdef name="wiki2testcase" classname="org.codehaus.groovy.wiki.Wiki2TestCase" classpathref="test.classpath"/> 
   </goal>
   
 
@@ -131,12 +132,17 @@
 
   <goal name="groovy:compile" prereqs="java:compile, setclasspath"
   		description="Compiles the Groovy code">
-    <copy todir="${basedir}/target/classes">
+  		
+    <!-- lets create the test cases from the wiki documentation -->
+    <mkdir dir="${basedir}/target/test-classes/wiki"/>
+    <wiki2testcase srcdir="${basedir}/xdocs" destdir="${basedir}/target/test-classes/wiki"/>
+    
+    <copy todir="${basedir}/target/test-classes">
       <fileset dir="${basedir}/src/main">
         <include name="**/*.groovy"/>
       </fileset>
     </copy>
-    <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
   </goal>

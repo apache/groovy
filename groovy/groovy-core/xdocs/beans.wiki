@@ -4,7 +4,7 @@
 GroovyBeans are JavaBeans but using a much simpler syntax. 
 Here's an example 
 
-{code:groovy}
+{code:gsh}
 class Customer {
     // properties
     Integer id
@@ -83,7 +83,7 @@ When Groovy is compiled to bytecode the following rules are used.
 So for example you could create a public read only property with a protected setter
 or a read only property like this
 
-{code:groovy}
+{code:gsh}
 class Foo {
     // read only property
     private String name
