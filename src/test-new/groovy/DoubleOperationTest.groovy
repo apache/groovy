@@ -46,13 +46,13 @@ class DoubleOperationTest extends GroovyTestCase {
     
     void testDivide() {
         x = 80.0 / 4
-        assert x == 20.0 : "x = " + x
+        assert x == 20.0 , "x = " + x
         
         x = 80 / 4.0
-        assert x == 20.0 : "x = " + x
+        assert x == 20.0 , "x = " + x
         
         y = x / 2
-        assert y == 10.0 : "y = " + y     
+        assert y == 10.0 , "y = " + y     
     }
 
     void testMethodNotFound() {

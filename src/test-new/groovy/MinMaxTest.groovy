@@ -29,10 +29,10 @@ class MinMaxTest extends GroovyTestCase {
 		
 		println("Found ${p}")
 		
-		assert p.get("@name") == "Joe" : "found person ${p}"
+		assert p.get("@name") == "Joe" , "found person ${p}"
 		
 		p = people.max(order)
-		assert p.get("@name") == "Chris" : "found person ${p}"
+		assert p.get("@name") == "Chris" , "found person ${p}"
 	}
     
     getPeople() {

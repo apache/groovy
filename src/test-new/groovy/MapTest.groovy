@@ -41,14 +41,14 @@ class MapTest extends GroovyTestCase {
             // ignore
         }
         else {
-            assert false : "should contain cheese!"
+            assert false , "should contain cheese!"
         }
 		
         if ( m.containsKey(3) ) {
             // ignore
         }
         else {
-            assert false : "should contain 3!"
+            assert false , "should contain 3!"
         }
     }
     

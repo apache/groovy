@@ -33,6 +33,6 @@ class TableModelTest extends GroovyTestCase {
     
     protected assertValueAt(model, row, col, expected) {
         value = model.getValueAt(row, col)
-        assert value == expected : "for row " + row + " col " + col
+        assert value == expected , "for row " + row + " col " + col
     }
 }
