@@ -216,6 +216,15 @@
         <role>Developer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Steve Goetze</name>
+      <id>goetze</id>
+      <email>goetze@dovetail.com</email>
+      <organization>Dovetailed Technologies, LLC</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>
@@ -265,10 +274,6 @@
     </contributor>
     <contributor>
       <name>Richard Monson-Haefel</name>
-      <email></email>
-    </contributor>
-    <contributor>
-      <name>Steve Goetze</name>
       <email></email>
     </contributor>
     <contributor>
