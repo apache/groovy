@@ -426,8 +426,6 @@ public class ASTBuilder
 
     protected Expression expression(CSTNode expressionRoot)
     {
-        Expression expression = null;
-
         switch ( expressionRoot.getToken().getType() )
         {
             case ( Token.COMPARE_EQUAL ):
@@ -444,20 +442,18 @@ public class ASTBuilder
             case ( Token.MOD ):
             case ( Token.EQUAL ):
             {
-                expression = binaryExpression( expressionRoot );
-                break;
+                return binaryExpression( expressionRoot );
             }
             case ( Token.SINGLE_QUOTE_STRING ):
             case ( Token.DOUBLE_QUOTE_STRING ):
             case ( Token.INTEGER_NUMBER ):
             case ( Token.FLOAT_NUMBER ):
             {
-                expression = constantExpression( expressionRoot );
-                break;
+                return constantExpression( expressionRoot );
             }
         }
 
-        return expression;
+        throw new RuntimeException("Cannot create expression for node: " + expressionRoot);
     }
 
     protected ConstantExpression constantExpression(CSTNode expressionRoot)
