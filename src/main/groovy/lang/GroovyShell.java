@@ -189,7 +189,7 @@ public class GroovyShell extends GroovyObjectSupport {
         int p = scriptName.lastIndexOf(".");
         if ( p++ >= 0) {
             if (scriptName.substring(p).equals("java")) {
-                System.err.println( "error: cannot dompile file with .java extension: " + scriptName );
+                System.err.println( "error: cannot compile file with .java extension: " + scriptName );
                 throw new CompilationFailedException(0, null);
             }
         }
