@@ -63,7 +63,7 @@ public class GStringExpression extends Expression {
     private String verbatimText;
     private List strings = new ArrayList();
     private List values = new ArrayList();
-
+    
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
     }
@@ -92,6 +92,9 @@ public class GStringExpression extends Expression {
     }
 
     public void addValue(Expression value) {
+    	// If the first thing is an value, then we need a dummy empty string in front of it so that when we
+    	// toString it they come out in the correct order.
+    	if (strings.size() == 0) strings.add(ConstantExpression.EMPTY_STRING);
         values.add(value);
     }
 
