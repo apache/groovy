@@ -2,7 +2,10 @@ package groovy.sql
 
 import org.axiondb.jdbc.AxionDataSource
 
-class SqlCompleteTest extends GroovyTestCase {
+/** @todo bug - should not need this line */
+import groovy.sql.TestHelper
+
+class SqlCompleteTest extends TestHelper {
 
     void testSqlQuery() {
         sql = createSql()     
@@ -87,37 +90,5 @@ class SqlCompleteTest extends GroovyTestCase {
         
         expected = ["GDO", "GPath", "GroovyMarkup"]
         assert results == expected
-    }
-    
-    protected createSql() {
-        sql = newSql("jdbc:axiondb:foo" + getName())
-        
-        sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
-        sql.execute("create table FOOD ( type varchar, name varchar)")
-        sql.execute("create table FEATURE ( id integer, name varchar)")
-        
-        // now lets populate the datasets
-        people = sql.dataSet("PERSON")
-        people.add( firstname:"James", lastname:"Strachan" )
-        people.add( firstname:"Bob", lastname:"Mcwhirter" )
-        people.add( firstname:"Sam", lastname:"Pullara" )
-        
-        food = sql.dataSet("FOOD")
-        food.add( type:"cheese", name:"edam" )
-        food.add( type:"cheese", name:"brie" )
-        food.add( type:"cheese", name:"cheddar" )
-        food.add( type:"drink", name:"beer" )
-        food.add( type:"drink", name:"coffee" )
-        
-        features = sql.dataSet("FEATURE")
-        features.add( id:1, name:'GDO' )
-        features.add( id:2, name:'GPath' )
-        features.add( id:3, name:'GroovyMarkup' )
-        return sql
-    }
-    
-    protected newSql(String uri) {
-	    dataSource = new AxionDataSource(uri)
-	    return new Sql(dataSource)
     }
 }

@@ -160,7 +160,7 @@ public class TestSupport extends GroovyTestCase implements Constants {
         log.info("About to execute script");
         log.info(text);
         
-        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), "TestScript.groovy");
+        Class groovyClass = loader.parseClass(new ByteArrayInputStream(text.getBytes()), getTestClassName());
         Script script = InvokerHelper.createScript(groovyClass, new Binding());
         script.run();
     }

@@ -106,8 +106,8 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query calling the closure with the result set
-	 */
+     * Performs the given SQL query calling the closure with the result set
+     */
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
@@ -127,9 +127,9 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query with parameters calling the closure with
-	 * the result set
-	 */
+     * Performs the given SQL query with parameters calling the closure with
+     * the result set
+     */
     public void query(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
@@ -151,8 +151,8 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query calling the closure with the result set
-	 */
+     * Performs the given SQL query calling the closure with the result set
+     */
     public void query(GString gstring, Closure closure) throws SQLException {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
@@ -160,9 +160,9 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query calling the closure with each row of the
-	 * result set
-	 */
+     * Performs the given SQL query calling the closure with each row of the
+     * result set
+     */
     public void queryEach(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = connection.createStatement();
@@ -186,8 +186,8 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query calling the closure with the result set
-	 */
+     * Performs the given SQL query calling the closure with the result set
+     */
     public void queryEach(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
@@ -213,8 +213,8 @@ public class Sql {
     }
 
     /**
-	 * Performs the given SQL query calling the closure with the result set
-	 */
+     * Performs the given SQL query calling the closure with the result set
+     */
     public void queryEach(GString gstring, Closure closure) throws SQLException {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
@@ -223,8 +223,8 @@ public class Sql {
     }
 
     /**
-	 * Executes the given piece of SQL
-	 */
+     * Executes the given piece of SQL
+     */
     public boolean execute(String sql) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
@@ -243,8 +243,8 @@ public class Sql {
     }
 
     /**
-	 * Executes the given piece of SQL with parameters
-	 */
+     * Executes the given piece of SQL with parameters
+     */
     public boolean execute(String sql, List params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
@@ -264,8 +264,8 @@ public class Sql {
     }
 
     /**
-	 * Executes the given SQL with embedded expressions inside
-	 */
+     * Executes the given SQL with embedded expressions inside
+     */
     public boolean execute(GString gstring) throws SQLException {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
@@ -273,15 +273,15 @@ public class Sql {
     }
 
     /**
-	 * Performs a stored procedure call
-	 */
+     * Performs a stored procedure call
+     */
     public int call(String sql) throws Exception {
         return call(sql, Collections.EMPTY_LIST);
     }
 
     /**
-	 * Performs a stored procedure call with the given parameters
-	 */
+     * Performs a stored procedure call with the given parameters
+     */
     public int call(String sql, List params) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
@@ -300,8 +300,8 @@ public class Sql {
     }
 
     /**
-	 * Performs a stored procedure call with the given parameters
-	 */
+     * Performs a stored procedure call with the given parameters
+     */
     public int call(GString gstring) throws Exception {
         String sql = asSql(gstring);
         List params = getParameters(gstring);
@@ -320,15 +320,15 @@ public class Sql {
             useConnection.close();
         }
     }
-    
+
     public DataSource getDataSource() {
         return dataSource;
     }
 
     /**
-	 * @return the SQL version of the given query using ? instead of any
-	 *         parameter
-	 */
+     * @return the SQL version of the given query using ? instead of any
+     *         parameter
+     */
     protected String asSql(GString gstring) {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
@@ -343,8 +343,8 @@ public class Sql {
     }
 
     /**
-	 * @return extracts the parameters from the expression as a List
-	 */
+     * @return extracts the parameters from the expression as a List
+     */
     protected List getParameters(GString gstring) {
         Object[] values = gstring.getValues();
         List answer = new ArrayList(values.length);
@@ -355,8 +355,8 @@ public class Sql {
     }
 
     /**
-	 * Appends the parameters to the given statement
-	 */
+     * Appends the parameters to the given statement
+     */
     protected void setParameters(List params, PreparedStatement statement) throws SQLException {
         int i = 1;
         for (Iterator iter = params.iterator(); iter.hasNext();) {
@@ -366,9 +366,9 @@ public class Sql {
     }
 
     /**
-	 * Strategy method allowing derived classes to handle types differently
-	 * such as for CLOBs etc.
-	 */
+     * Strategy method allowing derived classes to handle types differently
+     * such as for CLOBs etc.
+     */
     protected void setObject(PreparedStatement statement, int i, Object value) throws SQLException {
         statement.setObject(i, value);
     }
@@ -396,11 +396,13 @@ public class Sql {
     }
 
     protected void closeResources(Connection connection, Statement statement) {
-        try {
-            statement.close();
-        }
-        catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception closing statement: " + e, e);
+        if (statement != null) {
+            try {
+                statement.close();
+            }
+            catch (SQLException e) {
+                log.log(Level.SEVERE, "Caught exception closing statement: " + e, e);
+            }
         }
         if (dataSource != null) {
             try {

@@ -57,11 +57,11 @@ public class RangeTest extends TestCase {
 
     public void testSize() {
         Range r = createRange(0, 10);
-        assertEquals("Size of " + r, 10, r.size());
+        assertEquals("Size of " + r, 11, r.size());
         r = createRange(0, 1);
-        assertEquals("Size of " + r, 1, r.size());
+        assertEquals("Size of " + r, 2, r.size());
         r = createRange(0, 0);
-        assertEquals("Size of " + r, 0, r.size());
+        assertEquals("Size of " + r, 1, r.size());
     }
 
     public void testProperties() {
@@ -89,7 +89,7 @@ public class RangeTest extends TestCase {
             // worked
         }
         try {
-            r.get(10);
+            r.get(11);
             fail("Should have thrown IndexOut");
         }
         catch (IndexOutOfBoundsException e) {
@@ -105,7 +105,7 @@ public class RangeTest extends TestCase {
         assertTrue("contains 10", r.contains(new Integer(10)));
         assertTrue("contains 19", r.contains(new Integer(19)));
         assertFalse("contains 9", r.contains(new Integer(9)));
-        assertFalse("contains 20", r.contains(new Integer(20)));
+        assertFalse("contains 21", r.contains(new Integer(21)));
         assertFalse("contains 100", r.contains(new Integer(100)));
         assertFalse("contains -1", r.contains(new Integer(-1)));
     }
@@ -121,7 +121,7 @@ public class RangeTest extends TestCase {
 
         assertEquals("from", 12, sr.getFrom());
         assertEquals("to", 14, sr.getTo());
-        assertEquals("size", 2, sr.size());
+        assertEquals("size", 3, sr.size());
     }
 
     public void testHashCodeAndEquals() {

@@ -45,12 +45,15 @@
  */
 package groovy.util;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.util.logging.Logger;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
 import junit.framework.TestCase;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -65,16 +68,18 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class GroovyTestCase extends TestCase {
 
     protected Logger log = Logger.getLogger(getClass().getName());
-    
+    private static int counter;
+
     public GroovyTestCase() {
     }
 
     protected void assertArrayEquals(Object[] expected, Object[] value) {
-        String message = "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
+        String message =
+            "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
         assertNotNull(message + ": expected should not be null", value);
         assertNotNull(message + ": value should not be null", value);
         assertEquals(message, expected.length, value.length);
-        for (int i = 0, size = expected.length; i < size; i++ ) {
+        for (int i = 0, size = expected.length; i < size; i++) {
             assertEquals("value[" + i + "] when " + message, expected[i], value[i]);
         }
     }
@@ -137,7 +142,7 @@ public class GroovyTestCase extends TestCase {
 
         fail(message.toString());
     }
-    
+
     /**
      * Asserts that the value of toString() on the given object matches the
      * given text string
@@ -149,7 +154,7 @@ public class GroovyTestCase extends TestCase {
         Object console = InvokerHelper.invokeMethod(value, "toString", null);
         assertEquals("toString() on value: " + value, expected, console);
     }
-    
+
     /**
      * Asserts that the value of inspect() on the given object matches the
      * given text string
@@ -161,19 +166,37 @@ public class GroovyTestCase extends TestCase {
         Object console = InvokerHelper.invokeMethod(value, "inspect", null);
         assertEquals("inspect() on value: " + value, expected, console);
     }
-    
+
     /**
      * Asserts that the script runs without any exceptions
      * @param script
      */
-    protected void assertScript(String script) throws Exception {
+    protected void assertScript(final String script) throws Exception {
         log.info("About to execute script");
-        log.info(script);
+        //log.info(script);
+
+        // lets write the file to the target directory so its available 
+        // to the MetaClass.getClassNode()
+        String testClassName = getTestClassName();
         
+        File file = new File("target/test-classes/" + testClassName);
+        
+        log.info("Creating file " + file);
+        
+        DefaultGroovyMethods.withPrintWriter(file, new Closure(null) {
+            protected void doCall(PrintWriter writer) {
+                writer.println(script);
+            }
+        });
+
         GroovyShell shell = new GroovyShell();
-        shell.evaluate(script, "TestScript.groovy");
+        shell.evaluate(script, testClassName);
     }
-    
+
+    protected String getTestClassName() {
+        return "TestScript" + getName() + (counter++) + ".groovy";
+    }
+
     /**
      * Asserts that the given code closure fails when it is evaluated
      * 

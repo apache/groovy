@@ -46,6 +46,7 @@
 package groovy.sql;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyRuntimeException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.stmt.Statement;
 
@@ -155,11 +157,14 @@ public class DataSet extends Sql {
         if (sql == null) {
             sql = "select * from " + table;
             if (where != null) {
-                sql += " where ";
+                String clause = "";
                 if (parent != null && parent.where != null) {
-                    sql += parent.getSqlVisitor().getWhere() + " and ";
+                    clause += parent.getSqlVisitor().getWhere() + " and ";
                 }
-                sql += getSqlVisitor().getWhere();
+                clause += getSqlVisitor().getWhere();
+                if (clause.length() > 0) {
+                    sql += " where " + clause;
+                }
             }
         }
         return sql;
@@ -180,7 +185,12 @@ public class DataSet extends Sql {
         if (visitor == null) {
             visitor = new SqlWhereVisitor();
             if (where != null) {
-                MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
+                ClassNode classNode = where.getMetaClass().getClassNode();
+                if (classNode == null) {
+                    throw new GroovyRuntimeException(
+                        "Could not find the ClassNode for MetaClass: " + where.getMetaClass());
+                }
+                MethodNode method = classNode.getMethod("doCall");
                 Statement statement = method.getCode();
                 if (statement != null) {
                     statement.visit(visitor);
