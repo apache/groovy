@@ -1,0 +1,307 @@
+*Chapter 6*
+
+h1. Names
+The organization of this chapter parallels the chapter on [Names|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html] in the [Java Language Specification (second edition)|http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html], which begins as follows:
+
+bq. Names are used to refer to entities declared in a program. A declared entity ([&#167;6.1|Chapter 06 Names#6.1], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#33757]) is a package, class type, interface type, member (class, interface, field, or method) of a reference type, parameter (to a method, constructor, or exception handler), or local variable.
+
+bq. Names in programs are either simple, consisting of a single identifier, or qualified, &#32;consisting of a sequence of identifiers separated by "{{.}}" tokens ([&#167;6.2|Chapter 06 Names#6.2], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#31692]).
+
+bq. Every declaration that introduces a name has a ??scope?? ([&#167;6.3|Chapter 06 Names#6.3], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#103228]), which is the part of the program text within which the declared entity can be referred to by a simple name.
+
+bq. Packages and reference types (that is, class types, interface types, and array types) have members ([&#167;6.4|Chapter 06 Names#6.4], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#106443]). A member can be referred to using a qualified name _N_{{.}}_x_, where _N_ is a simple or qualified name and _x_ is an identifier. If _N_ names a package, then _x_ is a member of that package, which is either a class or interface type or a subpackage. If _N_ names a reference type or a variable of a reference type, then _x_ names a member of that type, which is either a class, an interface, a field, or a method.
+
+bq. In determining the meaning of a name ([&#167;6.5|Chapter 06 Names#6.5], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#106941]), the context of the occurrence is used to disambiguate among packages, types, variables, and methods with the same name.
+
+bq. Access control ([&#167;6.6|Chapter 06 Names#6.6], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#104285]) can be specified in a class, interface, method, or field declaration to control when ??access?? to a member is allowed. Access is a different concept from scope; access specifies the part of the program text within which the declared entity can be referred to by a qualified name, a field access expression ([&#167;15.11|Chapter 15 Expressions#15.11], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/expressions.doc.html#41267]), or a method invocation expression ([&#167;15.12|Chapter 15 Expressions#15.12], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/expressions.doc.html#20448]) in which the method is not specified by a simple name. The default access is that a member can be accessed anywhere within the package that contains its declaration; other possibilities are {{public}}, {{protected}}, and {{private}}.
+
+bq. Fully qualified and canonical names ([&#167;6.7|Chapter 06 Names#6.7], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#25430]) and naming conventions ([&#167;6.8|Chapter 06 Names#6.8], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#73307]) are also discussed in this chapter.
+
+{anchor:6.1}
+h2. 6.1 Declarations
+(Cf. ??[JLS. &#167;6.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#33757]??.)
+
+TO DO
+
+{anchor:6.2}
+h2. 6.2 Names and Identifiers
+(Cf. ??[JLS. &#167;6.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#31692]??.)
+
+TO DO
+
+{anchor:6.3}
+h2. 6.3 Scope of a Declaration
+(Cf. ??[JLS. &#167;6.3|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#103228]??.)
+
+TO DO
+
+{anchor:6.3.1}
+h3. 6.3.1 Shadowing Declarations
+(Cf. ??[JLS. &#167;6.3.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#34133]??.)
+
+TO DO
+
+{anchor:6.3.2}
+h3. 6.3.2 Obscured Declarations
+(Cf. ??[JLS. &#167;6.3.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#104058]??.)
+
+TO DO
+
+{anchor:6.4}
+h2. 6.4 Members and Inheritance
+(Cf. ??[JLS. &#167;6.4|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#106443]??.)
+
+TO DO
+
+{anchor:6.4.1}
+h3. 6.4.1 The Members of a Package
+(Cf. ??[JLS. &#167;6.4.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#34993]??.)
+
+TO DO
+
+{anchor:6.4.2}
+h3. 6.4.2 The Members of a Class Type
+(Cf. ??[JLS. &#167;6.4.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#34757]??.)
+
+TO DO
+
+{anchor:6.4.3}
+h3. 6.4.3 The Members of an Interface Type
+(Cf. ??[JLS. &#167;6.4.3|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#34849]??.)
+
+TO DO
+
+{anchor:6.4.4}
+h3. 6.4.4 The Members of an Array Type
+(Cf. ??[JLS. &#167;6.4.4|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#27725]??.)
+
+TO DO
+
+{anchor:6.5}
+h2. 6.5 Determining the Meaning of a Name
+(Cf. ??[JLS. &#167;6.5|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#106941]??.)
+
+TO DO
+
+{anchor:6.5.1}
+h3. 6.5.1 Syntactic Classification of a Name According to Context
+(Cf. ??[JLS. &#167;6.5.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#32741]??.)
+
+TO DO
+
+{anchor:6.5.2}
+h3. 6.5.2 Reclassification of Contextually Ambiguous Names
+(Cf. ??[JLS. &#167;6.5.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#32133]??.)
+
+TO DO
+
+{anchor:6.5.3}
+h3. 6.5.3 Meaning of Package Names
+(Cf. ??[JLS. &#167;6.5.3|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#32757]??.)
+
+TO DO
+
+{anchor:6.5.3.1}
+h4. 6.5.3.1 Simple Package Names
+(Cf. ??[JLS. &#167;6.5.3.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#22481]??.)
+
+TO DO
+
+{anchor:6.5.3.2}
+h4. 6.5.3.2 Qualified Package Names
+(Cf. ??[JLS. &#167;6.5.3.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#22482]??.)
+
+TO DO
+
+{anchor:6.5.4}
+h3. 6.5.4 Meaning of <i>PackageOrTypeNames</h3>
+(Cf. ??[JLS. &#167;6.5.4|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#21721]??.)
+
+TO DO
+
+{anchor:6.5.4.1}
+h4. 6.5.4.1 Simple <i>PackageOrTypeNames</h4>
+(Cf. ??[JLS. &#167;6.5.4.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#73065]??.)
+
+TO DO
+
+{anchor:6.5.4.2}
+h4. 6.5.4.2 Qualified <i>PackageOrTypeNames</h4>
+(Cf. ??[JLS. &#167;6.5.4.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#73067]??.)
+
+TO DO
+
+{anchor:6.5.5}
+h3. 6.5.5 Meaning of Type Names
+(Cf. ??[JLS. &#167;6.5.5|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#73064]??.)
+
+TO DO
+
+{anchor:6.5.5.1}
+h4. 6.5.5.1 Simple Type Names
+(Cf. ??[JLS. &#167;6.5.5.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#21810]??.)
+
+TO DO
+
+{anchor:6.5.5.2}
+h4. 6.5.5.2 Qualified Type Names
+(Cf. ??[JLS. &#167;6.5.5.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#21811]??.)
+
+TO DO
+
+{anchor:6.5.6}
+h3. 6.5.6 Meaning of Expression Names
+(Cf. ??[JLS. &#167;6.5.6|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#21650]??.)
+
+TO DO
+
+{anchor:6.5.6.1}
+h4. 6.5.6.1 Simple Expression Names
+(Cf. ??[JLS. &#167;6.5.6.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#22022]??.)
+
+TO DO
+
+{anchor:6.5.6.2}
+h4. 6.5.6.2 Qualified Expression Names
+(Cf. ??[JLS. &#167;6.5.6.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#33085]??.)
+
+TO DO
+
+{anchor:6.5.7}
+h3. 6.5.7 Meaning of Method Names
+(Cf. ??[JLS. &#167;6.5.7|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#21652]??.)
+
+TO DO
+
+{anchor:6.5.7.1}
+h4. 6.5.7.1 Simple Method Names
+(Cf. ??[JLS. &#167;6.5.7.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#54512]??.)
+
+TO DO
+
+{anchor:6.5.7.2}
+h4. 6.5.7.2 Qualified Method Names
+(Cf. ??[JLS. &#167;6.5.7.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#54547]??.)
+
+TO DO
+
+{anchor:6.6}
+h2. 6.6 Access Control
+(Cf. ??[JLS. &#167;6.6|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#104285]??.)
+
+TO DO
+
+{anchor:6.6.1}
+h3. 6.6.1 Determining Accessibility
+(Cf. ??[JLS. &#167;6.6.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#102765]??.)
+
+TO DO
+
+{anchor:6.6.2}
+h3. 6.6.2 Details on <code>protected Access</h3>
+(Cf. ??[JLS. &#167;6.6.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#62638]??.)
+
+TO DO
+
+{anchor:6.6.2.1}
+h4. 6.6.2.1 Access to a <code>protected Member</h4>
+(Cf. ??[JLS. &#167;6.6.2.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#60602]??.)
+
+TO DO
+
+{anchor:6.6.2.2}
+h4. 6.6.2.2 Qualified Access to a <code>protected Constructor</h4>
+(Cf. ??[JLS. &#167;6.6.2.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#72596]??.)
+
+TO DO
+
+{anchor:6.6.3}
+h3. 6.6.3 An Example of Access Control
+(Cf. ??[JLS. &#167;6.6.3|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#62647]??.)
+
+TO DO
+
+{anchor:6.6.4}
+h3. 6.6.4 Example: Access to <code>public and <code>Non-public</code> Classes</h3>
+(Cf. ??[JLS. &#167;6.6.4|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36060]??.)
+
+TO DO
+
+{anchor:6.6.5}
+h3. 6.6.5 Example: Default-Access Fields, Methods, and Constructors
+(Cf. ??[JLS. &#167;6.6.5|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36154]??.)
+
+TO DO
+
+{anchor:6.6.6}
+h3. 6.6.6 Example: <code>public Fields, Methods, and Constructors</h3>
+(Cf. ??[JLS. &#167;6.6.6|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36250]??.)
+
+TO DO
+
+{anchor:6.6.7}
+h3. 6.6.7 Example: <code>protected Fields, Methods, and Constructors</h3>
+(Cf. ??[JLS. &#167;6.6.7|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36191]??.)
+
+TO DO
+
+{anchor:6.6.8}
+h3. 6.6.8 Example: <code>private Fields, Methods, and Constructors</h3>
+(Cf. ??[JLS. &#167;6.6.8|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#36233]??.)
+
+TO DO
+
+{anchor:6.7}
+h2. 6.7 Fully Qualified Names and Canonical Names
+(Cf. ??[JLS. &#167;6.7|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#25430]??.)
+
+TO DO
+
+{anchor:6.8}
+h2. 6.8 Naming Conventions
+(Cf. ??[JLS. &#167;6.8|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#73307]??.)
+
+TO DO
+
+{anchor:6.8.1}
+h3. 6.8.1 Package Names
+(Cf. ??[JLS. &#167;6.8.1|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#9184]??.)
+
+TO DO
+
+{anchor:6.8.2}
+h3. 6.8.2 Class and Interface Type Names
+(Cf. ??[JLS. &#167;6.8.2|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#32824]??.)
+
+TO DO
+
+{anchor:6.8.3}
+h3. 6.8.3 Method Names
+(Cf. ??[JLS. &#167;6.8.3|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#34563]??.)
+
+TO DO
+
+{anchor:6.8.4}
+h3. 6.8.4 Field Names
+(Cf. ??[JLS. &#167;6.8.4|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#9351]??.)
+
+TO DO
+
+{anchor:6.8.5}
+h3. 6.8.5 Constant Names
+(Cf. ??[JLS. &#167;6.8.5|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#9368]??.)
+
+TO DO
+
+{anchor:6.8.6}
+h3. 6.8.6 Local Variable and Parameter Names
+(Cf. ??[JLS. &#167;6.8.6|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html#81404]??.)
+
+TO DO
+
+----
+Specification [Table of Contents|Chapter 00 Contents].
+
+The organization of this chapter parallels the chapter on [Names|http://java.sun.com/docs/books/jls/second_edition/html/names.doc.html] in the [Java Language Specification (second edition)|http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html].
+
+The original of this specification is at [http://docs.codehaus.org/display/GroovyJSR].

@@ -1,0 +1,259 @@
+*Chapter 3*
+
+h1. Lexical Structure
+The organization of this chapter parallels the chapter on [Lexical Structure|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html] in the [Java Language Specification (second edition)|http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html], which begins as follows:
+
+bq. This chapter specifies the lexical structure of the Java programming language.
+
+bq. Programs are written in Unicode ([&#167;3.1|Chapter 03 Lexical#3.1], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95413]), but lexical translations are provided ([&#167;3.2|Chapter 03 Lexical#3.2], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95504]) so that Unicode escapes ([&#167;3.3|Chapter 03 Lexical#3.3], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100850]) can be used to include any Unicode character using only ASCII characters. Line terminators are defined ([&#167;3.4|Chapter 03 Lexical#3.4], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#231571]) to support the different conventions of existing host systems while maintaining consistent line numbers.
+
+bq. The Unicode characters resulting from the lexical translations are reduced to a sequence of input elements ([&#167;3.5|Chapter 03 Lexical#3.5], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#25687]), which are white space ([&#167;3.6|Chapter 03 Lexical#3.6], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95710]), comments ([&#167;3.7|Chapter 03 Lexical#3.7], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#48125]), and tokens. The tokens are the identifiers ([&#167;3.8|Chapter 03 Lexical#3.8], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625]), keywords ([&#167;3.9|Chapter 03 Lexical#3.9], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#229308]), literals ([&#167;3.10|Chapter 03 Lexical#3.10], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#48272]), separators ([&#167;3.11|Chapter 03 Lexical#3.11], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230752]), and operators ([&#167;3.12|Chapter 03 Lexical#3.12], [JLS|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230663]) of the syntactic grammar.
+
+{anchor:3.1}
+h2. 3.1 Unicode
+(Cf. ??[JLS. &#167;3.1|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95413]??.)
+
+TO DO
+
+{anchor:3.2}
+h2. 3.2 Lexical Translations
+(Cf. ??[JLS. &#167;3.2|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95504]??.)
+
+TO DO
+
+{anchor:3.3}
+h2. 3.3 Unicode Escapes
+(Cf. ??[JLS. &#167;3.3|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100850]??.)
+
+TO DO
+
+{anchor:3.4}
+h2. 3.4 Line Terminators
+(Cf. ??[JLS. &#167;3.4|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#231571]??.)
+
+In Groovy, many line terminators are syntactically significant.  As a result, the lexical grammar differs from Java's.  Line terminators are not part of whitespace, but (outside of comments and strings) they are classified as Newline tokens.
+
+ISSUE:  Shall we define significance of newlines in the token stream, or operationally in the grammar?  In token stream, we can say they are insignificant after separators and operators.  In the grammar, we can just swallow optional newlines inside certain productions, as {{Expr: Expr Op LineTerminator* Expr}}.
+
+Provisionally do it in the grammar, as {{/bin/sh}} does it.  This lets us keep "x++" as a complete statement.  But we also want to ignore newlines in parenthesis nesting, which means we want an inherited grammar attribute for newline suppression inside parens and brackets.
+
+{anchor:3.5}
+h2. 3.5 Input Elements and Tokens
+(Cf. ??[JLS. &#167;3.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#25687]??.)
+
+Add {{Token: SignificantNewline}}.
+
+{anchor:3.6}
+h2. 3.6 White Space
+(Cf. ??[JLS. &#167;3.6|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95710]??.)
+
+Remove {{WhiteSpace: LineTerminator}}, since significant newlines are tokens in their own right.
+
+A ??significant newline?? is a token which in Java would be a group of whitespace tokens, but which contains at least one uncommented line terminator.  In an end-of-line comment, the terminating newline is counted as uncommented.  (Newlines in traditional C-style comments are not significant.)
+
+{code}
+SignificantNewlinePart:
+  LineTerminator
+  EndOfLineComment
+
+SignificantNewline:
+  SignificantNewlinePart
+  SignificantNewlinePart (Whitespace | Commenet)* SignificantNewline
+{code}
+
+This grammar implies that one or more consecutive uncommented line terminators, possibly separated by whitespace and comments, count as a single significant newline token.
+
+Generally speaking, significant newline tokens are equivalent to the semicolon separator token, wherever the latter is acceptable.  Unlike Java,(but like Pascal and the scripting sh and awk) both semicolons and significant newlines are statement separators.  A statement just before an enclosing right bracket is terminated with or without a final semicolon or newline.
+
+The grammar is organized so that significant newline tokens are ignored after prefix and infix operator tokens.  They are also ignored if they occur directly within round or square brackets, but not directly within curly brackets.  These rules provide for easy continuation of long statements or expressions onto multiple lines, without a need to explicitly escape the intermediate line terminators.
+
+{code}
+  println x      //SIG
+  println x;     //insig
+  println x /*...  insig
+    ...*/ + y
+  println x +    //insig
+    y
+  println (x     //insig
+    + y)
+  println ({ x   //SIG
+    y })
+{code}
+
+{anchor:3.7}
+h2. 3.7 Comments
+(Cf. ??[JLS. &#167;3.7|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#9724]??.)
+
+TO DO
+
+{anchor:3.8}
+h2. 3.8 Identifiers
+(Cf. ??[JLS. &#167;3.8|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625]??.)
+
+Groovy identifiers differ from Java identifiers in that the ASCII dollar character '$' is not a legal identifier character.  This is restriction applies in practice only to the spelling of unqualified names, since Groovy provides a way to use any Unicode string whatever as a member name or command name.
+
+(The dollar sign is sometimes used internally by Groovy to mangle non-Java identifiers which must be converted to Java names.  For this reason, it would be confusing to allow unescaped dollar signs as Groovy identifier constituents.)
+
+{anchor:3.9}
+h2. 3.9 Keywords
+(Cf. ??[JLS. &#167;3.9|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#229309]??.)
+
+The following words are keywords in Groovy but not in Java:
+{table}
+ def  |  map  |  any  |  TO DO
+{table}
+
+The following words are keywords in Java and Groovy, but are currently illegal in Groovy:
+{table}
+  do  |  strictfp  |  const  |  goto
+{table}
+
+{anchor:3.10}
+h2. 3.10 Literals
+(Cf. ??[JLS. &#167;3.10|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#228794]??.)
+
+TO DO
+
+{anchor:3.10.1}
+h3. 3.10.1 Integer Literals
+(Cf. ??[JLS. &#167;3.10.1|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#46750]??.)
+
+The production {{IntegerTypeSuffix: g G}} is added, allowing {{BigInteger}} constants.
+
+ISSUE:  123i allowed?  Other literal syntaxes?
+
+{anchor:3.10.2}
+h3. 3.10.2 Floating-Point Literals
+(Cf. ??[JLS. &#167;3.10.2|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#232095]??.)
+
+The production {{FloatTypeSuffix: g G}} is added, allowing {{BigDecimal}} constants.
+
+{anchor:3.10.3}
+h3. 3.10.3 Boolean Literals
+(Cf. ??[JLS. &#167;3.10.3|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#49652]??.)
+
+(No change.)
+
+{anchor:3.10.4}
+h3. 3.10.4 Character Literals
+(Cf. ??[JLS. &#167;3.10.4|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100964]??.)
+
+Groovy has no {{CharacterLiteral}} token.  All literals with character data in them denote strings.  Constant strings of unit length serve in the place of character literals, since they coerce properly to character constants.
+
+{anchor:3.10.5}
+h3. 3.10.5 String Literals
+(Cf. ??[JLS. &#167;3.10.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#101084]??.)
+
+Groovy string literals have a syntax inspired by other scripting languages.  A string literal may be delimited by either single or double quotes.  String literals with double quotes may incorporate substring substitution expressions, while singly-quoted string literals are always constants.
+
+If a double-quoted string contains an unescaped dollar sign, it is more properly called a ??string constructor??, since it evaluates to a non-constant string, whose contents depend on expressions following the dollar signs.
+
+Independently, the quote marks may be tripled, allowing the string to span multiple lines.  If the quote marks are used singly, the string may not contain a line terminator.
+
+Regardless of the spelling of a LineTerminator found inside a string literal or constructor, it is always equivalent to an escaped newline '\n'.
+
+{code}
+StringLiteral:
+  \'     (CStringCharacter[LT=false])* \'
+  \"     (DStringCharacter[LT=false])* \"
+  \'\'\' (CStringCharacter[LT=true])*  \'\'\'
+  \"\"\" (DStringCharacter[LT=true])*  \"\"\"
+
+CStringCharacter[LT]:
+  InputCharacter but not \' or \\
+  EscapeSequence
+  LineTerminator  when(LT)
+
+DStringCharacter[LT]:
+  InputCharacter but not \" or \\ or \$
+  EscapeSequence
+  LineTerminator  when(LT)
+
+GStringLexicalForm:
+  GStringStart[LT] GStringValue[LT]
+        (GStringPart[LT]? GStringValue[LT])* GStringEnd[LT]
+
+GStringStart[LT]
+  \"     (DStringCharacter[LT])*  when(!LT)
+  \"\"\" (DStringCharacter[LT])*  when(LT)
+
+GStringPart[LT]
+  (DStringCharacter[LT])*
+
+GStringEnd[LT]
+  \"      when(!LT)
+  \"\"\"  when(!LT)
+
+GStringValue[LT]:
+  GStringDollar Identifier ( \. Identifier )*
+  GStringDollar \( (GStringToken[LT])* \)
+
+GStringDollar:
+  \$
+
+GStringToken[LT]:
+  InputElement but not \{ \} \[ \] \( \) LineTerminator
+  \{ GStringToken[LT]* \}
+  \[ GStringToken[LT]* \]
+  \( GStringToken[LT]* \)
+  LineTerminator  when(LT)
+
+{code}
+{code}
+Token:
+  GStringSeparator[false]
+  GStringSeparator[true]
+
+GStringSeparator[LT]:
+  one of GStringStart[LT] GStringDollar[LT] GStringPart[LT] GStringEnd[LT]
+
+GStringLexicalForm[LT]:
+  GStringStart[LT] GStringValue[LT]
+           (GStringPart[LT]? GStringValue[LT])* GStringEnd[LT]
+
+GString[LT]:
+  GStringStart[LT]
+      (GStringDollar[LT] Expression | GStringPart[LT])+ GStringEnd[LT]
+{code}
+
+ISSUE:  Why use curly braces?  Makes for irregular variant of block syntax, forcing us to specify exceptions in various places.  We should use round braces instead.  Fundamentally, GString parameters are expressions, not blocks, and their syntax should reflect this.
+
+String constructors are recognized lexically as a complex of GStringSeparators and other tokens, according to the grammar of GStringLexicalForm.  After whitespace is removed, the resulting token sequence is parsed according to this syntax:
+
+
+Identifiers and dots after a dollar sign are parsed eagerly, even if some of their characters could also be validly parsed as string characters.
+
+Reference: http://archive.groovy.codehaus.org/jsr/threads/iakbeiefedohmiddhked
+
+{anchor:3.10.6}
+h3. 3.10.6 Escape Sequences for Character and String Literals
+(Cf. ??[JLS. &#167;3.10.6|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230359]??.)
+
+(Same as in Java.)
+
+In double-quoted strings, the escape sequence \$ is legal, and stands for the ASCII dollar character.  (The dollar does not introduce a GStringValue.)
+
+{anchor:3.10.7}
+h3. 3.10.7 The Null Literal
+(Cf. ??[JLS. &#167;3.10.7|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230717]??.)
+
+TO DO
+
+{anchor:3.11}
+h2. 3.11 Separators
+(Cf. ??[JLS. &#167;3.11|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230757]??.)
+
+TO DO
+
+{anchor:3.12}
+h2. 3.12 Operators
+(Cf. ??[JLS. &#167;3.12|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230669]??.)
+
+TO DO
+
+----
+Specification [Table of Contents|Chapter 00 Contents].
+
+The organization of this chapter parallels the chapter on [Lexical Structure|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html] in the [Java Language Specification (second edition)|http://java.sun.com/docs/books/jls/second_edition/html/j.title.doc.html].
+
+The original of this specification is at [http://docs.codehaus.org/display/GroovyJSR].
