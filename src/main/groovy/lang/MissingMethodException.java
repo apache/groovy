@@ -45,41 +45,38 @@
  */
 package groovy.lang;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Represents the variable bindings of a script which can be altered
- * from outside the script object.
+ * An exception occurred if a dynamic method dispatch fails with an unknown method.
+ * 
+ * Note that the Missing*Exception classes were named for consistency and
+ * to avoid conflicts with JDK exceptions of the same name.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ScriptContext {
-    private Map variables = new HashMap();
-    
-    public ScriptContext() {
-    }
-    
-    /**
-     * A helper constructor used in main(String[]) method calls
-     * 
-     * @param args are the command line arguments from a main()
-     */
-    public ScriptContext(String[] args) {
-        setVariable("args", args);
-    }
-    
-    public Object getVariable(String name) {
-        return variables.get(name);
-    }
-    
-    public void setVariable(String name, Object value) {
-        variables.put(name, value);
-    }
-    
-    public Map getVariables() {
-        return variables;
+public class MissingMethodException extends GroovyRuntimeException {
+
+    private String method;
+    private Class type;
+
+    public MissingMethodException(String method, Class type) {
+        super("No such method: " + method + " for class: " + type.getName());
+        this.method = method;
+        this.type = type;
     }
 
+    /**
+     * @return the name of the method that could not be found
+     */
+    public String getMethod() {
+        return method;
+    }
+
+    /**
+     * 
+     * @return The type on which the method was attempted to be called
+     */
+    public Class getType() {
+        return type;
+    }
 }

@@ -43,21 +43,24 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.lang;
 
 import org.codehaus.groovy.ast.ASTNode;
 
 /**
- * An exception occurred if a dynamic method dispatch fails with an unknown class
+ * An exception occurred if a dynamic method dispatch fails with an unknown class.
+ * 
+ * Note that the Missing*Exception classes were named for consistency and
+ * to avoid conflicts with JDK exceptions of the same name.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NoSuchClassException extends InvokerException {
+public class MissingClassException extends GroovyRuntimeException {
 
     private String type;
 
-    public NoSuchClassException(String type, ASTNode node, String message) {
+    public MissingClassException(String type, ASTNode node, String message) {
         super("No such class: " + type + " " + message, node);
         this.type = type;
     }

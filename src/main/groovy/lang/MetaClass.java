@@ -71,13 +71,10 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.classgen.CompilerFacade;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
-import org.codehaus.groovy.runtime.NoSuchMethodException;
-import org.codehaus.groovy.runtime.NoSuchPropertyException;
 import org.objectweb.asm.ClassWriter;
 
 /**
@@ -249,7 +246,7 @@ public class MetaClass {
         try {
             return invokeStaticMethod(object, methodName, arguments);
         }
-        catch (NoSuchMethodException e) {
+        catch (MissingMethodException e) {
             if (size == 1) {
                 Object firstArgument = arguments[0];
                 if (firstArgument instanceof List) {
@@ -285,11 +282,11 @@ public class MetaClass {
             try {
                 return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments);
             }
-            catch (InvokerException e) {
+            catch (GroovyRuntimeException e) {
                 // throw our own exception
             }
         }
-        throw new NoSuchMethodException(methodName, theClass);
+        throw new MissingMethodException(methodName, theClass);
     }
 
     public Object invokeConstructor(Object[] arguments) {
@@ -297,7 +294,7 @@ public class MetaClass {
         if (constructor != null) {
             return doConstructorInvoke(constructor, arguments);
         }
-        throw new InvokerException("Could not find matching constructor for class: " + theClass.getName());
+        throw new GroovyRuntimeException("Could not find matching constructor for class: " + theClass.getName());
     }
 
     /**
@@ -319,7 +316,7 @@ public class MetaClass {
         if (descriptor != null) {
             Method method = descriptor.getReadMethod();
             if (method == null) {
-                throw new InvokerException("Cannot read property: " + property);
+                throw new GroovyRuntimeException("Cannot read property: " + property);
             }
             return doMethodInvoke(object, method, EMPTY_ARRAY);
         }
@@ -355,7 +352,7 @@ public class MetaClass {
             if (object instanceof Object[]) {
                 return DefaultGroovyMethods.get(Arrays.asList((Object[]) object), property);
             }
-            throw new NoSuchPropertyException(property, theClass);
+            throw new MissingPropertyException(property, theClass);
         }
     }
 
@@ -368,13 +365,13 @@ public class MetaClass {
         if (descriptor != null) {
             Method method = descriptor.getWriteMethod();
             if (method == null) {
-                throw new InvokerException("Cannot set read-only property: " + property);
+                throw new GroovyRuntimeException("Cannot set read-only property: " + property);
             }
             Object[] arguments = { newValue };
             try {
                 doMethodInvoke(object, method, arguments);
             }
-            catch (InvokerException e) {
+            catch (GroovyRuntimeException e) {
                 // if the value is a List see if we can construct the value 
                 // from a constructor
                 if (newValue instanceof List) {
@@ -452,7 +449,7 @@ public class MetaClass {
                     compiler.parseClass(in, groovyFile);
                 }
                 catch (Exception e) {
-                    throw new InvokerException("Exception thrown parsing: " + groovyFile + ". Reason: " + e, e);
+                    throw new GroovyRuntimeException("Exception thrown parsing: " + groovyFile + ". Reason: " + e, e);
                 }
             }
 
@@ -613,9 +610,9 @@ public class MetaClass {
             }
         }
         catch (Exception e) {
-            throw new InvokerException("Could not evaluate property: " + property, e);
+            throw new GroovyRuntimeException("Could not evaluate property: " + property, e);
         }
-        throw new InvokerException("No such property: " + property);
+        throw new GroovyRuntimeException("No such property: " + property);
     }
 
     /**
@@ -669,7 +666,7 @@ public class MetaClass {
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
-            throw new InvokerException(
+            throw new GroovyRuntimeException(
                 "could not access method: "
                     + method
                     + " on: "
@@ -686,7 +683,7 @@ public class MetaClass {
                 return doMethodInvoke(object, method, argumentArray);
             }
             else {
-                throw new InvokerException(
+                throw new GroovyRuntimeException(
                     "failed to invoke method: "
                         + method
                         + " on: "
@@ -699,7 +696,7 @@ public class MetaClass {
             }
         }
         catch (Exception e) {
-            throw new InvokerException(
+            throw new GroovyRuntimeException(
                 "failed to invoke method: "
                     + method
                     + " on: "
@@ -732,7 +729,7 @@ public class MetaClass {
             throw new InvokerInvocationException(e);
         }
         catch (IllegalAccessException e) {
-            throw new InvokerException(
+            throw new GroovyRuntimeException(
                 "could not access constructor: "
                     + constructor
                     + " with arguments: "
@@ -742,7 +739,7 @@ public class MetaClass {
                 e);
         }
         catch (Exception e) {
-            throw new InvokerException(
+            throw new GroovyRuntimeException(
                 "failed to invoke constructor: "
                     + constructor
                     + " with arguments: "
@@ -808,7 +805,7 @@ public class MetaClass {
         if (answer != null) {
             return answer;
         }
-        throw new InvokerException(
+        throw new GroovyRuntimeException(
             "Could not find which method to invoke from this list: "
                 + methods
                 + " for arguments: "
@@ -869,7 +866,7 @@ public class MetaClass {
             Class baseType = baseTypes[i];
             Class derivedType = derivedTypes[i];
             if (!baseType.isAssignableFrom(derivedType)) {
-                throw new InvokerException(
+                throw new GroovyRuntimeException(
                     "Ambiguous method overloading for method: "
                         + name
                         + ". Cannot resolve which method to invoke due to overlapping prototypes between: "

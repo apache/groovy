@@ -46,6 +46,7 @@
 
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
@@ -89,9 +90,9 @@ public class InvokerTest extends GroovyTestCase {
 
     public void testInvokerException() throws Throwable {
         try {
-            throw new InvokerException("message", new NullPointerException());
+            throw new GroovyRuntimeException("message", new NullPointerException());
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             // worked
             assertEquals("message", e.getMessage());
             assertTrue(e.getCause() instanceof NullPointerException);
@@ -110,7 +111,7 @@ public class InvokerTest extends GroovyTestCase {
             assertAsBoolean(false, new Integer(1234));
             fail("Should fail - Numbers can't be converted to booleans");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             // worked
         }
     }

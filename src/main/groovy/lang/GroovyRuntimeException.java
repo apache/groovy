@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.lang;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ModuleNode;
@@ -54,21 +54,21 @@ import org.codehaus.groovy.ast.ModuleNode;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class InvokerException extends RuntimeException {
+public class GroovyRuntimeException extends RuntimeException {
 
     private ModuleNode module;
     private ASTNode node;
 
-    public InvokerException(String message) {
+    public GroovyRuntimeException(String message) {
         super(message);
     }
 
-    public InvokerException(String message, ASTNode node) {
+    public GroovyRuntimeException(String message, ASTNode node) {
         super(message);
         this.node = node;
     }
 
-    public InvokerException(String message, Throwable cause) {
+    public GroovyRuntimeException(String message, Throwable cause) {
         super(message, cause);
     }
 

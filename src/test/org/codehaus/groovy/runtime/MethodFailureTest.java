@@ -48,6 +48,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.util.GroovyTestCase;
 
 /**
@@ -65,7 +66,7 @@ public class MethodFailureTest extends GroovyTestCase {
 
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             System.out.println(e);
         }
     }
@@ -77,7 +78,7 @@ public class MethodFailureTest extends GroovyTestCase {
 
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             System.out.println(e);
             //e.printStackTrace();
         }
@@ -94,7 +95,7 @@ public class MethodFailureTest extends GroovyTestCase {
 
             fail("Should have thrown an exception");
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             System.out.println(e);
             //e.printStackTrace();
         }

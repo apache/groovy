@@ -63,12 +63,12 @@ public class TestCaseRenderEngineTest extends TestCase {
 
         assertRender(
             "blah blah {code:groovy}x = 1; assert x == 1{code} whatnot",
-            "class SomeFile extends GroovyTestCase {\n\n/*\nblah blah */ \n\n  void testCase1() {\nx = 1; assert x == 1\n}\n\n /* whatnot\n*/\n\n}\n");
+            "package wiki\nclass someFileTest extends GroovyTestCase {\n\nvoid testDummy() {\n// this is a dummy test case\n}\n\n/*\nblah blah */ \n\n  void testCase1() {\nx = 1; assert x == 1\n}\n\n /* whatnot\n*/\n\n}\n");
     }
 
     protected void assertRender(String input, String expected) {
         TestCaseRenderEngine test = new TestCaseRenderEngine();
-        context.set("name", "SomeFile.wiki");
+        context.set("name", "someFile.wiki");
         String answer = test.render(input, context);
 
 //        System.out.println("Converted: " + input);

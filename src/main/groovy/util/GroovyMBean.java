@@ -46,6 +46,7 @@
 package groovy.util;
 
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.GroovyRuntimeException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +60,6 @@ import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import org.codehaus.groovy.runtime.InvokerException;
 
 /**
  * A GroovyObject facade for an underlying MBean which acts like a normal 
@@ -107,10 +107,10 @@ public class GroovyMBean extends GroovyObjectSupport {
             return server.getAttribute(name, property);
         }
         catch (MBeanException e) {
-            throw new InvokerException("Could not access property: " + property + ". Reason: " + e, e.getTargetException());
+            throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e.getTargetException());
         }
         catch (Exception e) {
-            throw new InvokerException("Could not access property: " + property + ". Reason: " + e, e);
+            throw new GroovyRuntimeException("Could not access property: " + property + ". Reason: " + e, e);
         }
     }
     
@@ -119,10 +119,10 @@ public class GroovyMBean extends GroovyObjectSupport {
             server.setAttribute(name, new Attribute(property, value));
         }
         catch (MBeanException e) {
-            throw new InvokerException("Could not set property: " + property + ". Reason: " + e, e.getTargetException());
+            throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e.getTargetException());
         }
         catch (Exception e) {
-            throw new InvokerException("Could not set property: " + property + ". Reason: " + e, e);
+            throw new GroovyRuntimeException("Could not set property: " + property + ". Reason: " + e, e);
         }
     }
     
@@ -140,10 +140,10 @@ public class GroovyMBean extends GroovyObjectSupport {
                 return server.invoke(name, method, argArray, signature);
             }
             catch (MBeanException e) {
-                throw new InvokerException("Could not invoke method: " + method + ". Reason: " + e, e.getTargetException());
+                throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e.getTargetException());
             }
             catch (Exception e) {
-                throw new InvokerException("Could not invoke method: " + method + ". Reason: " + e, e);
+                throw new GroovyRuntimeException("Could not invoke method: " + method + ". Reason: " + e, e);
             }
         }
         else {

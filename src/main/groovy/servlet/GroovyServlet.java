@@ -33,7 +33,7 @@ package groovy.servlet;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.Script;
-import groovy.lang.ScriptContext;
+import groovy.lang.Binding;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,7 +119,7 @@ public class GroovyServlet extends HttpServlet {
 		}
 
 		// Set up the script context
-		ScriptContext binding = new ScriptContext();
+		Binding binding = new Binding();
 		binding.setVariable("request", httpRequest);
 		binding.setVariable("response", httpResponse);
 		binding.setVariable("application", sc);

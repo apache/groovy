@@ -35,6 +35,8 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MissingClassException;
 import groovy.lang.Reference;
 
 import java.util.ArrayList;
@@ -97,9 +99,7 @@ import org.codehaus.groovy.ast.stmt.SynchronizedStatement;
 import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-import org.codehaus.groovy.runtime.InvokerException;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.NoSuchClassException;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
@@ -247,7 +247,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
             cw.visitEnd();
         }
-        catch (InvokerException e) {
+        catch (GroovyRuntimeException e) {
             e.setModule(classNode.getModule());
             throw e;
         }
@@ -2227,7 +2227,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 type = packageName + "." + type;
             }
         }
-        throw new NoSuchClassException(original, node, message);
+        throw new MissingClassException(original, node, message);
     }
 
     protected String createVariableName(String type) {

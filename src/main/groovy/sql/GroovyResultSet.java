@@ -46,13 +46,13 @@
 package groovy.sql;
 
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.MissingPropertyException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.codehaus.groovy.runtime.NoSuchPropertyException;
 
 /**
  * Represents an extent of objects
@@ -75,7 +75,7 @@ public class GroovyResultSet extends GroovyObjectSupport {
             return resultSet.getObject(property);
         }
         catch (SQLException e) {
-            throw new NoSuchPropertyException(property, GroovyResultSet.class, e);
+            throw new MissingPropertyException(property, GroovyResultSet.class, e);
         }
     }
 
@@ -85,7 +85,7 @@ public class GroovyResultSet extends GroovyObjectSupport {
             updated = true;
         }
         catch (SQLException e) {
-            throw new NoSuchPropertyException(property, GroovyResultSet.class, e);
+            throw new MissingPropertyException(property, GroovyResultSet.class, e);
         }
     }
 
