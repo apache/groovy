@@ -1048,12 +1048,15 @@ public class MetaClass {
     protected boolean isCompatibleInstance(Class type, Object value, boolean includeCoerce) {
         boolean answer = value == null || type.isInstance(value);
         if (!answer) {
-            if (type.isPrimitive() && value instanceof Number) {
+            if (type.isPrimitive()) {
                 if (type == int.class) {
                     return value instanceof Integer;
                 }
                 else if (type == double.class) {
                     return value instanceof Double;
+                }
+                else if (type == boolean.class) {
+                    return value instanceof Boolean;
                 }
                 else if (type == long.class) {
                     return value instanceof Long;
