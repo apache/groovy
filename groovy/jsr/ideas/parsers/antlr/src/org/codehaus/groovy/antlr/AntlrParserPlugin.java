@@ -366,6 +366,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return defaultModifiers;
     }
 
+
+
+    // Statements
+    //-------------------------------------------------------------------------
+
     protected Statement statement(AST code) {
         BlockStatement block = new BlockStatement();
 
@@ -388,6 +393,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
                 case LABELED_STAT:
                     statement = labelledStatement(node);
+                    break;
 
                 case LITERAL_assert:
                     statement = assertStatement(node);
@@ -449,10 +455,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // TODO check for dumb expression rule
         return block;
     }
-
-
-    // Statements
-    //-------------------------------------------------------------------------
 
     protected Statement assertStatement(AST assertNode) {
         AST node = assertNode.getFirstChild();
@@ -516,9 +518,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return new IfStatement(booleanExpression, ifBlock, elseBlock);
     }
 
-    protected Statement labelledStatement(AST node) {
-        notImplementedYet(node);
-        return null; /** TODO */
+    protected Statement labelledStatement(AST labelNode) {
+        AST node = labelNode.getFirstChild();
+        String label = identifier(node);
+        Statement statement = statement(node.getNextSibling());
+        statement.setStatementLabel(label);
+        return statement;
     }
 
     protected Statement methodCall(AST code) {

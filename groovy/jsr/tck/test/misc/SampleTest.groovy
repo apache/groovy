@@ -8,6 +8,10 @@ class SampleTest extends GroovyTestCase {
     String foo = "John"
     String bar = "Jez"
 
+    void testStrings() {
+        assert "\\" == '\\'
+    }
+    
     void testNew() {
         x = new ArrayList()
         x.add(123)
@@ -45,9 +49,7 @@ class SampleTest extends GroovyTestCase {
         println "list is $list"
 
         // TODO sort out parser
-        /**
-        list.each { (e)| println("List contains $e") }
-        */
+        //list.each { (e)| println("List contains $e") }
     }
 
     void testCase() {
@@ -79,28 +81,6 @@ class SampleTest extends GroovyTestCase {
         assert x == 3
     }
 
-
-    /** TODO runtime breaks!
-    void testPrePostFix() {
-        def x = 124
-
-        println("value is $x")
-
-        if (x > 100) {
-        ++x
-        }
-
-        assert x == 124
-        assert ++x == 125
-
-        assert x++ == 125
-        assert --x == 124
-        assert x-- == 124
-
-        //println("value is now ${x}")
-    }
-    */
-
     void testIfElse() {
         def x = 123
         def y = 1
@@ -121,12 +101,26 @@ class SampleTest extends GroovyTestCase {
             x = x - 1
 
             if (x == 3) {
-                break //FOO
+                break
+            }
+        }
+    }
+
+    void testWhileWithLabel() {
+        def x = 10
+
+        while (x > 0) {
+            println "loop value with x=$x"
+            x = x - 1
+
+            if (x == 3) {
+                break FOO
             }
         }
 
-        //FOO: println "Done"
+        FOO: println "Done"
     }
+
     String foo(a, b) {
         return a + b
     }
@@ -179,7 +173,44 @@ class SampleTest extends GroovyTestCase {
         println "Normal method invocation..."
     }
 
-    /* TODO when parser fixed
+
+
+    /** TODO runtime breaks!
+    void testPrePostFix() {
+        def x = 124
+
+        println("value is $x")
+
+        if (x > 100) {
+        ++x
+        }
+
+        assert x == 124
+        assert ++x == 125
+
+        assert x++ == 125
+        assert --x == 124
+        assert x-- == 124
+
+        //println("value is now ${x}")
+    }
+    */
+
+
+    // TODO when parser fixed
+    //-------------------------------------------------------------------------
+
+
+    /*
+
+    void testArrays() {
+        // TODO this line seems to cause a stack overflow...
+        String[] array = { "a", "b", "c" }
+
+        List list = array.asList()
+
+        assert list == ["a", "b", "c"]
+    }
 
 
     void testMap() {
