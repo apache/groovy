@@ -74,4 +74,12 @@ class GStringTest extends GroovyTestCase {
         name = "Gromit"
         return "Hello ${name}!"
     }
+    
+    void testCoerce() {
+        it = "US-ASCII"
+        value = "test".getBytes("${it}")
+        
+        println "Created ${value}"
+        assert value != null
+    }
 }
