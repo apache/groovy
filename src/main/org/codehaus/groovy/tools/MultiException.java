@@ -69,7 +69,11 @@ public class MultiException
                 buffer.append( ", " );
             }
         }
-        
+
         return buffer.toString();
     }
+
+    public Exception[] getErrors(){
+		return errors;
+	}
 }
