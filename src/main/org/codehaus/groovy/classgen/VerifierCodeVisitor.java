@@ -82,5 +82,5 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
             }
         }
         super.visitBinaryExpression(expression);
-    }
+    }    
 }

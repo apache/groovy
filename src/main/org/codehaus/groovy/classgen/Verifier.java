@@ -66,6 +66,7 @@ import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
@@ -220,8 +221,8 @@ public class Verifier implements GroovyClassVisitor, Constants {
     public void visitMethod(MethodNode node) {
         this.methodNode = node;
 
+        Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
-            Statement statement = node.getCode();
             if (statement instanceof ExpressionStatement) {
                 ExpressionStatement expStmt = (ExpressionStatement) statement;
                 node.setCode(new ReturnStatement(expStmt.getExpression()));
@@ -246,7 +247,16 @@ public class Verifier implements GroovyClassVisitor, Constants {
                     list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
 
-                node.setCode(new BlockStatement(list));
+                node.setCode(new BlockStatement(filterStatements(list)));
+            }
+        }
+        else {
+            if (statement instanceof BlockStatement) {
+                BlockStatement block = (BlockStatement) statement;
+                node.setCode(new BlockStatement(filterStatements(block.getStatements())));
+           }
+            else {
+                node.setCode(filterStatement(statement));
             }
         }
         if (node.getName().equals("main") && node.isStatic()) {
@@ -390,5 +400,30 @@ public class Verifier implements GroovyClassVisitor, Constants {
     protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
         return new ExpressionStatement(
             new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
+    }
+
+    /**
+     * Filters the given statements
+     */
+    protected List filterStatements(List list) {
+        List answer = new ArrayList(list.size());
+        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
+            answer.add(filterStatement((Statement) iter.next()));
+        }
+        return answer;
+    }
+
+    protected Statement filterStatement(Statement statement) {
+        if (statement instanceof ExpressionStatement) {
+            ExpressionStatement expStmt = (ExpressionStatement) statement;
+            Expression expression = expStmt.getExpression();
+            if (expression instanceof ClosureExpression) {
+                ClosureExpression closureExp = (ClosureExpression) expression;
+                if (!closureExp.isParameterSpecified()) {
+                    return closureExp.getCode();
+                }
+            }
+        }
+        return statement;
     }
 }
