@@ -27,4 +27,19 @@ class NewExpressionTest extends GroovyTestCase {
         assert bean.name == "Bob"
         assert bean.i == 1707
     }
+
+    void testNewInstanceWithFullyQualifiedName() {
+        bean = new org.codehaus.groovy.runtime.DummyBean("Bob", 1707)
+        assert bean.name == "Bob"
+        assert bean.i == 1707
+    }
+
+    void testNewInstanceWithFullyQualifiedNameNotImported() {
+        bean = new java.io.File("Foo")
+
+        println "Created $bean"
+
+        assert bean != null
+    }
+
 }
