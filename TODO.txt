@@ -1,16 +1,16 @@
 Core Groovy Tasks
 =================
 
-* output line numbers! - need the compiler to generate line numbers from expressions for stack traces
-	
-* test local variables
-
 * should we implement + and - for collections and maps?
 
 	l = [1, 2] + [3, 4];
 	assert l := [1, 2, 3, 4];
 	
 * test try / catch
+
+* fix LocalPropertyTest
+
+* should we implement get(String) on collection to implement nested property fetching?
 
 * while / do - while statements
 
