@@ -1,10 +1,11 @@
 class ArrayCoerceTest extends GroovyTestCase {
 
-/*
     void testFoo2() {
         def x = [1, 2, 3] as Object[]
         dump(x)
     }
+
+/*
 
 
     void testFoo() {
@@ -49,7 +50,6 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert field.length == 3
     }
 
-*/
 
     void testMakeArrayThenCoerceToAnotherType() {
         def x = [1, 2, 3] as int[]
@@ -162,6 +162,7 @@ class ArrayCoerceTest extends GroovyTestCase {
         assert x instanceof Double[]
         dump(x)
     }
+*/
 
     void dump(array) {
         println "Array is of type ${array.class} which has element type ${array.class.componentType}"
