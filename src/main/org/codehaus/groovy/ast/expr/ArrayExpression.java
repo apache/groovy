@@ -97,6 +97,7 @@ public class ArrayExpression extends Expression {
      */
     public ArrayExpression(String type, Expression sizeExpression) {
         if (!type.endsWith("[]")) type += "[]";
+        setSuperType(type);
         this.elementType = type;        
         this.sizeExpression = sizeExpression;
         this.expressions = Collections.EMPTY_LIST;
