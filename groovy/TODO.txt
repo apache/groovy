@@ -56,11 +56,21 @@ Core Groovy Tasks
 	e.g. Map?
 	
 	
-	
+
+ECLIPSE WORK
+============
+
+We really need to start work on the Eclipse plugin. I *so* want neat Eclipse support for groovy
+
+* Run as JUnit support for Groovy! 
+
+* Refactoring support for Groovy and tie it into the Java refactoring
+
+* a WYSIWYG editor for Groovy. Though right now I've found that the Java Scrapbook editor is fine
+
+
 OTHER STUFF
 ===========
-
-* start work on the Eclipse plugin. I *so* want neat Eclipse support for groovy
 
 * patch GroovyTestCase so that methods which return Object are included in the test. This avoids us having to
 specify void for method return types.

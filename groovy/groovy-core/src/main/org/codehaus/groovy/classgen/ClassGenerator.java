@@ -134,7 +134,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     MethodCaller createListMethod = MethodCaller.newStatic(InvokerHelper.class, "createList");
     MethodCaller createTupleMethod = MethodCaller.newStatic(InvokerHelper.class, "createTuple");
     MethodCaller createMapMethod = MethodCaller.newStatic(InvokerHelper.class, "createMap");
-    
+
     MethodCaller assertFailedMethod = MethodCaller.newStatic(InvokerHelper.class, "assertFailed");
 
     MethodCaller iteratorNextMethod = MethodCaller.newInterface(Iterator.class, "next");
@@ -179,7 +179,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             sourceFile);
 
         ensureClassNodeHasConstructor(classNode);
-        
+
         // now lets visit the contents of the class
 
         for (Iterator iter = classNode.getFields().iterator(); iter.hasNext();) {
@@ -219,7 +219,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     public void visitMethod(MethodNode node) {
         //System.out.println("Visiting method: " + node.getName() + " with return type: " + node.getReturnType());
-        
+
         String methodType = getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = classVisitor.visitMethod(node.getModifiers(), node.getName(), methodType, null);
 
@@ -267,6 +267,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 propertyNode.getType(),
                 classNode.getName(),
                 propertyNode.getInitialValueExpression());
+        classNode.addField(field);
         visitField(field);
 
         Statement getterBlock = propertyNode.getGetterBlock();
@@ -353,14 +354,13 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLabel(l1);
     }
 
-
     public void visitAssertStatement(AssertStatement statement) {
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-        
+
         // do nothing
 
         Label l1 = new Label();
@@ -371,7 +371,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitLdcInsn(booleanExpression.getText());
         // now the optional exception expression
         statement.getMessageExpression().visit(this);
-        
+
         assertFailedMethod.call(cv);
         cv.visitLabel(l1);
     }
@@ -502,45 +502,52 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitVariableExpression(VariableExpression expression) {
-        String name = expression.getVariable();
-        Variable variable = defineVariable(name, "java.lang.Object");
-        String type = variable.getType();
-        int index = variable.getIndex();
-
-        if (leftHandExpression) {
-            //TODO: make work with arrays
-            if (type.equals("double")) {
-                cv.visitVarInsn(DSTORE, index);
-            }
-            else if (type.equals("float")) {
-                cv.visitVarInsn(FSTORE, index);
-            }
-            else if (type.equals("long")) {
-                cv.visitVarInsn(LSTORE, index);
-            }
-            else if (type.equals("byte") || type.equals("short")  || type.equals("boolean") || type.equals("int")){
-                cv.visitVarInsn(ISTORE, index);
-            }
-            else {
-                cv.visitVarInsn(ASTORE, index);
-            }
+        // lets see if the variable is a field
+        FieldNode field = classNode.getField(expression.getVariable());
+        if (field != null) {
+            visitFieldExpression(new FieldExpression(field));
         }
         else {
-            //TODO: make work with arrays
-            if (type.equals("double")) {
-                cv.visitVarInsn(DLOAD, index);
-            }
-            else if (type.equals("float")) {
-                cv.visitVarInsn(FLOAD, index);
-            }
-            else if (type.equals("long")) {
-                cv.visitVarInsn(LLOAD, index);
-            }
-            else if (type.equals("byte") || type.equals("short")  || type.equals("boolean") || type.equals("int")){
-                cv.visitVarInsn(ILOAD, index);
+            String name = expression.getVariable();
+            Variable variable = defineVariable(name, "java.lang.Object");
+            String type = variable.getType();
+            int index = variable.getIndex();
+
+            if (leftHandExpression) {
+                //TODO: make work with arrays
+                if (type.equals("double")) {
+                    cv.visitVarInsn(DSTORE, index);
+                }
+                else if (type.equals("float")) {
+                    cv.visitVarInsn(FSTORE, index);
+                }
+                else if (type.equals("long")) {
+                    cv.visitVarInsn(LSTORE, index);
+                }
+                else if (type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
+                    cv.visitVarInsn(ISTORE, index);
+                }
+                else {
+                    cv.visitVarInsn(ASTORE, index);
+                }
             }
             else {
-                cv.visitVarInsn(ALOAD, index);
+                //TODO: make work with arrays
+                if (type.equals("double")) {
+                    cv.visitVarInsn(DLOAD, index);
+                }
+                else if (type.equals("float")) {
+                    cv.visitVarInsn(FLOAD, index);
+                }
+                else if (type.equals("long")) {
+                    cv.visitVarInsn(LLOAD, index);
+                }
+                else if (type.equals("byte") || type.equals("short") || type.equals("boolean") || type.equals("int")) {
+                    cv.visitVarInsn(ILOAD, index);
+                }
+                else {
+                    cv.visitVarInsn(ALOAD, index);
+                }
             }
         }
     }
@@ -561,14 +568,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
 
         int i = 0;
-        for (Iterator iter = entries.iterator(); iter.hasNext(); ) {
+        for (Iterator iter = entries.iterator(); iter.hasNext();) {
             MapEntryExpression entry = (MapEntryExpression) iter.next();
 
             cv.visitInsn(DUP);
             pushConstant(i++);
             entry.getKeyExpression().visit(this);
             cv.visitInsn(AASTORE);
-            
+
             cv.visitInsn(DUP);
             pushConstant(i++);
             entry.getValueExpression().visit(this);
@@ -620,7 +627,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
     }
-
 
     protected void evaluateBinaryExpression(MethodCaller compareMethod, BinaryExpression expression) {
         leftHandExpression = false;

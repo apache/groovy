@@ -120,13 +120,13 @@ public class DumpClass {
     public void emptyVoidMethod() {
     }
     
-    public void testAssertion() {
-        assert bar == null;
-        assert result == null : "message";
-    }
+//    public void testAssertion() {
+//        assert bar == null;
+//        assert result == null : "message";
+//    }
 
     public void testGroovyAssertion() {
-        if (bar.equals(null)) {
+        if (InvokerHelper.compareEqual(bar, "foo")) {
         }
         else {
             InvokerHelper.assertFailed("expression", "message");

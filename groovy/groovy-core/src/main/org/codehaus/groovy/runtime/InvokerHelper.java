@@ -150,10 +150,10 @@ public class InvokerHelper {
     
     public static void assertFailed(String expression, Object message) {
         if (message == null) {
-            assert false : "Expression: " + expression;
+            throw new AssertionError("Expression: " + expression);
         }
         else {
-            assert false : message + ". Expression" + expression;
+            throw new AssertionError("" + message + ". Expression: " + expression);
         }
     }
 }
