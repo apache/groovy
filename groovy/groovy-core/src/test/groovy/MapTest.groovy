@@ -5,7 +5,6 @@ import org.codehaus.groovy.GroovyTestCase;
 class MapTest extends GroovyTestCase {
 
     void testMap() {
-        /** @todo parser
 
         m = [1:'one', '2':'two', 3:'three'];
 
@@ -22,10 +21,12 @@ class MapTest extends GroovyTestCase {
         assert m.containsValue('two');
         assert m.containsValue('three');
 	
+        /** @todo parser can't parse this
         assert m.keySet().size() := 3;
-        assert m.keySet().contains(1);
         assert m.values().size() := 3;
+        assert m.keySet().contains(1);
         assert m.values().contains('one');
+        */
 	
         m.remove(1);
         m.remove('2');
@@ -40,10 +41,9 @@ class MapTest extends GroovyTestCase {
 
         assert m.containsKey("cheese");
         assert m.containsValue("cheddar");
-        */
 		
 		
-		/** @todo parser
+        /** @todo parser - causes OutOfMemoryException
 		if m.contains("cheese") {
             // ignore
         }

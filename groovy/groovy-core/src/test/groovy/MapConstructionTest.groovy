@@ -19,7 +19,7 @@ class MapConstructionTest extends GroovyTestCase {
 
         System.err.println( mtoo );
 
-        //assertMap(m);
+        assertMap(m);
     }
 
     /** @todo parser
@@ -38,22 +38,22 @@ class MapConstructionTest extends GroovyTestCase {
 
     */
     
-    protected assertMap(m) {
+    assertMap(m) {
         //assert m instanceof Map;
-        assertEquals( "java.util.HashMap", m.getClass() );
-        
-/*
+        /** @todo parser
+        assertEquals( "java.util.HashMap", m.getClass().getName() );
+
         result = 0;
         text = "";
         for e in m {
             result += e.key;
             text += e.value;
         }
-*/
-	    
         assertEquals(result, 6);
         assertEquals(text, "abcdefxyz");
-        assertEquals(s.size(), 3);
+*/
+	    
+        assertEquals(m.size(), 3);
         // assertEquals(s[2], 'def');
     }
 }
