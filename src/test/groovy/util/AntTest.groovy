@@ -91,7 +91,7 @@ class AntTest extends GroovyTestCase {
         SpoofTaskContainer.getSpoof().length = 0
         PATH = 'task.path'
         ant.path(id:PATH){ant.pathelement(location:'classes')}
-        ['spoofcontainer':'SpoofTaskContainer', 'spoof':'SpoofTask'].each{ pair ::
+        ['spoofcontainer':'SpoofTaskContainer', 'spoof':'SpoofTask'].each{ pair ->
             ant.taskdef(name:pair.key, classname:'groovy.util.'+pair.value, classpathref:PATH)
         }
         ant.spoofcontainer(){

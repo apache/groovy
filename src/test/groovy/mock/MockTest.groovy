@@ -53,7 +53,7 @@ class MockTest extends GroovyTestCase {
     }
 
     void testAnExpectationWithAClosureGivesErrorIFCalledAndClosureFails() {
-        mock.doSomething( {arg :: assert arg=="poo" } )
+        mock.doSomething( {arg -> assert arg=="poo" } )
 
         // verify
         try {
@@ -69,8 +69,8 @@ class MockTest extends GroovyTestCase {
      * was GROOVY-76
      */
     void testAnExpectationwithAClosurePassesIfClosurePasses() {
-        mock.doSomething {arg :: assert arg=="hello" }
-        
+        mock.doSomething {arg -> assert arg=="hello" }
+
         // execute
         mock.instance.doSomething("hello")
 
@@ -79,7 +79,7 @@ class MockTest extends GroovyTestCase {
     }
 
     void testAnExpectationWithAClosureGivesErrorIFNotCalled() {
-        mock.doSomething( {arg :: assert arg=="poo" } )
+        mock.doSomething( {arg -> assert arg=="poo" } )
         // verify
         try {
             mock.verify()

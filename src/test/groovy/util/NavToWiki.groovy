@@ -16,7 +16,7 @@ QuickLinks page
 "
     links = doc.body.links.item
     println links.collect {
-        return "{link:" + it['@name'] + "::" + it['@href'] + "}"
+        return "{link:" + it['@name'] + "|" + it['@href'] + "}"
     }.join(" | ")
 
     println "

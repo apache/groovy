@@ -6,7 +6,7 @@ class ClosureWithEmptyParametersTest extends GroovyTestCase {
 
     void testNoParams() {
 
-        block = {:: println "hey I'm a closure!" }
+        block = {-> println "hey I'm a closure!" }
 
         println "About to call closure"
 

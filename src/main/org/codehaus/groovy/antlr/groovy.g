@@ -1756,13 +1756,13 @@ checkSuspiciousExpressionStatement[int prevToken]
         // if prevToken is NLS, we have double trouble; issue a double warning
         // Example:  obj.foo \n {println x}
         // Might be appended block:  obj.foo {println x}
-        // Might be closure expression:  obj.foo ; {x::println x}
+        // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
             "Closure expression looks like it may be an isolated open block, "+
             "or it may continue a previous statement."
             ,
-            "Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}, "+
+            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}, "+
             "and also either remove previous newline, or add an explicit semicolon ';'."
             );
         }
@@ -1770,11 +1770,11 @@ checkSuspiciousExpressionStatement[int prevToken]
         {prevToken != NLS}?
         // If prevToken is SEMI or something else, issue a single warning:
         // Example:  obj.foo ; {println x}
-        // Might be closure expression:  obj.foo ; {x::println x}
+        // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
             "Closure expression looks like it may be an isolated open block.",
-            "Add an explicit parameter list, as in {it :: ...}, or label it as L:{...}.");
+            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}.");
         }
     ;
 
@@ -2989,7 +2989,7 @@ REGEX_FIND              :   "=~"            ;
 REGEX_MATCH             :   "==~"           ;
 STAR_STAR               :   "**"            ;
 STAR_STAR_ASSIGN        :   "**="           ;
-CLOSURE_OP              :   "::"            ;
+CLOSURE_OP              :   "->"            ;
 
 // Whitespace -- ignored
 WS

@@ -13,7 +13,7 @@ class SandwichMakerTest extends GroovyTestCase {
         sandwichMaker.cheeseSlicer = mockCheeseSlicer.instance
 
         // expectation
-        mockCheeseSlicer.sliceCheese {arg :: assert arg.startsWith("ch")}
+        mockCheeseSlicer.sliceCheese {arg -> assert arg.startsWith("ch")}
 
         // execute
         sandwichMaker.makeFattySandwich()

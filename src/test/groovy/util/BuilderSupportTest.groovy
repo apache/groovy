@@ -116,13 +116,13 @@ class SpoofBuilder extends BuilderSupport{
     protected Object createNode(Object name, Map attributes){
         log << 'create_with_name_and_map'
         log << name
-        attributes.each{entry :: log << entry.key; log << entry.value}
+        attributes.each{entry -> log << entry.key; log << entry.value}
         return 'x'
     }
     protected Object createNode(Object name, Map attributes, Object value){
         log << 'create_with_name_map_and_value'
         log << name
-        attributes.each{entry :: log << entry.key; log << entry.value}
+        attributes.each{entry -> log << entry.key; log << entry.value}
         log << value
         return 'x'
     }

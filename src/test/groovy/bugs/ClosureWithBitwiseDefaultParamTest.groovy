@@ -1,6 +1,6 @@
 class ClosureWithBitwiseDefaultParamTest extends GroovyTestCase {
     void testAmbiguousStuff() {
-        def c = { x, y = 1 | 2, z = 0::
+        def c = { x, y = 1 | 2, z = 0->
             println x
             println y
             println z

@@ -12,28 +12,28 @@ class PropertyTest2 extends GroovyTestCase {
 		
 		// these are the properties that should be there
 		props = ['name', 'count', 'location', 'blah']
-		foo.eachPropertyName { prop ::
+		foo.eachPropertyName { prop ->
 			//println "looking for ${prop} in ${props}"
-			
+
 			// we should not see private or protected properties
 			assert prop != "invisible"
 			assert prop != "prot"
-			
+
 			// remove this one from the list
 			props = props - [prop]
 		}
-		
+
 		// make sure there are none left over
 		//println "count left in props list is ${props.count()}"
 		assert props.count() == 0
     }
-	
+
 	void testEachProperty() {
         foo = new Foo()
-		
+
 		// these are the properties and their values that should be there
 		props = ['name':'James', 'count':1, 'location':'London', 'blah':9]
-		foo.eachProperty { prop ::
+		foo.eachProperty { prop ->
 			//println "looking for ${prop.name} in ${props}"
 			
 			// we should not see private or protected properties

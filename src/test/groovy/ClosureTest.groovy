@@ -11,41 +11,41 @@ class ClosureTest extends GroovyTestCase {
     void testSimpleBlockCall() {
         count = 0
 
-        block = {owner:: owner.incrementCallCount() }
-        
+        block = {owner-> owner.incrementCallCount() }
+
         assertClosure(block)
         assert count == 1
 
-        assertClosure({owner:: owner.incrementCallCount() })
+        assertClosure({owner-> owner.incrementCallCount() })
         assert count == 2
     }
 
     void testVariableLengthParameterList() {
 
-        c1 = {Object[] args :: args.each{count += it}}
-        
+        c1 = {Object[] args -> args.each{count += it}}
+
         count = 0
         c1(1, 2, 3)
         assert count == 6
-        
+
         count = 0
         c1(1)
         assert count == 1
-         
+
         count = 0
         c1([1, 2, 3] as Object[])
         assert count == 6
 
-        c2 = {a, Object[] args :: count += a; args.each{count += it}}
-        
+        c2 = {a, Object[] args -> count += a; args.each{count += it}}
+
         count = 0
         c2(1, 2, 3)
         assert count == 6
-        
+
         count = 0
         c2(1)
         assert count == 1
-         
+
         count = 0
         c2(1, [2, 3] as Object[])
         assert count == 6
@@ -53,11 +53,11 @@ class ClosureTest extends GroovyTestCase {
 
     void testBlockAsParameter() {
         count = 0
-        
-        callBlock(5, {owner:: owner.incrementCallCount() })
+
+        callBlock(5, {owner-> owner.incrementCallCount() })
         assert count == 6
 
-        callBlock2(5, {owner:: owner.incrementCallCount() })
+        callBlock2(5, {owner-> owner.incrementCallCount() })
         assert count == 12
     }
   
