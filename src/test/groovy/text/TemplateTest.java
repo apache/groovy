@@ -56,7 +56,7 @@ public class TemplateTest extends TestCase {
         Map binding = new HashMap();
         binding.put("sam", "pullara");
         Template template = new SimpleTemplateEngine().createTemplate("<%= sam %>");
-        template.setBinding(binding.getVariables());
+        template.setBinding(binding);
         assertEquals("pullara", template.toString());
     }
 }
