@@ -90,9 +90,10 @@ class DocGenerator
 				listOfMethods = e.value
 				for (meth in listOfMethods)
 				{
-					writer2.println("<p><b>${e.key.getName()}.${meth.getName()}(${getParametersDecl(meth)})</b></p>")
+				    //writer2.println("<p><b>${e.key.getName()}.${meth.getName()}(${getParametersDecl(meth)})</b></p>")
+				    writer2.println("<p><b>${getReturnType(meth)} ${meth.getName()}(${getParametersDecl(meth)})</b></p>")
 					writer2.println("<p>${getComment(meth)}</p>")
-					writer2.println("${getParametersReturnAndEx(meth)}</p>")
+					writer2.println("${getExceptions(meth)}</p>")
 				}
 			}
 
@@ -108,7 +109,7 @@ class DocGenerator
 	{
 		s = ""
 		returnType = method.getReturns()
-		if (returnType != null && returnType.getValue() != "void")
+		if (returnType != null)
 		{
 			s += "<li><b>returns</b>: ${getObjectType(returnType)}"
 			returnTag = method.getTagByName("return")
@@ -119,6 +120,19 @@ class DocGenerator
 		return s
 	}
 
+	/**
+	 * Retrives a String representing the return type
+	 */
+	private String getReturnType(method)
+	{
+	    s = ""
+	    returnType = method.getReturns()
+	    if (returnType != null) {
+	        s += "${getObjectType(returnType)}"
+	    }
+	    return s
+	}
+	
 	/**
 	 * Retrives a String representing the Exceptions thrown by method passed as parameter.
 	 */
@@ -160,15 +174,20 @@ class DocGenerator
 		s += "</ul>"
 		return s
 	}
-
+	
 	/**
 	 * Retrieve a String representing the declaration of the parameters of the method passed as parameter.
 	 */
 	private String getParametersDecl(method)
 	{
-		parms = method.getParameters().toList().map{ "${getObjectType(it.getType())} ${it.getName()}" }.join(", ")
+		parms = getParameters(method).map{ "${getObjectType(it.getType())} ${it.getName()}" }.join(", ")
 	}
 
+	protected getParameters(method) 
+	{
+		return method.getParameters().toList()[1..-1]		    
+	}
+	
 	/**
 	 * Retrieve the JavaDoc comment associated with the method passed as parameter.
 	 */
@@ -184,10 +203,13 @@ class DocGenerator
 	 */
 	private String getObjectType(type)
     {
-        s = type.getValue()
+	    return type.toString()
+	    /*
+	    s = type.getValue()
         for (i in 1..type.getDimensions())
             s += "[]"
         return s
+        */
     }
 
     /**
