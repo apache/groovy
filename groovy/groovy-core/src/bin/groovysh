@@ -136,5 +136,6 @@ else
         -Dclassworlds.conf="$CLASSWORLDS_CONF" \
         -Dgroovy.home="$GROOVY_HOME" \
         -Dtools.jar="$TOOLS_JAR" \
+        -Xverify:none \
         org.codehaus.classworlds.Launcher "$@"
 fi
