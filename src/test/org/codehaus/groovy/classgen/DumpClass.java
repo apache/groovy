@@ -132,4 +132,26 @@ public class DumpClass {
             InvokerHelper.assertFailed("expression", "message");
         }
     }
+
+    public void testGroovyAssertion2() {
+        if (InvokerHelper.compareEqual(bar, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "message");
+        }
+        
+        bar = "abc";
+
+        if (InvokerHelper.compareNotEqual(bar, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "not null");
+        }
+
+        if (InvokerHelper.compareEqual(bar, "abc")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "not null");
+        }
+    }
 }
