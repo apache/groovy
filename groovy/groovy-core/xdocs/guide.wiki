@@ -10,5 +10,5 @@ Welcome to the Groovy User Guide. We hope you find it useful.
 * {link:Classes      	    |classes.html}
 * {link:Closures      	    |closures.html}
 * {link:Operator Overloading|operators.html}
-* {link:Groovy JDK          |groovy-jdk.html} is all the new methods added to the JDK to make it more groovy
+* {link:Groovy JDK          |groovy-jdk.html} for all the new methods added to the JDK to make it more groovy
 
