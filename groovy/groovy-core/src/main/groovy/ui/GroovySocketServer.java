@@ -10,10 +10,14 @@ import java.net.*;
 
 public class GroovySocketServer implements Runnable {
     private URL url;
-    private Script script;
+    private GroovyShell groovy;
+    private boolean isScriptFile;
+    private String scriptLocation;
     
-    public GroovySocketServer(Script script, int port) {
-        this.script = script;
+    public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptLocation, int port) {
+        this.groovy = groovy;
+        this.isScriptFile = isScriptFile;
+        this.scriptLocation = scriptLocation;
         try {
             url = new URL("http", InetAddress.getLocalHost().getHostAddress(), port, "/");
             System.out.println("groovy is listening on port " + port);
@@ -27,9 +31,16 @@ public class GroovySocketServer implements Runnable {
         try {
             ServerSocket serverSocket = new ServerSocket(url.getPort());
             while (true) {
+                // create one script per socket connection
+                Script script;
+                if (isScriptFile) {
+                    script = groovy.parse(new File(scriptLocation));
+                } else {
+                    script = groovy.parse(scriptLocation, "main");
+                }
                 new GroovyClientConnection(script, serverSocket.accept());
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -51,17 +62,26 @@ public class GroovySocketServer implements Runnable {
             try {
                 String line = null;
                 script.setProperty("out", writer);
+                script.setProperty("init", Boolean.TRUE);
                 while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
+                    // System.out.println(line);
                     script.setProperty("line", line);
                     Object o = script.run();
-                    writer.println(o);
-                    writer.flush();
+                    script.setProperty("init", Boolean.FALSE);
+                    if (o != null) {
+                        if ("success".equals(o)) {
+                            break; // to close sockets gracefully etc...
+                        } else {
+                            writer.println(o);
+                            writer.flush();
+                        }
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
                 try {
+                    writer.flush();
                     writer.close();
                 } finally {
                     try {
