@@ -41,4 +41,18 @@ class RangeTest extends GroovyTestCase {
 
 	    assert x == 18
 	}
+	
+	void testRangeToString() {
+	    range = 0..10
+	    text = range.toString()
+	    assert text == "0..10"
+	    text = range.toConsoleOutput()
+	    assert text == "0..10"
+	    
+	    list = [1, 4..10, 9]
+	    text = list.toString()
+	    assert text == "[1, 4..10, 9]"
+	    text = list.toConsoleOutput()
+	    assert text == "[1, 4..10, 9]"
+	}
 }

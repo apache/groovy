@@ -144,7 +144,7 @@ public class IntRange extends AbstractList implements Range {
     }
 
     public String toString() {
-        return "" + from + ":" + to;
+        return "" + from + ".." + to;
     }
 
     public boolean contains(Object value) {

@@ -49,6 +49,7 @@ import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassRegistry;
+import groovy.lang.Range;
 import groovy.lang.Tuple;
 
 import java.util.ArrayList;
@@ -316,6 +317,14 @@ public class Invoker {
                 buffer.append(toString(array[i]));
             }
             buffer.append("]");
+            return buffer.toString();
+        }
+        else if (arguments instanceof Range) {
+            Range range = (Range) arguments;
+            StringBuffer buffer = new StringBuffer();
+            buffer.append(toString(range.getFrom()));
+            buffer.append("..");
+            buffer.append(toString(range.getTo()));
             return buffer.toString();
         }
         else if (arguments instanceof List) {

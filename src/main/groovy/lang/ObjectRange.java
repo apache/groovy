@@ -149,7 +149,7 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public String toString() {
-        return "" + from + ":" + to;
+        return "" + from + ".." + to;
     }
 
     public boolean contains(Comparable value) {
