@@ -59,16 +59,24 @@ import org.objectweb.asm.ClassWriter;
  */
 public class GroovyClassLoader extends ClassLoader {
 
-    private String outputDir;
     private Map cache = new HashMap();
+    private CompilerConfig config;
 
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
     public GroovyClassLoader(ClassLoader loader) {
+        this(loader, new CompilerConfig());
+    }
+
+    public GroovyClassLoader(GroovyClassLoader parent) {
+        this(parent, parent.config);
+    }
+
+    public GroovyClassLoader(ClassLoader loader, CompilerConfig config) {
         super(loader);
-        outputDir = System.getProperty("groovy.output.dir");
+        this.config = config;
     }
 
     /**
@@ -157,7 +165,6 @@ public class GroovyClassLoader extends ClassLoader {
 
     
     protected static class ClassCollector extends CompilerFacade {
-
         private Class generatedClass;
         private GroovyClassLoader cl;
 
@@ -187,6 +194,7 @@ public class GroovyClassLoader extends ClassLoader {
     }
 
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
+        String outputDir = config.getOutputDir();
         if (outputDir != null) {
             String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
             int index = filename.lastIndexOf(File.separator);

@@ -65,7 +65,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 public class GroovyShell extends GroovyObjectSupport {
     public static final String[] EMPTY_ARGS = {
     };
-    
+
     private GroovyClassLoader loader;
     private Binding context;
     private int counter;
@@ -97,16 +97,26 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public GroovyShell(Binding binding) {
-      this(null, binding);
+        this(null, binding);
     }
-    
+
+    public GroovyShell(Binding binding, CompilerConfig config) {
+        this(null, binding, config);
+    }
+
     public GroovyShell(ClassLoader parent, Binding binding) {
-      if (parent == null) {
-        parent = Thread.currentThread().getContextClassLoader();
-        if (parent == null) parent = GroovyShell.class.getClassLoader();
-      }
-      this.loader = new GroovyClassLoader(parent);
-      this.context = binding;
+        this(parent, binding, new CompilerConfig());
+    }
+
+    public GroovyShell(ClassLoader parent, Binding binding, CompilerConfig config) {
+        if (parent == null) {
+            parent = Thread.currentThread().getContextClassLoader();
+            if (parent == null) {
+                parent = GroovyShell.class.getClassLoader();
+            }
+        }
+        this.loader = new GroovyClassLoader(parent, config);
+        this.context = binding;
     }
 
     /**
@@ -123,7 +133,7 @@ public class GroovyShell extends GroovyObjectSupport {
     public Binding getContext() {
         return context;
     }
-    
+
     public Object getProperty(String property) {
         Object answer = getVariable(property);
         if (answer == null) {
@@ -154,7 +164,6 @@ public class GroovyShell extends GroovyObjectSupport {
         run(scriptFile, args);
     }
 
-    
     /**
      * Runs the given script file name with the given command line arguments
      * 
@@ -162,18 +171,18 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args the command line arguments to pass in
      */
     public void run(File scriptFile, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
-      // Get the current context classloader and save it on the stack
-      Thread thread = Thread.currentThread();
-      ClassLoader currentClassLoader = thread.getContextClassLoader();
-      thread.setContextClassLoader(loader);
+        // Get the current context classloader and save it on the stack
+        Thread thread = Thread.currentThread();
+        ClassLoader currentClassLoader = thread.getContextClassLoader();
+        thread.setContextClassLoader(loader);
 
-      // Parse the script, generate the class, and invoke the main method.  This is a little looser than
-      // if you are compiling the script because the JVM isn't executing the main method.
-      Class scriptClass = loader.parseClass(scriptFile);
-      InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
+        // Parse the script, generate the class, and invoke the main method.  This is a little looser than
+        // if you are compiling the script because the JVM isn't executing the main method.
+        Class scriptClass = loader.parseClass(scriptFile);
+        InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
 
-      // Set the context classloader back to what it was.
-      thread.setContextClassLoader(currentClassLoader);
+        // Set the context classloader back to what it was.
+        thread.setContextClassLoader(currentClassLoader);
     }
 
     /**
@@ -183,7 +192,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args the command line arguments to pass in
      */
-    public void run(String scriptText, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    public void run(String scriptText, String fileName, String[] args)
+        throws ClassNotFoundException, SyntaxException, IOException {
         run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
     }
 
@@ -194,7 +204,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args the command line arguments to pass in
      */
-    public Object run(InputStream in, String fileName, String[] args) throws ClassNotFoundException, SyntaxException, IOException {
+    public Object run(InputStream in, String fileName, String[] args)
+        throws ClassNotFoundException, SyntaxException, IOException {
         Class scriptClass = loader.parseClass(in, fileName);
         return InvokerHelper.invokeMethod(scriptClass, "main", new Object[] { args });
     }
@@ -202,7 +213,7 @@ public class GroovyShell extends GroovyObjectSupport {
     public Object getVariable(String name) {
         return context.getVariable(name);
     }
-    
+
     public void setVariable(String name, Object value) {
         context.setVariable(name, value);
     }
@@ -213,7 +224,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      */
-    public Object evaluate(String scriptText, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+    public Object evaluate(String scriptText, String fileName)
+        throws SyntaxException, ClassNotFoundException, IOException {
         return evaluate(new ByteArrayInputStream(scriptText.getBytes()), fileName);
     }
 
@@ -235,7 +247,6 @@ public class GroovyShell extends GroovyObjectSupport {
         return evaluate(new ByteArrayInputStream(scriptText.getBytes()), generateScriptName());
     }
 
-    
     /**
      * Evaluates some script against the current ScriptContext and returns the result
      *
@@ -251,13 +262,14 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      */
-    public Object evaluate(InputStream in, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+    public Object evaluate(InputStream in, String fileName)
+        throws SyntaxException, ClassNotFoundException, IOException {
         Class scriptClass = loader.parseClass(in, fileName);
         Script script = InvokerHelper.createScript(scriptClass, context);
         return script.run();
     }
-    
+
     protected synchronized String generateScriptName() {
-        return "Script" + (++counter)  + ".groovy";
+        return "Script" + (++counter) + ".groovy";
     }
 }
