@@ -812,12 +812,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 evaluateBinaryExpression(compareNotEqualMethod, expression);
                 break;
 
-            case Token.FIND_REGEX :
-                evaluateBinaryExpression(findRegexMethod, expression);
-                break;
-
-            case Token.MATCH_REGEX :
-                evaluateBinaryExpression(matchRegexMethod, expression);
+            case Token.COMPARE_TO :
+                evaluateBinaryExpression("compareTo", expression);
                 break;
 
             case Token.COMPARE_GREATER_THAN :
@@ -878,6 +874,14 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
             case Token.KEYWORD_INSTANCEOF :
                 evaluateInstanceof(expression);
+                break;
+
+            case Token.FIND_REGEX :
+                evaluateBinaryExpression(findRegexMethod, expression);
+                break;
+
+            case Token.MATCH_REGEX :
+                evaluateBinaryExpression(matchRegexMethod, expression);
                 break;
 
             default :
@@ -1787,11 +1791,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     protected void evaluatePostfixMethod(String method, Expression expression) {
         leftHandExpression = false;
         expression.visit(this);
-        
+
         int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, tempIdx);
         cv.visitVarInsn(ALOAD, tempIdx);
-        
+
         cv.visitLdcInsn(method);
         new ArgumentListExpression().visit(this);
         invokeMethodMethod.call(cv);
@@ -1799,7 +1803,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftHandExpression = true;
         expression.visit(this);
         leftHandExpression = false;
-        
+
         cv.visitVarInsn(ALOAD, tempIdx);
     }
 
@@ -2131,8 +2135,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return false;
         }
         return methodNode.isStatic();
-    } 
-    
+    }
+
     /**
      * @return an array of ASM internal names of the type
      */
@@ -2143,8 +2147,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             answer[i] = getClassInternalName(names[i]);
         }
         return answer;
-    } 
-    
+    }
+
     /**
      * @return the ASM internal name of the type
      */
@@ -2157,8 +2161,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return "[" + answer.substring(0, answer.length() - 2);
         }
         return answer;
-    } 
-    
+    }
+
     /**
      * @return the ASM method type descriptor
      */
@@ -2171,8 +2175,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         buffer.append(")");
         buffer.append(getTypeDescription(returnTypeName));
         return buffer.toString();
-    } 
-    
+    }
+
     /**
      * @return the ASM type description
      */
@@ -2190,8 +2194,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             name = name.substring(0, name.length() - 2);
         }
         return prefix + "L" + name.replace('.', '/') + ";";
-    } 
-    
+    }
+
     /**
      * @return the ASM type for the given class name
      */
@@ -2201,8 +2205,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         return Type.getType(loadClass(className));
         //return Type.getType(className);
-    } 
-    
+    }
+
     /**
      * @return loads the given type name
      */

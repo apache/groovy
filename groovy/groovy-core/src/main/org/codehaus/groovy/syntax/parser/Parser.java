@@ -1102,6 +1102,7 @@ public class Parser
                 case ( Token.MULTIPLY ):
                 case ( Token.DIVIDE ):
                 case ( Token.MOD ):
+                case ( Token.COMPARE_TO ):
                 {
                     expr = rootNode( lt(),
                                      expr );

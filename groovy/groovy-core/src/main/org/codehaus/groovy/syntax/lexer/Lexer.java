@@ -498,6 +498,13 @@ public class Lexer
                                                       getStartColumn() );
                             break MULTICHAR_SWITCH;
                         }
+                        case ( '>' ):
+                        {
+                            consume();
+                            token = Token.navigate( getStartLine(),
+                                                    getStartColumn() );
+                            break MULTICHAR_SWITCH;
+                        }
                         default:
                         {
                             token = Token.minus( getStartLine(),
@@ -579,8 +586,15 @@ public class Lexer
                         case ( '=' ):
                         {
                             consume();
-                            token = Token.compareLessThanEqual( getStartLine(),
-                                                                getStartColumn() );
+                            c = la();
+                            if ( c == '>' ) {
+                                consume();
+                                token = Token.compareTo( getStartLine(), getStartColumn() );
+                            }   
+                            else {
+                                token = Token.compareLessThanEqual( getStartLine(),
+                                                                    getStartColumn() );
+                            }
                             break MULTICHAR_SWITCH;
                         }
                         case ( '<' ):
