@@ -55,6 +55,10 @@ public class CompileUnit {
     private Map classes = new HashMap();
     private CompilerConfig config;
     private ClassLoader classLoader;
+    private Map cachedClasses = new HashMap();
+    
+    public static final Object NO_CLASS = new Object();
+    
 
     public CompileUnit(ClassLoader classLoader, CompilerConfig config) {
         this.classLoader = classLoader;
@@ -100,6 +104,7 @@ public class CompileUnit {
         return classLoader;
     }
 
+    
     /**
      * Loads a class on the compile classpath so that it can be introspected
      * 
@@ -108,36 +113,59 @@ public class CompileUnit {
      *         ClassNotFoundException
      */
     public Class loadClass(String type) throws ClassNotFoundException {
+    	Object obj = cachedClasses.get(type);
+    	if ( obj == NO_CLASS ) {
+    		throw new ClassNotFoundException(type);
+    	}
+    	if ( obj != null) {
+    		return (Class)obj;
+    	}
+    	
+    	Class answer = null;
+    	
+    	try {
+    		answer = getClassLoader().loadClass(type);
+    	} catch (ClassNotFoundException e) {
+    		// fall through
+    	}
+    	
+    	// lets try the context class loader
         try {
-            return getClassLoader().loadClass(type);
+        	if ( answer == null ) {
+        		answer = Thread.currentThread().getContextClassLoader().loadClass(type);
+        	}
         }
-        catch (ClassNotFoundException e) {
-
-            // lets try the context class loader
-            try {
-                return Thread.currentThread().getContextClassLoader().loadClass(type);
-            }
-            catch (ClassNotFoundException e1) {
-                // fall through
-            }
-
-            // lets try our class loader
-            try {
-                return getClass().getClassLoader().loadClass(type);
-            }
-            catch (ClassNotFoundException e2) {
-                // fall through
-            }
-
-            // lets try the system class loader
-            try {
-                return Class.forName(type);
-            }
-            catch (ClassNotFoundException e2) {
-                // fall through
-            }
-            throw e;
+        catch (ClassNotFoundException e1) {
+            // fall through
         }
+        
+        // lets try our class loader
+        try {
+        	if ( answer == null ) {
+        		answer = getClass().getClassLoader().loadClass(type);
+        	}
+        }
+        catch (ClassNotFoundException e2) {
+            // fall through
+        }
+        
+        try {
+        	if (answer == null ) {
+        		answer = Class.forName(type);
+        	}
+        }
+        catch (ClassNotFoundException e2) {
+            // fall through
+        }
+
+        if ( answer == null ) {
+        	cachedClasses.put(type,NO_CLASS);
+        	throw new ClassNotFoundException(type);
+        } else {
+        	cachedClasses.put(type,answer);
+        }
+        
+        return answer;
     }
 
 
