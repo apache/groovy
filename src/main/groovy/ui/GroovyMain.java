@@ -269,6 +269,31 @@ public class GroovyMain {
     }
 
     /**
+     * Hunt for the script file, doesn't bother if it is named precisely.
+     *
+     * Tries in this order:
+     * - actual supplied name
+     * - name.groovy
+     * - name.gvy
+     * - name.gy
+     * - name.gsh
+     */
+    private File huntForTheScriptFile(String scriptFileName) {
+        File scriptFile = new File(scriptFileName);
+        String[] standardExtensions = {".groovy",".gvy",".gy",".gsh"};
+        int i = 0;
+        while (i < standardExtensions.length && !scriptFile.exists()) {
+            scriptFile = new File(scriptFileName + standardExtensions[i]);
+            i++;
+        }
+        // if we still haven't found the file, point back to the originally specified filename
+        if (!scriptFile.exists()) {
+            scriptFile = new File(scriptFileName);
+        }
+        return scriptFile;
+    }
+
+    /**
      * Process the input files.
      */
     private void processFiles() throws CompilationFailedException, IOException {
@@ -276,10 +301,11 @@ public class GroovyMain {
 
         Script s = null;
 
-        if (isScriptFile)
-            s = groovy.parse(new File(script));
-        else
+        if (isScriptFile) {
+            s = groovy.parse(huntForTheScriptFile(script));
+        } else {
             s = groovy.parse(script, "main");
+        }
 
         if (args.isEmpty()) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
@@ -290,7 +316,7 @@ public class GroovyMain {
             Iterator i = args.iterator();
             while (i.hasNext()) {
                 String filename = (String) i.next();
-                File file = new File(filename);
+                File file = huntForTheScriptFile(filename);
                 processFile(s, file);
             }
         }
@@ -368,7 +394,7 @@ public class GroovyMain {
         GroovyShell groovy = new GroovyShell(conf);
 
         if (isScriptFile)
-            groovy.run(new File(script), args);
+            groovy.run(huntForTheScriptFile(script), args);
         else
             groovy.run(script, "main", args);
     }
