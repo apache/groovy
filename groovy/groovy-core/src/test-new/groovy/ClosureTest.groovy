@@ -75,23 +75,23 @@ class ClosureTest extends GroovyTestCase {
         block.call("I just invoked a closure!")
     }
   
-    incrementCallCount() {
+    def incrementCallCount() {
         //System.out.println("invoked increment method!")
         count = count + 1
     }
 	
-    assertClosure(Closure block) {
+    def assertClosure(Closure block) {
         assert block != null
         block.call(this)
     }
 	
-    protected callBlock(Integer num, Closure block) {
+    protected void callBlock(Integer num, Closure block) {
         for ( i in 0..num ) {
             block.call(this)
         }
     }
 
-    protected callBlock2(num, block) {
+    protected void callBlock2(num, block) {
         for ( i in 0..num ) {
             block.call(this)
         }
@@ -114,6 +114,6 @@ class ClosureTest extends GroovyTestCase {
 }
 
 public class TinyAgent {
-    int x
+    @Property int x
 }
 

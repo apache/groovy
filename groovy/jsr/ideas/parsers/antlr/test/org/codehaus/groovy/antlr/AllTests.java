@@ -36,7 +36,7 @@ public class AllTests extends TestSuiteSupport {
         "ArrayTest.groovy",                     // TODO: arrays
         "ConstructorParameterBug.groovy",       // TODO: arrays
 
-        "BigDecimalOperationTest.groovy",       // TODO: parser bug
+        "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
 
         "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
         "ConstructorBug.groovy",                // TODO: foo.class bug in parser
@@ -57,6 +57,10 @@ public class AllTests extends TestSuiteSupport {
         "ClosureComparatorTest.groovy",         // TODO: closure params
         "ClosureCurryTest.groovy",              // TODO: closure params
         "ClosureMethodCallTest.groovy",         // TODO: closure params
+        "ClosureReturnTest.groovy",             // TODO: closure params
+        "ClosureReturnWithoutReturnStatementTest.groovy",             // TODO: closure params
+        "ClosureSugarTest.groovy",              // TODO: closure params
+        "ClosureTest.groovy",                   // TODO: closure params
 
         "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
 
@@ -70,13 +74,21 @@ public class AllTests extends TestSuiteSupport {
         "TestCaseBug.groovy",                   // TODO: constructor bug
         "TestDerived.groovy",                   // TODO: constructor bug
 
+        "ClosureCloneTest.groovy",              // TODO: use of * with dot
+        "ClosureMethodTest.groovy",             // TODO: use of *
+        "ClosureWithDefaultParamTest.groovy",   // TODO: use of *
+
+        "CompareToTest.groovy",                 // TODO: can't parse <=>
+
+        "StaticClosurePropertyBug.groovy",      // TODO: static/def
+        "UseStaticInClosureBug.groovy",         // TODO: static/def
+
+        "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
+
+
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
 
-        "ClosureCloneTest.groovy",              // TODO: parser bug : use of * with dot
-
-        // Not sure of bug yet
-        "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
         "DoubleSizeParametersBug.groovy",       // TODO: parser bug
         "InconsistentStackHeightBug.groovy",    // TODO: parser bug
         "MarkupAndMethodBug.groovy",            // TODO: parser bug
@@ -85,10 +97,9 @@ public class AllTests extends TestSuiteSupport {
         "RodsBooleanBug.groovy",                // TODO: parser bug
         "SubscriptOnPrimitiveTypeArrayBug.groovy",      // TODO: parser bug
 
-        "StaticClosurePropertyBug.groovy",      // TODO: parser bug - static/def
-        "UseStaticInClosureBug.groovy",         // TODO: parser bug - static/def
 
-
+        // Not sure of bug yet
+        "ClosureVariableBug.groovy",            // TODO: closure parser bug or AST bug
 
         // TODO: AST bugs I think...
         "PrintlnWithNewBug.groovy",
