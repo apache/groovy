@@ -47,12 +47,12 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
-import org.codehaus.groovy.runtime.MetaClass;
 
 /**
  * Tests dynamically compiling a new class

@@ -46,6 +46,8 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -71,8 +73,6 @@ import org.codehaus.groovy.ast.StatementBlock;
 import org.codehaus.groovy.ast.StaticMethodCallExpression;
 import org.codehaus.groovy.ast.VariableExpression;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.MetaClass;
-import org.codehaus.groovy.runtime.MetaClassRegistry;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.Constants;
 
