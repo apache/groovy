@@ -145,6 +145,64 @@ public class Lexer
                                                        getStartColumn() );
                             break MULTICHAR_SWITCH;
                         }
+                        case ( '/' ):
+                        {
+                            consume();
+
+                          CONSUME_LOOP:
+                            while ( true )
+                            {
+                                switch ( la() )
+                                {
+                                    case ( '\r' ):
+                                    {
+                                        consume();
+                                        
+                                        if ( la() == '\n' )
+                                        {
+                                            consume();
+                                        }
+                                    break CONSUME_LOOP;
+                                    }
+                                    case ( '\n' ):
+                                    {
+                                        consume();
+                                        break CONSUME_LOOP;
+                                    }
+                                    default:
+                                    {
+                                        consume();
+                                    }
+                                }
+                            }
+                            token = null;
+                            break MULTICHAR_SWITCH;
+                        }
+                        case ( '*' ):
+                        {
+                          CONSUME_LOOP:
+                            while ( true )
+                            {
+                                switch ( la() )
+                                {
+                                    case ( '*' ):
+                                    {
+                                        consume();
+                                        if ( la( 2 ) == '/' )
+                                        {
+                                            consume();
+                                            break CONSUME_LOOP;
+                                        }
+                                    }
+                                    default:
+                                    {
+                                        consume();
+                                    }
+                                }
+                            }
+                            token = null;
+                            break MULTICHAR_SWITCH;
+                        }
                         default:
                         {
                             token = Token.divide( getStartLine(),
