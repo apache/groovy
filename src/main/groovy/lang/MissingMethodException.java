@@ -45,6 +45,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * An exception occurred if a dynamic method dispatch fails with an unknown method.
  * 
@@ -59,8 +61,14 @@ public class MissingMethodException extends GroovyRuntimeException {
     private String method;
     private Class type;
 
-    public MissingMethodException(String method, Class type) {
-        super("No such method: " + method + " for class: " + type.getName());
+    public MissingMethodException(String method, Class type, Object[] arguments) {
+        super(
+            "No such method: "
+                + method
+                + " for class: "
+                + type.getName()
+                + " with arguments: "
+                + InvokerHelper.toString(arguments));
         this.method = method;
         this.type = type;
     }

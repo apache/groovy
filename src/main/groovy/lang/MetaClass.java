@@ -282,7 +282,7 @@ public class MetaClass {
                 // throw our own exception
             }
         }
-        throw new MissingMethodException(methodName, theClass);
+        throw new MissingMethodException(methodName, theClass, arguments);
     }
 
     public Object invokeConstructor(Object[] arguments) {
