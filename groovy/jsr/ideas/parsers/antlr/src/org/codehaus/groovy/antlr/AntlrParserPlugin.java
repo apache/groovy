@@ -42,7 +42,7 @@ public class AntlrParserPlugin extends ParserPlugin {
         parser = GroovyRecognizer.make(lexer);
         parser.setFilename(sourceUnit.getName());
 
-        return new Reduction(null);
+        return null; //new Reduction(Tpken.EOF);
     }
 
     public ModuleNode buildAST(SourceUnit sourceUnit, ClassLoader classLoader, Reduction cst) throws ParserException {
@@ -69,7 +69,8 @@ public class AntlrParserPlugin extends ParserPlugin {
      * Converts the Antlr AST to the Groovy AST
      */
     protected void convertGroovy(AST ast, ModuleNode module) {
-        /** TODO */
-        
+      for (AST node = ast.getFirstChild(); node != null; node = node.getNextSibling()) {
+            System.out.println("Type: " + node.getType() + " text: " + node.getText());
+        }
     }
 }
