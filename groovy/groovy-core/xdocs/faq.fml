@@ -214,6 +214,14 @@
 		<source>
 		maven rebuild
 		</source>
+		
+        <p>
+		If you want to run all the unit test cases inside the same JVM, which saves quite a bit of time
+		although the output isn't as nice, you can use this command.
+        </p>
+		<source>
+	    maven groovy:test-quick
+		</source>
       </answer>
     </faq>   
 
@@ -229,6 +237,15 @@
 		maven test:single -Dtestcase=CharsetToolkitTest
 		</source>
 
+		<p>
+		Where you pass in the name of a test case. If you want to run a single unit test case
+		written in Groovy in a slightly faster way you can try this...
+		</p>
+		
+		<source>
+		maven groovy:test-single -Dtest=src/test/groovy/SomeTest.groovy
+		</source>
+		
         <p>
 		or to run tests matching a certain pattern...
         </p>

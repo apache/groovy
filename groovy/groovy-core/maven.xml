@@ -47,6 +47,13 @@
    <attainGoal name="test:single"/>
   </goal>
   
+  <goal name="groovy:test-single" prereqs="groovy:compile" description="Runs a named groovy test case using the 'test' property">
+    <java classname="groovy.util.GroovyTestSuite" fork="yes">
+      <classpath refid="test.classpath"/>
+      <sysproperty key="test" value="${test}"/>
+    </java>
+  </goal>
+  
 
   <goal name="groovy:test-quick" prereqs="clean" description="Tries running all the unit test cases in the same JVM">
    <attainGoal name="clean"/>
