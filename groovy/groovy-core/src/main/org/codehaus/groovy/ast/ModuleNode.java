@@ -186,7 +186,7 @@ public class ModuleNode extends ASTNode implements Constants {
             new MethodNode(
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
-                "void",
+                "java.lang.Object",
                 new Parameter[] { new Parameter("java.lang.String[]", "args")},
                 statementBlock));
         }

@@ -1,6 +1,14 @@
 Things to Test
 ==============
 
+* main() to return object
+
+* run all the scripts as part of a unit test
+
+* something like Ruby's Binding & eval APIs		
+
+* how to make variables available to a shell?
+
 * test compiler errors when
 	- unknown variable
 	- unknown class
@@ -112,26 +120,6 @@ Core Groovy Tasks
 * << for list append and for output to streams
 	maybe other optional IO methods like gets?
 
-* DocTool 
-	- use wiki parser and allow embedded test cases, documentation, examples
-	
-	[Test
-		>>> a = [1, 2, 3]
-		[1, 2, 3]
-		>>> x = ...
-		
-	]
-	
-	or
-	
-	[Test some operation thingy
-		x = ...
-		assert x.whatnot == 7
-	]
-
-	
-* something like Ruby's Binding & eval APIs		
-	
 * is there a better way to add listeners in Groovy. e.g. how to remove added listeners
 
 	listener = bean.property + { some closure }
