@@ -38,4 +38,10 @@ class StringOperationTest extends GroovyTestCase {
 		
 		assert y := "the fox";
     }
+    
+    void testOperationsOnConstantString() {
+        assert "hello".size() := 5
+
+        assert "the quick brown".substring(4).substring(0,5) := "quick"
+    }
 }

@@ -542,7 +542,7 @@ public class MetaClass {
                 if (paramTypes.length == 1) {
                     Class theType = paramTypes[0];
                     if (isCompatibleInstance(theType, arguments)) {
-                        if (closestClass == null || !theType.isAssignableFrom(closestClass)) {
+                        if (closestClass == null || !isAssignableFrom(theType, closestClass)) {
                             closestClass = theType;
                             singleParameterMatch = method;
                         }
@@ -618,13 +618,17 @@ public class MetaClass {
             int paramLength = paramTypes.length;
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
-                if (closestClass == null || theType.isAssignableFrom(closestClass)) {
+                if (closestClass == null || isAssignableFrom(theType, closestClass)) {
                     closestClass = theType;
                     answer = method;
                 }
             }
         }
         return answer;
+    }
+
+    protected boolean isAssignableFrom(Class theType, Class closestClass) {
+        return theType.isAssignableFrom(closestClass);
     }
 
     /**
@@ -643,7 +647,33 @@ public class MetaClass {
     }
 
     protected boolean isCompatibleInstance(Class type, Object value) {
-        return value == null || type.isInstance(value);
+        boolean answer = value == null || type.isInstance(value);
+        if (! answer) {
+            if (type.isPrimitive() && value instanceof Number) {
+                if (type == int.class) {
+                    return value instanceof Integer;
+                }
+                else if (type == double.class) {
+                    return value instanceof Double;
+                }
+                else if (type == long.class) {
+                    return value instanceof Long;
+                }
+                else if (type == float.class) {
+                    return value instanceof Float;
+                }
+                else if (type == char.class) {
+                    return value instanceof Character;
+                }
+                else if (type == byte.class) {
+                    return value instanceof Byte;
+                }
+                else if (type == short.class) {
+                    return value instanceof Short;
+                }
+            }
+        }
+        return answer;
     }
 
     protected boolean isGenericSetMethod(Method method) {
