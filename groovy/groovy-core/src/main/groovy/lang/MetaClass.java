@@ -80,6 +80,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
@@ -622,11 +623,13 @@ public class MetaClass {
             }
         }
 
-        // is the property the name of a method - in which case return a
-        // closure
-        List methods = getMethods(property);
-        if (!methods.isEmpty()) {
-            return new MethodClosure(object, property);
+        if (!CompilerConfiguration.isJsrGroovy()) {
+            // is the property the name of a method - in which case return a
+            // closure
+            List methods = getMethods(property);
+            if (!methods.isEmpty()) {
+                return new MethodClosure(object, property);
+            }
         }
 
         // lets try invoke a static getter method
@@ -681,7 +684,7 @@ public class MetaClass {
                 throw new MissingPropertyException(property, theClass, lastException);
         }
     }
-    
+
     /**
      * Get all the properties defined for this type
      * @return a list of MetaProperty objects
@@ -2266,4 +2269,5 @@ public class MetaClass {
         }
         return ans;
     }
+
 }

@@ -19,6 +19,7 @@ package org.codehaus.groovy.antlr;
 
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import groovy.lang.MetaClass;
 
 /**
@@ -27,6 +28,8 @@ import groovy.lang.MetaClass;
 public class AntlrParserPluginFactory extends ParserPluginFactory {
 
     public ParserPlugin createParserPlugin() {
+        // TODO remove this hack after JSR-1 release
+        CompilerConfiguration.setJsrGroovy(true);
         return new AntlrParserPlugin();
     }
 }
