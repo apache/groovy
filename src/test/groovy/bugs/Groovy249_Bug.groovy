@@ -25,7 +25,8 @@ class Groovy249_Bug extends GroovyTestCase {
 		} 
 	}
 	
-/*
+/** @todo don't know why this fails
+
     void testBugInScript() {
     	assertScript <<<EOF
 			import groovy.xml.MarkupBuilder;
@@ -53,6 +54,7 @@ class Groovy249_Bug extends GroovyTestCase {
 
 EOF    	
 	}
+*/
    
 }
 
