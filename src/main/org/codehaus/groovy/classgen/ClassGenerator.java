@@ -72,6 +72,8 @@ import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.NotExpression;
+import org.codehaus.groovy.ast.expr.PostfixExpression;
+import org.codehaus.groovy.ast.expr.PrefixExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.RangeExpression;
 import org.codehaus.groovy.ast.expr.RegexExpression;
@@ -881,6 +883,16 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             default :
                 throw new ClassGeneratorException("Operation: " + expression.getOperation() + " not supported");
         }
+    }
+
+    public void visitPostfixExpression(PostfixExpression expression) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void visitPrefixExpression(PrefixExpression expression) {
+        // TODO Auto-generated method stub
+
     }
 
     protected void evaluateLogicalOrExpression(BinaryExpression expression) {
