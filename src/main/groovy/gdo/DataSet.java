@@ -48,7 +48,9 @@ package groovy.gdo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -70,6 +72,9 @@ public class DataSet extends Sql {
     private Closure where;
     private DataSet parent;
     private String table;
+    private SqlWhereVisitor visitor;
+    private String sql;
+    private List params;
 
     public DataSet(DataSource dataSource, Class type) {
         super(dataSource);
@@ -114,7 +119,7 @@ public class DataSet extends Sql {
         buffer.append(") values (");
         buffer.append(paramBuffer.toString());
         buffer.append(")");
-        
+
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -137,33 +142,49 @@ public class DataSet extends Sql {
             closeResources(connection, statement);
         }
     }
-    
+
     public DataSet findAll(Closure where) {
         return new DataSet(this, where);
     }
 
     public void each(Closure closure) throws SQLException {
-        queryEach(getSql(), closure);
+        queryEach(getSql(), getParameters(), closure);
     }
 
     public String getSql() {
-        String sql = "select * from " + table;
-        if (where != null) {
-            sql += " where ";
-            if (parent != null && parent.where != null) {
-                sql += parent.getWhereSql() + " and ";
+        if (sql == null) {
+            sql = "select * from " + table;
+            if (where != null) {
+                sql += " where ";
+                if (parent != null && parent.where != null) {
+                    sql += parent.getSqlVisitor().getWhere() + " and ";
+                }
+                sql += getSqlVisitor().getWhere();
             }
-            sql += getWhereSql();
         }
         return sql;
     }
 
-    protected String getWhereSql() {
-        MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
-        Statement statement = method.getCode();
+    public List getParameters() {
+        if (params == null) {
+            params = new ArrayList();
+            if (parent != null && parent.where != null) {
+                params.addAll(parent.getParameters());
+            }
+            params.addAll(getSqlVisitor().getParameters());
+        }
+        return params;
+    }
 
-        SqlWhereVisitor visitor = new SqlWhereVisitor();
-        statement.visit(visitor);
-        return visitor.getWhere();
+    protected SqlWhereVisitor getSqlVisitor() {
+        if (visitor == null) {
+            visitor = new SqlWhereVisitor();
+            if (where != null) {
+                MethodNode method = where.getMetaClass().getClassNode().getMethod("doCall");
+                Statement statement = method.getCode();
+                statement.visit(visitor);
+            }
+        }
+        return visitor;
     }
 }
