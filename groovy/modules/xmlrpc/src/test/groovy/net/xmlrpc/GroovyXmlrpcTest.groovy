@@ -53,7 +53,8 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 		//
 		// add methods that can be called remotely
 		//
-		server.validator1.arrayOfStructsTest = {structs |      
+		
+		server.validator1.arrayOfStructsTest = {structs ->      
 							                   		count = 0
 						                   		
 							                   		for (struct in structs) {
@@ -61,64 +62,25 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 							                   		}
 							                   		
 							                   		return count
-							                   }
+							                   };
+		server.validator1.countTheEntities = {text -> foo(text) }
 		
-		server.validator1.countTheEntities = {string |      
-						                   		ctLeftAngleBrackets = 0
-						                   		ctRightAngleBrackets = 0
-						                   		ctAmpersands = 0
-						                   		ctApostrophes = 0
-						                   		ctQuotes = 0
-						                   		 
-						                   		for (c in string) {
-						                   			switch (c) {
-						                   				case '<' :
-						                   					ctLeftAngleBrackets++
-						                   					break;
-						                   					
-						                   				case '>' :
-						                   					ctRightAngleBrackets++
-						                   					break;
-						                   					
-						                   				case '&' :
-						                   					ctAmpersands++
-						                   					break;
-						                   					
-						                   				case '\'' :
-						                   					ctApostrophes++
-						                   					break;
-						                   					
-						                   				case '"' :
-						                   					ctQuotes++
-						                   					break;
-						                   					
-						                   				default:
-						                   			}
-						                   		}
-						                   		
-						                   		return ['ctLeftAngleBrackets' : ctLeftAngleBrackets,
-								                   		'ctRightAngleBrackets' : ctRightAngleBrackets,
-								                   		'ctAmpersands' : ctAmpersands,
-								                   		'ctApostrophes' : ctApostrophes,
-								                   		'ctQuotes' : ctQuotes]
-						                   }
+		server.validator1.easyStructTest = {struct -> return struct['larry'] + struct['moe'] + struct['curly'] }
 		
-		server.validator1.easyStructTest = {struct | return struct['larry'] + struct['moe'] + struct['curly'] }
+		server.validator1.echoStructTest = {struct -> return struct }  
 		
-		server.validator1.echoStructTest = {struct | return struct }  
-		
-		server.validator1.manyTypesTest = {p1, p2, p3, p4, p5, p6 |  
+		server.validator1.manyTypesTest = {p1, p2, p3, p4, p5, p6 ->  
 						                   		return [p1, p2, p3, p4, p5, p6]
 						                   }  
 		
-		server.validator1.moderateSizeArrayCheck = {array | return array[0] + array[array.size() - 1] } 
+		server.validator1.moderateSizeArrayCheck = {array -> return array[0] + array[array.size() - 1] } 
 		
-		server.validator1.nestedStructTest = {struct |  
+		server.validator1.nestedStructTest = {struct ->  
 							                   	day = struct['2000']['04']['01']
 							                   		return day['larry'] + day['moe'] + day['curly']
 							                   }
 		
-		server.validator1.simpleStructReturnTest = {number |  
+		server.validator1.simpleStructReturnTest = {number ->  
 								                   		return ['times10' : number * 10, 'times100' : number * 100, 'times1000' : number * 1000]
 								                   }
 								                   
@@ -147,7 +109,7 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 			
 //			assertEquals("validator1.arrayOfStructsTest", result, 12)
 			
-			serverProxy.validator1.countTheEntities('<.\'"  l&oi ><><><>"""') { result |
+			serverProxy.validator1.countTheEntities('<.\'"  l&oi ><><><>"""') { result ->
 //				assertEquals("serverProxy.validator1.countTheEntities", result['ctLeftAngleBrackets'], 4)
 //				assertEquals("serverProxy.validator1.countTheEntities", result['ctRightAngleBrackets'], 4)
 //				assertEquals("serverProxy.validator1.countTheEntities", result['ctApostrophes'], 1)
@@ -156,7 +118,7 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 			}
 			
 			
-			serverProxy.validator1.manyTypesTest('a', 1.25, 'c', true, 2, 3) { result |
+			serverProxy.validator1.manyTypesTest('a', 1.25, 'c', true, 2, 3) { result ->
 				assertEquals("serverProxy.validator1.manyTypesTest", result[0], 'a')
 				assertEquals("serverProxy.validator1.manyTypesTest", result[1], 1.25)
 				assertEquals("serverProxy.validator1.manyTypesTest", result[2], 'c')
@@ -176,4 +138,43 @@ public class GroovyXmlrpcTest extends GroovyTestCase {
 			server.stopServer()
 		}
     }
+    
+    def foo(text) {
+    						                   		ctLeftAngleBrackets = 0
+						                   		ctRightAngleBrackets = 0
+						                   		ctAmpersands = 0
+						                   		ctApostrophes = 0
+						                   		ctQuotes = 0
+						                   		 
+						                   		for (c in text) {
+						                   			switch (c) {
+						                   				case '<' :
+						                   					ctLeftAngleBrackets++
+						                   					break;
+						                   					
+						                   				case '>' :
+						                   					ctRightAngleBrackets++
+						                   					break;
+						                   					
+						                   				case '&' :
+						                   					ctAmpersands++
+						                   					break;
+						                   					
+						                   				case '\'' :
+						                   					ctApostrophes++
+						                   					break;
+						                   					
+						                   				case '"' :
+						                   					ctQuotes++
+						                   					break;
+						                   			}
+						                   		}
+						                   		
+						                   		return ['ctLeftAngleBrackets' : ctLeftAngleBrackets,
+								                   		'ctRightAngleBrackets' : ctRightAngleBrackets,
+								                   		'ctAmpersands' : ctAmpersands,
+								                   		'ctApostrophes' : ctApostrophes,
+								                   		'ctQuotes' : ctQuotes]
+
+    }													
 }
