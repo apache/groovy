@@ -1215,10 +1215,10 @@ closureParametersStart!
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
 closureParameter!
-        :   parameterIdent!
+        :   id:parameterIdent!
                 {#closureParameter = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
                                                                 #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"]),
-                                                                #closureParameter);}
+                                                                id);}
         ;
 
 /** A formal parameter name can be decorated with the optionality operator, meaning that
@@ -1302,7 +1302,7 @@ expressionNotBOR
 closedBlock
         :       lc:LCURLY^ {#lc.setType(CLOSED_BLOCK);}
                 ( ( nls closureParametersStart ) =>
-                        nls! closureParameters
+                        nls closureParameters
                 |
                         implicitParameters  // implicit {it|...} or {?noname|...}
                 )
