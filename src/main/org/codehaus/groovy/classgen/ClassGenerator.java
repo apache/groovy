@@ -2484,10 +2484,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void evaluatePrefixMethod(String method, Expression expression) {
+        if (isNonStaticField(expression) && ! isHolderVariable(expression) && !isStaticMethod()) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
         expression.visit(this);
         cv.visitLdcInsn(method);
-        ArgumentListExpression.EMPTY_ARGUMENTS.visit(this);
-        invokeMethodMethod.call(cv);
+        invokeNoArgumentsMethod.call(cv);
 
         leftHandExpression = true;
         expression.visit(this);
@@ -2496,20 +2498,18 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
     }
 
     protected void evaluatePostfixMethod(String method, Expression expression) {
+        if (isNonStaticField(expression) && ! isHolderVariable(expression) && !isStaticMethod()) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
         leftHandExpression = false;
         expression.visit(this);
 
         int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
         cv.visitVarInsn(ASTORE, tempIdx);
-        /*
-         * if (! isStaticMethod() && ! isHolderVariable(expression)) {
-         * cv.visitVarInsn(ALOAD, 0); }
-         */
         cv.visitVarInsn(ALOAD, tempIdx);
 
         cv.visitLdcInsn(method);
-        ArgumentListExpression.EMPTY_ARGUMENTS.visit(this);
-        invokeMethodMethod.call(cv);
+        invokeNoArgumentsMethod.call(cv);
 
         leftHandExpression = true;
         expression.visit(this);
@@ -2525,12 +2525,14 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
-            FieldNode field = classNode.getField(varExp.getVariable());
             Variable variable = (Variable) variableStack.get(varExp.getVariable());
-            if (field != null && variable == null) {
+            if (variable != null) {
+                return variable.isHolder();
+            }
+            FieldNode field = classNode.getField(varExp.getVariable());
+            if (field != null) {
                 return field.isHolder();
             }
-            return variable.isHolder();
         }
         return false;
     }
