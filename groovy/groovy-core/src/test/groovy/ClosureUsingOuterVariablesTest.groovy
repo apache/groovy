@@ -9,7 +9,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         x = 123
         y = "hello"
         
-        closure = { i | 
+        closure = { i :: 
             println("x ${x}")
             println("y ${y}")
             println("i ${i}")

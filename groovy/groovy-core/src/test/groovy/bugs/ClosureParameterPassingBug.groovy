@@ -7,7 +7,7 @@ import org.codehaus.groovy.classgen.TestSupport
 class ClosureParameterPassingBug extends TestSupport {
     
     void testBugInMethod() {
-		c = { x | 
+		c = { x ::
 			y = 123
 			c1 = { 
 				println y
@@ -23,7 +23,7 @@ class ClosureParameterPassingBug extends TestSupport {
     
     void testBug() {
     	assertScript """
-c = { x | 
+c = { x ::
 	y = 123
 	c1 = { 
 		assert x != null , "Could not find a value for x"

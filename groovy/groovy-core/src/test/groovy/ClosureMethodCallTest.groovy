@@ -5,7 +5,7 @@
 class ClosureMethodCallTest extends GroovyTestCase {
 
     void testCallingClosureWithMultipleArguments() {
-        closure = { a, b | foo = "hello ${a} and ${b}".toString() }                
+        closure = { a, b :: foo = "hello ${a} and ${b}".toString() }
         
         closure("james", "bob")
 

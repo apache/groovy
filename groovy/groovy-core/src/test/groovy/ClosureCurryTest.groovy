@@ -5,12 +5,12 @@
 class ClosureCurryTest extends GroovyTestCase {
 
     void testCurry() {
-		clos1 = {s1, s2 | s1 + s2}
+		clos1 = {s1, s2 :: s1 + s2}
 		clos2 = clos1.curry("hi")
 		value = clos2("there") 
 		assert value == "hithere"
 		
-		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos3 = {s1, s2, s3 :: s1 + s2 + s3}
 		clos4 = clos3.curry('a')
 		clos5 = clos4.curry('b')
 		clos6 = clos4.curry('x')
@@ -24,7 +24,7 @@ class ClosureCurryTest extends GroovyTestCase {
 		value = clos7()
 		assert value == "afg"
 		
-		clos3 = {s1, s2, s3 | s1 + s2 + s3}.asWritable()
+		clos3 = {s1, s2, s3 :: s1 + s2 + s3}.asWritable()
 		clos4 = clos3.curry('a')
 		clos5 = clos4.curry('b')
 		clos6 = clos4.curry('x')
@@ -38,7 +38,7 @@ class ClosureCurryTest extends GroovyTestCase {
 		value = clos7()
 		assert value == "afg"
 		
-		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos3 = {s1, s2, s3 :: s1 + s2 + s3}
 		clos4 = clos3.curry('a').asWritable()
 		clos5 = clos4.curry('b').asWritable()
 		clos6 = clos4.curry('x').asWritable()
@@ -52,7 +52,7 @@ class ClosureCurryTest extends GroovyTestCase {
 		value = clos7()
 		assert value == "afg"
 		
-		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos3 = {s1, s2, s3 :: s1 + s2 + s3}
 		clos4 = clos3.curry('a').clone()
 		clos5 = clos4.curry('b').clone()
 		clos6 = clos4.curry('x').clone()
@@ -66,7 +66,7 @@ class ClosureCurryTest extends GroovyTestCase {
 		value = clos7()
 		assert value == "afg"
 		
-		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos3 = {s1, s2, s3 :: s1 + s2 + s3}
 		clos4 = clos3.curry('a').asWritable().clone()
 		clos5 = clos4.curry('b').asWritable().clone()
 		clos6 = clos4.curry('x').asWritable().clone()

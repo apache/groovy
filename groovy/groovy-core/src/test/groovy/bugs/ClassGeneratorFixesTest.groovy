@@ -18,8 +18,8 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         assert count == 1
 
         foo =
-            {i|
-                {j|
+            {i::
+                {j::
                     i += j
                     i
                 }
@@ -40,7 +40,7 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         }
 
         noneYet=true;
-        ["a","b","c","d"].each { c |
+        ["a","b","c","d"].each { c ::
           if (noneYet) {
             noneYet=false;
           } else {
