@@ -13,5 +13,3 @@
 # comment lines begin with '#'
 passwd
 log_accum.conf
-dctrigger.rbdctrigger.rb
-dctrigger.rb
