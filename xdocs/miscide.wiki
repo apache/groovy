@@ -7,4 +7,4 @@ Brian McCallister has done a plugin for {link:SubEthaEdit|http://www.codingmonke
 
 1.1 VIM
  
-VIM has been done by Alessio Pace {link:here|}
+VIM has been done by Alessio Pace {link:here|http://www.vim.org/scripts/script.php?script_id=945}
