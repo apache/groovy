@@ -109,6 +109,17 @@
   <part id="gdk">
     <title>GDK (Groovy Development Kit)</title>
     
+    <faq id="groovy-jgk">
+      <question>
+        What new methods are available on standard JDK classes?
+      </question>
+      <answer>
+        <p>
+		  Please see this description of the <a href="groovy-jdk.html">Groovy JDK</a>
+       </p>
+      </answer>
+    </faq>   
+    
     <faq id="what-closure">
       <question>
         What are Closures?
