@@ -915,6 +915,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case NOT_EQUAL:
                 return binaryExpression(Types.COMPARE_NOT_EQUAL, node);
 
+            case COMPARE_TO:
+                return binaryExpression(Types.COMPARE_TO, node);
+
             case LE:
                 return binaryExpression(Types.COMPARE_LESS_THAN_EQUAL, node);
 

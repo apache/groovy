@@ -23,6 +23,7 @@ import java.util.ArrayList;
  *		Peter Williams		pete.williams@sun.com
  *		Allan Jacobs		Allan.Jacobs@eng.sun.com
  *		Steve Messick		messick@redhills.com
+ *  James Strachan jstrachan@protique.com
  *		John Pybus		john@pybus.org
  *		John Rose		rose00@mac.com
  *		Jeremy Rayner		groovy@ross-rayner.com
@@ -2035,7 +2036,7 @@ andExpression
 
 // equality/inequality (==/!=) (level 6)
 equalityExpression
-        :       relationalExpression ((NOT_EQUAL^ | EQUAL^) nls! relationalExpression)*
+        :       relationalExpression ((NOT_EQUAL^ | EQUAL^ ) nls! relationalExpression)*
         ;
 
 
@@ -2046,6 +2047,7 @@ relationalExpression
                                 |       GT^
                                 |       LE^
                                 |       GE^
+                                |						 COMPARE_TO^
                                 |       "in"^
                                 )
                                 nls!
@@ -2643,6 +2645,7 @@ COLON			:	':'		;
 COMMA			:	','		;
 DOT			:	'.'		;
 ASSIGN			:	'='		;
+COMPARE_TO		:	"<=>"	;
 EQUAL			:	"=="	;
 LNOT			:	'!'		;
 BNOT			:	'~'		;

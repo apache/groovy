@@ -86,7 +86,6 @@ public class AllTests extends TestSuiteSupport {
         "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
         "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
 
-        "CompareToTest.groovy",                 // TODO: can't parse <=>
         "StreamingMarkupTest.groovy",           // TODO: can't parse <<
         "BuilderSupportTest.groovy",            // TODO: can't parse <<
         "bugs/ForAndSqlBug.groovy",             // TODO: can't parse <<

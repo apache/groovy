@@ -8,18 +8,18 @@ class CompareToTest extends GroovyTestCase {
         
         result = a <=> b
         assert result < 0
-        
+
         result = a <=> 12
         assert result == 0
-        
+
         result = c <=> b
         assert result > 0
         
-        assert a <=> b < 0
-        assert a <=> 12 == 0
-        assert c <=> b > 0
+        assert (a <=> b) < 0
+        assert (a <=> 12) == 0
+        assert (c <=> b) > 0
     }
-    
+
     void testNullCompares() {
     
     	a = 123
@@ -33,5 +33,5 @@ class CompareToTest extends GroovyTestCase {
     	
     	result = b <=> null
     	assert result == 0
-   	}
+    }
 }
