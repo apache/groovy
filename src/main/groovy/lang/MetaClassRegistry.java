@@ -52,7 +52,12 @@ import java.beans.IntrospectionException;
 import java.lang.reflect.Constructor;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * A registery of MetaClass instances which caches introspection &
@@ -63,8 +68,9 @@ import java.util.*;
  * @version $Revision$
  */
 public class MetaClassRegistry {
-    private Map metaClasses = Collections.synchronizedMap(new HashMap());
+    private Map metaClasses = Collections.synchronizedMap(new WeakHashMap());
     private boolean useAccessible;
+    private Map loaderMap = Collections.synchronizedMap(new WeakHashMap());
     private GroovyClassLoader loader =
             (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
@@ -89,14 +95,15 @@ public class MetaClassRegistry {
             lookup(DefaultGroovyMethods.class).registerInstanceMethods();
             lookup(DefaultGroovyStaticMethods.class).registerStaticMethods();
             checkInitialised();
-        } else {
+        }
+        else {
             this.useAccessible = true;
             // do nothing to avoid loading DefaultGroovyMethod
         }
     }
 
     /**
-     * @param useAccessible defines whether or not the {@link AccessibleObject.setAccessible()}
+     * @param useAccessible defines whether or not the {@link java.lang.reflect.AccessibleObject.setAccessible();}
      *                      method will be called to enable access to all methods when using reflection
      */
     public MetaClassRegistry(boolean useAccessible) {
@@ -109,13 +116,14 @@ public class MetaClassRegistry {
     }
 
     public MetaClass getMetaClass(Class theClass) {
-        synchronized(theClass) {
+        synchronized (theClass) {
             MetaClass answer = (MetaClass) metaClasses.get(theClass);
             if (answer == null) {
                 try {
                     answer = new MetaClass(this, theClass);
                     answer.checkInitialised();
-                } catch (IntrospectionException e) {
+                }
+                catch (IntrospectionException e) {
                     throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
                             e);
                 }
@@ -150,13 +158,47 @@ public class MetaClassRegistry {
     public Class loadClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
         return (Class) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return loader.defineClass(name, bytecode, getClass().getProtectionDomain());
+                return getGroovyLoader(loader).defineClass(name, bytecode, getClass().getProtectionDomain());
             }
         });
     }
 
+    public Class loadClass(final ClassLoader loader, final String name, final byte[] bytecode) throws ClassNotFoundException {
+        return (Class) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return getGroovyLoader(loader).defineClass(name, bytecode, getClass().getProtectionDomain());
+            }
+        });
+         }
+
+    public Class loadClass(ClassLoader loader, String name) throws ClassNotFoundException {
+        return getGroovyLoader(loader).loadClass(name);
+    }
+
     public Class loadClass(String name) throws ClassNotFoundException {
-        return loader.loadClass(name);
+        return getGroovyLoader(loader).loadClass(name);
+    }
+
+    private GroovyClassLoader getGroovyLoader(ClassLoader loader) {
+        if (loader instanceof GroovyClassLoader) {
+            return (GroovyClassLoader) loader;
+        }
+
+        synchronized (loaderMap) {
+            GroovyClassLoader groovyLoader = (GroovyClassLoader) loaderMap.get(loader);
+            if (groovyLoader == null) {
+                if (loader == null || loader == getClass().getClassLoader()) {
+                    groovyLoader = this.loader;
+                }
+                else {
+                    groovyLoader = new GroovyClassLoader(loader);
+                }
+
+                loaderMap.put(loader, groovyLoader);
+            }
+
+            return groovyLoader;
+        }
     }
 
     /**
@@ -180,7 +222,8 @@ public class MetaClassRegistry {
         if (answer == null) {
             try {
                 answer = new MetaClass(this, theClass);
-            } catch (IntrospectionException e) {
+            }
+            catch (IntrospectionException e) {
                 throw new GroovyRuntimeException("Could not introspect class: " + theClass.getName() + ". Reason: " + e,
                         e);
             }
@@ -194,10 +237,12 @@ public class MetaClassRegistry {
         MetaClass metaclass = this.getMetaClass(theClass);
         if (metaclass == null) {
             return null;
-        } else {
+        }
+        else {
             if (isStatic) {
                 return metaclass.retrieveStaticMethod(methodName, args);
-            } else {
+            }
+            else {
                 return metaclass.retrieveMethod(methodName, args);
             }
         }
@@ -207,7 +252,8 @@ public class MetaClassRegistry {
         MetaClass metaclass = this.getMetaClass(theClass);
         if (metaclass == null) {
             return null;
-        } else {
+        }
+        else {
             return metaclass.retrieveConstructor(args);
         }
     }
@@ -224,7 +270,8 @@ public class MetaClassRegistry {
                 instanceInclude = new MetaClassRegistry();
             }
             return instanceInclude;
-        } else {
+        }
+        else {
             if (instanceExclude == null) {
                 instanceExclude = new MetaClassRegistry(DONT_LOAD_DEFAULT);
             }

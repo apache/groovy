@@ -1,5 +1,5 @@
 class Groovy325_Bug extends GroovyTestCase {
-  static staticMethod() {
+  static void staticMethod() {
     println("hello world")
   }
 
