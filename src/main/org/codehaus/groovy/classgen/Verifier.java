@@ -203,28 +203,6 @@ public class Verifier implements GroovyClassVisitor, Constants {
             node.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
         }
 
-        // lets check that we don't have a serialization method
-        /*
-        if (node.getMethod("") == null) {
-        node.addMethod(
-                "invokeMethod",
-                ACC_PUBLIC,
-                Object.class.getName(),
-                new Parameter[] {
-                              new Parameter(String.class.getName(), "method"),
-                                      new Parameter(Object.class.getName(), "arguments")},
-                                      new ReturnStatement(
-                                              new MethodCallExpression(
-                                                      getMetaClass,
-                                                      "invokeMethod",
-                                                      new ArgumentListExpression(
-                                                              new Expression[] {
-                                                                             VariableExpression.THIS_EXPRESSION,
-                                                                                     new VariableExpression("method"),
-                                                                             new VariableExpression("arguments")}))));
-        }
-        */
-
         addFieldInitialization(node);
 
         node.visitContents(this);

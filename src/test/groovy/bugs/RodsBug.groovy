@@ -18,7 +18,8 @@ class RodsBug extends GroovyTestCase {
     void testBug2() {
         x = 1
         if (x > 0) {
-            String name = "Rod"
+            //String name = "Rod"
+            name = "Rod"
             println(name)
         }
     }
@@ -26,8 +27,17 @@ class RodsBug extends GroovyTestCase {
     void doTest(flag) {
         if (flag) {
             String name = "Rod"
-            // name = "Rod"
-            println(name)
+            //name = "Rod"
+            doAssert(name)
         }
+    }
+    
+    void doTest() {
+        String name = "Rod"
+        doAssert(name)
+    }
+    
+    void doAssert(text) {
+        assert text != null
     }
 }

@@ -123,16 +123,16 @@ public class ASTBuilderTest extends TestParserSupport {
         assertTrue(exp instanceof BinaryExpression);
         BinaryExpression binExpr = (BinaryExpression) exp;
         assertTrue("RHS is constant", binExpr.getRightExpression() instanceof ConstantExpression);
-        
+
         Expression lhs = binExpr.getLeftExpression();
         assertTrue("LHS is binary expression", lhs instanceof BinaryExpression);
 
         BinaryExpression lhsBinExpr = (BinaryExpression) lhs;
         assertEquals(Token.LEFT_SQUARE_BRACKET, lhsBinExpr.getOperation().getType());
-        
+
         assertTrue("Left of LHS is a variable", lhsBinExpr.getLeftExpression() instanceof VariableExpression);
         assertTrue("Right of LHS is a constant", lhsBinExpr.getRightExpression() instanceof ConstantExpression);
-        
+
     }
 
     public void testNoReturn() throws Exception {
@@ -140,12 +140,12 @@ public class ASTBuilderTest extends TestParserSupport {
         BlockStatement statement = getCode(module, "testMethod");
 
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
-        
+
         System.out.println(statement.getStatements());
-        
+
         ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
         Expression exp = exprStmt.getExpression();
-        
+
         System.out.println("expr: " + exp);
     }
 
@@ -154,31 +154,48 @@ public class ASTBuilderTest extends TestParserSupport {
         BlockStatement statement = getCode(module, "testMethod");
 
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
-        
+
         System.out.println(statement.getStatements());
-        
+
         IfStatement ifStmt = (IfStatement) statement.getStatements().get(0);
         BlockStatement trueStmt = (BlockStatement) ifStmt.getIfBlock();
-        
+
         System.out.println("trueStmt: " + trueStmt);
-        
+
         // ideally there would be 1 statement; though we're handling that in the verifier
-        assertEquals(2, trueStmt.getStatements().size());
+        assertEquals(1, trueStmt.getStatements().size());
     }
 
     public void testStaticMethodCallBug() throws Exception {
-        ModuleNode module = parse("class Foo { void testMethod() { ASTBuilderTest.mockHelperMethod() } }", "Dummy.groovy");
+        ModuleNode module =
+            parse("class Foo { void testMethod() { ASTBuilderTest.mockHelperMethod() } }", "Dummy.groovy");
         BlockStatement statement = getCode(module, "testMethod");
 
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
-        
+
         System.out.println(statement.getStatements());
+    }
+
+    public void testMethodCallWithoutParensBug() throws Exception {
+        try {
+            ModuleNode module = parse("class Foo { void testMethod() { println 3 } }", "Dummy.groovy");
+            BlockStatement statement = getCode(module, "testMethod");
+
+            assertEquals("Statements size: " + statement.getStatements(), 2, statement.getStatements().size());
+
+            System.out.println(statement.getStatements());
+
+            fail("Should have thrown a compiler error message");
+        }
+        catch (Exception e) {
+            System.out.println("Caught: " + e);
+        }
     }
 
     public static Object mockHelperMethod() {
         return "cheese";
     }
-    
+
     protected BlockStatement getCode(ModuleNode module, String name) {
         assertEquals("class count", 1, module.getClasses().size());
 
