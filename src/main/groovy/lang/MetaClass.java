@@ -66,6 +66,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MethodClosure;
 import org.codehaus.groovy.runtime.MethodHelper;
+import org.codehaus.groovy.runtime.ReflectionMetaMethod;
 import org.codehaus.groovy.runtime.Reflector;
 import org.objectweb.asm.ClassWriter;
 
@@ -91,9 +92,10 @@ public class MetaClass {
     private Map newStaticInstanceMethodIndex = new HashMap();
     private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
     private Map listeners = new HashMap();
-    private Method genericGetMethod;
-    private Method genericSetMethod;
+    private MetaMethod genericGetMethod;
+    private MetaMethod genericSetMethod;
     private List constructors;
+    private List allMethods = new ArrayList();
     private Reflector reflector;
     private boolean initialised;
 
@@ -117,7 +119,8 @@ public class MetaClass {
             Method[] listenerMethods = descriptor.getListenerMethods();
             for (int j = 0; j < listenerMethods.length; j++) {
                 Method listenerMethod = listenerMethods[j];
-                listeners.put(listenerMethod.getName(), descriptor.getAddListenerMethod());
+                MetaMethod metaMethod = createMetaMethod(descriptor.getAddListenerMethod());
+                listeners.put(listenerMethod.getName(), metaMethod);
             }
         }
 
@@ -174,6 +177,15 @@ public class MetaClass {
      * @param method
      */
     protected void addNewStaticInstanceMethod(Method method) {
+        if (initialised) {
+            throw new RuntimeException("Already initialized, cannot add new method: " + method);
+        }
+        else {
+            addNewStaticInstanceMethod(createMetaMethod(method));
+        }
+    }
+
+    protected void addNewStaticInstanceMethod(MetaMethod method) {
         String name = method.getName();
         List list = (List) newStaticInstanceMethodIndex.get(name);
         if (list == null) {
@@ -214,12 +226,12 @@ public class MetaClass {
 
         List methods = getMethods(methodName);
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, methods, arguments, false);
+            MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(object, method, arguments);
             }
             else {
-                method = (Method) chooseMethod(methodName, methods, arguments, true);
+                method = (MetaMethod) chooseMethod(methodName, methods, arguments, true);
                 if (method != null) {
                     return doMethodInvoke(object, method, arguments);
                 }
@@ -236,9 +248,9 @@ public class MetaClass {
             System.arraycopy(arguments, 0, staticArguments, 1, size);
         }
 
-        Method method = null;
+        MetaMethod method = null;
         if (!newStaticInstanceMethods.isEmpty()) {
-            method = (Method) chooseMethod(methodName, newStaticInstanceMethods, staticArguments, false);
+            method = (MetaMethod) chooseMethod(methodName, newStaticInstanceMethods, staticArguments, false);
         }
         if (method == null) {
             method = findNewStaticInstanceMethod(methodName, staticArguments);
@@ -279,7 +291,7 @@ public class MetaClass {
         List methods = getStaticMethods(methodName);
 
         if (!methods.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, methods, arguments, false);
+            MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(theClass, method, arguments);
             }
@@ -358,7 +370,8 @@ public class MetaClass {
             if (method == null) {
                 throw new GroovyRuntimeException("Cannot read property: " + property);
             }
-            return doMethodInvoke(object, method, EMPTY_ARRAY);
+            MetaMethod metaMethod = findMethod(method);
+            return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
         }
 
         if (genericGetMethod != null) {
@@ -379,7 +392,7 @@ public class MetaClass {
         // lets try invoke a static getter method
         Exception lastException = null;
         try {
-            Method method = findGetter(object, "get" + capitalize(property));
+            MetaMethod method = findGetter(object, "get" + capitalize(property));
             if (method != null) {
                 return doMethodInvoke(object, method, EMPTY_ARRAY);
             }
@@ -426,9 +439,10 @@ public class MetaClass {
             if (method == null) {
                 throw new GroovyRuntimeException("Cannot set read-only property: " + property);
             }
+            MetaMethod metaMethod = findMethod(method);
             Object[] arguments = { newValue };
             try {
-                doMethodInvoke(object, method, arguments);
+                doMethodInvoke(object, metaMethod, arguments);
             }
             catch (GroovyRuntimeException e) {
                 // if the value is a List see if we can construct the value
@@ -443,7 +457,7 @@ public class MetaClass {
                             //System.out.println("Found constructor: " +
                             // constructor);
                             Object value = doConstructorInvoke(constructor, list.toArray());
-                            doMethodInvoke(object, method, new Object[] { value });
+                            doMethodInvoke(object, metaMethod, new Object[] { value });
                             return;
                         }
                     }
@@ -453,7 +467,7 @@ public class MetaClass {
             return;
         }
 
-        Method addListenerMethod = (Method) listeners.get(property);
+        MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
         if (addListenerMethod != null && newValue instanceof Closure) {
             // lets create a dynamic proxy
             Object proxy = createListenerProxy(addListenerMethod.getParameterTypes()[0], property, (Closure) newValue);
@@ -571,7 +585,7 @@ public class MetaClass {
     protected void addMethods(Class theClass) {
         Method[] methodArray = theClass.getDeclaredMethods();
         for (int i = 0; i < methodArray.length; i++) {
-            Method method = methodArray[i];
+            MetaMethod method = createMetaMethod(methodArray[i]);
 
             String name = method.getName();
             if (isGenericGetMethod(method) && genericGetMethod == null) {
@@ -580,7 +594,7 @@ public class MetaClass {
             else if (isGenericSetMethod(method) && genericSetMethod == null) {
                 genericSetMethod = method;
             }
-            if (MethodHelper.isStatic(method)) {
+            if (method.isStatic()) {
                 List list = (List) staticMethodIndex.get(name);
                 if (list == null) {
                     list = new ArrayList();
@@ -613,9 +627,9 @@ public class MetaClass {
      * @return true if a method of the same matching prototype was found in the
      *         list
      */
-    protected boolean containsMatchingMethod(List list, Method method) {
+    protected boolean containsMatchingMethod(List list, MetaMethod method) {
         for (Iterator iter = list.iterator(); iter.hasNext();) {
-            Method aMethod = (Method) iter.next();
+            MetaMethod aMethod = (MetaMethod) iter.next();
             Class[] params1 = aMethod.getParameterTypes();
             Class[] params2 = method.getParameterTypes();
             if (params1.length == params2.length) {
@@ -682,7 +696,7 @@ public class MetaClass {
 
         // lets try invoke a static getter method
         try {
-            Method method = findStaticGetter(aClass, "get" + capitalize(property));
+            MetaMethod method = findStaticGetter(aClass, "get" + capitalize(property));
             if (method != null) {
                 return doMethodInvoke(aClass, method, EMPTY_ARRAY);
             }
@@ -700,25 +714,52 @@ public class MetaClass {
     }
 
     /**
+     * @return the matching method which should be found
+     */
+    protected MetaMethod findMethod(Method aMethod) {
+        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+            MetaMethod method = (MetaMethod) iter.next();
+            if (method.isMethod(aMethod)) {
+                return method;
+            }
+        }
+        return new ReflectionMetaMethod(aMethod);
+    }
+
+    /**
      * @return the getter method for the given object
      */
-    protected Method findGetter(Object object, String name) {
-        try {
-            return object.getClass().getMethod(name, EMPTY_TYPE_ARRAY);
+    protected MetaMethod findGetter(Object object, String name) {
+        checkInitialised();
+        
+        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+            MetaMethod method = (MetaMethod) iter.next();
+            if (!method.isStatic() && method.getName().equals(name) && method.getParameterTypes().length == 0) {
+                return method;
+            }
         }
-        catch (Exception e) {
-            return null;
-        }
+        return null;
     }
 
     /**
      * @return the Method of the given name with no parameters or null
      */
-    protected Method findStaticGetter(Class type, String name) {
+    protected MetaMethod findStaticGetter(Class type, String name) {
+        checkInitialised();
+        
+        /** @todo optimise me! */
+        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+            MetaMethod method = (MetaMethod) iter.next();
+            if (method.isStatic() && method.getName().equals(name) && method.getParameterTypes().length == 0) {
+                return method;
+            }
+        }
+        
+        /** @todo dirty hack - don't understand why this code is necessary - all methods should be in the allMethods list! */
         try {
             Method method = type.getMethod(name, EMPTY_TYPE_ARRAY);
             if ((method.getModifiers() & Modifier.STATIC) != 0) {
-                return method;
+                return new ReflectionMetaMethod(method);
             }
             else {
                 return null;
@@ -733,16 +774,17 @@ public class MetaClass {
      * Lets walk the base class & interfaces list to see if we can find the
      * method
      */
-    protected Method findNewStaticInstanceMethod(String methodName, Object[] staticArguments) {
+    protected MetaMethod findNewStaticInstanceMethod(String methodName, Object[] staticArguments) {
         if (theClass.equals(Object.class)) {
             return null;
         }
         MetaClass superClass = registry.getMetaClass(theClass.getSuperclass());
         List list = superClass.getNewStaticInstanceMethods(methodName);
         if (!list.isEmpty()) {
-            Method method = (Method) chooseMethod(methodName, list, staticArguments, false);
+            MetaMethod method = (MetaMethod) chooseMethod(methodName, list, staticArguments, false);
             if (method != null) {
                 // lets cache it for next invocation
+                // @todo is it OK to comment this out?
                 addNewStaticInstanceMethod(method);
             }
 
@@ -751,23 +793,44 @@ public class MetaClass {
         return superClass.findNewStaticInstanceMethod(methodName, staticArguments);
     }
 
-    protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
+    protected Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         //System.out.println("Evaluating method: " + method);
         //System.out.println("on object: " + object + " with arguments: " +
         // InvokerHelper.toString(argumentArray));
         //System.out.println(this.theClass);
 
         try {
-            if (registry.useAccessible()) {
-                method.setAccessible(true);
-            }
             if (argumentArray == null) {
                 argumentArray = EMPTY_ARRAY;
             }
             else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
                 argumentArray = ARRAY_WITH_NULL;
             }
+            Reflector reflector = method.getReflector();
+
+            //            System.out.println("Invoking method on reflector: " + reflector);
+            //            System.out.println("With method index: " + method.getMethodIndex());
             return method.invoke(object, argumentArray);
+        }
+        catch (ClassCastException e) {
+            if (coerceGStrings(argumentArray)) {
+                try {
+                    return doMethodInvoke(object, method, argumentArray);
+                }
+                catch (Exception e2) {
+                    // allow fall through
+                }
+            }
+            throw new GroovyRuntimeException(
+                "failed to invoke method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                e);
         }
         catch (InvocationTargetException e) {
             Throwable t = e.getTargetException();
@@ -813,6 +876,9 @@ public class MetaClass {
                     + e,
                 e);
         }
+        catch (RuntimeException e) {
+            throw e;
+        }
         catch (Exception e) {
             throw new GroovyRuntimeException(
                 "failed to invoke method: "
@@ -826,6 +892,84 @@ public class MetaClass {
                 e);
         }
     }
+
+    /*
+    protected Object doMethodInvoke(Object object, Method method, Object[] argumentArray) {
+        //System.out.println("Evaluating method: " + method);
+        //System.out.println("on object: " + object + " with arguments: " +
+        // InvokerHelper.toString(argumentArray));
+        //System.out.println(this.theClass);
+    
+        try {
+            if (registry.useAccessible()) {
+                method.setAccessible(true);
+            }
+            if (argumentArray == null) {
+                argumentArray = EMPTY_ARRAY;
+            }
+            else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
+                argumentArray = ARRAY_WITH_NULL;
+            }
+            return method.invoke(object, argumentArray);
+        }
+        catch (InvocationTargetException e) {
+            Throwable t = e.getTargetException();
+            if (t instanceof Error) {
+                Error error = (Error) t;
+                throw error;
+            }
+            if (t instanceof RuntimeException) {
+                RuntimeException runtimeEx = (RuntimeException) t;
+                throw runtimeEx;
+            }
+            throw new InvokerInvocationException(e);
+        }
+        catch (IllegalAccessException e) {
+            throw new GroovyRuntimeException(
+                    "could not access method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                    e);
+        }
+        catch (IllegalArgumentException e) {
+            if (coerceGStrings(argumentArray)) {
+                try {
+                    return doMethodInvoke(object, method, argumentArray);
+                }
+                catch (Exception e2) {
+                    // allow fall through
+                }
+            }
+            throw new GroovyRuntimeException(
+                    "failed to invoke method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                    e);
+        }
+        catch (Exception e) {
+            throw new GroovyRuntimeException(
+                    "failed to invoke method: "
+                    + method
+                    + " on: "
+                    + object
+                    + " with arguments: "
+                    + InvokerHelper.toString(argumentArray)
+                    + " reason: "
+                    + e,
+                    e);
+        }
+    }
+    */
 
     protected Object doConstructorInvoke(Constructor constructor, Object[] argumentArray) {
         //System.out.println("Evaluating constructor: " + constructor + " with
@@ -1037,6 +1181,10 @@ public class MetaClass {
     }
 
     protected Class[] getParameterTypes(Object methodOrConstructor) {
+        if (methodOrConstructor instanceof MetaMethod) {
+            MetaMethod method = (MetaMethod) methodOrConstructor;
+            return method.getParameterTypes();
+        }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;
             return method.getParameterTypes();
@@ -1180,12 +1328,12 @@ public class MetaClass {
         return coerced;
     }
 
-    protected boolean isGenericSetMethod(Method method) {
+    protected boolean isGenericSetMethod(MetaMethod method) {
         return (method.getName().equals("set") || method.getName().equals("setAttribute"))
             && method.getParameterTypes().length == 2;
     }
 
-    protected boolean isGenericGetMethod(Method method) {
+    protected boolean isGenericGetMethod(MetaMethod method) {
         if (method.getName().equals("get") || method.getName().equals("getAttribute")) {
             Class[] parameterTypes = method.getParameterTypes();
             return parameterTypes.length == 1 && parameterTypes[0] == String.class;
@@ -1218,25 +1366,39 @@ public class MetaClass {
         }
     }
 
-    protected void generateReflector() {
-        List methods = new ArrayList();
-        methods.addAll(methodIndex.values());
-        methods.addAll(staticMethodIndex.values());
-        methods = DefaultGroovyMethods.flatten(methods);
-
-        /** @todo this will be unnecessary when we ditch reflection altogether */
-        for (int i = 0, size = methods.size(); i < size; i++) {
-            MetaMethod metaMethod = new MetaMethod((Method) methods.get(i));
-            methods.set(i, metaMethod);
+    protected MetaMethod createMetaMethod(Method method) {
+        if (registry.useAccessible()) {
+            method.setAccessible(true);
         }
+        MetaMethod answer = new MetaMethod(method);
+        if (isValidReflectorMethod(answer)) {
+            allMethods.add(answer);
+            answer.setMethodIndex(allMethods.size());
+        }
+        else {
+            answer = new ReflectionMetaMethod(method);
+        }
+        return answer;
+    }
 
-        reflector = loadReflector(methods);
+    protected boolean isValidReflectorMethod(MetaMethod method) {
+        if (method.isPrivate() || method.isProtected()) {
+            return false;
+        }
+        Class declaringClass = method.getDeclaringClass();
+        if (! Modifier.isPublic(declaringClass.getModifiers())) {
+            return ! declaringClass.getName().startsWith("java.");
+        }
+        return true;
+    }
 
-        //System.out.println("Created reflector: " + reflector);
+    protected void generateReflector() {
+        reflector = loadReflector(allMethods);
 
         // lets set the reflector on all the methods
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
+            //System.out.println("Setting reflector for method: " + metaMethod + " with index: " + metaMethod.getMethodIndex());
             metaMethod.setReflector(reflector);
         }
     }
@@ -1244,35 +1406,60 @@ public class MetaClass {
     protected Reflector loadReflector(List methods) {
         ReflectorGenerator generator = new ReflectorGenerator(methods);
         String className = theClass.getName();
-        String name = "gjdk.reflector." + className;
+        String packagePrefix = "";
+        if (className.startsWith("java.")) {
+            packagePrefix = "gjdk.";
+        }
+        String name = packagePrefix + className + "$GroovyReflector";
         if (theClass.isArray()) {
-            name = "gjdk.reflector." + theClass.getComponentType().getName() + "Array";
+            String componentName = theClass.getComponentType().getName();
+            if (componentName.startsWith("java.")) {
+                packagePrefix = "gjdk.";
+            }
+            name = packagePrefix + componentName + "$GroovyReflectorArray";
         }
-        byte[] bytecode = generator.generate(name);
-        /*
-        if (name.endsWith("[]")) {
-            name = "[L" + name.substring(0, name.length() - 2) + ";";
-        }
-        */
-        //System.out.println("About to load: " + name);
+        // lets see if its already loaded
         try {
-            Class type = registry.loadClass(name, bytecode);
+            Class type = loadReflectorClass(name);
             return (Reflector) type.newInstance();
         }
-        catch (LinkageError e) {
-            // we've already loaded this class
-            try {
-                Class type = registry.loadClass(name);
-                return (Reflector) type.newInstance();
-            }
-            catch (Exception e2) {
-                throw new GroovyRuntimeException(
-                    "Could not load the reflector for class: " + name + ". Reason: " + e2,
-                    e2);
-            }
+        catch (Exception e) {
+            // lets ignore, lets generate it && load it
+        }
+
+        ClassWriter cw = new ClassWriter(true);
+        generator.generate(cw, name);
+
+        byte[] bytecode = cw.toByteArray();
+
+        try {
+            Class type = loadReflectorClass(name, bytecode);
+            return (Reflector) type.newInstance();
         }
         catch (Exception e) {
             throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
         }
+    }
+
+    protected Class loadReflectorClass(String name, byte[] bytecode) throws ClassNotFoundException {
+        ClassLoader loader = theClass.getClassLoader();
+        if (loader instanceof GroovyClassLoader) {
+            GroovyClassLoader gloader = (GroovyClassLoader) loader;
+            return gloader.loadClass(name, bytecode);
+        }
+        return registry.loadClass(name, bytecode);
+    }
+
+    protected Class loadReflectorClass(String name) throws ClassNotFoundException {
+        ClassLoader loader = theClass.getClassLoader();
+        if (loader instanceof GroovyClassLoader) {
+            GroovyClassLoader gloader = (GroovyClassLoader) loader;
+            return gloader.loadClass(name);
+        }
+        return registry.loadClass(name);
+    }
+
+    public List getMethods() {
+        return allMethods;
     }
 }

@@ -62,24 +62,31 @@ public class BytecodeHelper implements Constants {
     public BytecodeHelper(CodeVisitor cv) {
         this.cv = cv;
     }
-    
+
     /**
      * Generates the bytecode to autobox the current value on the stack
-     * @param cv
-     * @param type
-     * @return
      */
-    public void toObject(Class type) {
-        if (type.isPrimitive()) {
+    public void box(Class type) {
+        if (type.isPrimitive() && type != void.class) {
             String returnString = "(" + getTypeDescription(type.getName()) + ")Ljava/lang/Object;";
-            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "toObject", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "box", returnString);
+        }
+    }
+
+    /**
+     * Generates the bytecode to unbox the current value on the stack
+     */
+    public void unbox(Class type) {
+        if (type.isPrimitive() && type != void.class) {
+            String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type.getName());
+            cv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", type.getName() + "Unbox", returnString);
         }
     }
 
     /**
      * @return the ASM type description
      */
-    public String getTypeDescription(String name) { 
+    public String getTypeDescription(String name) {
         // lets avoid class loading
         // return getType(name).getDescriptor();
         if (name == null) {
@@ -88,34 +95,34 @@ public class BytecodeHelper implements Constants {
         if (name.equals("void")) {
             return "V";
         }
-        if (name.equals("int")) {
-            return "I";
-        }
-        if (name.equals("long")) {
-            return "J";
-        }
-        if (name.equals("short")) {
-            return "S";
-        }
-        if (name.equals("float")) {
-            return "F";
-        }
-        if (name.equals("double")) {
-            return "D";
-        }
-        if (name.equals("byte")) {
-            return "B";
-        }
-        if (name.equals("char")) {
-            return "C";
-        }
-        if (name.equals("boolean")) {
-            return "Z";
-        }
         String prefix = "";
         if (name.endsWith("[]")) {
             prefix = "[";
             name = name.substring(0, name.length() - 2);
+        }
+        if (name.equals("int")) {
+            return prefix + "I";
+        }
+        if (name.equals("long")) {
+            return prefix + "J";
+        }
+        if (name.equals("short")) {
+            return prefix + "S";
+        }
+        if (name.equals("float")) {
+            return prefix + "F";
+        }
+        if (name.equals("double")) {
+            return prefix + "D";
+        }
+        if (name.equals("byte")) {
+            return prefix + "B";
+        }
+        if (name.equals("char")) {
+            return prefix + "C";
+        }
+        if (name.equals("boolean")) {
+            return prefix + "Z";
         }
         return prefix + "L" + name.replace('.', '/') + ";";
     }
@@ -151,17 +158,26 @@ public class BytecodeHelper implements Constants {
     /**
      * @return the ASM method type descriptor
      */
-    protected String getMethodDescriptor(String returnTypeName, Class[] paramTypes) {
+    protected String getMethodDescriptor(Class returnType, Class[] paramTypes) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < paramTypes.length; i++) {
-            buffer.append(getTypeDescription(paramTypes[i].getName()));
+            buffer.append(getTypeDescription(paramTypes[i]));
         }
         buffer.append(")");
-        buffer.append(getTypeDescription(returnTypeName));
+        buffer.append(getTypeDescription(returnType));
         return buffer.toString();
     }
-    
+
+    public String getTypeDescription(Class type) {
+        if (type.isArray()) {
+            return type.getName().replace('.', '/');
+        }
+        else {
+            return getTypeDescription(type.getName());
+        }
+    }
+
     /**
      * @return an array of ASM internal names of the type
      */
@@ -188,26 +204,38 @@ public class BytecodeHelper implements Constants {
             case 0 :
                 cv.visitInsn(ICONST_0);
                 break;
-               case 1 :
-                   cv.visitInsn(ICONST_1);
-                   break;
-                  case 2 :
-                      cv.visitInsn(ICONST_2);
-                      break;
-                     case 3 :
-                         cv.visitInsn(ICONST_3);
-                         break;
-                        case 4 :
-                            cv.visitInsn(ICONST_4);
-                            break;
-                           case 5 :
-                               cv.visitInsn(ICONST_5);
-                               break;
-                              default :
-                                  cv.visitIntInsn(BIPUSH, value);
-                                  break;
+            case 1 :
+                cv.visitInsn(ICONST_1);
+                break;
+            case 2 :
+                cv.visitInsn(ICONST_2);
+                break;
+            case 3 :
+                cv.visitInsn(ICONST_3);
+                break;
+            case 4 :
+                cv.visitInsn(ICONST_4);
+                break;
+            case 5 :
+                cv.visitInsn(ICONST_5);
+                break;
+            default :
+                cv.visitIntInsn(BIPUSH, value);
+                break;
         }
     }
 
-    
+    public void doCast(String type) {
+        if (!type.equals("java.lang.Object")) {
+            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+        }
+    }
+
+    public void doCast(Class type) {
+        String name = type.getName();
+        if (type.isArray()) {
+            name = type.getComponentType().getName() + "[]";
+        }
+        doCast(name);
+    }
 }
