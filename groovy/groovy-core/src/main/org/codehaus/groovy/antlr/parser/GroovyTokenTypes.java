@@ -3,10 +3,10 @@
 package org.codehaus.groovy.antlr.parser;
 import org.codehaus.groovy.antlr.*;
 import java.util.*;
-	import java.io.InputStream;
-	import java.io.Reader;
-	import antlr.InputBuffer;
-	import antlr.LexerSharedInputState;
+import java.io.InputStream;
+import java.io.Reader;
+import antlr.InputBuffer;
+import antlr.LexerSharedInputState;
 
 public interface GroovyTokenTypes {
 	int EOF = 1;
