@@ -12,9 +12,12 @@ class Groovy252_Bug extends GroovyTestCase {
     
     
     f() {
+        /** @todo fixme!
+          
         if (count++ == 5)
     	    return null
         else
+        */
 	        return null
     } 
 }
