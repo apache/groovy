@@ -1,13 +1,23 @@
 #include <errno.h>
 #include <sys/syslimits.h>
+
+#ifdef __APPLE__
+#ifdef __MACH__
 #include <mach-o/dyld.h>
+#endif
+#endif
 
 int main(int argc, char* argv[]) {
 
   // Get the location of the executable -- platform specific
   char jarexe[PATH_MAX];
+
+#ifdef __APPLE__
+#ifdef __MACH__
   unsigned long length;
   _NSGetExecutablePath(jarexe, &length);
+#endif
+#endif
 
   // Setup the command line.
   // TODO: Add -J support for passing Java options
