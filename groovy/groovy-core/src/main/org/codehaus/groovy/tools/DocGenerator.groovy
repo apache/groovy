@@ -62,6 +62,19 @@ class DocGenerator
 					parameters = method.getParameters()
 					jdkClass = parameters[0].type.toString()
 					
+					/* 
+						absolutly HORRIBLE bodge to get round a bug in qdox
+					*/
+					
+					if ("org.codehaus.groovy.runtime.DefaultGroovyMethods$WritableFile".equals(jdkClass))
+						jdkClass = "java.io.File"
+					else if ("org.codehaus.groovy.runtime.DefaultGroovyMethods$FlushingStreamWriter".equals(jdkClass))
+						jdkClass = "java.io.Writer"
+						
+					/*
+						end of bodge
+					*/
+					
 					if (jdkEnhancedClasses.containsKey(jdkClass))
 						jdkEnhancedClasses[jdkClass].add(method)
 					else
@@ -146,10 +159,10 @@ class DocGenerator
 													}
 												 }
 
-												returnType = meth.getReturns()
+												returnType = getReturnType(meth)
 	
-												if (returnType != null) {
-												    if (returnType.toString() != "void") {
+												if (returnType != "") {
+												    if (returnType != "void") {
 													    li {
 													    	b "returns"
 															mkp.yield ": ${returnType}"
@@ -212,9 +225,24 @@ class DocGenerator
 		    returnType = method.getReturns()
 		    
 		    if (returnType != null) {
-		        return "${returnType}"
+		    		returnType = returnType.toString()
+		    		
+				/* 
+					absolutly HORRIBLE bodge to get round a bug in qdox
+				*/
+				
+				if ("org.codehaus.groovy.runtime.DefaultGroovyMethods$WritableFile".equals(returnType))
+					returnType = "java.io.File"
+				else if ("org.codehaus.groovy.runtime.DefaultGroovyMethods$FlushingStreamWriter".equals(returnType))
+					returnType = "java.io.Writer"
+					
+				/*
+					end of bodge
+				*/
+				
+		        return returnType
 		    } else {
-		    	return ""
+		    		return ""
 		    }
 		}
 
