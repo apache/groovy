@@ -13,6 +13,7 @@ import org.codehaus.groovy.ast.ConstantExpression;
 import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.Expression;
 import org.codehaus.groovy.ast.ClassExpression;
+import org.codehaus.groovy.ast.ClosureExpression;
 import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.ForLoop;
 import org.codehaus.groovy.ast.MethodNode;
@@ -572,9 +573,21 @@ public class ASTBuilder
             {
                 return methodCallExpression( expressionRoot );
             }
+            case ( Token.LEFT_CURLY_BRACE ):
+            {
+                return closureExpression( expressionRoot );
+            }
         }
 
         throw new RuntimeException( expressionRoot.getToken().getStartLine() + ": cannot create expression for node: " + expressionRoot );
+    }
+
+    protected ClosureExpression closureExpression(CSTNode expressionRoot)
+    {
+        Parameter[] parameters = parameters( expressionRoot.getChild( 0 ).getChildren() );
+
+        return new ClosureExpression( parameters,
+                                      statementBlock( expressionRoot.getChild( 1 ) ) );
     }
 
     protected MethodCallExpression methodCallExpression(CSTNode expressionRoot)

@@ -166,6 +166,9 @@ public class Token
     /** Token type for "?". */
     public static final int QUESTION = 310;
 
+    /** Token type for "|". */
+    public static final int PIPE = 315;
+
     /** Token type for double-quoted string literal. */
     public static final int DOUBLE_QUOTE_STRING = 320;
 
@@ -469,6 +472,8 @@ public class Token
                              ";" );
         addTokenDescription( QUESTION,
                              "?" );
+        addTokenDescription( PIPE,
+                             "|" );
         addTokenDescription( DOUBLE_QUOTE_STRING,
                              "<string literal>" );
         addTokenDescription( SINGLE_QUOTE_STRING,
@@ -1114,6 +1119,22 @@ public class Token
     {
         return newToken( QUESTION,
                          "?",
+                         startLine,
+                         startColumn );
+    }
+    
+    /** Factory method for token for "|".
+     *
+     *  @param startLine Line upon which the token starts.
+     *  @param startColumn Column upon which the token starts.
+     *
+     *  @return The token.
+     */
+    public static Token pipe(int startLine,
+                             int startColumn)
+    {
+        return newToken( PIPE,
+                         "|",
                          startLine,
                          startColumn );
     }

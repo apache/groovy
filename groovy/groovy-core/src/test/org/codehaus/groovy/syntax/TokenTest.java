@@ -382,6 +382,16 @@ public class TokenTest
                      "?" );
     }
 
+    public void testPipe()
+    {
+        Token token = Token.pipe( LINE,
+                                  COLUMN );
+
+        assertToken( token,
+                     Token.PIPE,
+                     "|" );
+    }
+
     public void testDoubleQuoteString()
     {
         Token token = Token.doubleQuoteString( LINE,
