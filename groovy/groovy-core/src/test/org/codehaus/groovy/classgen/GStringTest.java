@@ -91,7 +91,7 @@ public class GStringTest extends TestSupport {
                 new BinaryExpression(new VariableExpression("str"), Token.equal(-1, -1), compositeStringExpr)));
         block.addStatement(
             new ExpressionStatement(
-                new MethodCallExpression(new VariableExpression("this"), "println", new VariableExpression("str"))));
+                new MethodCallExpression(VariableExpression.THIS_EXPRESSION, "println", new VariableExpression("str"))));
 
         block.addStatement(
             new ExpressionStatement(

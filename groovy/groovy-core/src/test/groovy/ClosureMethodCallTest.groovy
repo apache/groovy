@@ -2,7 +2,7 @@
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-class ClosureMethodCallest extends GroovyTestCase {
+class ClosureMethodCallTest extends GroovyTestCase {
 
     property foo
     
@@ -12,5 +12,9 @@ class ClosureMethodCallest extends GroovyTestCase {
 		closure("james", "bob")
 
 		assert foo == "hello james and bob"
-    }
+
+		closure.call("sam", "james")
+
+		assert foo == "hello sam and james"
+	}
 }

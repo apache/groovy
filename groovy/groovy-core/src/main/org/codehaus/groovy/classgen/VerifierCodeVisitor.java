@@ -76,7 +76,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
                 
                 System.out.println("Converting varriable expression: " + varExp.getVariable());
                 
-                PropertyExpression propExp = new PropertyExpression(new VariableExpression("this"), varExp.getVariable());
+                PropertyExpression propExp = new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
                 expression.setLeftExpression(propExp);
             }
         }

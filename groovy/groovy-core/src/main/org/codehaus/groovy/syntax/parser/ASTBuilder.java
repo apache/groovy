@@ -853,7 +853,7 @@ public class ASTBuilder
 
         if ( objectExpressionRoot.getToken() == null )
         {
-            objectExpression = new VariableExpression( "this" );
+            objectExpression = VariableExpression.THIS_EXPRESSION;
         }
         else
         {
