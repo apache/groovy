@@ -47,6 +47,7 @@ package groovy.lang;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -60,7 +61,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class GroovyShell {
+public class GroovyShell extends GroovyObjectSupport {
     public static final String[] EMPTY_ARGS = {
     };
     
@@ -104,6 +105,19 @@ public class GroovyShell {
     
     
     
+    public Object getProperty(String property) {
+        Object answer = getVariable(property);
+        if (answer == null) {
+            answer = super.getProperty(property);
+        }
+        return answer;
+    }
+
+    public void setProperty(String property, Object newValue) {
+        setVariable(property, newValue);
+        super.setProperty(property, newValue);
+    }
+
     /**
      * A helper method which runs the given script file with the given command line arguments
      * 
@@ -159,7 +173,7 @@ public class GroovyShell {
     }
 
     /**
-     * Evaluates some script against the current Binding and returns the result
+     * Evaluates some script against the current ScriptContext and returns the result
      * 
      * @param in the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
@@ -169,7 +183,16 @@ public class GroovyShell {
     }
 
     /**
-     * Evaluates some script against the current Binding and returns the result
+     * Evaluates some script against the current ScriptContext and returns the result
+     * 
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     */
+    public Object evaluate(String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+        return evaluate(new FileInputStream(fileName), fileName);
+    }
+
+    /**
+     * Evaluates some script against the current ScriptContext and returns the result
      * 
      * @param in the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
