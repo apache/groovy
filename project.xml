@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-beta-3-snapshot</currentVersion>
+  <currentVersion>1.0-beta-3</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -46,6 +46,7 @@
     <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/groovy-core</developerConnection>
     <url>http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/</url>
   </repository>
+  
   <versions>
     <version>
       <id>b1</id>
@@ -56,6 +57,11 @@
       <id>b2</id>
       <name>1.0-beta2</name>
       <tag>GROOVY_1_0_BETA_2</tag>
+    </version>
+    <version>
+      <id>b3</id>
+      <name>1.0-beta3</name>
+      <tag>GROOVY_1_0_BETA_3</tag>
     </version>
   </versions>
  
