@@ -75,6 +75,7 @@ import org.objectweb.asm.ClassWriter;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Steve Goetze
+ * @author Bing Ran
  * @version $Revision$
  */
 public class GroovyClassLoader extends SecureClassLoader {
