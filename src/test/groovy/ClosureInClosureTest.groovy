@@ -20,14 +20,16 @@ class ClosureInClosureTest extends GroovyTestCase
 		l.each{
 			println(text)
 			it.each{
-				//println(text)
+			    /** @todo 
+				println(text)
+				*/
 			}
 		}
 	}
 
 	static void main(args)
 	{
-		bug = new ClosureInClosureBug()
+		bug = new ClosureInClosureTest()
 		bug.testInvisibleVariable()
 	}
 }
