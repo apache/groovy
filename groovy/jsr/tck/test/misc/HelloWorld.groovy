@@ -1,15 +1,15 @@
 class HelloWorld extends GroovyTestCase {
 
-  void testCase() {
-    println "Hello"
-  }
+    String foo = "John"
+    String bar = "Jez"
 
-/*
-  String bar = "there"
+    void testCase() {
+        println "Hello"
+        println 123
+        println 123.456
 
-  void testCase() {
-    println "Hello $bar"
-  }
-*/
+        println "Hello $foo!"
+        println "Hello ${bar}!"
+    }
 
 }

@@ -25,10 +25,11 @@ import org.codehaus.groovy.ast.MixinNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -40,6 +41,8 @@ import org.codehaus.groovy.syntax.parser.ParserException;
 import org.objectweb.asm.Constants;
 
 import java.io.Reader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,6 +157,10 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
                     processMethodDef(node);
                     break;
 
+                case VARIABLE_DEF:
+                    processFieldDef(node);
+                    break;
+
                 default:
                     onUnknownAST(node);
             }
@@ -197,6 +204,32 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         classNode.addMethod(name, modifiers, returnType, parameters, code);
     }
 
+    protected void processFieldDef(AST fieldDef) {
+        String type = null;
+        Expression initialValue = null;
+
+        // TODO read the modifiers
+        int modifiers = Constants.ACC_PRIVATE;
+
+        AST node = fieldDef.getFirstChild();
+        if (isType(node, TYPE)) {
+            type = extractFirstChildText(node);
+            node = node.getNextSibling();
+        }
+
+        assertNodeType(IDENT, node);
+        String name = node.getText();
+
+        node = node.getNextSibling();
+
+        if (node != null) {
+            assertNodeType(ASSIGN, node);
+            initialValue = extractExpression(node);
+        }
+
+        classNode.addField(name, modifiers, type, initialValue);
+    }
+
     protected String[] extractInterfaces(AST node) {
         List interfaceList = new ArrayList();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
@@ -237,7 +270,7 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         AST node = code.getFirstChild();
 
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
-        if (node.getType() == EXPR) {
+        if (isType(node, EXPR)) {
             objectExpression = extractExpression(node);
             node = node.getNextSibling();
         }
@@ -268,8 +301,36 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         for (AST node = expression.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
             switch (type) {
+                case EXPR:
+                    return extractExpression(node);
+
+                case IDENT:
+                    return new VariableExpression(node.getText());
+
+                    // literals
                 case STRING_LITERAL:
                     return new ConstantExpression(node.getText());
+
+                case STRING_CONSTRUCTOR:
+                    return extractGString(node);
+
+                case NUM_BIG_DECIMAL:
+                    return new ConstantExpression(new BigDecimal(node.getText()));
+
+                case NUM_BIG_INT:
+                    return new ConstantExpression(new BigInteger(node.getText()));
+
+                case NUM_DOUBLE:
+                    return new ConstantExpression(Double.valueOf(node.getText()));
+
+                case NUM_FLOAT:
+                    return new ConstantExpression(Float.valueOf(node.getText()));
+
+                case NUM_INT:
+                    return new ConstantExpression(Integer.valueOf(node.getText()));
+
+                case NUM_LONG:
+                    return new ConstantExpression(Long.valueOf(node.getText()));
 
                 default:
                     onUnknownAST(node);
@@ -278,12 +339,62 @@ public class AntlrParserPlugin extends ParserPlugin implements GroovyTokenTypes 
         return null;
     }
 
+    private Expression extractGString(AST expression) {
+        List strings = new ArrayList();
+        List values = new ArrayList();
+
+        StringBuffer buffer = new StringBuffer();
+
+
+        for (AST node = expression.getFirstChild(); node != null; node = node.getNextSibling()) {
+            int type = node.getType();
+            String text = null;
+            switch (type) {
+
+                case STRING_LITERAL:
+                    text = node.getText();
+                    strings.add(new ConstantExpression(text));
+                    buffer.append(text);
+                    break;
+
+                // TODO is this correct?
+                case IDENT:
+                    text = node.getText();
+                    values.add(new VariableExpression(text));
+                    buffer.append("$");
+                    buffer.append(text);
+                    break;
+
+                case SLIST:     {
+                    Expression valueExpression = extractExpression(node);
+                    values.add(valueExpression);
+                    buffer.append("${");
+                    buffer.append(valueExpression.getText());
+                    buffer.append("}");
+                }
+                    break;
+
+                default:
+                    onUnknownAST(node);
+            }
+        }
+        return new GStringExpression(buffer.toString(), strings, values);
+    }
+
 
     protected String extractFirstChildText(AST node) {
         return node.getFirstChild().getText();
     }
 
+
+    protected boolean isType(AST node, int typeCode) {
+        return node != null && node.getType() == typeCode;
+    }
+
     protected void assertNodeType(int type, AST node) {
+        if (node == null) {
+            throw new RuntimeException("No child node available in AST when expecting type: " + type);
+        }
         if (node.getType() != type) {
             throw new RuntimeException("Unexpected node type: " + node.getType() + " found at node: " + node);
         }
