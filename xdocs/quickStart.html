@@ -41,7 +41,7 @@ Iterating over collections is easy...
 
 <source>
   groovy&gt; list = [1, 2, 3]
-  groovy&gt; for (i in list) { i.println() }
+  groovy&gt; for (i in list) { println(i) }
   1
   2
   3
@@ -56,7 +56,7 @@ Closures are similar to Java's inner classes, except they are a single method wh
 A closure can have as many parameters as you wish...
 
 <source>
-  groovy&gt; closure = { param | println("hello " + param) }
+  groovy&gt; closure = { param | println("hello ${param}") }
   groovy&gt; closure.call("world!")
   hello world!
   groovy&gt; closure = { greeting, name | println(greeting + param) }
@@ -81,8 +81,8 @@ Here are a number of helper methods available on collections &amp; strings...
 iterate via a closure
 
 <source>
-  groovy&gt;[1, 2, 3].each { item | item.print(); "-".print() }
-  1-2-3
+  groovy&gt;[1, 2, 3].each { item | print("${item}-" }
+  1-2-3-
 </source>
 
 <h3>map</h3> 
@@ -190,12 +190,12 @@ class Foo {
 
 foo = new Foo()
 for (x in foo.myGenerator) {
-  x.print(); "-".print()
+  print("${x}-")
 }
 </source>
 
 outputs
-  A-B-C
+  A-B-C-
 
 The use of Closure in the method prototype is optional. If we have
 syntax sugar for invoking closures as if they are method calls, then
