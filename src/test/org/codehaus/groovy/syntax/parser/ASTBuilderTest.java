@@ -1,8 +1,8 @@
 /*
  * $Id$
- * 
+ *
  * Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
- * 
+ *
  * Redistribution and use of this software and associated documentation
  * ("Software"), with or without modification, are permitted provided that the
  * following conditions are met: 1. Redistributions of source code must retain
@@ -17,7 +17,7 @@
  * their names without prior written permission of The Codehaus. "groovy" is a
  * registered trademark of The Codehaus. 5. Due credit should be given to The
  * Codehaus - http://groovy.codehaus.org/
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -29,7 +29,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *  
+ *
  */
 package org.codehaus.groovy.syntax.parser;
 
@@ -54,11 +54,12 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.lexer.UnexpectedCharacterException;
+import org.codehaus.groovy.tools.ExceptionCollector;
 
 /**
  * Test case for the AST builder
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -168,7 +169,7 @@ public class ASTBuilderTest extends TestParserSupport {
         ExpressionStatement exprStmt = (ExpressionStatement) statement.getStatements().get(0);
         Expression exp = exprStmt.getExpression();
         System.out.println(exp);
-        
+
         assertTrue(exp instanceof BinaryExpression);
         BinaryExpression binExpr = (BinaryExpression) exp;
         assertTrue("RHS is constant", binExpr.getRightExpression() instanceof ConstantExpression);
@@ -412,8 +413,8 @@ public class ASTBuilderTest extends TestParserSupport {
 
         System.out.println("text: " + exp.getText());
     }
-    
-    
+
+
     public void testRodsBug() throws Exception {
         ModuleNode module = parse("class Foo { void testMethod() { if (x) { String n = 'foo' } } }", "Dummy.groovy");
         BlockStatement statement = getCode(module, "testMethod");
@@ -449,15 +450,15 @@ public class ASTBuilderTest extends TestParserSupport {
         assertEquals("Statements size: " + statement.getStatements(), 1, statement.getStatements().size());
 
         System.out.println(statement.getStatements());
-        
+
         IfStatement ifStmt = (IfStatement) statement.getStatements().get(0);
         BinaryExpression exp = (BinaryExpression) ifStmt.getBooleanExpression().getExpression();
-        
+
         System.out.println("exp: " + exp);
-        
+
         Expression rhs = exp.getRightExpression();
         assertTrue("RHS should be a class expression", rhs instanceof ClassExpression);
-        
+
         ClassExpression classExp = (ClassExpression) rhs;
         assertEquals("java.util.List", classExp.getType());
     }
@@ -486,6 +487,78 @@ public class ASTBuilderTest extends TestParserSupport {
         MethodNode method = getMethod(module, "main");
 
         System.out.println("Parameters: " + InvokerHelper.toString(method.getParameters()));
+    }
+
+    private void ensureOutOfRange(String script) throws Exception {
+        try {
+            ModuleNode module = parse(script, "Dummy.groovy");
+        } catch (ExceptionCollector e) {
+            if (e.get(0) instanceof ParserException && e.get(0).getMessage().indexOf("out of range") >= 0) {
+                return;
+            }
+            fail (script+" should fail with a ParserException: "+e.getMessage());
+        }
+        fail(script+" should fail because the number is out of range.");
+    }
+
+    private void ensureInRange(String script) throws Exception {
+        ModuleNode module = parse(script, "Dummy.groovy");
+    }
+
+    public void testLiteralIntegerRange() throws Exception {
+        ensureInRange(   "x =  2147483647I;");
+        ensureOutOfRange("x =  2147483648I;");
+
+        ensureInRange(   "x = -2147483648I;");
+        ensureOutOfRange("x = -2147483649I;");
+    }
+
+    public void testLiteralLongRange() throws Exception {
+        ensureInRange(   "x =  9223372036854775807L;");
+        ensureOutOfRange("x =  9223372036854775808L;");
+
+        ensureInRange(   "x = -9223372036854775808L;");
+        ensureOutOfRange("x = -9223372036854775809L;");
+    }
+
+    public void testLiteralDoubleRange() throws Exception {
+        ensureInRange(   "x =  1.7976931348623157E308D;");
+        ensureOutOfRange("x =  1.7976931348623167E308D;");
+
+        ensureInRange(   "x = -1.7976931348623157E308D;");
+        ensureOutOfRange("x = -1.7976931348623167E308D;");
+    }
+
+    public void testLiteralFloatRange() throws Exception {
+        ensureInRange(   "x =  3.4028235e+38f;");
+        ensureOutOfRange("x =  3.4028236e+38f;");
+
+        ensureInRange(   "x = -3.4028235e+38f;");
+        ensureOutOfRange("x = -3.4028236e+38f;");
+    }
+
+    public void testLiteralIntegerBadSuffix() throws Exception {
+        try {
+            ModuleNode module = parse("x = 2147483648J;", "Dummy.groovy");
+        } catch (ExceptionCollector e) {
+            if (e.get(0) instanceof UnexpectedCharacterException) {
+                return;
+            }
+            fail ("x = 2147483648J should fail with an UnexpectedCharacterException");
+        }
+        fail("x = 2147483648J, should fail because J is an invalid numeric literal suffix.");
+    }
+
+    public void testLiteralBadExponent() throws Exception {
+        try {
+            ModuleNode module = parse("x = 2.3e;", "Dummy.groovy");
+        } catch (ExceptionCollector e) {
+            if (e.get(0) instanceof UnexpectedCharacterException) {
+                return;
+            }
+            fail ("x = 2.3e should fail with an UnexpectedCharacterException");
+        }
+        fail("x = 2.3e, should fail because no exponent is specified.");
     }
 
     public static Object mockHelperMethod() {

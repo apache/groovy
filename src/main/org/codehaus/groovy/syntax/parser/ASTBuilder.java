@@ -1264,25 +1264,32 @@ public class ASTBuilder
     public Expression prefixExpression( CSTNode reduction ) throws ParserException
     {
         Expression expression = null;
-        Expression body = expression( reduction.get(1) );
+        CSTNode    body       = reduction.get(1);
 
         int type = reduction.getMeaning();
         switch( type )
         {
             case Types.PREFIX_MINUS:
-                expression = new NegationExpression( body );
+                if( body.size() == 1 && body.isA(Types.NUMBER) )
+                {
+                    expression = numericExpression( body, true );
+                }
+                else
+                {
+                    expression = new NegationExpression( expression(body) );
+                }
                 break;
 
             case Types.PREFIX_PLUS:
-                expression = body;   // no op
+                expression = expression(body);
                 break;
 
             case Types.NOT:
-                expression = new NotExpression( body );
+                expression = new NotExpression( expression(body) );
                 break;
 
             default:
-                expression = new PrefixExpression( reduction.getRoot(), body );
+                expression = new PrefixExpression( reduction.getRoot(), expression(body) );
                 break;
         }
 
@@ -1319,11 +1326,8 @@ public class ASTBuilder
                 break;
 
             case Types.INTEGER_NUMBER:
-                expression = new ConstantExpression( Numbers.parseInteger(reduction.getRootText()) );
-                break;
-
             case Types.DECIMAL_NUMBER:
-                expression = new ConstantExpression( Numbers.parseDecimal(reduction.getRootText()) );
+                expression = numericExpression( reduction, false );
                 break;
 
             case Types.KEYWORD_SUPER:
@@ -1338,6 +1342,34 @@ public class ASTBuilder
         }
 
         return expression;
+    }
+
+
+
+   /**
+    *  Processes numeric literals.
+    */
+
+    public Expression numericExpression( CSTNode reduction, boolean negate ) throws ParserException
+    {
+        Token  token  = reduction.getRoot();
+        String text   = reduction.getRootText();
+        String signed = negate ? "-" + text : text;
+
+        boolean isInteger = (token.getMeaning() == Types.INTEGER_NUMBER);
+
+        try
+        {
+            Number number = isInteger ? Numbers.parseInteger(signed) : Numbers.parseDecimal(signed);
+
+            return new ConstantExpression( number );
+        }
+        catch( NumberFormatException e )
+        {
+            error( "numeric literal [" + signed + "] invalid or out of range for its type", token );
+        }
+
+        throw new GroovyBugError( "this should never happen" );
     }
 
 
