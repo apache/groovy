@@ -78,7 +78,7 @@ public class TestSuiteSupport implements Test, Protectable {
         }
         else {
             String path = file.getPath();
-            if (path.endsWith(".groovy")) {
+            if (path.endsWith("Test.groovy") || path.endsWith("Bug.groovy") ) {
                 // lets check it doesn't end with any of the excluded tests
                 for (int i = 0; i < excludedTests.length; i++) {
                     String excludedTest = excludedTests[i];

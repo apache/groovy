@@ -33,18 +33,6 @@ public class AllTests extends TestSuiteSupport {
     static String[] excludedTests = {
 
         // TODO the following are all parser bugs
-        "ArrayTest.groovy",                     // TODO: arrays
-        "ConstructorParameterBug.groovy",       // TODO: arrays
-
-        "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
-
-        "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
-        "ConstructorBug.groovy",                // TODO: foo.class bug in parser
-        "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
-        "bugs/PrimitivePropertyBug.groovy",     // TODO: foo.class bug in parser
-        "CastTest.groovy",                      // TODO: foo.class bug in parser
-        "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
-        "ClassTest.groovy",                     // TODO: foo.class bug in parser
 
         "ClassGeneratorFixesTest.groovy",       // TODO: closure params
         "ClosureParameterPassingBug.groovy",    // TODO: closure params
@@ -64,11 +52,7 @@ public class AllTests extends TestSuiteSupport {
         "ExpandoPropertyTest.groovy",           // TODO: closure params
         "GeneratorTest.groovy",                 // TODO: closure params
         "InvokeNormalMethodsFirstTest.groovy",  // TODO: closure params
-
-        "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
-
-        "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
-        "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
+        "MockTest.groovy",                      // TODO: closure params
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
         "SuperMethod2Bug.groovy",               // TODO: constructor bug
@@ -85,17 +69,45 @@ public class AllTests extends TestSuiteSupport {
         "GroovyMethodsTest.groovy",             // TODO: use of *
         "IntegerOperationTest.groovy",          // TODO: use of *
         "ListTest.groovy",                      // TODO: use of *
+        "ModuloTest.groovy",                    // TODO: use of *
+
+        "ArrayTest.groovy",                     // TODO: arrays
+        "ConstructorParameterBug.groovy",       // TODO: arrays
+
+        "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
+        "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...
+
+        "MapConstructionTest.groovy",           // TODO: map keys cannot be numeric literals
+        "MapTest.groovy",                       // TODO: map keys cannot be numeric literals
+
+        "ClassInNamedParamsBug.groovy",         // TODO: foo.class bug in parser
+        "ConstructorBug.groovy",                // TODO: foo.class bug in parser
+        "bugs/Groovy558_616_Bug.groovy",        // TODO: foo.class bug in parser
+        "bugs/PrimitivePropertyBug.groovy",     // TODO: foo.class bug in parser
+        "CastTest.groovy",                      // TODO: foo.class bug in parser
+        "ClassExpressionTest.groovy",           // TODO: foo.class bug in parser
+        "ClassTest.groovy",                     // TODO: foo.class bug in parser
+
+        "DefVariableBug.groovy",                // TODO: can't use 'def' as named parameter or property
+
+        "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
+
+        "DefaultParamTest.groovy",              // TODO: can't parse default parameter values
+
+        "Groovy252_Bug.groovy",                 // TODO: surprising if parse error
+        "bugs/GuillaumesBug.groovy",            // TODO: surprising if parse error
 
         "CompareToTest.groovy",                 // TODO: can't parse <=>
 
         "StaticClosurePropertyBug.groovy",      // TODO: static/def
         "UseStaticInClosureBug.groovy",         // TODO: static/def
 
-        "ClosureUsingOuterVariablesTest.groovy",    // TODO: can't handle [] as start of statement
-
-        "DefaultParamTest.groovy",              // TODO: can't parse default parameter values
-
         "EscapedUnicodeTest.groovy",            // TODO: parser unicode handling
+
+        "LoopBreakTest.groovy",                 // TODO: do { } while () not supported yet
+
+        "MethodCallWithoutParenthesisTest.groovy",  // TODO: the last expression cannot be "a + b" currently return mandatory
+
 
         "Groovy308_Bug.groovy",                 // TODO: parser bug
         "NestedClosure2Bug.groovy",             // TODO: parser bug
@@ -116,17 +128,6 @@ public class AllTests extends TestSuiteSupport {
         "PrintlnWithNewBug.groovy",
 
 
-
-        // Ignored tests
-        //-------------------------------------------------------------------------
-
-        // lets ignore the benchmark tests as they just slow down unit testing
-        "benchmarks/createLoop.groovy",
-        "benchmarks/loop.groovy",
-        "benchmarks/loop2.groovy",
-
-        // these are not tests...
-        "CreateData.groovy"
     };
 
     public static Test suite() {

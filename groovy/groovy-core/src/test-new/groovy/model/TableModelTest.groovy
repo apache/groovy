@@ -7,8 +7,8 @@ class TableModelTest extends GroovyTestCase {
         
         listModel = new ValueHolder(list)
         
-	    model = new DefaultTableModel(listModel)
-	    rowModel = model.getRowModel()
+        model = new DefaultTableModel(listModel)
+        rowModel = model.getRowModel()
         model.addColumn(new DefaultTableColumn("Name", new PropertyModel(rowModel, "name")))
         model.addColumn(new DefaultTableColumn("Location", new PropertyModel(rowModel, "location")))
         
@@ -31,7 +31,7 @@ class TableModelTest extends GroovyTestCase {
         assert james.location == 'Antigua'
     }
     
-    protected assertValueAt(model, row, col, expected) {
+    protected void assertValueAt(model, row, col, expected) {
         value = model.getValueAt(row, col)
         assert value == expected , "for row " + row + " col " + col
     }

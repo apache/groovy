@@ -1,13 +1,11 @@
 class LocalFieldTest extends GroovyTestCase {
 
-    private x
+    private def x
 	
-	void testAssert() {
-        /** @todo
+    void testAssert() {
         this.x = "abc"
-	    
-	    assert this.x == "abc"
-	    assert this.x != "def"
-         */
-	}
+
+        assert this.x == "abc"
+        assert this.x != "def"
+    }
 }

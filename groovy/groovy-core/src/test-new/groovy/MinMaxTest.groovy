@@ -17,25 +17,25 @@ class MinMaxTest extends GroovyTestCase {
     }
     
     void testMinMaxWithComparator() {
-		people = getPeople()
-		
-		// lets find the maximum by name
-		
-		order = new OrderBy( { it.get('@cheese') } )
-		
-		println("People ${people}")
-		
-		p = people.min(order)
-		
-		println("Found ${p}")
-		
-		assert p.get("@name") == "Joe" , "found person ${p}"
-		
-		p = people.max(order)
-		assert p.get("@name") == "Chris" , "found person ${p}"
-	}
+        people = getPeople()
+
+        // lets find the maximum by name
+
+        order = new OrderBy( { it.get('@cheese') } )
+
+        println("People ${people}")
+
+        p = people.min(order)
+
+        println("Found ${p}")
+
+        assert p.get("@name") == "Joe" , "found person ${p}"
+
+        p = people.max(order)
+        assert p.get("@name") == "Chris" , "found person ${p}"
+    }
     
-    getPeople() {
+    def getPeople() {
         builder = new NodeBuilder()
         tree = builder.people {
             person(name:'James', cheese:'Edam', location:'London')
