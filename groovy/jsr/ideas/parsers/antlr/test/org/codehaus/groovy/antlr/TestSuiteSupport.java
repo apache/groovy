@@ -99,11 +99,14 @@ public class TestSuiteSupport implements Test, Protectable {
     }
 
     protected static void addTest(TestSuite suite, String fullName) {
+        suite.addTest(new GroovyMainTest(fullName));
+        /*
         TestSuiteSupport childTest = new TestSuiteSupport();
         childTest.fullName = fullName;
         TestSuite childSuite = new TestSuite(fullName);
 
         childSuite.addTest(childTest);
         suite.addTest(childSuite);
+        */
     }
 }
