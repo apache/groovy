@@ -61,14 +61,14 @@ credentials = new UsernamePasswordCredentials(email, password)
 client.state.setCredentials("Bloglines RPC", server, credentials)
 
 // Get the list of subscriptions and parse it into a GPath structure
-opml = new XmlSlurper().parseText(callBloglines(apiUrl('listsubs')))
+opml = new XmlSlurper().parse(callBloglines(apiUrl('listsubs')))
 
 def callBloglines(url) {
   try {
     get = new GetMethod(url)
     get.doAuthentication = true
     client.executeMethod(get)
-    return get.responseBodyAsString
+    return get.responseBodyAsStream
   } catch (Exception e) {
     println "Error retrieving <${url}>: ${e}"
     return ""
@@ -105,10 +105,10 @@ itemList.selectionMode = ListSelectionModel.SINGLE_SELECTION
 
 // Set up the action closures that will react to user selections
 listItems = { | feed |
-  rssText = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0")  
-  if (rssText != null) {
+  rssStream = callBloglines(apiUrl('getitems') + "?s=${feed.id}&n=0")  
+  if (rssStream != null) {
     try {
-      rss = new XmlSlurper().parseText(rssText)
+      rss = new XmlSlurper().parse(rssStream)
       itemList.listData =  rss.channel.item.collect(new Vector()) {
 		new Item(title:it.title, description:it.description)
       }
