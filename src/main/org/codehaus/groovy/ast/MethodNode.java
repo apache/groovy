@@ -76,7 +76,53 @@ public class MethodNode extends MetadataNode implements Constants {
             this.dynamicReturnType = true;
         }
     }
+    
+    /**
+     * The type descriptor for a method node is a string containing the name of the method, its return type, 
+     * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
+     * without parameter names, and with $dynamic as the type for any dynamically typed values.
+     * @return
+     */
+    // TODO: add test case for type descriptor
+    public String getTypeDescriptor() {
+        StringBuffer buf = new StringBuffer();
+        buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
+        buf.append(' ');
+        buf.append(name);
+        buf.append('(');
+        for (int i=0; i < parameters.length; i++) {
+            if (i>0) buf.append(',');
+            Parameter param = parameters[i];
+            buf.append(cleanupTypeName(param.getType()));
+        }
+        buf.append(')');
+        return buf.toString();
+    }
 
+    protected String cleanupTypeName(String typename) {
+        // if the typename begins with "[", ends with ";", or is
+        // one character long, it's in .class syntax.
+        if (typename.charAt(0) == '[') {
+            return cleanupTypeName(typename.substring(1)) + "[]";
+        }
+        if (typename.length() == 1) {
+            switch (typename.charAt(0)) {
+            case 'J': return "long"; 
+            case 'I': return "int"; 
+            case 'C' : return "char"; 
+            case 'F' : return "float";
+            case 'V' : return "void"; 
+            case 'D' : return "double";            
+            }
+        }
+        if (typename.endsWith(";")) {
+            // Type should be "Lclassname;"
+            return typename.substring(1, typename.length() - 1);
+        }
+        return typename;
+        
+    }
+    
     public boolean isVoidMethod() {
         return "void".equals(returnType);
     }
@@ -123,6 +169,10 @@ public class MethodNode extends MetadataNode implements Constants {
 
     public ClassNode getDeclaringClass() {
         return declaringClass;
+    }
+    
+    public boolean isAbstract() {
+        return (modifiers & ACC_ABSTRACT) != 0;
     }
     
     public boolean isStatic() {

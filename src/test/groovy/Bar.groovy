@@ -13,6 +13,8 @@ class Cheddar extends Goober implements Runnable
     String getStringCheese() { }
     String getOtherCheese(foo,bar) { }
 
+    void run() { cheeseIt() }
+
     static Goober mutateGoober(Goober theGoober) { }
    
 }

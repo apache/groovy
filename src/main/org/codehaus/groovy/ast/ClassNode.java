@@ -155,6 +155,72 @@ public class ClassNode extends MetadataNode implements Constants {
         return methods;
     }
 
+    public List getAbstractMethods() {
+
+        List result = new ArrayList();
+        for (Iterator methIt = getAllDeclaredMethods().iterator(); methIt.hasNext();) {
+            MethodNode method = (MethodNode) methIt.next();
+            if (method.isAbstract()) result.add(method);
+        }
+        if (result.size() == 0)
+            return null;
+        else
+            return result;
+    }
+
+    public List getAllDeclaredMethods() {
+        return new ArrayList(getDeclaredMethodsMap().values());
+    }
+
+
+    protected Map getDeclaredMethodsMap() {
+        // Start off with the methods from the superclass.
+        ClassNode parent = getSuperClassNode();
+        Map result = null;
+        if (parent != null)
+            result = parent.getDeclaredMethodsMap();
+        else
+            result = new HashMap();
+
+        // add in unimplemented abstract methods from the interfaces
+        for (int i = 0; i < interfaces.length; i++) {
+            String interfaceName = interfaces[i];
+            ClassNode iface = findClassNode(interfaceName);
+            Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
+            for (Iterator iter = ifaceMethodsMap.keySet().iterator(); iter.hasNext();) {
+                String methSig = (String) iter.next();
+                if (!result.containsKey(methSig)) {
+                    MethodNode methNode = (MethodNode) ifaceMethodsMap.get(methSig);
+                    result.put(methSig, methNode);
+                }
+            }
+        }
+
+        // And add in the methods implemented in this class.
+        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            String sig = method.getTypeDescriptor();
+            if (result.containsKey(sig)) {
+                MethodNode inheritedMethod = (MethodNode) result.get(sig);
+                if (inheritedMethod.isAbstract()) {
+                    result.put(sig, method);
+                }                
+            } else {
+                result.put(sig, method);
+            }
+        }
+        return result;
+    }
+
+    protected int findMatchingMethodInList(MethodNode method, List methods) {
+        for (int i = 0; i < methods.size(); i++) {
+            MethodNode someMeth = (MethodNode) methods.get(i);
+            if (someMeth.getName().equals(method.getName())
+                    && parametersEqual(someMeth.getParameters(), method.getParameters())) return i;
+        }
+        return -1;
+    }
+
     public String getName() {
         return name;
     }

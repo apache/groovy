@@ -316,7 +316,11 @@
       <name>Arjun Nayyar</name>
       <email></email>
     </contributor>
-  	  </contributors>
+    <contributor>
+      <name>Mark Chu-Carroll</name>
+      <email></email>
+    </contributor>
+  	  	  </contributors>
   <dependencies>
 
     <!-- core dependencies -->
