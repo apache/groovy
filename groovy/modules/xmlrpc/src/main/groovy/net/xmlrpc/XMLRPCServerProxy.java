@@ -45,6 +45,7 @@
 
 package groovy.net.xmlrpc;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 
 import java.io.IOException;
@@ -99,11 +100,17 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 		
 		try {
 		final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
-		final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
+		int numberOfparams = params.length;
 		
-		XMLRPCMessageProcessor.encodeString(buffer, methodName).append("</methodName>\n\t<params>\n");
+			if (params[numberOfparams - 1] instanceof Closure) {
+				numberOfparams--;	// the closure is not to be passes to the remote method
+			}
 			
-			for (int i = 0; i != params.length; i++) {
+			final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
+		
+			XMLRPCMessageProcessor.encodeString(buffer, methodName).append("</methodName>\n\t<params>\n");
+			
+			for (int i = 0; i != numberOfparams; i++) {
 			final Object param = params[i];
 				
 				XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
@@ -132,7 +139,12 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 			
 			responseParser.parseMessage(connection.getInputStream());
 			
-			return responseParser.getParams().get(0);
+			if (numberOfparams == params.length) {
+				return responseParser.getParams().get(0);
+			} else {	
+				// pass the result of the call to the closure
+				return ((Closure)params[numberOfparams]).call(new Object[] {responseParser.getParams().get(0)});
+			}
 			
 		} catch (final IOException e) {
 			e.printStackTrace();
