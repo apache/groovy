@@ -464,7 +464,9 @@ public class ErrorReporter
     
                     if( column > 40 )
                     {
-                        sample = "   " + line.substring( column - 30, column + 10 ) + eol() + "   " + marker.substring( column - 30, column + 10 );
+                        int start = column - 30 - 1;
+                        int end   = (column + 10 > line.length() ? line.length() : column + 10 - 1);
+                        sample = "   " + line.substring( start, end ) + eol() + "   " + marker.substring( start, marker.length() );
                     }
                     else
                     {
