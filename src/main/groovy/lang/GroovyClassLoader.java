@@ -39,6 +39,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -56,6 +58,7 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends ClassLoader {
 
 	private String outputDir;
+    private Map cache = new HashMap();
 
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
@@ -96,10 +99,15 @@ public class GroovyClassLoader extends ClassLoader {
 	 * @return the main class defined in the given script
 	 */
     public Class parseClass(InputStream in, String file) throws SyntaxException, IOException {
-        CompileUnit unit = new CompileUnit();
-        ClassCollector compiler = createCollector(unit);
-        compiler.parseClass(in, file);
-        return compiler.generatedClass;
+        Class answer = (Class) cache.get(file);
+        if (answer == null) {
+            CompileUnit unit = new CompileUnit();
+            ClassCollector compiler = createCollector(unit);
+            compiler.parseClass(in, file);
+            answer = compiler.generatedClass;
+            cache.put(file, answer);
+        }
+        return answer;
     }
 
     protected ClassCollector createCollector(CompileUnit unit) {
