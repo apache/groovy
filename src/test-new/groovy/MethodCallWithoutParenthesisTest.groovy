@@ -1,7 +1,7 @@
 class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
-    def flag = false
-    
+    def flag
+
     void testMethodCallWithOneParam() {
         flag = false
         
@@ -39,11 +39,14 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
         
         assert value == 11
     }
-    
+
     def methodWithTwoParams(a, b) {
         println("Called method with parameters ${a} and ${b}")
 
         // TODO using return here fixes this in the parser
-        a + b
+
+        return a + b
+        // a + b
+
     }
 }
