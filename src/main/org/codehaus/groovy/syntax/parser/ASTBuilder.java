@@ -16,6 +16,8 @@ import org.codehaus.groovy.ast.ExpressionStatement;
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.ForLoop;
+import org.codehaus.groovy.ast.TryCatchFinally;
+import org.codehaus.groovy.ast.CatchStatement;
 import org.codehaus.groovy.syntax.Token;
 
 import org.objectweb.asm.Constants;
@@ -394,6 +396,11 @@ public class ASTBuilder
                 statement = forStatement( statementRoot );
                 break;
             }
+            case ( Token.KEYWORD_TRY ):
+            {
+                statement = tryStatement( statementRoot );
+                break;
+            }
             case ( Token.KEYWORD_RETURN ):
             {
                 statement = returnStatement( statementRoot );
@@ -406,6 +413,27 @@ public class ASTBuilder
         }
 
         return statement;
+    }
+
+    protected TryCatchFinally tryStatement(CSTNode statementRoot)
+    {
+        TryCatchFinally tcf = new TryCatchFinally( statementBlock( statementRoot.getChild( 0 ) ),
+                                                   statementBlock( statementRoot.getChild( 1 ) ) );
+
+        CSTNode[] catchRoots = statementRoot.getChild( 2 ).getChildren();
+
+        for ( int i = 0 ; i < catchRoots.length ; ++i )
+        {
+            String exceptionType = resolvedQualifiedName( catchRoots[ i ].getChild( 0 ) );
+            String identifier = identifier( catchRoots[ i ].getChild( 1 ) );
+            Statement block = statementBlock( catchRoots[ i ].getChild( 2 ) );
+            
+            tcf.addCatch( new CatchStatement( exceptionType,
+                                              identifier,
+                                              block ) );
+        }
+        
+        return tcf;
     }
 
     protected ReturnStatement returnStatement(CSTNode statementRoot)

@@ -559,6 +559,7 @@ public class Parser
             }
             case ( Token.KEYWORD_TRY ):
             {
+                statement = tryStatement();
                 break;
             }
             case ( Token.KEYWORD_THROW ):
@@ -591,6 +592,48 @@ public class Parser
                 consume( Token.SEMICOLON );
             }
         }
+
+        return statement;
+    }
+
+    protected CSTNode tryStatement()
+        throws IOException, SyntaxException
+    {
+        CSTNode statement = rootNode( Token.KEYWORD_TRY );
+
+        statement.addChild( statementBlock() );
+
+        CSTNode catches = new CSTNode();
+
+        while ( lt() == Token.KEYWORD_CATCH )
+        {
+            CSTNode catchBlock = rootNode( Token.KEYWORD_CATCH );
+
+            consume( Token.LEFT_PARENTHESIS );
+
+            catchBlock.addChild( datatype() );
+
+            consume( catchBlock,
+                     Token.IDENTIFIER );
+
+            consume( Token.RIGHT_PARENTHESIS );
+
+            catchBlock.addChild( statementBlock() );
+
+            catches.addChild( catchBlock );
+        }
+
+        if ( lt() == Token.KEYWORD_FINALLY )
+        {
+            consume( Token.KEYWORD_FINALLY );
+            statement.addChild( statementBlock() );
+        }
+        else
+        {
+            statement.addChild( new CSTNode() );
+        }
+
+        statement.addChild( catches );
 
         return statement;
     }
