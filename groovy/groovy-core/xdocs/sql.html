@@ -29,6 +29,48 @@ cheese = food.findAll { it.type == 'cheese' }
 cheese.each { println("Eat ${it.name}") }
 </source>
 
+<h2>Examples</h2>
+
+<p>
+Here's an example of using Groovy SQL along with <a href="markup.html">GroovyMarkup</a>.
+</p>
+
+<source>
+# lets output some XML builder 
+# could be SAX / StAX / DOM / TrAX / text etc
+xml = createXmlBuilder()
+
+xml.customers() {
+    loc = 'London'
+    sql.queryEach ("select * from customer where location = ${loc}) {
+
+        # lets process each row by emitting some markup
+        xml.customer(id:it.id, type:'Customer', foo:someVariable)) {
+            if (it.parter == 'Y') {
+                role("partner") 
+            }
+            name(it.customer_name)
+            location(id:it.location_id, name:it.location_name)
+        }
+    }
+}
+</source>
+
+<p>
+This could generate, dynamically something like
+</p>
+
+<source>
+&lt;customers&gt;
+  &lt;customer id="123" type="Customer" foo="whatever"&gt;
+    &lt;role&gt;partner&lt;/role&gt;
+    &lt;name&gt;James&lt;/name&gt;
+    &lt;location id="5" name="London"/&gt;
+  &lt;/customer&gt;
+  ...
+&lt;/customers&gt;
+</source>
+
 <p>
 There's an example <a href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/gdo/SqlCompleteTest.groovy?rev=HEAD&view=auto">test case which demonstrates</a> all of these query mechanisms in action.
 </p>

@@ -2,7 +2,7 @@
 
 <projectDescription>
   <name>groovy</name>
-  <comment>a high level language for the JVM.</comment>
+  <comment>a powerful and dynamic scripting language for the JVM</comment>
   <projects>
   </projects>
   <buildSpec>

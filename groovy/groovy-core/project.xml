@@ -267,6 +267,16 @@
       <version>2.3</version>
     </dependency>
   
+  <!-- only used for the Wiki Ant tasks -->
+    <dependency>
+      <id>radeox</id>
+      <version>0.9</version>
+    </dependency>
+    <dependency>
+      <id>radeox+oro</id>
+      <version>0.9</version>
+    </dependency>
+  
   </dependencies>
 
   <build>
