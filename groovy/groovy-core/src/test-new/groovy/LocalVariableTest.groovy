@@ -20,7 +20,7 @@ class LocalVariableTest extends GroovyTestCase {
 			assert e.getProperty() == "x"            
             text = e.message
 			//e.printStackTrace()
-            assert text == "No such @Property: x for class: LocalVariableTest"
+            assert text == "No such def: x for class: LocalVariableTest"
         }
     }
 	    

@@ -10,12 +10,12 @@
 import java.io.*
 
 class FilterLineTest extends GroovyTestCase {
-	@Property myFile
-	@Property myInput
-	@Property myOutput
+	def myFile
+	def myInput
+	def myOutput
 
 	void setUp() {
-	    myFile = new File("src/test/groovy/FilterLineTest.groovy")
+	    myFile = new File("src/test-new/groovy/FilterLineTest.groovy")
 		myInput = new FileInputStream(myFile)
 		myOutput = new CharArrayWriter()
 	}

@@ -47,7 +47,7 @@ class RegularExpressionsTest extends GroovyTestCase {
  		
  	}
  	
- 	@Property i
+ 	def i
  	
  	void testRegexEach() {
  		i = 0

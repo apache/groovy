@@ -8,8 +8,8 @@ import groovy.swing.SwingBuilder
  */
 class MvcDemo {
     
-    @Property frame
-    @Property swing
+    def frame
+    def swing
     
     void run() {
         swing = new SwingBuilder()

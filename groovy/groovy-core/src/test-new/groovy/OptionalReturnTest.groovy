@@ -1,6 +1,6 @@
 class OptionalReturnTest extends GroovyTestCase {
 
-	@Property y
+	def y
 	
     void testSingleExpression() {
         value = foo()

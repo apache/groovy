@@ -1,7 +1,7 @@
 class StringOperationTest extends GroovyTestCase {
 
-    @Property x
-    @Property y
+    def x
+    def y
     
     void testPlus() {
         x = "hello " + "there"

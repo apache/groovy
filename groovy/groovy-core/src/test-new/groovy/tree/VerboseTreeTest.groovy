@@ -6,7 +6,7 @@
  */
 class VerboseTreeTest extends GroovyTestCase {
     
-    @Property b
+    def b
 
     void testSmallTree() {
         b = NodeBuilder.newInstance()

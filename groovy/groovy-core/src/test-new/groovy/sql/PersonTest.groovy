@@ -6,7 +6,7 @@ import org.axiondb.jdbc.AxionDataSource
 
 class PersonTest extends GroovyTestCase {
 
-    @Property type
+    def type
     
     void testFoo() {
         persons = createDataSet()

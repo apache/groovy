@@ -960,7 +960,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case MOD_ASSIGN:
                 return binaryExpression(Types.MOD_EQUAL, node);
 
+            case SL:
+                return binaryExpression(Types.LEFT_SHIFT, node);
 
+            case SR:
+                return binaryExpression(Types.RIGHT_SHIFT, node);
+
+                
             case RANGE_INCLUSIVE:
                 return rangeExpression(node, true);
 

@@ -2,7 +2,7 @@
 
 class ClosureClassLoaderBug extends GroovyTestCase {
     
-    @Property b
+    def b
 
     void testTree() {
         b = NodeBuilder.newInstance()

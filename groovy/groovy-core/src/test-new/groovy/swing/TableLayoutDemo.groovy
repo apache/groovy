@@ -8,8 +8,8 @@ import javax.swing.BorderFactory
  */
 class TableLayoutDemo {
     
-    @Property frame
-    @Property swing
+    def frame
+    def swing
     
     void run() {
         swing = new SwingBuilder()

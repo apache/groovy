@@ -6,7 +6,7 @@
  */
 class ClosureTest extends GroovyTestCase {
 
-	@Property count
+	def count
 
     void testSimpleBlockCall() {
         count = 0

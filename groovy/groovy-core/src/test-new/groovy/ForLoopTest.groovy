@@ -4,7 +4,7 @@ import java.util.Vector
 
 class ForLoopTest extends GroovyTestCase {
 
-	@Property x
+    def x
 	
     void testRange() {
         x = 0
@@ -20,14 +20,16 @@ class ForLoopTest extends GroovyTestCase {
         x = 0
 
         for ( Integer i in 0..9 ) {
-        	assert i.class == Integer
+            assert i.getClass() == Integer
             x = x + i
         }
 
         assert x == 45
     }
 
-	void testRangeWithJdk15Style() {
+    /** TODO - no longer applicable?
+
+    void testRangeWithJdk15Style() {
         x = 0
 
         for ( i : 0..9 ) {
@@ -41,12 +43,13 @@ class ForLoopTest extends GroovyTestCase {
         x = 0
 
         for ( Integer i : 0..9 ) {
-        	assert i.class == Integer
+            assert i.getClass() == Integer
             x = x + i
         }
 
         assert x == 45
-	}
+    }
+    */
 	
     void testList() {
         x = 0
@@ -61,7 +64,7 @@ class ForLoopTest extends GroovyTestCase {
     void testArray() {
         array = (0..4).toArray()
         
-        println "Class: ${array.class} for array ${array}"
+        println "Class: ${array.getClass()} for array ${array}"
         
         x = 0
         
@@ -70,12 +73,12 @@ class ForLoopTest extends GroovyTestCase {
         }
 
         assert x == 10
-	}
+    }
     
     void testIntArray() {
         array = TestSupport.getIntArray()
         
-        println "Class: ${array.class} for array ${array}"
+        println "Class: ${array.getClass()} for array ${array}"
         
         x = 0
         

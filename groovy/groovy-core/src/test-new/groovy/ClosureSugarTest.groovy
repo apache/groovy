@@ -1,7 +1,7 @@
 class ClosureSugarTest
 	extends GroovyTestCase
 {
-    @Property count;
+    def count;
 
     void testClosureSugar()
     {

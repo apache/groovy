@@ -1,7 +1,7 @@
 class IntegerOperationTest extends GroovyTestCase {
 
-    @Property x
-    @Property y
+    def x
+    def y
     
     void testPlus() {
         x = 2 + 2

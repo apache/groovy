@@ -5,7 +5,7 @@ import junit.framework.AssertionFailedError
 
 class MockTest extends GroovyTestCase {
 
-    @Property mock
+    def mock
 
     void setUp() {
         mock = GroovyMock.newInstance()
