@@ -36,6 +36,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *  
  */
+package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.text.SimpleTemplateEngine;
