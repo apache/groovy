@@ -41,6 +41,14 @@ or it can be used dynamically as an alternative language such as for writing scr
 </li>
 
 <li>
+<a href="servlets.html">Groovlets</a> for implementing Servlets easily in simple Groovy scripts
+</li>
+
+<li>
+<a href="regex.html">Regex</a> syntax for neater scripting with regular expressions
+</li>
+
+<li>
 Polymorphic iteration, operator overloading and Autoboxing
 </li>
 
@@ -67,12 +75,10 @@ class Foo {
   }
   
   closureExample(collection) {
-    collection.each { |i|
-      println("value ${i}")
-    };
+    collection.each { println("value ${it}") }
   }
   
-  static main(args) {
+  static void main(args) {
     values = [1, 2, 3, "abc"]
     closureExample(values)
   }
