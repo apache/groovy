@@ -22,8 +22,12 @@ org.apache.bsf.BSFManager.registerScriptingEngine(
 );
 {code}
 
+Also you'll need to copy the groovy*.jar and asm*.jar files into the jedit/jars directory.
 
-Restart jEdit. Open SuperScript dockable from Plugins Menu or Dockable 
-area and choose "groovy" from the languages dropdown. to test if groovy works fine or no, 
+Restart jEdit. 
+
+Open SuperScript dockable from Plugins Menu or Dockable 
+area and choose "groovy" from the languages dropdown. 
+
+To test if groovy works fine or not, 
 just try running some expression in the textbox or open some groovy script in jEdit and try "Executing Script".
-
