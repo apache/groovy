@@ -80,11 +80,38 @@ processing build tasks</li>
 </ul>
 
 <h2>Examples</h2>
-To see a bunch of examples of using GroovyMarkup try looking at our unit test cases
+
+<p>
+Here's a simple example which shows how you could iterate through some SQL result set
+and output a dynamic XML document containing the results in a custom format using GroovyMarkup
+</p>
+
+<source>
+// lets output some XML builder (could be SAX / DOM / TrAX / text)
+xml = createXmlBuilder()
+xml.customers() {
+	loc = 'London'
+	sql.queryEach ("select * from customer where location = ${loc}) {
+
+		// lets process each row by emitting some markup
+		xml.customer(id:it.id, type:'Customer', foo:someVariable)) {
+			role(it.person_role) 
+			name(it.customer_name)
+			location(id:it.location_id, name:it.location_name)
+		}
+	}
+}
+</source>
+
+<p>To see more examples of using GroovyMarkup try looking at our unit test cases</p>
+
 <ul>
   <li><a href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/xml/">XML unit tests</a></li>
   <li><a href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/ant/">Ant unit tests</a></li>
   <li><a href="http://cvs.groovy.codehaus.org/viewcvs.cgi/groovy/groovy-core/src/test/groovy/swing/">Swing demos</a></li>
 </ul>
 
+<p>
+There is more <a href="http://wiki.codehaus.org/groovy/TreeBasedSyntax">detail on markup here</a>.
+</p>
 </body></html>
