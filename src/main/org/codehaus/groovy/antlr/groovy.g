@@ -2877,7 +2877,9 @@ SL_COMMENT
         :       "//"
                 (
                         options {  greedy = true;  }:
-                        ~('\n'|'\r')
+                        // '\uffff' means the EOF character.
+			// This will fix the issue GROOVY-766 (infinite loop).
+                        ~('\n'|'\r'|'\uffff')
                 )*
                 {$setType(Token.SKIP);}
                 //This might be significant, so don't swallow it inside the comment:
