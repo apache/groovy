@@ -1,0 +1,16 @@
+These are the examples for libgroovy. If you don't know what I'm talking about, read
+the README in the parent directory.
+
+Before running any of the examples:
+ * Build libgroovy (instructions in libgroovy directory).
+ * Set GROOVY_HOME to wherever Groovy may reside.
+ * Append the libgroovy directory to LD_LIBRARY_PATH if not already present.
+   
+   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/path/to/groovy-native/libgroovy
+
+The example directory names are prefixed with a number so you can step through the 
+examples in a logical order.
+
+
+- Joe Walnes <joe@thoughtworks.net>
+

@@ -1,0 +1,82 @@
+--- org/codehaus/groovy/runtime/Invoker.java	2004-01-06 16:37:49.000000000 +0000
++++ org/codehaus/groovy/runtime/Invoker.java	2004-01-06 16:38:46.000000000 +0000
+@@ -62,8 +62,6 @@
+ import java.util.regex.Matcher;
+ import java.util.regex.Pattern;
+ 
+-import com.mockobjects.util.NotImplementedException;
+-
+ /**
+  * A helper class to invoke methods or extract properties on arbitrary Java objects dynamically
+  * 
+@@ -244,7 +242,7 @@
+ 					return matcher.group();
+ 				}
+ 				public void remove() {
+-					throw new NotImplementedException();
++					throw new UnsupportedOperationException();
+ 				}
+         	};
+         }
+--- ./org/codehaus/groovy/runtime/InvokerHelper.java.orig	2004-01-06 17:13:41.000000000 +0000
++++ ./org/codehaus/groovy/runtime/InvokerHelper.java	2004-01-06 17:14:24.000000000 +0000
+@@ -170,7 +170,7 @@
+         }
+         else if (object instanceof Matcher) {
+             Matcher matcher = (Matcher) object;
+-            return matcher.find();
++	    throw new UnsupportedOperationException("Matcher.find()");
+         }
+         else if (object instanceof Collection) {
+             Collection collection = (Collection) object;
+--- ./org/codehaus/groovy/runtime/Invoker.java.orig	2004-01-06 17:14:52.000000000 +0000
++++ ./org/codehaus/groovy/runtime/Invoker.java	2004-01-06 17:17:41.000000000 +0000
+@@ -227,8 +227,7 @@
+ 				public boolean hasNext() {
+ 					if (done) return false;
+ 					if (!found) {
+-						found = matcher.find();
+-						if (!found) done = true;
++						throw new UnsupportedOperationException("Matcher.find()");
+ 					}
+ 					return found;
+ 				}
+@@ -239,7 +238,7 @@
+ 						}
+ 					}
+ 					found = false;
+-					return matcher.group();
++					throw new UnsupportedOperationException("Matcher.group()");
+ 				}
+ 				public void remove() {
+ 					throw new UnsupportedOperationException();
+@@ -485,7 +484,7 @@
+     		pattern = Pattern.compile(toString(right));
+     	}
+     	String stringToCompare = toString(left);
+-    	return pattern.matcher(stringToCompare).matches();
++	throw new UnsupportedOperationException("Matcher");
+     }
+ 
+ 	/**
+--- ./org/codehaus/groovy/runtime/DefaultGroovyMethods.java.orig	2004-01-06 17:18:17.000000000 +0000
++++ ./org/codehaus/groovy/runtime/DefaultGroovyMethods.java	2004-01-06 17:19:36.000000000 +0000
+@@ -221,7 +221,7 @@
+     }
+ 
+     public static boolean isCase(Pattern caseValue, Object switchValue) {
+-        return caseValue.matcher(switchValue.toString()).matches();
++	throw new UnsupportedOperationException("Matcher.matches()");
+     }
+ 
+     // Collection based methods
+@@ -850,8 +850,7 @@
+     }
+ 
+     public static String minus(String left, Object value) {
+-        String text = toString(value);
+-        return left.replaceFirst(text, "");
++	throw new UnsupportedOperationException("String.replaceFirst()");
+     }
+ 
+     public static String multiply(String self, Number factor) {

@@ -1,0 +1,59 @@
+See README in parent directory before reading on.
+
+Okay, so now you know what this is all about.
+
+
+
+*** Introduction
+
+libgroovy is the core native Groovy library for runtime use. Any Groovy application
+requires this library (and the standard libgcj libraries) to run.
+
+libgroovy only contains a subset of the standard Groovy library. Currently it only
+runs basic Groovy scripts.
+
+You may notice that there are no actual source files here. This is because libgroovy
+is built from the Java source files from Groovy. The source files for the Java ASM 
+library are also required.
+
+
+
+*** Building the library.
+
+This library currently only compiles on UNIX.
+
+You need:
+ - JDK.
+ - GCJ.
+ - The Java source for Groovy and ASM.
+ - Bash.
+
+Edit build.sh and set the appropriate variables at the top of the script.
+
+./build.sh
+(may take some time and generate a collection of warnings - but hopefully no errors).
+
+If all goes to plan, you should end up with libgroovy.so and libgroovy.jar in the current
+directory. 
+
+
+
+*** Notes on how the library is built.
+
+The stripped down library only tries to compile the classes listed in groovy-src and asm-src.
+
+Certain tweaks needed to be made to get the source to compile as GCJ only partially supports 
+the J2SE1.4 library. Rather than modify the Groovy source, build.sh patches the source using
+patch.diff to get the code to compile (although nobbling some features in doing so).
+
+
+
+*** How to use the library.
+
+Coming soon. In the mean time, look at one of the examples.
+
+
+
+- Joe Walnes <joe@thoughtworks.net>
+
+

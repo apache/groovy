@@ -1,0 +1,15 @@
+Read README in parent directory first. And read the README in the grand-parent directory
+before that! Seriously, it's important!
+
+
+
+This demo simply compiles a single Simple.groovy class into a native executable that can
+be invoked using ./Simple
+
+Steps:
+ * Read the other README files.
+ * ./build.sh
+ * ./Simple
+
+
+- Joe Walnes <joe@thoughtworks.net>
