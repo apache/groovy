@@ -971,7 +971,7 @@ public class MetaClass {
 	 * that the two lists of types don't conflict. e.g. foo(String, Object) and
 	 * foo(Object, String) would conflict if called with foo("a", "b").
 	 * 
-	 * Note that this method is only called with 2 possible signnatures. i.e.
+	 * Note that this method is only called with 2 possible signatures. i.e.
 	 * possible invalid combinations will already have been filtered out. So if
 	 * there were methods foo(String, Object) and foo(Object, String) then one
 	 * of these would be already filtered out if foo was called as foo(12, "a")
@@ -980,7 +980,7 @@ public class MetaClass {
         for (int i = 0, size = baseTypes.length; i < size; i++) {
             Class baseType = baseTypes[i];
             Class derivedType = derivedTypes[i];
-            if (!baseType.isAssignableFrom(derivedType)) {
+            if (!isAssignableFrom(derivedType, baseType)) {
                 throw new GroovyRuntimeException(
                     "Ambiguous method overloading for method: "
                         + name
@@ -1099,6 +1099,9 @@ public class MetaClass {
             }
             else if (type == long.class) {
                 return Long.class;
+            }
+            else if (type == boolean.class) {
+                return Boolean.class;
             }
             else if (type == float.class) {
                 return Float.class;
