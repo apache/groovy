@@ -417,7 +417,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     
     private static class CurriedClosure extends DelegatingClosure {
     	protected final Object[] curried_args;
-    	
+
     	/**
     	 * @param closure
     	 * @param arguments
@@ -466,6 +466,13 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     	 */
     	public Closure asWritable() {
     		return new CurriedWritableClosure(this.closure, this.curried_args);
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see java.lang.Object#clone()
+    	 */
+    	public Object clone() throws CloneNotSupportedException {
+    		return new CurriedClosure((Closure)this.closure.clone(), this.curried_args.clone());
     	}
     }
     
@@ -533,6 +540,13 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable {
     		System.arraycopy(args, 0, new_curried_args, this.curried_args.length, args.length);
     		
     		return new CurriedWritableClosure(this.closure, new_curried_args);
+    	}
+    	
+    	/* (non-Javadoc)
+    	 * @see java.lang.Object#clone()
+    	 */
+    	public Object clone() throws CloneNotSupportedException {
+    		return new CurriedWritableClosure((Closure)this.closure.clone(), this.curried_args.clone());
     	}
     }
 }

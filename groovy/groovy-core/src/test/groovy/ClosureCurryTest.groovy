@@ -51,5 +51,33 @@ class ClosureCurryTest extends GroovyTestCase {
 		assert value == "ayz"
 		value = clos7()
 		assert value == "afg"
+		
+		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos4 = clos3.curry('a').clone()
+		clos5 = clos4.curry('b').clone()
+		clos6 = clos4.curry('x').clone()
+		clos7 = clos4.curry('f', 'g').clone()
+		value = clos5('c')
+		assert value == "abc"
+		value = clos6('c')
+		assert value == "axc"
+		value = clos4('y', 'z')
+		assert value == "ayz"
+		value = clos7()
+		assert value == "afg"
+		
+		clos3 = {s1, s2, s3 | s1 + s2 + s3}
+		clos4 = clos3.curry('a').asWritable().clone()
+		clos5 = clos4.curry('b').asWritable().clone()
+		clos6 = clos4.curry('x').asWritable().clone()
+		clos7 = clos4.curry('f', 'g').asWritable().clone()
+		value = clos5('c')
+		assert value == "abc"
+		value = clos6('c')
+		assert value == "axc"
+		value = clos4('y', 'z')
+		assert value == "ayz"
+		value = clos7()
+		assert value == "afg"
     }  
 }
