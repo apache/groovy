@@ -44,66 +44,65 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 	
-	class AbstractStreamingBuilder {
-		def badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest ->
-							uri = pendingNamespaces[prefix]
+    class AbstractStreamingBuilder {
+        @Property badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest ->
+                            uri = pendingNamespaces[prefix]
 
-							if (uri == null) {
-								uri = namespaces[prefix]
-							}
+                            if (uri == null) {
+                                uri = namespaces[prefix]
+                            }
 
-							throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
-						}
-		def namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
-									attrs.each { key, value ->
-										if ( key == "") {
-											key = ":"	// marker for default namespace
-										}
+                            throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
+                        }
+        @Property namespaceSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+                                    attrs.each { key, value ->
+                                        if ( key == "") {
+                                            key = ":"    // marker for default namespace
+                                        }
 
-										value = value.toString() 	// in case it's not a string
+                                        value = value.toString()     // in case it's not a string
 
-										if (namespaces[key] != value) {
-											pendingNamespaces[key] = value
-										}
+                                        if (namespaces[key] != value) {
+                                            pendingNamespaces[key] = value
+                                        }
 
-										if (!namespaceSpecificTags.containsKey(value)) {
-											baseEntry = namespaceSpecificTags[':']
-											namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
-										}
-									}
-								}
-		def aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
-								attrs.each { key, value ->
-									if (value instanceof Map) {
-										// key is a namespace prefix value is the mapping
-										info = null
+                                        if (!namespaceSpecificTags.containsKey(value)) {
+                                            baseEntry = namespaceSpecificTags[':']
+                                            namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
+                                        }
+                                    }
+                                }
+        @Property aliasSetupClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, Object[] rest ->
+                                attrs.each { key, value ->
+                                    if (value instanceof Map) {
+                                        // key is a namespace prefix value is the mapping
+                                        info = null
 
-										if (namespaces.containsKey(key)) {
-											info = namespaceSpecificTags[namespaces[key]]
-										} else if (pendingNamespaces.containsKey(key)) {
-											info = namespaceSpecificTags[pendingNamespaces[key]]
-										} else {
-											throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
-										}
+                                        if (namespaces.containsKey(key)) {
+                                            info = namespaceSpecificTags[namespaces[key]]
+                                        } else if (pendingNamespaces.containsKey(key)) {
+                                            info = namespaceSpecificTags[pendingNamespaces[key]]
+                                        } else {
+                                            throw new GroovyRuntimeException("namespace prefix ${key} has not been declared")
+                                        }
 /*
 
 This is commented out because of a code generator bug
 This means that mkp.declareAlias(xsd:['fred':'schema']) won't work
 But mkp.declareAlias(jim:'harry') will work
 
-										value.each { from, to ->
-											info[2][to] = info[1].curry(from)
-										}*/
-									} else {
-										info = namespaceSpecificTags[':']
-										info[2][key] = info[1].curry(value)
-									}
-								}
-							}
-											
-		def specialTags = ['declareNamespace':namespaceSetupClosure,
-		               'declareAlias':aliasSetupClosure]
-		
-		def builder = null
-	}
-	
+                                        value.each { from, to ->
+                                            info[2][to] = info[1].curry(from)
+                                        }*/
+                                    } else {
+                                        info = namespaceSpecificTags[':']
+                                        info[2][key] = info[1].curry(value)
+                                    }
+                                }
+                            }
+
+        @Property specialTags = ['declareNamespace':namespaceSetupClosure,
+                       'declareAlias':aliasSetupClosure]
+
+        @Property builder = null
+    }

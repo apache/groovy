@@ -43,112 +43,111 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-	
-	class StreamingMarkupBuilder extends AbstractStreamingBuilder {
-		def pendingStack = []
-		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-							out.unescaped() << "<!--"
-							out.bodyText() << body
-							out.unescaped() << "-->"
-						 }
-		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-							if (body instanceof Buildable) {
-								body.build(doc)
-							} else {
-								out.bodyText() << body
-							}
-					  }
-		def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-								out.unescaped() << body
-						   }
-		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-						if (prefix != "") {
-							if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
-								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
-							}
 
-							tag = prefix + ":" + tag
-						}
+    class StreamingMarkupBuilder extends AbstractStreamingBuilder {
+        @Property pendingStack = []
+        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                            out.unescaped() << "<!--"
+                            out.bodyText() << body
+                            out.unescaped() << "-->"
+                         }
+        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                            if (body instanceof Buildable) {
+                                body.build(doc)
+                            } else {
+                                out.bodyText() << body
+                            }
+                      }
+        @Property unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                                out.unescaped() << body
+                           }
+        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
+                        if (prefix != "") {
+                            if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
+                                throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
+                            }
 
-						out = out.unescaped() << "<${tag}"
+                            tag = prefix + ":" + tag
+                        }
 
-					    attrs.each {key, value ->
-					    				if (key.contains('$')) {
-					    					parts = key.tokenize('$')
+                        out = out.unescaped() << "<${tag}"
 
-					    					if (namespaces.containsKey(parts[0])) {
-					    						key = parts[0] + ":" + parts[1]
-					    					} else {
-					    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-					    					}
-					    				}
+                        attrs.each {key, value ->
+                                        if (key.contains('$')) {
+                                            parts = key.tokenize('$')
 
-										out << " ${key}='"
-										out.attributeValue() << "${value}"
-										out << "'"
-								  	}
+                                            if (namespaces.containsKey(parts[0])) {
+                                                key = parts[0] + ":" + parts[1]
+                                            } else {
+                                                throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                            }
+                                        }
 
-						hiddenNamespaces = [:]
+                                        out << " ${key}='"
+                                        out.attributeValue() << "${value}"
+                                        out << "'"
+                                      }
 
-						pendingNamespaces.each {key, value ->
-							hiddenNamespaces[key] = namespaces[key]
-							namespaces[key] = value
-							out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
-							out.attributeValue() << "${value}"
-							out << "'"
-						}
+                        hiddenNamespaces = [:]
 
-						if (body == null) {
-							out << "/>"
-						} else {
-							out << ">"
+                        pendingNamespaces.each {key, value ->
+                            hiddenNamespaces[key] = namespaces[key]
+                            namespaces[key] = value
+                            out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
+                            out.attributeValue() << "${value}"
+                            out << "'"
+                        }
 
-							pendingStack.add pendingNamespaces.clone()
-							pendingNamespaces.clear()
+                        if (body == null) {
+                            out << "/>"
+                        } else {
+                            out << ">"
 
-							if (body instanceof Buildable) {
-								body.build(doc)
-							} else {
-								out.bodyText() << body
-							}
+                            pendingStack.add pendingNamespaces.clone()
+                            pendingNamespaces.clear()
 
-							pendingNamespaces.clear()
-							pendingNamespaces.putAll pendingStack.pop()
+                            if (body instanceof Buildable) {
+                                body.build(doc)
+                            } else {
+                                out.bodyText() << body
+                            }
 
-							out << "</${tag}>"
-						}
+                            pendingNamespaces.clear()
+                            pendingNamespaces.putAll pendingStack.pop()
 
-						hiddenNamespaces.each {key, value ->
-													if (value == null) {
-														namespaces.remove key
-													} else {
-														namespaces[key] = value
-													}
-											   }
-					}
+                            out << "</${tag}>"
+                        }
 
-		def builder = null
+                        hiddenNamespaces.each {key, value ->
+                                                    if (value == null) {
+                                                        namespaces.remove key
+                                                    } else {
+                                                        namespaces[key] = value
+                                                    }
+                                               }
+                    }
 
-		StreamingMarkupBuilder() {
-			specialTags.putAll(['yield':noopClosure,
-		               			'yieldUnescaped':unescapedClosure,
-		               			'comment':commentClosure])
+        @Property builder = null
 
-			nsSpecificTags = [':' 											   : [tagClosure, tagClosure, [:]],	// the default namespace
-						      'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
-		                      'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+        StreamingMarkupBuilder() {
+            specialTags.putAll(['yield':noopClosure,
+                                   'yieldUnescaped':unescapedClosure,
+                                   'comment':commentClosure])
 
-			this.builder = new BaseMarkupBuilder(nsSpecificTags)
-		}
+            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+                              'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                              'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 
-		def bind(closure) {
-			boundClosure = this.builder.bind(closure);
+            this.builder = new BaseMarkupBuilder(nsSpecificTags)
+        }
 
-			{out ->
-			    out = new StreamingMarkupWriter(out)
-				boundClosure.trigger = out
-				out.flush()
-			}.asWritable()
-		}
-	}
-	
+        @Property bind(closure) {
+            boundClosure = this.builder.bind(closure);
+
+            {out ->
+                out = new StreamingMarkupWriter(out)
+                boundClosure.trigger = out
+                out.flush()
+            }.asWritable()
+        }
+    }

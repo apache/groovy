@@ -43,124 +43,123 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
-	
+
 import org.xml.sax.helpers.AttributesImpl
 import org.xml.sax.ext.LexicalHandler
-	
-	class StreamingSAXBuilder extends AbstractStreamingBuilder {
-		def pendingStack = []
-		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-							if (contentHandler instanceof LexicalHandler) {
-								contentHandler.comment(body.toCharArray(), 0, body.length())
-							}
-						 }
-		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-						if (body instanceof Closure) {
-							body()
-						} else {
-							contentHandler.characters(body.toCharArray(), 0, body.length())
-						}
-					  }
-		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-						attributes = new AttributesImpl()
 
-					    attrs.each {key, value ->
-			    				if (key.contains('$')) {
-			    					parts = key.tokenize('$')
+    class StreamingSAXBuilder extends AbstractStreamingBuilder {
+        @Property pendingStack = []
+        @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+                            if (contentHandler instanceof LexicalHandler) {
+                                contentHandler.comment(body.toCharArray(), 0, body.length())
+                            }
+                         }
+        @Property noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+                        if (body instanceof Closure) {
+                            body()
+                        } else {
+                            contentHandler.characters(body.toCharArray(), 0, body.length())
+                        }
+                      }
+        @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
+                        attributes = new AttributesImpl()
 
-			    					if (namespaces.containsKey(parts[0])) {
-			    						namespaceUri = namespaces[parts[0]]
+                        attrs.each {key, value ->
+                                if (key.contains('$')) {
+                                    parts = key.tokenize('$')
 
-//			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
+                                    if (namespaces.containsKey(parts[0])) {
+                                        namespaceUri = namespaces[parts[0]]
+
+//                                        attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
 // workround for bug GROOVY-309
-			    						attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
-			    					} else {
-			    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
-			    					}
-			    				} else {
-			    					attributes.addAttribute("", key, key, "CDATA", value)
-			    				}
-					  	}
+                                        attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
+                                    } else {
+                                        throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
+                                    }
+                                } else {
+                                    attributes.addAttribute("", key, key, "CDATA", value)
+                                }
+                          }
 
-						hiddenNamespaces = [:]
+                        hiddenNamespaces = [:]
 
-						pendingNamespaces.each {key, value ->
-							hiddenNamespaces[key] = namespaces[key]
-							namespaces[key] = value
-//							attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
+                        pendingNamespaces.each {key, value ->
+                            hiddenNamespaces[key] = namespaces[key]
+                            namespaces[key] = value
+//                            attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", value)
 // workround for bug GROOVY-309
-							attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
-			    				contentHandler.startPrefixMapping(key, value)
-						}
+                            attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}".toString(), "CDATA", value)
+                                contentHandler.startPrefixMapping(key, value)
+                        }
 
-						// setup the tag info
+                        // setup the tag info
 
-						uri = ""
-						qualifiedName = tag
+                        uri = ""
+                        qualifiedName = tag
 
-						if (prefix != "") {
-							if (namespaces.containsKey(prefix)) {
-								uri = namespaces[prefix]
-							} else if (pendingNamespaces.containsKey(prefix)) {
-								uri = pendingNamespaces[prefix]
-							} else {
-								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
-							}
+                        if (prefix != "") {
+                            if (namespaces.containsKey(prefix)) {
+                                uri = namespaces[prefix]
+                            } else if (pendingNamespaces.containsKey(prefix)) {
+                                uri = pendingNamespaces[prefix]
+                            } else {
+                                throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
+                            }
 
-							if (prefix != ":") {
-								qualifiedName = prefix + ":" + tag
-							}
-						}
+                            if (prefix != ":") {
+                                qualifiedName = prefix + ":" + tag
+                            }
+                        }
 
-						contentHandler.startElement(uri, tag, qualifiedName, attributes)
+                        contentHandler.startElement(uri, tag, qualifiedName, attributes)
 
-						if (body != null) {
-							pendingStack.add pendingNamespaces.clone()
-							pendingNamespaces.clear()
+                        if (body != null) {
+                            pendingStack.add pendingNamespaces.clone()
+                            pendingNamespaces.clear()
 
-							if (body instanceof Closure) {
-								body()
-							} else {
-								contentHandler.characters(body.toCharArray(), 0, body.length())
-							}
+                            if (body instanceof Closure) {
+                                body()
+                            } else {
+                                contentHandler.characters(body.toCharArray(), 0, body.length())
+                            }
 
-							pendingNamespaces.clear()
-							pendingNamespaces.putAll pendingStack.pop()
-						}
+                            pendingNamespaces.clear()
+                            pendingNamespaces.putAll pendingStack.pop()
+                        }
 
-						contentHandler.endElement(uri, tag, qualifiedName)
+                        contentHandler.endElement(uri, tag, qualifiedName)
 
-						hiddenNamespaces.each {key, value ->
-													contentHandler.endPrefixMapping(key)
+                        hiddenNamespaces.each {key, value ->
+                                                    contentHandler.endPrefixMapping(key)
 
-													if (value == null) {
-														namespaces.remove key
-													} else {
-														namespaces[key] = value
-													}
-											   }
-					}
+                                                    if (value == null) {
+                                                        namespaces.remove key
+                                                    } else {
+                                                        namespaces[key] = value
+                                                    }
+                                               }
+                    }
 
-		def builder = null
+        @Property builder = null
 
-		StreamingSAXBuilder() {
-			specialTags.putAll(['yield':noopClosure,
-		               			'yieldUnescaped':noopClosure,
-		               			'comment':commentClosure])
+        StreamingSAXBuilder() {
+            specialTags.putAll(['yield':noopClosure,
+                                   'yieldUnescaped':noopClosure,
+                                   'comment':commentClosure])
 
-			nsSpecificTags = [':' 											   : [tagClosure, tagClosure, [:]],	// the default namespace
-						      'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
-		                      'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
+            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+                              'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                              'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 
-			this.builder = new BaseMarkupBuilder(nsSpecificTags)
-		}
+            this.builder = new BaseMarkupBuilder(nsSpecificTags)
+        }
 
-		def bind(closure) {
-			boundClosure = this.builder.bind(closure)
+        @Property bind(closure) {
+            boundClosure = this.builder.bind(closure)
 
-			return {contentHandler ->
-				boundClosure.trigger = contentHandler
-			}
-		}
-	}
-	
+            return {contentHandler ->
+                boundClosure.trigger = contentHandler
+            }
+        }
+    }

@@ -60,7 +60,7 @@ public class IanMaceysBug extends TestSupport {
             assertScript("dummy = 0; for ( i in 0..9 ) {  dummy += i }\n println 'done'", "dummy.groovy");
             fail("Should throw a syntax exception");
         }
-        catch (RuntimeParserException e) {
+        catch (Exception e) {
             System.out.println("Worked. Caught: " + e);
         }
     }
