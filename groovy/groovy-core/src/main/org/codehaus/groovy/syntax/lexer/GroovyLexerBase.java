@@ -523,6 +523,21 @@ public class GroovyLexerBase extends LexerBase
                             token = symbol( Types.MULTIPLY_EQUAL );
                             break MULTICHAR_SWITCH;
                         }
+                        case ('*') :
+                        {
+                            consume();
+                            c = la();
+                            if( c == '=' )
+                            {
+                                consume();
+                                token = symbol( Types.POWER_EQUAL );
+                            } 
+                            else
+                            {	
+			        token = symbol( Types.POWER );
+                            }
+                            break MULTICHAR_SWITCH;
+                        }
                         default :
                         {
                             token = symbol( Types.MULTIPLY );

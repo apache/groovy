@@ -131,6 +131,8 @@ public class Types
     public static final int DIVIDE                      = 203;   // /
     public static final int INTDIV                      = 204;   // \
     public static final int MOD                         = 205;   // %
+    public static final int STAR_STAR                   = 206;   // **
+    public static final int POWER                       = STAR_STAR;   // **
 
     public static final int PLUS_EQUAL                  = 210;   // +=
     public static final int MINUS_EQUAL                 = 211;   // -=
@@ -138,6 +140,7 @@ public class Types
     public static final int DIVIDE_EQUAL                = 213;   // /=
     public static final int INTDIV_EQUAL                = 214;   // \=
     public static final int MOD_EQUAL                   = 215;   // %=
+    public static final int POWER_EQUAL                 = 216;   // **=
 
     public static final int PLUS_PLUS                   = 250;   // ++
     public static final int PREFIX_PLUS_PLUS            = 251;   // ++
@@ -152,10 +155,10 @@ public class Types
     public static final int LEFT_SHIFT                  = 280;   // <<
     public static final int RIGHT_SHIFT                 = 281;   // >>
     public static final int RIGHT_SHIFT_UNSIGNED        = 282;   // >>>
-    public static final int RIGHT_SHIFT_UNSIGNED_EQUAL  = 287;   // >>>=
 
     public static final int LEFT_SHIFT_EQUAL            = 285;   // <<=
     public static final int RIGHT_SHIFT_EQUAL           = 286;   // >>=
+    public static final int RIGHT_SHIFT_UNSIGNED_EQUAL  = 287;   // >>>=
 
     public static final int STAR                        = MULTIPLY;
 
@@ -442,7 +445,7 @@ public class Types
                 break;
 
             case ASSIGNMENT_OPERATOR:
-                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                          || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL)
                                          || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
@@ -525,12 +528,13 @@ public class Types
                         return true;
                 }
 
-                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= MOD_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
+                return (specific >= COMPARE_NOT_EQUAL && specific <= COMPARE_TO) || (specific >= PLUS && specific <= MOD_EQUAL) || specific == EQUAL || (specific >= PLUS_EQUAL && specific <= POWER_EQUAL) || (specific >= LOGICAL_OR_EQUAL && specific <= LOGICAL_AND_EQUAL)
                                  || (specific >= LEFT_SHIFT_EQUAL && specific <= RIGHT_SHIFT_UNSIGNED_EQUAL) || (specific >= BITWISE_OR_EQUAL && specific <= BITWISE_XOR_EQUAL);
 
             case PREFIX_OR_INFIX_OPERATOR:
                 switch( specific )
                 {
+                    case POWER:
                     case PLUS:
                     case MINUS:
                     case PREFIX_PLUS:
@@ -1007,6 +1011,7 @@ public class Types
             case DIVIDE_EQUAL:
             case INTDIV_EQUAL:
             case MOD_EQUAL:
+            case POWER_EQUAL:
             case LOGICAL_OR_EQUAL:
             case LOGICAL_AND_EQUAL:
             case LEFT_SHIFT_EQUAL:
@@ -1025,6 +1030,11 @@ public class Types
 
             case LOGICAL_AND:
                 return 20;
+
+            case BITWISE_OR:
+	    case BITWISE_AND:
+            case BITWISE_XOR:
+                return 22;
 
             case COMPARE_IDENTICAL:
             case COMPARE_NOT_IDENTICAL:
@@ -1046,11 +1056,6 @@ public class Types
             case DOT_DOT_DOT:
                 return 30;
 
-            case BITWISE_OR:
-	    case BITWISE_AND:
-            case BITWISE_XOR:
-                return 33;
-
             case LEFT_SHIFT:
             case RIGHT_SHIFT:
             case RIGHT_SHIFT_UNSIGNED:
@@ -1065,6 +1070,9 @@ public class Types
             case INTDIV:
             case MOD:
                 return 45;
+
+            case POWER:
+                return 47;
 
             case NOT:
             case REGEX_PATTERN:
@@ -1232,12 +1240,15 @@ public class Types
         addTranslation( "\\"          , INTDIV                      );
         addTranslation( "%"           , MOD                         );
 
+	addTranslation( "**"          , POWER                       );
+
         addTranslation( "+="          , PLUS_EQUAL                  );
         addTranslation( "-="          , MINUS_EQUAL                 );
         addTranslation( "*="          , MULTIPLY_EQUAL              );
         addTranslation( "/="          , DIVIDE_EQUAL                );
         addTranslation( "\\="         , INTDIV_EQUAL                );
         addTranslation( "%="          , MOD_EQUAL                   );
+        addTranslation( "**="         , POWER_EQUAL                 );
 
         addTranslation( "++"          , PLUS_PLUS                   );
         addTranslation( "--"          , MINUS_MINUS                 );
