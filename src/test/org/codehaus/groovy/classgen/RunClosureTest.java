@@ -58,6 +58,6 @@ public class RunClosureTest extends TestSupport {
 
     public void testClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureUsingOuterVariablesTest.groovy");
-        object.invokeMethod("testExampleUseOfClosureScopes", null);
+        object.invokeMethod("testExampleUseOfClosureScopesUsingEach", null);
     }
 }

@@ -13,6 +13,6 @@ class ToArrayBug extends GroovyTestCase {
         
         assert list2.size() == 4
         assert list2 == list
-        */
+         */
     }
 }

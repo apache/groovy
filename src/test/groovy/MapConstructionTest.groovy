@@ -35,10 +35,8 @@ class MapConstructionTest extends GroovyTestCase {
 
     assertMap(m) {
         assert m instanceof Map
-        /** @todo parser
-        */
         assert m.getClass().getName() == "java.util.HashMap"
-        
+
         result = 0
         text = ""
         for ( e in m ) {

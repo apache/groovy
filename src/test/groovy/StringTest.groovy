@@ -11,18 +11,14 @@ class StringTest extends GroovyTestCase {
         s = s + "efg" + "hijk"
         
         assert s.size() == 11
-        /** @todo parser
-        */
         assert "abcdef".size() == 6
     }
 
     void testStringPlusNull() {
-        /** @todo when fixed the method invocation code 
         y = null
         
         x = "hello " + y
         
         assert x == "hello null"
-        */
     }
 }
