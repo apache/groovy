@@ -366,7 +366,11 @@
     </j:forEach>
     
   </goal>
-  
+
+  <preGoal name="jar:jar">
+     <attainGoal name="groovy:compile"/>
+  </preGoal>
+    
   <goal name="groovy:make-install" prereqs="jar:jar">
     <echo>${groovy.install.staging.dest}</echo>
     <mkdir dir="${groovy.install.staging.dest}"/>
