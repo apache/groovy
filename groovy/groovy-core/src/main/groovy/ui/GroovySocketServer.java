@@ -13,11 +13,13 @@ public class GroovySocketServer implements Runnable {
     private GroovyShell groovy;
     private boolean isScriptFile;
     private String scriptLocation;
+    private boolean autoOutput;
     
-    public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptLocation, int port) {
+    public GroovySocketServer(GroovyShell groovy, boolean isScriptFile, String scriptLocation, boolean autoOutput, int port) {
         this.groovy = groovy;
         this.isScriptFile = isScriptFile;
         this.scriptLocation = scriptLocation;
+        this.autoOutput = autoOutput;
         try {
             url = new URL("http", InetAddress.getLocalHost().getHostAddress(), port, "/");
             System.out.println("groovy is listening on port " + port);
@@ -38,7 +40,7 @@ public class GroovySocketServer implements Runnable {
                 } else {
                     script = groovy.parse(scriptLocation, "main");
                 }
-                new GroovyClientConnection(script, serverSocket.accept());
+                new GroovyClientConnection(script, autoOutput, serverSocket.accept());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -50,9 +52,11 @@ public class GroovySocketServer implements Runnable {
         private Socket socket;
         private BufferedReader reader;
         private PrintWriter writer;
+        private boolean autoOutput;
     
-        GroovyClientConnection(Script script, Socket socket) throws IOException {
+        GroovyClientConnection(Script script, boolean autoOutput,Socket socket) throws IOException {
             this.script = script;
+            this.autoOutput = autoOutput;
             this.socket = socket;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(socket.getOutputStream());
@@ -72,10 +76,12 @@ public class GroovySocketServer implements Runnable {
                         if ("success".equals(o)) {
                             break; // to close sockets gracefully etc...
                         } else {
-                            writer.println(o);
-                            writer.flush();
+                            if (autoOutput) {
+                                writer.println(o);
+                            }
                         }
                     }
+                    writer.flush();
                 }
             } catch (IOException e) {
                 e.printStackTrace();

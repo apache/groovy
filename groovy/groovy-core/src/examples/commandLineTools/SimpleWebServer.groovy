@@ -3,7 +3,7 @@
  * @author <a href="mailto:jeremy.rayner@gmail.com">Jeremy Rayner</a>
  * 
  * invoke using
- *    groovy -w 80 SimpleWebServer.groovy
+ *    groovy -l 80 SimpleWebServer.groovy
  * 
  *       (where 80 is the port to listen for requests upon)
  */
