@@ -130,6 +130,11 @@ public class MetaClass {
         for (int i = 0; i < interfaces.length; i++) {
             addNewStaticMethodsFrom(interfaces[i]);
         }
+        
+        if (theClass.isArray() && ! theClass.equals(Object[].class)) {
+            addNewStaticMethodsFrom(Object[].class);
+        }
+        
         // lets add all the base class methods
         Class c = theClass;
         while (true) {
@@ -140,6 +145,8 @@ public class MetaClass {
             addNewStaticMethodsFrom(c);
             addMethods(c);
         }
+        
+        
     }
 
     /**
