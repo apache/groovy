@@ -1057,7 +1057,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
-            if (variableStack.get(name) == null) {
+            
+            if (variableStack.get(name) == null && classNode.getField(name) == null) {
                 defineVariable(name, "java.lang.Object");
             }
         }
@@ -1103,8 +1104,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String name = param.getName();
-            visitVariableExpression(new VariableExpression(name));
-
+            
+            if (variableStack.get(name) == null) {
+                visitFieldExpression(new FieldExpression(classNode.getField(name)));
+            }
+            else {
+                visitVariableExpression(new VariableExpression(name));
+            }
             prototype = prototype + "L" + helper.getClassInternalName(param.getType()) + ";";
         }
         passingClosureParams = false;
@@ -2441,7 +2447,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 // propertyNode.getInitialValueExpression().visit(outerVisitor);
             }
             expression.getCode().visit(innerVisitor);
-
+            addFieldsToVisitor(outerVisitor);
+            
             // now any variables declared in the outer context that are referred to
             // in the inner context need to be copied
             Set outerDecls = outerVisitor.getDeclaredVariables();
@@ -2453,7 +2460,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             Set varSet = new HashSet();
             for (Iterator iter = innerRefs.iterator(); iter.hasNext();) {
                 String var = (String) iter.next();
-                if (outerDecls.contains(var) && classNode.getField(var) == null) {
+                if (outerDecls.contains(var) && (classNode.getField(var) == null || isInnerClass())) {
                     String type = getVariableType(var);
                     vars.add(new Parameter(type, var));
                     varSet.add(var);
@@ -2461,7 +2468,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             }
             for (Iterator iter = outerRefs.iterator(); iter.hasNext();) {
                 String var = (String) iter.next();
-                if (innerDecls.contains(var) && classNode.getField(var) == null && !varSet.contains(var)) {
+                if (innerDecls.contains(var) && (classNode.getField(var) == null || isInnerClass()) && !varSet.contains(var)) {
                     String type = getVariableType(var);
                     vars.add(new Parameter(type, var));
                 }
@@ -2472,10 +2479,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         return answer;
     }
 
+    private boolean isInnerClass() {
+        return classNode instanceof InnerClassNode;
+    }
+
     protected void findMutableVariables(MethodNode node) {
         VariableScopeCodeVisitor outerVisitor = new VariableScopeCodeVisitor(true);
         node.getCode().visit(outerVisitor);
 
+        addFieldsToVisitor(outerVisitor);
+        
         VariableScopeCodeVisitor innerVisitor = outerVisitor.getClosureVisitor();
         Set outerDecls = outerVisitor.getDeclaredVariables();
         Set outerRefs = outerVisitor.getReferencedVariables();
@@ -2498,6 +2511,16 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             if (outerDecls.contains(var) && classNode.getField(var) == null) {
                 mutableVars.add(var);
             }
+        }
+    }
+
+    protected void addFieldsToVisitor(VariableScopeCodeVisitor visitor) {
+        for (Iterator iter = classNode.getFields().iterator(); iter.hasNext(); ) {
+            FieldNode field = (FieldNode) iter.next();
+            String name = field.getName();
+            
+            visitor.getDeclaredVariables().add(name);
+            visitor.getReferencedVariables().add(name);
         }
     }
 

@@ -8,9 +8,7 @@ class NestedClosureBug extends GroovyTestCase {
     	getValues().each { 
     		println it
     		it.each { 
-    			/** @todo
     			assert a == 123
-    			*/
     		}
     	}
     }
