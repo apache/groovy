@@ -100,6 +100,7 @@ import java.util.regex.Pattern;
  * @author Sam Pullara
  * @author Rod Cope
  * @author Guillaume Laforge
+ * @author John Wilson
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
