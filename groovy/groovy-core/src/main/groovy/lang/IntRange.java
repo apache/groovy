@@ -48,6 +48,8 @@ package groovy.lang;
 import java.util.AbstractList;
 import java.util.List;
 
+import org.codehaus.groovy.runtime.IteratorClosureAdapter;
+
 /**
  * Represents a list of Integer objects from a specified int up to but not including
  * a given and to.
@@ -75,7 +77,6 @@ public class IntRange extends AbstractList {
     public boolean equals(IntRange that) {
         return this.from == that.from && this.to == that.to;
     }
-
 
     public int getFrom() {
         return from;
@@ -120,7 +121,7 @@ public class IntRange extends AbstractList {
     public String toString() {
         return "" + from + ":" + to;
     }
-    
+
     public boolean contains(Object value) {
         if (value instanceof Integer) {
             Integer integer = (Integer) value;
@@ -128,5 +129,28 @@ public class IntRange extends AbstractList {
             return i >= from && i < to;
         }
         return false;
+    }
+
+    public void step(int step, Closure closure) {
+        if (step >= 0) {
+            int value = from;
+            while (value <= to) {
+                closure.call(new Integer(value));
+                value = value + step;
+            }
+        }
+        else {
+            int value = to;
+            while (value >= from) {
+                closure.call(new Integer(value));
+                value = value + step;
+            }
+        }
+    }
+
+    public List step(int step) {
+        IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
+        step(step, adapter);
+        return adapter.asList();
     }
 }
