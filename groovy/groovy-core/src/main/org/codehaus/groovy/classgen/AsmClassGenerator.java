@@ -1733,10 +1733,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
         ClassNode owner = innerClass.getOuterClass();
         String ownerTypeName = owner.getName();
+/*
         if (classNode.isStaticClass() || isStaticMethod()) {
             ownerTypeName = "java.lang.Class";
         }
-
+*/
         passingClosureParams = true;
         List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
