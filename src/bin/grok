@@ -164,7 +164,7 @@ fi
 if $useprofiler; then
     runProfiler
 else
-    exec $JAVACMD $JAVA_OPTS \
+    exec "$JAVACMD" $JAVA_OPTS \
         -classpath "$CLASSWORLDS_CLASSPATH" \
         -Dprogram.name="$PROGNAME" \
         -Dclassworlds.conf="$CLASSWORLDS_CONF" \
