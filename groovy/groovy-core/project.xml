@@ -204,7 +204,7 @@
 	<!-- core dependencies -->
     <dependency>
       <id>asm</id>
-      <version>1.3.4</version>
+      <version>1.4.1</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
@@ -244,10 +244,15 @@
       <version>3.8.1</version>
     </dependency>
 
-  <!-- only used for testing-->
+  <!-- only used for testing/debugging-->
     <dependency>
       <id>asm+util</id>
-      <version>1.3.4</version>
+      <version>1.4.1</version>
+      <url>http://asm.objectweb.org/</url>
+    </dependency>
+    <dependency>
+      <id>asm+attrs</id>
+      <version>1.4.1</version>
       <url>http://asm.objectweb.org/</url>
     </dependency>
 
