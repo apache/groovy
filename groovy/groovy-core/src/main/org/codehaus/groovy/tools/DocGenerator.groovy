@@ -47,7 +47,7 @@ class DocGenerator
 	 * Builds an HTML page from the structure of DefaultGroovyMethods.
 	 */
 		
-		generate() {
+		def generate() {
 			parse()
 			
 			sources = builder.getSources()

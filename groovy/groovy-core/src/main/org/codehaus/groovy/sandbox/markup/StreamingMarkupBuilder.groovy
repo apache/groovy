@@ -45,23 +45,23 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 	
 	class StreamingMarkupBuilder extends AbstractStreamingBuilder {
-		pendingStack = []
-		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		def pendingStack = []
+		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
 							out.unescaped() << "<!--"
 							out.bodyText() << body
 							out.unescaped() << "-->"
 						 }
-		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
 							if (body instanceof Buildable) {
 								body.build(doc)
 							} else {
 								out.bodyText() << body
 							}
 					  }
-		unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
 								out.unescaped() << body
 						   }
-		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out |
+		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ::
 						if (prefix != "") {
 							if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
 								throw new GroovyRuntimeException("Namespace prefix: ${prefix} is not bound to a URI")
@@ -72,11 +72,11 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							
 						out = out.unescaped() << "<${tag}"
 						
-					    attrs.each {key, value |
-					    				if (key.contains '$') {
-					    					parts = key.tokenize '$'
+					    attrs.each {key, value ::
+					    				if (key.contains('$')) {
+					    					parts = key.tokenize('$')
 					    					
-					    					if (namespaces.containsKey parts[0]) {
+					    					if (namespaces.containsKey(parts[0])) {
 					    						key = parts[0] + ":" + parts[1]
 					    					} else {
 					    						throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
@@ -90,7 +90,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 								  	
 						hiddenNamespaces = [:]
 			
-						pendingNamespaces.each {key, value |
+						pendingNamespaces.each {key, value ::
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
 							out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
@@ -118,7 +118,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 							out << "</${tag}>"
 						}
 						
-						hiddenNamespaces.each {key, value |	
+						hiddenNamespaces.each {key, value ::
 													if (value == null) {
 														namespaces.remove key
 													} else {
@@ -127,7 +127,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 											   }											   						
 					}
 		
-		builder = null
+		def builder = null
 		
 		StreamingMarkupBuilder() {
 			specialTags.putAll(['yield':noopClosure,
@@ -141,10 +141,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 			this.builder = new BaseMarkupBuilder(nsSpecificTags)
 		}
 		
-		bind(closure) {
-			boundClosure = this.builder.bind closure;
+		def bind(closure) {
+			boundClosure = this.builder.bind(closure);
 			
-			{out |
+			{out ::
 			    out = new StreamingMarkupWriter(out)
 				boundClosure.trigger = out
 				out.flush()

@@ -48,30 +48,30 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Node
 	
 	class StreamingDOMBuilder extends AbstractStreamingBuilder {
-		pendingStack = []
-		commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		def pendingStack = []
+		def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
 							comment = dom.document.createComment(body)
 							
 							if (comment != null) {
 								dom.element.appendChild(comment)
 							}
 						 }
-		noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
 						if (body instanceof Closure) {
 							body()
 						} else {
 							dom.element.appendChild(dom.document.createTextNode(body))
 						}
 					  }
-		tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom |
+		def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ::
 						attributes = []
 						nsAttributes = []
 						
-					    attrs.each {key, value |					    				
-			    				if (key.contains '$') {
-			    					parts = key.tokenize '$'
+					    attrs.each {key, value ::
+			    				if (key.contains('$')) {
+			    					parts = key.tokenize('$')
 			    					
-			    					if (namespaces.containsKey parts[0]) {
+			    					if (namespaces.containsKey(parts[0])) {
 			    						namespaceUri = namespaces[parts[0]]
 
 //									nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}", value])
@@ -87,7 +87,7 @@ import org.w3c.dom.Node
 							  	
 						hiddenNamespaces = [:]
 
-						pendingNamespaces.each {key, value |
+						pendingNamespaces.each {key, value ::
 							hiddenNamespaces[key] = namespaces[key]
 							namespaces[key] = value
 //							nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", value])
@@ -143,7 +143,7 @@ import org.w3c.dom.Node
 
 						dom.element = dom.element.getParentNode()
 						
-						hiddenNamespaces.each {key, value |
+						hiddenNamespaces.each {key, value ::
 													if (value == null) {
 														namespaces.remove key
 													} else {
@@ -152,7 +152,7 @@ import org.w3c.dom.Node
 											   }					
 					}
 		
-		builder = null
+		def builder = null
 				
 		StreamingDOMBuilder() {
 			specialTags.putAll(['yield':noopClosure,
@@ -166,8 +166,8 @@ import org.w3c.dom.Node
 			this.builder = new BaseMarkupBuilder(nsSpecificTags)
 		}
 		
-		bind(closure) {
-			boundClosure = this.builder.bind closure
+		def bind(closure) {
+			def boundClosure = this.builder.bind(closure)
 			
 			return {
 				if (it instanceof Node) {
