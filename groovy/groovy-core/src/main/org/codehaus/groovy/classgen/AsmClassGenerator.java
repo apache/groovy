@@ -366,14 +366,14 @@ public class AsmClassGenerator extends ClassGenerator {
         cv.visitLabel(labelEnd);
 
         // br experiment with local var table so debugers can retrieve variable names
-        Set vars = this.variableStack.keySet();
-        for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
-            String varName = (String) iterator.next();
-            Variable v = (Variable)variableStack.get(varName);
-            String type = v.getTypeName();
-            type = BytecodeHelper.getTypeDescription(type);
-            cv.visitLocalVariable(varName, type, labelStart, labelEnd, v.getIndex()); // the start and end should be fine-pined
-        }
+//        Set vars = this.variableStack.keySet();
+//        for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
+//            String varName = (String) iterator.next();
+//            Variable v = (Variable)variableStack.get(varName);
+//            String type = v.getTypeName();
+//            type = BytecodeHelper.getTypeDescription(type);
+//            cv.visitLocalVariable(varName, type, labelStart, labelEnd, v.getIndex()); // the start and end should be fine-pined
+//        }
 
         cv.visitMaxs(0, 0);
     }
