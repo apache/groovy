@@ -237,6 +237,13 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * Print a linebreak to the standard out.
+     */
+    public static void println(Object self) {
+        System.out.println();
+    }
+
+    /**
      * Print to a console in interactive format along with a newline
      */
     public static void println(Object self, Object value) {
@@ -3377,15 +3384,8 @@ PropertyValue pv = (PropertyValue) itr.next();
         char[] charBuffer = new char[4096];
         int nbCharRead = 0;
         while ((nbCharRead = reader.read(charBuffer)) != -1) {
-            if (nbCharRead == charBuffer.length) {
-                // appends a full buffer
-                answer.append(charBuffer);
-            } else {
-                // appends the last incomplete buffer
-                char[] endBuffer = new char[nbCharRead];
-                System.arraycopy(charBuffer, 0, endBuffer, 0, nbCharRead);
-                answer.append(endBuffer);
-            }
+            // appends buffer
+            answer.append(charBuffer, 0, nbCharRead);
         }
         reader.close();
         return answer.toString();
