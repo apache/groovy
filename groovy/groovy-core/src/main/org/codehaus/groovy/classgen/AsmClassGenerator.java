@@ -200,6 +200,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private VariableScope variableScope;
     public static final boolean CREATE_DEBUG_INFO = false;
+    public static final boolean CREATE_LINE_NUMBER_INFO = true;
     private static final boolean MARK_START = true;
 
     public static final String EB_SWITCH_NAME = "static.dispatching";
@@ -3403,7 +3404,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
 
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_SUPER, "groovy.lang.Closure"); // clsures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(owner, name, 0, "groovy.lang.Closure"); // clsures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         if (staticMethodOrInStaticClass) {
             answer.setStaticClass(true);
@@ -3534,7 +3535,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        InnerClassNode answer = new InnerClassNode(owner, name, ACC_SUPER, GString.class.getName());
+        InnerClassNode answer = new InnerClassNode(owner, name, 0, GString.class.getName());
         answer.setEnclosingMethod(this.methodNode);
         FieldNode stringsField =
             answer.addField(
@@ -4379,7 +4380,7 @@ public class AsmClassGenerator extends ClassGenerator {
             lineNumber = line;
             columnNumber = col;
         }
-        if (CREATE_DEBUG_INFO && line >= 0 && cv != null) {
+        if (CREATE_LINE_NUMBER_INFO && line >= 0 && cv != null) {
             Label l = new Label();
             cv.visitLabel(l);
             cv.visitLineNumber(line, l);
