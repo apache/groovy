@@ -5,9 +5,9 @@ import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
-import org.apache.xmlbeans.impl.jam.JamService;
-import org.apache.xmlbeans.impl.jam.JamServiceFactory;
-import org.apache.xmlbeans.impl.jam.JamServiceParams;
+import org.codehaus.jam.JamService;
+import org.codehaus.jam.JamServiceFactory;
+import org.codehaus.jam.JamServiceParams;
 
 import java.io.File;
 

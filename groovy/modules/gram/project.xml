@@ -4,7 +4,7 @@
   <groupId>groovy</groupId>
   <artifactId>gram</artifactId>
   <name>gram</name>
-  <currentVersion>1.0-SNAPSHOT</currentVersion>
+  <currentVersion>1.1-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -15,8 +15,11 @@
   <description>Gram is a metadata processing engine for Groovy</description>
   <url>http://groovy.codehaus.org/</url>
   <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
-  <siteAddress>groovy.codehaus.org</siteAddress>
-  <siteDirectory>/www/groovy.codehaus.org</siteDirectory>
+
+  <siteAddress>beaver.codehaus.org</siteAddress>
+  <siteDirectory>/home/projects/groovy/public_html/gram/maven</siteDirectory>
+  <distributionDirectory>/home/projects/groovy/dist</distributionDirectory>
+
   <repository>
     <connection>scm:cvs:pserver:anonymous@cvs.codehaus.org:/scm/cvspublic:groovy/modules/gram</connection>
     <developerConnection>scm:cvs:ext:${maven.username}@cvs.codehaus.org:/scm/cvspublic:groovy/modules/gram</developerConnection>
@@ -27,8 +30,8 @@
   <mailingLists/>
   <developers>
     <developer>
-      <id>tug</id>
-      <name>John Wilson</name>
+      <id>jstrachan</id>
+      <name>James Strachan</name>
       <roles>
         <role>Developer</role>
         <role>Founder</role>
@@ -46,9 +49,8 @@
     </dependency>
 
     <dependency>
-      <groupId>groovy</groupId>
-      <artifactId>jam</artifactId>
-      <version>dev</version>
+      <id>annogen</id>
+      <version>0.1.0</version>
     </dependency>
 
     <dependency>

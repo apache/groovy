@@ -1,10 +1,10 @@
 package org.codehaus.gram;
 
 import groovy.lang.GroovyShell;
-import org.apache.xmlbeans.impl.jam.JamService;
-import org.apache.xmlbeans.impl.jam.JamServiceFactory;
-import org.apache.xmlbeans.impl.jam.JamServiceParams;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.jam.JamService;
+import org.codehaus.jam.JamServiceFactory;
+import org.codehaus.jam.JamServiceParams;
 
 import java.io.File;
 import java.io.IOException;
