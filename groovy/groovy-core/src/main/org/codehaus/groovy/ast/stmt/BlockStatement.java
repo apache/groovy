@@ -92,4 +92,21 @@ public class BlockStatement extends Statement {
         return super.toString() + statements;
     }
 
+    public String getText() {
+        StringBuffer buffer = new StringBuffer("{ ");
+        boolean first = true;
+        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
+            if (first) {
+                first = false;
+            }
+            else {
+                buffer.append("; ");
+            }
+            Statement statement = (Statement) iter.next();
+            buffer.append(statement.getText());
+        }
+        buffer.append(" }");
+        return buffer.toString();
+    }
+
 }

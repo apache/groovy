@@ -73,4 +73,8 @@ public class ReturnStatement extends Statement {
         return expression;
     }
 
+    public String getText() {
+        return "return " + expression.getText();
+    }
+
 }

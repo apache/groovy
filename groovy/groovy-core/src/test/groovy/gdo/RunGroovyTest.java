@@ -68,10 +68,8 @@ public class RunGroovyTest extends TestSupport {
         object.invokeMethod("testWhereWithAndClause", null);
     }
 
-    /*
     public void testWhereClosureWithAnd() throws Exception {
         GroovyObject object = compile("src/test/groovy/gdo/PersonTest.groovy");
         object.invokeMethod("testWhereClosureWithAnd", null);
     }
-    */
 }
