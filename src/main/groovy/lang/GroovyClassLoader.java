@@ -120,7 +120,6 @@ public class GroovyClassLoader extends ClassLoader {
     private void debugWriteClassfile(ClassNode classNode, byte[] code) {
 		if (outputDir != null) {
 			String filename = classNode.getName().replace('.', File.separatorChar) + ".class";
-			System.err.println("Writing: " + filename);
 			int index = filename.lastIndexOf(File.separator);
 			String dirname;
 			if (index != -1) {
