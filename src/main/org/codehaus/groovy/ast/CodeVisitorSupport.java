@@ -165,6 +165,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitCaseStatement(CaseStatement statement) {
         statement.getExpression().visit(this);
+        statement.getCode().visit(this);
     }
 
     public void visitBreakStatement(BreakStatement statement) {
