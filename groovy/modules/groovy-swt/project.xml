@@ -10,7 +10,7 @@
         <logo>http://codehaus.org/codehaus-small.gif</logo>
     </organization>
     <inceptionYear>2004</inceptionYear>
-    <package>groovy.swt, groovy.jface</package>
+    <package>groovy</package>
     <description>groovy-swt</description>
     <url>http://groovy.codehaus.org/</url>
     <issueTrackingUrl>http://jira.codehaus.org/secure/BrowseProject.jspa?id=10242&amp;report=roadmap</issueTrackingUrl>
@@ -62,7 +62,7 @@
         <dependency>
             <groupId>groovy</groupId>
             <artifactId>groovy</artifactId>
-            <version>1.0-beta-6</version>
+            <version>1.0-beta-7</version>
             <type>jar</type>
             <properties/>
         </dependency>
