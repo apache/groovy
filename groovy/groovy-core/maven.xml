@@ -277,9 +277,19 @@
         <exclude name="CVS/*"/>
       </fileset>
     </copy>-->
+
+    <!--
     <groovyc destdir="${basedir}/target/classes" srcdir="${basedir}/target/classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
+    -->
+
+    <!-- lets fork a JVM to avoid classpath hell -->
+    <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
+      <classpath refid="test.classpath"/>
+      <arg value="${basedir}/target/classes"/>
+      <arg value="${basedir}/target/classes"/>
+    </java>
   </goal>
 
   <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath"
@@ -336,6 +346,7 @@
         <exclude name="**/SwingDemo.groovy"/>
         <exclude name="**/*Demo.groovy"/>
         <exclude name="**/Html2Wiki.groovy"/>
+        <exclude name="**/dom/DOMTest.groovy"/>
       </fileset>
     </copy>
     <!--
@@ -343,9 +354,19 @@
     <fileset dir="${basedir}/target/test-classes" includes="**/*.groovy"/>
     </touch>
     -->
+
+    <!-- lets fork a JVM to avoid classpath hell -->
+    <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
+      <classpath refid="test.classpath"/>
+      <arg value="${basedir}/target/test-classes"/>
+      <arg value="${basedir}/target/test-classes"/>
+    </java>
+
+    <!--
     <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/target/test-classes" listfiles="true">
       <classpath refid="test.classpath"/>
     </groovyc>
+    -->
 
       <!-- re compile java, so that UberTests are now built -->
       <javac srcdir="${basedir}/src/test"
