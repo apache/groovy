@@ -1854,6 +1854,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void configureAST(ASTNode node, AST ast) {
+        if (ast==null) throw new ASTRuntimeException(ast, "PARSER BUG: Tried to configure "+node.getClass().getName()+" with null Node");
         node.setColumnNumber(ast.getColumn());
         node.setLineNumber(ast.getLine());
 
@@ -1875,24 +1876,32 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return node != null && node.getType() == typeCode;
     }
 
-    protected void assertNodeType(int type, AST node) {
+    private String getTokenName(int token) {
         String[] tokenNames = BaseAST.getTokenNames();
+        if (tokenNames==null) return ""+token;
+        return tokenNames[token];
+    }
+    
+    private String getTokenName(AST node) {
+        if (node==null) return "null";
+        return getTokenName(node.getType());
+    }
+
+    protected void assertNodeType(int type, AST node) {
         if (node == null) {
-            throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + tokenNames[type]);
+            throw new ASTRuntimeException(node, "No child node available in AST when expecting type: " + getTokenName(type));
         }
         if (node.getType() != type) {            
-            throw new ASTRuntimeException(node, "Unexpected node type: " + tokenNames[node.getType()] + " found when expecting type: " + tokenNames[type]);
+            throw new ASTRuntimeException(node, "Unexpected node type: " + getTokenName(node) + " found when expecting type: " + getTokenName(type));
         }
     }
 
     protected void notImplementedYet(AST node) {
-        String[] tokenNames = BaseAST.getTokenNames();
-        throw new ASTRuntimeException(node, "AST node not implemented yet for type: " + tokenNames[node.getType()]);
+        throw new ASTRuntimeException(node, "AST node not implemented yet for type: " + getTokenName(node));
     }
 
     protected void unknownAST(AST node) {
-        String[] tokenNames = BaseAST.getTokenNames();
-        throw new ASTRuntimeException(node, "Unknown type: " + tokenNames[node.getType()]);
+        throw new ASTRuntimeException(node, "Unknown type: " + getTokenName(node));
     }
 
     protected void dumpTree(AST ast) {
@@ -1902,6 +1911,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void dump(AST node) {
-        System.out.println("Type: " + node.getType() + " text: " + node.getText());
+        System.out.println("Type: " + getTokenName(node) + " text: " + node.getText());
     }
 }
