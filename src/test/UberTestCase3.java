@@ -12,7 +12,7 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.ast.ClassNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.ast.ModuleNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
-        //todo suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
+        suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
 
         suite.addTestSuite(org.codehaus.groovy.classgen.CapitalizeTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.ConstructorIssueTest.class);
