@@ -284,6 +284,8 @@ public class MetaClass {
     }
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+        checkInitialised();
+
         //        System.out.println("Calling static method: " + methodName + " on args: " + InvokerHelper.toString(arguments));
         //        Class type = arguments == null ? null : arguments.getClass();
         //        System.out.println("Argument  type: " + type);
@@ -365,6 +367,8 @@ public class MetaClass {
      * @return the given property's value on the object
      */
     public Object getProperty(final Object object, final String property) {
+        checkInitialised();
+
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
         if (descriptor != null) {
             Method method = descriptor.getReadMethod();
@@ -439,6 +443,8 @@ public class MetaClass {
      * Sets the property value on an object
      */
     public void setProperty(Object object, String property, Object newValue) {
+        checkInitialised();
+
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
 
         if (descriptor != null) {
@@ -731,7 +737,8 @@ public class MetaClass {
      * @return the matching method which should be found
      */
     protected MetaMethod findMethod(Method aMethod) {
-        for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
+        List methods = getMethods(aMethod.getName());
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MetaMethod method = (MetaMethod) iter.next();
             if (method.isMethod(aMethod)) {
                 return method;
@@ -1341,6 +1348,9 @@ public class MetaClass {
     protected void generateReflector() {
         reflector = loadReflector(allMethods);
 
+        if (reflector == null) {
+            throw new RuntimeException("Should have a reflector!");
+        }
         // lets set the reflector on all the methods
         for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
@@ -1428,7 +1438,7 @@ public class MetaClass {
 
     private void addInterfaceMethods(List list, Method[] methods) {
         for (int i = 0; i < methods.length; i++) {
-            list.add(new MetaMethod(methods[i]));
+            list.add(createMetaMethod(methods[i]));
         }
     }
 }
