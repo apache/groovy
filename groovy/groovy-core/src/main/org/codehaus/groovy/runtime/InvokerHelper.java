@@ -56,6 +56,9 @@ import groovy.lang.Tuple;
 import groovy.lang.Writable;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
@@ -441,6 +444,21 @@ public class InvokerHelper {
         else if (object instanceof Writable) {
             Writable writable = (Writable) object;
             writable.writeTo(out);
+        }
+        else if (object instanceof InputStream || object instanceof Reader) {
+            // Copy stream to stream
+            Reader reader;
+            if (object instanceof InputStream) {
+                reader = new InputStreamReader((InputStream)object);
+            } else {
+                reader = (Reader) object;
+            }
+            char[] chars = new char[8192];
+            int i;
+            while ((i = reader.read(chars)) != -1) {
+                out.write(chars, 0, i);
+            }
+            reader.close();
         }
         else {
             out.write(toString(object));
