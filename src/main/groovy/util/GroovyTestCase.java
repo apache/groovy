@@ -207,7 +207,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     protected String getTestClassName() {
-        return "TestScript" + getName() + (counter++) + ".groovy";
+        return "TestScript" + getMethodName() + (counter++) + ".groovy";
     }
 
     /**
