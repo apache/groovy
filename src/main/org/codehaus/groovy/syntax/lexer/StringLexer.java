@@ -237,6 +237,9 @@ public class StringLexer extends TextLexerBase
                                     return c2;
 
                                 case '\\':
+                                    c = '\\';
+                                    width = 2;
+                                    break ESCAPE_SWITCH;
                                 case '$':
                                 {
                                     if( allowGStrings )
