@@ -53,7 +53,7 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/StaticMethodCallBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
+
     public void testTryCatchBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/TryCatchBug.groovy");
         object.invokeMethod("testBug", null);
@@ -63,7 +63,7 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/RodsBug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
+
     public void testCastBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/ClosureMethodCallTest.groovy");
         object.invokeMethod("testCallingClosureWithMultipleArguments", null);
@@ -72,20 +72,25 @@ public class RunBugsTest extends TestSupport {
     public void testGuillaumesMapBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/GuillaumesMapBug.groovy");
         object.invokeMethod("testBug", null);
-    } 
-    
+    }
+
     public void testUseClosureInScript() throws Exception {
         GroovyObject object = compile("src/test/groovy/script/UseClosureInScript.groovy");
         object.invokeMethod("run", null);
-    } 
-    
+    }
+
     public void testUseStaticInClosure() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/UseStaticInClosureBug.groovy");
         object.invokeMethod("testBug2", null);
-    } 
-    
+    }
+
     public void testStaticMarkupBug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/StaticMarkupBug.groovy");
         object.invokeMethod("testBug", null);
+    }
+    
+    public void testPrimitiveTypeFieldTest() throws Exception {
+        GroovyObject object = compile("src/test/groovy/PrimitiveTypeFieldTest.groovy");
+        object.invokeMethod("testPrimitiveField", null);
     }
 }
