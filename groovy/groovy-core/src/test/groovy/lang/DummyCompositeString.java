@@ -43,50 +43,41 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
+
 package groovy.lang;
+
+import groovy.lang.CompositeString;
+import groovy.lang.MetaClass;
 
 
 /**
- * Represents a String which contains embedded values such as 
- * "hello there ${user} how are you?"
- * which can be evaluated lazily.
- * Advanced users can iterate over the text and values to perform
- * special processing, such as for performing SQL operations, the
- * values can be substituted for ? and the actual value objects
- * can be bound to a JDBC statement.
+ * A hand crafted example CompositeString
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class CompositeString implements GroovyObject {
+public class DummyCompositeString extends CompositeString {
 
-    private Object[] values;
-
-    public CompositeString(Object values) {
-        this.values = (Object[]) values;
+    private static String[] strings = { "Hello ", "!" };
+    private MetaClass metaClass;
+    
+    public DummyCompositeString(Object[] values) {
+        super(values);
     }
     
-    public CompositeString(Object[] values) {
-        this.values = values;
-    }
-    
-    // will be static in an instance
-    public abstract String[] getStrings();
-    
-    public Object[] getValues() {
-        return values;
+    public String[] getStrings() {
+        return strings;
     }
 
-    public String toString() {
-        String[] s = getStrings();
-        int numberOfValues = values.length;
-        StringBuffer buffer = new StringBuffer();
-        for (int i = 0, size = s.length; i < size; i++) {
-            buffer.append(s[i]);
-            if (i < numberOfValues) {
-                buffer.append(values[i]);
-            }
-        }
-        return buffer.toString();
+    public MetaClass getMetaClass() {
+        return metaClass;
+    }
+
+    public void setMetaClass(MetaClass metaClass) {
+        this.metaClass = metaClass;
+    }
+
+    public Object invokeMethod(String name, Object arguments) {
+        return metaClass.invokeMethod(this, name, arguments);
     }
 }

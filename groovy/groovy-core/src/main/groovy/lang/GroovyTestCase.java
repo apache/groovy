@@ -66,6 +66,15 @@ public class GroovyTestCase extends TestCase {
     public GroovyTestCase() {
     }
 
+    protected void assertArrayEquals(Object[] expected, Object[] value) {
+        String message = "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);
+        assertNotNull(message + ": expected should not be null", value);
+        assertNotNull(message + ": value should not be null", value);
+        assertEquals(message, expected.length, value.length);
+        for (int i = 0, size = expected.length; i < size; i++ ) {
+            assertEquals("value[" + i + "] when " + message, expected[i], value[i]);
+        }
+    }
     protected void assertLength(int length, char[] array) {
         assertEquals(length, array.length);
     }

@@ -50,10 +50,12 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.BooleanExpression;
 import org.codehaus.groovy.ast.expr.CompositeStringExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -71,17 +73,40 @@ public class CompositeStringTest extends TestSupport {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
 
         //Statement printStatement = createPrintlnStatement(new VariableExpression("str"));
-        
+
         // simulate "Hello ${user}!"
         CompositeStringExpression compositeStringExpr = new CompositeStringExpression();
         compositeStringExpr.addString(new ConstantExpression("Hello "));
         compositeStringExpr.addValue(new VariableExpression("user"));
         compositeStringExpr.addString(new ConstantExpression("!"));
         BlockStatement block = new BlockStatement();
-        block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("user"), Token.equal(-1, -1), new ConstantExpression("World"))));
-        block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("str"), Token.equal(-1, -1), compositeStringExpr)));
-        block.addStatement(new ExpressionStatement(new MethodCallExpression(new VariableExpression("str"), "println", ConstantExpression.NULL)));
-        
+        block.addStatement(
+            new ExpressionStatement(
+                new BinaryExpression(
+                    new VariableExpression("user"),
+                    Token.equal(-1, -1),
+                    new ConstantExpression("World"))));
+        block.addStatement(
+            new ExpressionStatement(
+                new BinaryExpression(new VariableExpression("str"), Token.equal(-1, -1), compositeStringExpr)));
+        block.addStatement(
+            new ExpressionStatement(
+                new MethodCallExpression(new VariableExpression("str"), "println", ConstantExpression.NULL)));
+
+        block.addStatement(
+            new ExpressionStatement(
+                new BinaryExpression(
+                    new VariableExpression("text"),
+                    Token.equal(-1, -1),
+                    new MethodCallExpression(new VariableExpression("str"), "toString", ConstantExpression.NULL))));
+
+        block.addStatement(
+            new AssertStatement(
+                new BooleanExpression(
+                    new BinaryExpression(
+                        new VariableExpression("text"),
+                        Token.compareEqual(-1, -1),
+                        new ConstantExpression("Hello World!")))));
         classNode.addMethod(new MethodNode("stringDemo", ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);

@@ -44,34 +44,21 @@
 
  */
 
-package org.codehaus.groovy.classgen;
-
-import groovy.lang.CompositeString;
-import groovy.lang.MetaClass;
-
+package groovy.lang;
 
 /**
- * This is a scratch class used to experiment with ASM to see what kind of 
- * stuff is output for normal Java code
+ * Tests the use of the structured Attribute type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class DumpClass4 extends CompositeString {
+public class CompositeStringTest extends GroovyTestCase {
 
-    private static String[] strings = { "hello", "world" };
-    private MetaClass metaClass;
-    
-    public DumpClass4(Object[] values) {
-        super(values);
-    }
-    
-    public String[] getStrings() {
-        return strings;
+    public void testIterateOverText() {
+        DummyCompositeString compString = new DummyCompositeString(new Object[] {"James"});
+        
+        assertArrayEquals(new String[] { "Hello ", "!" }, compString.getStrings());
+        assertArrayEquals(new Object[] { "James" }, compString.getValues());
     }
 
-    public void foo(Object data) {
-        strings = (String[]) data;
-        metaClass = (MetaClass) data;
-    }
 }
