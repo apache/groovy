@@ -75,4 +75,10 @@ public class RunClosureTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/Bytecode2Bug.groovy");
         object.invokeMethod("testTedsBytecodeBug", null);
     }
-}
+    
+    public void testZoharsBug() throws Exception {
+        GroovyObject object = compile("src/test/groovy/bugs/ZoharsBug.groovy");
+        object.invokeMethod("testBug", null);
+    }
+    
+   }

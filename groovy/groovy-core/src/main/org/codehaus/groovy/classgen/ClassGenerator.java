@@ -1528,7 +1528,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         pushConstant(size);
 
         cv.visitTypeInsn(ANEWARRAY, "java/lang/Object");
-        
+
         for (int i = 0; i < size; i++) {
             cv.visitInsn(DUP);
             pushConstant(i);
@@ -1880,7 +1880,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         */
         cv.visitVarInsn(ALOAD, tempIdx);
-        
+
         cv.visitLdcInsn(method);
         new ArgumentListExpression().visit(this);
         invokeMethodMethod.call(cv);
@@ -2036,6 +2036,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         if (methodNode != null) {
             // we must be in a property
+            outerVisitor.setParameters(methodNode.getParameters());
             methodNode.getCode().visit(outerVisitor);
         }
         else {
@@ -2046,6 +2047,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         // now any variables declared in the outer context that are referred to
         // in the inner context need to be copied
         Set outerDecls = outerVisitor.getDeclaredVariables();
+        outerDecls.addAll(outerVisitor.getParameterSet());
         Set outerRefs = outerVisitor.getReferencedVariables();
         Set innerDecls = innerVisitor.getDeclaredVariables();
         Set innerRefs = innerVisitor.getReferencedVariables();
@@ -2067,7 +2069,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 vars.add(new Parameter(type, var));
             }
         }
-        
 
         //        if (!vars.isEmpty()) {
         //            System.out.println(classNode.getName() + " - closure is copying variables from outer context: " + vars);
@@ -2187,28 +2188,28 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                     classLoader.loadClass(type);
                     return type;
                 }
-                catch (Throwable e) { 
+                catch (Throwable e) {
                     // fall through
-                } 
-                
+                }
+
                 // lets try our class loader
                 try {
                     getClass().getClassLoader().loadClass(type);
                     return type;
                 }
-                catch (Throwable e) { 
+                catch (Throwable e) {
                     // fall through
-                } 
-                
+                }
+
                 // lets try the system class loader
                 try {
                     Class.forName(type);
                     return type;
                 }
-                catch (Throwable e) { 
+                catch (Throwable e) {
                     // fall through
-                } 
-                
+                }
+
                 // lets try class in same package
                 String packageName = classNode.getPackageName();
                 if (packageName == null || packageName.length() <= 0) {

@@ -81,6 +81,10 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         return referencedVariables;
     }
 
+    public Set getParameterSet() {
+        return parameterSet;
+    }
+
     public VariableScopeCodeVisitor getClosureVisitor() {
         if (closureVisitor == null) {
             closureVisitor = new VariableScopeCodeVisitor();
@@ -107,9 +111,12 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     public void visitVariableExpression(VariableExpression expression) {
         // check for undeclared variables?
         String variable = expression.getVariable();
+        /*
         if (!parameterSet.contains(variable)) {
             referencedVariables.add(variable);
         }
+        */
+        referencedVariables.add(variable);
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
@@ -121,7 +128,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
             exp.visit(this);
         }
     }
-    
+
     protected void setParameters(Parameter[] parameters) {
         parameterSet.clear();
         for (int i = 0; i < parameters.length; i++) {
@@ -131,10 +138,14 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
 
     protected void declareVariable(VariableExpression varExp) {
         String variable = varExp.getVariable();
+        /*
         if (!parameterSet.contains(variable)) {
             declaredVariables.add(variable);
             referencedVariables.add(variable);
         }
+        */
+        declaredVariables.add(variable);
+        referencedVariables.add(variable);
     }
 
 }
