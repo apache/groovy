@@ -158,6 +158,29 @@
 
   </goal>
 
+  <goal name="groovy-eclipse:copyjars">
+    <j:if test="${empty(groovy.eclipse.dir)}">
+      <j:set var="groovy.eclipse.dir" value="../groovyui"/>
+    </j:if>
+    
+    <copy file="${maven.build.dir}/${maven.final.name}.jar" tofile="${groovy.eclipse.dir}/lib/groovy.jar"/>
+
+    <j:forEach var="lib" items="${pom.artifacts}">
+      <echo>Processing ${lib.name}</echo>
+      <j:choose>
+        <j:when test="${lib.name.startsWith('commons-log')}">
+      	  <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/commons-logging.jar"/>
+        </j:when>
+        <j:when test="${lib.name.startsWith('asm-util')}">
+        </j:when>
+        <j:when test="${lib.name.startsWith('asm')}">
+      	  <copy file="${lib.path}" tofile="${groovy.eclipse.dir}/lib/asm.jar"/>
+        </j:when>
+      </j:choose>
+    </j:forEach>
+    
+  </goal>
+  
   <goal name="groovy:make-install" prereqs="jar:jar">
     <echo>${groovy.install.staging.dest}</echo>
     <mkdir dir="${groovy.install.staging.dest}"/>

@@ -1,6 +1,13 @@
 Things to Test
 ==============
 
+* interative shell for entering commands
+	groovy> x = [1, 2, 3]
+	groovy> print(x)
+	[1, 2, 3]
+	
+* UI shell (eclipse?) for evaluating groovy
+
 * throw statement
 * synchronized statement
 * switch statement
