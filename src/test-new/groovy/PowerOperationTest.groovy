@@ -1,5 +1,5 @@
 /** 
- * Test Math Power Operation in New Groovy
+ * Test Math Power Operation in Classic/New Groovy
  * 
  * @author Pilho Kim
  * @version $Revision$
@@ -39,8 +39,6 @@ class PowerOperationTest extends GroovyTestCase {
         println((x++)**3)
         assert x == 7
         println(x)
-        println("$x")
-        println("$x**2")
         println("${x**2}")
         println("${-x**2}")
         assert x == 7
@@ -50,5 +48,25 @@ class PowerOperationTest extends GroovyTestCase {
         assert x == 5
         assert (x--)**2 + x*2 - 1 == 32      // 5**2 + 4*2 - 1 = 32
         assert x == 4
+    }
+
+    void testConstantPowerAssignmentOperation() {
+        x = 5
+        x **= 2
+        assert x == 25
+        assert x**2 == 625
+        assert -x**2 != 625
+        assert -x**2 == -625
+    }
+
+    void testPowerAssignmentOperation() {
+        x = 5
+        y = 2
+        x **= y
+        assert x == 25
+        assert x**y == 625
+        assert x**-1 == 1/25
+        assert x**-y == 1/625
+        assert x**-y == x**(-y)
     }
 }
