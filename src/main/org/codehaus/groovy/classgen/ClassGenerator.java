@@ -1004,7 +1004,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
         ClassNode owner = innerClass.getOuterClass();
         String ownerTypeName = owner.getName();
-        if (isStaticMethod()) {
+        if (classNode.isStaticClass() || isStaticMethod()) {
             ownerTypeName = "java.lang.Class";
         }
 
@@ -1335,8 +1335,13 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         int tempIndex = defineVariable(createVariableName("field"), "java.lang.Object", false).getIndex();
 
         if (leftHandExpression && !holder) {
-            // this may be superflous
-            doConvertAndCast(type);
+            if (isInClosureConstructor()) {
+                doCast(type);
+            }
+            else {
+	            // this may be superflous
+	            doConvertAndCast(type);
+            }
         }
         int opcode =
             (leftHandExpression && !holder) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
@@ -1766,7 +1771,8 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         }
         String outerClassName = owner.getName();
         String name = outerClassName + "$" + context.getNextInnerClassIdx();
-        if (isStaticMethod()) {
+        boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
+        if (staticMethodOrInStaticClass) {
             outerClassName = "java.lang.Class";
         }
         Parameter[] parameters = expression.getParameters();
@@ -1778,6 +1784,10 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
 
         InnerClassNode answer = new InnerClassNode(owner, name, ACC_PUBLIC, "groovy.lang.Closure");
+        if (staticMethodOrInStaticClass) {
+            //System.out.println("#### Declaring closure in static method");
+            answer.setStaticClass(true);
+        }
         answer.addMethod("doCall", ACC_PUBLIC, "java.lang.Object", parameters, expression.getCode());
         if (parameters.length > 1
             || (parameters.length == 1
