@@ -55,6 +55,18 @@ class SampleTest extends GroovyTestCase {
         //list.each { (e)| println("List contains $e") }
     }
 
+    void testComplexExpression() {
+        def list = [1, [1, [1, 2], 3], 3]
+
+        def x = list[1][1][1]
+
+        assert x == 2
+
+        def y = list.get(1)[1].get(1)
+
+        assert x == y
+    }
+
     void testCase() {
         println "Hello"
         println 123
