@@ -1800,7 +1800,10 @@ public class MetaClass {
             Object method = iter.next();
             Class[] paramTypes = getParameterTypes(method);
             for (int i=0; i<paramTypes.length; i++) {
-                if (!isSuperclass(arguments[i],paramTypes[i])) iter.remove();
+                if (!isSuperclass(arguments[i],paramTypes[i])) {
+                    iter.remove();
+                    break; //return from the inner for
+                }
             }
         }
         if (superclassMatches.size()!=0) {
