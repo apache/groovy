@@ -72,6 +72,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -143,7 +144,7 @@ public class MetaClass {
         this.theClass = theClass;
 
         constructors = Arrays.asList(theClass.getDeclaredConstructors());
-        addMethods(theClass);
+        addMethods(theClass,true);
 
         // introspect
         BeanInfo info = null;
@@ -200,19 +201,16 @@ public class MetaClass {
         MetaClass.useReflection = useReflection;
     }
 
-    private void addInheritedMethods(Class theClass) {
+    private void addInheritedMethods() {
+        LinkedList superClasses = new LinkedList();
+        for (Class c = theClass.getSuperclass(); c!=Object.class && c!= null; c = c.getSuperclass()) {
+            superClasses.addFirst(c);
+        }
         // lets add all the base class methods
-        Class c = theClass;
-        if (c != Object.class) {
-            while (true) {
-                c = c.getSuperclass();
-                if (c == Object.class || c == null) {
-                    break;
-                }
-                addMethods(c);
-                addNewStaticMethodsFrom(c);
-
-            }
+        for (Iterator iter = superClasses.iterator(); iter.hasNext();) {
+            Class c = (Class) iter.next();
+            addMethods(c,true);
+            addNewStaticMethodsFrom(c);
         }
 
         // now lets see if there are any methods on one of my interfaces
@@ -224,7 +222,7 @@ public class MetaClass {
         // lets add Object methods after interfaces, as all interfaces derive from Object. 
         // this ensures List and Collection methods come before Object etc
         if (theClass != Object.class) {
-            addMethods(Object.class);
+            addMethods(Object.class, false);
             addNewStaticMethodsFrom(Object.class);
         }
 
@@ -277,7 +275,7 @@ public class MetaClass {
         }
         else {
             NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
-            addMethod(newMethod);
+            addMethod(newMethod,false);
             addNewInstanceMethod(newMethod);
         }
     }
@@ -292,7 +290,7 @@ public class MetaClass {
         }
         else {
             NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
-            addMethod(newMethod);
+            addMethod(newMethod,false);
             addNewStaticMethod(newMethod);
         }
     }
@@ -1155,7 +1153,8 @@ public class MetaClass {
      * 
      * @param theClass
      */
-    protected void addMethods(Class theClass) {
+    protected void addMethods(Class theClass, boolean forceOverwrite) {
+        // add methods directly declared in the class
         Method[] methodArray = theClass.getDeclaredMethods();
         for (int i = 0; i < methodArray.length; i++) {
             Method reflectionMethod = methodArray[i];
@@ -1163,11 +1162,11 @@ public class MetaClass {
                 continue;
             }
             MetaMethod method = createMetaMethod(reflectionMethod);
-            addMethod(method);
+            addMethod(method,forceOverwrite);
         }
     }
 
-    protected void addMethod(MetaMethod method) {
+    protected void addMethod(MetaMethod method, boolean forceOverwrite) {
         String name = method.getName();
 
         //System.out.println(theClass.getName() + " == " + name + Arrays.asList(method.getParameterTypes()));
@@ -1199,7 +1198,10 @@ public class MetaClass {
             list.add(method);
         }
         else {
-            if (!containsMatchingMethod(list, method)) {
+            if (forceOverwrite) {
+                removeMatchingMethod(list,method);
+                list.add(method);
+            } else if (!containsMatchingMethod(list, method)) {
                 list.add(method);
             }
         }
@@ -1229,6 +1231,33 @@ public class MetaClass {
         }
         return false;
     }
+    
+    /**
+     * @return remove a method of the same matching prototype was found in the
+     *         list
+     */
+    protected void removeMatchingMethod(List list, MetaMethod method) {
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            MetaMethod aMethod = (MetaMethod) iter.next();
+            Class[] params1 = aMethod.getParameterTypes();
+            Class[] params2 = method.getParameterTypes();
+            if (params1.length == params2.length) {
+                boolean matches = true;
+                for (int i = 0; i < params1.length; i++) {
+                    if (params1[i] != params2[i]) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if (matches) {
+                    iter.remove();
+                    return;
+                }
+            }
+        }
+        return;
+    }
+    
 
     /**
      * Adds all of the newly defined methods from the given class to this
@@ -1241,7 +1270,7 @@ public class MetaClass {
         Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
         while (iter.hasNext()) {
             MetaMethod method = (MetaMethod) iter.next();
-            addMethod(method);
+            addMethod(method,false);
             newGroovyMethodsList.add(method);
         }
     }
@@ -2083,7 +2112,7 @@ public class MetaClass {
     protected synchronized void checkInitialised() {
         if (!initialised) {
             initialised = true;
-            addInheritedMethods(theClass);
+            addInheritedMethods();
         }
         if (reflector == null) {
             generateReflector();
