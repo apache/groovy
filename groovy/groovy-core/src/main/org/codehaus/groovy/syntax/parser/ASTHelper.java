@@ -111,7 +111,7 @@ public class ASTHelper {
         // Use our cache of resolutions, if possible
 
         String resolution = (String) resolutions.get(name);
-        if (resolution == NOT_RESOLVED) {
+        if (NOT_RESOLVED.equals(resolution)) {
             return (safe ? name : null);
         }
         else if (resolution != null) {
