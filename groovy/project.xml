@@ -64,6 +64,15 @@
         <role>Founder</role>
       </roles>
     </developer>
+    <developer>
+      <name>James Strachan</name>
+      <id>jstrachan</id>
+      <email>james@coredevelopers.com</email>
+      <organization>Core Developer Network</organization>
+      <roles>
+        <role>Founder</role>
+      </roles>
+    </developer>
   </developers>
 
   <dependencies>
@@ -150,4 +159,22 @@
     </resources>
 
   </build>
+  
+   
+  <reports>
+    <!-- <report>maven-license-plugin</report> -->
+    <report>maven-checkstyle-plugin</report>
+    <report>maven-pmd-plugin</report>
+    <!-- <report>maven-simian-plugin</report> -->
+    <report>maven-jdepend-plugin</report>
+    <report>maven-changelog-plugin</report>
+    <report>maven-statcvs-plugin</report>
+    <report>maven-file-activity-plugin</report>
+    <report>maven-developer-activity-plugin</report>
+    <report>maven-jxr-plugin</report>
+    <report>maven-javadoc-plugin</report>
+    <report>maven-junit-report-plugin</report>
+    <report>maven-clover-plugin</report>
+  </reports>
+  
 </project>
