@@ -58,11 +58,11 @@ public abstract class Builder extends GroovyObjectSupport {
 	protected final Map namespaceMethodMap = new HashMap();
 	protected final Closure defaultGenerator;
 	
-	public Builder(final Closure defaultGenerator) {
-		this(defaultGenerator, new HashMap(), new HashMap());
+	public Builder(final Closure defaultGenerator, final Closure tagGenerator) {
+		this(defaultGenerator, tagGenerator, new HashMap(), new HashMap());
 	}
 	
-	public Builder(final Closure defaultGenerator, final Map methodMap, final Map namespaceMethodMap) {
+	public Builder(final Closure defaultGenerator, final Closure tagGenerator, final Map methodMap, final Map namespaceMethodMap) {
 		this.defaultGenerator = defaultGenerator.asWritable();
 		
 		this.methodMap = fettleMethodMap(this.defaultGenerator, methodMap);
@@ -72,9 +72,9 @@ public abstract class Builder extends GroovyObjectSupport {
 		while (keyIterator.hasNext()) {
 		final Object key = keyIterator.next();
 		final List value = (List)namespaceMethodMap.get(key);
-		final Closure dg = ((Closure)value.get(0)).asWritable();
+		final Closure dg = ((Closure)value.get(1)).asWritable();
 		
-			this.namespaceMethodMap.put(key, new Object[]{dg, fettleMethodMap(dg, (Map)value.get(1))});
+			this.namespaceMethodMap.put(key, new Object[]{dg, fettleMethodMap(dg, (Map)value.get(2))});
 		}
 	}
 	

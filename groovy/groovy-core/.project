@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <projectDescription>
-	<name>groovy-core</name>
-	<comment>a powerful and dynamic scripting language for the JVM</comment>
-	<projects>
-	</projects>
-	<buildSpec>
-		<buildCommand>
-			<name>org.eclipse.jdt.core.javabuilder</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
-	</buildSpec>
-	<natures>
-		<nature>org.eclipse.jdt.core.javanature</nature>
-		<nature>org.codehaus.groovy.eclipse.groovyNature</nature>
-	</natures>
+  <name>groovy</name>
+  <comment>a powerful and dynamic scripting language for the JVM</comment>
+  <projects>
+  </projects>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+      <arguments>
+      </arguments>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+  </natures>
 </projectDescription>

@@ -124,27 +124,30 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 											   }											   						
 					}
 		namespaceSetupClosure = {pendingNamespaces, namespaces, prefix, attrs, body, out |
-									if ( prefix == "") {
-										prefix = ":"	// marker for default namespace
-									}
-									
-									body = body.toString() 	// in case it's not a string
-									
-									if (namespaces[prefix] != body) {
-										pendingNamespaces[prefix] = body
+									attrs.each { key, value |
+										if ( key == "") {
+											key = ":"	// marker for default namespace
+										}
+										
+										value = value.toString() 	// in case it's not a string
+										
+										if (namespaces[key] != value) {
+											pendingNamespaces[key] = value
+										}
 									}
 								}
 						
 		specialTags = ['yield':noopClosure,
 		               'yieldUnescaped':unescapedClosure,
-		               'comment':commentClosure]
+		               'comment':commentClosure,
+		               'declareNamespace':namespaceSetupClosure]
 		               
-		namespaceSpecificTags = ['http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, specialTags]]
+		namespaceSpecificTags = ['http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 		
 		builder = null
 		
 		StreamingMarkupBuilder() {
-			this.builder = new BaseMarkupBuilder(this.tagClosure, ['declareNamespace':namespaceSetupClosure], this.namespaceSpecificTags)
+			this.builder = new BaseMarkupBuilder(this.tagClosure, this.tagClosure, [:], this.namespaceSpecificTags)
 		}
 		
 		StreamingMarkupBuilder(extraTags, extraNamespaceSpecificTags) {
@@ -152,7 +155,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 			nsTags.putAll(this.namespaceSpecificTags)
 			nsTags.putAll(extraNamespaceSpecificTags)
 			
-			this.builder = new BaseMarkupBuilder(this.tagClosure, extraTags, nsTags)
+			this.builder = new BaseMarkupBuilder(this.tagClosure, this.tagClosure, extraTags, nsTags)
 		}
 		
 		bind(closure) {
