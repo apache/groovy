@@ -48,6 +48,7 @@ package org.codehaus.groovy.interpreter;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.codehaus.groovy.ast.AssertStatement;
 import org.codehaus.groovy.ast.BinaryExpression;
@@ -67,6 +68,7 @@ import org.codehaus.groovy.ast.MapExpression;
 import org.codehaus.groovy.ast.MethodCallExpression;
 import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.RangeExpression;
+import org.codehaus.groovy.ast.RegexExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
 import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.TryCatchFinally;
@@ -241,6 +243,11 @@ public class Interpreter implements GroovyCodeVisitor {
         // TODO Auto-generated method stub
 
     }
+
+    public void visitRegexExpression(RegexExpression expression) {
+        pushExpressionValue(Pattern.compile(expression.getRegex()));
+    }
+
 
     public void visitMethodCallExpression(MethodCallExpression call) {
         Object value = evaluate(call.getObjectExpression());
