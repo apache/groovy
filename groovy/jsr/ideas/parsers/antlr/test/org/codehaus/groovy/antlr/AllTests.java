@@ -36,9 +36,6 @@ public class AllTests extends TestSuiteSupport {
 
         "VerboseDOMTest.groovy",                // TODO: closure params (explicit {|| to denote closure start)
 
-        "ClosureTest.groovy",                   // TODO: closure params - doesn't seem to like typed parameters
-
-
         "ClosureComparatorTest.groovy",         // TODO: cannot pass closure into new expression
 
         "Groovy278_Bug.groovy",                 // TODO: constructor bug
@@ -57,6 +54,7 @@ public class AllTests extends TestSuiteSupport {
         "SubscriptTest.groovy",                 // TODO: arrays
         "GroovyMethodsTest.groovy",             // TODO: arrays
         "ConstructorBug.groovy",                // TODO: arrays
+        "ClosureTest.groovy",                   // TODO: arrays
 
         "BigDecimalOperationTest.groovy",       // TODO: parser bug with numeric operations/literals
         "LiteralTypesTest.groovy",              // TODO: literal numbers in new parser...

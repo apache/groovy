@@ -23,7 +23,7 @@ import java.util.ArrayList;
  *		Peter Williams		pete.williams@sun.com
  *		Allan Jacobs		Allan.Jacobs@eng.sun.com
  *		Steve Messick		messick@redhills.com
- *  James Strachan jstrachan@protique.com
+ *		James Strachan		jstrachan@protique.com
  *		John Pybus		john@pybus.org
  *		John Rose		rose00@mac.com
  *		Jeremy Rayner		groovy@ross-rayner.com
@@ -1205,11 +1205,13 @@ parameterModifier
   * (An empty argument list must be spelled with two bars, <code>{|| ...}</code>)
   */
 closureParameters
-        :   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
-                {#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
-        |   BOR! nls! parameterDeclarationList nls! BOR!
+        :   BOR! nls! 
+        							(parameterDeclarationList | (LPAREN! nls! parameterDeclarationList nls! RPAREN!))
+        							nls! BOR!
                 // Yes, you can have a full parameter declaration list.
-                // Yes, you must parenthesize it (as for a named method) unless it's really, really simple.
+                // they can be wrapped in parens to allow complex expressions
+        |   (closureParameter (COMMA! nls! closureParameter)* nls!)? BOR!
+                {#closureParameters = #(#[PARAMETERS,"PARAMETERS"], #closureParameters);}
         ;
 
 /** Lookahead for closureParameters. */
