@@ -25,10 +25,6 @@
 	<classpathentry kind="var" path="MAVEN_REPO/radeox/jars/radeox-oro-0.9.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/nekohtml/jars/nekohtml-0.7.7.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/qdox/jars/qdox-1.3.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/asm-1.4.1.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/asm-attrs-1.4.1.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/asm-util-1.4.1.jar"/>
-	<classpathentry kind="lib" path="/Applications/eclipse-3.0-m5/plugins/org.codehaus.groovy_1.0.0/groovy-1.0-beta-3.jar"/>
 	<classpathentry kind="lib" path="target/test-classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
