@@ -42,7 +42,8 @@ import java.util.LinkedList;
 /**
  * Abstract base class for generator of Java class versions of Groovy AST classes
  *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
+ * @author Russel Winder
  * @version $Revision$
  */
 public abstract class ClassGenerator extends CodeVisitorSupport implements GroovyClassVisitor, Constants {
@@ -70,9 +71,6 @@ public abstract class ClassGenerator extends CodeVisitorSupport implements Groov
    *  1.5 there is an extra (first) parameter to specify the bytecode version to generate.  In
    *  version 1.5 these are in Constants.  The CVS (as at 2004.12.12) and presumably in version 2.0,
    *  the interface Constants is replaced by Opcodes.</p>
-   *
-   *  @author Russel Winder
-   *  @version 2004.12.14
    */
   public final static int asmJDKVersion = V1_3 ;
   //  We can use V1_3 and not org.objectweb.asm.Constants.V1_3 because this abstract class

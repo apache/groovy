@@ -584,25 +584,6 @@ public class MetaClass {
      * @return the given property's value on the object
      */
     public Object getProperty(final Object object, final String property) {
-        /* old code; we now use the metaProperty map to handle properties
-        MetaMethod metaMethod = null;
-        PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
-        if (descriptor != null) {
-            Method method = descriptor.getReadMethod();
-            if (method == null) {
-                throw new GroovyRuntimeException("Cannot read property: " + property);
-            }
-            metaMethod = findMethod(method);
-            if (metaMethod == null) {
-                // lets try invoke a static getter method
-                metaMethod = findGetter(object, "get" + capitalize(property));
-            }
-            if (metaMethod != null) {
-                return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
-            }
-        }
-        */
-        
         // look for the property in our map
         MetaProperty mp = (MetaProperty) propertyMap.get(property);
         if(mp != null) {
@@ -865,72 +846,6 @@ public class MetaClass {
      * Sets the property value on an object
      */
     public void setProperty(Object object, String property, Object newValue) {
-        /* old code, replaced with new MetaProperty stuff...
-        PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
-
-        if (descriptor != null) {
-            Method method = descriptor.getWriteMethod();
-            if (method == null) {
-                throw new ReadOnlyPropertyException(property, theClass);
-            }
-            MetaMethod metaMethod = findMethod(method);
-            Object[] arguments = { newValue };
-            try {
-                doMethodInvoke(object, metaMethod, arguments);
-            }
-            catch (GroovyRuntimeException e) {
-                // if the value is a List see if we can construct the value
-                // from a constructor
-                if (newValue instanceof List) {
-                    List list = (List) newValue;
-                    int params = list.size();
-                    Constructor[] propConstructors = descriptor.getPropertyType().getConstructors();
-                    for (int i = 0; i < propConstructors.length; i++) {
-                        Constructor constructor = propConstructors[i];
-                        if (constructor.getParameterTypes().length == params) {
-                            Object value = doConstructorInvoke(constructor, list.toArray());
-                            doMethodInvoke(object, metaMethod, new Object[] { value });
-                            return;
-                        }
-                    }
-                    
-                    // if value is an array  
-                    Class parameterType = method.getParameterTypes()[0];
-                    if (parameterType.isArray()) {
-                        Object objArray = asPrimitiveArray(list, parameterType);
-                        doMethodInvoke(object, metaMethod, new Object[]{
-                            objArray
-                        });
-                        return;
-                    }
-                }
-                
-                // if value is an multidimensional array  
-                if (newValue.getClass().isArray()) {
-                    List list = Arrays.asList((Object[])newValue);
-                    
-                    Class parameterType = method.getParameterTypes()[0];
-                    Class arrayType = parameterType.getComponentType();
-                    Object objArray = Array.newInstance(arrayType, list.size());
-                    
-                    for (int i = 0; i < list.size(); i++) {
-                        List list2 =Arrays.asList((Object[]) list.get(i));
-                        Object objArray2 = asPrimitiveArray(list2, arrayType);
-                        Array.set(objArray, i, objArray2);
-                    }
-
-                    doMethodInvoke(object, metaMethod, new Object[]{
-                        objArray
-                    });
-                    return;
-                }
-                
-                throw new MissingPropertyException(property, theClass, e);
-            }
-            return;
-        }
-        */
-        
         MetaProperty mp = (MetaProperty) propertyMap.get(property);
         if(mp != null) {
             try {
@@ -1056,6 +971,41 @@ public class MetaClass {
         
         // if we got here, the damn thing just aint there...
         throw new MissingPropertyException(property, theClass);
+    }
+
+
+    /**
+     * Looks up the given attribute (field) on the given object
+     */
+    public Object getAttribute(Object object, String attribute) {
+        try {
+            Field field = theClass.getDeclaredField(attribute);
+            field.setAccessible(true);
+            return field.get(object);
+        }
+        catch (NoSuchFieldException e) {
+            throw new MissingFieldException(attribute, theClass);
+        }
+        catch (IllegalAccessException e) {
+            throw new MissingFieldException(attribute, theClass, e);
+        }
+    }
+
+    /**
+     * Sets the given attribute (field) on the given object
+     */
+    public void setAttribute(Object object, String attribute, Object newValue) {
+        try {
+            Field field = theClass.getDeclaredField(attribute);
+            field.setAccessible(true);
+            field.set(object, newValue);
+        }
+        catch (NoSuchFieldException e) {
+            throw new MissingFieldException(attribute, theClass);
+        }
+        catch (IllegalAccessException e) {
+            throw new MissingFieldException(attribute, theClass, e);
+        }
     }
 
     /**

@@ -521,12 +521,24 @@ public class Invoker {
     }
 
     /**
+     * Looks up the given property of the given object
+     */
+    public Object getProperty(Object object, String property) {
+        if (object == null) {
+            throw new NullPointerException("Cannot get property: " + property + " on null object");
+        } else if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            return pogo.getProperty(property);
+        } else if (object instanceof Map) {
+            Map map = (Map) object;
+            return map.get(property);
+        } else {
+            return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
+        }
+    }
+
+    /**
      * Sets the property on the given object
-     *
-     * @param object
-     * @param property
-     * @param newValue
-     * @return
      */
     public void setProperty(Object object, String property, Object newValue) {
         if (object == null) {
@@ -543,23 +555,41 @@ public class Invoker {
     }
 
     /**
-     * Looks up the given property of the given object
-     *
-     * @param object
-     * @param property
-     * @return
+     * Looks up the given attribute (field) on the given object
      */
-    public Object getProperty(Object object, String property) {
+    public Object getAttribute(Object object, String attribute) {
         if (object == null) {
-            throw new NullPointerException("Cannot get property: " + property + " on null object");
+            throw new NullPointerException("Cannot get attribute: " + attribute + " on null object");
+
+        /**
         } else if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
-            return pogo.getProperty(property);
+            return pogo.getAttribute(attribute);
         } else if (object instanceof Map) {
             Map map = (Map) object;
-            return map.get(property);
+            return map.get(attribute);
+         */
         } else {
-            return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
+            return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
+        }
+    }
+
+    /**
+     * Sets the given attribute (field) on the given object
+     */
+    public void setAttribute(Object object, String attribute, Object newValue) {
+        if (object == null) {
+            throw new GroovyRuntimeException("Cannot set attribute on null object");
+            /*
+        } else if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            pogo.setProperty(attribute, newValue);
+        } else if (object instanceof Map) {
+            Map map = (Map) object;
+            map.put(attribute, newValue);
+            */
+        } else {
+            metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
         }
     }
 

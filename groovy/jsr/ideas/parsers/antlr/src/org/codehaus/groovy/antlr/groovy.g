@@ -1884,12 +1884,11 @@ pathElementStart!
         ;
 
 /** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
- *  <p>The alternative for "in" is there just for error processing; it raises an error.
  */
 namePart
         :
                 (   amp:LAND^   {#amp.setType(REFLECT_MEMBER);} // foo.&bar reflects the 'bar' member of foo
-                |       ats:ATSIGN^ {#amp.setType(SELECT_SLOT);}        // foo.@bar selects the field (or attribute), not property
+                |       ats:AT^ {#ats.setType(SELECT_SLOT);}        // foo.@bar selects the field (or attribute), not property
                 )?
 
             (   IDENT

@@ -92,15 +92,18 @@ public interface GroovyCodeVisitor {
     public void visitListExpression(ListExpression expression);
     public void visitRangeExpression(RangeExpression expression);
     
+    public void visitPropertyExpression(PropertyExpression expression);
+    public void visitAttributeExpression(AttributeExpression attributeExpression);
+    public void visitFieldExpression(FieldExpression expression);
+
     public void visitConstantExpression(ConstantExpression expression);
     public void visitClassExpression(ClassExpression expression);
     public void visitVariableExpression(VariableExpression expression);
-    public void visitPropertyExpression(PropertyExpression expression);
-    public void visitFieldExpression(FieldExpression expression);
     public void visitRegexExpression(RegexExpression expression);
     public void visitGStringExpression(GStringExpression expression);
     public void visitArrayExpression(ArrayExpression expression);
 	public void visitNotExpression(NotExpression expression);
 	public void visitNegationExpression(NegationExpression expression);
 	public void visitCastExpression(CastExpression expression);
+
 }

@@ -154,6 +154,14 @@ public class InvokerHelper {
         return getInstance().inspect(self);
     }
 
+    public static Object getAttribute(Object object, String attribute) {
+        return getInstance().getAttribute(object, attribute);
+    }
+
+    public static void setAttribute(Object object, String attribute, Object newValue) {
+        getInstance().setAttribute(object, attribute, newValue);
+    }
+
     public static Object getProperty(Object object, String property) {
         return getInstance().getProperty(object, property);
     }

@@ -165,7 +165,53 @@ public class ScriptBytecodeAdapter {
             return unwrap(gre);
         }
     }
-    
+
+
+
+    // Attributes
+    //-------------------------------------------------------------------------
+    public static Object getAttribute(Object object, String attribute) throws Throwable {
+        try {
+            return InvokerHelper.getAttribute(object, attribute);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+
+    public static Object getAttributeSafe(Object object, String attribute) throws Throwable {
+        if (object != null) return getAttribute(object, attribute);
+        return null;
+    }
+
+    public static void setAttribute(Object object, String attribute, Object newValue) throws Throwable {
+        try {
+            InvokerHelper.setAttribute(object, attribute, newValue);
+        } catch (GroovyRuntimeException gre) {
+            unwrap(gre);
+        }
+    }
+    /**
+     * This is so we don't have to reorder the stack when we call this method.
+     * At some point a better name might be in order.
+     * @throws Throwable
+     */
+    public static void setAttribute2(Object newValue, Object object, String property) throws Throwable {
+        setAttribute(object, property, newValue);
+    }
+
+    /**
+     * This is so we don't have to reorder the stack when we call this method.
+     * At some point a better name might be in order.
+     * @throws Throwable
+     */
+    public static void setAttributeSafe2(Object newValue, Object object, String property) throws Throwable {
+        setAttribute2(newValue, object, property);
+    }
+
+
+
+    // Properties
+    //-------------------------------------------------------------------------
     public static Object getProperty(Object object, String property) throws Throwable {
         try {
             return InvokerHelper.getProperty(object, property);
@@ -178,7 +224,7 @@ public class ScriptBytecodeAdapter {
         if (object != null) return getProperty(object, property);
         return null;
     }
-    
+
     public static void setProperty(Object object, String property, Object newValue) throws Throwable {
         try {
             InvokerHelper.setProperty(object, property, newValue);
@@ -204,7 +250,8 @@ public class ScriptBytecodeAdapter {
     public static void setPropertySafe2(Object newValue, Object object, String property) throws Throwable {
         setProperty2(newValue, object, property);
     }
-    
+
+
     /**
      * This is so we don't have to reorder the stack when we call this method.
      * At some point a better name might be in order.
@@ -225,7 +272,10 @@ public class ScriptBytecodeAdapter {
             return unwrap(gre);
         }
     }
-    
+
+
+    // Coercions
+    //-------------------------------------------------------------------------
     public static Iterator asIterator(Object collection) throws Throwable {
         try {
             return InvokerHelper.asIterator(collection);

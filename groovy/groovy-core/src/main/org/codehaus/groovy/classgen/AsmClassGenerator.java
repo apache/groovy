@@ -57,34 +57,7 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.ast.VariableScope;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.BooleanExpression;
-import org.codehaus.groovy.ast.expr.CastExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ClosureExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ExpressionTransformer;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.GStringExpression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MapEntryExpression;
-import org.codehaus.groovy.ast.expr.MapExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.NegationExpression;
-import org.codehaus.groovy.ast.expr.NotExpression;
-import org.codehaus.groovy.ast.expr.PostfixExpression;
-import org.codehaus.groovy.ast.expr.PrefixExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.RangeExpression;
-import org.codehaus.groovy.ast.expr.RegexExpression;
-import org.codehaus.groovy.ast.expr.StaticMethodCallExpression;
-import org.codehaus.groovy.ast.expr.TernaryExpression;
-import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -160,11 +133,18 @@ public class AsmClassGenerator extends ClassGenerator {
 
     MethodCaller asIntMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asInt");
     MethodCaller asTypeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asType");
+
+    MethodCaller getAttributeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttribute");
+    MethodCaller getAttributeSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttributeSafe");
+    MethodCaller setAttributeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setAttribute2");
+    MethodCaller setAttributeSafeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setAttributeSafe2");
+
     MethodCaller getPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getProperty");
     MethodCaller getPropertySafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getPropertySafe");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty");
     MethodCaller setPropertyMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty2");
     MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setPropertySafe2");
+
     MethodCaller getGroovyObjectPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getGroovyObjectProperty");
     MethodCaller setGroovyObjectPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectProperty");
     MethodCaller asIteratorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asIterator");
@@ -2540,12 +2520,12 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        boolean left = leftHandExpression;
         // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
         // rather than ALOAD
+        boolean left = leftHandExpression;
         leftHandExpression = false;
-
         objectExpression.visit(this);
+        leftHandExpression = left;
 
         cv.visitLdcInsn(expression.getProperty());
 
@@ -2573,6 +2553,45 @@ public class AsmClassGenerator extends ClassGenerator {
                 else {
                     getPropertyMethod.call(cv);
                 }
+            }
+        }
+    }
+
+    public void visitAttributeExpression(AttributeExpression expression) {
+        Expression objectExpression = expression.getObjectExpression();
+        if (isThisExpression(objectExpression)) {
+            // lets use the field expression if its available
+            String name = expression.getProperty();
+            FieldNode field = classNode.getField(name);
+            if (field != null) {
+                visitFieldExpression(new FieldExpression(field));
+                return;
+            }
+        }
+
+        // we need to clear the LHS flag to avoid "this." evaluating as ASTORE
+        // rather than ALOAD
+        boolean left = leftHandExpression;
+        leftHandExpression = false;
+        objectExpression.visit(this);
+        leftHandExpression = left;
+
+        cv.visitLdcInsn(expression.getProperty());
+
+        if (expression.isSafe()) {
+            if (left) {
+                setAttributeSafeMethod2.call(cv);
+            }
+            else {
+                getAttributeSafeMethod.call(cv);
+            }
+        }
+        else {
+            if (left) {
+                setAttributeMethod2.call(cv);
+            }
+            else {
+                getAttributeMethod.call(cv);
             }
         }
     }
@@ -5189,6 +5208,119 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
         propertyExpression.setResolveFailed(true);
+        return ;
+    }
+
+    public void resolve(AttributeExpression attributeExpression)  {
+        if (attributeExpression.getTypeClass() != null)
+            return ;
+        if (attributeExpression.isResolveFailed())
+            return ;
+
+        Expression ownerExp = attributeExpression.getObjectExpression();
+        Class ownerClass = ownerExp.getTypeClass();
+        String propName = attributeExpression.getProperty();
+        if (propName.equals("class")) {
+            attributeExpression.setTypeClass(Class.class);
+            return ;
+        }
+
+        // handle arraylength
+        if (ownerClass != null && ownerClass.isArray() && propName.equals("length")) {
+            attributeExpression.setTypeClass(int.class);
+            return;
+        }
+
+        if (isThisExpression(ownerExp)) {
+            // lets use the field expression if its available
+            if (classNode == null) {
+                attributeExpression.setResolveFailed(true);
+                return ;
+            }
+            FieldNode field   = null;
+            ownerExp.setType(classNode.getName());
+            try {
+                if( (field = classNode.getField(propName)) != null ) {
+//                    Class cls =loadClass(field.getType());
+//                    attributeExpression.setAccess(PropertyExpression.LOCAL_FIELD_ACCESS);
+//                    attributeExpression.setTypeClass(cls);
+// local property access. to be determined in the future
+                    attributeExpression.setResolveFailed(true);
+                    attributeExpression.setFailure("local property access. to be determined in the future.");
+                    return ;
+                } else {
+                    // search for super classes/interface
+                    // interface first first
+                    String[] interfaces = classNode.getInterfaces();
+                    String[] supers = new String[interfaces.length + 1];
+
+                    int i = 0;
+                    for (; i < interfaces.length; i++) {
+                        supers[i] = interfaces[i];
+                    }
+                    supers[i] = classNode.getSuperClass();
+                    for (int j = 0; j < supers.length; j++) {
+                        String aSuper = supers[j];
+                        Class superClass = loadClass(aSuper);
+                        Field fld  = superClass.getDeclaredField(propName);
+                        if (fld != null && !Modifier.isPrivate(fld.getModifiers())) {
+                            attributeExpression.setField(fld);
+                            return ;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                attributeExpression.setResolveFailed(true);
+                attributeExpression.setFailure(e.getMessage());
+                return ;
+            }
+        }
+        else if (ownerExp instanceof ClassExpression) {
+            if (ownerClass != null) {
+                Field fld  = null;
+                try {
+                    fld = ownerClass.getDeclaredField(propName);
+                    if (!Modifier.isPrivate(fld.getModifiers())) {
+                        attributeExpression.setField(fld);
+                        return ;
+                    }
+                } catch (NoSuchFieldException e) {
+                    attributeExpression.setResolveFailed(true);
+                    return ;
+                }
+            }
+        }
+        else { // search public field and then setter/getter
+            if (ownerClass != null) {
+                attributeExpression.setResolveFailed(true); // will get reset if property/getter/setter were found
+                Field fld  = null;
+                try {
+                    fld = ownerClass.getDeclaredField(propName);
+                } catch (NoSuchFieldException e) {}
+
+                if (fld != null && Modifier.isPublic(fld.getModifiers())) {
+                    attributeExpression.setField(fld);
+                }
+
+                // let's get getter and setter
+                String getterName = "get" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
+                String setterName = "set" + Character.toUpperCase(propName.charAt(0)) + propName.substring(1);
+
+                Method[] meths = ownerClass.getMethods();
+                for (int i = 0; i < meths.length; i++) {
+                    Method method = meths[i];
+                    String methName =method.getName();
+                    Class[] paramClasses = method.getParameterTypes();
+                    if (methName.equals(getterName) && paramClasses.length == 0) {
+                        attributeExpression.setGetter(method);
+                    } else if (methName.equals(setterName) && paramClasses.length == 1) {
+                        attributeExpression.setSetter(method);
+                    }
+                }
+                return ;
+            }
+        }
+        attributeExpression.setResolveFailed(true);
         return ;
     }
     /** search in the current classNode and super class for matching method */

@@ -1194,6 +1194,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             AST identifierNode = leftNode.getNextSibling();
             if (identifierNode != null) {
                 Expression leftExpression = expression(leftNode);
+                if (isType(SELECT_SLOT, identifierNode)) {
+                    String field = identifier(identifierNode.getFirstChild());
+                    return new AttributeExpression(leftExpression, field);
+                }
                 String property = identifier(identifierNode);
                 return new PropertyExpression(leftExpression, property);
             }

@@ -1,41 +1,48 @@
 class FieldPropertyMethodDisambiguationTest extends GroovyTestCase {
-  String bar = "property"
+    String bar = "field"
 
-  String getBar() {
-      return "propertyMethod"
-  }
+    String getBar() {
+        return "propertyMethod"
+    }
 
-  String bar() {
-      return "method"
-  }
-
-
-  String bar(param) {
-      return "method with param: " + param
-  }
+    String bar() {
+        return "method"
+    }
 
 
-  void testCase() {
-      def answer = bar()
-      assert answer == "method"
-      assert this.bar() == "method"
-
-      assert bar(1) == "method with param: 1"
-      assert this.bar(1) == "method with param: 1"
+    String bar(param) {
+        return "method with param: " + param
+    }
 
 
-      assert getBar() == "propertyMethod"
-      assert this.getBar() == "propertyMethod"
+    void testCase() {
+        def answer = bar()
+        assert answer == "method"
+        assert this.bar() == "method"
 
-      // TODO should these 2 expressions call the getter or return the field?
-      assert bar == "property"
-      assert this.bar == "property"
+        assert bar(1) == "method with param: 1"
+        assert this.bar(1) == "method with param: 1"
 
 
-      // assert @foo == "field"  // @foo is Java 5 annotation; use this.@foo
+        assert getBar() == "propertyMethod"
+        assert this.getBar() == "propertyMethod"
 
-      // TODO when the parser can handle this...
-      // assert this.@foo == "field"
+        // TODO should these 2 expressions call the getter or return the field?
+        assert bar == "field"
+        assert this.bar == "field"
 
-  }
+
+        def value = this.@bar
+        assert value == "field"
+
+        assert this.@bar == "field"
+
+        def tmp = this
+        assert tmp.@bar == "field"
+
+        tmp.@bar = "whatnot"
+
+        assert bar == "whatnot"
+        assert this.@bar == "whatnot"
+    }
 }
