@@ -16,6 +16,14 @@ class RangeTest extends GroovyTestCase {
 	    }
 
 	    assert x == 45
+	    
+	    x = 0
+
+	    for ( i in 0..'\u0009' ) {
+	        x = x + i
+	    }
+
+	    assert x == 45
 	}
 	
 	void testRangeEach() {
