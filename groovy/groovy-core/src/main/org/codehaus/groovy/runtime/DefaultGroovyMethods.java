@@ -2432,61 +2432,258 @@ PropertyValue pv = (PropertyValue) itr.next();
         }
         return answer;
     }
-
+    
     /**
-     * Increments the last digit in the given string, resetting
-     * it and moving onto the next digit if increasing the digit
-     * no longer becomes a letter or digit.
-     *
-     * @param self a String
-     * @return a String with an incremented digit at the end
-     */
-    public static String next(String self) {
-        StringBuffer buffer = new StringBuffer(self);
-        char firstCh = firstCharacter();
-        for (int idx = buffer.length() - 1; idx >= 0; idx--) {
-            char ch = next(buffer.charAt(idx));
-            if (ch != ZERO_CHAR) {
-                buffer.setCharAt(idx, ch);
-                break;
-            } else {
-                // lets find the first char
-                if (idx == 0) {
-                    buffer.append("1");
-                } else {
-                    buffer.setCharAt(idx, firstCh);
-                }
-            }
-        }
-        return buffer.toString();
+     * This method returns true if the given parameter is a letter or 
+     * digit. To test this the methods isLetter and isDigit are used.
+     * 
+     * @param the character to be tested for letter or digit 
+     */    
+    private static boolean isLetterOrDigit(char ch) {
+        return isDigit(ch)||isLetter(ch);
+    }
+    
+    /**
+     * This method returns true if the given parameter is a digit 
+     * To test this a simple range check for  0..9 is used.
+     * 
+     * @param the character to be tested for digit
+     */    
+    private static boolean isDigit(char ch) {
+        return ch>='0' && ch<='9';
+    }
+    
+    /**
+     * This method returns true if the given parameter is a letter 
+     * To test this a simple range check for a..z is used and the method
+     * isUpperCase
+     */    
+    private static boolean isLetter(char ch) {
+        return isUpperCase(ch) || (ch>='a' && ch <='z');
     }
 
     /**
-     * Decrements the last digit in the given string, resetting
-     * it and moving onto the next digit if increasing the digit
-     * no longer becomes a letter or digit.
-     *
+     * This method returns true if the given parameter is an 
+     * upper case letter. To test this a simple range check for
+     * A..Z is used.
+     */    
+    private static boolean isUpperCase(char ch) {
+        return ch>='A' && ch <='Z';
+    }
+
+    /**
+     * This method is called by the ++ operator for the class String.
+     * It increments the last digit/letter in the given string, resetting
+     * it and moving onto the next digit/letter if increasing the 
+     * digit/letter no longer becomes a letter or digit. This method isn't
+     * aware of non arabic didgits or non roman letters. For example
+     * the chinese 2 will not be increased to the chinese 3 because
+     * they are not neighbours in the UTF8 set, but it will be increased. 
+     * If no letters or digits are inside the string the last char will be 
+     * incremented. Leading non digits and non letters are ignored.
+     * 
+     * Examples:
+     * ++"9" will be "10"
+     * ++"a9" will be "b0"
+     * ++"1z" will be "2a"
+     * ++"--A--" will be "--B--"
+     * ++" " will be "!"
+     * 
+     * Note: --(++string)) will lead to the original value
+     * 
+     * @param self a String
+     * @return an incremented String
+     */
+    public static String next(String self) {
+        StringBuffer buffer = new StringBuffer(self);
+        boolean digit = false;
+        boolean upperCaseLetter = false;
+        boolean carry=buffer.length()>0;
+        boolean incremented = false;
+        for (int idx = buffer.length() - 1; (idx >= 0) && carry; idx--) {
+            char ch = buffer.charAt(idx);
+            if (! isLetterOrDigit(ch)) {
+                // the curent char is no letter or digit, so just go on
+                // to the next one, if there was no increment before
+                if (!incremented) continue;
+                // there was an increment before so we have a carry to handle
+                buffer.insert(idx+1,firstCharacter(digit,upperCaseLetter));
+                carry=false;
+                break;
+            }
+            // get the informaation if the current char is a digit or letter
+            digit = isDigit(ch);
+            upperCaseLetter = isUpperCase(ch);
+            // increment the char
+            char newCh = ch;
+            newCh++;
+            incremented=true;
+            if (isLetterOrDigit(newCh)) {
+                // the new char is still a letter or digit so there
+                // is no need to keep the carry
+                carry=false;
+            } else {
+                // the new char is no digit or letter so we need to
+                // set the character. for example "9" will be increased
+                // to "10" so we have to set the "0" here
+                newCh=firstCharacter(digit,upperCaseLetter);
+                if (digit) newCh='0';
+            }
+            buffer.setCharAt(idx,newCh);
+        }
+        // if there is no carry left we are finished
+        if (!carry) return buffer.toString();
+        // there is an carry but no characters are left
+        if (incremented) {
+            // if an increment happened insert a character to handle
+            // the carry
+            buffer.insert(0,firstCharacter(digit,upperCaseLetter));
+        } else {
+            // chars inside the buffer are all no letters or digits
+            // so just increment the last char
+            int last = buffer.length()-1;
+            char ch = buffer.charAt(last);
+            ch++;
+            buffer.setCharAt(last,ch);
+        }
+        return buffer.toString();
+    }
+    
+    private static char firstCharacter(boolean digit, boolean upperCaseLetter) {
+        char ch='a';
+        if (digit) {
+             ch='1';
+        } else if (upperCaseLetter) {
+            ch='A';
+        }
+        return ch;
+    }
+
+    /**
+     * This method is called by the -- operator for the class String.
+     * It decrements the last digit/letter in the given string, resetting
+     * it and moving onto the next digit if decreasing the digit/letter
+     * no longer becomes a letter or digit. This method isn't
+     * aware of non arabic didgits or non roman letters. For example
+     * the chinese 3 will not be increased to the chinese 2 because
+     * they are not neighbours in the UTf8 set, but it will be decreased.
+     * If no letters or digits are inside the string the last char will be 
+     * decremented. Leading non digits and non letters are ignored.
+     * 
+     * Examples:
+     * --"10" will be "9"
+     * --"b0" will be "a9"
+     * --"--B--" will be "--A--"
+     * --"!" will be " "
+     * 
+     * Note: 
+     * ++(--(string)) will lead to the original value in most cases. But if 
+     * the unincremented string is no letter or digit and the decremented string
+     * is one, the following increment will also be a letter or digit, so the 
+     * original value can't be reached. So be aware when decreasing "{", ":" or "["
+     * 
      * @param self a String
      * @return a String with a decremented digit at the end
      */
     public static String previous(String self) {
         StringBuffer buffer = new StringBuffer(self);
-        char lastCh = lastCharacter();
-        for (int idx = buffer.length() - 1; idx >= 0; idx--) {
-            char ch = previous(buffer.charAt(idx));
-            if (ch != ZERO_CHAR) {
-                buffer.setCharAt(idx, ch);
-                break;
-            } else {
-                if (idx == 0) {
-                    return null;
+        if (buffer.length()==0) return self;
+        // strings of length 1 are handled differently
+        // the char is just decremented
+        if (buffer.length()==1) {
+            int last = buffer.length()-1;
+            char ch = buffer.charAt(last);
+            ch--;
+            buffer.setCharAt(last,ch);
+            return buffer.toString();
+        }
+
+        boolean digit = false;
+        boolean upperCaseLetter = false;
+        boolean carry=buffer.length()>0;
+        boolean decremented=false;
+        int fill=0;
+        char oldChar=' ';
+        char ch=' ';
+        for (int idx = buffer.length() - 1; idx >= 0 && carry; idx--) {
+            oldChar = ch;
+            ch = buffer.charAt(idx);
+            if (! isLetterOrDigit(ch)) {
+                // the curent char is no letter or digit, so just go on
+                // to the next one, if there was no decrement before
+                if (!decremented) continue;
+                // there was an decrement before so we have a carry to handle
+                if (fill>1) {
+                    // we have done more than one decrement and the current char
+                    // is no letter or digit, so the char at idx+1 is obsolete
+                    // example: #100 will be decresed #109 in the first, #199 in
+                    // the second step, #099 in the third step. In the fourth step
+                    // the # will lead to this point and show we have to remove
+                    // the 0 so #99 will be the result
+                    buffer.deleteCharAt(idx+1); 
                 } else {
-                    // lets find the first char
-                    buffer.setCharAt(idx, lastCh);
+                    // we have only one decrement before and the current char
+                    // is no letter or digit, so we have to handle this string like
+                    // a one char string. This means we are just decrementing the char
+                    // before the current char
+                    oldChar--;
+                    buffer.setCharAt(idx+1,oldChar);
                 }
+                carry=false;
+                break;
             }
+            // get the informaation if the current char is a digit or letter
+            digit = isDigit(ch);
+            upperCaseLetter = isUpperCase(ch);
+            // decrement the char
+            char newCh = ch;
+            newCh--;
+            fill++;
+            decremented=true;
+            if (newCh=='0' && fill>1) {
+                // the new char will be a leading 0 so remove it
+                buffer.deleteCharAt(idx);
+                carry=false;
+                break;
+            } 
+            if (isLetterOrDigit(newCh)) {
+                // the new char is still a letter or digit so there
+                // is no need to keep the carry
+                carry=false;
+            } else {
+                // the new char is no digit or letter so we need to
+                // set the character. For example "10" will be decreased
+                // to "9" so we have to set the "9" here and later kill the "1"
+                newCh=lastCharacter(digit,upperCaseLetter);
+            }
+            buffer.setCharAt(idx,newCh);
+        }
+        // if there is no carry left we are finished
+        if (!carry) return buffer.toString();
+        // there is a carry but no characters are left
+        if (decremented) {
+            // if a decrement happened remove a character
+            // to handle the carry
+            buffer.deleteCharAt(0);
+        } else {
+            // chars inside the buffer are all no letters or digits
+            // so just decrement the last char
+            int last = buffer.length()-1;
+            ch = buffer.charAt(last);
+            ch--;
+            buffer.setCharAt(last,ch);
         }
         return buffer.toString();
+    }
+
+    private static char lastCharacter(boolean digit, boolean upperCaseLetter) {
+        char ch='z';
+        if (digit) {
+            ch='9';
+        } else if (upperCaseLetter) {
+            ch='Z';
+        }
+        return ch;
     }
 
     /**
@@ -2498,42 +2695,6 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static Process execute(String self) throws IOException {
         return Runtime.getRuntime().exec(self);
-    }
-
-    private static char next(char ch) {
-        if (Character.isLetterOrDigit(++ch)) {
-            return ch;
-        } else {
-            return ZERO_CHAR;
-        }
-    }
-
-    private static char previous(char ch) {
-        if (Character.isLetterOrDigit(--ch)) {
-            return ch;
-        } else {
-            return ZERO_CHAR;
-        }
-    }
-
-    /**
-     * @return the first character used when a letter rolls over when incrementing
-     */
-    private static char firstCharacter() {
-        char ch = ZERO_CHAR;
-        while (!Character.isLetterOrDigit(ch)) {
-            ch++;
-        }
-        return ch;
-    }
-
-    /**
-     * @return the last character used when a letter rolls over when decrementing
-     */
-    private static char lastCharacter() {
-        char ch = firstCharacter();
-        while (Character.isLetterOrDigit(++ch)) ;
-        return --ch;
     }
 
     /**
