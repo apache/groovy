@@ -389,15 +389,10 @@ public class InvokerHelper {
     public static List createList(Object[] values) {
         ArrayList answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
-            if (values[i] instanceof Spreadable) {
-                if (values[i] instanceof SpreadList) {
-                    SpreadList slist = (SpreadList) values[i];
-                    for (int j = 0; j < slist.size(); j++) {
-                        answer.add(slist.get(j));
-                    }
-                }
-                else {
-                    answer.add(values[i]);
+            if (values[i] instanceof SpreadList) {
+                SpreadList slist = (SpreadList) values[i];
+                for (int j = 0; j < slist.size(); j++) {
+                    answer.add(slist.get(j));
                 }
             }
             else {
