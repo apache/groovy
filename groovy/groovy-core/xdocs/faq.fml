@@ -27,11 +27,7 @@
         What are the dependencies for Groovy?
       </question>
       <answer>
-		<p>As well as JDK 1.4 and the Groovy jar we also depend at runtime on</p>
-		
-		<ul>
-		<li>asm</li>
-		</ul>
+		<p>As well as Java 1.4 and the Groovy jar we also depend at runtime on the ASM library</p>
       </answer>
     </faq>
 
