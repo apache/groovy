@@ -73,6 +73,10 @@ public class FieldNode extends AnnotatedNode implements Constants {
         return new FieldNode(name, ACC_PUBLIC | ACC_STATIC, fldType, theClass.getName(), null);
     }
 
+    public FieldNode(String name, int modifiers, String type, ClassNode owner, Expression initialValueExpression) {
+        this(name, modifiers, type, owner.getName(), initialValueExpression);
+    }
+
     public FieldNode(String name, int modifiers, String type, String owner, Expression initialValueExpression) {
         this.name = name;
         this.modifiers = modifiers;
