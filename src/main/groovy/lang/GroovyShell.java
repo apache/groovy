@@ -387,7 +387,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public Object getVariable(String name) {
-        return context.getVariable(name);
+        return context.getVariables().get(name);
     }
 
     public void setVariable(String name, Object value) {
