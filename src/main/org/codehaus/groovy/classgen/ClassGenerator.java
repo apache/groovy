@@ -886,55 +886,25 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitPostfixExpression(PostfixExpression expression) {
-        // TODO Auto-generated method stub
-
+        switch (expression.getOperation().getType()) {
+            case Token.PLUS_PLUS :
+                evaluatePostfixMethod("increment", expression.getExpression());
+                break;
+            case Token.MINUS_MINUS :
+                evaluatePostfixMethod("decrement", expression.getExpression());
+                break;
+        }
     }
 
     public void visitPrefixExpression(PrefixExpression expression) {
-        // TODO Auto-generated method stub
-
-    }
-
-    protected void evaluateLogicalOrExpression(BinaryExpression expression) {
-        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
-        Label l0 = new Label();
-        Label l2 = new Label();
-        cv.visitJumpInsn(IFEQ, l0);
-
-        cv.visitLabel(l2);
-
-        visitConstantExpression(ConstantExpression.TRUE);
-
-        Label l1 = new Label();
-        cv.visitJumpInsn(GOTO, l1);
-        cv.visitLabel(l0);
-
-        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
-
-        cv.visitJumpInsn(IFNE, l2);
-
-        visitConstantExpression(ConstantExpression.FALSE);
-        cv.visitLabel(l1);
-    }
-
-    protected void evaluateLogicalAndExpression(BinaryExpression expression) {
-        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
-        Label l0 = new Label();
-        cv.visitJumpInsn(IFEQ, l0);
-
-        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
-
-        cv.visitJumpInsn(IFEQ, l0);
-
-        visitConstantExpression(ConstantExpression.TRUE);
-
-        Label l1 = new Label();
-        cv.visitJumpInsn(GOTO, l1);
-        cv.visitLabel(l0);
-
-        visitConstantExpression(ConstantExpression.FALSE);
-
-        cv.visitLabel(l1);
+        switch (expression.getOperation().getType()) {
+            case Token.PLUS_PLUS :
+                evaluatePrefixMethod("increment", expression.getExpression());
+                break;
+            case Token.MINUS_MINUS :
+                evaluatePrefixMethod("decrement", expression.getExpression());
+                break;
+        }
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
@@ -1692,7 +1662,51 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     protected void doCast(String type) {
-        cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+        if (!type.equals("java.lang.Object")) {
+            cv.visitTypeInsn(CHECKCAST, type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+        }
+    }
+
+    protected void evaluateLogicalOrExpression(BinaryExpression expression) {
+        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
+        Label l0 = new Label();
+        Label l2 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+
+        cv.visitLabel(l2);
+
+        visitConstantExpression(ConstantExpression.TRUE);
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
+
+        cv.visitJumpInsn(IFNE, l2);
+
+        visitConstantExpression(ConstantExpression.FALSE);
+        cv.visitLabel(l1);
+    }
+
+    protected void evaluateLogicalAndExpression(BinaryExpression expression) {
+        visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
+        Label l0 = new Label();
+        cv.visitJumpInsn(IFEQ, l0);
+
+        visitBooleanExpression(new BooleanExpression(expression.getRightExpression()));
+
+        cv.visitJumpInsn(IFEQ, l0);
+
+        visitConstantExpression(ConstantExpression.TRUE);
+
+        Label l1 = new Label();
+        cv.visitJumpInsn(GOTO, l1);
+        cv.visitLabel(l0);
+
+        visitConstantExpression(ConstantExpression.FALSE);
+
+        cv.visitLabel(l1);
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
@@ -1758,6 +1772,37 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         leftHandExpression = false;
     }
 
+    protected void evaluatePrefixMethod(String method, Expression expression) {
+        expression.visit(this);
+        cv.visitLdcInsn(method);
+        new ArgumentListExpression().visit(this);
+        invokeMethodMethod.call(cv);
+
+        leftHandExpression = true;
+        expression.visit(this);
+        leftHandExpression = false;
+        expression.visit(this);
+    }
+
+    protected void evaluatePostfixMethod(String method, Expression expression) {
+        leftHandExpression = false;
+        expression.visit(this);
+        
+        int tempIdx = defineVariable(createVariableName("postfix"), "java.lang.Object", false).getIndex();
+        cv.visitVarInsn(ASTORE, tempIdx);
+        cv.visitVarInsn(ALOAD, tempIdx);
+        
+        cv.visitLdcInsn(method);
+        new ArgumentListExpression().visit(this);
+        invokeMethodMethod.call(cv);
+
+        leftHandExpression = true;
+        expression.visit(this);
+        leftHandExpression = false;
+        
+        cv.visitVarInsn(ALOAD, tempIdx);
+    }
+
     protected void evaluateInstanceof(BinaryExpression expression) {
         expression.getLeftExpression().visit(this);
         Expression rightExp = expression.getRightExpression();
@@ -1772,16 +1817,20 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         }
         String classInternalName = getClassInternalName(className);
         cv.visitTypeInsn(INSTANCEOF, classInternalName);
-    } /**
-                                                         * @return true if the given argument expression requires the stack, in
-                                                         *         which case the arguments are evaluated first, stored in the
-                                                         *         variable stack and then reloaded to make a method call
-                                                         */
+    }
+
+    /**
+     * @return true if the given argument expression requires the stack, in
+     *         which case the arguments are evaluated first, stored in the
+     *         variable stack and then reloaded to make a method call
+     */
     protected boolean argumentsUseStack(Expression arguments) {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
-    } /**
-                                                         * @return true if the given expression represents a non-static field
-                                                         */
+    }
+
+    /**
+     * @return true if the given expression represents a non-static field
+     */
     protected boolean isNonStaticField(Expression expression) {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
@@ -2045,20 +2094,24 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected String createVariableName(String type) {
         return "__" + type + idx;
-    } /**
-                                                         * @return if the type of the expression can be determined at compile time
-                                                         *         then this method returns the type - otherwise java.lang.Object
-                                                         *         is returned.
-                                                         */
+    }
+
+    /**
+     * @return if the type of the expression can be determined at compile time
+     *         then this method returns the type - otherwise java.lang.Object
+     *         is returned.
+     */
     protected Class getExpressionType(Expression expression) {
         if (comparisonExpression(expression)) {
             return Boolean.class;
         } /** @todo we need a way to determine this from an expression */
         return Object.class;
-    } /**
-                                                         * @return true if the value is an Integer, a Float, a Long, a Double or a
-                                                         *         String .
-                                                         */
+    }
+
+    /**
+     * @return true if the value is an Integer, a Float, a Long, a Double or a
+     *         String .
+     */
     protected boolean isPrimitiveFieldType(Object value) {
         return value instanceof String
             || value instanceof Integer
@@ -2078,9 +2131,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return false;
         }
         return methodNode.isStatic();
-    } /**
-                                                         * @return an array of ASM internal names of the type
-                                                         */
+    } 
+    
+    /**
+     * @return an array of ASM internal names of the type
+     */
     private String[] getClassInternalNames(String[] names) {
         int size = names.length;
         String[] answer = new String[size];
@@ -2088,9 +2143,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             answer[i] = getClassInternalName(names[i]);
         }
         return answer;
-    } /**
-                                                         * @return the ASM internal name of the type
-                                                         */
+    } 
+    
+    /**
+     * @return the ASM internal name of the type
+     */
     protected String getClassInternalName(String name) {
         if (name == null) {
             return "java/lang/Object";
@@ -2100,9 +2157,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             return "[" + answer.substring(0, answer.length() - 2);
         }
         return answer;
-    } /**
-                                                         * @return the ASM method type descriptor
-                                                         */
+    } 
+    
+    /**
+     * @return the ASM method type descriptor
+     */
     protected String getMethodDescriptor(String returnTypeName, Parameter[] paramTypeNames) {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
@@ -2112,9 +2171,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         buffer.append(")");
         buffer.append(getTypeDescription(returnTypeName));
         return buffer.toString();
-    } /**
-                                                         * @return the ASM type description
-                                                         */
+    } 
+    
+    /**
+     * @return the ASM type description
+     */
     protected String getTypeDescription(String name) { // lets avoid class loading
         // return getType(name).getDescriptor();
         if (name == null) {
@@ -2129,18 +2190,22 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             name = name.substring(0, name.length() - 2);
         }
         return prefix + "L" + name.replace('.', '/') + ";";
-    } /**
-                                                         * @return the ASM type for the given class name
-                                                         */
+    } 
+    
+    /**
+     * @return the ASM type for the given class name
+     */
     protected Type getType(String className) {
         if (className.equals("void")) {
             return Type.VOID_TYPE;
         }
         return Type.getType(loadClass(className));
         //return Type.getType(className);
-    } /**
-                                                         * @return loads the given type name
-                                                         */
+    } 
+    
+    /**
+     * @return loads the given type name
+     */
     protected Class loadClass(String name) {
         try {
             return getClassLoader().loadClass(name);

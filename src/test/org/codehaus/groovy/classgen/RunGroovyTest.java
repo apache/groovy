@@ -58,6 +58,11 @@ import org.codehaus.groovy.classgen.TestSupport;
  */
 public class RunGroovyTest extends TestSupport {
 
+    public void testPostfix() throws Exception {
+        GroovyObject object = compile("src/test/groovy/PostfixTest.groovy");
+        object.invokeMethod("testIntegerPostfix", null);
+    }
+
     public void testMap() throws Exception {
         GroovyObject object = compile("src/test/groovy/MapTest.groovy");
         object.invokeMethod("testMap", null);
