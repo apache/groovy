@@ -481,7 +481,7 @@ public class MetaClass {
                     return field.get(object);
                 }
                 catch (Exception e1) {
-                    throw new MissingPropertyException(property, theClass);
+                    // fall through
                 }
             }
             
