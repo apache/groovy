@@ -256,7 +256,16 @@
         <roles>
           <role>Developer</role>
         </roles>
-    </developer>
+   </developer>
+    <developer>
+        <name>John Stump</name>
+        <id>jstump</id>
+        <email>johnstump2@yahoo.com</email>
+        <organization></organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+   </developer>
 
   </developers>
 
