@@ -75,7 +75,6 @@ import org.codehaus.groovy.ast.PropertyExpression;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.RangeExpression;
 import org.codehaus.groovy.ast.ReturnStatement;
-import org.codehaus.groovy.ast.Statement;
 import org.codehaus.groovy.ast.TryCatchFinally;
 import org.codehaus.groovy.ast.TupleExpression;
 import org.codehaus.groovy.ast.VariableExpression;
@@ -155,13 +154,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         this.sourceFile = sourceFile;
     }
 
-    /**
-     * Capitalizes the start of the given bean property name
-     */
-    public static String capitalize(String name) {
-        return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
-    }
-
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -182,13 +174,12 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         ensureClassNodeHasConstructor(classNode);
 
         // now lets visit the contents of the class
+        for (Iterator iter = classNode.getProperties().iterator(); iter.hasNext();) {
+            visitProperty((PropertyNode) iter.next());
+        }
 
         for (Iterator iter = classNode.getFields().iterator(); iter.hasNext();) {
             visitField((FieldNode) iter.next());
-        }
-
-        for (Iterator iter = classNode.getProperties().iterator(); iter.hasNext();) {
-            visitProperty((PropertyNode) iter.next());
         }
 
         for (Iterator iter = classNode.getConstructors().iterator(); iter.hasNext();) {
@@ -212,6 +203,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         resetVariableStack(node.getParameters());
 
         // invokes the super class constructor
+        cv.visitVarInsn(ALOAD, 0);
         cv.visitMethodInsn(INVOKESPECIAL, internalBaseClassName, "<init>", "()V");
 
         cv.visitInsn(RETURN);
@@ -237,6 +229,8 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
     }
 
     public void visitField(FieldNode fieldNode) {
+        System.out.println("Visiting field: " + fieldNode.getName() + " on class: " + classNode.getName());
+        
         Object fieldValue = null;
         Expression expression = fieldNode.getInitialValueExpression();
         if (expression instanceof ConstantExpression) {
@@ -257,42 +251,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
      * Creates a getter, setter and field
      */
     public void visitProperty(PropertyNode propertyNode) {
-        String name = propertyNode.getName();
-        String getterName = "get" + capitalize(name);
-        String setterName = "set" + capitalize(name);
-
-        FieldNode field =
-            new FieldNode(
-                name,
-                ACC_PRIVATE,
-                propertyNode.getType(),
-                classNode.getName(),
-                propertyNode.getInitialValueExpression());
-        classNode.addField(field);
-        visitField(field);
-
-        Statement getterBlock = propertyNode.getGetterBlock();
-        if (getterBlock == null) {
-            getterBlock = createGetterBlock(propertyNode, field);
-        }
-        Statement setterBlock = propertyNode.getGetterBlock();
-        if (setterBlock == null) {
-            setterBlock = createSetterBlock(propertyNode, field);
-        }
-
-        MethodNode getter =
-            new MethodNode(
-                getterName,
-                propertyNode.getModifiers(),
-                propertyNode.getType(),
-                Parameter.EMPTY_ARRAY,
-                getterBlock);
-        visitMethod(getter);
-
-        Parameter[] setterParameterTypes = { new Parameter(propertyNode.getType(), "value")};
-        MethodNode setter =
-            new MethodNode(setterName, propertyNode.getModifiers(), "void", setterParameterTypes, setterBlock);
-        visitMethod(setter);
     }
 
     // GroovyCodeVisitor interface
@@ -344,7 +302,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         Label l0 = new Label();
         cv.visitJumpInsn(IFEQ, l0);
-        cv.visitVarInsn(ALOAD, 0);
+        //cv.visitVarInsn(ALOAD, 0);
         ifElse.getIfBlock().visit(this);
 
         Label l1 = new Label();
@@ -468,6 +426,9 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
         FieldNode field = expression.getField();
         boolean isStatic = field.isStatic();
 
+        if (! isStatic && !leftHandExpression) {
+            cv.visitVarInsn(ALOAD, 0);
+        }
         int opcode = (leftHandExpression) ? ((isStatic) ? PUTSTATIC : PUTFIELD) : ((isStatic) ? GETSTATIC : GETFIELD);
         String ownerName =
             (field.getOwner().equals(classNode.getName()))
@@ -475,6 +436,11 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
                 : Type.getInternalName(loadClass(field.getOwner()));
 
         cv.visitFieldInsn(opcode, ownerName, expression.getFieldName(), getTypeDescription(field.getType()));
+        
+        // lets push this back on the stack 
+//        if (! isStatic && leftHandExpression) {
+//            cv.visitVarInsn(ALOAD, 0);
+//        }
     }
 
     public void visitBooleanExpression(BooleanExpression expression) {
@@ -647,6 +613,10 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
     protected void evaluateEqual(BinaryExpression expression) {
         // lets evaluate the RHS then hopefully the LHS will be a field
+
+        // this may be redundant - we should maybe do this after each method call?
+        cv.visitVarInsn(ALOAD, 0);
+        
         leftHandExpression = false;
         expression.getRightExpression().visit(this);
 
@@ -694,7 +664,7 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
 
         // lets push this onto the stack
         defineVariable("this", classNode.getName()).getIndex();
-        cv.visitVarInsn(ALOAD, idx);
+        //cv.visitVarInsn(ALOAD, idx);
 
         // now lets create indices for the parameteres
         for (int i = 0; i < parameters.length; i++) {
@@ -724,16 +694,6 @@ public class ClassGenerator implements GroovyClassVisitor, GroovyCodeVisitor, Co
             throw new ClassGeneratorException("Undefined variable: " + name);
         }
         return answer;
-    }
-
-    protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
-        return new ReturnStatement(new FieldExpression(field));
-    }
-
-    protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
-        String name = propertyNode.getName();
-        return new ExpressionStatement(
-            new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
     }
 
     /**

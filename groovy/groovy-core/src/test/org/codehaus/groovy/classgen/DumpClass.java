@@ -60,10 +60,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @version $Revision$
  */
 public class DumpClass {
-    
+
     private String bar;
     private String result;
-    
+    private Object x;
+
     public String getResult() {
         return result;
     }
@@ -71,39 +72,38 @@ public class DumpClass {
     public String getBar() {
         return bar;
     }
-    
+
     public void setBar(String value) {
         this.bar = value;
     }
-    
-    
+
     public void iterateOverList() {
         // equivalent of
-//        for i in ["a", "b", "c"] {
-//            System.out.println(i);
-//        }
-        List list = InvokerHelper.createList(new Object[] {"a", "b", "c"});
-        for (Iterator iter = InvokerHelper.asIterator(list); iter.hasNext(); ) {
+        //        for i in ["a", "b", "c"] {
+        //            System.out.println(i);
+        //        }
+        List list = InvokerHelper.createList(new Object[] { "a", "b", "c" });
+        for (Iterator iter = InvokerHelper.asIterator(list); iter.hasNext();) {
             Object i = iter.next();
             InvokerHelper.invokeMethod(System.out, "println", i);
         }
     }
-    
+
     public void iterateOverMap() {
-        Map map = InvokerHelper.createMap(new Object[] {"a", "x", "b", "y", "c", "z"});
-        for (Iterator iter = InvokerHelper.asIterator(map); iter.hasNext(); ) {
+        Map map = InvokerHelper.createMap(new Object[] { "a", "x", "b", "y", "c", "z" });
+        for (Iterator iter = InvokerHelper.asIterator(map); iter.hasNext();) {
             Object i = iter.next();
             InvokerHelper.invokeMethod(System.out, "println", i);
         }
     }
-    
+
     public void printValues(Object collection) {
-        for (Iterator iter = InvokerHelper.asIterator(collection); iter.hasNext(); ) {
+        for (Iterator iter = InvokerHelper.asIterator(collection); iter.hasNext();) {
             Object foo = iter.next();
             InvokerHelper.invokeMethod(System.out, "println", foo);
         }
     }
-    
+
     public void ifDemo() {
         if (InvokerHelper.compareEqual(bar, "abc")) {
             result = "worked";
@@ -112,18 +112,18 @@ public class DumpClass {
             InvokerHelper.invokeMethod(System.out, "println", "false");
         }
     }
-    
+
     public Object emptyMethod() {
         return null;
     }
-    
+
     public void emptyVoidMethod() {
     }
-    
-//    public void testAssertion() {
-//        assert bar == null;
-//        assert result == null : "message";
-//    }
+
+    //    public void testAssertion() {
+    //        assert bar == null;
+    //        assert result == null : "message";
+    //    }
 
     public void testGroovyAssertion() {
         if (InvokerHelper.compareEqual(bar, "foo")) {
@@ -139,7 +139,7 @@ public class DumpClass {
         else {
             InvokerHelper.assertFailed("expression", "message");
         }
-        
+
         bar = "abc";
 
         if (InvokerHelper.compareNotEqual(bar, "foo")) {
@@ -152,6 +152,27 @@ public class DumpClass {
         }
         else {
             InvokerHelper.assertFailed("expression", "not null");
+        }
+    }
+
+    public void testFieldSet() {
+        if (InvokerHelper.compareNotEqual(x, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "message");
+        }
+
+        x = "foo";
+
+        if (InvokerHelper.compareEqual(x, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "message");
+        }
+        if (InvokerHelper.compareNotEqual(x, "foo")) {
+        }
+        else {
+            InvokerHelper.assertFailed("expression", "message");
         }
     }
 }

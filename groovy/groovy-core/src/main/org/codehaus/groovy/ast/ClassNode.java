@@ -50,13 +50,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.syntax.Token;
+import org.objectweb.asm.Constants;
+
 /**
  * Represents a class declaration
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassNode extends ASTNode {
+public class ClassNode extends ASTNode implements Constants {
 
     private String name;
     private int modifiers;
@@ -87,6 +90,8 @@ public class ClassNode extends ASTNode {
         this.modifiers = modifiers;
         this.superClass = superClass;
         this.interfaces = interfaces;
+
+        System.out.println("Creating class: " + name + " with superclass: " + superClass);
     }
 
     public String getSuperClass() {
@@ -127,6 +132,39 @@ public class ClassNode extends ASTNode {
     }
 
     public void addProperty(PropertyNode node) {
+        FieldNode field =
+            new FieldNode(node.getName(), ACC_PRIVATE, node.getType(), getName(), node.getInitialValueExpression());
+        addField(field);
+
+        String name = node.getName();
+        String getterName = "get" + capitalize(name);
+        String setterName = "set" + capitalize(name);
+
+        Statement getterBlock = node.getGetterBlock();
+        if (getterBlock == null) {
+            getterBlock = createGetterBlock(node, field);
+        }
+        Statement setterBlock = node.getGetterBlock();
+        if (setterBlock == null) {
+            setterBlock = createSetterBlock(node, field);
+        }
+
+        MethodNode getter =
+            new MethodNode(
+                getterName,
+                node.getModifiers(),
+                node.getType(),
+                Parameter.EMPTY_ARRAY,
+                getterBlock);
+                
+        addMethod(getter);
+
+        Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
+        MethodNode setter =
+            new MethodNode(setterName, node.getModifiers(), "void", setterParameterTypes, setterBlock);
+        addMethod(setter);
+
+
         properties.add(node);
     }
 
@@ -145,4 +183,22 @@ public class ClassNode extends ASTNode {
     public FieldNode getField(String name) {
         return (FieldNode) fieldIndex.get(name);
     }
+
+    /**
+     * Capitalizes the start of the given bean property name
+     */
+    public static String capitalize(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
+    }
+
+    protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
+        return new ReturnStatement(new FieldExpression(field));
+    }
+
+    protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
+        String name = propertyNode.getName();
+        return new ExpressionStatement(
+            new BinaryExpression(new FieldExpression(field), Token.equal(0, 0), new VariableExpression("value")));
+    }
+
 }

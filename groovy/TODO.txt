@@ -3,13 +3,19 @@ Core Groovy Tasks
 
 * AST closures 
 
+* test for statement
+
+* test try / catch
+
+* while / do - while statements
+
+* use of properties within a class should use setteres / getters.
+
 * test the use of PropertyExpression
 	a.b = c.d
 	
 * test use of invokeMethod(methodName, arguments) to test dynamic proxy features
 
-* test use of assert statements
-	
 * support static new() method for constructors
 
 * add methods plus(), minus(), multiply and so forth to Number etc
