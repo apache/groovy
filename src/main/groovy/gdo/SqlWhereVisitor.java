@@ -39,29 +39,23 @@ public class SqlWhereVisitor implements GroovyCodeVisitor {
 
     private StringBuffer buffer = new StringBuffer();
 
-    public void visitForLoop(ForStatement forLoop) {
-        // TODO Auto-generated method stub
+    public String getWhere() {
+        return buffer.toString();
+    }
 
+    public void visitForLoop(ForStatement forLoop) {
     }
 
     public void visitWhileLoop(WhileStatement loop) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitDoWhileLoop(DoWhileStatement loop) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitIfElse(IfStatement ifElse) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitExpressionStatement(ExpressionStatement statement) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitReturnStatement(ReturnStatement statement) {
@@ -69,28 +63,18 @@ public class SqlWhereVisitor implements GroovyCodeVisitor {
     }
 
     public void visitAssertStatement(AssertStatement statement) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitTryCatchFinally(TryCatchStatement finally1) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitStaticMethodCallExpression(StaticMethodCallExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitConstructorCallExpression(ConstructorCallExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
@@ -99,52 +83,34 @@ public class SqlWhereVisitor implements GroovyCodeVisitor {
 
         left.visit(this);
         buffer.append(" ");
+        
         Token token = expression.getOperation();
-        switch (token.getType()) {
-            case Token.COMPARE_EQUAL:
-                buffer.append("=");
-                break;
-                
-            default:
-                buffer.append(token.getText());
-        }
+        buffer.append(tokenAsSql(token));
+        
         buffer.append(" ");
         right.visit(this);
     }
 
     public void visitBooleanExpression(BooleanExpression expression) {
-        // TODO Auto-generated method stub
-
+        expression.getExpression().visit(this);
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void visitTupleExpression(TupleExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitMapExpression(MapExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitMapEntryExpression(MapEntryExpression expression) {
-        // TODO Auto-generated method stub
+    }
 
+    public void visitTupleExpression(TupleExpression expression) {
     }
 
     public void visitListExpression(ListExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitRangeExpression(RangeExpression expression) {
-        // TODO Auto-generated method stub
-
     }
 
     public void visitConstantExpression(ConstantExpression expression) {
@@ -193,8 +159,16 @@ public class SqlWhereVisitor implements GroovyCodeVisitor {
 
     }
 
-    public String getWhere() {
-        return buffer.toString();
+    protected String tokenAsSql(Token token) {
+        switch (token.getType()) {
+            case Token.COMPARE_EQUAL:
+                return "=";
+            case Token.LOGICAL_AND:
+                return "and";
+            case Token.LOGICAL_OR:
+                return "or";
+            default:
+                return token.getText();
+        }
     }
-
 }
