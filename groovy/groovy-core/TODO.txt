@@ -3,6 +3,8 @@ Core Groovy Tasks
 
 * write a Node pretty printer
 
+* more tests of field and property initialisers
+
 * test closure with no argument, once bob's done the parser. both
     foo = { someMethod() }
     foo2 = {| someMethod() }

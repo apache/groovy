@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.*;
 import groovy.lang.GroovyObject;
 
 import java.util.Arrays;

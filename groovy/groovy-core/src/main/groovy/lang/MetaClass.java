@@ -43,7 +43,7 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package org.codehaus.groovy.runtime;
+package groovy.lang;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -58,6 +58,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.codehaus.groovy.runtime.InvokerException;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.MethodHelper;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
