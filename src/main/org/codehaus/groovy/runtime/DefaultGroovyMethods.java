@@ -264,6 +264,45 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
+
+    /**
+     * Selects the maximum value found in the collection
+     * 
+     * @param source
+     * @param closure
+     */
+    public static Object max(Collection self) {
+        Object answer = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value != null) {
+                if (answer == null || InvokerHelper.compareGreaterThan(value, answer)) {
+                    answer = value;
+                }
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the minimum value found in the collection
+     * 
+     * @param source
+     * @param closure
+     */
+    public static Object min(Collection self) {
+        Object answer = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (value != null) {
+                if (answer == null || InvokerHelper.compareLessThan(value, answer)) {
+                    answer = value;
+                }
+            }
+        }
+        return answer;
+    }
+
     /**
      * Makes a String look like a Collection by adding support for the size() method
      * 
