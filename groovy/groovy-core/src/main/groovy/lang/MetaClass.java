@@ -662,12 +662,14 @@ public class MetaClass {
                 return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), property);
             }
             if (object instanceof Object) {
+                Field field = null;
                 try {
                     // lets try a public field
-                    Field field = object.getClass().getDeclaredField(property);
+                    field = object.getClass().getDeclaredField(property);
                     return field.get(object);
-                }
-                catch (Exception e1) {
+                } catch (IllegalAccessException iae) {
+                    lastException = new IllegalPropertyAccessException(field,object.getClass());
+                } catch (Exception e1) {
                     // fall through
                 }
             }
