@@ -67,7 +67,9 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.cli.Option;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
  * A Command line to execute groovy.
@@ -96,6 +98,9 @@ public class GroovyMain {
 
     // backup input files with extension
     private String backupExtension;
+
+    // Compiler configuration, used to set the encodings of the scripts/classes
+    private CompilerConfiguration conf = new CompilerConfiguration();
 
     /**
      * Main CLI interface.
@@ -153,6 +158,8 @@ public class GroovyMain {
 
         options.addOption(OptionBuilder.hasArg(false).withDescription("usage information").withLongOpt("help").create('h'));
 
+        options.addOption(OptionBuilder.withArgName("charset").hasArg().withDescription("specify the encoding of the files").withLongOpt("encoding").create('c'));
+
         options.addOption(OptionBuilder.withArgName("script").hasArg().withDescription("specify a command line script").create('e'));
 
         options.addOption(OptionBuilder.withArgName("extension").hasOptionalArg().withDescription("modify files in place").create('i'));
@@ -175,6 +182,11 @@ public class GroovyMain {
         GroovyMain main = new GroovyMain();
 
         List args = line.getArgList();
+
+        // add the ability to parse scripts with a specified encoding
+        if (line.hasOption('c')) {
+            main.conf.setSourceEncoding(line.getOptionValue("encoding"));
+        }
 
         main.isScriptFile = !line.hasOption('e');
         main.processFiles = line.hasOption('p') || line.hasOption('n');
@@ -226,7 +238,7 @@ public class GroovyMain {
      * Process the input files.
      */
     private void processFiles() throws CompilationFailedException, IOException {
-        GroovyShell groovy = new GroovyShell();
+        GroovyShell groovy = new GroovyShell(conf);
 
         Script s = null;
 
@@ -330,7 +342,7 @@ public class GroovyMain {
      * Process the standard, single script with args.
      */
     private void processOnce() throws CompilationFailedException, IOException {
-        GroovyShell groovy = new GroovyShell();
+        GroovyShell groovy = new GroovyShell(conf);
 
         if (isScriptFile)
             groovy.run(new File(script), args);
