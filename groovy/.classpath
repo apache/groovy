@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <classpath>
-  <classpathentry kind="src" path="src/java/main">
+  <classpathentry kind="src" path="src/main">
   </classpathentry>
-  <classpathentry kind="src" path="src/java/test">
+  <classpathentry kind="src" path="src/test">
   </classpathentry>
   <classpathentry kind="var" path="MAVEN_REPO/junit/jars/junit-3.8.1.jar">
   </classpathentry>

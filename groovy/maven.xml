@@ -36,7 +36,7 @@
   <goal name="groovy:compile-tests"
   		description="Compiles the Groovy unit test cases">
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="test.classpath"/> 
-    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/src/java/test">
+    <groovyc destdir="${basedir}/target/test-classes" srcdir="${basedir}/src/test">
       <classpath refid="test.classpath"/>
       <include name="**/*.groovy"/>
       <exclude name="**/notworking/*.groovy"/>
