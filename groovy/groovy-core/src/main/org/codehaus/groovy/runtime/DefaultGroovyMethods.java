@@ -36,6 +36,8 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
+import groovy.lang.PropertyValue;
+import groovy.lang.MetaProperty;
 import groovy.lang.Range;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
@@ -151,7 +153,9 @@ public class DefaultGroovyMethods {
 	    buffer.append("@");
 	    buffer.append(Integer.toHexString(self.hashCode()));
 	    boolean groovyObject = self instanceof GroovyObject;
-	    while (true) {
+		
+		//jes this should be rewritten to use the new allProperties() stuff
+	    while (klass != null) {
 	        Field[] fields = klass.getDeclaredFields();
 	        for (int i = 0; i < fields.length; i++) {
 	            final Field field = fields[i];
@@ -176,14 +180,44 @@ public class DefaultGroovyMethods {
 	                }
 	            }
 	        }
+
 	        klass = klass.getSuperclass();
-	        if (klass == null) {
-	            break;
-	        }
 	    }
+
 	    buffer.append(">");
 	    return buffer.toString();
 	}
+
+    public static void eachPropertyName(Object self, Closure closure) {
+        List props = allProperties(self);
+        for(Iterator itr = props.iterator(); itr.hasNext(); ) {
+            PropertyValue pv = (PropertyValue) itr.next();
+            closure.call(pv.getName());
+        }
+    }
+
+    public static void eachProperty(Object self, Closure closure) {
+        List props = allProperties(self);
+        for(Iterator itr = props.iterator(); itr.hasNext(); ) {
+            PropertyValue pv = (PropertyValue) itr.next();
+            closure.call(pv);
+        }
+    }
+    
+    public static List allProperties(Object self) {
+        List props = new ArrayList();
+        MetaClass metaClass = InvokerHelper.getMetaClass(self);
+        
+        // get the MetaProperty list from the MetaClass
+        List mps = metaClass.getProperties();
+        for(Iterator itr = mps.iterator(); itr.hasNext();) {
+            MetaProperty mp = (MetaProperty) itr.next();
+            PropertyValue pv = new PropertyValue(self, mp);
+            props.add(pv);
+        }
+        
+        return props;
+    }
 
 	/**
 	 * Scoped use method

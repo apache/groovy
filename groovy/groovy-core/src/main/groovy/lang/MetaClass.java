@@ -121,7 +121,8 @@ public class MetaClass {
     private Map methodIndex = new HashMap();
     private Map staticMethodIndex = new HashMap();
     private List newGroovyMethodsList = new ArrayList();
-    private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
+    //private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
+    private Map propertyMap = Collections.synchronizedMap(new HashMap());
     private Map listeners = new HashMap();
     private Map methodCache = Collections.synchronizedMap(new HashMap());
     private Map staticMethodCache = Collections.synchronizedMap(new HashMap());
@@ -143,24 +144,32 @@ public class MetaClass {
         // introspect
         BeanInfo info = null;
         try {
-        	info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-        		public Object run() throws IntrospectionException {
-        			return Introspector.getBeanInfo(theClass);
-        		}
-        	});
+            info =(BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IntrospectionException {
+                    return Introspector.getBeanInfo(theClass);
+                }
+            });
         } catch (PrivilegedActionException pae) {
-        	if (pae.getException() instanceof IntrospectionException) {
-        		throw (IntrospectionException) pae.getException();
-        	} else {
-        		throw new RuntimeException(pae.getException());
-        	}
+            if (pae.getException() instanceof IntrospectionException) {
+                throw (IntrospectionException) pae.getException();
+            } else {
+                throw new RuntimeException(pae.getException());
+            }
         }
 
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
+        
+        // build up the metaproperties based on the public fields, property descriptors,
+        // and the getters and setters
+        setupProperties(descriptors);
+        
+        /* old code
         for (int i = 0; i < descriptors.length; i++) {
             PropertyDescriptor descriptor = descriptors[i];
             propertyDescriptors.put(descriptor.getName(), descriptor);
         }
+        */
+        
         EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
         for (int i = 0; i < eventDescriptors.length; i++) {
             EventSetDescriptor descriptor = eventDescriptors[i];
@@ -521,9 +530,9 @@ public class MetaClass {
             }
         }
         throw new GroovyRuntimeException(
-        			"Could not find matching constructor for: "
-        				+ theClass.getName()
-						+ "("+InvokerHelper.toTypeString(arguments)+")");
+                    "Could not find matching constructor for: "
+                        + theClass.getName()
+                        + "("+InvokerHelper.toTypeString(arguments)+")");
     }
 
     /**
@@ -535,6 +544,11 @@ public class MetaClass {
         for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             String key = entry.getKey().toString();
+            
+            // do we have this property?
+            if(propertyMap.get(key) == null)
+                continue;
+            
             Object value = entry.getValue();
             try {
                 setProperty(bean, key, value);
@@ -552,6 +566,7 @@ public class MetaClass {
      * @return the given property's value on the object
      */
     public Object getProperty(final Object object, final String property) {
+        /* old code; we now use the metaProperty map to handle properties
         MetaMethod metaMethod = null;
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
         if (descriptor != null) {
@@ -566,6 +581,21 @@ public class MetaClass {
             }
             if (metaMethod != null) {
                 return doMethodInvoke(object, metaMethod, EMPTY_ARRAY);
+            }
+        }
+        */
+        
+        // look for the property in our map
+        MetaProperty mp = (MetaProperty) propertyMap.get(property);
+        if(mp != null) {
+            try {
+                //System.out.println("we found a metaproperty for " + theClass.getName() +
+                //  "." + property);
+                // delegate the get operation to the metaproperty
+                return mp.getProperty(object);
+            }
+            catch(Exception e) {
+                throw new GroovyRuntimeException("Cannot read property: " + property);
             }
         }
 
@@ -583,9 +613,11 @@ public class MetaClass {
                     }
                 }
             }
-        } else {
+        } 
+        else {
             Object[] arguments = { property };
             Object answer = doMethodInvoke(object, genericGetMethod, arguments);
+            // jes bug? a property retrieved via a generic get() can't have a null value?
             if (answer != null) {
                 return answer;
             }
@@ -599,6 +631,7 @@ public class MetaClass {
         }
 
         // lets try invoke a static getter method
+        // this case is for protected fields. I wish there was a better way...
         Exception lastException = null;
         try {
             MetaMethod method = findGetter(object, "get" + capitalize(property));
@@ -643,20 +676,173 @@ public class MetaClass {
                 return null;
             }
 
-            // lets try the getter method
-            if (lastException == null) {
+            if (lastException == null)
                 throw new MissingPropertyException(property, theClass);
-            }
-            else {
+            else
                 throw new MissingPropertyException(property, theClass, lastException);
-            }
         }
     }
-
+    
+    /**
+     * Get all the properties defined for this type
+     * @return a list of MetaProperty objects
+     */
+    public List getProperties() {
+        // simply return the values of the metaproperty map as a List
+        return new ArrayList(propertyMap.values());
+    }
+    
+    /**
+     * This will build up the property map (Map of MetaProperty objects, keyed on 
+     * property name).
+     */
+    protected void setupProperties(PropertyDescriptor[] propertyDescriptors) {
+        MetaProperty mp;
+        Method method;
+        MetaMethod getter = null;
+        MetaMethod setter = null;
+        Class klass;
+        
+        // first get the public fields and create MetaFieldProperty objects
+        klass = theClass;
+        while(klass != null) {
+            Field[] fields = klass.getDeclaredFields();
+            for(int i = 0; i < fields.length; i++) {
+                // we're only interested in publics
+                if((fields[i].getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0)
+                    continue;
+                
+                // see if we already got this
+                if(propertyMap.get(fields[i].getName()) != null)
+                    continue;
+                
+                //System.out.println("adding field " + fields[i].getName() + 
+                //  " for class " + klass.getName());
+                // stick it in there!
+                propertyMap.put(fields[i].getName(), new MetaFieldProperty(fields[i]));
+            }
+            
+            // now get the super class
+            klass = klass.getSuperclass();
+        }
+        
+        // now iterate over the map of property descriptors and generate 
+        // MetaBeanProperty objects
+        for(int i=0; i<propertyDescriptors.length; i++) {
+            PropertyDescriptor pd = propertyDescriptors[i];
+            // skip if the field already exists in the map
+            if(propertyMap.get(pd.getName()) != null)
+                continue;
+            
+            // skip if the property type is unknown (this seems to be the case if the 
+            // property descriptor is based on a setX() method that has two parameters,
+            // which is not a valid property)
+            if(pd.getPropertyType() == null)
+                continue;
+            
+            // get the getter method
+            method = pd.getReadMethod();
+            if(method != null)
+                getter = findMethod(method);
+            else
+                getter = null;
+            
+            // get the setter method
+            method = pd.getWriteMethod();
+            if(method != null)
+                setter = findMethod(method);
+            else
+                setter = null;
+            
+            // now create the MetaProperty object
+            //System.out.println("creating a bean property for class " +
+            //  theClass.getName() + ": " + pd.getName());
+                
+            mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
+            
+            // put it in the list
+            propertyMap.put(pd.getName(), mp);
+        }
+        
+        // now look for any stray getters that may be used to define a property
+        klass = theClass;
+        while(klass != null) {
+            Method[] methods = klass.getDeclaredMethods();
+            for (int i = 0; i < methods.length; i++) {
+                // filter out the privates
+                if(Modifier.isPublic(methods[i].getModifiers()) == false)
+                    continue;
+                
+                method = methods[i];
+                
+                String methodName = method.getName();
+                
+                // is this a getter?
+                if(methodName.startsWith("get") && 
+                    methodName.length() > 3 &&
+                    method.getParameterTypes().length == 0) {
+                    
+                    // get the name of the property
+                    String propName = methodName.substring(3).toLowerCase();
+                    
+                    // is this property already accounted for?
+                    mp = (MetaProperty) propertyMap.get(propName);
+                    if(mp != null) {
+                        // we may have already found the setter for this
+                        if(mp instanceof MetaBeanProperty && ((MetaBeanProperty) mp).getGetter() == null) {
+                            // update the getter method to this one
+                            ((MetaBeanProperty) mp).setGetter(findMethod(method));
+                        }
+                    }
+                    else {
+                        // we need to create a new property object
+                        // type of the property is what the get method returns
+                        MetaBeanProperty mbp = new MetaBeanProperty(propName, 
+                            method.getReturnType(),
+                            findMethod(method), null);
+                            
+                        // add it to the map
+                        propertyMap.put(propName, mbp);
+                    }
+                }
+                else if(methodName.startsWith("set") && 
+                    methodName.length() > 3 &&
+                    method.getParameterTypes().length == 1) {
+                    
+                    // get the name of the property
+                    String propName = methodName.substring(3).toLowerCase();
+                    
+                    // did we already find the getter of this?
+                    mp = (MetaProperty) propertyMap.get(propName);
+                    if(mp != null) {
+                        if(mp instanceof MetaBeanProperty && ((MetaBeanProperty) mp).getSetter() == null) {
+                            // update the setter method to this one
+                            ((MetaBeanProperty) mp).setSetter(findMethod(method));
+                        }
+                    }
+                    else {
+                        // this is a new property to add
+                        MetaBeanProperty mbp = new MetaBeanProperty(propName, 
+                                                                    method.getParameterTypes()[0],
+                                                                    null,
+                                                                    findMethod(method));
+                            
+                        // add it to the map
+                        propertyMap.put(propName, mbp);
+                    }
+                }
+            }
+            
+            // now get the super class
+            klass = klass.getSuperclass();
+        }
+    }
+    
     /**
      * Sets the property value on an object
      */
     public void setProperty(Object object, String property, Object newValue) {
+        /* old code, replaced with new MetaProperty stuff...
         PropertyDescriptor descriptor = (PropertyDescriptor) propertyDescriptors.get(property);
 
         if (descriptor != null) {
@@ -720,7 +906,68 @@ public class MetaClass {
             }
             return;
         }
+        */
+        
+        MetaProperty mp = (MetaProperty) propertyMap.get(property);
+        if(mp != null) {
+            try {
+                mp.setProperty(object, newValue);
+                return;
+            }
+            catch (Exception e) {
+                // if the value is a List see if we can construct the value
+                // from a constructor
+                if (newValue instanceof List) {
+                    List list = (List) newValue;
+                    int params = list.size();
+                    Constructor[] constructors = mp.getType().getConstructors();
+                    for (int i = 0; i < constructors.length; i++) {
+                        Constructor constructor = constructors[i];
+                        if (constructor.getParameterTypes().length == params) {
+                            Object value = doConstructorInvoke(constructor, list.toArray());
+                            mp.setProperty(object, value);
+                            return;
+                        }
+                    }
+                    
+                    // if value is an array  
+                    Class parameterType = mp.getType();
+                    if (parameterType.isArray()) {
+                        Object objArray = asPrimitiveArray(list, parameterType);
+                        mp.setProperty(object, objArray);
+                        return;
+                    }
+                }
 
+                // if value is an multidimensional array  
+                // jes currently this logic only supports metabeansproperties and
+                // not metafieldproperties. It shouldn't be too hard to support
+                // the latter...
+                if (newValue.getClass().isArray() && mp instanceof MetaBeanProperty) {
+                    MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                    List list = Arrays.asList((Object[])newValue);
+                    MetaMethod setter = mbp.getSetter();
+                    
+                    Class parameterType = setter.getParameterTypes()[0];
+                    Class arrayType = parameterType.getComponentType();
+                    Object objArray = Array.newInstance(arrayType, list.size());
+                    
+                    for (int i = 0; i < list.size(); i++) {
+                        List list2 =Arrays.asList((Object[]) list.get(i));
+                        Object objArray2 = asPrimitiveArray(list2, arrayType);
+                        Array.set(objArray, i, objArray2);
+                    }
+
+                    doMethodInvoke(object, setter, new Object[]{
+                        objArray
+                    });
+                    return;
+                }
+                
+                throw new MissingPropertyException(property, theClass, e);
+            }
+        }
+        
         try {
             MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
             if (addListenerMethod != null && newValue instanceof Closure) {
@@ -731,7 +978,8 @@ public class MetaClass {
                 return;
             }
 
-            if (genericGetMethod == null) {
+            if (genericSetMethod == null) {
+                //jes do we still need this logic??
                 // Make sure there isn't a generic method in the "use" cases
                 List possibleGenericMethods = getMethods("set");
                 if (possibleGenericMethods != null) {
@@ -745,7 +993,8 @@ public class MetaClass {
                         }
                     }
                 }
-            } else{
+            } 
+            else {
                 Object[] arguments = { property, newValue };
                 doMethodInvoke(object, genericSetMethod, arguments);
                 return;
@@ -754,6 +1003,9 @@ public class MetaClass {
             /** todo or are we an extensible class? */
 
             // lets try invoke the set method
+            // this is kind of ugly: if it is a protected field, we fall
+            // all the way down to this klunky code. Need a better
+            // way to handle this situation...
 
             String method = "set" + capitalize(property);
             try {
@@ -773,6 +1025,9 @@ public class MetaClass {
         catch (GroovyRuntimeException e) {
             throw new MissingPropertyException(property, theClass, e);
         }
+        
+        // if we got here, the damn thing just aint there...
+        throw new MissingPropertyException(property, theClass);
     }
 
     /**
@@ -918,10 +1173,10 @@ public class MetaClass {
     protected void addMethods(Class theClass) {
         Method[] methodArray = theClass.getDeclaredMethods();
         for (int i = 0; i < methodArray.length; i++) {
-        	Method reflectionMethod = methodArray[i];
+            Method reflectionMethod = methodArray[i];
             if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
-        		continue;
-        	}
+                continue;
+            }
             MetaMethod method = createMetaMethod(reflectionMethod);
             addMethod(method);
         }
@@ -1838,29 +2093,29 @@ public class MetaClass {
     }
 
     protected MetaMethod createMetaMethod(final Method method) {
-	    if (registry.useAccessible()) {
-	    	AccessController.doPrivileged(new PrivilegedAction() {
-	    		public Object run() {
-	                method.setAccessible(true);
-	                return null;
-	    		}
-	    	});
-	    }
-	    if (useReflection) {
-	        //log.warning("Creating reflection based dispatcher for: " + method);
-	        return new ReflectionMetaMethod(method);
-	    }
-	    MetaMethod answer = new MetaMethod(method);
-	    if (isValidReflectorMethod(answer)) {
-	        allMethods.add(answer);
-	        answer.setMethodIndex(allMethods.size());
-	    }
-	    else {
-	        //log.warning("Creating reflection based dispatcher for: " + method);
-	        answer = new ReflectionMetaMethod(method);
-	    }
-	    return answer;
-	}
+        if (registry.useAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    method.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+        if (useReflection) {
+            //log.warning("Creating reflection based dispatcher for: " + method);
+            return new ReflectionMetaMethod(method);
+        }
+        MetaMethod answer = new MetaMethod(method);
+        if (isValidReflectorMethod(answer)) {
+            allMethods.add(answer);
+            answer.setMethodIndex(allMethods.size());
+        }
+        else {
+            //log.warning("Creating reflection based dispatcher for: " + method);
+            answer = new ReflectionMetaMethod(method);
+        }
+        return answer;
+    }
 
     protected boolean isValidReflectorMethod(MetaMethod method) {
         // We cannot use a reflector if the method is private, protected, or package accessible only.
@@ -1923,8 +2178,8 @@ public class MetaClass {
             return (Reflector) type.newInstance();
         }
         catch (AccessControlException ace) {
-        	//Don't ignore this exception type
-        	throw ace;
+            //Don't ignore this exception type
+            throw ace;
         } 
         catch (Exception e) {
             // lets ignore, lets generate it && load it
@@ -1948,11 +2203,11 @@ public class MetaClass {
         ClassLoader loader = theClass.getClassLoader();
         if (loader instanceof GroovyClassLoader) {
             final GroovyClassLoader gloader = (GroovyClassLoader) loader;
-        	return (Class) AccessController.doPrivileged(new PrivilegedAction() {
-        		public Object run() {
-        			return gloader.defineClass(name, bytecode, getClass().getProtectionDomain());
-        		}
-        	});
+            return (Class) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return gloader.defineClass(name, bytecode, getClass().getProtectionDomain());
+                }
+            });
         }
         return registry.loadClass(name, bytecode);
     }
