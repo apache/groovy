@@ -1,8 +1,8 @@
 <project>
   <pomVersion>3</pomVersion>
   <extend>${basedir}/../../groovy-core/project.xml</extend>
-
-  <groupId>groovy-xmlrpc</groupId>
+  <id>groovy-xmlrpc</id>
+  <groupId>groovy</groupId>
   <artifactId>groovy-xmlrpc</artifactId>
   <name>groovy-xmlrpc</name>
   <currentVersion>0.2</currentVersion>
