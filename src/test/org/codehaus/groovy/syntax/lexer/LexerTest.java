@@ -56,6 +56,17 @@ public class LexerTest
         assertEnd();
     }
 
+    public void testSingleLineHashComment_CarriageReturn()
+        throws Exception
+    {
+        newLexer( "# I like cheese\rcheese" );
+
+        assertNextToken( Token.IDENTIFIER,
+                         "cheese" );
+
+        assertEnd();
+    }
+
     public void testMultilineComment_MiddleOfLine()
         throws Exception
     {
@@ -900,7 +911,7 @@ public class LexerTest
     public void testUnexpecteCharacterException()
         throws Exception
     {
-        newLexer( "#" );
+        newLexer( "±" );
 
         try
         {
@@ -910,7 +921,7 @@ public class LexerTest
         catch (UnexpectedCharacterException e)
         {
             // expected and correct
-            assertEquals( '#',
+            assertEquals( '±',
                           e.getCharacter() );
         }
     }

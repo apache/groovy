@@ -137,6 +137,40 @@ public class Lexer
                     }
                     break ROOT_SWITCH;
                 }
+                case ( '#' ):
+                {
+                    consume();
+
+                  CONSUME_LOOP:
+                    while ( true )
+                    {
+                        switch ( la() )
+                        {
+                            case ( '\r' ):
+                            {
+                                consume();
+                                if ( la() == '\n' )
+                                {
+                                    consume();
+                                }
+                                eol();
+                                break CONSUME_LOOP;
+                            }
+                            case ( '\n' ):
+                            {
+                                consume();
+                                eol();
+                                break CONSUME_LOOP;
+                            }
+                            default:
+                            {
+                                consume();
+                            }
+                        }
+                    }
+                    token = null;
+                    break ROOT_SWITCH;
+                }
                 case ( '/' ):
                 {
                     mark();
