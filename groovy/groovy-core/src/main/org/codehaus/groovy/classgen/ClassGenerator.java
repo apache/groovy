@@ -850,20 +850,21 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
         //TODO: make work with arrays
         // we may need to cast
         String returnType = methodNode.getReturnType();
+        helper.unbox(returnType);
         if (returnType.equals("double")) {
-            MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
+            //MethodCaller.newVirtual(Double.class, "doubleValue").call(cv);
             cv.visitInsn(DRETURN);
         }
         else if (returnType.equals("float")) {
-            MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
+            //MethodCaller.newVirtual(Double.class, "floatValue").call(cv);
             cv.visitInsn(FRETURN);
         }
         else if (returnType.equals("long")) {
-            MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
+            //MethodCaller.newVirtual(Integer.class, "longValue").call(cv);
             cv.visitInsn(LRETURN);
         }
         else if (returnType.equals("boolean")) {
-            MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
+            //MethodCaller.newVirtual(Boolean.class, "booleanValue").call(cv);
             cv.visitInsn(IRETURN);
         }
         else if (
@@ -872,7 +873,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
                 || returnType.equals("int")
                 || returnType.equals("short")) { //byte,short,boolean,int are
             // all IRETURN
-            MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
+            //MethodCaller.newVirtual(Integer.class, "intValue").call(cv);
             cv.visitInsn(IRETURN);
         }
         else {

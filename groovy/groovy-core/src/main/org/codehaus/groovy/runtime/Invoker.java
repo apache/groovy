@@ -376,6 +376,9 @@ public class Invoker {
                 }
                 return DefaultGroovyMethods.compareTo(asNumber(left), (Number) right);
             }
+            else if (left instanceof String && right instanceof Character) {
+                return ((String)left).compareTo(right.toString());
+            }
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);
         }
