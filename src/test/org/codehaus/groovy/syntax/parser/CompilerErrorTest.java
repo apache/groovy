@@ -93,7 +93,7 @@ public class CompilerErrorTest extends TestSupport {
 
     protected GroovyObject assertCompileWorks(String code) throws Exception {
         Class type =
-            loader.parseClass(new ByteArrayInputStream(code.getBytes()), "ValidClass_" + getName() + ".groovy");
+            loader.parseClass(new ByteArrayInputStream(code.getBytes()), "ValidClass_" + getMethodName() + ".groovy");
         return (GroovyObject) type.newInstance();
     }
 

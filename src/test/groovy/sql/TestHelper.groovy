@@ -40,7 +40,7 @@ class TestHelper extends GroovyTestCase {
     
     protected getURI() {
 		answer = "jdbc:axiondb:foo"
-		name = getName()
+		name = getMethodName()
 		if (name == null) { name = "" }
 		name += counter++
 		return answer + name

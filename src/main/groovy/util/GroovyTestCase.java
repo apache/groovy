@@ -82,6 +82,10 @@ public class GroovyTestCase extends TestCase {
         return super.getName().substring(4).replaceAll("([A-Z])", " $1").toLowerCase();
     }
     
+    public String getMethodName() {
+        return super.getName();
+    }
+    
     protected void assertArrayEquals(Object[] expected, Object[] value) {
         String message =
             "expected array: " + InvokerHelper.toString(expected) + " value array: " + InvokerHelper.toString(value);

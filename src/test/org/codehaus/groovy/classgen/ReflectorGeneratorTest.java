@@ -85,7 +85,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
     
     protected void testMethods(List methods) throws Exception {
         ReflectorGenerator generator = new ReflectorGenerator(methods);
-        String name = getClass().getName() + "." + getName();
+        String name = getClass().getName() + "." + getMethodName();
         ClassWriter cw = new ClassWriter(true);
 
         

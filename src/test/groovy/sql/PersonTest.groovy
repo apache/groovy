@@ -55,7 +55,7 @@ class PersonTest extends GroovyTestCase {
     }
     
     protected DataSource createDataSource() {
-        return new AxionDataSource("jdbc:axiondb:foo" + getName())
+        return new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
     }
     
 }
