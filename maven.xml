@@ -2,7 +2,10 @@
 
   <goal name="default" prereqs="clean, groovy:make-install"/>
 
+<!-- DC currently has trouble creating the wiki pages 
   <goal name="dc" prereqs="clean, test, site:deploy"/>
+-->
+  <goal name="dc" prereqs="clean, test, site"/>
 
   <preGoal name="site:deploy">
   	<attainGoal name="javadoc"/>
