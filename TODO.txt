@@ -1,14 +1,6 @@
 Core Groovy Tasks
 =================
 
-* assertion expressions to generate a string of the values of variables. e.g.
-
-	assert a != 7;
-	
-	would make
-	
-	assert a != 7 : "Expression: a != 7. a = ${a}"
-
 * output line numbers! - need the compiler to generate line numbers from expressions for stack traces
 	
 * test local variables
@@ -28,8 +20,6 @@ Core Groovy Tasks
 * test use of invokeMethod(methodName, arguments) to test dynamic proxy features
 
 * support static new() method for constructors
-
-* add methods plus(), minus(), multiply and so forth to Number etc
 
 * finish expresssion support in classgen
 
