@@ -49,11 +49,11 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testListGrep() {
         list = ["James", "Bob", "Guillaume", "Sam"]
-        answer = list.grep(".*a.*")
+        answer = list.grep(~".*a.*")
 
         assert answer == ["James", "Guillaume", "Sam"]
 
-        answer = list.grep("B.b")
+        answer = list.grep(~"B.b")
 
         assert answer == ["Bob"]
     }
@@ -82,6 +82,21 @@ class GroovyMethodsTest extends GroovyTestCase {
 
         assert answer == expected
     }
+    
+    void testGrep() {
+    	list = ["Guillaume", "loves", "cheese"]
+    	
+    	answer = list.grep(~".*ee.*")
+    	assert answer == ["cheese"]
+    	
+    	list = [123, "abc", 4.56]
+    	answer = list.grep(String)
+    	assert answer == ["abc"]
+    	
+    	list = [4, 2, 7, 3, 6, 2]
+    	answer = list.grep(2..3)
+    	assert answer == [2, 3, 2]
+	}
     
     void DISABLE_testExecuteCommandLineProcessUsingAString() {
     	/** @todo why does this not work

@@ -36,6 +36,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
 import groovy.lang.Range;
 import groovy.lang.StringWriterIOException;
 import groovy.lang.Writable;
@@ -343,6 +344,27 @@ public class DefaultGroovyMethods {
             }
         }
         return false;
+    }
+
+    /**
+     * Iterates over every element of the collection and return each object that matches
+     * the given filter - calling the isCase() method used by switch statements.
+     * This method can be used with different kinds of filters like regular expresions, classes, ranges etc.
+     *
+     * @param self    the object over which we iterate
+     * @param filter  the filter to perform on the collection (using the isCase(object) method)
+     * @return a list of objects which match the filter
+     */
+    public static List grep(Object self, Object filter) {
+        List answer = new ArrayList();
+        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
+            Object object = iter.next();
+            if (InvokerHelper.asBool(metaClass.invokeMethod(filter, "isCase", object))) {
+                answer.add(object);
+            }
+        }
+        return answer;
     }
 
     /**
@@ -1435,26 +1457,7 @@ public class DefaultGroovyMethods {
     public static List flatten(List self) {
         return new ArrayList(flatten(self, new LinkedList()));
     }
-
-    /**
-     * Grep a list to return all entries matching a specified regexp
-     *
-     * @param self a List
-     * @param regexp a String representing a regexp
-     * @return a list containing all the elements mapping this regexp
-     */
-    public static List grep(List self, String regexp) {
-        List answer = new ArrayList();
-        for (int i = 0; i < self.size(); i++) {
-            Object value = self.get(i);
-            String s = toString(value);
-            if (s.matches(regexp)) {
-                answer.add(value);
-            }
-        }
-        return answer;
-    }
-
+    
     /**
      * Iterate over each element of the list in the reverse order.
      *
