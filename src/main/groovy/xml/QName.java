@@ -160,7 +160,7 @@ public class QName implements Serializable {
      */
     public String getQualifiedName() {
 
-        return ((prefix == emptyString)
+        return ((prefix.equals(emptyString))
                 ? localPart
                 : prefix + ':' + localPart);
     }
@@ -172,7 +172,7 @@ public class QName implements Serializable {
      */
     public String toString() {
 
-        return ((namespaceURI == emptyString)
+        return ((namespaceURI.equals(emptyString))
                 ? localPart
                 : '{' + namespaceURI + '}' + localPart);
     }
@@ -206,7 +206,7 @@ public class QName implements Serializable {
             return false;
         }
 
-        if ((namespaceURI == ((QName) obj).namespaceURI)
+        if ((namespaceURI.equals(((QName) obj).namespaceURI))
                 && (localPart == ((QName) obj).localPart)) {
             return true;
         }
