@@ -5,11 +5,13 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.ClassGenerator;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.classgen.Verifier;
@@ -164,18 +166,19 @@ public class Compiler
     {
         ASTBuilder astBuilder = new ASTBuilder( getClassLoader() );
 
-        ClassNode[] classNodes = astBuilder.build( compilationUnit );
+        ModuleNode module = astBuilder.build( compilationUnit );
 
         List results = new ArrayList();
 
-        for ( int i = 0 ; i < classNodes.length ; ++i )
+        for ( Iterator iter = module.getClasses().iterator(); iter.hasNext(); )
         {
+            ClassNode classNode = (ClassNode) iter.next();
             if (verbose)
             {
-                System.out.println("Generating class: " + classNodes[i].getName());
+                System.out.println("Generating class: " + classNode.getName());
             }
             GroovyClass[] classes = generateClasses( new GeneratorContext(),
-                                                     classNodes[ i ],
+                                                     classNode,
                                                      charStream.getDescription() );
 
             for ( int j = 0 ; j < classes.length ; ++j )

@@ -35,8 +35,10 @@ public class ASTBuilder
         return this.classLoader;
     }
 
-    public ClassNode[] build(CSTNode unitRoot) throws ParserException
+    public ModuleNode build(CSTNode unitRoot) throws ParserException
     {
+        ModuleNode answer = new ModuleNode();
+        
         CSTNode[] children = unitRoot.getChildren();
 
         packageName = packageDeclaration( children[ 0 ] );
@@ -47,11 +49,11 @@ public class ASTBuilder
 
         for ( int i = 2 ; i < children.length ; ++i )
         {
-            datatypes[ i - 2 ] = datatypeDeclaration( packageName,
-                                                      children[ i ] );
+            answer.addClass( datatypeDeclaration( packageName,
+                                                  children[ i ] ));
         }
 
-        return datatypes;
+        return answer;
     }
 
     protected String packageDeclaration(CSTNode packageRoot)
