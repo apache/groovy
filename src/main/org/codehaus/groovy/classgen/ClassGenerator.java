@@ -1648,11 +1648,7 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
             return true;
         }
         else {
-            String superClass = classNode.getSuperClass();
-            return superClass != null
-                && superClass.equals("groovy.lang.Script")
-                && methodNode != null
-                && methodNode.getName().equals("run");
+            return classNode.isScript() && methodNode != null && methodNode.getName().equals("run");
         }
     }
 
@@ -1985,9 +1981,12 @@ public class ClassGenerator extends CodeVisitorSupport implements GroovyClassVis
 
                 // lets add a getter & setter
                 Expression fieldExp = new FieldExpression(paramField);
-                answer
-                    .addMethod(
-                        "get" + methodName, ACC_PUBLIC, realType, Parameter.EMPTY_ARRAY, new ReturnStatement(fieldExp));
+                answer.addMethod(
+                    "get" + methodName,
+                    ACC_PUBLIC,
+                    realType,
+                    Parameter.EMPTY_ARRAY,
+                    new ReturnStatement(fieldExp));
 
                 /*
                 answer.addMethod(

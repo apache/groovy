@@ -47,9 +47,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaMethod;
 
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.objectweb.asm.ClassVisitor;

@@ -196,7 +196,15 @@ public class ModuleNode extends ASTNode implements Constants {
         }
         name += extractClassFromFileDescription();
 
-        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, Script.class.getName());
+        String baseClass = null;
+        if (unit != null) {
+            baseClass = unit.getConfig().getScriptBaseClass();
+        }
+        if (baseClass == null) {
+            baseClass = Script.class.getName();
+        }
+        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
+        classNode.setScript(true);
 
         // return new Foo(new ShellContext(args)).run()
         classNode.addMethod(

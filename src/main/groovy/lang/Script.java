@@ -67,7 +67,16 @@ public abstract class Script extends GroovyObjectSupport {
 
     public Object getProperty(String property) {
         //System.out.println("Script.getProperty for: " + property + " with binding: " + binding.getVariables());
-        return binding.getVariable(property);
+        Object answer = binding.getVariable(property);
+        if (answer == null) {
+            try {
+                return super.getProperty(property);
+            }
+            catch (MissingPropertyException e) {
+                // ignore errors inside scripts
+            }
+        }
+        return answer;
     }
 
     public void setProperty(String property, Object newValue) {
@@ -78,14 +87,14 @@ public abstract class Script extends GroovyObjectSupport {
 
     /**
      * The main instance method of a script which has variables in scope
-     * as defined by the current {@link ShellContext} instance
+     * as defined by the current {@link Binding} instance.
+     * 
      * @return
      */
     public abstract Object run();
-    
-    
+
     // println helper methods
-    
+
     public void println() {
         Object object = getProperty("out");
         if (object != null) {
@@ -95,7 +104,7 @@ public abstract class Script extends GroovyObjectSupport {
             System.out.println();
         }
     }
-    
+
     public void print(Object value) {
         Object object = getProperty("out");
         if (object != null) {
@@ -105,7 +114,7 @@ public abstract class Script extends GroovyObjectSupport {
             System.out.print(value);
         }
     }
-    
+
     public void println(Object value) {
         Object object = getProperty("out");
         if (object != null) {

@@ -34,65 +34,17 @@
  */
 package groovy.lang;
 
-import groovy.util.GroovyTestCase;
-
-import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * @author sam
- * 
- * To change the template for this generated type comment go to Window -
- * Preferences - Java - Code Generation - Code and Comments
+ * A derived Script which adds some 'global' methods available to the script
  */
-public class GroovyShellTest extends GroovyTestCase {
+public abstract class DerivedScript extends Script {
 
-    private String script1 = "test = 1";
-
-    public void testExecuteScript() {
-        GroovyShell shell = new GroovyShell();
-        try {
-            Object result = shell.evaluate(new ByteArrayInputStream(script1.getBytes()), "Test.groovy");
-            assertEquals(new Integer(1), result);
-        }
-        catch (Exception e) {
-            assertTrue(false);
-        }
-    }
-
-    private static class PropertyHolder {
-        private Map map = new HashMap();
-        public void set(String key, Object value) {
-            map.put(key, value);
-        }
-        public Object get(String key) {
-            return map.get(key);
-        }
-    }
-
-    private String script2 = "test.prop = 2\nreturn test.prop";
-
-    public void testExecuteScriptWithContext() {
-        Binding context = new Binding();
-        context.setVariable("test", new PropertyHolder());
-        GroovyShell shell = new GroovyShell(context);
-        try {
-            Object result = shell.evaluate(new ByteArrayInputStream(script2.getBytes()), "Test.groovy");
-            assertEquals(new Integer(2), result);
-        }
-        catch (Exception e) {
-            fail(e.toString());
-        }
+    public String getCheese() {
+        return "Cheddar";
     }
     
-    public void testScriptWithDerivedBaseClass() throws Exception {
-        Binding context = new Binding();
-        CompilerConfig config = new CompilerConfig();
-        config.setScriptBaseClass(DerivedScript.class.getName());
-        GroovyShell shell = new GroovyShell(context, config);
-        Object result = shell.evaluate("x = 'abc'; doSomething(cheese)");
-        assertEquals("I like Cheddar", result);
-        assertEquals("abc", context.getVariable("x"));
+    public String doSomething(String food) {
+        return "I like " + food;
     }
+
 }

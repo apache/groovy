@@ -219,7 +219,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Evaluates some script against the current ScriptContext and returns the result
+     * Evaluates some script against the current Binding and returns the result
      * 
      * @param scriptText the text of the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
@@ -230,7 +230,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Evaluates some script against the current ScriptContext and returns the result
+     * Evaluates some script against the current Binding and returns the result
      * 
      * @param file is the file of the script (which is used to create the class name of the script)
      */
@@ -239,7 +239,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Evaluates some script against the current ScriptContext and returns the result
+     * Evaluates some script against the current Binding and returns the result
      *
      * @param scriptText the text of the script
      */
@@ -248,7 +248,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Evaluates some script against the current ScriptContext and returns the result
+     * Evaluates some script against the current Binding and returns the result
      *
      * @param in the stream reading the script
      */
@@ -257,16 +257,65 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Evaluates some script against the current ScriptContext and returns the result
+     * Evaluates some script against the current Binding and returns the result
      * 
      * @param in the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(InputStream in, String fileName)
         throws SyntaxException, ClassNotFoundException, IOException {
-        Class scriptClass = loader.parseClass(in, fileName);
-        Script script = InvokerHelper.createScript(scriptClass, context);
+        Script script = parse(in, fileName);
         return script.run();
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     * 
+     * @param in the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     * @return the parsed script which is ready to be run via @link Script.run()
+     */
+    public Script parse(InputStream in, String fileName) throws SyntaxException, ClassNotFoundException, IOException {
+        Class scriptClass = loader.parseClass(in, fileName);
+        return InvokerHelper.createScript(scriptClass, context);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     * 
+     * @param scriptText the text of the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     */
+    public Script parse(String scriptText, String fileName)
+        throws SyntaxException, ClassNotFoundException, IOException {
+        return parse(new ByteArrayInputStream(scriptText.getBytes()), fileName);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     * 
+     * @param file is the file of the script (which is used to create the class name of the script)
+     */
+    public Script parse(File file) throws SyntaxException, ClassNotFoundException, IOException {
+        return parse(new FileInputStream(file), file.getName());
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param scriptText the text of the script
+     */
+    public Script parse(String scriptText) throws SyntaxException, ClassNotFoundException, IOException {
+        return parse(new ByteArrayInputStream(scriptText.getBytes()), generateScriptName());
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param in the stream reading the script
+     */
+    public Script parse(InputStream in) throws SyntaxException, ClassNotFoundException, IOException {
+        return parse(in, generateScriptName());
     }
 
     protected synchronized String generateScriptName() {
