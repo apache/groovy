@@ -53,7 +53,7 @@ import java.util.List;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.DumpClassVisitor;
+import org.objectweb.asm.util.ASMifierClassVisitor;
 
 import groovy.lang.MetaClassRegistry;
 import groovy.lang.MetaMethod;
@@ -89,7 +89,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         ClassWriter cw = new ClassWriter(true);
 
         
-        DumpClassVisitor dumper = new DumpClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
+        ASMifierClassVisitor dumper = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
         //generator.generate(dumper, name);
 
         generator.generate(new CheckClassAdapter(cw), name);
@@ -103,7 +103,7 @@ public class ReflectorGeneratorTest extends GroovyTestCase {
         out.close();
 
         // now lets try dump it
-        DumpClassVisitor.main(new String[] { fileName });
+        ASMifierClassVisitor.main(new String[] { fileName });
 
         // now lets try class load it
         MetaClassRegistry registry = new MetaClassRegistry();
