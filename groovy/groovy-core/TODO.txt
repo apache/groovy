@@ -3,17 +3,98 @@ Core Groovy Tasks
 
 * bob - allow types to end in []
 
+* looks like a bug on generated methods, should use param name over any field name
+	- also it looks like there's various unnecessary stuff (creation of tuples) when invoking
+	methods
+	
+
+* test getProperty, setProperty on Groovy objects
+
+* to document
+	- return statement optional
+	
+* GroovyServlet - serves up *.groovy files
+
+* DocTool 
+	- use wiki parser and allow embedded test cases, documentation, examples
+	
+	[Test
+		>>> a = [1, 2, 3]
+		[1, 2, 3]
+		>>> x = ...
+		
+	]
+	
+	or
+	
+	[Test some operation thingy
+		x = ...
+		assert x.whatnot == 7
+	]
+
+* GroovyMethods	
+	- Object.getMetaClass()
+	- removeIf { x | x > 0 }
+	- List.first, List.last, pop
+	- List.eachWithindex { item, idx | ... }
+	- reverseEach { ... }
+	- Map.eachKey, eachValue
+	- Map.index, Map.indexes
+	- Object.display (rather than toConsoleOutput)
+	- grep(pattern)  { closure }
+		where pattern = range / regexp
+	- eval("....")
+	- gets
+	- load(...)
+	- Object.setProperties(foo:'abc', x:123)
+
+* support instanceof operator
+			
+* Switch statement to use matches to handle classes, ranges, regexp etc		
+	- matches(object) for Range or Regexp or Class
+
+* sorting, min, max to use closures		
+	- min/max to allow clsoures for comparators
+		foo.max { a, b | a.length <=> b.length }
+	- ClosureComparator
+		
+* something like Ruby's Binding & eval APIs		
+	
+* add get/SetProperty to GroovyObject 
+
+* GroovyMBean - takes an ObjectName and MBeanServer and looks like a pogo
+
+* is there a better way to add listeners in Groovy. e.g. how to remove added listeners
+
+	listener = bean.property + { some closure }
+	bean.property - listener
+	
+	
+* .@ support on W3C DOM trees...
+
+* when named method calls are supported with default values, refactor SwingBuilder
+	so that all the creations of widgets occur with SwingFactory which would be 
+	useful in and of itself
+	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
+	the long laborious Map coding
+	
 * add table layout cell spacing thingy
 
+* FormModel.addPropertyModel(property)
+	FormModel.addClosureModel(readClosure, writeClosure)
+
+* ListModel is-a List but delegates to an underlying list and has events
+
 * rename tableLayout -> table and table -> grid
+
+* add sortableGrid
+
+* a GroovyUI
+	-> interactive script + allows scripts to be run & objects explored
 
 * groovy.model -> groovy.mvc?
 
 * delete groovytablemodel / groovytablecolumn
-
-* a way to refactor the Swing builder so that the factory methods are just normal method calls?
-	- plus we should be using normal method call mechanism & for groovy to do the rest to avoid
-	the long laborious Map coding
 
 * test date range
 
@@ -64,6 +145,11 @@ Core Groovy Tasks
 * foo[1, 2] versus foo[1..2] etc
 
 
+* MetaClass -> add getPropertyDescriptor which has methods
+	- get(), set(), type(), cardinality() etc
+	
+	could use naming conventions to detect cardinality - e.g. addFoo(), getFoos()
+	
 * bug - x = methodName fails, but x = this.methodName works
 	- need to turn variableExpressions into property expressions
 	- if no local variable in scope
@@ -114,14 +200,13 @@ Core Groovy Tasks
 * to support dynamic mixins we should use dynamic proxies to allow
 	a groovy object to change metaclass at runtime
 
-* closures need to be able to access fields of outer class
-
 * closures - handle passing in of variables from outer scope?	
 	use a Holder object for all local variables and pass holder
 	into the closure
 	
 * groovy dynamic proxy of any Java object in Java-land?
-
+	NullObject pattern
+	
 * immutable bean
 
 * MetaClass.deriveMetaClass()

@@ -299,6 +299,10 @@ public class Invoker {
         if (object == null) {
             throw new InvokerException("Cannot set property on null object");
         }
+        else if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            pogo.setProperty(property, newValue);
+        }
         else if (object instanceof Map) {
             Map map = (Map) object;
             map.put(property, newValue);
@@ -318,6 +322,10 @@ public class Invoker {
     public Object getProperty(Object object, String property) {
         if (object == null) {
             throw new InvokerException("Cannot get property on null object");
+        }
+        else if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            return pogo.getProperty(property);
         }
         else if (object instanceof Map) {
             Map map = (Map) object;

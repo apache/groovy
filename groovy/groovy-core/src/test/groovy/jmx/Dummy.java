@@ -43,58 +43,52 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.swing.impl;
+package groovy.jmx;
 
-import java.awt.Component;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.LayoutManager;
+public class Dummy implements DummyMBean {
 
-import javax.swing.JPanel;
+    private String name = "James";
+    private String location = "London";
+    private int size = 12;
 
-/** 
- * Represents a HTML style table layout
- *
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class TableLayout implements ComponentFacade {
-
-    private JPanel panel = new JPanel();
-    private int rowCount;
-    private int space; /** @todo whats the cell spacing thingy called in HTML4? */
-
-    public TableLayout() {
-        panel.setLayout(createLayoutManager());
-    }
-
-    public Component getComponent() {
-        return panel;
+    public Dummy() {
     }
     
-    /**
-     * Adds a new cell to the current grid
-     */
-    public void addCell(TableLayoutCell cell) {
-        GridBagConstraints constraints = cell.getConstraints();
-        //constraints.insets = new Insets()
-        panel.add(cell.getComponent(), constraints);
+    public Dummy(String name, String location) {
+        this.name = name;
+        this.location = location;
+    }
+    
+    public void start() {
+        System.out.println("Started!");
+    }
+    
+    public void stop() {
+        System.out.println("Stopped!");
+    }
+    
+    public String getLocation() {
+        return location;
     }
 
-    /**
-     * Creates a new row index for child <tr> tags 
-     */
-    public int nextRowIndex() {
-        return rowCount++;
+    public void setLocation(String location) {
+        this.location = location;
     }
 
-    // Implementation methods
-    //-------------------------------------------------------------------------                    
-
-    /**
-     * Creates a GridBagLayout
-     */
-    protected LayoutManager createLayoutManager() {
-        return new GridBagLayout();
+    public String getName() {
+        return name;
     }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
 }
