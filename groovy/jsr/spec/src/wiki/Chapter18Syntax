@@ -6,6 +6,6 @@ This is the current JSR [Grammar|GroovyRecognizer.html] and [Lexer|GroovyLexer.h
 Automatic generation from [antlr|http://antlr.org]
 
 h1. Diagrams
-[Here|http://groovy.javanicus.com/jsr/grammar] are syntax diagrams based upon 21 Dec 2004 groovy.g
+[Here|http://groovy.codehaus.org/jsr/spec/grammar/] are syntax diagrams based upon the current groovy.g
 
 Diagram generation using [syndiag|http://syndiag.javanicus.com]
