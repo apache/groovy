@@ -136,11 +136,13 @@ public class AsmClassGenerator extends ClassGenerator {
 
     MethodCaller getAttributeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttribute");
     MethodCaller getAttributeSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttributeSafe");
+    MethodCaller getAttributeSpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getAttributeSpreadSafe");
     MethodCaller setAttributeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setAttribute2");
     MethodCaller setAttributeSafeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setAttributeSafe2");
 
     MethodCaller getPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getProperty");
     MethodCaller getPropertySafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getPropertySafe");
+    MethodCaller getPropertySpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getPropertySpreadSafe");
     MethodCaller setPropertyMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty");
     MethodCaller setPropertyMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setProperty2");
     MethodCaller setPropertySafeMethod2 = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "setPropertySafe2");
@@ -2616,7 +2618,12 @@ public class AsmClassGenerator extends ClassGenerator {
                     setPropertySafeMethod2.call(cv);
                 }
                 else {
-                    getPropertySafeMethod.call(cv);
+                    if (expression.isSpreadSafe()) {
+                        getPropertySpreadSafeMethod.call(cv);
+                    }
+                    else {
+                        getPropertySafeMethod.call(cv);
+                    }
                 }
             }
             else {
@@ -2656,7 +2663,12 @@ public class AsmClassGenerator extends ClassGenerator {
                 setAttributeSafeMethod2.call(cv);
             }
             else {
-                getAttributeSafeMethod.call(cv);
+                if (expression.isSpreadSafe()) {
+                    getAttributeSpreadSafeMethod.call(cv);
+                }
+                else {
+                    getAttributeSafeMethod.call(cv);
+                }
             }
         }
         else {

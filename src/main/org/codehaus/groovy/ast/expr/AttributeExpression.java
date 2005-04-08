@@ -62,7 +62,8 @@ public class AttributeExpression extends Expression {
 
     private Expression objectExpression;
     private String property;
-    private boolean safe;
+    private boolean spreadSafe = false;
+    private boolean safe = false;
     private boolean isStatic = false;
 
     private Method getter = null;
@@ -120,6 +121,14 @@ public class AttributeExpression extends Expression {
      */
     public boolean isSafe() {
         return safe;
+    }
+
+    public boolean isSpreadSafe() {
+        return spreadSafe;
+    }
+
+    public void setSpreadSafe(boolean value) {
+        spreadSafe = value;
     }
 
     public String toString() {
