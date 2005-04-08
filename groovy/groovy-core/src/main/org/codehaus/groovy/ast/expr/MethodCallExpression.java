@@ -61,7 +61,8 @@ public class MethodCallExpression extends Expression {
     private Expression objectExpression;
     private String method;
     private Expression arguments;
-    private boolean safe;
+    private boolean spreadSafe = false;
+    private boolean safe = false;
     private boolean implicitThis;
 
     public MetaMethod getMetaMethod() {
@@ -119,6 +120,14 @@ public class MethodCallExpression extends Expression {
 
     public void setSafe(boolean safe) {
         this.safe = safe;
+    }
+
+    public boolean isSpreadSafe() {
+        return spreadSafe;
+    }
+
+    public void setSpreadSafe(boolean value) {
+        spreadSafe = value;
     }
 
     /**

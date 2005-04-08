@@ -122,6 +122,7 @@ public class AsmClassGenerator extends ClassGenerator {
     // cached values
     MethodCaller invokeMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethod");
     MethodCaller invokeMethodSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSafe");
+    MethodCaller invokeMethodSpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeMethodSpreadSafe");
     MethodCaller invokeStaticMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod");
     MethodCaller invokeConstructorMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructor");
     MethodCaller invokeConstructorOfMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeConstructorOf");
@@ -129,6 +130,8 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller invokeClosureMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeClosure");
     MethodCaller invokeSuperMethodMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeSuperMethod");
     MethodCaller invokeNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsMethod");
+    MethodCaller invokeNoArgumentsSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSafeMethod");
+    MethodCaller invokeNoArgumentsSpreadSafeMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeNoArgumentsSpreadSafeMethod");
     MethodCaller invokeStaticNoArgumentsMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "invokeStaticNoArgumentsMethod");
 
     MethodCaller asIntMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "asInt");
@@ -2080,7 +2083,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         }
                     } // end of early binding trial
 
-                    if (emptyArguments(arguments) && !call.isSafe()) {
+                    if (emptyArguments(arguments) && !call.isSafe() && !call.isSpreadSafe()) {
                         call.getObjectExpression().visit(this);
                         cv.visitLdcInsn(method);
                         invokeNoArgumentsMethod.call(cv); // todo try if we can do early binding
@@ -2106,7 +2109,10 @@ public class AsmClassGenerator extends ClassGenerator {
                             arguments.visit(this);
                         }
 
-                        if (call.isSafe()) {
+                        if (call.isSpreadSafe()) {
+                            invokeMethodSpreadSafeMethod.call(cv);
+                        }
+                        else if (call.isSafe()) {
                             invokeMethodSafeMethod.call(cv);
                         }
                         else {

@@ -1468,8 +1468,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         Expression objectExpression = VariableExpression.THIS_EXPRESSION;
         AST elist = null;
-        boolean safe = isType(OPTIONAL_DOT, node);
-        if (isType(DOT, node) || safe) {
+        boolean safe = isype(OPTIONAL_DOT, node);
+        boolean spreadSafe = isType(SPREAD_DOT, node);
+        if (isType(DOT, node) || safe || spreadSafe) {
             AST objectNode = node.getFirstChild();
             elist = node.getNextSibling();
 
@@ -1507,6 +1508,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         boolean implicitThis = (objectExpression == VariableExpression.THIS_EXPRESSION);
         implicitThis = implicitThis || (objectExpression == VariableExpression.SUPER_EXPRESSION);
         expression.setSafe(safe);
+        expression.setSpreadSafe(spreadSafe);
         expression.setImplicitThis(implicitThis);
         configureAST(expression, methodCallNode);
         return expression;
