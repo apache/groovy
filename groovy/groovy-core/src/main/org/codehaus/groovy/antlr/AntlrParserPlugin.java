@@ -1427,12 +1427,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 Expression leftExpression = expression(leftNode);
                 if (isType(SELECT_SLOT, identifierNode)) {
                     String field = identifier(identifierNode.getFirstChild());
-                    AttributeExpression attributeExpression = new AttributeExpression(leftExpression, field);
+                    AttributeExpression attributeExpression = new AttributeExpression(leftExpression, field, node.getType() != DOT);
+                    if (node.getType() == SPREAD_DOT) {
+                        attributeExpression.setSpreadSafe(true);
+                    }
                     configureAST(attributeExpression, node);
                     return attributeExpression;
                 }
                 String property = identifier(identifierNode);
                 PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() != DOT);
+                if (node.getType() == SPREAD_DOT) {
+                    propertyExpression.setSpreadSafe(true);
+                }
                 configureAST(propertyExpression, node);
                 return propertyExpression;
             }

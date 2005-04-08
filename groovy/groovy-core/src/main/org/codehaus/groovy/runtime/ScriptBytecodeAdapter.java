@@ -49,6 +49,7 @@ import groovy.lang.*;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -183,6 +184,23 @@ public class ScriptBytecodeAdapter {
         return null;
     }
 
+    public static Object getAttributeSpreadSafe(Object object, String attribute) throws Throwable {
+        if (object != null) {
+            if (object instanceof List) {
+                List list = (List) object;
+                List answer = new ArrayList();
+                Iterator it = list.iterator();
+                for (; it.hasNext(); ) {
+                    answer.add(getAttributeSafe(it.next(), attribute));
+                }
+                return answer;
+            }
+            else
+                return getAttributeSafe(object, attribute);
+        }
+        return null;
+    }
+
     public static void setAttribute(Object object, String attribute, Object newValue) throws Throwable {
         try {
             InvokerHelper.setAttribute(object, attribute, newValue);
@@ -222,6 +240,23 @@ public class ScriptBytecodeAdapter {
 
     public static Object getPropertySafe(Object object, String property) throws Throwable {
         if (object != null) return getProperty(object, property);
+        return null;
+    }
+
+    public static Object getPropertySpreadSafe(Object object, String property) throws Throwable {
+        if (object != null) {
+            if (object instanceof List) {
+                List list = (List) object;
+                List answer = new ArrayList();
+                Iterator it = list.iterator();
+                for (; it.hasNext(); ) {
+                    answer.add(getPropertySafe(it.next(), property));
+                }
+                return answer;
+            }
+            else
+                return getPropertySafe(object, property);
+        }
         return null;
     }
 
