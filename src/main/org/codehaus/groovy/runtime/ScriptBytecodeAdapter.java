@@ -93,6 +93,23 @@ public class ScriptBytecodeAdapter {
         return null;
     }    
 
+    public static Object invokeMethodSpreadSafe(Object object, String methodName, Object arguments) throws Throwable{
+        if (object != null) {
+            if (object instanceof List) {
+                List list = (List) object;
+                List answer = new ArrayList();
+                Iterator it = list.iterator();
+                for (; it.hasNext();) {
+                    answer.add(invokeMethodSafe(it.next(), methodName, arguments));
+                }
+                return answer;
+            }
+            else
+                return invokeMethodSafe(object, methodName, arguments);
+        }
+        return null;
+    }    
+
     public static Object invokeStaticMethod(String type, String methodName, Object arguments) throws Throwable{
         try {
             return InvokerHelper.invokeStaticMethod(type, methodName, arguments);
@@ -135,6 +152,28 @@ public class ScriptBytecodeAdapter {
     
     public static Object invokeNoArgumentsMethod(Object object, String methodName) throws Throwable {
         return invokeMethod(object, methodName, EMPTY_ARGS);
+    }
+    
+    public static Object invokeNoArgumentsMethodSafe(Object object, String methodName) throws Throwable {
+        if (object != null) return invokeNoArgumentsMethod(object, methodName);
+        return null;
+    }
+    
+    public static Object invokeNoArgumentsMethodSpreadSafe(Object object, String methodName) throws Throwable {
+        if (object != null) {
+            if (object instanceof List) {
+                List list = (List) object;
+                List answer = new ArrayList();
+                Iterator it = list.iterator();
+                for (; it.hasNext();) {
+                    answer.add(invokeNoArgumentsMethod(it.next(), methodName));
+                }
+                return answer;
+            }
+            else
+                return invokeNoArgumentsMethod(object, methodName);
+        }
+        return null;
     }
     
     public static Object invokeStaticNoArgumentsMethod(String type, String methodName) throws Throwable {
