@@ -13,100 +13,89 @@ bq. The Unicode characters resulting from the lexical translations are reduced t
 h2. 3.1 Unicode
 (Cf. ??[JLS. &#167;3.1|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95413]??.)
 
-Unchanged, except for the following:
-
-* Groovy has no character literals.
+_Deletion:_ Groovy has no character literals.
 
 {anchor:3.2}
 h2. 3.2 Lexical Translations
 (Cf. ??[JLS. &#167;3.2|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95504]??.)
 
-See following sections for changes in the lexical translation phases.
-
-Here are some examples that suggest some of the changes that pertain to newlines and string literals:
-{code}
-  println 'Say "Hi", world.'  //friendly suggestion
-  {print "Magic="; println "cafebabe"}
-  print "foo"+
-      "tball"; println " heroes"
-  println ("bar"
-      +(buff? "bells": "bies"))
-  String how /* sneaky
-      newline */ = "real"
-  println "value of \\\$how.length is '$how.length'."
-  println "It's been $how.";
-{code}
+Unchanged.
 
 {anchor:3.3}
 h2. 3.3 Unicode Escapes
 (Cf. ??[JLS. &#167;3.3|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100850]??.)
 
-TO DO: Some implementations do not support '\\\uXXXX' escapes, except in strings.  Mandate them anyway?
+Unchanged.
 
 {anchor:3.4}
 h2. 3.4 Line Terminators
 (Cf. ??[JLS. &#167;3.4|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#231571]??.)
 
-In both Groovy and Java, a line terminator is either an ASCII CR or an ASCII LF character, or both (in that order).
-
-In Groovy, some line terminators are syntactically significant.  As a result, the lexical grammar differs from that of Java.
-Inside a few specific contexts (comments and brackets) line terminators are deemed to be insignificant and are classified as whitespae, as in Java.
-Other line terminators are called ??significant newlines??, and are reclassified as the token {{SignificantNewline}}.
-
-This reclassification is part of the the third lexical transformation phase.  See [&#167;3.11.1|#3.11.1].
+Unchanged.
 
 {anchor:3.5}
 h2. 3.5 Input Elements and Tokens
 (Cf. ??[JLS. &#167;3.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#25687]??.)
 
-There are two major differences from Java in Groovy tokenization.
-Some line terminators are reclassified (during tokenization) as significant newlines ([&#167;3.11.1|#3.11.1]), which are tokens presented to the grammar.
-Also, string constructor expressions allow string literals to be interrupted by Groovy expressions, which compute non-constant parts of a desired string.
+_Addition:_ The definition of _Token_ includes _StringConstructor_, as shown below.
+
+{code}
+Token:
+    Identifier
+    Keyword
+    Literal
+    StringConstructor
+    Separator
+    Operator
+{code}
+
+It is also noted that line terminators (as defined by [&#167;3.4|#3.4]) may be classified as either separators ([&#167;3.11|#3.11]) or white space ([&#167;3.6|#3.6]), according to the rules of [&#167;3.11|#3.11].
 
 {anchor:3.6}
 h2. 3.6 White Space
 (Cf. ??[JLS. &#167;3.6|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#95710]??.)
 
-Retain {{WhiteSpace: LineTerminator}}, but recall that some line terminators are transformed into significant newlines.
+_Addition:_ Some line terminators are transformed into separators, according to the rules defined in [&#167;3.11|#3.11], below.
 
 {anchor:3.7}
 h2. 3.7 Comments
 (Cf. ??[JLS. &#167;3.7|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#9724]??.)
 
-Comment syntaxes are the same as in Java.
-Note that the newline terminating an "end of line" comment can be significant.
+_Addition_: If the first two characters of a Groovy program are the ASCII sharp sign and exclamation point ('#' followed by '!'), the whole line is treated as a comment.  In other words, the program is treated exactly as if two slash characters ('//') were inserted before the sharp sign.  This unusual rule makes it easier to write Groovy scripts on some systems.
 
-In addition, if the first two characters of a Groovy program are the ASCII sharp sign and exclamation point ('#', '!'), the whole line is treated as a comment.  In other words, the program is treated exactly as if two slash characters ('//') were inserted before the sharp sign.
-This unusual rule makes it easier to write Groovy scripts on some systems.
+_Addition_: Note that the newline terminating an "end of line" comment can be significant.
+
 
 {anchor:3.8}
 h2. 3.8 Identifiers
 (Cf. ??[JLS. &#167;3.8|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#40625]??.)
 
-Groovy identifiers differ from Java identifiers in that the ASCII dollar character '$' is not a legal identifier character.  This is restriction applies in practice only to the spelling of unqualified names, since Groovy provides a way to use any Unicode string whatever as a member name or command name.
+_Change:_ Groovy identifiers differ from Java identifiers in that the ASCII dollar character '$' is not a legal identifier character. 
 
-(The dollar sign is sometimes used internally by Groovy to mangle non-Java identifiers which must be converted to Java names.  For this reason, it would be confusing to allow unescaped dollar signs as Groovy identifier constituents.)
+Note that Groovy provides a mechanism to use any Unicode string as a name. This is restriction applies in practice only to the spelling of unqualified names, since Groovy provides a way to use any Unicode string whatever as a member name. (See [Chapter 6|Chapter06Names.html].)
+
+(The dollar sign is sometimes used internally by Groovy to mangle non-Java identifiers which must be converted to Java names. For this reason, it would be confusing to allow unescaped dollar signs as Groovy identifier constituents.)
 
 {anchor:3.9}
 h2. 3.9 Keywords
 (Cf. ??[JLS. &#167;3.9|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#229309]??.)
 
-The following words are keywords in Groovy but not in Java:
+_Addition:_ The following ASCII character sequences are keywords in Groovy but
+not in Java:
 {table}
- def  |  map  |  any  |  TO DO
+ any | as | def | in | with
 {table}
 
-The following words are keywords in Java and Groovy, but are currently illegal in Groovy:
+_Addition:_ In addition to {{const}} and {{goto}}, the following keywords are reserved in Groovy, but are not currently used. 
 {table}
-  do  |  strictfp  |  const  |  goto
+  do  |  strictfp  
 {table}
 
 {anchor:3.10}
 h2. 3.10 Literals
 (Cf. ??[JLS. &#167;3.10|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#228794]??.)
 
-Groovy extends the set of literal syntaxes to support a wider variety of strings, including strings with non-constant parts.
-It also supports literal constants of type {{BigInteger}} and {{BigDecimal}}.
+_Change_: A literal is the source code representation of a value of a numeric type ([&#167;3.10.1|#3.10.1] and [&#167;3.10.2|#3.10.2]), the boolean type ([&#167;3.10.3|#3.10.3]), the string type ([&#167;3.10.5|#3.10.5]), or the null type ([&#167;3.10.7|#3.10.7]). String constructors ([&#167;3.10.5.1|#3.10.5.1]) are closely related to string literals and may contain non-constant parts. Groovy also builds on the Java numeric literal syntaxes to support literal constants of type {{BigInteger}} and {{BigDecimal}}.
 
 {anchor:3.10.1}
 h3. 3.10.1 Integer Literals
@@ -136,13 +125,15 @@ The production {{FloatTypeSuffix: g G}} is added, allowing {{BigDecimal}} consta
 h3. 3.10.3 Boolean Literals
 (Cf. ??[JLS. &#167;3.10.3|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#49652]??.)
 
-(No change.)
+Unchanged.
 
 {anchor:3.10.4}
 h3. 3.10.4 Character Literals
 (Cf. ??[JLS. &#167;3.10.4|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#100964]??.)
 
-Groovy has no {{CharacterLiteral}} token.  All literals with character data in them denote strings.  Constant strings of unit length serve in the place of character literals, since they coerce properly to character constants.
+Deletion: Groovy has no {{CharacterLiteral}} token.  All literals with character data in them denote strings.  Constant strings of unit length serve in the place of character literals, since they coerce properly to character constants.
+
+TODO: include reference to section of Chapter 5 "Conversions" that specifys that unit length strings coorce to characters
 
 {anchor:3.10.5}
 h3. 3.10.5 String Literals
@@ -343,16 +334,18 @@ If a line terminator is escaped by a backslash, both the backslash and the line 
 h3. 3.10.7 The Null Literal
 (Cf. ??[JLS. &#167;3.10.7|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230717]??.)
 
-(Unchanged.)
+Unchanged.
 
 {anchor:3.11}
 h2. 3.11 Separators
 (Cf. ??[JLS. &#167;3.11|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230757]??.)
 
-Add {{Separator: SignificantNewline}} to the Java grammar.
+_Addition:_ Groovy separators include all the Groovy separators, plus significant newline (described below) and {{->}}.
 
 {anchor:3.11.1}
 h2. 3.11.1 Significant Newlines
+
+_Addition:_ This entire section is added to the specification.
 
 As tokenization proceeds from left to right, some line terminators are reclassified as significant newlines, which then serve as alternatives to semicolons in the grammar of statements.
 
@@ -386,6 +379,8 @@ If there is doubt about a specific expression, enclose it in parentheses to make
 {anchor:3.11.2}
 h2. 3.11.2 Grammatical Significance of Newlines
 
+_Addition:_ This entire section is added to the specification.
+
 For simplicity in subsequent chapters, the following two grammar rules define all occurrences of significant newlines.
 
 {code}
@@ -400,7 +395,7 @@ Wherever the grammar allows a semicolon separator token, the grammar also accept
 
 Syntactically insignificant (and optional) newlines are indicated by occurrences of the {{NLS}} nonterminal.  There are no other uses of the {{SignificantNewline}} element.
 
-Unlike Java, but like Pascal, semicolon functions as a statement separator, not a statement terminator.  A statement just before an enclosing right bracket is terminated with or without a final separator token.  Like certain scripting languages (such as {{sh}} and {{awk}}), semicolons and significant newlines are interchangeable as statement separators.
+Unlike Java, but like Pascal, a semicolon functions as a statement separator, not a statement terminator.  A statement just before an enclosing right bracket is terminated with or without a final separator token.  As with certain scripting languages such as {{sh}} and {{awk}}, semicolons and significant newlines are interchangeable as statement separators.
 
 {code}
   println x      //SIG

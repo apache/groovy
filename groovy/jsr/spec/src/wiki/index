@@ -2,7 +2,7 @@
 
 h1. Table of Contents
 
-* Chapter 1: Introduction
+* Chapter 1: [Introduction|Chapter01Introduction.html]
 * Chapter 2: Grammars
 * Chapter 3: [Lexical Structure|Chapter03Lexical.html]
 * Chapter 4: [Types, Values, and Variables|Chapter04Types.html]
