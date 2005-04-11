@@ -56,6 +56,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
@@ -83,6 +84,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.parser.ParserException;
 import org.codehaus.groovy.syntax.parser.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
@@ -244,8 +246,30 @@ public class Verifier implements GroovyClassVisitor, Constants {
 
         node.visitContents(this);
     }
-
     public void visitConstructor(ConstructorNode node) {
+        CodeVisitorSupport checkSuper = new CodeVisitorSupport() {
+            boolean firstMethodCall = true;
+            String type=null;
+            public void visitMethodCallExpression(MethodCallExpression call) {
+                if (!firstMethodCall) return;
+                firstMethodCall = false;
+                String name = call.getMethod();
+                if (!name.equals("super") && !name.equals("this")) return;
+                type=name;
+                call.getArguments().visit(this);
+                type=null;
+            }
+            public void visitVariableExpression(VariableExpression expression) {
+                if (type==null) return;
+                String name = expression.getVariable();
+                if (!name.equals("this") && !name.equals("super")) return;
+                throw new RuntimeParserException("cannot reference "+name+" inside of "+type+"(....) before supertype constructor has been called",expression);
+            }            
+        };
+        Statement s = node.getCode();
+        //todo why can a statement can be null?
+        if (s == null) return;
+        s.visit(checkSuper);
     }
 
     public void visitMethod(MethodNode node) {
