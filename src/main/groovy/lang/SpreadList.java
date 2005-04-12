@@ -75,8 +75,8 @@ public class SpreadList extends AbstractList {
     }
 
     public boolean equals(Object that) {
-        if (that instanceof Tuple) {
-            return equals((Tuple) that);
+        if (that instanceof SpreadList) {
+            return equals((SpreadList) that);
         }
         return false;
     }
