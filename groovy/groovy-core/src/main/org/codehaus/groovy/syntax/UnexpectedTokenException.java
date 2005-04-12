@@ -1,7 +1,8 @@
-package org.codehaus.groovy.syntax.parser;
+package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.ParserException;
 
 public class UnexpectedTokenException extends ParserException {
     private Token unexpectedToken;

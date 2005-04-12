@@ -15,7 +15,11 @@
  * limitations under the License.
  *
  **/
-package org.codehaus.groovy.control;
+package org.codehaus.groovy.syntax.parser;
+
+import org.codehaus.groovy.syntax.parser.ClassicParserPlugin;
+import org.codehaus.groovy.control.ParserPluginFactory;
+import org.codehaus.groovy.control.ParserPlugin;
 
 /**
  * @version $Revision$

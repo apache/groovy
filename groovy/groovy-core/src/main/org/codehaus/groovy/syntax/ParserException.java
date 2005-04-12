@@ -1,4 +1,4 @@
-package org.codehaus.groovy.syntax.parser;
+package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.TokenException;

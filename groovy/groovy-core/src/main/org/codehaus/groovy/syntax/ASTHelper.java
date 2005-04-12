@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  **/
-package org.codehaus.groovy.syntax.parser;
+package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.SourceUnit;

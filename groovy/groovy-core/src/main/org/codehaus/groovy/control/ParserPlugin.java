@@ -18,7 +18,7 @@
 package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.syntax.parser.ParserException;
+import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.ast.ModuleNode;
 
 import java.io.Reader;

@@ -1,4 +1,4 @@
-package org.codehaus.groovy.syntax.parser;
+package org.codehaus.groovy.syntax;
 
 import groovy.lang.GroovyRuntimeException;
 

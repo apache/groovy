@@ -17,6 +17,7 @@
  **/
 package org.codehaus.groovy.control;
 
+import org.codehaus.groovy.antlr.AntlrParserPluginFactory;
 
 /**
  * A factory of parser plugin instances
@@ -58,7 +59,7 @@ public abstract class ParserPluginFactory {
             }
             // can't find Antlr parser, so lets use the Classic one
         }
-        return new ClassicParserPluginFactory();
+        return new AntlrParserPluginFactory();
     }
 
     public abstract ParserPlugin createParserPlugin();

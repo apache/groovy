@@ -1,6 +1,11 @@
-package org.codehaus.groovy.syntax;
+package org.codehaus.groovy.syntax.parser;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.ReadException;
+import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.syntax.TokenMismatchException;
+import org.codehaus.groovy.syntax.Types;
 
 
 /**

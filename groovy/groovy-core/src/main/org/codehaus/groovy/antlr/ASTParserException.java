@@ -18,7 +18,7 @@
 package org.codehaus.groovy.antlr;
 
 import antlr.collections.AST;
-import org.codehaus.groovy.syntax.parser.ParserException;
+import org.codehaus.groovy.syntax.ParserException;
 
 /**
  * Thrown when trying to parse the AST

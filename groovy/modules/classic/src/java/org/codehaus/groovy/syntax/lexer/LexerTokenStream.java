@@ -1,9 +1,10 @@
 package org.codehaus.groovy.syntax.lexer;
 
-import org.codehaus.groovy.syntax.AbstractTokenStream;
+import org.codehaus.groovy.syntax.parser.AbstractTokenStream;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.ReadException;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.parser.AbstractTokenStream;
 
 
 /**

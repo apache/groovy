@@ -103,10 +103,12 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.TryCatchStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Numbers;
+import org.codehaus.groovy.syntax.ASTHelper;
+import org.codehaus.groovy.syntax.ParserException;
+import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.GroovyBugError;
 import org.objectweb.asm.Constants;
 

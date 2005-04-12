@@ -50,13 +50,13 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.ReadException;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.UnexpectedTokenException;
+import org.codehaus.groovy.syntax.CSTNode;
 
 /**
  *  Reads the source text and produces a Concrete Syntax Tree.  Exceptions

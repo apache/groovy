@@ -53,7 +53,8 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.syntax.parser.RuntimeParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
 /**

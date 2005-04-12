@@ -19,7 +19,7 @@ package org.codehaus.groovy.classgen;
 
 import junit.framework.TestCase;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.syntax.parser.RuntimeParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 
 /**
  * @version $Revision$

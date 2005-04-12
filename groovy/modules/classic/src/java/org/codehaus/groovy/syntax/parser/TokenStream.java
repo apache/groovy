@@ -1,4 +1,8 @@
-package org.codehaus.groovy.syntax;
+package org.codehaus.groovy.syntax.parser;
+
+import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.ReadException;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 /*
  $Id$
@@ -70,7 +74,7 @@ public interface TokenStream
      *  @return The next token or null if no more tokens
      *          available.
      *
-     *  @throws ReadException If an error occurs attempting to lookahead
+     *  @throws org.codehaus.groovy.syntax.ReadException If an error occurs attempting to lookahead
      *          a token.
      */
 

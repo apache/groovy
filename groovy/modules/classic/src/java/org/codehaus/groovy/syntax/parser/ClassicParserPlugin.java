@@ -15,17 +15,20 @@
  * limitations under the License.
  *
  **/
-package org.codehaus.groovy.control;
+package org.codehaus.groovy.syntax.parser;
 
 import org.codehaus.groovy.syntax.Reduction;
-import org.codehaus.groovy.syntax.TokenStream;
+import org.codehaus.groovy.syntax.parser.TokenStream;
 import org.codehaus.groovy.syntax.lexer.GroovyLexer;
 import org.codehaus.groovy.syntax.lexer.LexerTokenStream;
 import org.codehaus.groovy.syntax.lexer.ReaderCharStream;
 import org.codehaus.groovy.syntax.parser.Parser;
 import org.codehaus.groovy.syntax.parser.ASTBuilder;
-import org.codehaus.groovy.syntax.parser.ParserException;
+import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.control.ParserPlugin;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.io.Reader;
 

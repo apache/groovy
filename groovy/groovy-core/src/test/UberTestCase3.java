@@ -9,8 +9,6 @@ import junit.framework.*;
 public class UberTestCase3 extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
-        suite.addTestSuite(org.codehaus.groovy.ast.ClassNodeTest.class);
-        suite.addTestSuite(org.codehaus.groovy.ast.ModuleNodeTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
 
@@ -40,16 +38,6 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.runtime.NewStaticMetaMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.TupleListTest.class);
         suite.addTestSuite(org.codehaus.groovy.sandbox.util.XmlSlurperTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.AbstractTokenStreamTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.lexer.AbstractCharStreamTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.lexer.LexerTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.lexer.LexerTokenStreamTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.lexer.StringCharStreamTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.parser.AbstractMethodCheckTest.class);
-
-        suite.addTestSuite(org.codehaus.groovy.syntax.parser.CSTNodeTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.parser.ParserTest.class);
-        suite.addTestSuite(org.codehaus.groovy.syntax.parser.ReturnTypeErrorTest.class);
         suite.addTestSuite(org.codehaus.groovy.syntax.TokenTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.CompilerTest.class);
         suite.addTestSuite(org.codehaus.groovy.tools.FileSystemCompilerTest.class);
