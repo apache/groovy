@@ -68,7 +68,9 @@ import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.parser.UnexpectedTokenException;
+import org.codehaus.groovy.syntax.UnexpectedTokenException;
+import org.codehaus.groovy.syntax.UnexpectedTokenException;
+import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.tools.Utilities;
 
 import com.thoughtworks.xstream.XStream;

@@ -84,8 +84,9 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.parser.ParserException;
-import org.codehaus.groovy.syntax.parser.RuntimeParserException;
+import org.codehaus.groovy.syntax.ParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.Constants;
 
 /**

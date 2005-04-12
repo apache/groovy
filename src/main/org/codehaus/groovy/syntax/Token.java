@@ -47,7 +47,6 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.syntax.CSTNode;
 
 
 /**

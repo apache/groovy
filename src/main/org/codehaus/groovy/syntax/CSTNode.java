@@ -48,6 +48,9 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.Reduction;
+
 import java.io.StringWriter;
 import java.io.PrintWriter;
 
@@ -57,10 +60,10 @@ import java.io.PrintWriter;
  *  the result of parsing.  Note that the CSTNode is inextricably linked
  *  with the Token in that every CSTNode has a Token as it's root.
  *
- *  @see Parser
+ *  @see org.codehaus.groovy.syntax.parser.Parser
  *  @see Token
- *  @see Reduction
- *  @see Types
+ *  @see org.codehaus.groovy.syntax.Reduction
+ *  @see org.codehaus.groovy.syntax.Types
  *
  *  @author <a href="mailto:bob@werken.com">bob mcwhirter</a>
  *  @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>

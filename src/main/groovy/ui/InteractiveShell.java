@@ -52,8 +52,6 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.sandbox.ui.Prompt;
 import org.codehaus.groovy.sandbox.ui.PromptFactory;
-import org.codehaus.groovy.syntax.CSTNode;
-import org.codehaus.groovy.syntax.TokenStream;
 import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.IOException;
@@ -90,7 +88,8 @@ public class InteractiveShell {
         try {
             final InteractiveShell groovy = new InteractiveShell();
             groovy.run(args);
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             System.err.println("Caught: " + e);
             e.printStackTrace();
         }
@@ -117,7 +116,9 @@ public class InteractiveShell {
         prompt.setPrompt("groovy> ");
         shell = new GroovyShell(binding);
         Map map = shell.getContext().getVariables();
-        if (map.get("shell")!=null) map.put("shell",shell);
+        if (map.get("shell") != null) {
+            map.put("shell", shell);
+        }
     }
 
     //---------------------------------------------------------------------------
@@ -152,7 +153,8 @@ public class InteractiveShell {
                 // We have a command that parses, so evaluate it.
                 try {
                     shell.evaluate(command, "CommandLine.groovy");
-                } catch (Exception e) {
+                }
+                catch (Exception e) {
                     err.println("Exception: " + e.getMessage());
                     e.printStackTrace(err);
                     // TODO: figure out what value ErrorReporter adds here and below
@@ -160,7 +162,8 @@ public class InteractiveShell {
                     // err.println and printStackTrace() should be used, or 
                     // ErrorReporter should, but not both.
                     new ErrorReporter(e, false).write(err);
-                } catch (Throwable e) {
+                }
+                catch (Throwable e) {
                     new ErrorReporter(e, false).write(err);
                 }
             }
@@ -184,9 +187,7 @@ public class InteractiveShell {
     private boolean stale = false;                      // Set to force clear of accepted
 
     private SourceUnit parser = null;                   // A SourceUnit used to check the statement
-    private TokenStream stream = null;                  // The TokenStream that backs the Parser
     private Exception error = null;                     // Any actual syntax error caught during parsing
-    private CSTNode tree = null;                        // The top-level statement when parsed
 
 
     /**
@@ -199,9 +200,7 @@ public class InteractiveShell {
         line = 1;
 
         parser = null;
-        stream = null;
         error = null;
-        tree = null;
     }
 
 
@@ -228,7 +227,8 @@ public class InteractiveShell {
 
             try {
                 pending = prompt.readLine();
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
             }
 
             if (pending == null || (COMMAND_MAPPINGS.containsKey(pending) && ((Integer) COMMAND_MAPPINGS.get(pending)).intValue() == COMMAND_ID_EXIT)) {
@@ -263,7 +263,8 @@ public class InteractiveShell {
                     case COMMAND_ID_EXECUTE:
                         if (complete) {
                             done = true;
-                        } else {
+                        }
+                        else {
                             err.println("statement not complete");
                         }
                         break;
@@ -292,9 +293,11 @@ public class InteractiveShell {
             if (parse(code, 1)) {
                 accept();
                 complete = true;
-            } else if (error == null) {
+            }
+            else if (error == null) {
                 accept();
-            } else {
+            }
+            else {
                 report();
             }
 
@@ -360,15 +363,12 @@ public class InteractiveShell {
         boolean parsed = false;
 
         parser = null;
-        stream = null;
         error = null;
-        tree = null;
 
         // Create the parser and attempt to parse the text as a top-level statement.
         try {
             parser = SourceUnit.create("groovysh script", code, tolerance);
             parser.parse();
-            tree = parser.getCST();
 
             /* see note on read():
              * tree = parser.topLevelStatement();
@@ -385,7 +385,8 @@ public class InteractiveShell {
             if (parser.getErrorCount() > 1 || !parser.failedWithUnexpectedEOF()) {
                 error = e;
             }
-        } catch (Exception e) {
+        }
+        catch (Exception e) {
             error = e;
         }
 
@@ -476,7 +477,8 @@ public class InteractiveShell {
         Set set = variables.keySet();
         if (set.isEmpty()) {
             out.println("The current binding is empty.");
-        } else {
+        }
+        else {
             for (Iterator it = set.iterator(); it.hasNext();) {
                 String key = (String) it.next();
                 out.println(key + " = " + variables.get(key));
@@ -492,12 +494,13 @@ public class InteractiveShell {
     private void explainStatement() {
         if (parse(accepted(true), 10) || error == null) {
             out.println("Parse tree:");
-            out.println(tree);
-        } else {
+            //out.println(tree);
+        }
+        else {
             out.println("Statement does not parse");
         }
     }
-    
+
     private void resetLoadedClasses() {
         shell.resetLoadedClasses();
         out.println("all former unbound class definitions are discarded");

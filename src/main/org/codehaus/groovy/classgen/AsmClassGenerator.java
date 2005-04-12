@@ -80,7 +80,7 @@ import org.codehaus.groovy.runtime.RegexSupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.syntax.parser.RuntimeParserException;
+import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.CodeVisitor;
 import org.objectweb.asm.Label;

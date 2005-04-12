@@ -47,7 +47,6 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Token;
 
 import java.util.List;
@@ -272,7 +271,7 @@ public class Reduction extends CSTNode
     *  the root node (index 0).
     */
 
-    public CSTNode remove( int index ) 
+    public CSTNode remove( int index )
     {
         if( index < 1 ) 
         {
