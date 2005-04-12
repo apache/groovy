@@ -115,7 +115,6 @@ public class VariableExpression extends Expression {
     /**
      * @return true if this variable is dynamically typed
      */
-
     public String toString() {
         return super.toString() + "[variable: " + variable + ((isDynamic()) ? "" : " type: " + type) + "]";
     }
