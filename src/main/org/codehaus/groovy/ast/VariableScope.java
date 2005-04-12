@@ -204,4 +204,8 @@ public class VariableScope  {
 	public void setVarsDeclaredHere(Set varsDeclaredHere) {
 		this.varsDeclaredHere = varsDeclaredHere;
 	}
+    
+    public VariableScope getParent() {
+        return parent;
+    }
 }

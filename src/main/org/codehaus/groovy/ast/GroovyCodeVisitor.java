@@ -100,6 +100,7 @@ public interface GroovyCodeVisitor {
     public void visitConstantExpression(ConstantExpression expression);
     public void visitClassExpression(ClassExpression expression);
     public void visitVariableExpression(VariableExpression expression);
+    public void visitDeclarationExpression(DeclarationExpression expression);
     public void visitRegexExpression(RegexExpression expression);
     public void visitGStringExpression(GStringExpression expression);
     public void visitArrayExpression(ArrayExpression expression);

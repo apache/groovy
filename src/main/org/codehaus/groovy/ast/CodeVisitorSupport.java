@@ -259,6 +259,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
     public void visitVariableExpression(VariableExpression expression) {
     }
 
+    public void visitDeclarationExpression(DeclarationExpression expression) {
+        visitBinaryExpression(expression);
+    }
+    
     public void visitPropertyExpression(PropertyExpression expression) {
         expression.getObjectExpression().visit(this);
     }
