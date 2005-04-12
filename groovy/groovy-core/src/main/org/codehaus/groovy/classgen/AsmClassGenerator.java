@@ -2982,7 +2982,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         variable.setType(new Type(typeName, true));
                     }
                     else if (!varOldType.getName().equals(typeName)){
-                        new GroovyRuntimeException("VariableExpression data type conflicts with the existing variable. "
+                        throw new GroovyRuntimeException("VariableExpression data type conflicts with the existing variable. "
                                 + "[" + expression.getLineNumber() + ":" + expression.getColumnNumber() + "]");
                     }
                 }
@@ -4818,28 +4818,30 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected String checkValidType(String type, ASTNode node, String message) {
-        if (type!= null && type.length() == 0)
-            return "java.lang.Object";
-        if (type.endsWith("[]")) {
-            String postfix = "[]";
-            String prefix = type.substring(0, type.length() - 2);
-            return checkValidType(prefix, node, message) + postfix;
-        }
-        int idx = type.indexOf('$');
-        if (idx > 0) {
-            String postfix = type.substring(idx);
-            String prefix = type.substring(0, idx);
-            return checkValidType(prefix, node, message) + postfix;
-        }
-        if (BytecodeHelper.isPrimitiveType(type) || "void".equals(type)) {
-            return type;
+        if (type != null) {
+            if (type.length() == 0) {
+                return "java.lang.Object";
+            }
+            if (type.endsWith("[]")) {
+                String postfix = "[]";
+                String prefix = type.substring(0, type.length() - 2);
+                return checkValidType(prefix, node, message) + postfix;
+            }
+            int idx = type.indexOf('$');
+            if (idx > 0) {
+                String postfix = type.substring(idx);
+                String prefix = type.substring(0, idx);
+                return checkValidType(prefix, node, message) + postfix;
+            }
+            if (BytecodeHelper.isPrimitiveType(type) || "void".equals(type)) {
+                return type;
+            }
         }
         String original = type;
         type = resolveClassName(type);
         if (type != null) {
             return type;
         }
-
         throw new MissingClassException(original, node, message + " for class: " + classNode.getName());
     }
 

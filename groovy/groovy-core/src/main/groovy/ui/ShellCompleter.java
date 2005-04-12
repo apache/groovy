@@ -47,73 +47,75 @@ package groovy.ui;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.sandbox.ui.Completer;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.codehaus.groovy.sandbox.ui.Completer;
-
 /**
- *  Readline completion for InteractiveShell.
- * 
+ * Readline completion for InteractiveShell.
+ *
  * @author Yuri Schimke
  * @version $Revision$
  */
 public class ShellCompleter implements Completer {
-  // The shell being handled
-  private GroovyShell shell;
-  private ArrayList completions;
+    // The shell being handled
+    private GroovyShell shell;
+    private List completions = new ArrayList();
 
-  public ShellCompleter(GroovyShell shell) {
-    this.shell = shell;
-  }
-  
-  // @TODO add optimisations like check for . and rule out variables etc
-  public List findCompletions(String token) {  
-    completions.clear();
-      
-    if (token.length() == 0)
-      return completions;
-    
-    // completions of local variable names
-    findLocalVariables(token);
-    
-    // completions of local fields.
-      
-    // completions of local methods
-    findShellMethods(token);
-    
-    // completions of methods invoked on a target
-    //findTargetCompletions(complete);
-    
-    // completion of keywords.
-    
-    return completions;
-  }
-
-  private void findShellMethods(String complete) {
-    List methods = shell.getMetaClass().getMetaMethods();
-    for (Iterator i = methods.iterator(); i.hasNext();) {
-      MetaMethod method = (MetaMethod) i.next();
-      if (method.getName().startsWith(complete)) {
-        if (method.getParameterTypes().length > 0)
-          completions.add(method.getName() + "(");
-        else
-          completions.add(method.getName() + "()");
-      }
+    public ShellCompleter(GroovyShell shell) {
+        this.shell = shell;
     }
-  }
 
-  private void findLocalVariables(String complete) {
-    Set names = shell.getContext().getVariables().keySet();
-    
-    for (Iterator i = names.iterator(); i.hasNext();) {
-      String name = (String) i.next();
-      if (name.startsWith(complete)) {
-        completions.add(name);  
-      }
+    // @TODO add optimisations like check for . and rule out variables etc
+    public List findCompletions(String token) {
+        completions.clear();
+
+        if (token.length() == 0) {
+            return completions;
+        }
+
+        // completions of local variable names
+        findLocalVariables(token);
+
+        // completions of local fields.
+
+        // completions of local methods
+        findShellMethods(token);
+
+        // completions of methods invoked on a target
+        //findTargetCompletions(complete);
+
+        // completion of keywords.
+
+        return completions;
     }
-  }
+
+    private void findShellMethods(String complete) {
+        List methods = shell.getMetaClass().getMetaMethods();
+        for (Iterator i = methods.iterator(); i.hasNext();) {
+            MetaMethod method = (MetaMethod) i.next();
+            if (method.getName().startsWith(complete)) {
+                if (method.getParameterTypes().length > 0) {
+                    completions.add(method.getName() + "(");
+                }
+                else {
+                    completions.add(method.getName() + "()");
+                }
+            }
+        }
+    }
+
+    private void findLocalVariables(String complete) {
+        Set names = shell.getContext().getVariables().keySet();
+
+        for (Iterator i = names.iterator(); i.hasNext();) {
+            String name = (String) i.next();
+            if (name.startsWith(complete)) {
+                completions.add(name);
+            }
+        }
+    }
 }

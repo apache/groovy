@@ -88,8 +88,4 @@ public class ClosureListener implements InvocationHandler {
         return null;
     }
 
-    public boolean equals(Object that) {
-        return this == that;
-    }
-
 }
