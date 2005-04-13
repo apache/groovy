@@ -47,9 +47,9 @@ package org.codehaus.groovy.ast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Iterator;
 
 
 /**
@@ -61,6 +61,7 @@ import java.util.Iterator;
 public class AnnotatedNode extends ASTNode {
     private Map annotations = new HashMap();
     private boolean synthetic;
+    ClassNode declaringClass;
 
     public AnnotatedNode() {
     }
@@ -72,7 +73,7 @@ public class AnnotatedNode extends ASTNode {
     public AnnotationNode getAnnotations(String name) {
         return (AnnotationNode) annotations.get(name);
     }
-    
+
     public void addAnnotation(String name, AnnotationNode value) {
         AnnotationNode oldValue = (AnnotationNode) annotations.get(name);
 
@@ -110,4 +111,24 @@ public class AnnotatedNode extends ASTNode {
         this.synthetic = synthetic;
     }
 
+    protected void addFieldsToVisitor(VariableScope scope) {
+        for (Iterator iter = getDeclaringClass().getFields().iterator(); iter.hasNext();) {
+            FieldNode field = (FieldNode) iter.next();
+            String name = field.getName();
+
+            scope.getDeclaredVariables().add(name);
+            scope.getReferencedVariables().add(name);
+        }
+    }
+
+    public ClassNode getDeclaringClass() {
+        return declaringClass;
+    }
+
+    /**
+     * @param declaringClass The declaringClass to set.
+     */
+    public void setDeclaringClass(ClassNode declaringClass) {
+        this.declaringClass = declaringClass;
+    }
 }

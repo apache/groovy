@@ -255,12 +255,14 @@ public class ClassNode extends AnnotatedNode implements Constants {
     }
 
     public void addField(FieldNode node) {
+        node.setDeclaringClass(this);
         node.setOwner(getName());
         fields.add(node);
         fieldIndex.put(node.getName(), node);
     }
 
     public void addProperty(PropertyNode node) {
+        node.setDeclaringClass(this);
         FieldNode field = node.getField();
         addField(field);
 
@@ -280,6 +282,7 @@ public class ClassNode extends AnnotatedNode implements Constants {
     }
 
     public void addConstructor(ConstructorNode node) {
+        node.setDeclaringClass(this);
         constructors.add(node);
     }
 
@@ -290,8 +293,8 @@ public class ClassNode extends AnnotatedNode implements Constants {
     }
 
     public void addMethod(MethodNode node) {
+        node.setDeclaringClass(this);
         methods.add(node);
-        node.declaringClass = this;
     }
 
     /**

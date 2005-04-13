@@ -4444,28 +4444,9 @@ public class AsmClassGenerator extends ClassGenerator {
             if (methodNode != null) {
                 // if we're a closure method we'll have our variable scope already created
                 variableScope = methodNode.getVariableScope();
-                if (variableScope == null) {
-                    variableScope = new VariableScope();
-                    methodNode.setVariableScope(variableScope);
-                    VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
-                    visitor.setParameters(methodNode.getParameters());
-                    Statement code = methodNode.getCode();
-                    if (code != null) {
-                        code.visit(visitor);
-                    }
-                }
-                addFieldsToVisitor(variableScope);
             }
             else if (constructorNode != null) {
-                variableScope = new VariableScope();
-                constructorNode.setVariableScope(variableScope);
-                VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
-                visitor.setParameters(constructorNode.getParameters());
-                Statement code = constructorNode.getCode();
-                if (code != null) {
-                    code.visit(visitor);
-                }
-                addFieldsToVisitor(variableScope);
+                variableScope = constructorNode.getVariableScope();
             }
             else {
                 throw new RuntimeException("Can't create a variable scope outside of a method or constructor");
@@ -4601,16 +4582,6 @@ public class AsmClassGenerator extends ClassGenerator {
         //                System.out.println("outerRefs: " + outerRefs);
         //                System.out.println("innerDecls: " + innerDecls);
         //                System.out.println("innerRefs: " + innerRefs);
-    }
-
-    protected void addFieldsToVisitor(VariableScope scope) {
-        for (Iterator iter = classNode.getFields().iterator(); iter.hasNext();) {
-            FieldNode field = (FieldNode) iter.next();
-            String name = field.getName();
-
-            scope.getDeclaredVariables().add(name);
-            scope.getReferencedVariables().add(name);
-        }
     }
 
     private boolean isInnerClass() {
