@@ -46,11 +46,12 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
 import org.objectweb.asm.Constants;
 
 /**
  * Represents a method declaration
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -63,27 +64,27 @@ public class MethodNode extends AnnotatedNode implements Constants {
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
-    ClassNode declaringClass;
 
     public MethodNode(String name, int modifiers, String returnType, Parameter[] parameters, Statement code) {
         this.name = name;
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
-        
+
         if (returnType == null || returnType.length() == 0) {
             this.returnType = "java.lang.Object";
             this.dynamicReturnType = true;
         }
         else {
-            this.returnType = ensureJavaTypeNameSyntax(returnType);   
+            this.returnType = ensureJavaTypeNameSyntax(returnType);
         }
     }
-    
+
     /**
-     * The type descriptor for a method node is a string containing the name of the method, its return type, 
+     * The type descriptor for a method node is a string containing the name of the method, its return type,
      * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
      * without parameter names, and with $dynamic as the type for any dynamically typed values.
+     *
      * @return
      */
     // TODO: add test case for type descriptor
@@ -96,8 +97,10 @@ public class MethodNode extends AnnotatedNode implements Constants {
         buf.append(' ');
         buf.append(name);
         buf.append('(');
-        for (int i=0; i < parameters.length; i++) {
-            if (i>0) buf.append(',');
+        for (int i = 0; i < parameters.length; i++) {
+            if (i > 0) {
+                buf.append(',');
+            }
             Parameter param = parameters[i];
             buf.append(ensureJavaTypeNameSyntax(param.getType()));
         }
@@ -113,15 +116,24 @@ public class MethodNode extends AnnotatedNode implements Constants {
         }
         if (typename.length() == 1) {
             switch (typename.charAt(0)) {
-                case 'B': return "byte";
-                case 'C': return "char";
-                case 'D': return "double";
-                case 'F': return "float";
-                case 'J': return "long";
-                case 'I': return "int";
-                case 'S': return "short";
-                case 'V': return "void";
-                case 'Z': return "boolean";
+                case 'B':
+                    return "byte";
+                case 'C':
+                    return "char";
+                case 'D':
+                    return "double";
+                case 'F':
+                    return "float";
+                case 'J':
+                    return "long";
+                case 'I':
+                    return "int";
+                case 'S':
+                    return "short";
+                case 'V':
+                    return "void";
+                case 'Z':
+                    return "boolean";
             }
         }
         if (typename.endsWith(";")) {
@@ -129,9 +141,9 @@ public class MethodNode extends AnnotatedNode implements Constants {
             return typename.substring(1, typename.length() - 1);
         }
         return typename;
-        
+
     }
-    
+
     public boolean isVoidMethod() {
         return "void".equals(returnType);
     }
@@ -165,6 +177,9 @@ public class MethodNode extends AnnotatedNode implements Constants {
     }
 
     public VariableScope getVariableScope() {
+        if (variableScope == null) {
+            variableScope = createVariableScope();
+        }
         return variableScope;
     }
 
@@ -176,18 +191,14 @@ public class MethodNode extends AnnotatedNode implements Constants {
         return dynamicReturnType;
     }
 
-    public ClassNode getDeclaringClass() {
-        return declaringClass;
-    }
-    
     public boolean isAbstract() {
         return (modifiers & ACC_ABSTRACT) != 0;
     }
-    
+
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
     }
-    
+
     public String toString() {
         return super.toString() + "[name: " + name + "]";
     }
@@ -195,10 +206,18 @@ public class MethodNode extends AnnotatedNode implements Constants {
     public void setReturnType(String returnType) {
         this.returnType = returnType;
     }
-	/**
-	 * @param declaringClass The declaringClass to set.
-	 */
-	public void setDeclaringClass(ClassNode declaringClass) {
-		this.declaringClass = declaringClass;
-	}
+
+
+    protected VariableScope createVariableScope() {
+        VariableScope variableScope = new VariableScope();
+        VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
+        visitor.setParameters(getParameters());
+        Statement code = getCode();
+        if (code != null) {
+            code.visit(visitor);
+        }
+        addFieldsToVisitor(variableScope);
+        return variableScope;
+    }
 }
+

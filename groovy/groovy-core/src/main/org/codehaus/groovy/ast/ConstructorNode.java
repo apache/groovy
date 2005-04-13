@@ -46,6 +46,7 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
 
 
 /**
@@ -88,6 +89,9 @@ public class ConstructorNode extends AnnotatedNode {
     }
 
     public VariableScope getVariableScope() {
+        if (variableScope == null) {
+            variableScope = createVariableScope();
+        }
         return variableScope;
     }
 
@@ -95,4 +99,16 @@ public class ConstructorNode extends AnnotatedNode {
         this.variableScope = variableScope;
     }
     
+    protected VariableScope createVariableScope() {
+        VariableScope variableScope = new VariableScope();
+        VariableScopeCodeVisitor visitor = new VariableScopeCodeVisitor(variableScope);
+        visitor.setParameters(getParameters());
+        Statement code = getCode();
+        if (code != null) {
+            code.visit(visitor);
+        }
+        addFieldsToVisitor(variableScope);
+        return variableScope;
+    }
+
 }

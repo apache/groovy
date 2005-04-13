@@ -146,7 +146,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
         super.visitMethodCallExpression(call);
     }
 
-    protected void setParameters(Parameter[] parameters) {
+    public void setParameters(Parameter[] parameters) {
         /*
         parameterSet.clear();
         for (int i = 0; i < parameters.length; i++) {
