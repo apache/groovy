@@ -207,4 +207,28 @@ class ListTest extends GroovyTestCase {
             println "Worked: caught expected exception: ${e}"
         }
     }
+
+    void testBoolCoerce() {
+
+        // Explicit coercion
+        assertFalse((Boolean) [])
+        assertTrue((Boolean) [1])
+
+        // Implicit coercion in statements
+        List list = null
+        if (list) {
+            fail("null should have evaluated to false, but didn't")
+        }
+        list = []
+        if (list) {
+            fail("[] should have evaluated to false, but didn't")
+        }
+        list = [1]
+        if (list) {
+            // OK
+        } else {
+            fail("[] should have evaluated to false, but didn't")
+        }
+        
+    }
 }
