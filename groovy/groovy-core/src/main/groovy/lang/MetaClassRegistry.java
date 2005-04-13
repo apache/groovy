@@ -191,22 +191,22 @@ public class MetaClassRegistry {
                     groovyLoader = this.loader;
                 }
                 else {
-                    // We have to make sure a class loaded through groovy is always
-                    // able to find a class of the runtime. I assume the classloaders
-                    // are behaving normal and delegate unknown classes to the parent
-                    // classloader. So if no parent has the same classloader as the 
-                    // runtime we can't use the normal loader to create the 
-                    // GroovyClassLoader
-                    ClassLoader localLoader = getClass().getClassLoader();
-                    ClassLoader parent = loader;
-                    while (parent!=localLoader && parent!=null) parent=parent.getParent();
-                    if (parent==null) {
-                        groovyLoader = new GroovyClassLoader(localLoader);
-                    } else {
+                    // lets check that the class loader can see the Groovy classes
+                    // if so we'll use that, otherwise lets use the local class loader
+                    try {
+                        loader.loadClass(getClass().getName());
+
+                        // thats fine, lets use the loader
                         groovyLoader = new GroovyClassLoader(loader);
                     }
-                }
+                    catch (ClassNotFoundException e) {
 
+                        // we can't see the groovy classes here
+                        // so lets try create a new loader
+                        ClassLoader localLoader = getClass().getClassLoader();
+                        groovyLoader = new GroovyClassLoader(localLoader);
+                    }
+                }
                 loaderMap.put(loader, groovyLoader);
             }
 
