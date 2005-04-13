@@ -715,8 +715,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         BooleanExpression booleanExpression = booleanExpression(node);
 
         node = node.getNextSibling();
-        // this node could be a BREAK node
-        //assertNodeType(SLIST, node);
         Statement ifBlock = statement(node);
 
         Statement elseBlock = EmptyStatement.INSTANCE;
@@ -903,7 +901,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         BooleanExpression booleanExpression = booleanExpression(node);
 
         node = node.getNextSibling();
-        assertNodeType(SLIST, node);
         Statement block = statement(node);
         WhileStatement whileStatement = new WhileStatement(booleanExpression, block);
         configureAST(whileStatement, whileNode);
@@ -1462,46 +1459,46 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression methodCallExpression(AST methodCallNode) {
         AST node = methodCallNode.getFirstChild();
+        /* // Bad idea, since foo(1)(2) is valid Groovy for foo(1).call(2).
         if (isType(METHOD_CALL, node)) {
             // sometimes method calls get wrapped in method calls for some wierd reason
             return methodCallExpression(node);
         }
+        */
 
-        Expression objectExpression = VariableExpression.THIS_EXPRESSION;
-        AST elist = null;
+        Expression objectExpression;
+        AST selector;
+        AST elist = node.getNextSibling();
         boolean safe = isType(OPTIONAL_DOT, node);
         boolean spreadSafe = isType(SPREAD_DOT, node);
         if (isType(DOT, node) || safe || spreadSafe) {
             AST objectNode = node.getFirstChild();
-            elist = node.getNextSibling();
-
             objectExpression = expression(objectNode);
+            selector = objectNode.getNextSibling();
+        } else if (isType(IDENT, node)) {
+            objectExpression = VariableExpression.THIS_EXPRESSION;
+            selector = node;
 
-            node = objectNode.getNextSibling();
+        } else {
+            objectExpression = expression(node);
+            selector = null;  // implicit "call"
         }
 
         String name = null;
-        if (isType(LITERAL_super, node)) {
+        if (selector == null) {
+            name = "call";
+        }  else if (isType(LITERAL_super, selector)) {
             name = "super";
             if (objectExpression == VariableExpression.THIS_EXPRESSION) {
                 objectExpression = VariableExpression.SUPER_EXPRESSION;
             }
         }
-        else if (isType(LITERAL_new, node)) {
-            // TODO for some reason the parser wraps this in a method call if
-            // there is an appended closure
-            return constructorCallExpression(node);
-        }
-        else if (isPrimitiveTypeLiteral(node)) {
-            throw new ASTRuntimeException(node, "Primitive type literal: " + node.getText()
-                    + " cannot be used as a method name; maybe you need to use a double || with a closure expression? {|int x| ..} rather than {int x|...}");
+        else if (isPrimitiveTypeLiteral(selector)) {
+            throw new ASTRuntimeException(selector, "Primitive type literal: " + selector.getText()
+                    + " cannot be used as a method name");
         }
         else {
-            name = identifier(node);
-        }
-
-        if (elist == null) {
-            elist = node.getNextSibling();
+            name = identifier(selector);
         }
 
         Expression arguments = arguments(elist);
@@ -1688,7 +1685,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List values = new ArrayList();
 
         StringBuffer buffer = new StringBuffer();
-        
+
         boolean isPrevString = false;
 
         for (AST node = gstringNode.getFirstChild(); node != null; node = node.getNextSibling()) {

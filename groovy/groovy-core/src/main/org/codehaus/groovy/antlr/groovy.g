@@ -323,6 +323,17 @@ tokens {
     // Written by 'argList' rule, read only by immediate callers of 'argList'.
     private boolean argListHasLabels = false;
 
+    // Scratch variable, holds most recently completed pathExpression.
+    // Read only by immediate callers of 'pathExpression' and 'expression'.
+    private AST lastPathExpression = null;
+
+    // Inherited attribute pushed into most expression rules.
+    // If not zero, it means that the left context of the expression
+    // being parsed is a statement boundary or an initializer sign '='.
+    // Only such expressions are allowed to reach across newlines
+    // to pull in an LCURLY and appended block.
+    private final int LC_STMT = 1, LC_INIT = 2;
+
     /**
      * Counts the number of LT seen in the typeArguments production.
      * It is used in semantic predicates to ensure we have seen
@@ -791,7 +802,7 @@ annotationMemberValuePair!
     ;
 
 annotationMemberValueInitializer
-    :   conditionalExpression | annotation
+    :   conditionalExpression[0] | annotation
     ;
 
 /*OBS*
@@ -819,7 +830,7 @@ annotationMemberArrayInitializer
 // The two things that can initialize an annotation array element are a conditional expression
 // and an annotation (nested annotation array initialisers are not valid)
 annotationMemberArrayValueInitializer
-    :   conditionalExpression
+    :   conditionalExpression[0]
     |   annotation nls!
     ;
 
@@ -1262,7 +1273,8 @@ declaratorBrackets[AST typ]
 
 /** An assignment operator '=' followed by an expression.  (Never empty.) */
 varInitializer
-    :   ASSIGN^ nls! initializer
+    :   ASSIGN^ nls! expression[LC_INIT]
+        // In {T x = y}, the left-context of y is that of an initializer.
     ;
 
 /*OBS*
@@ -1287,14 +1299,14 @@ arrayInitializer
     ;
 *OBS*/
 
+/*OBS*  // Use [...] for initializing all sorts of sequences, including arrays.
 // The two "things" that can initialize an array element are an expression
 // and another (nested) array initializer.
 initializer
     :   expression
-/*OBS*  // Use [...] for initializing all sorts of sequences, including arrays.
     |   arrayInitializer
-*OBS*/
     ;
+*OBS*/
 
 /*OBS???
 // This is the header of a method. It includes the name and parameters
@@ -1505,29 +1517,6 @@ closedBlock
         RCURLY!
     ;
 
-/** An appended block follows a method name or method argument list. */
-appendedBlock
-    :
-    /*  FIXME!
-        DECIDE: should appended blocks accept labels?
-        (IDENT COLON nls LCURLY)=>
-        IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
-        closedBlock
-    |
-    */
-        nlsWarn!
-        closedBlock
-    ;
-
-appendedBlockStart!
-    :
-    /*
-        IDENT COLON nls LCURLY
-    |
-    */
-        (NLS)? LCURLY
-    ;
-
 /** A block known to be a closure, but which omits its arguments, is given this placeholder.
  *  A subsequent pass is responsible for deciding if there is an implicit 'it' parameter,
  *  or if the parameter list should be empty.
@@ -1607,7 +1596,7 @@ statement[int prevToken]
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
-    |   "do"^ statement "while"! LPAREN! expression RPAREN! SEMI!
+    |   "do"^ statement "while"! LPAREN! strictContextExpression RPAREN! SEMI!
     *OBS*/
     // With statement
     // (This is the Groovy scope-shift mechanism, used for builders.)
@@ -1632,7 +1621,7 @@ statement[int prevToken]
     |   tryBlock
 
     // synchronize a statement
-    |   "synchronized"^ LPAREN! expression RPAREN! nlsWarn! compoundStatement
+    |   "synchronized"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compoundStatement
 
 
     /*OBS*
@@ -1676,11 +1665,26 @@ forEachClause
 
 forInClause
     :   (   (declarationStart)=>
-            singleDeclarationNoInit
+            decl:singleDeclarationNoInit
         |   IDENT
         )
-        i:"in"^         {#i.setType(FOR_IN_ITERABLE);}
-        shiftExpression
+        (
+            i:"in"^         {#i.setType(FOR_IN_ITERABLE);}
+            shiftExpression[0]
+        |
+            { addWarning(
+              "A colon at this point is legal Java but not recommended in Groovy.",
+              "Use the 'in' keyword."
+              );
+            require(#decl != null,
+                "Java-style for-each statement requires a type declaration."
+                ,
+                "Use the 'in' keyword, as for (x in y) {...}"
+                );
+            }
+            c:COLON^         {#c.setType(FOR_IN_ITERABLE);}
+            expression[0]
+        )
     ;
 
 /** In Java, "if", "while", and "for" statements can take random, non-braced statements as their bodies.
@@ -1701,7 +1705,7 @@ branchStatement
     :
     // Return an expression
         "return"^
-        ( expression )?
+        ( expression[0] )?
 
     // break:  get out of a loop, or switch, or method call
     // continue:  do next iteration of a loop, or leave a closure
@@ -1710,22 +1714,24 @@ branchStatement
             (IDENT COLON)=>
             statementLabelPrefix
         )?
-        ( expression )?
+        ( expression[0] )?
 
     // throw an exception
-    |   "throw"^ expression
+    |   "throw"^ expression[0]
 
 
     // TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
     // asserts
     // 1.4+ ...
-    //      |   "assert"^ expression ( COLON! expression )?
+    //      |   "assert"^ expression[0] ( COLON! expression[0] )?
 
     // groovy assertion...
-    |   "assert"^ expression
+    |   "assert"^ expression[0]
         (   options {greedy=true;} :
-            COMMA!  // TODO:  s/COMMA/COLON/; gratuitous change causes BSFTest failures
-            expression
+            (   COMMA!  // TODO:  gratuitous change caused failures
+            |   COLON!  // standard Java syntax, but looks funny in Groovy
+            )
+            expression[0]
         )?
     ;
 
@@ -1745,20 +1751,21 @@ statementLabelPrefix
 // DECIDE: A later semantic pass can flag dumb expressions that dot occur in
 //         positions where their value is not used, e.g., <code>{1+1;println}</code>
 expressionStatement[int prevToken]
-            {boolean zz; /*ignore*/ }
+        {   boolean isPathExpr = false;  }
     : 
         (   (suspiciousExpressionStatementStart)=>
             checkSuspiciousExpressionStatement[prevToken]
         )?
         // Checks are now out of the way; here's the real rule:
+        head:expression[LC_STMT]
+        {   isPathExpr = (#head == lastPathExpression);  }
         (
-            (expression (SEMI | NLS | RCURLY | EOF))=>  //FIXME: too much lookahead
-            expression
-        |
-            head:pathExpression!
-            commandArguments[#head]
-            {#expressionStatement = #(#[EXPR,"EXPR"],#expressionStatement);}
-        )
+            // A path expression (e.g., System.out.print) can take arguments.
+            {isPathExpr}?
+            cmd:commandArguments[#head]!
+            {#expressionStatement = #cmd;}
+        )?
+        {#expressionStatement = #(#[EXPR,"EXPR"],#expressionStatement);}
     ;
         
 /**
@@ -1841,7 +1848,7 @@ casesGroup
     ;
 
 aCase
-    :   ("case"^ expression | "default") COLON! nls!
+    :   ("case"^ expression[0] | "default") COLON! nls!
     ;
 
 caseSList
@@ -1891,7 +1898,7 @@ handler
  */
 commandArguments[AST head]
     :
-        expression ( COMMA! nls! expression )*
+        expression[0] ( COMMA! nls! expression[0] )*
         // println 2+2 //OK
         // println(2+2) //OK
         // println (2)+2 //BAD
@@ -1950,9 +1957,8 @@ commandArguments[AST head]
 // This nonterminal is not used for expression statements, which have a more restricted syntax
 // due to possible ambiguities with other kinds of statements.  This nonterminal is used only
 // in contexts where we know we have an expression.  It allows general Java-type expressions.
-expression
-    :   assignmentExpression
-        {#expression = #(#[EXPR,"EXPR"],#expression);}
+expression[int lc_stmt]
+    :   assignmentExpression[lc_stmt]
     ;
 
 // This is a list of expressions.
@@ -1971,20 +1977,20 @@ controlExpressionList
  *  (Compare to a C lvalue, or LeftHandSide in the JLS section 15.26.)
  *  General expressions are built up from path expressions, using operators like '+' and '='.
  */
-pathExpression
+pathExpression[int lc_stmt]
         { AST prefix = null; }
     :
         pre:primaryExpression!
         { prefix = #pre; }
 
-        (   // FIXME: There will be a harmless ANTLR warning on this line.  Can't make it go away??
+        (
             options {
                 // \n{foo} could match here or could begin a new statement
                 // We do want to match here. Turn off warning.
                 greedy=true;
                 // This turns the ambiguity warning of the second alternative
                 // off. See below. (The "ANTLR_LOOP_EXIT" predicate makes it non-issue)
-                warnWhenFollowAmbig=false;
+                //@@ warnWhenFollowAmbig=false;
             }
             // Parsing of this chain is greedy.  For example, a pathExpression may be a command name
             // followed by a command argument, but that command argument cannot begin with an LPAREN,
@@ -1995,10 +2001,17 @@ pathExpression
             pe:pathElement[prefix]!
             { prefix = #pe; }
         |
-            {ANTLR_LOOP_EXIT}?
+            {lc_stmt == LC_STMT || lc_stmt == LC_INIT}?
+            (nls LCURLY)=>
+            nlsWarn!
+            apb:appendedBlock[prefix]!
+            { prefix = #apb; }
         )*
 
-        { #pathExpression = prefix; }
+        {
+            #pathExpression = prefix;
+            lastPathExpression = #pathExpression;
+        }
     ;
 
 pathElement[AST prefix]
@@ -2019,6 +2032,10 @@ pathElement[AST prefix]
     |
         mca:methodCallArgs[prefix]!
         {   #pathElement = #mca;  }
+    |
+        // Can always append a block, as foo{bar}
+        apb:appendedBlock[prefix]!
+        {   #pathElement = #apb;  }
     |
         // Element selection is always an option, too.
         // In Groovy, the stuff between brackets is a general argument list,
@@ -2050,7 +2067,7 @@ pathElementStart!
     |   MEMBER_POINTER
     |   LBRACK
     |   LPAREN
-    |   appendedBlockStart
+    |   LCURLY
     ;
 
 /** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
@@ -2136,27 +2153,39 @@ dynamicMemberName
  *
  *  A plain unlabeled argument is allowed to match a trailing Map or Closure argument:
  *  f(x, a:p) {s}  ===  f(*[ x, [a:p], {s} ])
- *  <p>
- *  Returned AST is [METHOD_CALL, callee, ELIST?, CLOSED_BLOCK?].
- *  Note that callee is often of the form x.y but not always.
  */
+// AST is [METHOD_CALL, callee, ELIST? CLOSED_BLOCK?].
+// Note that callee is often of the form x.y but not always.
+// If the callee is not of the form x.y, then an implicit .call is needed.
 methodCallArgs[AST callee]
     :
         {#methodCallArgs = callee;}
         lp:LPAREN^ {#lp.setType(METHOD_CALL);}
         argList
         RPAREN!
-        (   (appendedBlockStart)=>   // eagerly reach across newline to {...}
-            appendedBlock
-        )?  // maybe append a closure
-    |
-        // else use a closure alone
-        {   AST lbrace = getASTFactory().create(LT(1));
-            lbrace.setType(METHOD_CALL);
-            lbrace.addChild(callee);
-            #methodCallArgs = lbrace;
+    ;
+
+/** An appended block follows any expression.
+ *  If the expression is not a method call, it is given an empty argument list.
+ */
+appendedBlock[AST callee]
+    :
+        {
+            // If the callee is itself a call, flatten the AST.
+            if (callee != null && callee.getType() == METHOD_CALL) {
+                #appendedBlock = callee;
+            } else {
+                AST lbrace = getASTFactory().create(LT(1));
+                lbrace.setType(METHOD_CALL);
+                if (callee != null)  lbrace.addChild(callee);
+                #appendedBlock = lbrace;
+            }
         }
-        appendedBlock
+        /*  FIXME DECIDE: should appended blocks accept labels?
+        (   (IDENT COLON nls LCURLY)=>
+            IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
+        )? */
+        closedBlock
     ;
 
 /** An expression may be followed by [...].
@@ -2174,8 +2203,8 @@ indexPropertyArgs[AST indexee]
     ;
 
 // assignment expression (level 15)
-assignmentExpression
-    :   conditionalExpression
+assignmentExpression[int lc_stmt]
+    :   conditionalExpression[lc_stmt]
         (
             (   ASSIGN^
             |   PLUS_ASSIGN^
@@ -2193,60 +2222,62 @@ assignmentExpression
             //|   USEROP_13^  //DECIDE: This is how user-define ops would show up.
             )
             nls!
-            assignmentExpression
+            assignmentExpression[lc_stmt == LC_STMT? LC_INIT: 0]
+            // If left-context of {x = y} is a statement boundary,
+            // define the left-context of y as an initializer.
         )?
     ;
 
 // conditional test (level 14)
-conditionalExpression
-    :   logicalOrExpression
-        ( QUESTION^ nls! assignmentExpression COLON! nls! conditionalExpression )?
+conditionalExpression[int lc_stmt]
+    :   logicalOrExpression[lc_stmt]
+        ( QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0] )?
     ;
 
 
 // logical or (||)  (level 13)
-logicalOrExpression
-    :   logicalAndExpression (LOR^ nls! logicalAndExpression)*
+logicalOrExpression[int lc_stmt]
+    :   logicalAndExpression[lc_stmt] (LOR^ nls! logicalAndExpression[0])*
     ;
 
 
 // logical and (&&)  (level 12)
-logicalAndExpression
-    :   inclusiveOrExpression (LAND^ nls! inclusiveOrExpression)*
+logicalAndExpression[int lc_stmt]
+    :   inclusiveOrExpression[lc_stmt] (LAND^ nls! inclusiveOrExpression[0])*
     ;
 
 // bitwise or non-short-circuiting or (|)  (level 11)
-inclusiveOrExpression
-    :   exclusiveOrExpression (BOR^ nls! exclusiveOrExpression)*
+inclusiveOrExpression[int lc_stmt]
+    :   exclusiveOrExpression[lc_stmt] (BOR^ nls! exclusiveOrExpression[0])*
     ;
 
 
 // exclusive or (^)  (level 10)
-exclusiveOrExpression
-    :   andExpression (BXOR^ nls! andExpression)*
+exclusiveOrExpression[int lc_stmt]
+    :   andExpression[lc_stmt] (BXOR^ nls! andExpression[0])*
     ;
 
 
 // bitwise or non-short-circuiting and (&)  (level 9)
-andExpression
-    :   regexExpression (BAND^ nls! regexExpression)*
+andExpression[int lc_stmt]
+    :   regexExpression[lc_stmt] (BAND^ nls! regexExpression[0])*
     ;
 
 // regex find and match (=~ and ==~) (level 8.5)
 // jez: moved =~ closer to precedence of == etc, as...
 // 'if (foo =~ "a.c")' is very close in intent to 'if (foo == "abc")'
-regexExpression
-    :   equalityExpression ((REGEX_FIND^ | REGEX_MATCH^) nls! equalityExpression)*
+regexExpression[int lc_stmt]
+    :   equalityExpression[lc_stmt] ((REGEX_FIND^ | REGEX_MATCH^) nls! equalityExpression[0])*
     ;
 
 // equality/inequality (==/!=) (level 8)
-equalityExpression
-    :   relationalExpression ((NOT_EQUAL^ | EQUAL^ | COMPARE_TO^) nls! relationalExpression)*
+equalityExpression[int lc_stmt]
+    :   relationalExpression[lc_stmt] ((NOT_EQUAL^ | EQUAL^ | COMPARE_TO^) nls! relationalExpression[0])*
     ;
 
 // boolean relational expressions (level 7)
-relationalExpression
-    :   shiftExpression
+relationalExpression[int lc_stmt]
+    :   shiftExpression[lc_stmt]
         (   (   (   LT^
                 |   GT^
                 |   LE^
@@ -2254,7 +2285,7 @@ relationalExpression
                 |   "in"^
                 )
                 nls!
-                shiftExpression
+                shiftExpression[0]
             )?
         |   "instanceof"^ nls! typeSpec[true]
         |   "as"^         nls! typeSpec[true] //TODO: Rework to allow type expression?
@@ -2264,8 +2295,8 @@ relationalExpression
 
 
 // bit shift expressions (level 6)
-shiftExpression
-    :   additiveExpression
+shiftExpression[int lc_stmt]
+    :   additiveExpression[lc_stmt]
         (
             ((SL^ | SR^ | BSR^)
             |   RANGE_INCLUSIVE^
@@ -2273,48 +2304,50 @@ shiftExpression
             |   td:TRIPLE_DOT^ {#td.setType(RANGE_EXCLUSIVE);} /* backward compat: FIXME REMOVE */
             )
             nls!
-            additiveExpression
+            additiveExpression[0]
         )*
     ;
 
 
 // binary addition/subtraction (level 5)
-additiveExpression
-    :   multiplicativeExpression
+additiveExpression[int lc_stmt]
+    :   multiplicativeExpression[lc_stmt]
         (
+            options {greedy=true;} :
+            // Be greedy here, to favor {x+y} instead of {print +value}
             (PLUS^ | MINUS^) nls!
-            multiplicativeExpression
+            multiplicativeExpression[0]
         )*
     ;
 
 
 // multiplication/division/modulo (level 4)
-multiplicativeExpression
-    :    ( INC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
-    |    ( DEC^ nls!  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
-    |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
-    |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
-    |    (  powerExpression ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression)* )
+multiplicativeExpression[int lc_stmt]
+    :    ( INC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( DEC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+    |    (  powerExpression[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
     ;
 
 // math power operator (**) (level 3)
-powerExpression
-    :   unaryExpressionNotPlusMinus (STAR_STAR^ nls! unaryExpression)*
+powerExpression[int lc_stmt]
+    :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
     ;
 
-// ++(prefix)/--(prefix)/+(unary)/-(unary)/$(GString expression) (level 2)
-unaryExpression
-    :   INC^ nls! unaryExpression
-    |   DEC^ nls! unaryExpression
-    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression
-    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression
-    |   unaryExpressionNotPlusMinus
+// ++(prefix)/--(prefix)/+(unary)/-(unary) (level 2)
+unaryExpression[int lc_stmt]
+    :   INC^ nls! unaryExpression[0]
+    |   DEC^ nls! unaryExpression[0]
+    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
+    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
+    |   unaryExpressionNotPlusMinus[lc_stmt]
     ;
 
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
-unaryExpressionNotPlusMinus
-    :   BNOT^ nls! unaryExpression
-    |   LNOT^ nls! unaryExpression
+unaryExpressionNotPlusMinus[int lc_stmt]
+    :   BNOT^ nls! unaryExpression[0]
+    |   LNOT^ nls! unaryExpression[0]
     |   (   // subrule allows option to shut off warnings
             options {
                     // "(int" ambig with postfixExpr due to lack of sequence
@@ -2323,26 +2356,28 @@ unaryExpressionNotPlusMinus
             }
         :   // If typecast is built in type, must be numeric operand
             // Have to backtrack to see if operator follows
-            (LPAREN builtInTypeSpec[true] RPAREN unaryExpression)=>
+            // FIXME: DECIDE: This syntax is wormy.  Can we deprecate or remove?
+            (LPAREN builtInTypeSpec[true] RPAREN unaryExpression[0])=>
             lpb:LPAREN^ {#lpb.setType(TYPECAST);} builtInTypeSpec[true] RPAREN!
-            unaryExpression
+            unaryExpression[0]
 
             // Have to backtrack to see if operator follows. If no operator
             // follows, it's a typecast. No semantic checking needed to parse.
             // if it _looks_ like a cast, it _is_ a cast; else it's a "(expr)"
+            // FIXME: DECIDE: This syntax is wormy.  Can we deprecate or remove?
             // TODO:  Rework this mess for Groovy.
-        |   (LPAREN classTypeSpec[true] RPAREN unaryExpressionNotPlusMinus)=>
+        |   (LPAREN classTypeSpec[true] RPAREN unaryExpressionNotPlusMinus[0])=>
             lp:LPAREN^ {#lp.setType(TYPECAST);} classTypeSpec[true] RPAREN!
-            unaryExpressionNotPlusMinus
+            unaryExpressionNotPlusMinus[0]
 
-        |   postfixExpression
+        |   postfixExpression[lc_stmt]
         )
     ;
 
 // qualified names, array expressions, method invocation, post inc/dec
-postfixExpression
+postfixExpression[int lc_stmt]
     :
-        pathExpression
+        pathExpression[lc_stmt]
         (
             options {greedy=true;} :
             // possibly add on a post-increment or post-decrement.
@@ -2378,9 +2413,11 @@ primaryExpression
     *OBS*/
     ;
 
+// Note:  This is guaranteed to be an EXPR AST.
+// That is, parentheses are preserved, in case the walker cares about them.
+// They are significant sometimes, as in (f(x)){y} vs. f(x){y}.
 parenthesizedExpression
-    :   lp:LPAREN^ strictContextExpression RPAREN!
-        { #lp.setType(EXPR); }
+    :   LPAREN! strictContextExpression RPAREN!
     ;
 
 scopeEscapeExpression
@@ -2396,11 +2433,15 @@ scopeEscapeExpression
  *  contexts like inside parentheses, argument lists, and list constructors.
  */
 strictContextExpression
-    :   (declarationStart)=>
-        singleDeclaration  // used for both binding and value, as: while (String xx = nextln()) { println xx }
-    |   expression
-    |   branchStatement // useful to embed inside expressions (cf. C++ throw)
-    |   annotation      // creates an annotation value
+    :
+        (   (declarationStart)=>
+            singleDeclaration  // used for both binding and value, as: while (String xx = nextln()) { println xx }
+        |   expression[0]
+        |   branchStatement // useful to embed inside expressions (cf. C++ throw)
+        |   annotation      // creates an annotation value
+        )
+        // For the sake of the AST walker, mark nodes like this very clearly.
+        {#strictContextExpression = #(#[EXPR,"EXPR"],#strictContextExpression);}
     ;
 
 closureConstructorExpression
@@ -2571,8 +2612,19 @@ identPrimary
 newExpression
     :   "new"^ (typeArguments)? type
         (   mca:methodCallArgs[null]!
-        
+
+            (
+                options { greedy=true; }:
+                apb1:appendedBlock[#mca]!
+                { #mca = #apb1; }
+            )?
+
             {#newExpression.addChild(#mca.getFirstChild());}
+        |
+            apb:appendedBlock[null]!
+            // FIXME:  This node gets dropped, somehow.
+
+            {#newExpression.addChild(#apb.getFirstChild());}
 
             /*TODO - NYI* (anonymousInnerClassBlock)? *NYI*/
 
@@ -2682,7 +2734,7 @@ newArrayDeclarator
             }
         :
             lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);}
-                (expression)?
+                (expression[0])?
             RBRACK!
         )+
     ;
@@ -2809,7 +2861,7 @@ options {
         setTabSize(1);  // get rid of special tab interpretation, for IDEs and general clarity
     }
 
-/** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
+    /** Bumped when inside '[x]' or '(x)', reset inside '{x}'.  See ONE_NL.  */
     protected int parenLevel = 0;
     protected int suppressNewline = 0;  // be really mean to newlines inside strings
     protected static final int SCS_TYPE = 3, SCS_VAL = 4, SCS_LIT = 8, SCS_LIMIT = 16;
@@ -2925,12 +2977,12 @@ options {
         }
     }
 
-    protected void newlineCheck() throws RecognitionException {
-        if (suppressNewline > 0) {
-            suppressNewline = 0;
+    protected void newlineCheck(boolean check) throws RecognitionException {
+        if (check && suppressNewline > 0) {
             require(suppressNewline == 0,
-                "end of line reached within a simple string 'x' or \"x\"",
+                "end of line reached within a simple string 'x' or \"x\" or /x/",
                 "for multi-line literals, use triple quotes '''x''' or \"\"\"x\"\"\"");
+            suppressNewline = 0;  // shut down any flood of errors
         }
         newline();
     }
@@ -3111,12 +3163,13 @@ options {
             ' '
         |   '\t'
         |   '\f'
+        |   '\\' ONE_NL[false]
         )+
         { if (!whitespaceIncluded)  _ttype = Token.SKIP; }
     ;
 
 protected
-ONE_NL!
+ONE_NL![boolean check]
 options {
     paraphrase="a newline";
 }
@@ -3128,7 +3181,7 @@ options {
         )
         {
             // update current line number for error reporting
-            newlineCheck();
+            newlineCheck(check);
         }
     ;
         
@@ -3139,9 +3192,9 @@ NLS
 options {
     paraphrase="some newlines, whitespace or comments";
 }
-    :   ONE_NL
+    :   ONE_NL[true]
         (   {!whitespaceIncluded}?
-            (ONE_NL | WS | SL_COMMENT | ML_COMMENT)+
+            (ONE_NL[true] | WS | SL_COMMENT | ML_COMMENT)+
             // (gobble, gobble)*
         )?
         // Inside (...) and [...] but not {...}, ignore newlines.
@@ -3184,7 +3237,7 @@ options {
             options {  greedy = true;  }:
             // '\uffff' means the EOF character.
             // This will fix the issue GROOVY-766 (infinite loop).
-            ~('\n'|'\r')
+            ~('\n'|'\r'|'\uffff')
         )*
         { if (!whitespaceIncluded)  $setType(Token.SKIP); }
         //ONE_NL  //Never a significant newline, but might as well separate it.
@@ -3208,10 +3261,8 @@ options {
             }
         :
             ( '*' ~'/' ) => '*'
-        |   '\r' '\n'               {newlineCheck();}
-        |   '\r'                    {newlineCheck();}
-        |   '\n'                    {newlineCheck();}
-        |   ~('*'|'\n'|'\r')
+        |   ONE_NL[true]
+        |   ~('*'|'\n'|'\r'|'\uffff')
         )*
         "*/"
         { if (!whitespaceIncluded)  $setType(Token.SKIP); }
@@ -3286,8 +3337,7 @@ STRING_CH
 options {
     paraphrase="a string character";
 }
-     :  { if (LA(1) == EOF_CHAR) throw new MismatchedCharException(LA(1), EOF_CHAR, true, this);} 
-       ~('"'|'\''|'\\'|'$'|'\n'|'\r')
+    :   ~('"'|'\''|'\\'|'$'|'\n'|'\r'|'\uffff')
     ;
 
 REGEXP_LITERAL
@@ -3356,9 +3406,9 @@ options {
 }
     :
         (
-            ~('*'|'/'|'$'|'\\'|'\n'|'\r')
+            ~('*'|'/'|'$'|'\\'|'\n'|'\r'|'\uffff')
         |   '\\' ~('\n'|'\r')   // most backslashes are passed through unchanged
-        |!  '\\' ONE_NL         { $setText('\n'); }     // always normalize to newline
+        |!  '\\' ONE_NL[false]         { $setText('\n'); }     // always normalize to newline
         )
         ('*')*      // stars handled specially to avoid ambig. on /**/
     ;
@@ -3412,8 +3462,8 @@ options {
             )?
             {char ch = (char)Integer.parseInt($getText,8); $setText(ch);}
         )
-    |!  '\\' ONE_NL
-    //|!  ONE_NL          { $setText('\n'); }             // always normalize to newline
+    |!  '\\' ONE_NL[false]
+    //|!  ONE_NL[true]          { $setText('\n'); }             // always normalize to newline
     ;
 
 protected 
@@ -3422,7 +3472,7 @@ options {
     paraphrase="a newline inside a string";
 }
     :  {if (!allowNewline) throw new MismatchedCharException('\n', '\n', true, this); } 
-       ONE_NL { $setText('\n'); }
+       ONE_NL[false] { $setText('\n'); }
     ;
 
 
