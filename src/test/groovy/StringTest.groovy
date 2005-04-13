@@ -110,4 +110,30 @@ y''', 3, 'x\ny');
         assert "\n" == /\
 /
     }
+
+
+    void testBoolCoerce() {
+
+        // Explicit coercion
+        assertFalse((Boolean) "")
+        assertTrue((Boolean) "content")
+
+        // Implicit coercion in statements
+        String s = null
+        if (s) {
+            fail("null should have evaluated to false, but didn't")
+        }
+        s = ''
+        if (s) {
+            fail("'' should have evaluated to false, but didn't")
+        }
+        s = 'something'
+        if (s) {
+            // OK
+        } else {
+            fail("'something' should have evaluated to false, but didn't")
+        }
+        
+    }
+
 }
