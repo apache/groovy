@@ -143,7 +143,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
         }
 
         @Property bind(closure) {
-            boundClosure = this.builder.bind(closure);
+            def boundClosure = this.builder.bind(closure);
 
             {out ->
                 out = new StreamingMarkupWriter(out)

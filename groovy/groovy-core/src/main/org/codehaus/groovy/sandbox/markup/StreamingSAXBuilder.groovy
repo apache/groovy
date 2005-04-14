@@ -157,7 +157,7 @@ import org.xml.sax.ext.LexicalHandler
         }
 
         @Property bind(closure) {
-            boundClosure = this.builder.bind(closure)
+            def boundClosure = this.builder.bind(closure)
 
             return {contentHandler ->
                 boundClosure.trigger = contentHandler
