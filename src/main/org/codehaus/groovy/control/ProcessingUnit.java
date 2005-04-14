@@ -311,7 +311,7 @@ public abstract class ProcessingUnit {
      * Adds a non-fatal error to the message set.
      */
     public void addError(Message message) throws CompilationFailedException {
-        addErrorandContinue(message);
+        addErrorAndContinue(message);
 
         if (this.errors.size() >= this.tolerance) {
             fail();
@@ -322,7 +322,7 @@ public abstract class ProcessingUnit {
     /**
      * Adds a non-fatal error to the message set.
      */
-    public void addErrorandContinue(Message message) {
+    public void addErrorAndContinue(Message message) {
         if (this.errors == null) {
             this.errors = new LinkedList();
         }
