@@ -192,7 +192,7 @@ class ClosureMethodTest extends GroovyTestCase {
             file = new File("Bar.groovy")
         }
 
-        lines = file.readLines()
+        def lines = file.readLines()
 
         assert lines != null
         assert lines.size() > 0
