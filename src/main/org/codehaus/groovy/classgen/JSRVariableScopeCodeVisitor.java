@@ -34,12 +34,16 @@
 package org.codehaus.groovy.classgen;
 
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
 import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -62,11 +66,12 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 
 import org.codehaus.groovy.syntax.SyntaxException;
 
-import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+import groovy.lang.GroovyRuntimeException;
+
 
 public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements GroovyClassVisitor {
     private VariableScope currentScope = null;  
@@ -120,9 +125,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     private void addError(String msg, ASTNode expr) {
         int line = expr.getLineNumber();
         int col = expr.getColumnNumber();
-        try{
-            source.addError(new SyntaxErrorMessage(new SyntaxException(msg,line,col)),false);
-        } catch (CompilationFailedException ce) {}
+        source.addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(msg+"\n",line,col)));
     }
     
     protected void declare(String name, ASTNode expr) {
@@ -150,7 +153,9 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     
     protected void checkVariableNameForDeclaration(String name, Expression expression) {
         if (expression==VariableExpression.THIS_EXPRESSION) return;
-        if (expression==VariableExpression.SUPER_EXPRESSION) return;
+        //TODO: this line is not working
+        //if (expression==VariableExpression.SUPER_EXPRESSION) return;
+        if ("super".equals(name)) return;
         VariableScope scope = currentScope;
         while (scope!=null) {
             if (scope.getDeclaredVariables().contains(name)) break;
@@ -168,9 +173,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                 scope.getReferencedVariables().add(name);
                 scope = scope.getParent();
             }
-        }
-        
-    }
+        }        
+    }    
     
     public void visitClosureExpression(ClosureExpression expression) {
         VariableScope scope = currentScope;
@@ -193,7 +197,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
     
     private String getPropertyName(String name) {
-        if (name.startsWith("set") || name.startsWith("get")) return null;
+        if (! (name.startsWith("set") || name.startsWith("get")) ) return null;
         
         String pname = name.substring(3);
         if (pname.length()==0) return null;
@@ -203,52 +207,105 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }        
 
     public void visitClass(ClassNode node) {
+        //if (node instanceof InnerClassNode) return;
         //System.err.println("-------------"+hashCode()+":"+node.getName()+"-------------");
         VariableScope scope = currentScope;
         currentScope = new VariableScope(currentScope);
         Set declares = currentScope.getDeclaredVariables();
 
         // first pass, add all possible variable names (properies and fields)
-        for (Iterator iter = node.getProperties().iterator(); iter.hasNext();) {
-            PropertyNode element = (PropertyNode) iter.next();
-            //System.err.println(node.getName()+"#"+element.getName());
-            declares.add(element.getName());
-        }
-        for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-            FieldNode element = (FieldNode) iter.next();
-            declares.add(element.getName());
-        }
-        for (Iterator iter = node.getAllDeclaredMethods().iterator(); iter.hasNext();) {
-            MethodNode element = (MethodNode) iter.next();
-            String name = getPropertyName(element.getName());
-            if (name!=null) declares.add(name);
-        }        
-        
         //TODO: handle interfaces
         //TODO: handle static imports
-        Set refs = currentScope.getReferencedVariables();
-        //System.err.println("checking superclasses for "+node.getName());
-        ClassNode cn = unit.getClass(node.getSuperClass());
-        while (cn!=null) {
-            List l = cn.getFields();
-            for (Iterator iter = l.iterator(); iter.hasNext();) {
-                FieldNode f = (FieldNode) iter.next();
-                if (Modifier.isPrivate(f.getModifiers())) continue;
-                refs.add(f.getName());
-            }
-
-            l = cn.getMethods();
-            for (Iterator iter = l.iterator(); iter.hasNext();) {
-                MethodNode f = (MethodNode) iter.next();
-                if (Modifier.isPrivate(f.getModifiers())) continue;
-                refs.add(f.getName());                
-            }
-               
-            cn = unit.getClass(cn.getSuperClass());
-        }        
+        try {
+            addVarNames(node,currentScope.getDeclaredVariables(),false);
+            addVarNames(node.getOuterClass(),currentScope.getReferencedVariables(),true);
+            addVarNames(node.getSuperClass(),currentScope.getReferencedVariables(),true);
+        } catch (ClassNotFoundException cnfe) {
+            //throw new GroovyRuntimeException("couldn't find super class",cnfe);
+            cnfe.printStackTrace();
+        }
+        
         // second pass, check contents
         node.visitContents(this);
         currentScope = scope;
+    }
+    
+    
+    private void addVarNames(Class c, Set refs, boolean visitParent) throws ClassNotFoundException{
+        if (c==null) return;
+        // to prefer compiled code try to get a ClassNode via name first
+        addVarNames(c.getName(),refs,visitParent);
+    }
+    
+    private void addVarNames(ClassNode cn, Set refs, boolean visitParent) throws ClassNotFoundException{
+        if (cn==null) return;
+        List l = cn.getFields();
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            FieldNode f = (FieldNode) iter.next();
+            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
+            refs.add(f.getName());
+        }
+
+        l = cn.getMethods();
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            MethodNode f = (MethodNode) iter.next();
+            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
+            String name = getPropertyName(f.getName());
+            if (name!=null) refs.add(name);             
+        }
+        
+        l = cn.getProperties();
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            PropertyNode f = (PropertyNode) iter.next();
+            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
+            refs.add(f.getName());
+        }
+           
+        if (!visitParent) return; 
+            
+        addVarNames(cn.getSuperClass(),refs,visitParent);
+        
+        MethodNode enclosingMethod = cn.getEnclosingMethod();
+        if (enclosingMethod==null) return;
+        Parameter[] params = enclosingMethod.getParameters();
+        for (int i = 0; i < params.length; i++) {
+            refs.add(params[i].getName());
+        }        
+        if (visitParent) addVarNames(enclosingMethod.getDeclaringClass(),refs,visitParent);
+
+        addVarNames(cn.getOuterClass(),refs,visitParent);
+        
+    }
+    
+    private void addVarNames(String superclassName, Set refs, boolean visitParent) throws ClassNotFoundException{
+        if (superclassName==null) return;
+        ClassNode cn = unit.getClass(superclassName);
+        if (cn!=null) {
+            addVarNames(cn,refs,visitParent);
+            return;
+        } 
+        
+        Class c = unit.getClassLoader().loadClass(superclassName);
+        Field[] fields = c.getFields();
+        for (int i=0; i<fields.length; i++) {
+           Field f = fields[i];
+           if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
+           refs.add(f.getName());
+        }
+        Method[] methods = c.getMethods();
+        for (int i=0; i<methods.length; i++) {
+            Method m = methods[i];
+            if (visitParent && Modifier.isPrivate(m.getModifiers())) continue;
+            String name = getPropertyName(m.getName());
+            if (name!=null) refs.add(name);
+        }
+        
+        if (!visitParent) return;
+            
+        addVarNames(c.getSuperclass(),refs,visitParent);
+        
+        //it's not possible to know the variable names used for an enclosing method 
+        addVarNames(c.getEnclosingClass(),refs,visitParent);
     }
 
     public void visitConstructor(ConstructorNode node) {
