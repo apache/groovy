@@ -81,6 +81,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     public JSRVariableScopeCodeVisitor(VariableScope scope, SourceUnit source) {
         currentScope = scope;
         this.source = source;
+        if (source.getAST()==null) return;
         this.unit = source.getAST().getUnit();
     }
     
@@ -305,7 +306,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         addVarNames(c.getSuperclass(),refs,visitParent);
         
         //it's not possible to know the variable names used for an enclosing method 
-        addVarNames(c.getEnclosingClass(),refs,visitParent);
+        //addVarNames(c.getEnclosingClass(),refs,visitParent);
     }
 
     public void visitConstructor(ConstructorNode node) {
