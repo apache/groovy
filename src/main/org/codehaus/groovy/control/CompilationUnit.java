@@ -413,15 +413,15 @@ public class CompilationUnit extends ProcessingUnit {
             }
           
             //
-            // do scoping
+            // do scoping 
             //
-            if (System.getProperty("jsr.check","false").equals("true")) {
-                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(new VariableScope(),classLoader);
+            if ("true".equals(System.getProperty("groovy.jsr.check"))) {
+                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(new VariableScope(),source);
                 try {
                     scopeVisitor.visitClass(classNode);
                 } catch (GroovyRuntimeException rpe) {
                     ASTNode node = rpe.getNode();
-                    source.addError(new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()));
+                    source.addError(new SyntaxException(rpe.getMessage(),node.getLineNumber(),node.getColumnNumber()));
                 }
             }
             //
