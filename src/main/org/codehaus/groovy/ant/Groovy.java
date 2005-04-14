@@ -53,6 +53,7 @@ import org.apache.tools.ant.*;
 import org.codehaus.groovy.control.CompilationFailedException;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import groovy.util.AntBuilder;
 
 /**
  * Executes a series of Groovy statements.
@@ -380,6 +381,12 @@ public class Groovy extends Task {
 
             try {
                 Script script = groovy.parse(txt);
+                script.setProperty("ant",new AntBuilder(getProject()));
+                script.setProperty("project",getProject());
+                script.setProperty("properties",getProject().getProperties());
+                script.setProperty("target",getOwningTarget());
+                script.setProperty("task",this);
+
                 script.run();
             } catch (CompilationFailedException e) {
                 throw new BuildException("Script Failed: "+ e.getMessage(), getLocation());
