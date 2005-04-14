@@ -310,13 +310,8 @@ public abstract class ProcessingUnit {
     /**
      * Adds a non-fatal error to the message set.
      */
-
     public void addError(Message message) throws CompilationFailedException {
-        if (this.errors == null) {
-            this.errors = new LinkedList();
-        }
-
-        this.errors.add(message);
+        addErrorandContinue(message);
 
         if (this.errors.size() >= this.tolerance) {
             fail();
@@ -324,6 +319,17 @@ public abstract class ProcessingUnit {
     }
 
 
+    /**
+     * Adds a non-fatal error to the message set.
+     */
+    public void addErrorandContinue(Message message) {
+        if (this.errors == null) {
+            this.errors = new LinkedList();
+        }
+
+        this.errors.add(message);
+    }
+    
     /**
      * Adds an optionally-fatal error to the message set.  Throws
      * the unit as a PhaseFailedException, if the error is fatal.
@@ -439,6 +445,7 @@ public abstract class ProcessingUnit {
     protected void fail() throws CompilationFailedException {
         // lets find the first error exception
         Throwable firstException = null;
+        if (errors==null) return;
         for (Iterator iter = errors.iterator(); iter.hasNext();) {
             Message message = (Message) iter.next();
             if (message instanceof ExceptionMessage) {
