@@ -1,7 +1,7 @@
 class ArrayTypeTest extends GroovyTestCase {
 
     void testClosureWithTypedParam() {
-        c = {String[] foo->println("called with $foo") }
+        def c = {String[] foo->println("called with $foo") }
         c(null)
     }
 

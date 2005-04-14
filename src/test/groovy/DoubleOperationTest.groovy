@@ -16,7 +16,7 @@ class DoubleOperationTest extends GroovyTestCase {
         y = x + 1
         assert y == 7.2       
         	
-        z = y + x + 1 + 2
+        def z = y + x + 1 + 2
         assert z == 16.4
     }
     
@@ -64,7 +64,7 @@ class DoubleOperationTest extends GroovyTestCase {
     }
         
     void testCoerce() {
-    	xyz = Math.sin(1.1);
+    	def xyz = Math.sin(1.1);
     	assert xyz instanceof Double;
     	assert xyz == Math.sin(1.1D);
     	

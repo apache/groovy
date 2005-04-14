@@ -15,7 +15,7 @@ class ClosureSugarTest extends GroovyTestCase {
     */
 
     void testMixedClosureSugar() {
-        count = 11;
+        def count = 11;
 
         mixedSugar (5){a->
              count = count + a;

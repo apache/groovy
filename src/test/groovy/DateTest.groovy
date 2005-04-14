@@ -3,8 +3,8 @@ import java.util.Date
 class DateTest extends GroovyTestCase {
   
     void testNextPrevious() {
-        x = new Date()
-        y = x + 2
+        def x = new Date()
+        def y = x + 2
         
         assert x < y
         ++x
@@ -19,12 +19,12 @@ class DateTest extends GroovyTestCase {
     
     void testDateRange() {
         
-        today = new Date()
-        later = today + 3
+        def today = new Date()
+        def later = today + 3
         
-        expected = [today, today + 1, today + 2, today + 3]
+        def expected = [today, today + 1, today + 2, today + 3]
         
-        list = []
+        def list = []
         for (d in today..later) {
             list << d
         }

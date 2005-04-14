@@ -47,32 +47,32 @@ class Console extends ConsoleSupport implements CaretListener {
         scriptList = []
         // if menu modifier is two keys we are out of luck as the javadocs
         // indicates it returns "Control+Shift" instead of "Control Shift"
-        menuModifier = KeyEvent.getKeyModifiersText(
+        def menuModifier = KeyEvent.getKeyModifiersText(
             Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()).toLowerCase() + ' '
 
-        swing = new SwingBuilder()
-        frame = swing.frame(
+        def swing = new SwingBuilder()
+        def frame = swing.frame(
             title:'GroovyConsole',
             location:[100,100],
             size:[500,400],
             defaultCloseOperation:javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE) {
-            newAction = action(
+            def newAction = action(
                 name:'New', closure: this.&fileNew, mnemonic: 'N', accelerator: menuModifier + 'N'
             )
-            openAction = action(
+            def openAction = action(
                 name:'Open', closure: this.&fileOpen, mnemonic: 'O', accelerator: menuModifier + 'O'
             )
-            saveAction = action(
+            def saveAction = action(
                 name:'Save', closure: this.&fileSave, mnemonic: 'S', accelerator: menuModifier + 'S'
             )
-            exitAction = action(
+            def exitAction = action(
                 name:'Exit', closure: this.&exit, mnemonic: 'x'
             )
-            runAction = action(
+            def runAction = action(
                 name:'Run', closure: this.&runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
                 accelerator: 'ctrl R'
             )
-            aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
+            def aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
             menuBar {
                 menu(text:'File', mnemonic:0x46) {
                     menuItem() { action(newAction) }
@@ -130,7 +130,7 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 
     def selectFilename(name = "Open") {
-        fc = new JFileChooser()
+        def fc = new JFileChooser()
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
         if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
             return fc.selectedFile
@@ -170,13 +170,13 @@ class Console extends ConsoleSupport implements CaretListener {
     }
     
     void runScript(EventObject evt = null) {
-        text = textArea.getText()
+        def text = textArea.getText()
         if (textSelectionStart != textSelectionEnd) {   // we have a real selection
             text = textArea.getText()[textSelectionStart...textSelectionEnd]
         }
         scriptList.add(text)
 
-        doc = outputArea.getStyledDocument();
+        def doc = outputArea.getStyledDocument();
 
         for (line in text.tokenize("\n")) {
             if (doc.length > 0) { append(doc,  "\n", promptStyle)}
@@ -184,8 +184,8 @@ class Console extends ConsoleSupport implements CaretListener {
             append(doc, line, commandStyle)
         }
 
-        answer = evaluate(text)
-        output = "\n" + InvokerHelper.inspect(answer)
+        def answer = evaluate(text)
+        def output = "\n" + InvokerHelper.inspect(answer)
 
         append(doc, output, outputStyle)
 
@@ -197,15 +197,15 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 
     protected void handleException(String text, Exception e) {
-        pane = swing.optionPane(message:'Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
-        dialog = pane.createDialog(frame, 'Compile error')
+        def pane = swing.optionPane(message:'Error: ' + e + '\n' + e.getMessage() + '\nafter compiling: ' + text)
+        def dialog = pane.createDialog(frame, 'Compile error')
         dialog.show()
     }
 
     void showAbout(EventObject evt = null) {
-        version = InvokerHelper.getVersion()
-        pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
-        dialog = pane.createDialog(frame, 'About GroovyConsole')
+        def version = InvokerHelper.getVersion()
+        def pane = swing.optionPane(message:'Welcome to the Groovy Console for evaluating Groovy scripts\nVersion ' + version)
+        def dialog = pane.createDialog(frame, 'About GroovyConsole')
         dialog.show()
     }
 

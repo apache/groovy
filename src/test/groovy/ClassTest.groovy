@@ -1,7 +1,7 @@
 class ClassTest extends GroovyTestCase {
 
     void testClassExpression() {
-    	c = String.class
+    	def c = String.class
     	println c
     	assert c instanceof Class
     	assert c.name == "java.lang.String" , c.name

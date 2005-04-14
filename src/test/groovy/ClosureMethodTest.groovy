@@ -9,18 +9,18 @@ import java.io.File
 class ClosureMethodTest extends GroovyTestCase {
 
     void testListCollect() {
-        list = [1, 2, 3, 4]
-        answer = list.collect( {item -> return item * 2 } )
+        def list = [1, 2, 3, 4]
+        def answer = list.collect( {item -> return item * 2 } )
 
         assert answer.size() == 4
 
-        expected = [2, 4, 6, 8]
+        def expected = [2, 4, 6, 8]
         assert answer == expected
     }
 
     void testMapCollect() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.collect( {e-> return e.key + e.value } )
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.collect( {e-> return e.key + e.value } )
 
         // lest sort the results since maps are in hash code order
         answer = answer.sort()
@@ -34,8 +34,8 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testListFind() {
-        list = ["a", "b", "c"]
-        answer = list.find( {item-> return item == "b" })
+        def list = ["a", "b", "c"]
+        def answer = list.find( {item-> return item == "b" })
         assert answer == "b"
 
         answer = list.find{item-> return item == "z" }
@@ -43,8 +43,8 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testMapFind() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.find( {entry-> return entry.value == 6 })
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.find( {entry-> return entry.value == 6 })
         assert answer != null
         assert answer.key == 3
         assert answer.value == 6
@@ -54,21 +54,21 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testListFindAll() {
-        list = [20, 5, 40, 2]
-        answer = list.findAll( {item-> return item < 10 } )
+        def list = [20, 5, 40, 2]
+        def answer = list.findAll( {item-> return item < 10 } )
 
         assert answer.size() == 2
         assert answer == [5, 2]
     }
 
     void testMapFindAll() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.findAll( {entry-> return entry.value > 5 })
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.findAll( {entry-> return entry.value > 5 })
 
         assert answer.size() == 2
 
-        keys = answer.collect( {entry-> return entry.key })
-        values = answer.collect {entry-> return entry.value }
+        def keys = answer.collect( {entry-> return entry.key })
+        def values = answer.collect {entry-> return entry.value }
 
         println("keys " + keys + " values " + values)
 
@@ -81,9 +81,9 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testListEach() {
-        count = 0
+        def count = 0
 
-        list = [1, 2, 3, 4]
+        def list = [1, 2, 3, 4]
         list.each({item-> count = count + item })
 
         assert count == 10
@@ -94,9 +94,9 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testMapEach() {
-        count = 0
+        def count = 0
 
-        map = [1:2, 2:4, 3:6, 4:8]
+        def map = [1:2, 2:4, 3:6, 4:8]
         map.each({e-> count = count + e.value })
 
         assert count == 20
@@ -107,9 +107,9 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testMapEachWith2Params() {
-        count = 0
+        def count = 0
 
-        map = [1:2, 2:4, 3:6, 4:8]
+        def map = [1:2, 2:4, 3:6, 4:8]
         map.each {key, value -> count = count + value }
 
         assert count == 20
@@ -131,37 +131,37 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testJoin() {
-        value = [1, 2, 3].join('-')
+        def value = [1, 2, 3].join('-')
         assert value == "1-2-3"
     }
 
     void testListReverse() {
-        value = [1, 2, 3, 4].reverse()
+        def value = [1, 2, 3, 4].reverse()
         assert value == [4, 3, 2, 1]
     }
 
     void testListInject() {
-        value = [1, 2, 3].inject('counting: ') { str, item -> str + item }
+        def value = [1, 2, 3].inject('counting: ') { str, item -> str + item }
         assert value == "counting: 123"
 
-        value = [1, 2, 3].inject(0) { c, item -> c + item }
+        def value = [1, 2, 3].inject(0) { c, item -> c + item }
         assert value == 6
     }
 
     void testDump() {
-        text = dump()
+        def text = dump()
         println("Dumping object ${text}")
         assert text != null && text.startsWith("<")
     }
 
     void testInspect() {
-        text = [1, 2, 'three'].inspect()
+        def text = [1, 2, 'three'].inspect()
         println("Inspecting ${text}")
         assert text == '[1, 2, "three"]'
     }
 
     void testEachLine() {
-        file = new File("src/test/groovy/Bar.groovy")
+        def file = new File("src/test/groovy/Bar.groovy")
         if(file.exists() == false) {
             file = new File("Bar.groovy")
         }
@@ -174,7 +174,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testForEachLine() {
-        file = new File("src/test/groovy/Bar.groovy")
+        def file = new File("src/test/groovy/Bar.groovy")
         if(file.exists() == false) {
             file = new File("Bar.groovy")
         }
@@ -187,7 +187,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testReadLines() {
-        file = new File("src/test/groovy/Bar.groovy")
+        def file = new File("src/test/groovy/Bar.groovy")
         if(file.exists() == false) {
             file = new File("Bar.groovy")
         }
@@ -201,7 +201,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
 
     void testEachFile() {
-        file = new File("src/test/groovy")
+        def file = new File("src/test/groovy")
         if(!file.exists()) {
             file = new File(".")
         }
@@ -214,9 +214,9 @@ class ClosureMethodTest extends GroovyTestCase {
     }
     
     void testTokenize() {
-        text = "hello-there-how-are-you"
+        def text = "hello-there-how-are-you"
         
-        answer = []
+        def answer = []
         for (i in text.tokenize('-')) {
             answer.add(i)
         }
@@ -224,7 +224,7 @@ class ClosureMethodTest extends GroovyTestCase {
     }
     
     void testUpto() {
-        answer = []
+        def answer = []
         
         1.upto(5) { answer.add(it) }
         

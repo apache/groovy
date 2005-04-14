@@ -5,12 +5,12 @@
 class ClosureInStaticMethodTest extends GroovyTestCase {
 
     void testClosureInStaticMethod() {
-        closure = closureInStaticMethod()
+        def closure = closureInStaticMethod()
         assertClosure(closure)    
     }
 
     void testMethodClosureInStaticMethod() {
-        closure = methodClosureInStaticMethod()
+        def closure = methodClosureInStaticMethod()
         assertClosure(closure)    
     }
     

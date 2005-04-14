@@ -14,6 +14,7 @@ class IfPropertyTest extends GroovyTestCase {
     }
 
     void testIfNullPropertySet() {
+        def cheese = null
         if (cheese == null) {
             cheese = 1
         }
@@ -24,6 +25,7 @@ class IfPropertyTest extends GroovyTestCase {
     }
     
     void testIfNullPropertySetRecheck() {
+        def cheese = null
         if (cheese == null) {
             cheese = 1
         }

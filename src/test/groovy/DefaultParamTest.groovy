@@ -2,7 +2,7 @@ class DefaultParamTest extends GroovyTestCase {
 
     void testDefaultParameters() {
     
-    	value = doSomething("X", "Y", "Z")
+    	def value = doSomething("X", "Y", "Z")
     	assert value == "X-Y-Z"
     	
     	value = doSomething("X", "Y")
@@ -15,7 +15,7 @@ class DefaultParamTest extends GroovyTestCase {
     }
 
     void testDefaultTypedParameters() {
-    	value = doTypedSomething("X", "Y", "Z")
+    	def value = doTypedSomething("X", "Y", "Z")
     	assert value == "X-Y-Z"
     	
     	value = doTypedSomething("X", "Y")

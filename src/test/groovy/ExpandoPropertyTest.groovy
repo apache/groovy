@@ -1,7 +1,7 @@
 class ExpandoPropertyTest extends GroovyTestCase {
 
     void testExpandoProperty() {
-        foo = new Expando()
+        def foo = new Expando()
         
         foo.cheese = "Cheddar"
         foo.name = "Gromit"
@@ -13,7 +13,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
     }
     
     void testExpandoMethods() {
-        foo = new Expando()
+        def foo = new Expando()
 
         foo.cheese = "Cheddar"
         foo.fullName = "Gromit"

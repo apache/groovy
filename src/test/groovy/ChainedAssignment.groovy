@@ -5,13 +5,15 @@ class ChainedAssignment extends GroovyTestCase {
     }
 
     void testCompare() {
-        i = 123
-        s = "hello"
+        def i = 123
+        def s = "hello"
 
-        i1 = i2 = i;
+        def i2
+        def i1 = i2 = i;
         assert i1 == 123
         assert i2 == 123
 
+        def s1
         dummy(s1 = s)
         assert s1 == "hello"
     }

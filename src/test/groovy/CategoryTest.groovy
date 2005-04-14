@@ -1,9 +1,9 @@
 class CategoryTest extends GroovyTestCase {
 
   void testCategories() {
-    use (StringCategory) {
+    use (StringCategory.class) {
       assert "Sam".lower() == "sam";
-      use (IntegerCategory) {
+      use (IntegerCategory.class) {
         assert "Sam".lower() == "sam";
         assert 1.inc() == 2;
       }
@@ -13,7 +13,7 @@ class CategoryTest extends GroovyTestCase {
   }
 
   static void main(args) {
-    t = new CategoryTest();
+    def t = new CategoryTest();
     t.testCategories();
   }
 }

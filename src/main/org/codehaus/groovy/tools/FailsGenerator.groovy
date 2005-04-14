@@ -110,8 +110,8 @@ class FailsGenerator {
         }
         println "saving conf in ${conf}, old configuration is saved in ${conf}.old"
         println "WARNING: comments are not in the new file"
-        oldConf = new File(conf.absolutePath+".old")
-        bytes = conf.readBytes()
+        def oldConf = new File(conf.absolutePath+".old")
+        def bytes = conf.readBytes()
         def out = oldConf.newOutputStream()
         out << bytes
         out.close()
@@ -130,7 +130,7 @@ class FailsGenerator {
 
     void readConf() {
         def reader = new LineNumberReader(new FileReader(conf));
-        line = null;
+        def line = null;
 
         def readLine = {line ->
             if (line!=null) return line

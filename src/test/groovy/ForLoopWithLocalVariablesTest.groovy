@@ -4,7 +4,7 @@
 class ForLoopWithLocalVariablesTest extends GroovyTestCase {
 
     void testForLoop() {
-        x = null
+        def x = null
 
         for ( i in 0..9 ) {
             x = i

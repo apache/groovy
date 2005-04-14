@@ -62,16 +62,16 @@ import org.xml.sax.ext.LexicalHandler
                         }
                       }
         @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, contentHandler ->
-                        attributes = new AttributesImpl()
+                        def attributes = new AttributesImpl()
 
                         attrs.each {key, value ->
                                 if (key.contains('$')) {
-                                    parts = key.tokenize('$')
+                                    def parts = key.tokenize('$')
 
                                     if (namespaces.containsKey(parts[0])) {
-                                        namespaceUri = namespaces[parts[0]]
+                                        def namespaceUri = namespaces[parts[0]]
 
-//                                        attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
+//                                      attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
 // workround for bug GROOVY-309
                                         attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}".toString(), "CDATA", value)
                                     } else {
@@ -82,7 +82,7 @@ import org.xml.sax.ext.LexicalHandler
                                 }
                           }
 
-                        hiddenNamespaces = [:]
+                        def hiddenNamespaces = [:]
 
                         pendingNamespaces.each {key, value ->
                             hiddenNamespaces[key] = namespaces[key]
@@ -95,8 +95,8 @@ import org.xml.sax.ext.LexicalHandler
 
                         // setup the tag info
 
-                        uri = ""
-                        qualifiedName = tag
+                        def uri = ""
+                        def qualifiedName = tag
 
                         if (prefix != "") {
                             if (namespaces.containsKey(prefix)) {
@@ -144,11 +144,12 @@ import org.xml.sax.ext.LexicalHandler
         @Property builder = null
 
         StreamingSAXBuilder() {
+            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
                                    'yieldUnescaped':noopClosure,
                                    'comment':commentClosure])
 
-            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+            def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                               'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
                               'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 

@@ -50,7 +50,7 @@ import org.w3c.dom.Node
     class StreamingDOMBuilder extends AbstractStreamingBuilder {
         @Property pendingStack = []
         @Property commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
-                            comment = dom.document.createComment(body)
+                            def comment = dom.document.createComment(body)
 
                             if (comment != null) {
                                 dom.element.appendChild(comment)
@@ -64,12 +64,13 @@ import org.w3c.dom.Node
                         }
                       }
         @Property tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
-                        attributes = []
-                        nsAttributes = []
+                        def attributes = []
+                        def nsAttributes = []
 
                         attrs.each {key, value ->
                                 if (key.contains('$')) {
-                                    parts = key.tokenize('$')
+                                    def parts = key.tokenize('$')
+                                    def namespaceUri = null
 
                                     if (namespaces.containsKey(parts[0])) {
                                         namespaceUri = namespaces[parts[0]]
@@ -85,7 +86,7 @@ import org.w3c.dom.Node
                                 }
                           }
 
-                        hiddenNamespaces = [:]
+                        def hiddenNamespaces = [:]
 
                         pendingNamespaces.each {key, value ->
                             hiddenNamespaces[key] = namespaces[key]
@@ -97,8 +98,8 @@ import org.w3c.dom.Node
 
                         // setup the tag info
 
-                        uri = ""
-                        qualifiedName = tag
+                        def uri = ""
+                        def qualifiedName = tag
 
                         if (prefix != "") {
                             if (namespaces.containsKey(prefix)) {
@@ -114,7 +115,7 @@ import org.w3c.dom.Node
                             }
                         }
 
-                        element = dom.document.createElementNS(uri, qualifiedName)
+                        def element = dom.document.createElementNS(uri, qualifiedName)
 
                         nsAttributes.each {
                             element.setAttributeNS(it[0], it[1], it[2])
@@ -155,11 +156,12 @@ import org.w3c.dom.Node
         @Property builder = null
 
         StreamingDOMBuilder() {
+            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
-                                   'yieldUnescaped':noopClosure,
-                                   'comment':commentClosure])
+                                    'yieldUnescaped':noopClosure,
+                                    'comment':commentClosure])
 
-            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+            def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                               'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
                               'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 
@@ -171,14 +173,14 @@ import org.w3c.dom.Node
 
             return {
                 if (it instanceof Node) {
-                    document = it.getOwnerDocument()
+                    def document = it.getOwnerDocument()
 
                     boundClosure.trigger = ['document' : document, 'element' : it]
 
                     return document
 
                 } else {
-                    newDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+                    def newDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
 
                     boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
 

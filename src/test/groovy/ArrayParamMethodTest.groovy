@@ -3,7 +3,7 @@ import groovy.DummyInterface
 class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
 
     void testMethodCall() {
-        array = "a b c".split(' ')
+        def array = "a b c".split(' ')
         
         assert array.size() == 3
         
@@ -14,7 +14,7 @@ class ArrayParamMethodTest extends GroovyTestCase implements DummyInterface {
         println("first item: ${args[0]}")
         
         // lets turn it into a list
-        list = args.toList()
+        def list = args.toList()
         assert list instanceof java.util.List
         list[4] = "e"
         

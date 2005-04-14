@@ -11,7 +11,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testCollect() {
         assert [2, 4, 6].collect { it * 2} == [4, 8, 12]
 
-        answer = [2, 4, 6].collect(new Vector()) { it * 2}
+        def answer = [2, 4, 6].collect(new Vector()) { it * 2}
 
         assert answer[0] == 4
         assert answer[1] == 8
@@ -26,22 +26,22 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
     
     void testTimes() {
-        count = 0
+        def count = 0
         5.times { i -> count = count + i }
         assert count == 10
 
         count = 0
-        temp = 5
+        def temp = 5
         temp.times { i -> count = count + i }
 
         assert count == 10
     }
 
     void testArraySubscript() {
-        list = [1, 2, 3, 4]
-        array = list.toArray()
+        def list = [1, 2, 3, 4]
+        def array = list.toArray()
 
-        value = array[2]
+        def value = array[2]
 
         assert value == 3
 
@@ -51,15 +51,15 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testToCharacterMethod() {
-        s = 'c'
-        x = s.toCharacter()
+        def s = 'c'
+        def x = s.toCharacter()
 
         assert x instanceof Character
     }
 
     void testListGrep() {
-        list = ["James", "Bob", "Guillaume", "Sam"]
-        answer = list.grep(~".*a.*")
+        def list = ["James", "Bob", "Guillaume", "Sam"]
+        def answer = list.grep(~".*a.*")
 
         assert answer == ["James", "Guillaume", "Sam"]
 
@@ -69,8 +69,8 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testCollectionToList() {
-        c = [1, 2, 3, 4, 5] // but it's a list
-        l = c.toList()
+        def c = [1, 2, 3, 4, 5] // but it's a list
+        def l = c.toList()
 
         assert l.containsAll(c)
         assert c.size() == l.size()
@@ -78,25 +78,25 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testJoinString() {
         String[] arr = ["a", "b", "c", "d"]
-        joined = arr.join(", ")
+        def joined = arr.join(", ")
 
         assert joined == "a, b, c, d"
     }
 
     void testReverseEach() {
-        l = ["cheese", "loves", "Guillaume"]
-        expected = ["Guillaume", "loves", "cheese"]
+        def l = ["cheese", "loves", "Guillaume"]
+        def expected = ["Guillaume", "loves", "cheese"]
 
-        answer = []
+        def answer = []
         l.reverseEach{ answer << it }
 
         assert answer == expected
     }
 
     void testGrep() {
-        list = ["Guillaume", "loves", "cheese"]
+        def list = ["Guillaume", "loves", "cheese"]
 
-        answer = list.grep(~".*ee.*")
+        def answer = list.grep(~".*ee.*")
         assert answer == ["cheese"]
 
         list = [123, "abc", 4.56]
@@ -109,7 +109,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testMapGetWithDefault() {
-        map = [:]
+        def map = [:]
 
         assert map.foo == null
 
@@ -129,18 +129,18 @@ class GroovyMethodsTest extends GroovyTestCase {
         cmd = "${javaHome}/bin/java -version"
         */
 
-        cmd = "ls -l"
+        def cmd = "ls -l"
         if (System.getProperty('os.name', '').contains('Win')) {
             cmd = "dir"
         }
 
         println "executing command: ${cmd}"
 
-        process = cmd.execute()
+        def process = cmd.execute()
         //process = "ls -l".execute()
 
         // lets have an easier way to do this!
-        count = 0
+        def count = 0
 
         println "Read the following lines..."
 
@@ -152,7 +152,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         println ""
 
         process.waitFor()
-        value = process.exitValue()
+        def value = process.exitValue()
         println "Exit value of command line is ${value}"
 
         assert count > 1
@@ -164,17 +164,17 @@ class GroovyMethodsTest extends GroovyTestCase {
         cmd = "${javaHome}/bin/java -version"
         */
 
-        cmd = "ls -l"
+        def cmd = "ls -l"
         if (System.getProperty('os.name', '').contains('Win')) {
             cmd = "dir"
         }
 
         println "executing command: ${cmd}"
 
-        process = cmd.execute()
+        def process = cmd.execute()
 
         process.waitForOrKill(1000)
-        value = process.exitValue()
+        def value = process.exitValue()
         println "Exit value of command line is ${value}"
 
 
@@ -187,8 +187,8 @@ class GroovyMethodsTest extends GroovyTestCase {
     
     void testDisplaySystemProperties() {
         println "System properties are..."
-        properties = System.properties
-        keys = properties.keySet().sort()
+        def properties = System.properties
+        def keys = properties.keySet().sort()
         for (k in keys) {
             println "${k} = ${properties[k]}"
         }

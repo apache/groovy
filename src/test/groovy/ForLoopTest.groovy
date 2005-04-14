@@ -62,7 +62,7 @@ class ForLoopTest extends GroovyTestCase {
     }
 
     void testArray() {
-        array = (0..4).toArray()
+        def array = (0..4).toArray()
         
         println "Class: ${array.getClass()} for array ${array}"
         
@@ -76,7 +76,7 @@ class ForLoopTest extends GroovyTestCase {
     }
     
     void testIntArray() {
-        array = TestSupport.getIntArray()
+        def array = TestSupport.getIntArray()
         
         println "Class: ${array.getClass()} for array ${array}"
         
@@ -90,9 +90,9 @@ class ForLoopTest extends GroovyTestCase {
     }
     
     void testString() {
-        text = "abc"
+        def text = "abc"
         
-        list = []
+        def list = []
         for (c in text) {
             list.add(c)
         }
@@ -101,10 +101,10 @@ class ForLoopTest extends GroovyTestCase {
     }
     
     void testVector() {
-        vector = new Vector()
+        def vector = new Vector()
         vector.addAll( [1, 2, 3] )
         
-        answer = []
+        def answer = []
         for (i in vector.elements()) {
             answer << i
         }

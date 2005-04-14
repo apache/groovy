@@ -1,7 +1,7 @@
 class IfTest extends GroovyTestCase {
 
     void testUsingNumber() {
-        x = 1
+        def x = 1
 
         if (x) {
             println "${x} is true"
@@ -22,7 +22,7 @@ class IfTest extends GroovyTestCase {
     }
 
     void testUsingString() {
-        x = "abc"
+        def x = "abc"
 
         if (x) {
             println "${x} is true"

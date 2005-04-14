@@ -7,17 +7,17 @@ import java.util.Arrays
 class ClosureListenerTest extends GroovyTestCase {
      
     void testAddingAndRemovingAClosureListener() {
-        value = System.getProperty('java.awt.headless')
+        def value = System.getProperty('java.awt.headless')
         println("Value of java.awt.headless = ${value}")
         
-        b = new JButton("foo")
+        def b = new JButton("foo")
         b.actionPerformed = { println("Found ${it}") }
 
-        size = b.actionListeners.size()
+        def size = b.actionListeners.size()
         assert size == 1
         
-        l = b.actionListeners[0]
-		code = l.hashCode()
+        def l = b.actionListeners[0]
+		def code = l.hashCode()
         
         println("listener: ${l} with hashCode code ${code}")
         
@@ -37,8 +37,8 @@ class ClosureListenerTest extends GroovyTestCase {
     }
     
     void testGettingAListenerProperty() {
-    	b = new JButton("foo")
-    	foo = b.actionPerformed
+    	def b = new JButton("foo")
+    	def foo = b.actionPerformed
     	assert foo == null
     }
 }

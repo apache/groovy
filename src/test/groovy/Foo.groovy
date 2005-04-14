@@ -24,7 +24,7 @@ class Foo implements Serializable {
     private String body
 
     static void main(args) {
-        f = new Foo()
+        def f = new Foo()
         println f
     }
     

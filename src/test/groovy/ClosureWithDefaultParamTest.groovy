@@ -9,18 +9,18 @@ import java.io.File
 class ClosureWithDefaultParamTest extends GroovyTestCase {
 
     void testListCollect() {
-        list = [1, 2, 3, 4]
-        answer = list.collect { it * 2 }
+        def list = [1, 2, 3, 4]
+        def answer = list.collect { it * 2 }
 
         assert answer.size() == 4
         
-        expected = [2, 4, 6, 8]
+        def expected = [2, 4, 6, 8]
         assert answer == expected
     }
 
     void testMapCollect() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.collect { it.key + it.value }
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.collect { it.key + it.value }
 		
 		// lest sort the results since maps are in hash code order
 		answer = answer.sort()
@@ -34,8 +34,8 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
 
     void testListFind() {
-        list = ["a", "b", "c"]
-        answer = list.find {it == "b" }
+        def list = ["a", "b", "c"]
+        def answer = list.find {it == "b" }
         assert answer == "b"
         
         answer = list.find {it == "z" }
@@ -43,8 +43,8 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
     
     void testMapFind() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.find {it.value == 6 }
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.find {it.value == 6 }
         assert answer != null
         assert answer.key == 3
         assert answer.value == 6
@@ -54,21 +54,21 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
 
     void testListFindAll() {
-        list = [20, 5, 40, 2]
-        answer = list.findAll {it < 10 }
+        def list = [20, 5, 40, 2]
+        def answer = list.findAll {it < 10 }
 
         assert answer.size() == 2
         assert answer == [5, 2]
     }
     
     void testMapFindAll() {
-        map = [1:2, 2:4, 3:6, 4:8]
-        answer = map.findAll {it.value > 5 }
+        def map = [1:2, 2:4, 3:6, 4:8]
+        def answer = map.findAll {it.value > 5 }
 
         assert answer.size() == 2
         
-        keys = answer.collect {it.key }
-        values = answer.collect {it.value }
+        def keys = answer.collect {it.key }
+        def values = answer.collect {it.value }
 
         System.out.println("keys " + keys + " values " + values)
 		
@@ -81,9 +81,9 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
 
     void testListEach() {
-        count = 0
+        def count = 0
 
-        list = [1, 2, 3, 4]
+        def list = [1, 2, 3, 4]
         list.each { count = count + it }
 		
         assert count == 10
@@ -94,9 +94,9 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
 
     void testMapEach() {
-        count = 0
+        def count = 0
 
-        map = [1:2, 2:4, 3:6, 4:8]
+        def map = [1:2, 2:4, 3:6, 4:8]
         map.each { count = count + it.value }
 
         assert count == 20
@@ -114,17 +114,17 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
     
     void testJoin() {
-        value = [1, 2, 3].join('-')
+        def value = [1, 2, 3].join('-')
         assert value == "1-2-3"
     }
     
     void testListReverse() {
-        value = [1, 2, 3, 4].reverse()
+        def value = [1, 2, 3, 4].reverse()
         assert value == [4, 3, 2, 1]
     }
     
     void testEachLine() {
-        file = new File("src/test/groovy/Bar.groovy")
+        def file = new File("src/test/groovy/Bar.groovy")
         
         System.out.println("Contents of file: " + file)
         
@@ -134,9 +134,9 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
     
     void testReadLines() {
-        file = new File("src/test/groovy/Bar.groovy")
+        def file = new File("src/test/groovy/Bar.groovy")
 
-		lines = file.readLines()
+		def lines = file.readLines()
 		
 		assert lines != null
 		assert lines.size() > 0
@@ -145,7 +145,7 @@ class ClosureWithDefaultParamTest extends GroovyTestCase {
     }
     
     void testEachFile() {
-        file = new File("src/test/groovy")
+        def file = new File("src/test/groovy")
         
         System.out.println("Contents of dir: " + file)
         

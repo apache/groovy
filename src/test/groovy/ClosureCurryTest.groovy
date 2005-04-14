@@ -5,16 +5,16 @@
 class ClosureCurryTest extends GroovyTestCase {
 
     void testCurry() {
-		clos1 = {s1, s2 -> s1 + s2}
-		clos2 = clos1.curry("hi")
-		value = clos2("there")
+		def clos1 = {s1, s2 -> s1 + s2}
+		def clos2 = clos1.curry("hi")
+		def value = clos2("there")
 		assert value == "hithere"
 
-		clos3 = {s1, s2, s3 -> s1 + s2 + s3}
-		clos4 = clos3.curry('a')
-		clos5 = clos4.curry('b')
-		clos6 = clos4.curry('x')
-		clos7 = clos4.curry('f', 'g')
+		def clos3 = {s1, s2, s3 -> s1 + s2 + s3}
+		def clos4 = clos3.curry('a')
+		def clos5 = clos4.curry('b')
+		def clos6 = clos4.curry('x')
+		def clos7 = clos4.curry('f', 'g')
 		value = clos5('c')
 		assert value == "abc"
 		value = clos6('c')

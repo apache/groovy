@@ -3,17 +3,17 @@ class GStringTest extends GroovyTestCase {
     void check(template, teststr) {
         assert template instanceof GString
 
-        count = template.getValueCount()
+        def count = template.getValueCount()
         assert count == 1
         assert template.getValue(0) == "Bob"
 
-        string = template.toString()
+        def string = template.toString()
         assert string == teststr
     }
 
     void testWithOneVariable() {
-        name = "Bob"
-        teststr = "hello Bob how are you?"
+        def name = "Bob"
+        def teststr = "hello Bob how are you?"
 
 
     check("hello $name how are you?", teststr)
@@ -25,8 +25,8 @@ class GStringTest extends GroovyTestCase {
     }
 
     void testWithVariableAtEnd() {
-        name = "Bob"
-        teststr = "hello Bob"
+        def name = "Bob"
+        def teststr = "hello Bob"
 
         check("hello $name", teststr)
         check("hello ${name}", teststr)
@@ -37,8 +37,8 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testWithVariableAtBeginning() {
-        name = "Bob"
-        teststr = "Bob hey"
+        def name = "Bob"
+        def teststr = "Bob hey"
         check("$name hey", teststr)
         check("${name} hey", teststr)
         name = ""
@@ -51,7 +51,8 @@ class GStringTest extends GroovyTestCase {
     }
 
     void testWithJustVariable() {
-        name = teststr = "Bob"
+        def teststr
+        def name = teststr = "Bob"
         check("$name", teststr)
         check("${name}", teststr)
         check("${assert name=="Bob"; name}", teststr)
@@ -70,7 +71,7 @@ class GStringTest extends GroovyTestCase {
         check(/$name\?/, "Bob\\?")
         check(/$name$/, "Bob\$")
 
-        guy = [name: name]
+        def guy = [name: name]
         check("${guy.name}", "Bob")
         check("$guy.name", "Bob")
         check("$guy.name.", "Bob.")
@@ -85,26 +86,26 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testWithTwoVariables() {
-        name = "Bob"
-        template = "${name}${name}"
-        string = template.toString()
+        def name = "Bob"
+        def template = "${name}${name}"
+        def string = template.toString()
         
         assert string == "BobBob"
     }
     
     void testWithTwoVariablesWithSpace() {
-        name = "Bob"
-        template = "${name} ${name}"
-        string = template.toString()
+        def name = "Bob"
+        def template = "${name} ${name}"
+        def string = template.toString()
         
         assert string == "Bob Bob"
     }
     
     void testAppendString() {
-        a = "dog" 
-        b = "a ${a}"
+        def a = "dog" 
+        def b = "a ${a}"
         
-        c = b + " cat"
+        def c = b + " cat"
 
         println("Created ${c}")
         
@@ -116,8 +117,8 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testAppendGString() {
-        a = "dog" 
-        b = "a ${a}" 
+        def a = "dog" 
+        def b = "a ${a}" 
         b += " cat${a}"
         
         assert b.toString() == "a dog catdog" , b
@@ -126,26 +127,26 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testReturnString() {
-        value = dummyMethod()
+        def value = dummyMethod()
         assert value == "Hello Gromit!"
     }
     
     String dummyMethod() {
-        name = "Gromit"
+        def name = "Gromit"
         return "Hello ${name}!"
     }
     
     void testCoerce() {
-        it = "US-ASCII"
-        value = "test".getBytes("${it}")
+        def it = "US-ASCII"
+        def value = "test".getBytes("${it}")
         
         println "Created ${value}"
         assert value != null
     }
     
     void testGroovy441() {
-        arg = "test"
-        content = "${arg} ="
+        def arg = "test"
+        def content = "${arg} ="
 
         if (arg != "something") {
             content += "?"
@@ -157,8 +158,8 @@ class GStringTest extends GroovyTestCase {
     }
 
     void testTwoStringsInMiddle() {
-        a = "---"
-        b = "${a} :"
+        def a = "---"
+        def b = "${a} :"
         b += "<<"
         b += ">>"
         b += ": ${a}"
@@ -166,8 +167,8 @@ class GStringTest extends GroovyTestCase {
     }
 
     void testAlternatingGStrings() {
-        a = "---"
-        b = "${a} :"
+        def a = "---"
+        def b = "${a} :"
         b += "<<"
         b += " [[${a}]] "
         b += ">>"

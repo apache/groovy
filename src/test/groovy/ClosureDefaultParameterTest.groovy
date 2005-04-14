@@ -6,7 +6,7 @@ class ClosureDefaultParameterTest extends GroovyTestCase {
 
     void testClosureWithDefaultParams() {
 
-        block = {a = 123, b = 456 -> println "value of a = $a and b = $b" }
+        def block = {a = 123, b = 456 -> println "value of a = $a and b = $b" }
 
         block = {Integer a = 123, String b = "abc" -> println "value of a = $a and b = $b" }
 
