@@ -5,7 +5,8 @@
 class ClosureMethodCallTest extends GroovyTestCase {
 
     void testCallingClosureWithMultipleArguments() {
-        closure = { a, b -> foo = "hello ${a} and ${b}".toString() }
+        def foo
+        def closure = { a, b -> foo = "hello ${a} and ${b}".toString() }
         
         closure("james", "bob")
 
@@ -18,7 +19,7 @@ class ClosureMethodCallTest extends GroovyTestCase {
     
     
     void testSystemOutPrintlnAsAClosure() {
-        closure = System.out.&println
+        def closure = System.out.&println
         closure("Hello world")
     }
 }

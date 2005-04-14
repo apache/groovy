@@ -1,7 +1,7 @@
 class BindingTest extends GroovyTestCase {
 
     void testProperties() {
-    	b = new Binding()
+    	def b = new Binding()
     	b.setVariable("foo", 123)
     	
     	assert b.foo == 123

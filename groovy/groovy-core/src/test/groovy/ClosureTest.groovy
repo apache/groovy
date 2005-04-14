@@ -11,7 +11,7 @@ class ClosureTest extends GroovyTestCase {
     void testSimpleBlockCall() {
         count = 0
 
-        block = {owner-> owner.incrementCallCount() }
+        def block = {owner-> owner.incrementCallCount() }
 
         assertClosure(block)
         assert count == 1
@@ -22,7 +22,7 @@ class ClosureTest extends GroovyTestCase {
 
     void testVariableLengthParameterList() {
 
-        c1 = {Object[] args -> args.each{count += it}}
+        def c1 = {Object[] args -> args.each{count += it}}
 
         count = 0
         c1(1, 2, 3)
@@ -36,7 +36,7 @@ class ClosureTest extends GroovyTestCase {
         c1([1, 2, 3] as Object[])
         assert count == 6
 
-        c2 = {a, Object[] args -> count += a; args.each{count += it}}
+        def c2 = {a, Object[] args -> count += a; args.each{count += it}}
 
         count = 0
         c2(1, 2, 3)
@@ -62,7 +62,7 @@ class ClosureTest extends GroovyTestCase {
     }
   
     void testMethodClosure() {
-        block = this.&incrementCallCount
+        def block = this.&incrementCallCount
 
         count = 0
 
@@ -102,7 +102,7 @@ class ClosureTest extends GroovyTestCase {
     boolean testDone = false
 
     void testIntFieldAccess() {
-        agents = new ArrayList();
+        def agents = new ArrayList();
         numAgents.times {
             TinyAgent btn = new TinyAgent()
             testDone = true

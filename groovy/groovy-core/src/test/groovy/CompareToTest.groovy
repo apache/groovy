@@ -2,11 +2,11 @@ class CompareToTest extends GroovyTestCase {
 
     void testCompareTo() {
 
-        a = 12
-        b = 20
-        c = 30
+        def a = 12
+        def b = 20
+        def c = 30
         
-        result = a <=> b
+        def result = a <=> b
         assert result < 0
 
         result = a <=> 12
@@ -22,10 +22,10 @@ class CompareToTest extends GroovyTestCase {
 
     void testNullCompares() {
     
-    	a = 123
-    	b = null
+    	def a = 123
+    	def b = null
     	
-    	result = a <=> b
+    	def result = a <=> b
     	assert result > 0
     	
     	result = b <=> a

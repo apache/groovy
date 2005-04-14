@@ -47,17 +47,22 @@
 package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.Message;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.tools.GroovyClass;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+
+import groovy.lang.GroovyRuntimeException;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -537,30 +542,46 @@ public class CompilationUnit extends ProcessingUnit {
 
     }
 
-
+    
     /**
      * Runs classgen() on a single ClassNode.
      */
-
     private LoopBodyForPrimaryClassNodeOperations classgen = new LoopBodyForPrimaryClassNodeOperations() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             //
             // Run the Verifier on the outer class
-
-            verifier.visitClass(classNode);
-
-
+            //
+            try {
+                verifier.visitClass(classNode);
+            } catch (GroovyRuntimeException rpe) {
+                ASTNode node = rpe.getNode();
+                source.addError(new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()));
+            }
+            
+            //
+            // do scoping
+            //
+            if (System.getProperty("jsr.check","false").equals("true")) {
+                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(new VariableScope(),classLoader);
+                try {
+                    scopeVisitor.visitClass(classNode);
+                } catch (GroovyRuntimeException rpe) {
+                    ASTNode node = rpe.getNode();
+                    source.addError(new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()));
+                }
+            }
+            
             //
             // Prep the generator machinery
-
+            //
             ClassVisitor visitor = createClassVisitor();
 
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             ClassGenerator generator = new AsmClassGenerator(context, visitor, classLoader, sourceName);
-
+            
             //
             // Run the generation and create the class (if required)
-
+            //
             generator.visitClass(classNode);
             completionVerifier.visitClass(classNode);
 

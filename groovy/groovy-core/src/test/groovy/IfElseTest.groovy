@@ -2,7 +2,7 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_NoElse() {
 
-        x = false
+        def x = false
 
         if ( true ) {
             x = true
@@ -13,8 +13,8 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElse_MatchIf() {
 
-        x = false
-        y = false
+        def x = false
+        def y = false
 
         if ( true ) {
             x = true
@@ -29,8 +29,8 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElse_MatchElse() {
 
-        x = false
-        y = false
+        def x = false
+        def y = false
 
         if ( false ) {
             x = true
@@ -44,8 +44,8 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElseIf_MatchIf() {
 
-        x = false
-        y = false
+        def x = false
+        def y = false
 
         if ( true ) {
             x = true
@@ -59,8 +59,8 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElseIf_MatchElseIf() {
 
-        x = false
-        y = false
+        def x = false
+        def y = false
 
         if ( false ) {
             x = true
@@ -74,9 +74,9 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElseIf_WithElse_MatchIf() {
 
-        x = false
-        y = false
-        z = false
+        def x = false
+        def y = false
+        def z = false
 
         if ( true ) {
             x = true
@@ -93,9 +93,9 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElseIf_WithElse_MatchElseIf() {
 
-        x = false
-        y = false
-        z = false
+        def x = false
+        def y = false
+        def z = false
 
         if ( false ) {
             x = true
@@ -112,9 +112,9 @@ class IfElseTest extends GroovyTestCase {
 
     void testIf_WithElseIf_WithElse_MatchElse() {
 
-        x = false
-        y = false
-        z = false
+        def x = false
+        def y = false
+        def z = false
 
         if ( false ) {
             x = true

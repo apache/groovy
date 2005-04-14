@@ -46,10 +46,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 	
     class AbstractStreamingBuilder {
         @Property badTagClosure = {tag, doc, pendingNamespaces, namespaces, Object[] rest ->
-                            uri = pendingNamespaces[prefix]
+                            def uri = pendingNamespaces[this.prefix]
 
                             if (uri == null) {
-                                uri = namespaces[prefix]
+                                uri = namespaces[this.prefix]
                             }
 
                             throw new GroovyRuntimeException("Tag ${tag} is not allowed in namespace ${uri}")
@@ -67,7 +67,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                         }
 
                                         if (!namespaceSpecificTags.containsKey(value)) {
-                                            baseEntry = namespaceSpecificTags[':']
+                                            def baseEntry = namespaceSpecificTags[':']
                                             namespaceSpecificTags[value] = [baseEntry[0], baseEntry[1], [:]].toArray()
                                         }
                                     }
@@ -76,7 +76,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                 attrs.each { key, value ->
                                     if (value instanceof Map) {
                                         // key is a namespace prefix value is the mapping
-                                        info = null
+                                        def info = null
 
                                         if (namespaces.containsKey(key)) {
                                             info = namespaceSpecificTags[namespaces[key]]
@@ -95,7 +95,7 @@ But mkp.declareAlias(jim:'harry') will work
                                             info[2][to] = info[1].curry(from)
                                         }*/
                                     } else {
-                                        info = namespaceSpecificTags[':']
+                                        def info = namespaceSpecificTags[':']
                                         info[2][key] = info[1].curry(value)
                                     }
                                 }

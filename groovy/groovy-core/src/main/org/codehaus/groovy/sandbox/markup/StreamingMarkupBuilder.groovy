@@ -74,7 +74,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
                         attrs.each {key, value ->
                                         if (key.contains('$')) {
-                                            parts = key.tokenize('$')
+                                            def parts = key.tokenize('$')
 
                                             if (namespaces.containsKey(parts[0])) {
                                                 key = parts[0] + ":" + parts[1]
@@ -88,7 +88,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
                                         out << "'"
                                       }
 
-                        hiddenNamespaces = [:]
+                        def hiddenNamespaces = [:]
 
                         pendingNamespaces.each {key, value ->
                             hiddenNamespaces[key] = namespaces[key]
@@ -130,11 +130,12 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
         @Property builder = null
 
         StreamingMarkupBuilder() {
+            def specialTags = [:]
             specialTags.putAll(['yield':noopClosure,
                                    'yieldUnescaped':unescapedClosure,
                                    'comment':commentClosure])
 
-            nsSpecificTags = [':'                                                : [tagClosure, tagClosure, [:]],    // the default namespace
+            def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
                               'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
                               'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
 

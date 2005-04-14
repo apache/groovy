@@ -5,14 +5,14 @@
 class ClosureCloneTest extends GroovyTestCase {
 
     void testCloneOfClosure() {
-        factor = 2
-        closure = { it * factor }
+        def factor = 2
+        def closure = { it * factor }
 
-        value = closure(5)
+        def value = closure(5)
         assert value == 10
 
         // now lets clone the closure
-        c2 = closure.clone()
+        def c2 = closure.clone()
         assert c2 != null
 
         value = c2(6)

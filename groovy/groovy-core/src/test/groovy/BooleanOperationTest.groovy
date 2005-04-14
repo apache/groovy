@@ -4,7 +4,7 @@ class BooleanOperationTest extends GroovyTestCase {
         assert true
         assert true != false
         
-        x = true
+        def x = true
         
         assert x
         assert x == true
@@ -17,7 +17,7 @@ class BooleanOperationTest extends GroovyTestCase {
         
         assert !x
         
-        y = false        
+        def y = false        
         assert x == y
         
         y = true
@@ -26,8 +26,8 @@ class BooleanOperationTest extends GroovyTestCase {
     
     
     void testIfBranch() {
-        x = false
-        r = false
+        def x = false
+        def r = false
         
         if ( x ) {
             // ignore
@@ -61,8 +61,8 @@ class BooleanOperationTest extends GroovyTestCase {
 
 
 	void testBooleanExpression() {
-	    x = 5
-	    value = x > 2
+	    def x = 5
+	    def value = x > 2
 	    assert value
 	    
 	    value = x < 2

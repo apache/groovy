@@ -1,7 +1,7 @@
 class ClassLoaderBug extends GroovyTestCase {
     
     static void main(args) {
-        gst = new ClassLoaderBug();
+        def gst = new ClassLoaderBug();
         gst.testWithOneVariable();
     }
 

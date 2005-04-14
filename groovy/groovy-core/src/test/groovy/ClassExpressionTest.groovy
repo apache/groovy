@@ -7,7 +7,7 @@
 class ClassExpressionTest extends GroovyTestCase {
 
     void testUseOfClass() {
-        x = String
+        def x = String
         
         System.out.println("x: " + x)
         
@@ -35,7 +35,7 @@ class ClassExpressionTest extends GroovyTestCase {
 
     void testClassPsuedoProperty() {
 
-        x = "cheese";
+        def x = "cheese";
 
         assert x.class != null
 

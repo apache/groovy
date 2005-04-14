@@ -1,8 +1,8 @@
 class HeredocsTest extends GroovyTestCase {
 
     void testHeredocs() {
-        name = "James"
-        s = """
+        def name = "James"
+        def s = """
 abcd
 efg
 
@@ -20,13 +20,13 @@ hello ${name}
     }
     
     void testDollarEscaping() {
-        s = """
+        def s = """
 hello \${name}
 """
         println s
         assert s != null
         assert s.contains('$')
-        c = s.count('$')
+        def c = s.count('$')
         assert c == 1
     }
 }

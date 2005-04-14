@@ -9,7 +9,7 @@ class Cheddar extends Goober implements Runnable
     public static def cheesiest;
 
     static void main(args) {
-        f = new Cheddar()
+        def f = new Cheddar()
         println f
     }
 

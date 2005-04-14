@@ -21,7 +21,7 @@ class FilterLineTest extends GroovyTestCase {
 	}
 
 	void testFilterLineOnFileReturningAWritable() {
-		writable = myFile.filterLine() {it.contains("testFilterLineOnFileReturningAWritable")}
+		def writable = myFile.filterLine() {it.contains("testFilterLineOnFileReturningAWritable")}
 		writable.writeTo(myOutput)
 		assert 3 == myOutput.toString().count("testFilterLineOnFileReturningAWritable")
 	}
@@ -32,7 +32,7 @@ class FilterLineTest extends GroovyTestCase {
 	}
 
 	void testFilterLineOnInputStreamReturningAWritable() {
-		writable = myInput.filterLine() {it.contains("testFilterLineOnInputStreamReturningAWritable")}
+		def writable = myInput.filterLine() {it.contains("testFilterLineOnInputStreamReturningAWritable")}
 		writable.writeTo(myOutput)
 		assert 3 == myOutput.toString().count("testFilterLineOnInputStreamReturningAWritable")
 	}

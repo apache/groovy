@@ -8,7 +8,7 @@ class DefaultParamClosureTest extends GroovyTestCase {
 			return a + "-" + b + "-" + c
 		}
 
-    	value = doSomething("X", "Y", "Z")
+    	def value = doSomething("X", "Y", "Z")
     	assert value == "X-Y-Z"
 
     	value = doSomething("X", "Y")
@@ -30,7 +30,7 @@ class DefaultParamClosureTest extends GroovyTestCase {
 			return a + "-" + b + "-" + c
 		}
 	
-    	value = doTypedSomething("X", "Y", "Z")
+    	def value = doTypedSomething("X", "Y", "Z")
     	assert value == "X-Y-Z"
     	
     	value = doTypedSomething("X", "Y")

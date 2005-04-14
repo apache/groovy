@@ -1,7 +1,7 @@
 class AssertTest extends GroovyTestCase {
 
     void testAssert() {
-        x = null
+        def x = null
         
         assert x == null
         assert x != "abc"
@@ -24,9 +24,9 @@ class AssertTest extends GroovyTestCase {
     }
 	
     void testAssertFail() {
-        x = 1234
+        def x = 1234
 
-        runCode = false
+        def runCode = false
         try {
             runCode = true
             assert x == 5

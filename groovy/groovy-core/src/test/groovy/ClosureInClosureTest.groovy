@@ -11,9 +11,9 @@
  */
 class ClosureInClosureTest extends GroovyTestCase {
 	void testInvisibleVariable() {
-		text = "test "
+		def text = "test "
 
-		l = [1..11, 2..12, 3..13, 4..14]
+		def l = [1..11, 2..12, 3..13, 4..14]
 
 		l.each{
 			it.each{
@@ -23,7 +23,7 @@ class ClosureInClosureTest extends GroovyTestCase {
 	}
 
 	static void main(args) {
-		bug = new ClosureInClosureTest()
+		def bug = new ClosureInClosureTest()
 		bug.testInvisibleVariable()
 	}
 }

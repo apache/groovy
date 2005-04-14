@@ -2,7 +2,7 @@ class IfElseCompactTest extends GroovyTestCase {
 
     void testIf_NoElse() {
 
-        x = false
+        def x = false
 
         if ( true ) {x = true}
 
@@ -11,8 +11,8 @@ class IfElseCompactTest extends GroovyTestCase {
 
     void testIf_WithElse_MatchIf() {
 
-        x = false
-        y = false
+        def x = false
+        def y = false
 
         if ( true ) {x = true} else {y = true}
 

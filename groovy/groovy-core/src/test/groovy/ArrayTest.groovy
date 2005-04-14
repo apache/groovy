@@ -1,7 +1,7 @@
 class ArrayTest extends GroovyTestCase {
 
     void testFixedSize() {
-        array = new String[10]
+        def array = new String[10]
         
         assert array.size() == 10
         
@@ -24,7 +24,7 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testCharArrayCreate() {
-           array  = new char[3]
+           def array  = new char[3]
            assert array.size() == 3
     }
 
@@ -40,7 +40,7 @@ class ArrayTest extends GroovyTestCase {
     }
     
     void testByteArrayCreate() {
-        array = new byte[100]
+        def array = new byte[100]
         assert array.size() == 100;
     }
 
@@ -75,7 +75,7 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testDoubleArrayCreate() {
-         array  = new double[3]
+         def array  = new double[3]
          assert array.size() == 3
     }
 
@@ -92,7 +92,7 @@ class ArrayTest extends GroovyTestCase {
 
 
     void testIntArrayCreate() {
-        array = new int[5]
+        def array = new int[5]
         
         assert array.size() == 5
     }
@@ -120,7 +120,7 @@ class ArrayTest extends GroovyTestCase {
     }
 
     static void main( String[] args ) {
-        o = new ArrayTest();
+        def o = new ArrayTest();
 
         o.testArrayDeclaration();
     }

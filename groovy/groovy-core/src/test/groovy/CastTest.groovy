@@ -3,7 +3,7 @@ class CastTest extends GroovyTestCase {
     Short b = 1
     
     void testCast() {
-        x = (Short) 5
+        def x = (Short) 5
 
         println("Cast Integer to ${x} with type ${x.class}")
         
@@ -34,7 +34,7 @@ class CastTest extends GroovyTestCase {
         
         assert b.class == Short , "Type is ${b.class}"
         
-        b = 5
+        def b = 5
         
         println("Updated field ${b} with type ${b.class}")
  
@@ -42,14 +42,14 @@ class CastTest extends GroovyTestCase {
     }
     
     void testIntCast() {
-        i = (Integer) 'x'
+        def i = (Integer) 'x'
         
         assert i instanceof Integer
     }
     
     void testCharCompare() {
-        i = (Integer) 'x'
-        c = 'x'
+        def i = (Integer) 'x'
+        def c = 'x'
         
         assert i == c
         assert i =='x'
@@ -63,7 +63,7 @@ class CastTest extends GroovyTestCase {
     }
     
     void testCharCast() {
-        c = (Character) 'x'
+        def c = (Character) 'x'
         
         assert c instanceof Character
         
@@ -80,23 +80,23 @@ class CastTest extends GroovyTestCase {
     void methodWithChar(Character x) {
         println("Called with ${x} with type ${s.class}")
         
-        text = "text"
-        idx = text.indexOf(x)
+        def text = "text"
+        def idx = text.indexOf(x)
         
         assert idx == 2
     }
     // br
     void testPrimitiveCasting() {
-        d = 1.23
-        i1 = (int)d
-        i2 = (Integer)d
+        def d = 1.23
+        def i1 = (int)d
+        def i2 = (Integer)d
         assert i1.class.name == 'java.lang.Integer'
         assert i2.class.name == 'java.lang.Integer'
 
-        ch = (char) i1
+        def ch = (char) i1
         assert ch.class.name == 'java.lang.Character'
 
-        dd = (double)d
+        def dd = (double)d
         assert dd.class.name == 'java.lang.Double'
 
     }

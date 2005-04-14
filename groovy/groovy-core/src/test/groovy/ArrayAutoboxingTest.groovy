@@ -1,6 +1,7 @@
 class ArrayAutoboxingTest extends GroovyTestCase {
     
     void testUnwantedAutoboxingWhenInvokingMethods() {
+      def cl
       cl = blah2(new int[2*2])
       assert cl == "[I"
       cl = blah2(new long[2*2])
