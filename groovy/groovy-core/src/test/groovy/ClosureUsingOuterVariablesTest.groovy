@@ -49,8 +49,6 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         assert sum == 10
     }
     
-    /*
-     TODO: is this a valid test case?
     void testExampleUseOfClosureScopes() {
         def a = 123
 		
@@ -67,5 +65,5 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
         [5].each { b = a + it }
 
         assert b == a + 5
-    }*/
+    }
 }
