@@ -33,17 +33,15 @@
  */
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.GroovyRuntimeException;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
@@ -63,13 +61,22 @@ import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.CompilationFailedException;
+
+import org.codehaus.groovy.syntax.SyntaxException;
+
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
+
 public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements GroovyClassVisitor {
     private VariableScope currentScope = null;  
-    private ClassLoader loader;
+    private CompileUnit unit;
+    private SourceUnit source;
     
-    public JSRVariableScopeCodeVisitor(VariableScope scope, ClassLoader classLoader) {
+    public JSRVariableScopeCodeVisitor(VariableScope scope, SourceUnit source) {
         currentScope = scope;
-        loader = classLoader;
+        this.source = source;
+        this.unit = source.getAST().getUnit();
     }
     
     public void visitBlockStatement(BlockStatement block) {
@@ -110,10 +117,19 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         declare(variable,expression);
     }
     
+    private void addError(String msg, ASTNode expr) {
+        int line = expr.getLineNumber();
+        int col = expr.getColumnNumber();
+        try{
+            source.addError(new SyntaxErrorMessage(new SyntaxException(msg,line,col)),false);
+        } catch (CompilationFailedException ce) {}
+    }
+    
     protected void declare(String name, ASTNode expr) {
         Set declares = currentScope.getDeclaredVariables();
         if (declares.contains(name)) {
-            throw new GroovyRuntimeException("The current scope does already contain a variable of the name "+name,expr);
+            String msg = "The current scope does already contain a variable of the name "+name;
+            addError(msg,expr);
         }
         declares.add(name);        
     }
@@ -133,17 +149,25 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
     
     protected void checkVariableNameForDeclaration(String name, Expression expression) {
-        if (name.equals("this")) return;
-        if (name.equals("super")) return;
+        if (expression==VariableExpression.THIS_EXPRESSION) return;
+        if (expression==VariableExpression.SUPER_EXPRESSION) return;
         VariableScope scope = currentScope;
         while (scope!=null) {
             if (scope.getDeclaredVariables().contains(name)) break;
             if (scope.getReferencedVariables().contains(name)) break;
-            scope.getReferencedVariables().add(name);
+            //scope.getReferencedVariables().add(name);
             scope = scope.getParent();
         }
+        VariableScope end = scope; 
         if (scope==null) {
-            throw new GroovyRuntimeException("The variable "+name+" is undefined in the current scope",expression);
+            declare(name,expression);
+            addError("The variable "+name+" is undefined in the current scope",expression);
+        } else {
+            scope = currentScope;
+            while (scope!=end) {
+                scope.getReferencedVariables().add(name);
+                scope = scope.getParent();
+            }
         }
         
     }
@@ -167,6 +191,16 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         super.visitClosureExpression(expression);
         currentScope = scope;
     }
+    
+    private String getPropertyName(String name) {
+        if (name.startsWith("set") || name.startsWith("get")) return null;
+        
+        String pname = name.substring(3);
+        if (pname.length()==0) return null;
+        String s = pname.substring(0,1).toLowerCase();
+        String rest = pname.substring(1);
+        return s+rest;
+    }        
 
     public void visitClass(ClassNode node) {
         //System.err.println("-------------"+hashCode()+":"+node.getName()+"-------------");
@@ -186,48 +220,32 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         }
         for (Iterator iter = node.getAllDeclaredMethods().iterator(); iter.hasNext();) {
             MethodNode element = (MethodNode) iter.next();
-            if (element.getName().startsWith("set") || element.getName().startsWith("get")) {
-                String name = element.getName().substring(3);
-                if (name.length()==0) continue;
-                String s = name.substring(0,1).toLowerCase();
-                String rest = name.substring(1);
-                declares.add(s+rest);
-            }
+            String name = getPropertyName(element.getName());
+            if (name!=null) declares.add(name);
         }        
         
         //TODO: handle interfaces
         //TODO: handle static imports
         Set refs = currentScope.getReferencedVariables();
         //System.err.println("checking superclasses for "+node.getName());
-        try {
-            Class c = loader.loadClass(node.getSuperClass());
-            while (c!=null) {
-                //System.err.println("superclass:"+c.getName());
-                Field[] fields = c.getDeclaredFields();
-                for (int i = 0; i < fields.length; i++) {
-                    Field f = fields[i];
-                    if (Modifier.isPrivate(f.getModifiers())) continue;
-                    refs.add(f.getName());
-                }
-                Method[] methods = c.getDeclaredMethods();
-                for (int i = 0; i < methods.length; i++) {
-                    Method m = methods[i];
-                    if (Modifier.isPrivate(m.getModifiers())) continue;
-                    if (m.getName().startsWith("set") || m.getName().startsWith("get")) {
-                        String name = m.getName().substring(3);
-                        if (name.length()==0) continue;
-                        String s = name.substring(0,1).toLowerCase();
-                        String rest = name.substring(1);
-                        refs.add(s+rest);
-                    }
-                }
-                
-                c = c.getSuperclass();
+        ClassNode cn = unit.getClass(node.getSuperClass());
+        while (cn!=null) {
+            List l = cn.getFields();
+            for (Iterator iter = l.iterator(); iter.hasNext();) {
+                FieldNode f = (FieldNode) iter.next();
+                if (Modifier.isPrivate(f.getModifiers())) continue;
+                refs.add(f.getName());
             }
-        } catch (ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-        }
-        
+
+            l = cn.getMethods();
+            for (Iterator iter = l.iterator(); iter.hasNext();) {
+                MethodNode f = (MethodNode) iter.next();
+                if (Modifier.isPrivate(f.getModifiers())) continue;
+                refs.add(f.getName());                
+            }
+               
+            cn = unit.getClass(cn.getSuperClass());
+        }        
         // second pass, check contents
         node.visitContents(this);
         currentScope = scope;
