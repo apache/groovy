@@ -299,10 +299,13 @@ public class Groovy extends Task {
                                                            append)));
                     }
 
-                    //todo - also allow src from files here
-                    if (command == null) {
+                    // if there are no groovy statements between the enclosing Groovy tags
+                    // then read groovy statements in from a text file using the src attribute
+                    if (command == null || command.trim().length() == 0) {
                         command = getText(new BufferedReader(new FileReader(srcFile)));
                     }
+
+                    
                     if (command != null) {
                         execGroovy(command,out);
                     } else {
