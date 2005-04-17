@@ -5832,6 +5832,10 @@ public class AsmClassGenerator extends ClassGenerator {
             Collection collection = (Collection) object;
             return !collection.isEmpty();
         }
+        else if (object instanceof String) {
+            String string = (String) object;
+            return string.length() > 0;
+        }
         else if (object instanceof Number) {
             Number n = (Number) object;
             return n.intValue() != 0;
