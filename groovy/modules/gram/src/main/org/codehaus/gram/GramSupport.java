@@ -83,6 +83,17 @@ public abstract class GramSupport extends Script {
     }
 
     /**
+     * Captalizes the first character of the given string; particularly useful for turning JAM field names
+     * into property names etc.
+     */
+    public String capitalize(String text) {
+        if (text == null) {
+            return null;
+        }
+        return text.substring(0, 1).toUpperCase() + text.substring(1);
+    }
+
+    /**
      * Returns the string value of the named annotation
      */
     public String annotationValue(JAnnotatedElement element, String annotationName, String valueName) {
