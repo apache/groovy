@@ -3113,6 +3113,159 @@ PropertyValue pv = (PropertyValue) itr.next();
         }
     }
 
+    public static void upto(long self, Number to, Closure closure) {
+        for (long i = self, size = to.longValue(); i <= size; i++) {
+            closure.call(new Long(i));
+        }
+    }
+
+    public static void upto(Long self, Number to, Closure closure) {
+        for (long i = self.longValue(), size = to.longValue(); i <= size; i++) {
+            closure.call(new Long(i));
+        }
+    }
+
+    public static void upto(Float self, Number to, Closure closure) {
+        for (float i = self.floatValue(), size = to.floatValue(); i <= size; i++) {
+            closure.call(new Float(i));
+        }
+    }
+
+    public static void upto(float self, Number to, Closure closure) {
+        for (float i = self, size = to.floatValue(); i <= size; i++) {
+            closure.call(new Float(i));
+        }
+    }
+
+    public static void upto(Double self, Number to, Closure closure) {
+        for (double i = self.doubleValue(), size = to.doubleValue(); i <= size; i++) {
+            closure.call(new Double(i));
+        }
+    }
+
+    public static void upto(BigInteger self, Number to, Closure closure) {
+        if (to instanceof BigDecimal) {
+            BigDecimal one = new BigDecimal(1.0);
+            for (BigDecimal i = new BigDecimal(self), size = (BigDecimal) to; i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+        else if (to instanceof BigInteger) {
+            BigInteger one = new BigInteger("1");
+            for (BigInteger i = self, size = (BigInteger) to; i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+        else {
+            BigInteger one = new BigInteger("1");
+            for (BigInteger i = self, size = new BigInteger("" + to); i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+    }
+
+    public static void upto(BigDecimal self, Number to, Closure closure) {
+        BigDecimal one = new BigDecimal(1.0);
+        if (to instanceof BigDecimal) {
+            for (BigDecimal i = self, size = (BigDecimal) to; i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+        else if (to instanceof BigInteger) {
+            for (BigDecimal i = self, size = new BigDecimal((BigInteger) to); i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+        else {
+            for (BigDecimal i = self, size = new BigDecimal(to.doubleValue()); i.compareTo(size) <= 0; i = i.add(one)) {
+                closure.call(i);
+            }
+        }
+    }
+
+    /**
+     * Iterates from this number down to the given number
+     *
+     * @param self    a Number
+     * @param to      another Number to go down to
+     * @param closure the closure to call
+     */
+    public static void downto(Number self, Number to, Closure closure) {
+        for (int i = self.intValue(), size = to.intValue(); i >= size; i--) {
+            closure.call(new Integer(i));
+        }
+    }
+
+    public static void downto(long self, Number to, Closure closure) {
+        for (long i = self, size = to.longValue(); i >= size; i--) {
+            closure.call(new Long(i));
+        }
+    }
+
+    public static void downto(Long self, Number to, Closure closure) {
+        for (long i = self.longValue(), size = to.longValue(); i >= size; i--) {
+            closure.call(new Long(i));
+        }
+    }
+
+    public static void downto(Float self, Number to, Closure closure) {
+        for (float i = self.floatValue(), size = to.floatValue(); i >= size; i--) {
+            closure.call(new Float(i));
+        }
+    }
+
+    public static void downto(float self, Number to, Closure closure) {
+        for (float i = self, size = to.floatValue(); i >= size; i--) {
+            closure.call(new Float(i));
+        }
+    }
+
+    public static void downto(Double self, Number to, Closure closure) {
+        for (double i = self.doubleValue(), size = to.doubleValue(); i >= size; i--) {
+            closure.call(new Double(i));
+        }
+    }
+
+    public static void downto(BigInteger self, Number to, Closure closure) {
+        if (to instanceof BigDecimal) {
+            BigDecimal one = new BigDecimal(1.0);
+            for (BigDecimal i = new BigDecimal(self), size = (BigDecimal) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+        else if (to instanceof BigInteger) {
+            BigInteger one = new BigInteger("1");
+            for (BigInteger i = self, size = (BigInteger) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+        else {
+            BigInteger one = new BigInteger("1");
+            for (BigInteger i = self, size = new BigInteger("" + to); i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+    }
+
+    public static void downto(BigDecimal self, Number to, Closure closure) {
+        BigDecimal one = new BigDecimal(1.0);
+        if (to instanceof BigDecimal) {
+            for (BigDecimal i = self, size = (BigDecimal) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+        else if (to instanceof BigInteger) {
+            for (BigDecimal i = self, size = new BigDecimal((BigInteger) to); i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+        else {
+            for (BigDecimal i = self, size = new BigDecimal(to.doubleValue()); i.compareTo(size) >= 0; i = i.subtract(one)) {
+                closure.call(i);
+            }
+        }
+    }
+
     /**
      * Iterates from this number up to the given number using a step increment
      *
@@ -3122,8 +3275,26 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param closure    the closure to call
      */
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
-        for (int i = self.intValue(), size = to.intValue(), step = stepNumber.intValue(); i < size; i += step) {
-            closure.call(new Integer(i));
+        if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
+            BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal("" + self);
+            BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal("" + to);
+            BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal("" + stepNumber);
+            for (BigDecimal i = self1, size = to1, step = stepNumber1; i.compareTo(size) < 0; i = i.add(step)) {
+                closure.call(i);
+            }
+        }
+        else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
+            BigInteger self1 = (self instanceof BigInteger) ? (BigInteger) self : new BigInteger("" + self);
+            BigInteger to1 = (to instanceof BigInteger) ? (BigInteger) to : new BigInteger("" + to);
+            BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger("" + stepNumber);
+            for (BigInteger i = self1, size = to1, step = stepNumber1; i.compareTo(size) < 0; i = i.add(step)) {
+                closure.call(i);
+            }
+        }
+       else {
+            for (int i = self.intValue(), size = to.intValue(), step = stepNumber.intValue(); i < size; i += step) {
+                closure.call(new Integer(i));
+            }
         }
     }
 
