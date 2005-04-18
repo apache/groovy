@@ -18,38 +18,4 @@ public class DownUpStepTest extends GroovyTestCase {
         (1.2).step(3.9, 0.1) { z += it }
         assert z == 67.5
     }
-
-    void testStringTrim() {
-        z = "  Viva! Groovy!   "
-        println allTrim(z)
-    }
-
-    String allTrim(String s) {
-        if (s == null)
-            return null
-        n = s.length()
-        i = 0
-        j = n - 1
-
-        0.upto(n - 1) {
-            println "[$it] " + s[it]
-            if (s[it] == ' ') {
-                i++
-                println i
-            }
-            else
-                break
-        }
-
-        if (i >= n)
-            return ""
-
-        (n-1).downto(i) {
-            if (s[it] == ' ')
-                j--
-        }
-
-        println s[i..j]
-        return s[i..j]
-    }
 }
