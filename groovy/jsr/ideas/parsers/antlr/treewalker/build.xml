@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<project name="groovy-treewalker" default="default">
+
+  <target name="default" 
+          depends="genTreeWalker" 
+          description="default: build everything" />
+
+  <target name="genTreeGrammar" description="regenerates GroovyRecognizerTree.g (requires antlr2.8.x)">
+    <mkdir dir="gensrc"/>
+    <copy file="../../../../../groovy-core/src/main/org/codehaus/groovy/antlr/groovy.g" todir="gensrc"/>
+
+    <exec executable="patch">
+      <arg value="gensrc/groovy.g"/>
+      <arg value="tree.construction.patch"/>
+    </exec>
+
+    <java classname="antlr.Tool" dir="gensrc" fork="yes">
+      <arg value="-tree"/>
+      <arg value="groovy.g"/>
+      <classpath>
+        <pathelement location="lib/antlr.jar"/>
+      </classpath>
+    </java>
+
+    <copy file="gensrc/GroovyRecognizerTree.g" todir="src"/>
+  </target>
+
+  <target name="genTreeWalker" description="generate tree walker">
+    <mkdir dir="gensrc"/>
+    <copy file="src/GroovyRecognizerTree.g" todir="gensrc"/>
+    <java classname="antlr.Tool" dir="gensrc" fork="yes">
+      <arg value="GroovyRecognizerTree.g"/>
+      <classpath>
+        <pathelement location="lib/antlr.jar"/>
+      </classpath>
+    </java>    
+  </target>
+
+  <target name="clean" description="clean generated files">
+    <delete dir="gensrc"/>
+  </target>
+
+</project>

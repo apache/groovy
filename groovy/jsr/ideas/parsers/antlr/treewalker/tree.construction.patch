@@ -1,0 +1,487 @@
+Index: groovy.g
+===================================================================
+RCS file: /home/projects/groovy/scm/groovy/groovy-core/src/main/org/codehaus/groovy/antlr/groovy.g,v
+retrieving revision 1.24
+diff -c -r1.24 groovy.g
+*** groovy.g	13 Apr 2005 21:45:54 -0000	1.24
+--- groovy.g	19 Apr 2005 21:32:05 -0000
+***************
+*** 387,393 ****
+  // Package statement: optional annotations followed by "package" then the package identifier.
+  packageDefinition
+          //TODO? options {defaultErrorHandler = true;} // let ANTLR handle errors
+!     :   annotationsOpt p:"package"^ {#p.setType(PACKAGE_DEF);} identifier
+      ;
+  
+  
+--- 387,393 ----
+  // Package statement: optional annotations followed by "package" then the package identifier.
+  packageDefinition
+          //TODO? options {defaultErrorHandler = true;} // let ANTLR handle errors
+!     :   annotationsOpt "package"! ^[PACKAGE_DEF,"package"]^ identifier 
+      ;
+  
+  
+***************
+*** 602,608 ****
+  
+  // Wildcard type indicating all types (with possible constraint)
+  wildcardType
+!     :   q:QUESTION^ {#q.setType(WILDCARD_TYPE);}
+          (("extends" | "super")=> typeArgumentBounds)?
+      ;
+  
+--- 602,608 ----
+  
+  // Wildcard type indicating all types (with possible constraint)
+  wildcardType
+!     :   QUESTION! ^[WILDCARD_TYPE,"?"]^
+          (("extends" | "super")=> typeArgumentBounds)?
+      ;
+  
+***************
+*** 808,814 ****
+  /*OBS*
+  // This is an initializer used to set up an annotation member array.
+  annotationMemberArrayInitializer
+!     :   lc:LCURLY^ {#lc.setType(ANNOTATION_ARRAY_INIT);}
+          (   annotationMemberArrayValueInitializer
+              (
+                  // CONFLICT: does a COMMA after an initializer start a new
+--- 808,814 ----
+  /*OBS*
+  // This is an initializer used to set up an annotation member array.
+  annotationMemberArrayInitializer
+!     :   LCURLY! ^[ANNOTATION_ARRAY_INIT,"{"]^
+          (   annotationMemberArrayValueInitializer
+              (
+                  // CONFLICT: does a COMMA after an initializer start a new
+***************
+*** 1143,1149 ****
+      ;
+  
+  constructorBody
+!     :   lc:LCURLY^ nls!         {#lc.setType(SLIST);}
+          (   (explicitConstructorInvocation) =>   // Java compatibility hack
+                  explicitConstructorInvocation (sep! blockBody[sepToken])?
+              |   blockBody[EOF]
+--- 1143,1149 ----
+      ;
+  
+  constructorBody
+!     :   LCURLY! ^[SLIST,"{"]^ nls!         
+          (   (explicitConstructorInvocation) =>   // Java compatibility hack
+                  explicitConstructorInvocation (sep! blockBody[sepToken])?
+              |   blockBody[EOF]
+***************
+*** 1155,1164 ****
+  /** Catch obvious constructor calls, but not the expr.super(...) calls */
+  explicitConstructorInvocation
+      :   (typeArguments)?
+!         (   "this"! lp1:LPAREN^ argList RPAREN!
+!             {#lp1.setType(CTOR_CALL);}
+!         |   "super"! lp2:LPAREN^ argList RPAREN!
+!             {#lp2.setType(SUPER_CTOR_CALL);}
+          )
+      ;
+  
+--- 1155,1162 ----
+  /** Catch obvious constructor calls, but not the expr.super(...) calls */
+  explicitConstructorInvocation
+      :   (typeArguments)?
+!         (   "this"! LPAREN! ^[CTOR_CALL,"("]^ argList RPAREN!
+!         |   "super"! LPAREN! ^[SUPER_CTOR_CALL,"("]^ argList RPAREN!
+          )
+      ;
+  
+***************
+*** 1182,1187 ****
+--- 1180,1186 ----
+  
+          (   id:IDENT
+          |   qid:STRING_LITERAL          {#qid.setType(IDENT);}  // use for operator defintions, etc.
++             //todo Add ^[IDENT,????] tree construction syntax
+          )
+  
+          // parse the formal parameter declarations.
+***************
+*** 1267,1273 ****
+          (
+              // A following list constructor might conflict with index brackets; prefer the declarator.
+              options {greedy=true;} :
+!             lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
+          )*
+      ;
+  
+--- 1266,1272 ----
+          (
+              // A following list constructor might conflict with index brackets; prefer the declarator.
+              options {greedy=true;} :
+!             LBRACK! ^[ARRAY_DECLARATOR,"("]^ RBRACK!
+          )*
+      ;
+  
+***************
+*** 1280,1286 ****
+  /*OBS*
+  // This is an initializer used to set up an array.
+  arrayInitializer
+!     :   lc:LCURLY^ {#lc.setType(ARRAY_INIT);}
+          (   initializer
+              (
+                  // CONFLICT: does a COMMA after an initializer start a new
+--- 1279,1285 ----
+  /*OBS*
+  // This is an initializer used to set up an array.
+  arrayInitializer
+!     :   LCURLY! ^[ARRAY_INIT,"{"]^
+          (   initializer
+              (
+                  // CONFLICT: does a COMMA after an initializer start a new
+***************
+*** 1494,1500 ****
+  
+  /** An open block is not allowed to have closure arguments. */
+  openBlock
+!     :   lc:LCURLY^ nls!     {#lc.setType(SLIST);}
+          // AST type of SLIST means "never gonna be a closure"
+          blockBody[EOF]
+          RCURLY!
+--- 1493,1499 ----
+  
+  /** An open block is not allowed to have closure arguments. */
+  openBlock
+!     :   LCURLY! ^[SLIST,"{"]^ nls!     
+          // AST type of SLIST means "never gonna be a closure"
+          blockBody[EOF]
+          RCURLY!
+***************
+*** 1511,1517 ****
+   *  Only labeled, unparameterized blocks which occur directly as substatements are kept open.
+   */
+  closedBlock
+!     :   lc:LCURLY^ nls!     {#lc.setType(CLOSED_BLOCK);}
+          closureParametersOpt[true]
+          blockBody[EOF]
+          RCURLY!
+--- 1510,1516 ----
+   *  Only labeled, unparameterized blocks which occur directly as substatements are kept open.
+   */
+  closedBlock
+!     :   LCURLY! ^[CLOSED_BLOCK,"{"]^ nls!     
+          closureParametersOpt[true]
+          blockBody[EOF]
+          RCURLY!
+***************
+*** 1533,1538 ****
+--- 1532,1538 ----
+  openOrClosedBlock
+      :   lc:LCURLY^ nls!
+          cp:closureParametersOpt[false]
++         // todo use ^[SLIST,???] or ^[CLOSED_BLOCK,???] tree construction syntax
+          {   if (#cp == null)    #lc.setType(SLIST);
+              else                #lc.setType(CLOSED_BLOCK);
+          }
+***************
+*** 1604,1610 ****
+  
+      // Splice statement, meaningful only inside a "with" expression.
+      // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
+!     |   sp:STAR^ nls!                       {#sp.setType(SPREAD_ARG);}
+          expressionStatement[EOF]
+      // Example:  with(htmlbuilder) { head{} body{ *"some text" } }
+      // Equivalent to:  { htmlbuilder.head{} htmlbuilder.body{ (htmlbuilder as Collection).add("some text") } }
+--- 1604,1610 ----
+  
+      // Splice statement, meaningful only inside a "with" expression.
+      // PROPOSED, DECIDE.  Prevents the namespace pollution of a "text" method or some such.
+!     |   STAR! ^[SPREAD_ARG,"*"]^ nls!                       
+          expressionStatement[EOF]
+      // Example:  with(htmlbuilder) { head{} body{ *"some text" } }
+      // Equivalent to:  { htmlbuilder.head{} htmlbuilder.body{ (htmlbuilder as Collection).add("some text") } }
+***************
+*** 1626,1632 ****
+  
+      /*OBS*
+      // empty statement
+!     |   s:SEMI {#s.setType(EMPTY_STAT);}
+      *OBS*/
+  
+      |   branchStatement
+--- 1626,1632 ----
+  
+      /*OBS*
+      // empty statement
+!     |   SEMI ^[EMPTY_STAT,";"]
+      *OBS*/
+  
+      |   branchStatement
+***************
+*** 1738,1744 ****
+  /** A labeled statement, consisting of a vanilla identifier followed by a colon. */
+  // Note:  Always use this lookahead, to keep antlr from panicking: (IDENT COLON)=>
+  statementLabelPrefix
+!     :   IDENT c:COLON^ {#c.setType(LABELED_STAT);}
+      ;
+  
+  /** An expression statement can be any general expression.
+--- 1738,1744 ----
+  /** A labeled statement, consisting of a vanilla identifier followed by a colon. */
+  // Note:  Always use this lookahead, to keep antlr from panicking: (IDENT COLON)=>
+  statementLabelPrefix
+!     :   IDENT COLON! ^[LABELED_STAT,":"]^
+      ;
+  
+  /** An expression statement can be any general expression.
+***************
+*** 1910,1915 ****
+--- 1910,1916 ----
+          {
+              AST elist = #(#[ELIST,"ELIST"], #commandArguments);
+              AST headid = getASTFactory().dup(#head);
++             //todo possibly use ^[METHOD_CALL,???] tree construction here
+              headid.setType(METHOD_CALL);
+              headid.setText("<command>");
+              #commandArguments = #(headid, head, elist);
+***************
+*** 2048,2057 ****
+  
+      |   DOT^ nls! "super"
+          (   // (new Outer()).super()  (create enclosing instance)
+!             lp3:LPAREN^ argList RPAREN!
+!             {#lp3.setType(SUPER_CTOR_CALL);}
+          |   DOT^ IDENT
+!             (   lps:LPAREN^ {#lps.setType(METHOD_CALL);}
+                  argList
+                  RPAREN!
+              )?
+--- 2049,2057 ----
+  
+      |   DOT^ nls! "super"
+          (   // (new Outer()).super()  (create enclosing instance)
+!             LPAREN! ^[SUPER_CTOR_CALL,"("]^ argList RPAREN!
+          |   DOT^ IDENT
+!             (   LPAREN! ^[METHOD_CALL,"("]^
+                  argList
+                  RPAREN!
+              )?
+***************
+*** 2160,2166 ****
+  methodCallArgs[AST callee]
+      :
+          {#methodCallArgs = callee;}
+!         lp:LPAREN^ {#lp.setType(METHOD_CALL);}
+          argList
+          RPAREN!
+      ;
+--- 2160,2166 ----
+  methodCallArgs[AST callee]
+      :
+          {#methodCallArgs = callee;}
+!         LPAREN! ^[METHOD_CALL,"("]^
+          argList
+          RPAREN!
+      ;
+***************
+*** 2197,2203 ****
+  indexPropertyArgs[AST indexee]
+      :
+          {#indexPropertyArgs = indexee;}
+!         lb:LBRACK^ {#lb.setType(INDEX_OP);}
+          argList
+          RBRACK!
+      ;
+--- 2197,2203 ----
+  indexPropertyArgs[AST indexee]
+      :
+          {#indexPropertyArgs = indexee;}
+!         LBRACK! ^[INDEX_OP,"("]^
+          argList
+          RBRACK!
+      ;
+***************
+*** 2301,2307 ****
+              ((SL^ | SR^ | BSR^)
+              |   RANGE_INCLUSIVE^
+              |   RANGE_EXCLUSIVE^
+!             |   td:TRIPLE_DOT^ {#td.setType(RANGE_EXCLUSIVE);} /* backward compat: FIXME REMOVE */
+              )
+              nls!
+              additiveExpression[0]
+--- 2301,2307 ----
+              ((SL^ | SR^ | BSR^)
+              |   RANGE_INCLUSIVE^
+              |   RANGE_EXCLUSIVE^
+!             |   TRIPLE_DOT! ^[RANGE_EXCLUSIVE,"..."]^ /* backward compat: FIXME REMOVE */
+              )
+              nls!
+              additiveExpression[0]
+***************
+*** 2325,2332 ****
+  multiplicativeExpression[int lc_stmt]
+      :    ( INC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      |    ( DEC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+!     |    ( MINUS^ {#MINUS.setType(UNARY_MINUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+!     |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      |    (  powerExpression[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      ;
+  
+--- 2325,2332 ----
+  multiplicativeExpression[int lc_stmt]
+      :    ( INC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      |    ( DEC^ nls!  powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+!     |    ( MINUS! ^[UNARY_MINUS,"-"]^ nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+!     |    ( PLUS! ^[UNARY_PLUS,"+"]^ nls!   powerExpression[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      |    (  powerExpression[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
+      ;
+  
+***************
+*** 2339,2346 ****
+  unaryExpression[int lc_stmt]
+      :   INC^ nls! unaryExpression[0]
+      |   DEC^ nls! unaryExpression[0]
+!     |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
+!     |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
+      |   unaryExpressionNotPlusMinus[lc_stmt]
+      ;
+  
+--- 2339,2346 ----
+  unaryExpression[int lc_stmt]
+      :   INC^ nls! unaryExpression[0]
+      |   DEC^ nls! unaryExpression[0]
+!     |   MINUS!   ^[UNARY_MINUS,"-"]^   nls! unaryExpression[0]
+!     |   PLUS!    ^[UNARY_PLUS,"+"]^     nls! unaryExpression[0]
+      |   unaryExpressionNotPlusMinus[lc_stmt]
+      ;
+  
+***************
+*** 2382,2389 ****
+              options {greedy=true;} :
+              // possibly add on a post-increment or post-decrement.
+              // allows INC/DEC on too much, but semantics can check
+!             in:INC^ {#in.setType(POST_INC);}
+!         |   de:DEC^ {#de.setType(POST_DEC);}
+          )?
+      ;
+      
+--- 2382,2389 ----
+              options {greedy=true;} :
+              // possibly add on a post-increment or post-decrement.
+              // allows INC/DEC on too much, but semantics can check
+!             INC! ^[POST_INC,"++"]^
+!         |   DEC! ^[POST_DEC,"--"]^
+          )?
+      ;
+      
+***************
+*** 2421,2427 ****
+      ;
+  
+  scopeEscapeExpression
+!     :   DOLLAR^  {#DOLLAR.setType(SCOPE_ESCAPE);} (IDENT | scopeEscapeExpression)
+          // PROPOSE: The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
+          // If not within a "with" block, it pops the operand out of the static global scope,
+          // into whatever dynamic (unchecked) global scope is available when the script is run,
+--- 2421,2427 ----
+      ;
+  
+  scopeEscapeExpression
+!     :   DOLLAR!  ^[SCOPE_ESCAPE,"$"]^ (IDENT | scopeEscapeExpression)
+          // PROPOSE: The SCOPE_ESCAPE operator pops its operand out of the scope of a "with" block.
+          // If not within a "with" block, it pops the operand out of the static global scope,
+          // into whatever dynamic (unchecked) global scope is available when the script is run,
+***************
+*** 2471,2477 ****
+      :
+      (
+          // PROPOSE: allow spread markers on string constructor arguments
+!         sp:STAR^                        {#sp.setType(SPREAD_ARG);}
+      )?
+      (   identifier
+      |   openOrClosedBlock
+--- 2471,2477 ----
+      :
+      (
+          // PROPOSE: allow spread markers on string constructor arguments
+!         STAR!                        ^[SPREAD_ARG,"*"]^
+      )?
+      (   identifier
+      |   openOrClosedBlock
+***************
+*** 2546,2552 ****
+                  // limitation of linear approximate lookahead.
+                  greedy=true;
+              }
+!         :   (   lp:LPAREN^ {#lp.setType(METHOD_CALL);}
+                  // if the input is valid, only the last IDENT may
+                  // have preceding typeArguments... rather hacky, this is...
+                  {if (#ta2 != null) astFactory.addASTChild(currentAST, #ta2);}
+--- 2546,2552 ----
+                  // limitation of linear approximate lookahead.
+                  greedy=true;
+              }
+!         :   (   LPAREN! ^[METHOD_CALL,"("]^
+                  // if the input is valid, only the last IDENT may
+                  // have preceding typeArguments... rather hacky, this is...
+                  {if (#ta2 != null) astFactory.addASTChild(currentAST, #ta2);}
+***************
+*** 2554,2560 ****
+                  argList RPAREN!
+              )
+          |   (    options {greedy=true;} :
+!                 lbc:LBRACK^ {#lbc.setType(ARRAY_DECLARATOR);} RBRACK!
+              )+
+          )?
+      ;
+--- 2554,2560 ----
+                  argList RPAREN!
+              )
+          |   (    options {greedy=true;} :
+!                 LBRACK! ^[ARRAY_DECLARATOR,"["]^ RBRACK!
+              )+
+          )?
+      ;
+***************
+*** 2680,2691 ****
+          // Optional argument label.
+          // Usage:  Specifies a map key, or a keyworded argument.
+          (   (argumentLabelStart) =>
+!             argumentLabel c:COLON^          {#c.setType(LABELED_ARG);}
+  
+              {   hasLabel = true;  }  // signal to caller the presence of a label
+  
+          |   // Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
+!             sp:STAR^                        {#sp.setType(SPREAD_ARG);}
+              // spread maps are marked, as f(*:m) for f(a:x, b:y) if m==[a:x, b:y]
+              (
+                  COLON!                      {#sp.setType(SPREAD_MAP_ARG);}
+--- 2680,2691 ----
+          // Optional argument label.
+          // Usage:  Specifies a map key, or a keyworded argument.
+          (   (argumentLabelStart) =>
+!             argumentLabel COLON!          ^[LABELED_ARG,":"]^
+  
+              {   hasLabel = true;  }  // signal to caller the presence of a label
+  
+          |   // Spread operator:  f(*[a,b,c])  ===  f(a,b,c);  f(1,*null,2)  ===  f(1,2).
+!             STAR!                        ^[SPREAD_ARG,"*"]^
+              // spread maps are marked, as f(*:m) for f(a:x, b:y) if m==[a:x, b:y]
+              (
+                  COLON!                      {#sp.setType(SPREAD_MAP_ARG);}
+***************
+*** 2733,2739 ****
+                  warnWhenFollowAmbig = false;
+              }
+          :
+!             lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);}
+                  (expression[0])?
+              RBRACK!
+          )+
+--- 2733,2739 ----
+                  warnWhenFollowAmbig = false;
+              }
+          :
+!             LBRACK! ^[ARRAY_DECLARATOR,"("]^
+                  (expression[0])?
+              RBRACK!
+          )+

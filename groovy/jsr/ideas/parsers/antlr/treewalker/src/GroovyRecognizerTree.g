@@ -1,0 +1,2263 @@
+// ANTLR generated tree grammar
+
+
+
+
+header {
+}
+
+class GroovyRecognizerTree extends TreeParser;
+options {
+	buildAST = false;
+}
+
+
+compilationUnit
+	:
+	(
+		packageDefinition
+		|
+			(
+				statement
+			)?
+	)
+	(
+		(
+			statement
+		)?
+	)*
+	;
+
+snippetUnit
+	:
+	blockBody
+	;
+
+packageDefinition
+	:
+	#( 
+		PACKAGE_DEF
+		annotationsOpt
+		identifier
+	)
+	;
+
+importStatement
+	:
+	#( 
+		"import"
+		identifierStar
+	)
+	;
+
+typeDefinitionInternal
+	:
+	classDefinition
+	|
+		interfaceDefinition
+	|
+		enumDefinition
+	|
+		annotationDefinition
+	;
+
+singleDeclaration
+	:
+	(
+		varInitializer
+	)?
+	;
+
+upperCaseIdent
+	:
+	IDENT
+	;
+
+typeSpec
+	:
+	classTypeSpec
+	|
+		builtInTypeSpec
+	;
+
+classTypeSpec
+	:
+	declaratorBrackets
+	;
+
+classOrInterfaceType0a
+	:
+	#( 
+		IDENT
+		(
+			typeArguments
+		)?
+	)
+	|
+		#( 
+			DOT
+			classOrInterfaceType0a
+			IDENT
+			(
+				typeArguments
+			)?
+		)
+	;
+
+classOrInterfaceType
+	:
+	#( 
+		DOT
+		classOrInterfaceType0a
+		IDENT
+		(
+			typeArguments
+		)?
+	)
+	|
+		#( 
+			IDENT
+			(
+				typeArguments
+			)?
+		)
+	;
+
+typeArgumentSpec
+	:
+	classTypeSpec
+	|
+		builtInTypeArraySpec
+	;
+
+typeArgument
+	:
+	(
+		typeArgumentSpec
+		|
+			wildcardType
+	)
+	;
+
+wildcardType
+	:
+	#( 
+		WILDCARD_TYPE
+		(
+			typeArgumentBounds
+		)?
+	)
+	;
+
+typeArguments
+	:
+	typeArgument
+	(
+		typeArgument
+	)*
+	(
+		typeArgumentsOrParametersEnd
+	)?
+	;
+
+typeArgumentBounds
+	:
+	classOrInterfaceType
+	;
+
+builtInTypeArraySpec
+	:
+	(
+		declaratorBrackets
+		|
+	)
+	;
+
+builtInTypeSpec
+	:
+	declaratorBrackets
+	;
+
+type
+	:
+	classOrInterfaceType
+	|
+		builtInType
+	;
+
+builtInType
+	:
+	"void"
+	|
+		"boolean"
+	|
+		"byte"
+	|
+		"char"
+	|
+		"short"
+	|
+		"int"
+	|
+		"float"
+	|
+		"long"
+	|
+		"double"
+	|
+		"any"
+	;
+
+identifier0a
+	:
+	IDENT
+	|
+		#( 
+			DOT
+			identifier0a
+			IDENT
+		)
+	;
+
+identifier
+	:
+	#( 
+		DOT
+		identifier0a
+		IDENT
+	)
+	|
+		IDENT
+	;
+
+identifierStar0a
+	:
+	IDENT
+	|
+		#( 
+			DOT
+			identifierStar0a
+			IDENT
+		)
+	;
+
+identifierStar
+	:
+	#( 
+		DOT
+		#( 
+			DOT
+			identifierStar0a
+			IDENT
+		)
+		STAR
+	)
+	|
+		#( 
+			"as"
+			#( 
+				DOT
+				identifierStar0a
+				IDENT
+			)
+			IDENT
+		)
+	|
+		#( 
+			DOT
+			identifierStar0a
+			IDENT
+		)
+	|
+		#( 
+			DOT
+			IDENT
+			STAR
+		)
+	|
+		#( 
+			"as"
+			IDENT
+			IDENT
+		)
+	|
+		IDENT
+	;
+
+modifiersInternal
+	:
+	(
+		modifier
+		|
+			annotation
+		|
+	)+
+	;
+
+modifiers
+	:
+	modifiersInternal
+	;
+
+modifiersOpt
+	:
+	(
+		modifiersInternal
+	)?
+	;
+
+modifier
+	:
+	"private"
+	|
+		"public"
+	|
+		"protected"
+	|
+		"static"
+	|
+		"transient"
+	|
+		"final"
+	|
+		"abstract"
+	|
+		"native"
+	|
+		"threadsafe"
+	|
+		"synchronized"
+	|
+		"volatile"
+	|
+		"strictfp"
+	;
+
+annotationsOpt
+	:
+	(
+		annotation
+	)*
+	;
+
+annotationArguments
+	:
+	annotationMemberValueInitializer
+	|
+		anntotationMemberValuePairs
+	;
+
+anntotationMemberValuePairs
+	:
+	annotationMemberValuePair
+	(
+		annotationMemberValuePair
+	)*
+	;
+
+annotationMemberValueInitializer
+	:
+	conditionalExpression
+	|
+		annotation
+	;
+
+annotationMemberArrayValueInitializer
+	:
+	conditionalExpression
+	|
+		annotation
+	;
+
+typeParameters
+	:
+	typeParameter
+	(
+		typeParameter
+	)*
+	(
+		typeArgumentsOrParametersEnd
+	)?
+	;
+
+typeParameter
+	:
+	(
+		IDENT
+	)
+	(
+		typeParameterBounds
+	)?
+	;
+
+typeParameterBounds
+	:
+	classOrInterfaceType
+	(
+		classOrInterfaceType
+	)*
+	;
+
+classBlock
+	:
+	(
+		classField
+	)?
+	(
+		(
+			classField
+		)?
+	)*
+	;
+
+interfaceBlock
+	:
+	(
+		interfaceField
+	)?
+	(
+		(
+			interfaceField
+		)?
+	)*
+	;
+
+annotationBlock
+	:
+	(
+		annotationField
+	)?
+	(
+		(
+			annotationField
+		)?
+	)*
+	;
+
+enumBlock
+	:
+	(
+		enumConstants
+		|
+			(
+				classField
+			)?
+	)
+	(
+		(
+			classField
+		)?
+	)*
+	;
+
+enumConstantsStart
+	:
+	enumConstant
+	(
+		COMMA
+		|
+			SEMI
+		|
+			NLS
+		|
+			RCURLY
+	)
+	;
+
+enumConstants
+	:
+	enumConstant
+	(
+		enumConstant
+	)*
+	;
+
+enumConstantBlock
+	:
+	(
+		enumConstantField
+	)?
+	(
+		(
+			enumConstantField
+		)?
+	)*
+	;
+
+interfaceExtends
+	:
+	(
+		classOrInterfaceType
+		(
+			classOrInterfaceType
+		)*
+	)?
+	;
+
+implementsClause
+	:
+	(
+		classOrInterfaceType
+		(
+			classOrInterfaceType
+		)*
+	)?
+	;
+
+constructorBody
+	:
+	#( 
+		SLIST
+		(
+			explicitConstructorInvocation
+			(
+				blockBody
+			)?
+			|
+				blockBody
+		)
+	)
+	;
+
+explicitConstructorInvocation
+	:
+	#( 
+		CTOR_CALL
+		(
+			typeArguments
+		)?
+		argList
+	)
+	|
+		#( 
+			SUPER_CTOR_CALL
+			(
+				typeArguments
+			)?
+			argList
+		)
+	;
+
+variableDefinitions
+	:
+	variableDeclarator
+	(
+		variableDeclarator
+	)*
+	|
+		(
+			IDENT
+			|
+				STRING_LITERAL
+		)
+	;
+
+constructorDefinition
+	:
+	IDENT
+	;
+
+variableName
+	:
+	IDENT
+	;
+
+declaratorBrackets0a
+	:
+	#( 
+		ARRAY_DECLARATOR
+		declaratorBrackets0a
+	)
+	|
+	;
+
+declaratorBrackets
+	:
+	#( 
+		ARRAY_DECLARATOR
+		declaratorBrackets0a
+	)
+	|
+	;
+
+varInitializer
+	:
+	#( 
+		ASSIGN
+		expression
+	)
+	;
+
+throwsClause
+	:
+	#( 
+		"throws"
+		identifier
+		(
+			identifier
+		)*
+	)
+	;
+
+parameterDeclarationList
+	:
+	(
+		parameterDeclaration
+		(
+			parameterDeclaration
+		)*
+	)?
+	;
+
+simpleParameterDeclarationList
+	:
+	simpleParameterDeclaration
+	(
+		simpleParameterDeclaration
+	)*
+	;
+
+parameterModifiersOpt
+	:
+	(
+		"final"
+		|
+			annotation
+		|
+	)*
+	;
+
+closureParametersOpt
+	:
+	parameterDeclarationList
+	|
+		oldClosureParameters
+	|
+		implicitParameters
+	|
+	;
+
+oldClosureParameters
+	:
+	parameterDeclarationList
+	|
+		simpleParameterDeclarationList
+	|
+	;
+
+compoundStatement
+	:
+	openBlock
+	;
+
+openBlock
+	:
+	#( 
+		SLIST
+		blockBody
+	)
+	;
+
+blockBody
+	:
+	(
+		statement
+	)?
+	(
+		(
+			statement
+		)?
+	)*
+	;
+
+closedBlock
+	:
+	#( 
+		CLOSED_BLOCK
+		closureParametersOpt
+		blockBody
+	)
+	;
+
+openOrClosedBlock
+	:
+	#( 
+		LCURLY
+		closureParametersOpt
+		blockBody
+	)
+	;
+
+statement
+	:
+	(
+		openOrClosedBlock
+		|
+			statement
+	)
+	|
+		expressionStatement
+	|
+		typeDefinitionInternal
+	|
+		forStatement
+	|
+		#( 
+			"while"
+			strictContextExpression
+			compatibleBodyStatement
+		)
+	|
+		#( 
+			"with"
+			strictContextExpression
+			compoundStatement
+		)
+	|
+		#( 
+			SPREAD_ARG
+			expressionStatement
+		)
+	|
+		importStatement
+	|
+		tryBlock
+	|
+		#( 
+			"synchronized"
+			strictContextExpression
+			compoundStatement
+		)
+	|
+		branchStatement
+	|
+		declaration
+	;
+
+forStatement
+	:
+	#( 
+		"for"
+		(
+			traditionalForClause
+			|
+				forInClause
+		)
+		compatibleBodyStatement
+	)
+	;
+
+traditionalForClause
+	:
+	forInit
+	forCond
+	forIter
+	;
+
+forInClause
+	:
+	#( 
+		"in"
+		(
+			singleDeclarationNoInit
+			|
+				IDENT
+		)
+		shiftExpression
+	)
+	|
+		#( 
+			COLON
+			(
+				singleDeclarationNoInit
+				|
+					IDENT
+			)
+			expression
+		)
+	;
+
+compatibleBodyStatement
+	:
+	compoundStatement
+	|
+		statement
+	;
+
+branchStatement
+	:
+	#( 
+		"break"
+		(
+			statementLabelPrefix
+		)?
+		(
+			expression
+		)?
+	)
+	|
+		#( 
+			"continue"
+			(
+				statementLabelPrefix
+			)?
+			(
+				expression
+			)?
+		)
+	|
+		#( 
+			"throw"
+			expression
+		)
+	|
+		#( 
+			"assert"
+			expression
+			(
+				expression
+			)?
+		)
+	|
+		#( 
+			"return"
+			(
+				expression
+			)?
+		)
+	;
+
+statementLabelPrefix
+	:
+	#( 
+		LABELED_STAT
+		IDENT
+	)
+	;
+
+expressionStatement
+	:
+	(
+		checkSuspiciousExpressionStatement
+	)?
+	expression
+	;
+
+suspiciousExpressionStatementStart
+	:
+	(
+		(
+			PLUS
+			|
+				MINUS
+		)
+		|
+			(
+				LBRACK
+				|
+					LPAREN
+				|
+					LCURLY
+			)
+	)
+	;
+
+casesGroup
+	:
+	(
+		aCase
+	)+
+	caseSList
+	;
+
+aCase
+	:
+	#( 
+		"case"
+		expression
+	)
+	|
+		(
+			"default"
+		)
+	;
+
+caseSList
+	:
+	statement
+	(
+		(
+			statement
+		)?
+	)*
+	;
+
+forInit
+	:
+	declaration
+	|
+		(
+			controlExpressionList
+		)?
+	;
+
+forCond
+	:
+	(
+		strictContextExpression
+	)?
+	;
+
+forIter
+	:
+	(
+		controlExpressionList
+	)?
+	;
+
+tryBlock
+	:
+	#( 
+		"try"
+		compoundStatement
+		(
+			handler
+		)*
+		(
+			finallyClause
+		)?
+	)
+	;
+
+finallyClause
+	:
+	#( 
+		"finally"
+		compoundStatement
+	)
+	;
+
+handler
+	:
+	#( 
+		"catch"
+		parameterDeclaration
+		compoundStatement
+	)
+	;
+
+commandArguments
+	:
+	expression
+	(
+		expression
+	)*
+	;
+
+expression
+	:
+	assignmentExpression
+	;
+
+controlExpressionList
+	:
+	strictContextExpression
+	(
+		strictContextExpression
+	)*
+	;
+
+pathElement
+	:
+	#( 
+		SPREAD_DOT
+		(
+			typeArguments
+		)?
+		namePart
+	)
+	|
+		#( 
+			OPTIONAL_DOT
+			(
+				typeArguments
+			)?
+			namePart
+		)
+	|
+		#( 
+			MEMBER_POINTER
+			(
+				typeArguments
+			)?
+			namePart
+		)
+	|
+		#( 
+			DOT
+			(
+				typeArguments
+			)?
+			namePart
+		)
+	|
+	;
+
+namePart
+	:
+	#( 
+		AT
+		(
+			IDENT
+			|
+				STRING_LITERAL
+			|
+				openBlock
+			|
+				keywordPropertyNames
+			|
+		)
+	)
+	|
+		(
+			IDENT
+			|
+				STRING_LITERAL
+			|
+				openBlock
+			|
+				keywordPropertyNames
+			|
+		)
+	;
+
+keywordPropertyNames
+	:
+	(
+		"class"
+		|
+			"in"
+		|
+			"as"
+		|
+			"def"
+		|
+			"if"
+		|
+			"else"
+		|
+			"for"
+		|
+			"while"
+		|
+			"do"
+		|
+			"switch"
+		|
+			"try"
+		|
+			"catch"
+		|
+			"finally"
+		|
+			builtInType
+	)
+	;
+
+dynamicMemberName
+	:
+	(
+		parenthesizedExpression
+		|
+			stringConstructorExpression
+	)
+	;
+
+methodCallArgs
+	:
+	#( 
+		METHOD_CALL
+		argList
+	)
+	;
+
+appendedBlock
+	:
+	closedBlock
+	;
+
+indexPropertyArgs
+	:
+	#( 
+		INDEX_OP
+		argList
+	)
+	;
+
+assignmentExpression
+	:
+	#( 
+		ASSIGN
+		conditionalExpression
+		assignmentExpression
+	)
+	|
+		#( 
+			PLUS_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			MINUS_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			STAR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			DIV_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			MOD_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			SR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			BSR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			SL_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			BAND_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			BXOR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			BOR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		#( 
+			STAR_STAR_ASSIGN
+			conditionalExpression
+			assignmentExpression
+		)
+	|
+		conditionalExpression
+	;
+
+conditionalExpression
+	:
+	#( 
+		QUESTION
+		logicalOrExpression
+		assignmentExpression
+		conditionalExpression
+	)
+	|
+		logicalOrExpression
+	;
+
+logicalOrExpression0a
+	:
+	logicalAndExpression
+	|
+		#( 
+			LOR
+			logicalOrExpression0a
+			logicalAndExpression
+		)
+	;
+
+logicalOrExpression
+	:
+	#( 
+		LOR
+		logicalOrExpression0a
+		logicalAndExpression
+	)
+	|
+		logicalAndExpression
+	;
+
+logicalAndExpression0a
+	:
+	inclusiveOrExpression
+	|
+		#( 
+			LAND
+			logicalAndExpression0a
+			inclusiveOrExpression
+		)
+	;
+
+logicalAndExpression
+	:
+	#( 
+		LAND
+		logicalAndExpression0a
+		inclusiveOrExpression
+	)
+	|
+		inclusiveOrExpression
+	;
+
+inclusiveOrExpression0a
+	:
+	exclusiveOrExpression
+	|
+		#( 
+			BOR
+			inclusiveOrExpression0a
+			exclusiveOrExpression
+		)
+	;
+
+inclusiveOrExpression
+	:
+	#( 
+		BOR
+		inclusiveOrExpression0a
+		exclusiveOrExpression
+	)
+	|
+		exclusiveOrExpression
+	;
+
+exclusiveOrExpression0a
+	:
+	andExpression
+	|
+		#( 
+			BXOR
+			exclusiveOrExpression0a
+			andExpression
+		)
+	;
+
+exclusiveOrExpression
+	:
+	#( 
+		BXOR
+		exclusiveOrExpression0a
+		andExpression
+	)
+	|
+		andExpression
+	;
+
+andExpression0a
+	:
+	regexExpression
+	|
+		#( 
+			BAND
+			andExpression0a
+			regexExpression
+		)
+	;
+
+andExpression
+	:
+	#( 
+		BAND
+		andExpression0a
+		regexExpression
+	)
+	|
+		regexExpression
+	;
+
+regexExpression0a
+	:
+	equalityExpression
+	|
+		#( 
+			REGEX_FIND
+			regexExpression0a
+			equalityExpression
+		)
+	|
+		#( 
+			REGEX_MATCH
+			regexExpression0b
+			equalityExpression
+		)
+	;
+
+regexExpression0b
+	:
+	equalityExpression
+	|
+		#( 
+			REGEX_FIND
+			regexExpression0a
+			equalityExpression
+		)
+	|
+		#( 
+			REGEX_MATCH
+			regexExpression0b
+			equalityExpression
+		)
+	;
+
+regexExpression
+	:
+	#( 
+		REGEX_FIND
+		regexExpression0a
+		equalityExpression
+	)
+	|
+		#( 
+			REGEX_MATCH
+			regexExpression0b
+			equalityExpression
+		)
+	|
+		equalityExpression
+	;
+
+equalityExpression0a
+	:
+	relationalExpression
+	|
+		#( 
+			NOT_EQUAL
+			equalityExpression0a
+			relationalExpression
+		)
+	|
+		#( 
+			EQUAL
+			equalityExpression0b
+			relationalExpression
+		)
+	|
+		#( 
+			COMPARE_TO
+			equalityExpression0c
+			relationalExpression
+		)
+	;
+
+equalityExpression0b
+	:
+	relationalExpression
+	|
+		#( 
+			NOT_EQUAL
+			equalityExpression0a
+			relationalExpression
+		)
+	|
+		#( 
+			EQUAL
+			equalityExpression0b
+			relationalExpression
+		)
+	|
+		#( 
+			COMPARE_TO
+			equalityExpression0c
+			relationalExpression
+		)
+	;
+
+equalityExpression0c
+	:
+	relationalExpression
+	|
+		#( 
+			NOT_EQUAL
+			equalityExpression0a
+			relationalExpression
+		)
+	|
+		#( 
+			EQUAL
+			equalityExpression0b
+			relationalExpression
+		)
+	|
+		#( 
+			COMPARE_TO
+			equalityExpression0c
+			relationalExpression
+		)
+	;
+
+equalityExpression
+	:
+	#( 
+		NOT_EQUAL
+		equalityExpression0a
+		relationalExpression
+	)
+	|
+		#( 
+			EQUAL
+			equalityExpression0b
+			relationalExpression
+		)
+	|
+		#( 
+			COMPARE_TO
+			equalityExpression0c
+			relationalExpression
+		)
+	|
+		relationalExpression
+	;
+
+relationalExpression
+	:
+	#( 
+		LT
+		shiftExpression
+		shiftExpression
+	)
+	|
+		#( 
+			GT
+			shiftExpression
+			shiftExpression
+		)
+	|
+		#( 
+			LE
+			shiftExpression
+			shiftExpression
+		)
+	|
+		#( 
+			GE
+			shiftExpression
+			shiftExpression
+		)
+	|
+		#( 
+			"in"
+			shiftExpression
+			shiftExpression
+		)
+	|
+		shiftExpression
+	|
+		#( 
+			"instanceof"
+			shiftExpression
+			typeSpec
+		)
+	|
+		#( 
+			"as"
+			shiftExpression
+			typeSpec
+		)
+	;
+
+shiftExpression0a
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression0b
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression0c
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression0d
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression0e
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression0f
+	:
+	additiveExpression
+	|
+		#( 
+			SL
+			shiftExpression0a
+			additiveExpression
+		)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	;
+
+shiftExpression
+	:
+	#( 
+		SL
+		shiftExpression0a
+		additiveExpression
+	)
+	|
+		#( 
+			SR
+			shiftExpression0b
+			additiveExpression
+		)
+	|
+		#( 
+			BSR
+			shiftExpression0c
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_INCLUSIVE
+			shiftExpression0d
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0e
+			additiveExpression
+		)
+	|
+		#( 
+			RANGE_EXCLUSIVE
+			shiftExpression0f
+			additiveExpression
+		)
+	|
+		additiveExpression
+	;
+
+additiveExpression0a
+	:
+	multiplicativeExpression
+	|
+		#( 
+			PLUS
+			additiveExpression0a
+			multiplicativeExpression
+		)
+	|
+		#( 
+			MINUS
+			additiveExpression0b
+			multiplicativeExpression
+		)
+	;
+
+additiveExpression0b
+	:
+	multiplicativeExpression
+	|
+		#( 
+			PLUS
+			additiveExpression0a
+			multiplicativeExpression
+		)
+	|
+		#( 
+			MINUS
+			additiveExpression0b
+			multiplicativeExpression
+		)
+	;
+
+additiveExpression
+	:
+	#( 
+		PLUS
+		additiveExpression0a
+		multiplicativeExpression
+	)
+	|
+		#( 
+			MINUS
+			additiveExpression0b
+			multiplicativeExpression
+		)
+	|
+		multiplicativeExpression
+	;
+
+multiplicativeExpression0a
+	:
+	#( 
+		INC
+		powerExpression
+	)
+	|
+		#( 
+			STAR
+			multiplicativeExpression0a
+			powerExpression
+		)
+	|
+		#( 
+			DIV
+			multiplicativeExpression0b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression0c
+			powerExpression
+		)
+	;
+
+multiplicativeExpression0b
+	:
+	#( 
+		INC
+		powerExpression
+	)
+	|
+		#( 
+			STAR
+			multiplicativeExpression0a
+			powerExpression
+		)
+	|
+		#( 
+			DIV
+			multiplicativeExpression0b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression0c
+			powerExpression
+		)
+	;
+
+multiplicativeExpression0c
+	:
+	#( 
+		INC
+		powerExpression
+	)
+	|
+		#( 
+			STAR
+			multiplicativeExpression0a
+			powerExpression
+		)
+	|
+		#( 
+			DIV
+			multiplicativeExpression0b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression0c
+			powerExpression
+		)
+	;
+
+multiplicativeExpression
+	:
+	#( 
+		STAR
+		multiplicativeExpression0a
+		powerExpression
+	)
+	|
+		#( 
+			DIV
+			multiplicativeExpression0b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression0c
+			powerExpression
+		)
+	|
+		#( 
+			STAR
+			multiplicativeExpression1a
+			powerExpression
+		)
+	|
+		#( 
+			DIV
+			multiplicativeExpression1b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression1c
+			powerExpression
+		)
+	|
+		#( 
+			STAR
+			multiplicativeExpression4a
+			powerExpression
+		)
+	|
+		#( 
+			DIV
+			multiplicativeExpression4b
+			powerExpression
+		)
+	|
+		#( 
+			MOD
+			multiplicativeExpression4c
+			powerExpression
+		)
+	|
+		#( 
+			DEC
+			powerExpression
+		)
+	|
+		powerExpression
+	|
+		#( 
+			INC
+			powerExpression
+		)
+	;
+
+powerExpression0a
+	:
+	unaryExpressionNotPlusMinus
+	|
+		#( 
+			STAR_STAR
+			powerExpression0a
+			unaryExpression
+		)
+	;
+
+powerExpression
+	:
+	#( 
+		STAR_STAR
+		powerExpression0a
+		unaryExpression
+	)
+	|
+		unaryExpressionNotPlusMinus
+	;
+
+unaryExpression
+	:
+	#( 
+		DEC
+		unaryExpression
+	)
+	|
+		#( 
+			UNARY_MINUS
+			unaryExpression
+		)
+	|
+		#( 
+			UNARY_PLUS
+			unaryExpression
+		)
+	|
+		unaryExpressionNotPlusMinus
+	|
+		#( 
+			INC
+			unaryExpression
+		)
+	;
+
+unaryExpressionNotPlusMinus
+	:
+	#( 
+		LNOT
+		unaryExpression
+	)
+	|
+		#( 
+			LPAREN
+			builtInTypeSpec
+			unaryExpression
+		)
+	|
+		#( 
+			LPAREN
+			classTypeSpec
+			unaryExpressionNotPlusMinus
+		)
+	|
+		#( 
+			BNOT
+			unaryExpression
+		)
+	;
+
+postfixExpression
+	:
+	#( 
+		POST_INC
+		pathExpression
+	)
+	|
+		#( 
+			POST_DEC
+			pathExpression
+		)
+	|
+		pathExpression
+	;
+
+primaryExpression
+	:
+	IDENT
+	|
+		constant
+	|
+		newExpression
+	|
+		"this"
+	|
+		"super"
+	|
+		parenthesizedExpression
+	|
+		closureConstructorExpression
+	|
+		listOrMapConstructorExpression
+	|
+		stringConstructorExpression
+	|
+		scopeEscapeExpression
+	|
+		builtInType
+	;
+
+parenthesizedExpression
+	:
+	strictContextExpression
+	;
+
+scopeEscapeExpression
+	:
+	#( 
+		SCOPE_ESCAPE
+		(
+			IDENT
+			|
+				scopeEscapeExpression
+		)
+	)
+	;
+
+strictContextExpression
+	:
+	(
+		singleDeclaration
+		|
+			expression
+		|
+			branchStatement
+		|
+			annotation
+	)
+	;
+
+closureConstructorExpression
+	:
+	closedBlock
+	;
+
+stringConstructorExpression
+	:
+	STRING_CTOR_START
+	stringConstructorValuePart
+	(
+		STRING_CTOR_MIDDLE
+		stringConstructorValuePart
+	)*
+	STRING_CTOR_END
+	;
+
+stringConstructorValuePart
+	:
+	#( 
+		SPREAD_ARG
+		(
+			identifier
+			|
+				openOrClosedBlock
+		)
+	)
+	|
+		(
+			identifier
+			|
+				openOrClosedBlock
+		)
+	;
+
+listOrMapConstructorExpression
+	:
+	LBRACK
+	|
+		#( 
+			LBRACK
+			argList
+		)
+	;
+
+newExpression
+	:
+	#( 
+		"new"
+		(
+			typeArguments
+		)?
+		type
+		(
+			newArrayDeclarator
+			|
+		)
+	)
+	;
+
+argList
+	:
+	(
+		argument
+		(
+			argument
+		)*
+		|
+	)
+	;
+
+argument
+	:
+	#( 
+		LABELED_ARG
+		argumentLabel
+		strictContextExpression
+	)
+	|
+		#( 
+			SPREAD_ARG
+			strictContextExpression
+		)
+	|
+		strictContextExpression
+	;
+
+argumentLabel
+	:
+	IDENT
+	|
+		keywordPropertyNames
+	|
+		primaryExpression
+	;
+
+newArrayDeclarator0a
+	:
+	#( 
+		ARRAY_DECLARATOR
+		newArrayDeclarator0a
+		(
+			expression
+		)?
+	)
+	|
+	;
+
+newArrayDeclarator
+	:
+	#( 
+		ARRAY_DECLARATOR
+		newArrayDeclarator0a
+		(
+			expression
+		)?
+	)
+	;
+
+constant
+	:
+	constantNumber
+	|
+		STRING_LITERAL
+	|
+		"true"
+	|
+		"false"
+	|
+		"null"
+	;
+
+constantNumber
+	:
+	NUM_INT
+	|
+		NUM_FLOAT
+	|
+		NUM_LONG
+	|
+		NUM_DOUBLE
+	|
+		NUM_BIG_INT
+	|
+		NUM_BIG_DECIMAL
+	;
