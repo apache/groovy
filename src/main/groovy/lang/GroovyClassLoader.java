@@ -247,6 +247,11 @@ public class GroovyClassLoader extends SecureClassLoader {
                     cache.put(name, answer);
                 }
             }
+            try {
+                codeSource.getInputStream().close();
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("unable to close stream",e);
+            }
         }
         return answer;
     }
