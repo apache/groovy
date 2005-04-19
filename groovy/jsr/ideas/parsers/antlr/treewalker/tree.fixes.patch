@@ -1,0 +1,29 @@
+Index: GroovyRecognizerTree.g
+===================================================================
+RCS file: /home/projects/groovy/scm/groovy/jsr/ideas/parsers/antlr/treewalker/src/GroovyRecognizerTree.g,v
+retrieving revision 1.1
+diff -c -r1.1 GroovyRecognizerTree.g
+*** GroovyRecognizerTree.g	19 Apr 2005 22:14:04 -0000	1.1
+--- GroovyRecognizerTree.g	19 Apr 2005 22:42:47 -0000
+***************
+*** 689,700 ****
+  	;
+  
+  statement
+! 	:
+! 	(
+! 		openOrClosedBlock
+! 		|
+! 			statement
+! 	)
+  	|
+  		expressionStatement
+  	|
+--- 689,695 ----
+  	;
+  
+  statement
+! 	:   openOrClosedBlock
+  	|
+  		expressionStatement
+  	|

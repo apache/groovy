@@ -28,6 +28,12 @@
   <target name="genTreeWalker" description="generate tree walker">
     <mkdir dir="gensrc"/>
     <copy file="src/GroovyRecognizerTree.g" todir="gensrc"/>
+
+    <exec executable="patch">
+      <arg value="gensrc/GroovyRecognizerTree.g"/>
+      <arg value="tree.fixes.patch"/>
+    </exec>
+
     <java classname="antlr.Tool" dir="gensrc" fork="yes">
       <arg value="GroovyRecognizerTree.g"/>
       <classpath>
