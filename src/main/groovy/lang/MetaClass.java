@@ -232,10 +232,9 @@ public class MetaClass {
         List used = GroovyCategorySupport.getCategoryMethods(theClass, name);
         if (used != null) {
             if (answer != null) {
-                answer.addAll(used);
-            } else{
-                answer = used;
+                used.addAll(answer);
             }
+            answer = used;
         }
         if (answer == null) {
             answer = Collections.EMPTY_LIST;

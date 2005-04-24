@@ -586,7 +586,7 @@
 <!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
   </goal>
 
-  <goal name="groovy:exe" >
+  <goal name="groovy:exe" prereqs="rebuild">
     <echo>Building a Groovy executable</echo>
     <mkdir dir="${maven.build.dir}/native/classes"/>
     <unzip src="${maven.build.dir}/${maven.final.name}.jar" dest="${maven.build.dir}/native/classes"/>
