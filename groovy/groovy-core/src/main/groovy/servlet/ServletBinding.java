@@ -49,10 +49,12 @@ import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletResponse;
 import java.util.Map;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.io.IOException;
 
 /**
@@ -66,9 +68,11 @@ public class ServletBinding extends Binding {
     protected Binding binding = new Binding();
     private ServletResponse response;
     private MarkupBuilder html;
+    private ServletContext sc;
 
-    public ServletBinding(HttpServletRequest request, ServletResponse response, ServletContext sc) {
+    public ServletBinding(HttpServletRequest request, final HttpServletResponse response, ServletContext sc) {
         this.response = response;
+        this.sc = sc;
 
         binding.setVariable("request", request);
         binding.setVariable("response", response);
@@ -77,17 +81,33 @@ public class ServletBinding extends Binding {
         binding.setVariable("session", request.getSession(true));
 
         // Form parameters. If there are multiple its passed as a list.
+        Map params = new HashMap();
         for (Enumeration paramEnum = request.getParameterNames(); paramEnum.hasMoreElements();) {
             String key = (String) paramEnum.nextElement();
             if (!binding.getVariables().containsKey(key)) {
                 String[] values = request.getParameterValues(key);
                 if (values.length == 1) {
-                    binding.setVariable(key, values[0]);
+                    params.put(key, values[0]);
                 } else {
-                    binding.setVariable(key, values);
+                    params.put(key, values);
                 }
             }
         }
+        binding.setVariable("param", params);
+
+        // Headers
+        Map headers = new HashMap() {
+            public Object put(Object key, Object value) {
+                response.setHeader(key.toString(), value.toString());
+                return null;
+            }
+        };
+        for (Enumeration headerEnum = request.getHeaderNames(); headerEnum.hasMoreElements(); ) {
+            String headerName = (String) headerEnum.nextElement();
+            String headerValue = request.getHeader(headerName);
+            headers.put(headerName, headerValue);
+        }
+        binding.setVariable("header", headers);
     }
 
     public void setVariable(String name, Object value) {
@@ -102,18 +122,30 @@ public class ServletBinding extends Binding {
      * @return a writer, an output stream, a markup builder or another requested object
      */
     public Object getVariable(String name) {
-        try {
             if ("out".equals(name))
-                return response.getWriter();
+                try {
+                    return response.getWriter();
+                } catch (IOException e) {
+                    sc.log("Failed to get writer from response", e);
+                    return null;
+                }
             if ("sout".equals(name))
-                return response.getOutputStream();
+                try {
+                    return response.getOutputStream();
+                } catch (IOException e) {
+                    sc.log("Failed to get outputstream from response", e);
+                    return null;
+                }
             if ("html".equals(name)) {
                 if (html == null)
-                    html = new MarkupBuilder(response.getWriter());
+                    try {
+                        html = new MarkupBuilder(response.getWriter());
+                    } catch (IOException e) {
+                        sc.log("Failed to get writer from response", e);
+                        return null;
+                    }
                 return html;
             }
-        }
-        catch (IOException e) { }
         return binding.getVariable(name);
     }
 }
