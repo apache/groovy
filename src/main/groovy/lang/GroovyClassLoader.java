@@ -86,6 +86,8 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private String[] searchPaths;
 
+    private List additionalPaths = new ArrayList();
+
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
     }
@@ -384,7 +386,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      */
     protected String[] getClassPath() {
         if (searchPaths == null) {
-            List pathList = new ArrayList();
+            List pathList = new ArrayList(additionalPaths);
             String classpath = System.getProperty("java.class.path", ".");
             expandClassPath(pathList, null, classpath);
             searchPaths = new String[pathList.size()];
@@ -612,5 +614,10 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private boolean isSourceNewer(File source, Class cls) {
         return source.lastModified() > getTimeStamp(cls);
+    }
+
+    public void addClasspath(String path) {
+        additionalPaths.add(path);
+        searchPaths = null;
     }
 }

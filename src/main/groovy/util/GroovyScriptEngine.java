@@ -139,7 +139,10 @@ public class GroovyScriptEngine implements ResourceConnector {
 	/**
 	 * The groovy script engine will run groovy scripts and reload them and
 	 * their dependencies when they are modified. This is useful for embedding
-	 * groovy in other containers like games and application servers. 
+	 * groovy in other containers like games and application servers.
+     *
+     * @param roots This an array of URLs where Groovy scripts will be stored. They should
+     * be layed out using their package structure like Java classes 
 	 */
 	public GroovyScriptEngine(URL[] roots) {
 		this.roots = roots;

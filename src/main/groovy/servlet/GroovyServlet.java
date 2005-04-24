@@ -195,7 +195,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
         response.setContentType("text/html");
 
         // Set up the script context
-        final Binding binding = new ServletBinding((HttpServletRequest) request, response, sc);
+        final Binding binding = new ServletBinding((HttpServletRequest) request, (HttpServletResponse) response, sc);
 
         // Run the script
         try {
