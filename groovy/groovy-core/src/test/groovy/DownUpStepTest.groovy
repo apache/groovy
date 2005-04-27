@@ -1,4 +1,5 @@
 public class DownUpStepTest extends GroovyTestCase {
+
     void testDownto() {
         z = 0.0
         (10.5).downto(5.9) { z += it }
@@ -16,6 +17,12 @@ public class DownUpStepTest extends GroovyTestCase {
     void testStep() {
         z = 0.0
         (1.2).step(3.9, 0.1) { z += it }
+        assert z == 67.5
+    }
+
+    void testDownStep() {
+        z = 0.0
+        (3.8).step(11.1, -0.1) { z += it }
         assert z == 67.5
     }
 }
