@@ -3108,78 +3108,143 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param closure the closure to call
      */
     public static void upto(Number self, Number to, Closure closure) {
-        for (int i = self.intValue(), size = to.intValue(); i <= size; i++) {
-            closure.call(new Integer(i));
+        int self1 = self.intValue();
+        int to1 = to.intValue();
+        if (self1 <= to1) {
+            for (int i = self1; i <= to1; i++) {
+                closure.call(new Integer(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(long self, Number to, Closure closure) {
-        for (long i = self, size = to.longValue(); i <= size; i++) {
-            closure.call(new Long(i));
+        long to1 = to.longValue();
+        if (self <= to1) {
+            for (long i = self; i <= to1; i++) {
+                closure.call(new Long(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(Long self, Number to, Closure closure) {
-        for (long i = self.longValue(), size = to.longValue(); i <= size; i++) {
-            closure.call(new Long(i));
+        long self1 = self.longValue();
+        long to1 = to.longValue();
+        if (self1 <= to1) {
+            for (long i = self1; i <= to1; i++) {
+                closure.call(new Long(i));
+            }
         }
-    }
-
-    public static void upto(Float self, Number to, Closure closure) {
-        for (float i = self.floatValue(), size = to.floatValue(); i <= size; i++) {
-            closure.call(new Float(i));
-        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(float self, Number to, Closure closure) {
-        for (float i = self, size = to.floatValue(); i <= size; i++) {
-            closure.call(new Float(i));
+        float to1 = to.floatValue();
+        if (self <= to1) {
+            for (float i = self; i <= to1; i++) {
+                closure.call(new Float(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
+    }
+
+    public static void upto(Float self, Number to, Closure closure) {
+        float self1 = self.floatValue();
+        float to1 = to.floatValue();
+        if (self1 <= to1) {
+            for (float i = self1; i <= to1; i++) {
+                closure.call(new Float(i));
+            }
+        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(Double self, Number to, Closure closure) {
-        for (double i = self.doubleValue(), size = to.doubleValue(); i <= size; i++) {
-            closure.call(new Double(i));
+        double self1 = self.doubleValue();
+        double to1 = to.doubleValue();
+        if (self1 <= to1) {
+            for (double i = self1; i <= to1; i++) {
+                closure.call(new Double(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            BigDecimal one = new BigDecimal(1.0);
-            for (BigDecimal i = new BigDecimal(self), size = (BigDecimal) to; i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            final BigDecimal one = new BigDecimal(1.0);
+            BigDecimal self1 = new BigDecimal(self);
+            BigDecimal to1 = (BigDecimal) to;
+            if (self1.compareTo(to1) <= 0) {
+                for (BigDecimal i = self1; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
         else if (to instanceof BigInteger) {
-            BigInteger one = new BigInteger("1");
-            for (BigInteger i = self, size = (BigInteger) to; i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            final BigInteger one = new BigInteger("1");
+            BigInteger to1 = (BigInteger) to;
+            if (self.compareTo(to1) <= 0) {
+                for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
         else {
-            BigInteger one = new BigInteger("1");
-            for (BigInteger i = self, size = new BigInteger("" + to); i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            final BigInteger one = new BigInteger("1");
+            BigInteger to1 = new BigInteger("" + to);
+            if (self.compareTo(to1) <= 0) {
+                for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
     }
 
     public static void upto(BigDecimal self, Number to, Closure closure) {
-        BigDecimal one = new BigDecimal(1.0);
+        final BigDecimal one = new BigDecimal(1.0);
         if (to instanceof BigDecimal) {
-            for (BigDecimal i = self, size = (BigDecimal) to; i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            BigDecimal to1 = (BigDecimal) to;
+            if (self.compareTo(to1) <= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
         else if (to instanceof BigInteger) {
-            for (BigDecimal i = self, size = new BigDecimal((BigInteger) to); i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            BigDecimal to1 = new BigDecimal((BigInteger) to);
+            if (self.compareTo(to1) <= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
         else {
-            for (BigDecimal i = self, size = new BigDecimal(to.doubleValue()); i.compareTo(size) <= 0; i = i.add(one)) {
-                closure.call(i);
+            BigDecimal to1 = new BigDecimal(to.doubleValue());
+            if (self.compareTo(to1) <= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
     }
 
@@ -3191,78 +3256,153 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param closure the closure to call
      */
     public static void downto(Number self, Number to, Closure closure) {
-        for (int i = self.intValue(), size = to.intValue(); i >= size; i--) {
-            closure.call(new Integer(i));
+        int self1 = self.intValue();
+        int to1 = to.intValue();
+        if (self1 >= to1) {
+            for (int i = self1; i >= to1; i--) {
+                closure.call(new Integer(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
     public static void downto(long self, Number to, Closure closure) {
-        for (long i = self, size = to.longValue(); i >= size; i--) {
-            closure.call(new Long(i));
+        long to1 = to.longValue();
+        if (self >= to1) {
+            for (long i = self; i >= to1; i--) {
+                closure.call(new Long(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
     public static void downto(Long self, Number to, Closure closure) {
-        for (long i = self.longValue(), size = to.longValue(); i >= size; i--) {
-            closure.call(new Long(i));
+        long self1 = self.longValue();
+        long to1 = to.longValue();
+        if (self1 >= to1) {
+            for (long i = self1; i >= to1; i--) {
+                closure.call(new Long(i));
+            }
         }
-    }
-
-    public static void downto(Float self, Number to, Closure closure) {
-        for (float i = self.floatValue(), size = to.floatValue(); i >= size; i--) {
-            closure.call(new Float(i));
-        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
     public static void downto(float self, Number to, Closure closure) {
-        for (float i = self, size = to.floatValue(); i >= size; i--) {
-            closure.call(new Float(i));
+        float to1 = to.floatValue();
+        if (self >= to1) {
+            for (float i = self; i >= to1; i--) {
+               closure.call(new Float(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+    }
+
+    public static void downto(Float self, Number to, Closure closure) {
+        float self1 = self.floatValue();
+        float to1 = to.floatValue();
+        if (self1 >= to1) {
+            for (float i = self1; i >= to1; i--) {
+               closure.call(new Float(i));
+            }
+        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
+    }
+
+    public static void downto(double self, Number to, Closure closure) {
+        double to1 = to.doubleValue();
+        if (self >= to1) {
+            for (double i = self; i >= to1; i--) {
+                closure.call(new Double(i));
+            }
+        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
     public static void downto(Double self, Number to, Closure closure) {
-        for (double i = self.doubleValue(), size = to.doubleValue(); i >= size; i--) {
-            closure.call(new Double(i));
+        double self1 = self.doubleValue();
+        double to1 = to.doubleValue();
+        if (self1 >= to1) {
+            for (double i = self1; i >= to1; i--) {
+                closure.call(new Double(i));
+            }
         }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
     }
 
     public static void downto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            BigDecimal one = new BigDecimal(1.0);
-            for (BigDecimal i = new BigDecimal(self), size = (BigDecimal) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            final BigDecimal one = new BigDecimal(1.0);
+            BigDecimal to1 = (BigDecimal) to;
+            if (self.compareTo(to1) >= 0) {
+                for (BigDecimal i = new BigDecimal(self); i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
         else if (to instanceof BigInteger) {
-            BigInteger one = new BigInteger("1");
-            for (BigInteger i = self, size = (BigInteger) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            final BigInteger one = new BigInteger("1");
+            BigInteger to1 = (BigInteger) to;
+            if (self.compareTo(to1) >= 0) {
+                for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
         else {
-            BigInteger one = new BigInteger("1");
-            for (BigInteger i = self, size = new BigInteger("" + to); i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            final BigInteger one = new BigInteger("1");
+            BigInteger to1 = new BigInteger("" + to);
+            if (self.compareTo(to1) >= 0) {
+                for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
     }
 
     public static void downto(BigDecimal self, Number to, Closure closure) {
-        BigDecimal one = new BigDecimal(1.0);
+        final BigDecimal one = new BigDecimal(1.0);
         if (to instanceof BigDecimal) {
-            for (BigDecimal i = self, size = (BigDecimal) to; i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            BigDecimal to1 = (BigDecimal) to;
+            if (self.compareTo(to1) >= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
         else if (to instanceof BigInteger) {
-            for (BigDecimal i = self, size = new BigDecimal((BigInteger) to); i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            BigDecimal to1 = new BigDecimal((BigInteger) to);
+            if (self.compareTo(to1) >= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
         else {
-            for (BigDecimal i = self, size = new BigDecimal(to.doubleValue()); i.compareTo(size) >= 0; i = i.subtract(one)) {
-                closure.call(i);
+            BigDecimal to1 = new BigDecimal(to.doubleValue());
+            if (self.compareTo(to1) >= 0) {
+                for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
+                    closure.call(i);
+                }
             }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self +".downto(" + to +")");
         }
     }
 
@@ -3276,25 +3416,57 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
+            final BigDecimal zero = new BigDecimal(0.0);
             BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal("" + self);
             BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal("" + to);
             BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal("" + stepNumber);
-            for (BigDecimal i = self1, size = to1, step = stepNumber1; i.compareTo(size) < 0; i = i.add(step)) {
-                closure.call(i);
+            if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
+                for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
+                    closure.call(i);
+                }
             }
+            else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
+                for (BigDecimal i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
+                    closure.call(i);
+                }
+            }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
         else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
+            final BigInteger zero = new BigInteger("0");
             BigInteger self1 = (self instanceof BigInteger) ? (BigInteger) self : new BigInteger("" + self);
             BigInteger to1 = (to instanceof BigInteger) ? (BigInteger) to : new BigInteger("" + to);
             BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger("" + stepNumber);
-            for (BigInteger i = self1, size = to1, step = stepNumber1; i.compareTo(size) < 0; i = i.add(step)) {
-                closure.call(i);
+            if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
+                for (BigInteger i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
+                    closure.call(i);
+                }
             }
+            else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
+                for (BigInteger i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
+                    closure.call(i);
+                }
+            }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
-       else {
-            for (int i = self.intValue(), size = to.intValue(), step = stepNumber.intValue(); i < size; i += step) {
-                closure.call(new Integer(i));
+        else {
+            int self1 = self.intValue();
+            int to1 = to.intValue();
+            int stepNumber1 = stepNumber.intValue();
+            if (stepNumber1 > 0 && to1 > self1) {
+                for (int i = self1; i < to1; i += stepNumber1) {
+                    closure.call(new Integer(i));
+                }
             }
+            else if (stepNumber1 < 0 && to1 < self1) {
+                for (int i = self1; i > to1; i += stepNumber1) {
+                    closure.call(new Integer(i));
+                }
+            }
+            else
+                throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
     }
 
