@@ -22,7 +22,7 @@ public class DownUpStepTest extends GroovyTestCase {
 
     void testDownStep() {
         z = 0.0
-        (3.8).step(11.1, -0.1) { z += it }
+        (3.8).step(1.1, -0.1) { z += it }
         assert z == 67.5
     }
 }
