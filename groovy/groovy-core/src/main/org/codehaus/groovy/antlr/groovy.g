@@ -2338,8 +2338,7 @@ powerExpression[int lc_stmt]
 
 // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 2)
 unaryExpression[int lc_stmt]
-    :   BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
-    |   BNOT^ nls! unaryExpression[0]
+    :   INC^ nls! unaryExpression[0]
     |   DEC^ nls! unaryExpression[0]
     |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
     |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
@@ -2348,7 +2347,8 @@ unaryExpression[int lc_stmt]
 
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus[int lc_stmt]
-    :   BNOT^ nls! unaryExpression[0]
+    :   BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
+    |   BNOT^ nls! unaryExpression[0]
     |   LNOT^ nls! unaryExpression[0]
     |   (   // subrule allows option to shut off warnings
             options {
