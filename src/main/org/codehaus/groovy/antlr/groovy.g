@@ -2064,6 +2064,7 @@ pathElementStart!
     :   DOT
     |   SPREAD_DOT
     |   OPTIONAL_DOT
+    |   MEMBER_POINTER_DEFAULT
     |   MEMBER_POINTER
     |   LBRACK
     |   LPAREN
@@ -2337,7 +2338,8 @@ powerExpression[int lc_stmt]
 
 // ++(prefix)/--(prefix)/+(unary)/-(unary) (level 2)
 unaryExpression[int lc_stmt]
-    :   INC^ nls! unaryExpression[0]
+    :   BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
+    |   BNOT^ nls! unaryExpression[0]
     |   DEC^ nls! unaryExpression[0]
     |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
     |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
