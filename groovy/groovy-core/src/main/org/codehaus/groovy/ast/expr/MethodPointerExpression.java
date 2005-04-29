@@ -73,7 +73,10 @@ public class MethodPointerExpression extends Expression {
     }
 
     public Expression getExpression() {
-        return expression;
+	if (expression == null)
+	    return VariableExpression.THIS_EXPRESSION;
+	else
+	    return expression;
     }
 
     public String getMethodName() {
@@ -85,17 +88,25 @@ public class MethodPointerExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new MethodPointerExpression(transformer.transform(expression), methodName);
+	if (expression == null)
+	        return new MethodPointerExpression(VariableExpression.THIS_EXPRESSION, methodName);
+	else
+	        return new MethodPointerExpression(transformer.transform(expression), methodName);
     }
 
     protected void resolveType(AsmClassGenerator resolver) {
-        expression.resolve(resolver);
-        setTypeClass(expression.getTypeClass());
+	if (expression != null) {
+            expression.resolve(resolver);
+            setTypeClass(expression.getTypeClass());
+	}
     }
 
     public String getText() {
+	if (expression == null)
+		return "&" + methodName;
+	else
 		return expression.getText() + ".&" + methodName;
-	}
+    }
 
     public String getType() {
         return "groovy.lang.Closure";
