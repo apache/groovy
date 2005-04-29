@@ -77,6 +77,17 @@ public class DefaultGroovyMethods {
     private static final char ZERO_CHAR = '\u0000';
 
     /**
+     * Allows the closure to be called for the object reference self
+     *
+     * @param self     the object to have a closure act upon
+     * @param closure  the closure to call on the object
+     * @return         result of calling the closure
+     */
+    public static Object identity(Object self, Closure closure) {
+        return closure.call(self);
+    }
+
+    /**
      * Allows the subscript operator to be used to lookup dynamic property values.
      * <code>bean[somePropertyNameExpression]</code>. The normal property notation
      * of groovy is neater and more concise but only works with compile time known
