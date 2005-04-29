@@ -107,6 +107,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(GuillaumesMapBug.class);
         suite.addTestSuite(HeredocsTest.class);
         suite.addTestSuite(HomepageTest.class);
+        suite.addTestSuite(IdentityClosureTest.class);
         suite.addTestSuite(IfElseCompactTest.class);
         suite.addTestSuite(IfElseTest.class);
         suite.addTestSuite(IfPropertyTest.class);
