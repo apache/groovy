@@ -1,5 +1,4 @@
 /**
- *
  * Copyright 2005 Alan Green
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- **/
+ */
+
+
 package org.codehaus.groovy.antlr;
 
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import java.io.IOException;
 import java.io.Reader;
+
+import antlr.CharScanner;
 
 /**
  * Translates GLS-defined unicode escapes into characters. Throws an exception
@@ -33,7 +35,7 @@ import java.io.Reader;
 public class UnicodeEscapingReader extends Reader {
 
     private Reader reader;
-    private GroovyLexer lexer;
+    private CharScanner lexer;
     private boolean hasNextChar = false;
     private int nextChar;
 
@@ -46,10 +48,10 @@ public class UnicodeEscapingReader extends Reader {
     }
 
     /**
-     * Sets the lexer that is using this reader. Must be called before the 
+     * Sets the lexer that is using this reader. Must be called before the
      * lexer is used.
      */
-    public void setLexer(GroovyLexer lexer) {
+    public void setLexer(CharScanner lexer) {
         this.lexer = lexer;
     }
 
@@ -58,7 +60,6 @@ public class UnicodeEscapingReader extends Reader {
      * @see java.io.Reader#read(char[],int,int)
      */
     public int read(char cbuf[], int off, int len) throws IOException {
-
         int c = 0;
         int count = 0;
         while (count < len && (c = read())!= -1) {
@@ -74,12 +75,11 @@ public class UnicodeEscapingReader extends Reader {
      * @see java.io.Reader#close()
      */
     public int read() throws IOException {
-
         if (hasNextChar) {
             hasNextChar = false;
             return nextChar;
         }
-        
+
         int c = reader.read();
         if (c != '\\') {
             return c;
@@ -132,7 +132,6 @@ public class UnicodeEscapingReader extends Reader {
                 + " line: " + lexer.getLine() + " col:" + lexer.getColumn());
     }
 
-
     /**
      * Closes this reader by calling close on the underlying reader.
      * @see java.io.Reader#close()
@@ -140,5 +139,4 @@ public class UnicodeEscapingReader extends Reader {
     public void close() throws IOException {
         reader.close();
     }
-
 }
