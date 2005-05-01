@@ -49,8 +49,12 @@ package org.codehaus.groovy.ant;
 import org.apache.tools.ant.types.*;
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
+
 import org.apache.tools.ant.*;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
@@ -384,11 +388,26 @@ public class Groovy extends Task {
 
             try {
                 Script script = groovy.parse(txt);
-                script.setProperty("ant",new AntBuilder(getProject()));
-                script.setProperty("project",getProject());
-                script.setProperty("properties",getProject().getProperties());
+                Project project = getProject();
+                script.setProperty("ant",new AntBuilder(project));
+                script.setProperty("project",project);
+                script.setProperty("properties",project.getProperties());
                 script.setProperty("target",getOwningTarget());
                 script.setProperty("task",this);
+
+                // treat the case Ant is run through Maven, and
+                if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
+                    try {
+                        Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
+                        Field contextField = propsHandler.getClass().getDeclaredField("context");
+                        contextField.setAccessible(true);
+                        Object context = contextField.get(propsHandler);
+                        Object mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+                        script.setProperty("pom", mavenPom);
+                    } catch (Exception e) {
+                        throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
+                    }
+                }
 
                 script.run();
             } catch (CompilationFailedException e) {
