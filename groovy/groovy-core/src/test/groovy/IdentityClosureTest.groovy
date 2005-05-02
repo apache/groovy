@@ -2,6 +2,7 @@
  * Check that Object.identity(Closure) method works as expected
  *
  * @author Jeremy Rayner
+ * @author Guillaume Laforge
  */
 class IdentityClosureTest extends GroovyTestCase {
     
@@ -46,6 +47,26 @@ class IdentityClosureTest extends GroovyTestCase {
             m.identity{ n->
                 assert "1234567890" == n
             }
+        }
+    }
+
+    /** Test the closure delegate */
+    void testClosureDelegate1() {
+        bar.toUpperCase().trim().identity{
+            assert "BAR" == it
+            assert 3 = size()
+            assert indexOf("A") > 0
+        }
+    }
+
+    /** Test the closure delegate with Expandos */
+    void testClosureDelegate2() {
+        def a = new Expando()
+        a.foobar = "foobar"
+        a.barfoo = 555
+        a.identity{
+            assert foobar == "foobar"
+            assert barfoo == 555
         }
     }
 }
