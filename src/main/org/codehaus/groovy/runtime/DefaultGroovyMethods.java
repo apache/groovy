@@ -84,6 +84,7 @@ public class DefaultGroovyMethods {
      * @return         result of calling the closure
      */
     public static Object identity(Object self, Closure closure) {
+        closure.setDelegate(self);
         return closure.call(self);
     }
 
