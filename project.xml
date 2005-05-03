@@ -323,6 +323,15 @@
           <role>Developer</role>
         </roles>
    </developer>
+    <developer>
+        <name>Christian Stein</name>
+        <id>cstein</id>
+        <email>sormuras@gmx.de</email>
+        <organization>CTSR.de</organization>
+        <roles>
+          <role>Developer</role>
+        </roles>
+   </developer>
    
   </developers>
 
