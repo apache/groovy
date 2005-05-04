@@ -38,15 +38,19 @@
  */
 package groovy.servlet;
 
-import groovy.lang.Binding;
+import groovy.servlet.ServletBinding;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
 
-import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.Writer;
-import java.net.URL;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -56,421 +60,520 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * A generic servlet for templates.
+ * A generic servlet for serving (mostly HTML) templates.
  * 
  * It wraps a <code>groovy.text.TemplateEngine</code> to process HTTP
  * requests. By default, it uses the
  * <code>groovy.text.SimpleTemplateEngine</code> which interprets JSP-like (or
- * Canvas-like) templates. <br>
- * <br>
+ * Canvas-like) templates. The init parameter <code>templateEngine</code>
+ * defines the fully qualified class name of the template to use.<br>
  * 
- * Example <code>HelloWorld.template</code>:
- * 
+ * <p>
+ * Headless <code>helloworld.html</code> example
  * <pre><code>
- * 
  *  &lt;html&gt;
- *  &lt;body&gt;
- *  &lt;% 3.times { %&gt;
- *  Hello World!
- * <br>
- * 
- *  &lt;% } %&gt;
- *  &lt;/body&gt;
+ *    &lt;body&gt;
+ *      &lt;% 3.times { %&gt;
+ *        Hello World!
+ *      &lt;% } %&gt;
+ *      &lt;br&gt;
+ *      session.id = ${session.id}
+ *    &lt;/body&gt;
  *  &lt;/html&gt; 
- *  
  * </code></pre>
+ * </p>
  * 
- * <br>
- * <br>
+ * @see TemplateServlet#setVariables(ServletBinding)
  * 
- * Note: <br>
- * Automatic binding of context variables and request (form) parameters is
- * disabled by default. You can enable it by setting the servlet config init
- * parameters to <code>true</code>.
- * 
- * <pre><code>
- * bindDefaultVariables = init(&quot;bindDefaultVariables&quot;, false);
- * bindRequestParameters = init(&quot;bindRequestParameters&quot;, false);
- * </code></pre>
- * 
- * @author <a mailto:sormuras@web.de>Christian Stein </a>
+ * @author Christian Stein
  * @author Guillaume Laforge
- * @version 1.3
+ * @version 2.0
  */
 public class TemplateServlet extends HttpServlet {
 
-    public static final String DEFAULT_CONTENT_TYPE = "text/html";
+  /**
+   * Simple cache entry that validates against last modified and length
+   * attributes of the specified file. 
+   *
+   * @author Sormuras
+   */
+  private static class TemplateCacheEntry {
 
-    private ServletContext servletContext;
+    long lastModified;
+    long length;
+    Template template;
 
-    protected TemplateEngine templateEngine;
-
-    /**
-     * Initializes the servlet.
-     * 
-     * @param config
-     *            Passed by the servlet container.
-     */
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-
-        /*
-         * Save the context.
-         */
-        this.servletContext = config.getServletContext();
-
-        /*
-         * BEGIN
-         */
-        String className = getClass().getName();
-        servletContext.log("Initializing on " + className + "...");
-
-        /*
-         * Get TemplateEngine instance.
-         */
-        this.templateEngine = createTemplateEngine(config);
-        if (templateEngine == null) { throw new RuntimeException("Template engine not instantiated."); }
-
-        /*
-         * END;
-         */
-        String engineName = templateEngine.getClass().getName();
-        servletContext.log(className + " initialized on " + engineName + ".");
+    public TemplateCacheEntry(File file, Template template) {
+      if (file == null) {
+        throw new NullPointerException("file");
+      }
+      if (template == null) {
+        throw new NullPointerException("template");
+      }
+      this.lastModified = file.lastModified();
+      this.length = file.length();
+      this.template = template;
     }
 
     /**
-     * Convient evaluation of boolean configuration parameters.
-     * 
-     * @return <code>true</code> or <code>false</code>.
-     * @param config
-     *            Servlet configuration passed by the servlet container.
-     * @param param
-     *            Name of the paramter to look up.
-     * @param value
-     *            Default value if parameter name is not set.
+     * Checks the passed file attributes against those cached ones. 
+     *
+     * @param file
+     *  Other file handle to compare to the cached values.
+     * @return <code>true</code> if all measured values match, else <code>false</code>
      */
-    protected boolean init(ServletConfig config, String param, boolean value) {
-        String string = config.getInitParameter(param);
-        if (string == null) { return value; }
-        return Boolean.valueOf(string).booleanValue();
+    public boolean validate(File file) {
+      if (file == null) {
+        throw new NullPointerException("file");
+      }
+      if (file.lastModified() != this.lastModified) {
+        return false;
+      }
+      if (file.length() != this.length) {
+        return false;
+      }
+      return true;
     }
 
-    /**
-     * Creates the template engine.
-     * 
-     * Called by {@link #init(ServletConfig)} and returns just <code>
-     * SimpleTemplateEngine()</code> if the init parameter <code>templateEngine</code>
-     * is not set.
-     * 
-     * @return The underlying template engine.
-     * @param config
-     *            This serlvet configuration passed by the container.
-     * @see #createTemplateEngine(javax.servlet.ServletConfig)
-     */
-    protected TemplateEngine createTemplateEngine(ServletConfig config) {
-        String templateEngineClassName = config.getInitParameter("templateEngine");
-        if (templateEngineClassName == null) {
-            return new SimpleTemplateEngine();
+  }
+
+  /**
+   * Content type of the HTTP response.
+   */
+  public static final String CONTENT_TYPE = "text/html";
+
+  /*
+   * Servlet API include key names.
+   */
+  private static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
+  private static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
+
+  /*
+   * Enables more log statements.
+   */
+  private static final boolean VERBOSE = true;
+
+  /**
+   * Simple file name to template cache map.
+   */
+  // Java5 private final Map<String, TemplateCacheEntry> cache;
+  private final Map cache;
+
+  /**
+   * Servlet (or the application) context.
+   */
+  private ServletContext context;
+
+  /**
+   * Underlying template engine used to evaluate template source files.
+   */
+  private TemplateEngine engine;
+
+  /**
+   * Flag that controls the appending of the "Generated by ..." comment.
+   */
+  private boolean generatedBy;
+
+  /**
+   * Create new TemplateSerlvet.
+   */
+  public TemplateServlet() {
+    // Java 5 this.cache = new WeakHashMap<String, TemplateCacheEntry>();
+    this.cache = new WeakHashMap();
+    this.context = null; // assigned later by init()
+    this.engine = null; // assigned later by init()
+    this.generatedBy = true; // may be changed by init()
+  }
+
+  /**
+   * Triggers the template creation eliminating all new line characters.
+   * 
+   * Its a work around
+   * 
+   * @see TemplateServlet#getTemplate(File)
+   * @see BufferedReader#readLine()
+   */
+  private Template createTemplate(int bufferCapacity, FileReader fileReader)
+      throws Exception {
+    StringBuffer sb = new StringBuffer(bufferCapacity);
+    BufferedReader reader = new BufferedReader(fileReader);
+    try {
+      String line = reader.readLine();
+      while (line != null) {
+        sb.append(line);
+        //if (VERBOSE) { // prints the entire source file
+        //  log(" | " + line);
+        //}
+        line = reader.readLine();
+      }
+    }
+    finally {
+      if (reader != null) {
+        reader.close();
+      }
+    }
+    StringReader stringReader = new StringReader(sb.toString());
+    Template template = engine.createTemplate(stringReader);
+    stringReader.close();
+    return template;
+  }
+
+  /*
+   * Parses the http request for the real template source file.
+   */
+  private File extractAbsoluteFile(HttpServletRequest request) {
+    String uri = null;
+    String requestUri = (String) request.getAttribute(INC_REQUEST_URI);
+    String includeUri = (String) request.getAttribute(INC_SERVLET_PATH);
+    // 
+    // The first scenario occurs when the template is not directly under /
+    // example: /foo/bar.template
+    //
+    if (requestUri != null) {
+      String current = requestUri.substring(requestUri.indexOf(includeUri));
+      if (!includeUri.equals(current)) {
+        includeUri = current;
+      }
+    }
+    //
+    // The second scenario is when the includeUri is null but it is still
+    // possible to recreate the request.
+    //
+    if (includeUri == null) {
+      uri = request.getServletPath();
+      if (request.getPathInfo() != null) {
+        uri = request.getServletPath() + request.getPathInfo();
+      }
+    }
+    else {
+      uri = includeUri;
+    }
+    //
+    // Create a file object from the real path.
+    //
+    File file = new File(context.getRealPath(uri)).getAbsoluteFile();
+    //  log("\t    TemplateFile: " + file);
+    //  log("\t     File exists? " + file.exists());
+    //  log("\t     File exists? " + file.canRead());
+    //  log("\t     ServletPath: " + request.getServletPath());
+    //  log("\t        PathInfo: " + request.getPathInfo());
+    //  log("\t        RealPath: " + context.getRealPath(uri));
+    //  log("\t      RequestURI: " + request.getRequestURI());
+    //  log("\t     QueryString: " + request.getQueryString());
+    //  //log("\t  Request Params: ");
+    //  //Enumeration e = request.getParameterNames();
+    //  //while (e.hasMoreElements()) {
+    //  //  String name = (String) e.nextElement();
+    //  //  log("\t\t " + name + " = " + request.getParameter(name));
+    //  //}
+    return file;
+  }
+
+  /**
+   * Gets the template created by the underlying engine parsing the request.
+   * 
+   * <p>
+   * This method looks up a simple (weak) hash map for an existing template
+   * object that matches the source file. If the source file didn't change in
+   * length and its last modified stamp hasn't changed compared to a precompiled
+   * template object, this template is used. Otherwise, there is no or an
+   * invalid template object cache entry, a new one is created by the underlying
+   * template engine. This new instance is put to the cache for consecutive
+   * calls.
+   * </p>
+   * 
+   * @return The template that will produce the response text.
+   * @param file
+   *            The HttpServletRequest.
+   * @throws IOException 
+   *            If the request specified an invalid template source file 
+   */
+  protected Template getTemplate(File file) throws ServletException {
+
+    String key = file.getAbsolutePath();
+    Template template = null;
+
+    //
+    // Test cache for a valid template bound to the key.
+    //
+    TemplateCacheEntry entry = (TemplateCacheEntry) cache.get(key);
+    if (entry != null) {
+      if (entry.validate(file)) { // log("Valid cache hit! :)");       
+        template = entry.template;
+      } // else log("Cached template needs recompiliation!");
+    } // else log("Cache miss.");
+
+    //
+    // Template not cached or the source file changed - compile new template!
+    //
+    if (template == null) {
+      if (VERBOSE) {
+        log("Creating new template from file " + file + "...");
+      }
+      FileReader reader = null;
+      try {
+        reader = new FileReader(file);
+        //
+        // FIXME Template creation should eliminate '\n' by default?!
+        //
+        // template = engine.createTemplate(reader);
+        //
+        //    General error during parsing: 
+        //    expecting anything but ''\n''; got it anyway
+        //
+        template = createTemplate((int) file.length(), reader);
+      }
+      catch (Exception e) {
+        throw new ServletException("Creation of template failed: " + e, e);
+      }
+      finally {
+        if (reader != null) {
+          try {
+            reader.close();
+          }
+          catch (IOException ignore) {
+            // e.printStackTrace();
+          }
         }
-        try {
-            return (TemplateEngine) Class.forName(templateEngineClassName).newInstance();
-        } catch (InstantiationException e) {
-            servletContext.log("Could not instantiate template engine: " + templateEngineClassName, e);
-        } catch (IllegalAccessException e) {
-            servletContext.log("Could not access template engine class: " + templateEngineClassName, e);
-        } catch (ClassNotFoundException e) {
-            servletContext.log("Could not find template engine class: " + templateEngineClassName, e);
-       }
-        return null;
+      }
+      cache.put(key, new TemplateCacheEntry(file, template));
+      if (VERBOSE) {
+        log("Created and added template to cache. [key=" + key + "]");
+      }
     }
 
-    /**
-     * Delegates to {@link #doRequest(HttpServletRequest, HttpServletResponse)}.
-     */
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doRequest(request, response);
+    //
+    // Last sanity check.
+    //
+    if (template == null) {
+      throw new ServletException("Template is null? Should not happen here!");
     }
 
-    /**
-     * Delegates to {@link #doRequest(HttpServletRequest, HttpServletResponse)}.
-     */
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        doRequest(request, response);
+    return template;
+
+  }
+
+  /**
+   * Initializes the servlet from hints the container passes.
+   * <p>
+   * Delegates to sub-init methods and parses the following parameters:
+   * <ul>
+   * <li> <tt>"generatedBy"</tt> : boolean, appends "Generated by ..." to the
+   *     HTML response text generated by this servlet.
+   *     </li>
+   * </ul>
+   * @param config
+   *  Passed by the servlet container.
+   * @throws ServletException
+   *  if this method encountered difficulties 
+   *  
+   * @see TemplateServlet#initTemplateEngine(ServletConfig)
+   */
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
+    this.context = config.getServletContext();
+    if (context == null) {
+      throw new ServletException("Context must not be null!");
+    }
+    this.engine = initTemplateEngine(config);
+    if (engine == null) {
+      throw new ServletException("Template engine not instantiated.");
+    }
+    String value = config.getInitParameter("generatedBy");
+    if (value != null) {
+      this.generatedBy = Boolean.valueOf(value).booleanValue();
+    }
+    if (VERBOSE) {
+      log(getClass().getName() + " initialized on " + engine.getClass());
+    }
+  }
+
+  /**
+   * Creates the template engine.
+   * 
+   * Called by {@link TemplateServlet#init(ServletConfig)} and returns just 
+   * <code>new groovy.text.SimpleTemplateEngine()</code> if the init parameter
+   * <code>templateEngine</code> is not set by the container configuration.
+   * 
+   * @param config 
+   *  Current serlvet configuration passed by the container.
+   * 
+   * @return The underlying template engine or <code>null</code> on error.
+   *
+   * @see TemplateServlet#initTemplateEngine(javax.servlet.ServletConfig)
+   */
+  protected TemplateEngine initTemplateEngine(ServletConfig config) {
+    String name = config.getInitParameter("templateEngine");
+    if (name == null) {
+      return new SimpleTemplateEngine();
+    }
+    try {
+      return (TemplateEngine) Class.forName(name).newInstance();
+    }
+    catch (InstantiationException e) {
+      log("Could not instantiate template engine: " + name, e);
+    }
+    catch (IllegalAccessException e) {
+      log("Could not access template engine class: " + name, e);
+    }
+    catch (ClassNotFoundException e) {
+      log("Could not find template engine class: " + name, e);
+    }
+    return null;
+  }
+
+  /**
+   * Services the request with a response.
+   * <p>
+   * First the request is parsed for the source file uri. If the specified file
+   * could not be found or can not be read an error message is sent as response.
+   * 
+   * </p>
+   * @param request
+   *            The http request.
+   * @param response
+   *            The http response.
+   * @throws IOException 
+   *            if an input or output error occurs while the servlet is
+   *            handling the HTTP request
+   * @throws ServletException
+   *            if the HTTP request cannot be handled
+   */
+  public void service(HttpServletRequest request,
+      HttpServletResponse response) throws ServletException, IOException {
+
+    if (VERBOSE) {
+      log("Creating/getting cached template...");
     }
 
-    /**
-     * Processes all requests by dispatching to helper methods.
-     * 
-     * TODO Outline the algorithm. Although the method names are well-chosen. :)
-     * 
-     * @param request
-     *            The http request.
-     * @param response
-     *            The http response.
-     * @throws ServletException
-     *             ...
-     */
-    protected void doRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException {
-
-        Binding binding = null;
-
-        try {
-
-            /*
-             * Create binding.
-             */
-            binding = new ServletBinding(request, response, servletContext);
-
-            /*
-             * Set default content type.
-             */
-            setContentType(request, response);
-
-            /*
-             * Create the template by its engine.
-             */
-            Template template = handleRequest(request, response, binding);
-
-            /*
-             * Let the template, that is groovy, do the merge.
-             */
-            merge(template, binding, response);
-
-        }
-        catch (Exception exception) {
-
-            /*
-             * Call exception handling hook.
-             */
-            error(request, response, exception);
-
-        }
-        finally {
-
-            /*
-             * Indicate we are finally done with this request.
-             */
-            requestDone(request, response, binding);
-
-        }
-
+    //
+    // Get the template source file handle.
+    //
+    File file = extractAbsoluteFile(request);
+    if (!file.exists()) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND);
+      return; // throw new IOException(file.getAbsolutePath());
+    }
+    if (!file.canRead()) {
+      response.sendError(HttpServletResponse.SC_FORBIDDEN, "Can not read!");
+      return; // throw new IOException(file.getAbsolutePath());
     }
 
-    /**
-     * Sets {@link #DEFAULT_CONTENT_TYPE}.
-     * 
-     * @param request
-     *            The HTTP request.
-     * @param response
-     *            The HTTP response.
-     */
-    protected void setContentType(HttpServletRequest request, HttpServletResponse response) {
+    //
+    // Get the requested template.
+    //
+    long getMillis = System.currentTimeMillis();
+    Template template = getTemplate(file);
+    getMillis = System.currentTimeMillis() - getMillis;
 
-        response.setContentType(DEFAULT_CONTENT_TYPE);
+    //
+    // Create new binding for the current request.
+    //
+    ServletBinding binding = new ServletBinding(request, response, context);
+    setVariables(binding);
 
+    //
+    // Prepare the response buffer content type _before_ getting the writer.
+    //
+    response.setContentType(CONTENT_TYPE);
+
+    //
+    // Get the output stream writer from the binding.
+    //
+    Writer out = (Writer) binding.getVariable("out");
+    if (out == null) {
+      out = response.getWriter();
     }
 
-    /**
-     * Default request handling. <br>
-     * 
-     * Leaving Velocity behind again. The template, actually the Groovy code in
-     * it, could handle/process the entire request. Good or not? This depends on
-     * you! :)<br>
-     * 
-     * Anyway, here no exception is thrown -- but it's strongly recommended to
-     * override this method in derived class and do the real processing against
-     * the model inside it. The template should be used, like Velocity
-     * templates, to produce the view, the html page. Again, it's up to you!
-     * 
-     * @return The template that will be merged.
-     * @param request
-     *            The HTTP request.
-     * @param response
-     *            The HTTP response.
-     * @param binding
-     *            The application context.
-     * @throws Exception
-     */
-    protected Template handleRequest(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Binding binding)
-    throws Exception {
-        /*
-         * Delegate to getTemplate(String).
-         */
-        return getTemplate(request);
+    //
+    // Evaluate the template.
+    //
+    if (VERBOSE) {
+      log("Making template...");
+    }
+    // String made = template.make(binding.getVariables()).toString();
+    // log(" = " + made);
+    long makeMillis = System.currentTimeMillis();
+    template.make(binding.getVariables()).writeTo(out);
+    makeMillis = System.currentTimeMillis() - makeMillis;
+
+    if (generatedBy) {
+      out.append("\n<!-- Generated by Groovy TemplateServlet [create/get=");
+      out.append(Long.toString(getMillis));
+      out.append(" ms, make=");
+      out.append(Long.toString(makeMillis));
+      out.append(" ms] -->\n");
     }
 
-    /**
-     * Gets the template by its name.
-     * 
-     * @return The template that will be merged.
-     * @param request
-     *            The HttpServletRequest.
-     * @throws Exception
-     *             Any exception.
-     */
-    protected Template getTemplate(HttpServletRequest request) throws Exception {
+    //
+    // Set status code and flush the response buffer.
+    //
+    response.setStatus(HttpServletResponse.SC_OK);
+    response.flushBuffer();
 
-        /*
-         * If its an include we need to get the included path, not the main request path.
-         */
-        String path = (String) request.getAttribute("javax.servlet.include.servlet_path");
-        if (path == null) {
-            path = request.getServletPath();
-        }
-
-        /*
-         * Delegate to resolveTemplateName(String). Twice if necessary.
-         */
-        URL url = resolveTemplateName(path);
-        if (url == null) {
-            url = resolveTemplateName(request.getRequestURI());
-        }
-
-        /*
-         * Template not found?
-         */
-        if (url == null) {
-            String uri = request.getRequestURI();
-            servletContext.log("Resource \"" + uri + "\" not found.");
-            throw new FileNotFoundException(uri);
-        }
-
-        /*
-         * Delegate to getTemplate(URL).
-         */
-        return getTemplate(url);
-
+    if (VERBOSE) {
+      log("Template request responded. [create/get=" + getMillis
+          + " ms, make=" + makeMillis + " ms]");
     }
 
-    /**
-     * Locate template and convert its location to an URL.
-     * 
-     * @return The URL pointing to the resource... the template.
-     * @param templateName
-     *            The name of the template.
-     * @throws Exception
-     *             Any exception.
-     */
-    protected URL resolveTemplateName(String templateName) throws Exception {
+  }
 
-        /*
-         * Try servlet context resource facility.
-         * 
-         * Good for names pointing to templates relatively to the servlet
-         * context.
-         */
-        URL url = servletContext.getResource(templateName);
-        if (url != null) { return url; }
-
-        /*
-         * Precedence: Context classloader, Class classloader
-         * (those classloaders will delegate to the system classloader)
-         */
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        url = classLoader.getResource(templateName);
-        if (url != null) { return url; }
-
-        /*
-         * Try the class loader, that loaded this class.
-         * 
-         * Good for templates located within the class path.
-         * 
-         */
-        url = getClass().getResource(templateName);
-        if (url != null) { return url; }
-
-        /*
-         * Still, still here? Just return null.
-         */
-        return null;
-
-    }
-
-    /**
-     * Gets the template by its url.
-     * 
-     * @return The template that will be merged.
-     * @param templateURL
-     *            The url of the template.
-     * @throws Exception
-     *             Any exception.
-     */
-    protected Template getTemplate(URL templateURL) throws Exception {
-
-        /*
-         * Let the engine create the template from given URL.
-         * 
-         * TODO Is createTemplate(Reader); faster? Fail safer?
-         */
-        return templateEngine.createTemplate(templateURL);
-
-    }
-
-    /**
-     * Merges the template and writes response.
-     * 
-     * @param template
-     *            The template that will be merged... now!
-     * @param binding
-     *            The application context.
-     * @param response
-     *            The HTTP response.
-     * @throws Exception
-     *             Any exception.
-     */
-    protected void merge(Template template, Binding binding, HttpServletResponse response) throws Exception {
-
-        /*
-         * Set binding and write response.
-         */
-        template.make(binding.getVariables()).writeTo((Writer) binding.getVariable("out"));
-
-    }
-
-    /**
-     * Simply sends an internal server error page (code 500).
-     * 
-     * @param request
-     *            The HTTP request.
-     * @param response
-     *            The HTTP response.
-     * @param exception
-     *            The cause.
-     */
-    protected void error(HttpServletRequest request, HttpServletResponse response, Exception exception) {
-
-        try {
-            response.sendError(500, exception.getMessage());
-        }
-        catch (IOException ioException) {
-            servletContext.log("Should not happen.", ioException);
-        }
-
-    }
-
-    /**
-     * Called one request is processed.
-     * 
-     * This clean-up hook is always called, even if there was an exception
-     * flying around and the error method was executed.
-     * 
-     * @param request
-     *            The HTTP request.
-     * @param response
-     *            The HTTP response.
-     * @param binding
-     *            The application context.
-     */
-    protected void requestDone(HttpServletRequest request, HttpServletResponse response, Binding binding) {
-
-        /*
-         * Nothing to clean up.
-         */
-        return;
-
-    }
+  /**
+   * Override this method to set your variables to the Groovy binding.
+   * <p>
+   * All variables bound the binding are passed to the template source text, 
+   * e.g. the HTML file, when the template is merged.
+   * </p>
+   * <p>
+   * The binding provided by TemplateServlet does already include some default
+   * variables. As of this writing, they are (copied from 
+   * {@link groovy.servlet.ServletBinding}):
+   * <ul>
+   * <li><tt>"request"</tt> : HttpServletRequest </li>
+   * <li><tt>"response"</tt> : HttpServletResponse </li>
+   * <li><tt>"context"</tt> : ServletContext </li>
+   * <li><tt>"application"</tt> : ServletContext </li>
+   * <li><tt>"session"</tt> : request.getSession(true) </li>
+   * </ul>
+   * </p>
+   * <p>
+   * And via explicit hard-coded keywords:
+   * <ul>
+   * <li><tt>"out"</tt> : response.getWriter() </li>
+   * <li><tt>"sout"</tt> : response.getOutputStream() </li>
+   * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
+   * </ul>
+   * </p>
+   * 
+   * <p>Example binding all servlet context variables:
+   * <pre><code>
+   * class Mytlet extends TemplateServlet {
+   * 
+   *   private ServletContext context;
+   *   
+   *   public void init(ServletConfig config) {
+   *     this.context = config.getServletContext();
+   *   }
+   * 
+   *   protected void setVariables(ServletBinding binding) {
+   *     Enumeration enumeration = context.getAttributeNames();
+   *     while (enumeration.hasMoreElements()) {
+   *       String name = (String) enumeration.nextElement();
+   *       binding.setVariable(name, context.getAttribute(name));
+   *     }
+   *   }
+   * 
+   * }
+   * <code></pre>
+   * </p>
+   * 
+   * @param binding
+   *  to get modified
+   * 
+   * @see TemplateServlet
+   */
+  protected void setVariables(ServletBinding binding) {
+    // empty
+  }
 
 }
