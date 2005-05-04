@@ -42,10 +42,6 @@ import groovy.util.ScriptException;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -252,10 +248,17 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
      */
     private String getGroovyScriptPath(HttpServletRequest request) {
 
-        // Get the name of the Groovy script
+        // Get the name of the Groovy script - include aware (GROOVY-815)
+        String includeURI = (String)request.getAttribute("javax.servlet.include.request_uri");
+        String strURI = null;
+        if (includeURI != null) {
+            strURI = includeURI; 
+        } else {
+            strURI = request.getRequestURI(); 
+        }
+
         int contextLength = request.getContextPath().length();
-        String scriptFilename = request.getRequestURI()
-            .substring(contextLength).substring(1);
+        String scriptFilename = strURI.substring(contextLength).substring(1);
 
         // if the servlet mapping is .groovy, we don't need to strip the mapping from the filename.
         // if the mapping is anything else, we need to strip it and append .groovy
