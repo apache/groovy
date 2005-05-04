@@ -6,6 +6,7 @@ velocity.log
 logs
 dist
 .externalToolBuilders
+.settings
 groovy.iml
 groovy.ipr
 groovy.iws
