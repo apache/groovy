@@ -111,7 +111,8 @@ public class TemplateServlet extends HttpServlet {
      * @param config
      *            Passed by the servlet container.
      */
-    public void init(ServletConfig config) {
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
 
         /*
          * Save the context.
