@@ -64,7 +64,12 @@ public abstract class AbstractHttpServlet extends HttpServlet {
   public static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
 
   /**
-   * TODO ... 
+   * Returns the include-aware uri of the script or template file.
+   * 
+   * @param request
+   *  the http request to analyze
+   * @return the include-aware uri either parsed from request attributes or
+   *  hints provided by the servlet container
    */
   protected String getScriptUri(HttpServletRequest request) {
     //
@@ -73,15 +78,15 @@ public abstract class AbstractHttpServlet extends HttpServlet {
     // http://cvs.apache.org/viewcvs.cgi/jakarta-tomcat-jasper/jasper2/ \
     //        src/share/org/apache/jasper/servlet/JspServlet.java?view=markup
     //
-    // Why doesn't it use request.getRequestURI()?
+    // Why doesn't it use request.getRequestURI() or INC_REQUEST_URI?
     //
 
     String uri = null;
     String info = null;
 
     //
-    // Check to see if the requested script/template has been the target of a
-    // RequestDispatcher.include().
+    // Check to see if the requested script/template source file has been the
+    // target of a RequestDispatcher.include().
     //
     uri = (String) request.getAttribute(INC_SERVLET_PATH);
     if (uri != null) {
@@ -113,6 +118,12 @@ public abstract class AbstractHttpServlet extends HttpServlet {
 
   /**
    * Parses the http request for the real script or template source file.
+   * 
+   * @param request
+   *  the http request to analyze
+   * @param context
+   *  the context of this servlet used to get the real path string
+   * @return a file object using an absolute file path name
    */
   protected File getScriptUriAsFile(HttpServletRequest request,
       ServletContext context) {
@@ -120,21 +131,22 @@ public abstract class AbstractHttpServlet extends HttpServlet {
     String real = context.getRealPath(uri);
     File file = new File(real).getAbsoluteFile();
 
-      log("\tInclude-aware URI: " + uri);
-      log("\tContext real path: " + real); // context.getRealPath(uri)
-      log("\t             File: " + file);
-      log("\t      File exists? " + file.exists());
-      log("\t    File can read? " + file.canRead());
-      log("\t      ServletPath: " + request.getServletPath());
-      log("\t         PathInfo: " + request.getPathInfo()); 
-      log("\t       RequestURI: " + request.getRequestURI());
-      log("\t      QueryString: " + request.getQueryString());
-      //log("\t  Request Params: ");
-      //Enumeration e = request.getParameterNames();
-      //while (e.hasMoreElements()) {
-      //  String name = (String) e.nextElement();
-      //  log("\t\t " + name + " = " + request.getParameter(name));
-      //}   
+    // log("\tInclude-aware URI: " + uri);
+    // log("\tContext real path: " + real); // context.getRealPath(uri)
+    // log("\t             File: " + file);
+    // log("\t      File exists? " + file.exists());
+    // log("\t    File can read? " + file.canRead());
+    // log("\t      ServletPath: " + request.getServletPath());
+    // log("\t         PathInfo: " + request.getPathInfo()); 
+    // log("\t       RequestURI: " + request.getRequestURI());
+    // log("\t      QueryString: " + request.getQueryString());
+
+    // //log("\t  Request Params: ");
+    // //Enumeration e = request.getParameterNames();
+    // //while (e.hasMoreElements()) {
+    // //  String name = (String) e.nextElement();
+    // //  log("\t\t " + name + " = " + request.getParameter(name));
+    // //}   
 
     return file;
   }
