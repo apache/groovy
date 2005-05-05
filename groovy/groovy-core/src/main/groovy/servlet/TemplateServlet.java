@@ -38,7 +38,7 @@
  */
 package groovy.servlet;
 
-import groovy.servlet.ServletBinding;
+import groovy.lang.MetaClass;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
@@ -55,7 +55,6 @@ import java.util.WeakHashMap;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -89,7 +88,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author Guillaume Laforge
  * @version 2.0
  */
-public class TemplateServlet extends HttpServlet {
+public class TemplateServlet extends AbstractHttpServlet {
 
   /**
    * Simple cache entry that validates against last modified and length
@@ -136,17 +135,6 @@ public class TemplateServlet extends HttpServlet {
     }
 
   }
-
-  /**
-   * Content type of the HTTP response.
-   */
-  public static final String CONTENT_TYPE = "text/html";
-
-  /*
-   * Servlet API include key names.
-   */
-  private static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
-  private static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
 
   /*
    * Enables more log statements.
@@ -216,57 +204,6 @@ public class TemplateServlet extends HttpServlet {
     Template template = engine.createTemplate(stringReader);
     stringReader.close();
     return template;
-  }
-
-  /*
-   * Parses the http request for the real template source file.
-   */
-  private File extractAbsoluteFile(HttpServletRequest request) {
-    String uri = null;
-    String requestUri = (String) request.getAttribute(INC_REQUEST_URI);
-    String includeUri = (String) request.getAttribute(INC_SERVLET_PATH);
-    // 
-    // The first scenario occurs when the template is not directly under /
-    // example: /foo/bar.template
-    //
-    if (requestUri != null) {
-      String current = requestUri.substring(requestUri.indexOf(includeUri));
-      if (!includeUri.equals(current)) {
-        includeUri = current;
-      }
-    }
-    //
-    // The second scenario is when the includeUri is null but it is still
-    // possible to recreate the request.
-    //
-    if (includeUri == null) {
-      uri = request.getServletPath();
-      if (request.getPathInfo() != null) {
-        uri = request.getServletPath() + request.getPathInfo();
-      }
-    }
-    else {
-      uri = includeUri;
-    }
-    //
-    // Create a file object from the real path.
-    //
-    File file = new File(context.getRealPath(uri)).getAbsoluteFile();
-    //  log("\t    TemplateFile: " + file);
-    //  log("\t     File exists? " + file.exists());
-    //  log("\t     File exists? " + file.canRead());
-    //  log("\t     ServletPath: " + request.getServletPath());
-    //  log("\t        PathInfo: " + request.getPathInfo());
-    //  log("\t        RealPath: " + context.getRealPath(uri));
-    //  log("\t      RequestURI: " + request.getRequestURI());
-    //  log("\t     QueryString: " + request.getQueryString());
-    //  //log("\t  Request Params: ");
-    //  //Enumeration e = request.getParameterNames();
-    //  //while (e.hasMoreElements()) {
-    //  //  String name = (String) e.nextElement();
-    //  //  log("\t\t " + name + " = " + request.getParameter(name));
-    //  //}
-    return file;
   }
 
   /**
@@ -379,6 +316,10 @@ public class TemplateServlet extends HttpServlet {
     if (engine == null) {
       throw new ServletException("Template engine not instantiated.");
     }
+    
+    // Use reflection, some containers don't load classes properly
+    MetaClass.setUseReflection(true);
+    
     String value = config.getInitParameter("generatedBy");
     if (value != null) {
       this.generatedBy = Boolean.valueOf(value).booleanValue();
@@ -449,7 +390,7 @@ public class TemplateServlet extends HttpServlet {
     //
     // Get the template source file handle.
     //
-    File file = extractAbsoluteFile(request);
+    File file = super.getScriptUriAsFile(request, context);
     if (!file.exists()) {
       response.sendError(HttpServletResponse.SC_NOT_FOUND);
       return; // throw new IOException(file.getAbsolutePath());
@@ -475,7 +416,7 @@ public class TemplateServlet extends HttpServlet {
     //
     // Prepare the response buffer content type _before_ getting the writer.
     //
-    response.setContentType(CONTENT_TYPE);
+    response.setContentType(CONTENT_TYPE_TEXT_HTML);
 
     //
     // Get the output stream writer from the binding.

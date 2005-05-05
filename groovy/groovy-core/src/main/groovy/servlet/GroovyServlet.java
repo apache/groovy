@@ -48,7 +48,6 @@ import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -101,7 +100,7 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
  * @author Mark Turansky (markturansky at hotmail.com)
  * @author Guillaume Laforge
  */
-public class GroovyServlet extends HttpServlet implements ResourceConnector {
+public class GroovyServlet extends AbstractHttpServlet implements ResourceConnector {
 
     // ------------------------------------------------------ instance variables
 
@@ -127,17 +126,24 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 
     // ---------------------------------------------------------- public methods
 
-    /**
-     * Returns the ServletContext for this servlet
-     */
-    public ServletContext getServletContext() {
-        return sc;
-    }
+    //
+    // (cstein) Do NOT override GenericServlet - using super.init() instead
+    //
+    //    /**
+    //     * Returns the ServletContext for this servlet
+    //     */
+    //    public ServletContext getServletContext() {
+    //        return sc;
+    //    }
 
     /**
      * Initialize the GroovyServlet.
+     *
+     * @throws ServletException if init() method defined in super class 
+     * javax.servlet.GenericServlet throws it
      */
-    public void init(ServletConfig config) {
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
 
         // Use reflection, some containers don't load classes properly
         MetaClass.setUseReflection(true);
@@ -148,6 +154,9 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 
         // Ensure that we use the correct classloader so that we can find
         // classes in an application server.
+        //
+        // TODO (cstein) Is parent used? Somewhere else then here?
+        //
         parent = Thread.currentThread().getContextClassLoader();
         if (parent == null)
             parent = GroovyServlet.class.getClassLoader();
@@ -178,7 +187,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
      * Handle web requests to the GroovyServlet
      */
     public void service(ServletRequest request, ServletResponse response)
-        throws ServletException, IOException {
+        throws IOException {
 
         // Convert the generic servlet request and response to their Http versions
         final HttpServletRequest httpRequest = (HttpServletRequest) request;
@@ -186,12 +195,13 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
 
         // get the script path from the request
         final String scriptFilename = getGroovyScriptPath(httpRequest);
+        // log("Serving " + scriptFilename);
 
         // Set it to HTML by default
         response.setContentType("text/html");
 
         // Set up the script context
-        final Binding binding = new ServletBinding((HttpServletRequest) request, (HttpServletResponse) response, sc);
+        final Binding binding = new ServletBinding(httpRequest, httpResponse, sc);
 
         // Run the script
         try {
@@ -207,6 +217,10 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
                 }
             };
             GroovyCategorySupport.use(ServletCategory.class, closure);
+            // Set reponse code 200 and flush buffers
+            httpResponse.setStatus(HttpServletResponse.SC_OK);
+            httpResponse.flushBuffer();            
+            // log("Flushed response buffer.");
         } catch (RuntimeException re) {
 
             StringBuffer error = new StringBuffer("GroovyServlet Error: ");
@@ -238,6 +252,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
                     HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
         }
+
     }
 
     // --------------------------------------------------------- private methods
@@ -249,13 +264,7 @@ public class GroovyServlet extends HttpServlet implements ResourceConnector {
     private String getGroovyScriptPath(HttpServletRequest request) {
 
         // Get the name of the Groovy script - include aware (GROOVY-815)
-        String includeURI = (String)request.getAttribute("javax.servlet.include.request_uri");
-        String strURI = null;
-        if (includeURI != null) {
-            strURI = includeURI; 
-        } else {
-            strURI = request.getRequestURI(); 
-        }
+        String strURI = super.getScriptUri(request);
 
         int contextLength = request.getContextPath().length();
         String scriptFilename = strURI.substring(contextLength).substring(1);
