@@ -5825,7 +5825,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return object;
     }
 
-    private static boolean asBool(Object object) {
+    public static boolean asBool(Object object) {
        if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
@@ -5839,9 +5839,13 @@ public class AsmClassGenerator extends ClassGenerator {
             Collection collection = (Collection) object;
             return !collection.isEmpty();
         }
+        else if (object instanceof Map) {
+            Map map = (Map) object;
+            return !map.isEmpty();
+        }
         else if (object instanceof String) {
             String string = (String) object;
-            return string.length() > 0;
+            return string != null && "true".equalsIgnoreCase(string);
         }
         else if (object instanceof Number) {
             Number n = (Number) object;
