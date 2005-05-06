@@ -45,6 +45,7 @@
  */
 package org.codehaus.groovy.runtime;
 
+import org.codehaus.groovy.classgen.AsmClassGenerator;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
@@ -1062,6 +1063,7 @@ public class Invoker {
     }
 
     public boolean asBool(Object object) {
+        /*
         if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
@@ -1086,6 +1088,8 @@ public class Invoker {
         else {
             return object != null;
         }
+        */
+        return AsmClassGenerator.asBool(object);
     }
 
     protected Character asCharacter(Number value) {
