@@ -4243,6 +4243,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
         }
+        else if (leftExpression instanceof FieldExpression) {
+            FieldExpression fieldExp = (FieldExpression) leftExpression;
+            String type = fieldExp.getType();
+            if (isValidTypeForCast(type)) {
+                return type;
+            }
+        }
         return null;
     }
 
