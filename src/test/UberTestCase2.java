@@ -26,6 +26,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.Groovy675_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy770_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
+        suite.addTestSuite(groovy.bugs.Groovy831_Bug.class);
 
         suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
         suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
