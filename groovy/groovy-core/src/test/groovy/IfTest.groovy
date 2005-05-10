@@ -31,7 +31,7 @@ class IfTest extends GroovyTestCase {
             fail("should not be false")
         }
 
-        x = 0
+        x = ""
 
         if (x) {
             fail("should not be true")

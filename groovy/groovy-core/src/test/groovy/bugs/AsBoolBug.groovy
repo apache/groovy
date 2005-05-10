@@ -33,31 +33,35 @@ public class AsBoolBug extends GroovyTestCase {
      * "string as Boolean" should have the same meaning
      *  as "java.lang.Boolean.getBoolean(string)" of Java.
      */
-    void testStringAsBool() {
-        def c = "true"
-        println ("$c : ${c as Boolean}")
-        assert c as Boolean == true
-        boolean z = c
-        println ("$z")
-        assert z == true
-        if (c)
-           println "It is true!!"
-        else
-           println "It is false!!"
-
-        c = "123"
-        println ("$c : ${c as Boolean}")
-        assert c as Boolean == false
-
-        c = "True"
-        println ("$c : ${c as Boolean}")
-        assert c as Boolean == true
-        if (c)
-           println "It is true!!"
-        else
-           println "It is false!!"
-        z = c
-        println ("$z")
-        assert z
-    }
+    // This is a test case for GROOVY-812
+    // Unfortunately, it contradicts several other test cases, and
+    // it has already been decided to handle string-to-boolean conversions
+    // differently. Commented out temporarily on 10 May 2005.
+//    void testStringAsBool() {
+//        def c = "true"
+//        println ("$c : ${c as Boolean}")
+//        assert c as Boolean == true
+//        boolean z = c
+//        println ("$z")
+//        assert z == true
+//        if (c)
+//           println "It is true!!"
+//        else
+//           println "It is false!!"
+//
+//        c = "123"
+//        println ("$c : ${c as Boolean}")
+//        assert c as Boolean == false
+//
+//        c = "True"
+//        println ("$c : ${c as Boolean}")
+//        assert c as Boolean == true
+//        if (c)
+//           println "It is true!!"
+//        else
+//           println "It is false!!"
+//        z = c
+//        println ("$z")
+//        assert z
+//    }
 }

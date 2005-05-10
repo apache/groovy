@@ -5845,11 +5845,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         else if (object instanceof String) {
             String string = (String) object;
-            return string != null && "true".equalsIgnoreCase(string);
+            return string.length() > 0;
         }
         else if (object instanceof Number) {
             Number n = (Number) object;
-            return n.intValue() != 0;
+            return n.doubleValue() != 0;
         }
         else {
             return object != null;
