@@ -139,28 +139,27 @@ TODO: include reference to section of Chapter 5 "Conversions" that specifys that
 h3. 3.10.5 String Literals
 (Cf. ??[JLS. &#167;3.10.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#101084]??.)
 
+_Change:_ The following text completely replaces [JLS. &#167;3.10.5|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#101084], and adds &#167;3.10.5.1.
+
 Groovy string literals have a syntax inspired by other scripting languages.  A string literal may be delimited by single or double.  When following certain operators and punctuation characters, a string literal may also be delimited by forward-slash characters, in which case it is also called a ??regular expression literal??.
 
-Double-quoted literals and regular expression literals may incorporate substring substitution expressions, which are introduced by unescaped dollar signs.
+Double-quoted literals and regular expression literals may incorporate substring substitution expressions, which are introduced by unescaped dollar signs, and these are specified by [&#167;3.10.5.1|#3.10.5.1], below.
 
 Independently, single or double quote marks may be tripled, allowing the string to span multiple lines.  Whenever string delimiters are used singly, the string may not contain an unescaped line terminator.
 
 Regardless of the spelling of a line terminator found inside a string literal or constructor, it is always taken to represent a newline character, regardless of the local newline conventions.
 
-To avoid conflict with comment syntaxes, a regular expression literal cannot be empty and cannot begin with a star character.
-There is also a potential conflict with division operators (those beginning with a forward slash).  Division operators are only recognized after certain tokens:  Identifiers, keywords, numeric and string constants, right brackets, and unary increment operators ({{++}}, {{--}}).
-Any amount of whitespace and line terminators may also occur before a division operator.
+To avoid conflict with comment syntaxes, a regular expression literal cannot be empty and cannot begin with a star character. There is also a potential conflict with division operators (those beginning with a forward slash). Division operators are only recognized after certain tokens:  Identifiers, keywords, numeric and string constants, right brackets, and unary increment operators ({{++}}, {{--}}).  Any amount of whitespace and line terminators may also occur before a division operator.
 In other contexts, a slash introduces a regular expression literal.
 
-(Note:  The grammar of single-quoted and triple-quoted strings differs only in their processing of line terminators.
-We express this by means of a grammatical parameter {{LT}}, which is true if line terminators are allowed.)
+(Note:  The grammar of single-quoted and triple-quoted strings differs only in their processing of line terminators. We express this by means of a grammatical parameter {{LT}}, which is true if line terminators are allowed.)
 
 {code}
 StringLiteral:
   \'   (CStringCharacter[LT=false])*   \'
   \"   (DStringCharacter[LT=false])*   \"
-  \'\'\' (CStringCharacter[LT=true])*  \'\'\'
-  \"\"\" (DStringCharacter[LT=true])*  \"\"\"
+  \'\'\' (CStringCharacter[LT=true] (\')? (\')? )*  \'\'\'
+  \"\"\" (DStringCharacter[LT=true] (\")? (\"?) )* \"\"\"
   \/   (RStringCharacter (\*)*)+   \/
 
 CStringCharacter[LT]:
@@ -173,7 +172,7 @@ DStringCharacter[LT]:
   EscapeSequence[LT]
   LineTerminator  when(LT)
 
-EscapeSequence[LT]:  (add the following new productions)
+EscapeSequence[LT]:  (Use the Java EscapeSequence definition, plus the following productions)
   \\\ \$
   \\\ LineTerminator
 
@@ -187,12 +186,11 @@ RStringEscape:
   \\\ InputCharacter (but not \r or \n)
 {code}
 
-Note that a triple-quoted string may contain isolated single or double occurrences of its close-quote.
-For example:
-{code}
-  assert """x""" == 'x'
-  assert """""" == ''
-  assert '''''"''' == "''" + '"'
+Note that a triple-quoted string may contain isolated single or double occurrences of its close-quote. For example:
+{code}   
+assert """x""" == 'x'
+assert """""" == ''
+assert '''''"''' == "''" + '"'
 {code}
 
 {anchor:3.10.5.1}
@@ -215,22 +213,22 @@ In a regular expression literal, if a dollar sign is not followed by an identifi
 (Note that in standard regular expression syntaxes, the dollar sign is never meaningfully followed by a star, a brace, or a letter, so these notations are available for use as string constructor value parts.)
 
 {code}
-  String x = "X"
-  def xx = [length:1]
-  assert "$x" == x
-  assert "${x}" == x
-  assert "${x}o$x" == "XoX"
-  assert "\\\$x" == '$'+'x'
-  assert "$xx.length" == "1"
-  assert "$xx.length." == "1."
-  assert "$xx.length()" == "1()"
-  assert "$xx.length+2" == "1+2"
-  assert "$xx . length" == "[length:1] . length"
-  assert "zXY;" == """z${
-      String y = "Y"
-      ("$x$y") };""" as String
-  assert 'EUOUAE'.matches(/^[aeiou]*$/)
-  assert 'football'.replaceAll(/foo/, "Bar").startsWith('Bart')
+String x = "X"
+def xx = [length:1]
+assert "$x" == x
+assert "${x}" == x
+assert "${x}o$x" == "XoX"
+assert "\\\$x" == '$'+'x'
+assert "$xx.length" == "1"
+assert "$xx.length." == "1."
+assert "$xx.length()" == "1()"
+assert "$xx.length+2" == "1+2"
+assert "$xx . length" == "[length:1] . length"
+assert "zXY;" == """z${
+    String y = "Y"
+    ("$x$y") };""" as String
+assert 'EUOUAE'.matches(/^[aeiou]*$/)
+assert 'football'.replaceAll(/foo/, "Bar").startsWith('Bart')
 {code}
 
 The process of parsing an embedded block may be viewed as an approximate parse which attends only to the balancing of curly brace tokens.
@@ -319,8 +317,6 @@ Reference: http://archive.groovy.codehaus.org/jsr/threads/iakbeiefedohmiddhked
 {anchor:3.10.6}
 h3. 3.10.6 Escape Sequences for Character and String Literals
 (Cf. ??[JLS. &#167;3.10.6|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230359]??.)
-
-(Same as in Java, with a few additions.)
 
 Within the various kinds of strings, most characters stand for themselves, but a few have special functions.  The backslash character serves as an escape, which turns off the special function of the following character.  In quoted string literals, an escaping backslash itself is removed, while in regular expression literals both the backslash and the escaped character are retained.
 In quoted string literals, a backslash may only be followed by a limited set of characters, the ones which need escaping, or ones which when escaped serve as symbols for certain non-printing characters, such as newline.
@@ -414,10 +410,12 @@ Unlike Java, but like Pascal, a semicolon functions as a statement separator, no
 h2. 3.12 Operators
 (Cf. ??[JLS. &#167;3.12|http://java.sun.com/docs/books/jls/second_edition/html/lexical.doc.html#230669]??.)
 
-The following productions are added:
+_Addition:_ Groovy includes all Java operators, plus:
+
 {code}
 Operator:
-  .@  |  TO DO
+    <=>     ..      ..<     ...     *.      ?.      .&
+    =~      ==~     **      **=     .@
 {code}
 
 ----
