@@ -205,4 +205,8 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testSort() {
         assert [-5, -3, -1, 0, 2, 4].sort { it*it } == [0, -1, 2, -3, 4, -5]
     }
+
+    void testReplaceAllClosure() {
+        assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") { it * 2 } == "11 a 22 b 33 c 44"
+    }
 }

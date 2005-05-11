@@ -1027,6 +1027,30 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * Replaces all occurrencies of a captured group by the result of a closure on that text.
+     *
+     * @param self a String
+     * @param regex the capturing regex
+     * @param closure the closure to apply on each captured group
+     * @return a String with replaced content
+     */
+    public static String replaceAll(String self, String regex, Closure closure) {
+        Matcher matcher = Pattern.compile(regex).matcher(self);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String foundText = self.substring(matcher.start(0), matcher.end(0));
+                matcher.appendReplacement(sb, String.valueOf(closure.call( foundText )));
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    /**
      * Turns a String into a regular expression pattern
      *
      * @param self a GString to convert into a regular expression
