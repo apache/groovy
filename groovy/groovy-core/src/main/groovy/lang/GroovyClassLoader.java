@@ -49,10 +49,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -71,6 +68,12 @@ import java.util.jar.Manifest;
 public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
+
+    /**
+     * Mirror the value in the superclass since it's private and we need to
+     * access it for the classpath.
+     */
+    private String[] _searchPaths;
 
     public void removeFromCache(Class aClass) {
         cache.remove(aClass);
@@ -381,19 +384,34 @@ public class GroovyClassLoader extends SecureClassLoader {
         return baos.toByteArray();
     }
 
-    /**
-     * @return
-     */
-    protected String[] getClassPath() {
-        if (searchPaths == null) {
-            List pathList = new ArrayList(additionalPaths);
-            String classpath = System.getProperty("java.class.path", ".");
-            expandClassPath(pathList, null, classpath);
-            searchPaths = new String[pathList.size()];
-            searchPaths = (String[]) pathList.toArray(searchPaths);
+      /**
+       * Workaround for Groovy-835
+       */
+      protected String[] getClassPath() {
+        if (null == _searchPaths) {
+          final String classpath;
+          if(null != config && null != config.getClasspath()) {
+            //there's probably a better way to do this knowing the internals of
+            //Groovy, but it works for now
+            final List paths = config.getClasspath();
+            final StringBuffer sb = new StringBuffer();
+            for(Iterator iter = paths.iterator(); iter.hasNext(); ) {
+              sb.append(iter.next().toString());
+              sb.append(File.pathSeparatorChar);
+            }
+            //remove extra path separator
+            sb.deleteCharAt(sb.length()-1);
+            classpath = sb.toString();
+          } else {
+            classpath = System.getProperty("java.class.path", ".");
+          }
+          final List pathList = new ArrayList();
+          expandClassPath(pathList, null, classpath);
+          _searchPaths = new String[pathList.size()];
+          _searchPaths = (String[]) pathList.toArray(_searchPaths);
         }
-        return searchPaths;
-    }
+        return _searchPaths;
+      }
 
     /**
      * @param pathList
