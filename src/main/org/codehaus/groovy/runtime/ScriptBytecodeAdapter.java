@@ -399,6 +399,14 @@ public class ScriptBytecodeAdapter {
         }
     }
 
+    public static Object spreadMap(Object value) throws Throwable {
+        try {
+            return InvokerHelper.spreadMap(value);
+        } catch (GroovyRuntimeException gre) {
+            return unwrap(gre);
+        }
+    }
+
     public static Object negate(Object value) throws Throwable {
         try {
             return InvokerHelper.negate(value);

@@ -216,6 +216,7 @@ public interface GroovyCodeVisitor {
 
     public void visitSpreadExpression(SpreadExpression expression);
 
+    public void visitSpreadMapExpression(SpreadMapExpression expression);
     public void visitNotExpression(NotExpression expression);
 
     public void visitNegationExpression(NegationExpression expression);
