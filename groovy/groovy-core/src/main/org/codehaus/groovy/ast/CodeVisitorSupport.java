@@ -468,6 +468,10 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     }
 
+ 
+    public void visitSpreadMapExpression(SpreadMapExpression expression) {
+        expression.getExpression().visit(this);
+    }
 
 
     public void visitMethodPointerExpression(MethodPointerExpression expression) {

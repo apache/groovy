@@ -981,6 +981,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SPREAD_ARG:
                 return spreadExpression(node);
 
+            case SPREAD_MAP_ARG:
+                return spreadMapExpression(node);
+
             case MEMBER_POINTER_DEFAULT:
                 return defaultMethodPointerExpression(node);
 
@@ -1258,6 +1261,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return spreadExpression;
     }
 
+    protected Expression spreadMapExpression(AST node) {
+        AST exprNode = node.getFirstChild();
+        Expression expr = expression(exprNode);
+        SpreadMapExpression spreadMapExpression = new SpreadMapExpression(expr);
+        configureAST(spreadMapExpression, node);
+        return spreadMapExpression;
+    }
+
     protected Expression methodPointerExpression(AST node) {
         AST exprNode = node.getFirstChild();
         String methodName = identifier(exprNode.getNextSibling());
@@ -1321,13 +1332,23 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected MapEntryExpression mapEntryExpression(AST node) {
-        AST keyNode = node.getFirstChild();
-        Expression keyExpression = expression(keyNode);
-        AST valueNode = keyNode.getNextSibling();
-        Expression valueExpression = expression(valueNode);
-        MapEntryExpression mapEntryExpression = new MapEntryExpression(keyExpression, valueExpression);
-        configureAST(mapEntryExpression, node);
-        return mapEntryExpression;
+        if (node.getType() == SPREAD_MAP_ARG) {
+            AST rightNode = node.getFirstChild();
+            Expression keyExpression = spreadMapExpression(node);
+            Expression rightExpression = expression(rightNode);
+            MapEntryExpression mapEntryExpression = new MapEntryExpression(keyExpression, rightExpression);
+            configureAST(mapEntryExpression, node);
+            return mapEntryExpression;
+        }
+        else {
+            AST keyNode = node.getFirstChild();
+            Expression keyExpression = expression(keyNode);
+            AST valueNode = keyNode.getNextSibling();
+            Expression valueExpression = expression(valueNode);
+            MapEntryExpression mapEntryExpression = new MapEntryExpression(keyExpression, valueExpression);
+            configureAST(mapEntryExpression, node);
+            return mapEntryExpression;
+        }
     }
 
 
@@ -1596,9 +1617,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected boolean addArgumentExpression(AST node, List expressionList) {
-        Expression expression = expression(node);
-        expressionList.add(expression);
-        return expression instanceof MapEntryExpression;
+        if (node.getType() == SPREAD_MAP_ARG) {
+            AST rightNode = node.getFirstChild();
+            Expression keyExpression = spreadMapExpression(node);
+            Expression rightExpression = expression(rightNode);
+            MapEntryExpression mapEntryExpression = new MapEntryExpression(keyExpression, rightExpression);
+            expressionList.add(mapEntryExpression);
+            return true;
+        }
+        else {       
+            Expression expression = expression(node);
+            expressionList.add(expression);
+            return expression instanceof MapEntryExpression;
+        }
     }
 
     protected Expression expressionList(AST node) {

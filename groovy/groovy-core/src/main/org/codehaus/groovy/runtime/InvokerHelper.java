@@ -393,6 +393,23 @@ public class InvokerHelper {
         }
     }
 
+    public static SpreadMap spreadMap(Object value) {
+        if (value instanceof Map) {
+            Object[] values = new Object[((Map) value).keySet().size() * 2];
+            int index = 0;
+            Iterator it = ((Map) value).keySet().iterator();
+            for (; it.hasNext();) {
+                Object key = it.next();
+                values[index++] = key;
+                values[index++] = ((Map) value).get(key);
+            }
+            return new SpreadMap(values);
+        }
+        else {
+            throw new SpreadMapEvaluatingException("Cannot spread the map " + value.getClass().getName() + ", value " + value);
+        }
+    }
+
     public static List createList(Object[] values) {
         ArrayList answer = new ArrayList(values.length);
         for (int i = 0; i < values.length; i++) {
@@ -412,8 +429,19 @@ public class InvokerHelper {
     public static Map createMap(Object[] values) {
         Map answer = new HashMap(values.length / 2);
         int i = 0;
-        while (i < values.length) {
-            answer.put(values[i++], values[i++]);
+        while (i < values.length - 1) {
+            if ((values[i] instanceof SpreadMap) && (values[i+1] instanceof Map)) {
+                Map smap = (Map) values[i+1];
+                Iterator iter = smap.keySet().iterator();
+                for (; iter.hasNext(); ) {
+                    Object key = (Object) iter.next();
+                    answer.put(key, smap.get(key));
+                }
+                i+=2;
+            }
+            else {
+                answer.put(values[i++], values[i++]);
+            }
         }
         return answer;
     }

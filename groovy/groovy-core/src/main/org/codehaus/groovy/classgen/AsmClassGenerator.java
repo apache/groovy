@@ -158,6 +158,7 @@ public class AsmClassGenerator extends ClassGenerator {
     MethodCaller notObject = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "notObject");
     MethodCaller regexPattern = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "regexPattern");
     MethodCaller spreadList = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadList");
+    MethodCaller spreadMap = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "spreadMap");
     MethodCaller getMethodPointer = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "getMethodPointer");
     MethodCaller negation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "negate");
     MethodCaller bitNegation = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "bitNegate");
@@ -1849,6 +1850,12 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
         spreadList.call(cv);
+    }
+
+    public void visitSpreadMapExpression(SpreadMapExpression expression) {
+        Expression subExpression = expression.getExpression();
+        subExpression.visit(this);
+        spreadMap.call(cv);
     }
 
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
