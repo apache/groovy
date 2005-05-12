@@ -36,7 +36,6 @@ package groovy.text;
 import groovy.lang.Writable;
 
 import java.util.Map;
-import java.io.Writer;
 
 
 /**

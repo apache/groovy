@@ -61,7 +61,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
     /* (non-Javadoc)
      * @see groovy.util.TemplateEngine#createTemplate(java.io.Reader)
      */
-    public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
+    public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate();
         GroovyShell shell = new GroovyShell();
         String script = template.parse(reader);
@@ -71,7 +71,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
         
     private static class SimpleTemplate implements Template {
         
-        private Script script;
+        protected Script script;
 
         public Writable make() {
             return make(null);
@@ -84,7 +84,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
                  *
                  * @see groovy.lang.Writable#writeTo(java.io.Writer)
                  */
-                public Writer writeTo(Writer writer) throws IOException {
+                public Writer writeTo(Writer writer) {
                     Binding binding;
                     if (map == null) binding = new Binding(); else binding = new Binding(map);
                     Script scriptObject = InvokerHelper.createScript(script.getClass(), binding);
@@ -120,7 +120,7 @@ public class SimpleTemplateEngine extends TemplateEngine {
          * @return
          * @throws IOException
          */
-        private String parse(Reader reader) throws IOException {
+        protected String parse(Reader reader) throws IOException {
             if (!reader.markSupported()) {
                 reader = new BufferedReader(reader);
             }
@@ -135,7 +135,6 @@ public class SimpleTemplateEngine extends TemplateEngine {
                     if (c != '%') {
                         sw.write('<');
                         reader.reset();
-                        continue;
                     } else {
                         reader.mark(1);
                         c = reader.read();
@@ -145,8 +144,8 @@ public class SimpleTemplateEngine extends TemplateEngine {
                             reader.reset();
                             groovySection(reader, sw);
                         }
-                        continue;
                     }
+                    continue; // at least '<' is consumed ... read next chars.
                 }
                 if (c == '\"') {
                     sw.write('\\');
