@@ -25,9 +25,9 @@ public class PropertyNameBug extends GroovyTestCase {
         map."foo.bar-bar" = "FooBar-Bar"
         map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!" = "Any character"
 
-        println("foo.bar1 = ${map.get("foo.bar1")}")
-        println("foo.bar-bar = ${map.get("foo.bar-bar")}")
-        println("Specical Character Test: ${map.get("foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!")}")
+        println("foo.bar1 = ${map."foo.bar1"}")
+        println("foo.bar-bar = ${map."foo.bar-bar"}")
+        println("Specical Character Test: ${map."foo.=;&|^*-+-/\\'?.*:arbitrary()[]{}%#@!"}")
     }
 }
 
