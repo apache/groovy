@@ -82,7 +82,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants
     }
 
     public void visitPropertyExpression(PropertyExpression expression) {
-        assertValidIdentifier(expression.getProperty(), "property name", expression);
+        // assertValidIdentifier(expression.getProperty(), "property name", expression);  // This has been commented out to fix the issue Groovy-843
         super.visitPropertyExpression(expression);
     }
 
