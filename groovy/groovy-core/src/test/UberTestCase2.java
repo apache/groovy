@@ -42,7 +42,8 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.lang.GroovyShellTest.class);
         suite.addTestSuite(groovy.lang.GStringTest.class);
         suite.addTestSuite(groovy.lang.IntRangeTest.class);
-        suite.addTestSuite(groovy.lang.MetaClassTest.class);
+        suite.addTestSuite(groovy.lang.PropertyNameBug.class);
+        suite.addTestSuite(groovy.lang.RangeTest.class);
         suite.addTestSuite(groovy.lang.RangeTest.class);
         suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
         suite.addTestSuite(groovy.lang.ScriptPrintTest.class);
