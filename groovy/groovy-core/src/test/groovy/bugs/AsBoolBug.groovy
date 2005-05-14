@@ -1,7 +1,8 @@
 package groovy.bugs
 
 /**
- * Test to fix the Jira issues GROOVY-810, GROOVY-811 and GROOVY-812.
+ * Test to fix the Jira issues GROOVY-810 and GROOVY-811.
+ * Test of "string as Boolean" against the issue GROOVY-812.
  *
  * @author Pilho Kim
  * @version $Revision$
@@ -28,40 +29,43 @@ public class AsBoolBug extends GroovyTestCase {
     }
 
     /**
-     * void testStringAsBool() <br><br>
+     * void testStringAsBool().
      *
-     * "string as Boolean" should have the same meaning
-     *  as "java.lang.Boolean.getBoolean(string)" of Java.
+     * <code>string as Boolean</code> is equivalent to
+     *     <code>string != null && string.length() > 0</code>.
      */
-    // This is a test case for GROOVY-812
     // Unfortunately, it contradicts several other test cases, and
     // it has already been decided to handle string-to-boolean conversions
     // differently. Commented out temporarily on 10 May 2005.
-//    void testStringAsBool() {
-//        def c = "true"
-//        println ("$c : ${c as Boolean}")
-//        assert c as Boolean == true
-//        boolean z = c
-//        println ("$z")
-//        assert z == true
-//        if (c)
-//           println "It is true!!"
-//        else
-//           println "It is false!!"
-//
-//        c = "123"
-//        println ("$c : ${c as Boolean}")
-//        assert c as Boolean == false
-//
-//        c = "True"
-//        println ("$c : ${c as Boolean}")
-//        assert c as Boolean == true
-//        if (c)
-//           println "It is true!!"
-//        else
-//           println "It is false!!"
-//        z = c
-//        println ("$z")
-//        assert z
-//    }
+    // This is a test case against GROOVY-812
+    void testStringAsBool() {
+        def c = "false"
+        println ("$c : ${c as Boolean}")
+        assert c as Boolean == true
+        assert c as Boolean == (c != null && c.length() > 0)
+        boolean z = c
+        println ("$z")
+        assert z == true
+        if (c)
+           println "It is true!!"
+        else
+           println "It is false!!"
+
+        c = "123"
+        println ("$c : ${c as Boolean}")
+        assert c as Boolean == true
+        assert c as Boolean == (c != null && c.length() > 0)
+
+        c = "False"
+        println ("$c : ${c as Boolean}")
+        assert c as Boolean == true
+        assert c as Boolean == (c != null && c.length() > 0)
+        if (c)
+           println "It is true!!"
+        else
+           println "It is false!!"
+        z = c
+        println ("$z")
+        assert z
+    }
 }
