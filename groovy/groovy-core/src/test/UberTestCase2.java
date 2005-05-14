@@ -34,6 +34,7 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
         suite.addTestSuite(groovy.bugs.MethodPointerBug.class);
         suite.addTestSuite(groovy.bugs.PrimitivePropertyBug.class);
+        suite.addTestSuite(groovy.bugs.PropertyNameBug.class);
         suite.addTestSuite(groovy.bugs.ScriptBug.class);
         suite.addTestSuite(groovy.bugs.SeansBug.class);
         suite.addTestSuite(groovy.bugs.StaticMethodCallBug.class);
@@ -42,7 +43,6 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.lang.GroovyShellTest.class);
         suite.addTestSuite(groovy.lang.GStringTest.class);
         suite.addTestSuite(groovy.lang.IntRangeTest.class);
-        suite.addTestSuite(groovy.lang.PropertyNameBug.class);
         suite.addTestSuite(groovy.lang.RangeTest.class);
         suite.addTestSuite(groovy.lang.RangeTest.class);
         suite.addTestSuite(groovy.lang.ScriptIntegerDivideTest.class);
