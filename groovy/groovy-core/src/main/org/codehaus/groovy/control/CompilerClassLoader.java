@@ -54,6 +54,8 @@ public class CompilerClassLoader extends ClassLoader {
     {
         super(Thread.currentThread().getContextClassLoader());
         parent = Thread.currentThread().getContextClassLoader();
+        // if no context class loader is set use the classloader of this class
+        if (parent==null) parent= this.getClass().getClassLoader();
         inner = new InnerLoader();
         map = new HashMap();
         //super(EMPTY_URL_ARRAY);
