@@ -431,26 +431,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
         }
+        assertNodeType(TYPE, node);
+        String type = typeName(node);
 
-        String type = null;
-        if (isType(TYPE, node)) {
-            type = typeName(node);
-            node = node.getNextSibling();
-        }
+        node = node.getNextSibling();
 
         String name = identifier(node);
+
+        Expression defaultValue = null;
         node = node.getNextSibling();
-        VariableExpression leftExpression = new VariableExpression(name, type);
-        configureAST(leftExpression, paramNode);
-
-        Expression rightExpression = ConstantExpression.NULL;
         if (node != null) {
-            assertNodeType(ASSIGN, node);
-
-            rightExpression = expression(node.getFirstChild());
+            defaultValue = expression(node);
         }
-
-        Parameter parameter = new Parameter(type, name, rightExpression);
+        Parameter parameter = new Parameter(type, name, defaultValue);
         // TODO
         //configureAST(parameter,paramNode);
         //parameter.addAnnotations(annotations);
@@ -1421,40 +1414,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AST leftNode = node.getFirstChild();
         Expression leftExpression = expression(leftNode);
-
         AST rightNode = leftNode.getNextSibling();
         if (rightNode == null) {
+            //rightNode = leftNode.getFirstChild();
             return leftExpression;
-        }
-
-        if (Types.ofType(type, Types.ASSIGNMENT_OPERATOR)) {
-            if (leftExpression instanceof VariableExpression || leftExpression instanceof PropertyExpression
-                                                             || leftExpression instanceof FieldExpression
-                                                             || leftExpression instanceof DeclarationExpression) {
-                // Do nothing.
-            }
-            else if (leftExpression instanceof ConstantExpression) {
-                throw new ASTRuntimeException(node, "\n[" + ((ConstantExpression) leftExpression).getValue() + "] is a constant expression, but it should be a variable expression");
-            }
-            else if (leftExpression instanceof BinaryExpression) {
-                Expression leftexp = ((BinaryExpression) leftExpression).getLeftExpression();
-                int lefttype = ((BinaryExpression) leftExpression).getOperation().getType();
-                if (!Types.ofType(lefttype, Types.ASSIGNMENT_OPERATOR) && lefttype != Types.LEFT_SQUARE_BRACKET) {
-                    throw new ASTRuntimeException(node, "\n" + ((BinaryExpression) leftExpression).getText() + " is a binary expression, but it should be a variable expression");
-                }
-            }
-            else if (leftExpression instanceof GStringExpression) {
-                throw new ASTRuntimeException(node, "\n\"" + ((GStringExpression) leftExpression).getText() + "\" is a GString expression, but it should be a variable expression");
-            }
-            else if (leftExpression instanceof MethodCallExpression) {
-                throw new ASTRuntimeException(node, "\n\"" + ((MethodCallExpression) leftExpression).getText() + "\" is a method call expression, but it should be a variable expression");
-            }
-            else if (leftExpression instanceof MapExpression) {
-                throw new ASTRuntimeException(node, "\n'" + ((MapExpression) leftExpression).getText() + "' is a map expression, but it should be a variable expression");
-            }
-            else {
-                throw new ASTRuntimeException(node, "\n" + leftExpression.getClass() + ", with its value '" + leftExpression.getText() + "', is a bad expression as the LSH of an assignment operator");
-            }
         }
         /*if (rightNode == null) {
             throw new NullPointerException("No rightNode associated with binary expression");
@@ -1593,7 +1556,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (isType(ARRAY_DECLARATOR, elist)) {
             AST expressionNode = elist.getFirstChild();
             if (expressionNode == null) {
-                throw new ASTRuntimeException(elist, "No expression for the array constructor call");
+                throw new ASTRuntimeException(elist, "No expression for the arrary constructor call");
             }
             Expression size = expression(expressionNode);
             ArrayExpression arrayExpression = new ArrayExpression(name, size);
