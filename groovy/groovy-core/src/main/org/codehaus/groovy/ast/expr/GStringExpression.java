@@ -98,6 +98,10 @@ public class GStringExpression extends Expression {
         return super.toString() + "[strings: " + strings + " values: " + values + "]";
     }
 
+    public String getText() {
+        return verbatimText;
+    }
+
     public List getStrings() {
         return strings;
     }
