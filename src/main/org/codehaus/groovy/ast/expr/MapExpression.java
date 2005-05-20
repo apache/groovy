@@ -93,6 +93,27 @@ public class MapExpression extends Expression {
         return super.toString() + mapEntryExpressions;
     }
 
+    public String getText() {
+        StringBuffer sb = new StringBuffer(32);
+        sb.append("[");
+        int size = mapEntryExpressions.size();
+        MapEntryExpression mapEntryExpression = null;
+        if (size > 0) {
+            mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(0);
+            sb.append(mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
+            for (int i = 1; i < size; i++) {
+                mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(i);
+                sb.append(", " + mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
+                if (sb.length() > 120 && i < size - 1) {
+                    sb.append(", ... ");
+                    break;
+                }
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     public void addMapEntryExpression(Expression keyExpression, Expression valueExpression) {
         addMapEntryExpression(new MapEntryExpression(keyExpression, valueExpression));
     }
