@@ -16,7 +16,7 @@ class IdentityClosureTest extends GroovyTestCase {
 
         bar.toUpperCase().trim().identity{
             assert "BAR" == it
-            assert 3 = it.size()
+            assert 3 == it.size()
             assert it.indexOf("A") > 0
         }
     }  
@@ -54,7 +54,7 @@ class IdentityClosureTest extends GroovyTestCase {
     void testClosureDelegate1() {
         bar.toUpperCase().trim().identity{
             assert "BAR" == it
-            assert 3 = size()
+            assert 3 == size()
             assert indexOf("A") > 0
         }
     }
