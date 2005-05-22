@@ -173,7 +173,7 @@ class BitwiseOperationsTest extends GroovyTestCase {
         def x = 3
         def y = 5
         c1 = { x -> return y }         // -> is a closure delimiter
-        c2 = { return n x & y }        // & is a bitAnd
+        c2 = { return x & y }        // & is a bitAnd
         def c3 = { return x ^ y }      // & is a bitXor
         def c11 = {
              x -> return y             // -> is a closure delimiter
