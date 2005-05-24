@@ -12,28 +12,35 @@
 
 #ifdef UNIX
 #include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #endif
 
 #ifdef LINUX
 #include <unistd.h>
 #include <linux/limits.h>
+#include <malloc.h>
 #endif
 
 #ifdef MACOSX
 #include <mach-o/dyld.h>
-#include <sys/syslimits.h>
+#include <sys/param.h>
 #endif
 
 int main(int argc, char* argv[]) {
 
   // Get the location of the executable -- platform specific
 #ifdef UNIX
-  char jarexe[PATH_MAX];
+  char *jarexe = malloc((MAXPATHLEN+2)*sizeof(char));
 #endif
 
 #ifdef MACOSX
-  unsigned long length;
-  _NSGetExecutablePath(jarexe, &length);
+  uint32_t length = MAXPATHLEN + 2;
+  while (_NSGetExecutablePath((char*)jarexe, &length) == -1) {
+    free(jarexe);
+    jarexe = malloc((length)*sizeof(char));
+  }
 #endif
 
 #ifdef LINUX
@@ -65,6 +72,7 @@ int main(int argc, char* argv[]) {
 
   // Execute java
 #ifdef UNIX
+  free(jarexe);
   execvp("java", argv2);
 #endif
 
