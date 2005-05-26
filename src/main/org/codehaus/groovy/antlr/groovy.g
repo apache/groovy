@@ -248,6 +248,40 @@ tokens {
     GroovyLexer lexer;
     public GroovyLexer getLexer() { return lexer; }
     public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
+    private SourceBuffer sourceBuffer;
+    public void setSourceBuffer(SourceBuffer sourceBuffer) {
+        this.sourceBuffer = sourceBuffer;
+    }
+
+    /** Create an AST node with the token type and text passed in, but
+     *  with the same background information as another supplied Token (e.g. line numbers)
+     * to be used in place of antlr tree construction syntax,
+     * i.e. #[TOKEN,"text"]  becomes  create(TOKEN,"text",anotherToken)
+     *
+     * todo - change antlr.ASTFactory to do this instead...
+     */
+    public AST create(int type, String txt, Token first, Token last) {
+        AST t = astFactory.create(type,txt);
+        if ( t != null && first != null) {
+            // first copy details from first token
+            t.initialize(first);
+            // then ensure that type and txt are specific to this new node
+            t.initialize(type,txt);
+        }
+
+        if ((t instanceof GroovySourceAST) && last != null) {
+            GroovySourceAST node = (GroovySourceAST)t;
+            node.setLast(last);
+
+            // todo - we can populate AST snippets on the fly, but this may be better done as a post-parse decoration
+            if (sourceBuffer != null) {
+                String snippet = sourceBuffer.getSnippet(first.getLine(),first.getColumn(),last.getLine(),last.getColumn());
+                node.setSnippet(snippet);
+            }
+        }
+        return t;
+    }
+
 
     // stuff to adjust ANTLR's tracing machinery
     public static boolean tracing = false;  // only effective if antlr.Tool is run with -traceParser
@@ -562,18 +596,18 @@ typeSpec[boolean addImagNode]
 // - possible brackets afterwards
 //   (which would make it an array type).
 // - generic type arguments after
-classTypeSpec[boolean addImagNode]
+classTypeSpec[boolean addImagNode]  {Token first = LT(1);}
     :   ct:classOrInterfaceType[false]!
         declaratorBrackets[#ct]
         {
             if ( addImagNode ) {
-                #classTypeSpec = #(#[TYPE,"TYPE"], #classTypeSpec);
+                #classTypeSpec = #(create(TYPE,"TYPE",first,LT(1)), #classTypeSpec);
             }
         }
     ;
 
 // A non-built in type name, with possible type parameters
-classOrInterfaceType[boolean addImagNode]
+classOrInterfaceType[boolean addImagNode]  {Token first = LT(1);}
     :   IDENT^ (typeArguments)?
         (   options{greedy=true;}: // match as many as possible
             DOT^
@@ -581,7 +615,7 @@ classOrInterfaceType[boolean addImagNode]
         )*
         {
             if ( addImagNode ) {
-                #classOrInterfaceType = #(#[TYPE,"TYPE"], #classOrInterfaceType);
+                #classOrInterfaceType = #(create(TYPE,"TYPE",first,LT(1)), #classOrInterfaceType);
             }
         }
     ;
@@ -593,11 +627,11 @@ typeArgumentSpec
     ;
 
 // A generic type argument is a class type, a possibly bounded wildcard type or a built-in type array
-typeArgument
+typeArgument  {Token first = LT(1);}
     :   (   typeArgumentSpec
         |   wildcardType
         )
-        {#typeArgument = #(#[TYPE_ARGUMENT,"TYPE_ARGUMENT"], #typeArgument);}
+        {#typeArgument = #(create(TYPE_ARGUMENT,"TYPE_ARGUMENT",first,LT(1)), #typeArgument);}
     ;
 
 // Wildcard type indicating all types (with possible constraint)
@@ -608,7 +642,8 @@ wildcardType
 
 // Type arguments to a class or interface type
 typeArguments
-{int currentLtLevel = 0;}
+{Token first = LT(1);
+int currentLtLevel = 0;}
     :
         {currentLtLevel = ltCounter;}
         LT! {ltCounter++;} nls!
@@ -628,7 +663,7 @@ typeArguments
         // if we are at the "top level" of nested typeArgument productions
         {(currentLtLevel != 0) || ltCounter == currentLtLevel}?
 
-        {#typeArguments = #(#[TYPE_ARGUMENTS, "TYPE_ARGUMENTS"], #typeArguments);}
+        {#typeArguments = #(create(TYPE_ARGUMENTS, "TYPE_ARGUMENTS",first,LT(1)), #typeArguments);}
     ;
 
 // this gobbles up *some* amount of '>' characters, and counts how many
@@ -641,23 +676,23 @@ protected typeArgumentsOrParametersEnd
 
 // Restriction on wildcard types based on super class or derrived class
 typeArgumentBounds
-    {boolean isUpperBounds = false;}
+    {Token first = LT(1);boolean isUpperBounds = false;}
     :
         ( "extends"! {isUpperBounds=true;} | "super"! ) nls! classOrInterfaceType[false] nls!
         {
             if (isUpperBounds)
             {
-                #typeArgumentBounds = #(#[TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS"], #typeArgumentBounds);
+                #typeArgumentBounds = #(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1)), #typeArgumentBounds);
             }
             else
             {
-                #typeArgumentBounds = #(#[TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS"], #typeArgumentBounds);
+                #typeArgumentBounds = #(create(TYPE_LOWER_BOUNDS,"TYPE_LOWER_BOUNDS",first,LT(1)), #typeArgumentBounds);
             }
         }
     ;
 
 // A builtin type array specification is a builtin type with brackets afterwards
-builtInTypeArraySpec[boolean addImagNode]
+builtInTypeArraySpec[boolean addImagNode]  {Token first = LT(1);}
     :   bt:builtInType!
         (   (LBRACK)=>   // require at least one []
             declaratorBrackets[#bt] 
@@ -668,19 +703,19 @@ builtInTypeArraySpec[boolean addImagNode]
         )
         {
             if ( addImagNode ) {
-                #builtInTypeArraySpec = #(#[TYPE,"TYPE"], #builtInTypeArraySpec);
+                #builtInTypeArraySpec = #(create(TYPE,"TYPE",first,LT(1)), #builtInTypeArraySpec);
             }
         }
     ;
 
 // A builtin type specification is a builtin type with possible brackets
 // afterwards (which would make it an array type).
-builtInTypeSpec[boolean addImagNode]
+builtInTypeSpec[boolean addImagNode]  {Token first = LT(1);}
     :   bt:builtInType!
         declaratorBrackets[#bt]
         {
             if ( addImagNode ) {
-                #builtInTypeSpec = #(#[TYPE,"TYPE"], #builtInTypeSpec);
+                #builtInTypeSpec = #(create(TYPE,"TYPE",first,LT(1)), #builtInTypeSpec);
             }
         }
     ;
@@ -746,20 +781,20 @@ modifiersInternal
     ;
 
 /** A list of one or more modifier, annotation, or "def". */
-modifiers
+modifiers  {Token first = LT(1);}
     :   modifiersInternal
-        {#modifiers = #([MODIFIERS, "MODIFIERS"], #modifiers);}
+        {#modifiers = #(create(MODIFIERS, "MODIFIERS",first,LT(1)), #modifiers);}
     ;
 
 /** A list of zero or more modifiers, annotations, or "def". */
-modifiersOpt
+modifiersOpt  {Token first = LT(1);}
     :   (
             // See comment above on hushing warnings.
             options{generateAmbigWarnings=false;}:
 
             modifiersInternal
         )?
-        {#modifiersOpt = #([MODIFIERS, "MODIFIERS"], #modifiersOpt);}
+        {#modifiersOpt = #(create(MODIFIERS, "MODIFIERS",first,LT(1)), #modifiersOpt);}
     ;
 
 // modifiers for Java classes, interfaces, class/instance vars and methods
@@ -778,14 +813,14 @@ modifier
     |   "strictfp"
     ;
 
-annotation!
+annotation!  {Token first = LT(1);}
     :   AT! i:identifier ( LPAREN! ( args:annotationArguments )? RPAREN! )?
-        {#annotation = #(#[ANNOTATION,"ANNOTATION"], i, args);}
+        {#annotation = #(create(ANNOTATION,"ANNOTATION",first,LT(1)), i, args);}
     ;
 
-annotationsOpt
+annotationsOpt  {Token first = LT(1);}
     :   (annotation nls!)*
-        {#annotationsOpt = #([ANNOTATIONS, "ANNOTATIONS"], #annotationsOpt);}
+        {#annotationsOpt = #(create(ANNOTATIONS, "ANNOTATIONS", first, LT(1)), #annotationsOpt);}
 ;
 
 annotationArguments
@@ -796,9 +831,9 @@ anntotationMemberValuePairs
     :   annotationMemberValuePair ( COMMA! nls! annotationMemberValuePair )*
     ;
 
-annotationMemberValuePair!
+annotationMemberValuePair!  {Token first = LT(1);}
     :   i:IDENT ASSIGN! nls! v:annotationMemberValueInitializer
-            {#annotationMemberValuePair = #(#[ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR"], i, v);}
+            {#annotationMemberValuePair = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",first,LT(1)), i, v);}
     ;
 
 annotationMemberValueInitializer
@@ -835,13 +870,15 @@ annotationMemberArrayValueInitializer
     ;
 
 superClassClause!
-    :   ( "extends" nls! c:classOrInterfaceType[false] nls! )?
-        {#superClassClause = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],c);}
+    {Token first = LT(1);}
+    :
+        ( "extends" nls! c:classOrInterfaceType[false] nls! )?
+        {#superClassClause = #(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1)),c);}
     ;
 
 // Definition of a Java class
 classDefinition![AST modifiers]
-    { AST prevCurrentClass = currentClass; }
+{Token first = LT(1);AST prevCurrentClass = currentClass; }
     :   "class" IDENT nls!
        { currentClass = #IDENT; }
         // it _might_ have type paramaters
@@ -852,7 +889,7 @@ classDefinition![AST modifiers]
         ic:implementsClause
         // now parse the body of the class
         cb:classBlock
-        {#classDefinition = #(#[CLASS_DEF,"CLASS_DEF"],
+        {#classDefinition = #(create(CLASS_DEF,"CLASS_DEF",first,LT(1)),
                                                             modifiers,IDENT,tp,sc,ic,cb);}
         { currentClass = prevCurrentClass; }
     ;
@@ -860,7 +897,7 @@ classDefinition![AST modifiers]
 //TODO - where has superClassClause! production gone???
 
 // Definition of a Java Interface
-interfaceDefinition![AST modifiers]
+interfaceDefinition![AST modifiers]  {Token first = LT(1);}
     :   "interface" IDENT nls!
         // it _might_ have type paramaters
         (tp:typeParameters)?
@@ -868,30 +905,30 @@ interfaceDefinition![AST modifiers]
         ie:interfaceExtends
         // now parse the body of the interface (looks like a class...)
         ib:interfaceBlock
-        {#interfaceDefinition = #(#[INTERFACE_DEF,"INTERFACE_DEF"],
+        {#interfaceDefinition = #(create(INTERFACE_DEF,"INTERFACE_DEF",first,LT(1)),
                                   modifiers,IDENT,tp,ie,ib);}
     ;
 
-enumDefinition![AST modifiers]
+enumDefinition![AST modifiers]  {Token first = LT(1);}
     :   "enum" IDENT
         // it might implement some interfaces...
         ic:implementsClause
         // now parse the body of the enum
         eb:enumBlock
-        {#enumDefinition = #(#[ENUM_DEF,"ENUM_DEF"],
+        {#enumDefinition = #(create(ENUM_DEF,"ENUM_DEF",first,LT(1)),
                              modifiers,IDENT,ic,eb);}
     ;
 
-annotationDefinition![AST modifiers]
+annotationDefinition![AST modifiers]  {Token first = LT(1);}
     :   AT "interface" IDENT
         // now parse the body of the annotation
         ab:annotationBlock
-        {#annotationDefinition = #(#[ANNOTATION_DEF,"ANNOTATION_DEF"],
+        {#annotationDefinition = #(create(ANNOTATION_DEF,"ANNOTATION_DEF",first,LT(1)),
                                    modifiers,IDENT,ab);}
     ;
 
 typeParameters
-{int currentLtLevel = 0;}
+{Token first = LT(1);int currentLtLevel = 0;}
     :
         {currentLtLevel = ltCounter;}
         LT! {ltCounter++;} nls!
@@ -903,51 +940,51 @@ typeParameters
         // if we are at the "top level" of nested typeArgument productions
         {(currentLtLevel != 0) || ltCounter == currentLtLevel}?
 
-        {#typeParameters = #(#[TYPE_PARAMETERS, "TYPE_PARAMETERS"], #typeParameters);}
+        {#typeParameters = #(create(TYPE_PARAMETERS, "TYPE_PARAMETERS",first,LT(1)), #typeParameters);}
     ;
 
-typeParameter
+typeParameter  {Token first = LT(1);}
     :
         // I'm pretty sure Antlr generates the right thing here:
         (id:IDENT) ( options{generateAmbigWarnings=false;}: typeParameterBounds )?
-        {#typeParameter = #(#[TYPE_PARAMETER,"TYPE_PARAMETER"], #typeParameter);}
+        {#typeParameter = #(create(TYPE_PARAMETER,"TYPE_PARAMETER",first,LT(1)), #typeParameter);}
     ;
 
-typeParameterBounds
+typeParameterBounds  {Token first = LT(1);}
     :
         "extends"! nls! classOrInterfaceType[false]
         (BAND! nls! classOrInterfaceType[false])*
-        {#typeParameterBounds = #(#[TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS"], #typeParameterBounds);}
+        {#typeParameterBounds = #(create(TYPE_UPPER_BOUNDS,"TYPE_UPPER_BOUNDS",first,LT(1)), #typeParameterBounds);}
     ;
 
 // This is the body of a class. You can have classFields and extra semicolons.
-classBlock
+classBlock  {Token first = LT(1);}
     :   LCURLY!
         ( classField )? ( sep! ( classField )? )*
         RCURLY!
-        {#classBlock = #([OBJBLOCK, "OBJBLOCK"], #classBlock);}
+        {#classBlock = #(create(OBJBLOCK, "OBJBLOCK",first,LT(1)), #classBlock);}
     ;
 
 // This is the body of an interface. You can have interfaceField and extra semicolons.
-interfaceBlock
+interfaceBlock  {Token first = LT(1);}
     :   LCURLY!
         ( interfaceField )? ( sep! ( interfaceField )? )*
         RCURLY!
-        {#interfaceBlock = #([OBJBLOCK, "OBJBLOCK"], #interfaceBlock);}
+        {#interfaceBlock = #(create(OBJBLOCK, "OBJBLOCK",first,LT(1)), #interfaceBlock);}
     ;
 
 // This is the body of an annotation. You can have annotation fields and extra semicolons,
 // That's about it (until you see what an annoation field is...)
-annotationBlock
+annotationBlock  {Token first = LT(1);}
     :   LCURLY!
         ( annotationField )? ( sep! ( annotationField )? )*
         RCURLY!
-        {#annotationBlock = #([OBJBLOCK, "OBJBLOCK"], #annotationBlock);}
+        {#annotationBlock = #(create(OBJBLOCK, "OBJBLOCK",first,LT(1)), #annotationBlock);}
     ;
 
 // This is the body of an enum. You can have zero or more enum constants
 // followed by any number of fields like a regular class
-enumBlock
+enumBlock  {Token first = LT(1);}
     :   LCURLY!
         (
             // Need a syntactic predicate, since enumConstants
@@ -959,7 +996,7 @@ enumBlock
         )
         ( sep! (classField)? )*
         RCURLY!
-        {#enumBlock = #([OBJBLOCK, "OBJBLOCK"], #enumBlock);}
+        {#enumBlock = #(create(OBJBLOCK, "OBJBLOCK",first,LT(1)), #enumBlock);}
     ;
 
 /** Guard for enumConstants.  */
@@ -976,7 +1013,7 @@ enumConstants
     ;
 
 // An annotation field
-annotationField!
+annotationField!  {Token first = LT(1);}
     :   mods:modifiersOpt!
         (   td:typeDefinitionInternal[#mods]
             {#annotationField = #td;}
@@ -994,9 +1031,9 @@ annotationField!
                 ( "default" nls! amvi:annotationMemberValueInitializer )?
 
                 {#annotationField =
-                        #(#[ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF"],
+                        #(create(ANNOTATION_FIELD_DEF,"ANNOTATION_FIELD_DEF",first,LT(1)),
                                  mods,
-                                 #(#[TYPE,"TYPE"],t),
+                                 #(create(TYPE,"TYPE",first,LT(1)),t),
                                  i,amvi
                                  );}
             |   v:variableDefinitions[#mods,#t]    // variable
@@ -1007,7 +1044,7 @@ annotationField!
 
 //An enum constant may have optional parameters and may have a
 //a class body
-enumConstant!
+enumConstant!  {Token first = LT(1);}
     :   an:annotationsOpt // Note:  Cannot start with "def" or another modifier.
         i:IDENT
         (   LPAREN!
@@ -1015,15 +1052,15 @@ enumConstant!
             RPAREN!
         )?
         ( b:enumConstantBlock )?
-        {#enumConstant = #([ENUM_CONSTANT_DEF, "ENUM_CONSTANT_DEF"], an, i, a, b);}
+        {#enumConstant = #(create(ENUM_CONSTANT_DEF, "ENUM_CONSTANT_DEF",first,LT(1)), an, i, a, b);}
     ;
 
 //The class-like body of an enum constant
-enumConstantBlock
+enumConstantBlock  {Token first = LT(1);}
     :   LCURLY!
         (enumConstantField)? ( sep! (enumConstantField)? )*
         RCURLY!
-        {#enumConstantBlock = #([OBJBLOCK, "OBJBLOCK"], #enumConstantBlock);}
+        {#enumConstantBlock = #(create(OBJBLOCK, "OBJBLOCK",first,LT(1)), #enumConstantBlock);}
     ;
 
 //An enum constant field is just like a class field but without
@@ -1031,7 +1068,7 @@ enumConstantBlock
 
 // TODO - maybe allow 'declaration' production within this production, 
 // but how to disallow constructors and static initializers...
-enumConstantField!
+enumConstantField!  {Token first = LT(1);}
     :   mods:modifiersOpt!
         (   td:typeDefinitionInternal[#mods]
             {#enumConstantField = #td;}
@@ -1058,10 +1095,10 @@ enumConstantField!
 
                 ( s2:compoundStatement )?
                 // TODO - verify that 't' is useful/correct here, used to be 'rt'
-                {#enumConstantField = #(#[METHOD_DEF,"METHOD_DEF"],
+                {#enumConstantField = #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
                                          mods,
                                          tp,
-                                         #(#[TYPE,"TYPE"],t),
+                                         #(create(TYPE,"TYPE",first,LT(1)),t),
                                          IDENT,
                                          param,
                                          tc,
@@ -1074,31 +1111,31 @@ enumConstantField!
 
         // "{ ... }" instance initializer
     |   s4:compoundStatement
-        {#enumConstantField = #(#[INSTANCE_INIT,"INSTANCE_INIT"], s4);}
+        {#enumConstantField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
     ;
 
 // An interface can extend several other interfaces...
-interfaceExtends
+interfaceExtends  {Token first = LT(1);}
     :   (
             e:"extends"! nls!
             classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
         )?
-        {#interfaceExtends = #(#[EXTENDS_CLAUSE,"EXTENDS_CLAUSE"],
+        {#interfaceExtends = #(create(EXTENDS_CLAUSE,"EXTENDS_CLAUSE",first,LT(1)),
                                #interfaceExtends);}
     ;
 
 // A class can implement several interfaces...
-implementsClause
+implementsClause  {Token first = LT(1);}
     :   (
             i:"implements"! nls!
             classOrInterfaceType[false] ( COMMA! nls! classOrInterfaceType[false] )* nls!
         )?
-        {#implementsClause = #(#[IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE"],
+        {#implementsClause = #(create(IMPLEMENTS_CLAUSE,"IMPLEMENTS_CLAUSE",first,LT(1)),
                                #implementsClause);}
     ;
 
 // Now the various things that can be defined inside a class
-classField!
+classField!  {Token first = LT(1);}
     :   // method, constructor, or variable declaration
         (constructorStart)=>
         mc:modifiersOpt! ctor:constructorDefinition[#mc]
@@ -1118,11 +1155,11 @@ classField!
 
     // "static { ... }" class initializer
     |   "static" s3:compoundStatement
-        {#classField = #(#[STATIC_INIT,"STATIC_INIT"], s3);}
+        {#classField = #(create(STATIC_INIT,"STATIC_INIT",first,LT(1)), s3);}
 
     // "{ ... }" instance initializer
     |   s4:compoundStatement
-        {#classField = #(#[INSTANCE_INIT,"INSTANCE_INIT"], s4);}
+        {#classField = #(create(INSTANCE_INIT,"INSTANCE_INIT",first,LT(1)), s4);}
     ;
 
 // Now the various things that can be defined inside a interface
@@ -1170,7 +1207,7 @@ explicitConstructorInvocation
   * Otherwise, the variable type defaults to 'any'.
   * DECIDE:  Method return types default to the type of the method body, as an expression.
   */
-variableDefinitions[AST mods, AST t]
+variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
     :   variableDeclarator[getASTFactory().dupTree(mods),
                            getASTFactory().dupTree(t)]
         (   COMMA! nls!
@@ -1203,15 +1240,15 @@ variableDefinitions[AST mods, AST t]
         )
         {   if (#qid != null)  #id = #qid;
             #variableDefinitions =
-                    #(#[METHOD_DEF,"METHOD_DEF"],
-                      mods, #(#[TYPE,"TYPE"],t), id, param, tc, mb);
+                    #(create(METHOD_DEF,"METHOD_DEF",first,LT(1)),
+                      mods, #(create(TYPE,"TYPE",first,LT(1)),t), id, param, tc, mb);
         }
     ;
 
 /** I've split out constructors separately; we could maybe integrate back into variableDefinitions 
  *  later on if we maybe simplified 'def' to be a type declaration?
  */
-constructorDefinition[AST mods]
+constructorDefinition[AST mods]  {Token first = LT(1);}
     :
         id:IDENT
 
@@ -1231,7 +1268,7 @@ constructorDefinition[AST mods]
         { isConstructorIdent(id); }
 
         cb:constructorBody!
-        {   #constructorDefinition =  #(#[CTOR_IDENT,"CTOR_IDENT"],  mods, param, tc, cb);
+        {   #constructorDefinition =  #(create(CTOR_IDENT,"CTOR_IDENT",first,LT(1)),  mods, param, tc, cb);
         }
      ;
 
@@ -1239,19 +1276,19 @@ constructorDefinition[AST mods]
  *  or a local variable in a method
  *  It can also include possible initialization.
  */
-variableDeclarator![AST mods, AST t]
+variableDeclarator![AST mods, AST t]  {Token first = LT(1);}
     :
         id:variableName
         /*OBS*d:declaratorBrackets[t]*/
         (v:varInitializer)?
-        {#variableDeclarator = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id, v);}
+        {#variableDeclarator = #(create(VARIABLE_DEF,"VARIABLE_DEF",first,LT(1)), mods, #(create(TYPE,"TYPE",first,LT(1)),t), id, v);}
     ;
 
 /** Used in cases where a declaration cannot have commas, or ends with the "in" operator instead of '='. */
-singleVariable![AST mods, AST t]
+singleVariable![AST mods, AST t]  {Token first = LT(1);}
     :
         id:variableName
-        {#singleVariable = #(#[VARIABLE_DEF,"VARIABLE_DEF"], mods, #(#[TYPE,"TYPE"],t), id);}
+        {#singleVariable = #(create(VARIABLE_DEF,"VARIABLE_DEF",first,LT(1)), mods, #(create(TYPE,"TYPE",first,LT(1)),t), id);}
     ;
 
 variableName
@@ -1335,7 +1372,7 @@ throwsClause
  *  This must be sorted out after parsing, since the various declaration forms
  *  are impossible to tell apart without backtracking.
  */
-parameterDeclarationList
+parameterDeclarationList  {Token first = LT(1);}
     :
         (
             parameterDeclaration
@@ -1343,13 +1380,13 @@ parameterDeclarationList
                 parameterDeclaration
             )*
         )?
-        {#parameterDeclarationList = #(#[PARAMETERS,"PARAMETERS"],
+        {#parameterDeclarationList = #(create(PARAMETERS,"PARAMETERS",first,LT(1)),
                                        #parameterDeclarationList);}
     ;
 
 /** A formal parameter for a method or closure. */
 parameterDeclaration!
-        { boolean spreadParam = false; }
+        { Token first = LT(1);boolean spreadParam = false; }
     :
         pm:parameterModifiersOpt
         (   options {greedy=true;} :
@@ -1369,22 +1406,22 @@ parameterDeclaration!
         /*OBS*pd:declaratorBrackets[#t]*/
         {
             if (spreadParam) {
-                #parameterDeclaration = #(#[VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF"],
-                      pm, #([TYPE,"TYPE"],t), id, exp);
+                #parameterDeclaration = #(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1)),
+                      pm, #(create(TYPE,"TYPE",first,LT(1)),t), id, exp);
             } else {
-                #parameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-                      pm, #([TYPE,"TYPE"],t), id, exp);
+                #parameterDeclaration = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
+                      pm, #(create(TYPE,"TYPE",first,LT(1)),t), id, exp);
             }
         }
     ;
 
 /*OBS*
-variableLengthParameterDeclaration!
+variableLengthParameterDeclaration!  {Token first = LT(1);}
     :   pm:parameterModifier t:typeSpec[false] TRIPLE_DOT! id:IDENT
 
         /*OBS* pd:declaratorBrackets[#t]* /
-        {#variableLengthParameterDeclaration = #(#[VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF"],
-                                                                                            pm, #([TYPE,"TYPE"],t), id);}
+        {#variableLengthParameterDeclaration = #(create(VARIABLE_PARAMETER_DEF,"VARIABLE_PARAMETER_DEF",first,LT(1)),
+                                                                                            pm, #(create(TYPE,"TYPE",first,LT(1)),t), id);}
     ;
 *OBS*/
 
@@ -1392,33 +1429,33 @@ variableLengthParameterDeclaration!
  *  It is not confused by a lookahead of BOR.
  *  DECIDE:  Is thie necessary, or do we change the closure-bar syntax?
  */
-simpleParameterDeclaration!
+simpleParameterDeclaration!  {Token first = LT(1);}
     :   ( options {greedy=true;} : t:typeSpec[false])?
         id:IDENT
-        {#simpleParameterDeclaration = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-              #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"],t), id);}
+        {#simpleParameterDeclaration = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
+              #(create(MODIFIERS,"MODIFIERS",first,LT(1))), #(create(TYPE,"TYPE",first,LT(1)),t), id);}
     ;
 
 /** Simplified formal parameter list for closures.  Never empty. */
-simpleParameterDeclarationList
+simpleParameterDeclarationList  {Token first = LT(1);}
     :
         simpleParameterDeclaration
         (   COMMA! nls!
             simpleParameterDeclaration
         )*
-        {#simpleParameterDeclarationList = #(#[PARAMETERS,"PARAMETERS"],
+        {#simpleParameterDeclarationList = #(create(PARAMETERS,"PARAMETERS",first,LT(1)),
                                              #simpleParameterDeclarationList);}
     ;
 
 parameterModifiersOpt
-        { int seenDef = 0; }
+        { Token first = LT(1);int seenDef = 0; }
         //final and/or def can appear amongst annotations in any order
     :   (   {seenDef++ == 0}?       // do not allow multiple "def" tokens
             "def"!  nls!            // redundant, but allowed for symmetry
         |   "final" nls!
         |   annotation nls!
         )*
-        {#parameterModifiersOpt = #(#[MODIFIERS,"MODIFIERS"], #parameterModifiersOpt);}
+        {#parameterModifiersOpt = #(create(MODIFIERS,"MODIFIERS",first,LT(1)), #parameterModifiersOpt);}
     ;
 
 /** Closure parameters are exactly like method parameters,
@@ -1449,12 +1486,12 @@ closureParametersStart!
 
 /** Provisional definition of old-style closure params based on BOR '|'.
  *  Going away soon, perhaps... */
-oldClosureParameters
+oldClosureParameters  {Token first = LT(1);}
     :   LOR! nls!  // '||' operator is a null param list
-        {#oldClosureParameters = #(#[PARAMETERS,"PARAMETERS"]);}
+        {#oldClosureParameters = #(create(PARAMETERS,"PARAMETERS",first,LT(1)));}
     |   (BOR nls BOR)=>
         BOR! nls! BOR! nls!
-        {#oldClosureParameters = #(#[PARAMETERS,"PARAMETERS"]);}
+        {#oldClosureParameters = #(create(PARAMETERS,"PARAMETERS",first,LT(1)));}
     |   ((BOR nls)? LPAREN parameterDeclarationList RPAREN nls BOR)=>
         (BOR! nls!)? LPAREN! parameterDeclarationList RPAREN! nls! BOR! nls!
     |   ((BOR nls)? simpleParameterDeclarationList nls BOR)=>
@@ -1471,10 +1508,10 @@ oldClosureParametersStart!
     ;
 
 /** Simple names, as in {x|...}, are completely equivalent to {(def x)|...}.  Build the right AST. */
-closureParameter!
+closureParameter!  {Token first = LT(1);}
     :   id:IDENT!
-        {#closureParameter = #(#[PARAMETER_DEF,"PARAMETER_DEF"],
-                               #(#[MODIFIERS,"MODIFIERS"]), #([TYPE,"TYPE"]),
+        {#closureParameter = #(create(PARAMETER_DEF,"PARAMETER_DEF",first,LT(1)),
+                               #(create(MODIFIERS,"MODIFIERS",first,LT(1))), #(create(TYPE,"TYPE",first,LT(1))),
                                id);}
     ;
 
@@ -1521,8 +1558,8 @@ closedBlock
  *  A subsequent pass is responsible for deciding if there is an implicit 'it' parameter,
  *  or if the parameter list should be empty.
  */
-implicitParameters
-    :   {   #implicitParameters = #(#[IMPLICIT_PARAMETERS,"IMPLICIT_PARAMETERS"]);  }
+implicitParameters  {Token first = LT(1);}
+    :   {   #implicitParameters = #(create(IMPLICIT_PARAMETERS,"IMPLICIT_PARAMETERS",first,LT(1)));  }
     ;
 
 /** A sub-block of a block can be either open or closed.
@@ -1656,10 +1693,10 @@ traditionalForClause
     ;
 
 /*OBS*
-forEachClause
+forEachClause  {Token first = LT(1);}
     :
         p:parameterDeclaration COLON! expression
-        {#forEachClause = #(#[FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE"], #forEachClause);}
+        {#forEachClause = #(create(FOR_EACH_CLAUSE,"FOR_EACH_CLAUSE",first,LT(1)), #forEachClause);}
     ;
 *OBS*/
 
@@ -1751,7 +1788,7 @@ statementLabelPrefix
 // DECIDE: A later semantic pass can flag dumb expressions that dot occur in
 //         positions where their value is not used, e.g., <code>{1+1;println}</code>
 expressionStatement[int prevToken]
-        {   boolean isPathExpr = false;  }
+        {Token first = LT(1);boolean isPathExpr = false;  }
     : 
         (   (suspiciousExpressionStatementStart)=>
             checkSuspiciousExpressionStatement[prevToken]
@@ -1765,7 +1802,7 @@ expressionStatement[int prevToken]
             cmd:commandArguments[#head]!
             {#expressionStatement = #cmd;}
         )?
-        {#expressionStatement = #(#[EXPR,"EXPR"],#expressionStatement);}
+        {#expressionStatement = #(create(EXPR,"EXPR",first,LT(1)),#expressionStatement);}
     ;
         
 /**
@@ -1832,7 +1869,7 @@ suspiciousExpressionStatementStart
     ;
 
 // Support for switch/case:
-casesGroup
+casesGroup  {Token first = LT(1);}
     :   (   // CONFLICT: to which case group do the statements bind?
             // ANTLR generates proper code: it groups the
             // many "case"/"default" labels together then
@@ -1844,35 +1881,35 @@ casesGroup
             aCase
         )+
         caseSList
-        {#casesGroup = #([CASE_GROUP, "CASE_GROUP"], #casesGroup);}
+        {#casesGroup = #(create(CASE_GROUP, "CASE_GROUP",first,LT(1)), #casesGroup);}
     ;
 
 aCase
     :   ("case"^ expression[0] | "default") COLON! nls!
     ;
 
-caseSList
+caseSList  {Token first = LT(1);}
     :   statement[COLON] (sep! (statement[sepToken])?)*
-        {#caseSList = #(#[SLIST,"SLIST"],#caseSList);}
+        {#caseSList = #(create(SLIST,"SLIST",first,LT(1)),#caseSList);}
     ;
 
 // The initializer for a for loop
-forInit
+forInit  {Token first = LT(1);}
     :   // if it looks like a declaration, it is
         (declarationStart)=> declaration
     |   // else it's a comma-separated list of expressions
         (controlExpressionList)?
-        {#forInit = #(#[FOR_INIT,"FOR_INIT"],#forInit);}
+        {#forInit = #(create(FOR_INIT,"FOR_INIT",first,LT(1)),#forInit);}
     ;
 
-forCond
+forCond  {Token first = LT(1);}
     :   (strictContextExpression)?
-        {#forCond = #(#[FOR_CONDITION,"FOR_CONDITION"],#forCond);}
+        {#forCond = #(create(FOR_CONDITION,"FOR_CONDITION",first,LT(1)),#forCond);}
     ;
 
-forIter
+forIter  {Token first = LT(1);}
     :   (controlExpressionList)?
-        {#forIter = #(#[FOR_ITERATOR,"FOR_ITERATOR"],#forIter);}
+        {#forIter = #(create(FOR_ITERATOR,"FOR_ITERATOR",first,LT(1)),#forIter);}
     ;
 
 // an exception handler try/catch block
@@ -1896,7 +1933,7 @@ handler
  *  Unlike parenthesized arguments, these must be plain expressions,
  *  without labels or spread operators.
  */
-commandArguments[AST head]
+commandArguments[AST head]  {Token first = LT(1);}
     :
         expression[0] ( COMMA! nls! expression[0] )*
         // println 2+2 //OK
@@ -1908,7 +1945,7 @@ commandArguments[AST head]
         // compare( (2), 2 ) //OK
         // foo.bar baz{bat}, bang{boz} //OK?!
         {
-            AST elist = #(#[ELIST,"ELIST"], #commandArguments);
+            AST elist = #(create(ELIST,"ELIST",first,LT(1)), #commandArguments);
             AST headid = getASTFactory().dup(#head);
             headid.setType(METHOD_CALL);
             headid.setText("<command>");
@@ -1964,9 +2001,9 @@ expression[int lc_stmt]
 // This is a list of expressions.
 // Used for backward compatibility, in a few places where
 // comma-separated lists of Java expression statements and declarations are required.
-controlExpressionList
+controlExpressionList  {Token first = LT(1);}
     :   strictContextExpression (COMMA! nls! strictContextExpression)*
-        {#controlExpressionList = #(#[ELIST,"ELIST"], controlExpressionList);}
+        {#controlExpressionList = #(create(ELIST,"ELIST",first,LT(1)), controlExpressionList);}
     ;
 
 /** A "path expression" is a name or other primary, possibly qualified by various
@@ -2074,7 +2111,7 @@ pathElementStart!
 /** This is the grammar for what can follow a dot:  x.a, x.@a, x.&a, x.'a', etc.
  *  Note: <code>typeArguments</code> is handled by the caller of <code>namePart</code>.
  */
-namePart
+namePart  {Token first = LT(1);}
     :
         (   ats:AT^     {#ats.setType(SELECT_SLOT);}  )?
         // foo.@bar selects the field (or attribute), not property
@@ -2083,7 +2120,7 @@ namePart
         |   sl:STRING_LITERAL {#sl.setType(IDENT);}
             // foo.'bar' is in all ways same as foo.bar, except that bar can have an arbitrary spelling
         |   dn:dynamicMemberName!
-            { #namePart = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dn); }
+            { #namePart = #(create(DYNAMIC_MEMBER, "DYNAMIC_MEMBER",first,LT(1)), #dn); }
             // DECIDE PROPOSAL:  foo.(bar), x.(p?'a':'b') means dynamic lookup on a dynamic name
         |
             openBlock
@@ -2126,11 +2163,11 @@ keywordPropertyNames
 /** If a dot is followed by a parenthesized or quoted expression, the member is computed dynamically,
  *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
  */
-dynamicMemberName
+dynamicMemberName  {Token first = LT(1);}
     :   (   parenthesizedExpression
         |   stringConstructorExpression
         )
-        { #dynamicMemberName = #(#[DYNAMIC_MEMBER, "DYNAMIC_MEMBER"], #dynamicMemberName); }
+        { #dynamicMemberName = #(create(DYNAMIC_MEMBER, "DYNAMIC_MEMBER",first,LT(1)), #dynamicMemberName); }
     ;
 
 /** An expression may be followed by one or both of (...) and {...}.
@@ -2434,7 +2471,7 @@ scopeEscapeExpression
 /** Things that can show up as expressions, but only in strict
  *  contexts like inside parentheses, argument lists, and list constructors.
  */
-strictContextExpression
+strictContextExpression  {Token first = LT(1);}
     :
         (   (declarationStart)=>
             singleDeclaration  // used for both binding and value, as: while (String xx = nextln()) { println xx }
@@ -2443,7 +2480,7 @@ strictContextExpression
         |   annotation      // creates an annotation value
         )
         // For the sake of the AST walker, mark nodes like this very clearly.
-        {#strictContextExpression = #(#[EXPR,"EXPR"],#strictContextExpression);}
+        {#strictContextExpression = #(create(EXPR,"EXPR",first,LT(1)),#strictContextExpression);}
     ;
 
 closureConstructorExpression
@@ -2451,7 +2488,7 @@ closureConstructorExpression
     ;
 
 // Groovy syntax for "$x $y" or /$x $y/.
-stringConstructorExpression
+stringConstructorExpression  {Token first = LT(1);}
     :   cs:STRING_CTOR_START
         { #cs.setType(STRING_LITERAL); }
 
@@ -2465,7 +2502,7 @@ stringConstructorExpression
         ce:STRING_CTOR_END
         { #ce.setType(STRING_LITERAL);
           #stringConstructorExpression =
-            #(#[STRING_CONSTRUCTOR,"STRING_CONSTRUCTOR"], stringConstructorExpression);
+            #(create(STRING_CONSTRUCTOR,"STRING_CONSTRUCTOR",first,LT(1)), stringConstructorExpression);
         }
     ;
 
@@ -2653,7 +2690,7 @@ anonymousInnerClassBlock
 *NYI*/
 
 argList
-    { boolean hl = false, hl2; }
+    {Token first = LT(1); boolean hl = false, hl2; }
     :   (
             hl=argument
             (
@@ -2662,9 +2699,9 @@ argList
                 // Note:  nls not needed, since we are inside parens,
                 // and those insignificant newlines are suppressed by the lexer.
             )*
-            {#argList = #(#[ELIST,"ELIST"], argList);}
+            {#argList = #(create(ELIST,"ELIST",first,LT(1)), argList);}
         |   /*nothing*/
-            {#argList = #[ELIST,"ELIST"];}
+            {#argList = create(ELIST,"ELIST",first,LT(1));}
         )
 
         // DECIDE: Allow an extra trailing comma, for easy editing of long lists.
@@ -2857,7 +2894,7 @@ options {
     public void setWhitespaceIncluded(boolean z) { whitespaceIncluded = z; }
     /** Are whitespace tokens included? */
     public boolean isWhitespaceIncluded() { return whitespaceIncluded; }
-    
+
     {
         // Initialization actions performed on construction.
         setTabSize(1);  // get rid of special tab interpretation, for IDEs and general clarity
