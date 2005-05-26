@@ -13,6 +13,9 @@ import antlr.*;
 public class GroovySourceAST extends CommonAST {
   private int line;
   private int col;
+  private int lineLast;
+  private int colLast;
+  private String snippet;
 
   public GroovySourceAST() {
   }
@@ -33,11 +36,33 @@ public class GroovySourceAST extends CommonAST {
     col = t.getColumn();
   }
 
-  public int getLine() {
+    public void setLast(Token last) {
+        lineLast = last.getLine();
+        colLast = last.getColumn();
+    }
+
+    public int getLineLast() {
+        return lineLast;
+    }
+
+    public int getColumnLast() {
+        return colLast;
+    }
+
+    public int getLine() {
     return (line);
   }
 
   public int getColumn() {
     return (col);
   }
+
+    public void setSnippet(String snippet) {
+        this.snippet = snippet;
+    }
+
+    public String getSnippet() {
+        return snippet;
+    }
+
 }

@@ -67,10 +67,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         setController(sourceUnit);
 
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader);
+        SourceBuffer sourceBuffer = new SourceBuffer();
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader,sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
         GroovyRecognizer parser = GroovyRecognizer.make(lexer);
+        parser.setSourceBuffer(sourceBuffer);
         tokenNames = parser.getTokenNames();
         parser.setFilename(sourceUnit.getName());
 

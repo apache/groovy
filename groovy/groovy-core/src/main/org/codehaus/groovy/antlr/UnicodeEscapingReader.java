@@ -38,13 +38,15 @@ public class UnicodeEscapingReader extends Reader {
     private CharScanner lexer;
     private boolean hasNextChar = false;
     private int nextChar;
+    private SourceBuffer sourceBuffer;
 
     /**
      * Constructor.
      * @param reader The reader that this reader will filter over.
      */
-    public UnicodeEscapingReader(Reader reader) {
+    public UnicodeEscapingReader(Reader reader,SourceBuffer sourceBuffer) {
         this.reader = reader;
+        this.sourceBuffer = sourceBuffer;
     }
 
     /**
@@ -77,11 +79,13 @@ public class UnicodeEscapingReader extends Reader {
     public int read() throws IOException {
         if (hasNextChar) {
             hasNextChar = false;
+            write(nextChar);
             return nextChar;
         }
 
         int c = reader.read();
         if (c != '\\') {
+            write(c);
             return c;
         }
 
@@ -90,6 +94,7 @@ public class UnicodeEscapingReader extends Reader {
         if (c != 'u') {
             hasNextChar = true;
             nextChar = c;
+            write('\\');
             return '\\';
         }
 
@@ -109,9 +114,13 @@ public class UnicodeEscapingReader extends Reader {
             checkHexDigit(c);
             charNum.append((char) c);
         }
-        return Integer.parseInt(charNum.toString(), 16);
+        int rv = Integer.parseInt(charNum.toString(), 16);
+        write(rv);
+        return rv;
     }
-
+    private void write(int c) {
+        if (sourceBuffer != null) {sourceBuffer.write(c);}
+    }
     /**
      * Checks that the given character is indeed a hex digit.
      */
