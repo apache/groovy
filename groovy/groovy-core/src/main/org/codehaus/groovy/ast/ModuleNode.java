@@ -65,7 +65,7 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a module, which consists typically of a class declaration
@@ -75,7 +75,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ModuleNode extends ASTNode implements Constants {
+public class ModuleNode extends ASTNode implements Opcodes {
 
     private BlockStatement statementBlock = new BlockStatement();
     List classes = new ArrayList();

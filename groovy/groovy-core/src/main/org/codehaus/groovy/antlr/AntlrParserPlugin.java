@@ -39,8 +39,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.ASTHelper;
 import org.codehaus.groovy.syntax.ParserException;
-import org.codehaus.groovy.syntax.ParserException;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 import java.io.FileWriter;
 import java.io.Reader;
@@ -204,7 +203,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void classDef(AST classDef) {
         List annotations = new ArrayList();
         AST node = classDef.getFirstChild();
-        int modifiers = Constants.ACC_PUBLIC;
+        int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
@@ -272,7 +271,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void methodDef(AST methodDef) {
         List annotations = new ArrayList();
         AST node = methodDef.getFirstChild();
-        int modifiers = Constants.ACC_PUBLIC;
+        int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
@@ -314,7 +313,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected void constructorDef(AST constructorDef) {
         List annotations = new ArrayList();
         AST node = constructorDef.getFirstChild();
-        int modifiers = Constants.ACC_PUBLIC;
+        int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
@@ -366,14 +365,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (fieldNode.getAnnotations("Property") != null) {
             // lets set the modifiers on the field
             int fieldModifiers = 0;
-            int flags = Constants.ACC_STATIC | Constants.ACC_TRANSIENT | Constants.ACC_VOLATILE | Constants.ACC_FINAL;
+            int flags = Opcodes.ACC_STATIC | Opcodes.ACC_TRANSIENT | Opcodes.ACC_VOLATILE | Opcodes.ACC_FINAL;
 
             // lets pass along any other modifiers we need
             fieldModifiers |= (modifiers & flags);
             fieldNode.setModifiers(fieldModifiers);
 
             if (!hasVisibility(modifiers)) {
-                modifiers |= Constants.ACC_PUBLIC;
+                modifiers |= Opcodes.ACC_PUBLIC;
             }
             PropertyNode propertyNode = new PropertyNode(fieldNode, modifiers, null, null);
             configureAST(propertyNode, fieldDef);
@@ -382,7 +381,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         else {
             /*
             if (!hasVisibility(modifiers)) {
-                modifiers |= Constants.ACC_PRIVATE;
+                modifiers |= Opcodes.ACC_PRIVATE;
                 fieldNode.setModifiers(modifiers);
             }
             */
@@ -476,51 +475,51 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
                     // core access scope modifiers
                 case LITERAL_private:
-                    answer = setModifierBit(node, answer, Constants.ACC_PRIVATE);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_PRIVATE);
                     access = setAccessTrue(node, access);
                     break;
 
                 case LITERAL_protected:
-                    answer = setModifierBit(node, answer, Constants.ACC_PROTECTED);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_PROTECTED);
                     access = setAccessTrue(node, access);
                     break;
 
                 case LITERAL_public:
-                    answer = setModifierBit(node, answer, Constants.ACC_PUBLIC);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_PUBLIC);
                     access = setAccessTrue(node, access);
                     break;
 
                     // other modifiers
                 case ABSTRACT:
-                    answer = setModifierBit(node, answer, Constants.ACC_ABSTRACT);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_ABSTRACT);
                     break;
 
                 case FINAL:
-                    answer = setModifierBit(node, answer, Constants.ACC_FINAL);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_FINAL);
                     break;
 
                 case LITERAL_native:
-                    answer = setModifierBit(node, answer, Constants.ACC_NATIVE);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_NATIVE);
                     break;
 
                 case LITERAL_static:
-                    answer = setModifierBit(node, answer, Constants.ACC_STATIC);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_STATIC);
                     break;
 
                 case STRICTFP:
-                    answer = setModifierBit(node, answer, Constants.ACC_STRICT);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_STRICT);
                     break;
 
                 case LITERAL_synchronized:
-                    answer = setModifierBit(node, answer, Constants.ACC_SYNCHRONIZED);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_SYNCHRONIZED);
                     break;
 
                 case LITERAL_transient:
-                    answer = setModifierBit(node, answer, Constants.ACC_TRANSIENT);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_TRANSIENT);
                     break;
 
                 case LITERAL_volatile:
-                    answer = setModifierBit(node, answer, Constants.ACC_VOLATILE);
+                    answer = setModifierBit(node, answer, Opcodes.ACC_VOLATILE);
                     break;
 
                 default:
@@ -1951,7 +1950,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
      * Returns true if the modifiers flags contain a visibility modifier
      */
     protected boolean hasVisibility(int modifiers) {
-        return (modifiers & (Constants.ACC_PRIVATE | Constants.ACC_PROTECTED | Constants.ACC_PUBLIC)) != 0;
+        return (modifiers & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED | Opcodes.ACC_PUBLIC)) != 0;
     }
 
     protected void configureAST(ASTNode node, AST ast) {

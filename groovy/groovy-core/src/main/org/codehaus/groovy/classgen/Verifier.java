@@ -84,10 +84,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.syntax.ParserException;
 import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Verifies the AST node and adds any defaulted AST code before
@@ -96,7 +94,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Verifier implements GroovyClassVisitor, Constants {
+public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public static final String __TIMESTAMP = "__timeStamp";
 	private ClassNode classNode;

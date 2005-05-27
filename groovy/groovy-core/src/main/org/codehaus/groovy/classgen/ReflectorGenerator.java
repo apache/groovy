@@ -50,8 +50,8 @@ import groovy.lang.MetaMethod;
 import java.util.List;
 
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Label;
 
 /**
@@ -60,11 +60,11 @@ import org.objectweb.asm.Label;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ReflectorGenerator implements Constants {
+public class ReflectorGenerator implements Opcodes {
 
     private List methods;
     private ClassVisitor cw;
-    private CodeVisitor cv;
+    private MethodVisitor cv;
     private BytecodeHelper helper = new BytecodeHelper(null);
     private String classInternalName;
 
@@ -74,15 +74,9 @@ public class ReflectorGenerator implements Constants {
 
     public void generate(ClassVisitor cw, String className) {
         this.cw = cw;
-        String fileName = className;
-        int idx = className.lastIndexOf('.');
-        if (idx > 0) {
-            fileName = className.substring(idx + 1);
-        }
-        fileName += ".java";
 
         classInternalName = BytecodeHelper.getClassInternalName(className);
-        cw.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, "org/codehaus/groovy/runtime/Reflector", null, fileName);
+        cw.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, (String)null, "org/codehaus/groovy/runtime/Reflector", null);
 
         cv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
         cv.visitVarInsn(ALOAD, 0);

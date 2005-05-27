@@ -35,7 +35,7 @@ package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 
@@ -46,7 +46,7 @@ import java.util.LinkedList;
  * @author Russel Winder
  * @version $Revision$
  */
-public abstract class ClassGenerator extends CodeVisitorSupport implements GroovyClassVisitor, Constants {
+public abstract class ClassGenerator extends CodeVisitorSupport implements GroovyClassVisitor, Opcodes {
     protected ClassLoader classLoader;
     // inner classes created while generating bytecode
     protected LinkedList innerClasses = new LinkedList();
@@ -73,6 +73,6 @@ public abstract class ClassGenerator extends CodeVisitorSupport implements Groov
    *  the interface Constants is replaced by Opcodes.</p>
    */
   public final static int asmJDKVersion = V1_3 ;
-  //  We can use V1_3 and not org.objectweb.asm.Constants.V1_3 because this abstract class
-  //  implements org.objectweb.asm.Constants so all its constants are available directly.
+  //  We can use V1_3 and not org.objectweb.asm.Opcodes.V1_3 because this abstract class
+  //  implements org.objectweb.asm.Opcodes so all its constants are available directly.
 }

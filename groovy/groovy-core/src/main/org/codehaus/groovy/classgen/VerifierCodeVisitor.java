@@ -54,8 +54,7 @@ import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.codehaus.groovy.syntax.RuntimeParserException;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Verifies the method code
@@ -63,7 +62,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class VerifierCodeVisitor extends CodeVisitorSupport implements Constants {
+public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
 
     private Verifier verifier;
 

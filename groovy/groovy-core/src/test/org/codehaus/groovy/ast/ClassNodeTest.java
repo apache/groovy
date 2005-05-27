@@ -45,7 +45,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 import junit.framework.TestCase;
 
@@ -55,7 +55,7 @@ import junit.framework.TestCase;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassNodeTest extends TestCase implements Constants {
+public class ClassNodeTest extends TestCase implements Opcodes {
 
     ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
     ClassNode innerClassNode = new InnerClassNode(classNode, "Foo$1", ACC_PUBLIC, "java.lang.Object");

@@ -47,8 +47,8 @@ package org.codehaus.groovy.classgen;
 
 import java.lang.reflect.Method;
 
-import org.objectweb.asm.CodeVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
@@ -57,7 +57,7 @@ import org.objectweb.asm.Type;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodCaller implements Constants {
+public class MethodCaller implements Opcodes {
 
     private int opcode;
     private String internalName;
@@ -85,8 +85,8 @@ public class MethodCaller implements Constants {
 
     }
 
-    public void call(CodeVisitor codeVisitor) {
-        codeVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor());
+    public void call(MethodVisitor methodVisitor) {
+        methodVisitor.visitMethodInsn(opcode, internalName, name, getMethodDescriptor());
     }
 
     public String getMethodDescriptor() {

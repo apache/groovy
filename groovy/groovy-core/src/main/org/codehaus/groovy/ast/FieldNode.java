@@ -49,7 +49,7 @@ import java.lang.reflect.Field;
 
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.classgen.BytecodeHelper;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a field (member variable)
@@ -57,7 +57,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class FieldNode extends AnnotatedNode implements Constants {
+public class FieldNode extends AnnotatedNode implements Opcodes {
 
     private String name;
     private int modifiers;
@@ -152,7 +152,7 @@ public class FieldNode extends AnnotatedNode implements Constants {
      * @return true if the field is static
      */
     public boolean isStatic() {
-        return (modifiers & Constants.ACC_STATIC) != 0;
+        return (modifiers & ACC_STATIC) != 0;
     }
 	/**
 	 * @param owner The owner to set.

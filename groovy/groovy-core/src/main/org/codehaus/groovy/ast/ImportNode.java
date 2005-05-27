@@ -45,7 +45,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents an import statement of a single class
@@ -53,7 +53,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ImportNode extends AnnotatedNode implements Constants {
+public class ImportNode extends AnnotatedNode implements Opcodes {
 
     private String className;
     private String alias;
