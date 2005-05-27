@@ -20,23 +20,23 @@
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-1.5.2.jar">
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-2.0.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-analysis-1.5.2.jar">
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-analysis-2.0.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-1.5.2.jar">
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-attrs-2.0.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-tree-1.5.2.jar">
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-tree-2.0.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-1.5.2.jar">
+	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-2.0.jar">
 		<attributes>
 		</attributes>
 	</classpathentry>
