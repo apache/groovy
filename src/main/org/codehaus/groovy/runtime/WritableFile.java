@@ -99,6 +99,10 @@ public class WritableFile extends File implements Writable {
         return delegate.compareTo(arg0);
     }
 
+    public int compareTo(Object arg0) {
+        return delegate.compareTo(arg0);
+    }
+
     public boolean createNewFile() throws IOException {
         return delegate.createNewFile();
     }
