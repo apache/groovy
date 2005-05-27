@@ -22,14 +22,14 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 
 /**
  * ClassCompletionVerifier
  * 
  */
-public class ClassCompletionVerifier implements Constants, GroovyClassVisitor {
+public class ClassCompletionVerifier implements Opcodes, GroovyClassVisitor {
     
     ClassNode classNode;
     
@@ -43,7 +43,7 @@ public class ClassCompletionVerifier implements Constants, GroovyClassVisitor {
      */
     public void visitClass(ClassNode a_node) {
         classNode = a_node;
-        if ((classNode.getModifiers() & Constants.ACC_ABSTRACT) == 0 ) {
+        if ((classNode.getModifiers() & Opcodes.ACC_ABSTRACT) == 0 ) {
             List abstractMethods = classNode.getAbstractMethods();
             if (abstractMethods != null) {
                 List methodNames = new ArrayList();

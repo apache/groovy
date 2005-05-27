@@ -73,7 +73,7 @@ import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Base class for test cases
@@ -81,7 +81,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TestSupport extends GroovyTestCase implements Constants {
+public class TestSupport extends GroovyTestCase implements Opcodes {
 
     protected static boolean DUMP_CLASS = false;
 

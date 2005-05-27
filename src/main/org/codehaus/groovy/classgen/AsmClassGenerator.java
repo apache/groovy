@@ -82,7 +82,7 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.ClassWriter;
 
@@ -99,7 +99,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private Logger log = Logger.getLogger(getClass().getName());
 
     private ClassVisitor cw;
-    private CodeVisitor cv;
+    private MethodVisitor cv;
     private GeneratorContext context;
 
     private String sourceFile;
@@ -281,9 +281,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 asmJDKVersion,
                 classNode.getModifiers(),
                 internalClassName,
+                null,
                 internalBaseClassName,
-                BytecodeHelper.getClassInternalNames(classNode.getInterfaces()),
-                sourceFile);
+                BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
+                );
 
             // set the optional enclosing method attribute of the current inner class
 //          br comment out once Groovy uses the latest CVS HEAD of ASM
@@ -422,7 +423,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 type = BytecodeHelper.getTypeDescription(type);
                 Label start = v.getStartLabel() != null ? v.getStartLabel() : labelStart;
                 Label end = v.getEndLabel() != null ? v.getEndLabel() : labelEnd;
-                cv.visitLocalVariable(varName, type, start, end, v.getIndex());
+                cv.visitLocalVariable(varName, type, null, start, end, v.getIndex());
             }
         }
         cv.visitMaxs(0, 0);
@@ -4654,12 +4655,13 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (v != null) {
                     visitVariableEndLabel(v);
                     cv.visitLocalVariable(
-                            v.getName(),
-                            BytecodeHelper.getTypeDescription(v.getTypeName()),
-                            v.getStartLabel(),
-                            v.getEndLabel(),
-                            v.getIndex()
-                    );
+                                          v.getName(),
+                                          BytecodeHelper.getTypeDescription(v.getTypeName()),
+                                          null,
+                                          v.getStartLabel(),
+                                          v.getEndLabel(),
+                                          v.getIndex()
+                                          );
                 }
             }
         }
@@ -4672,12 +4674,13 @@ public class AsmClassGenerator extends ClassGenerator {
         	Label endl = new Label();
         	cv.visitLabel(endl);
         	cv.visitLocalVariable(
-        			v.getName(),
-					BytecodeHelper.getTypeDescription(v.getTypeName()),
-					v.getStartLabel(),
-					endl,
-					v.getIndex()
-        	);
+                                v.getName(),
+                                BytecodeHelper.getTypeDescription(v.getTypeName()),
+                                null,
+                                v.getStartLabel(),
+                                endl,
+                                v.getIndex()
+                                );
         }
     }
     private void visitVariableEndLabel(Variable v) {

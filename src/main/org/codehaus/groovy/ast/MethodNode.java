@@ -47,7 +47,7 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.VariableScopeCodeVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a method declaration
@@ -55,7 +55,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class MethodNode extends AnnotatedNode implements Constants {
+public class MethodNode extends AnnotatedNode implements Opcodes {
 
     private String name;
     private int modifiers;
@@ -220,4 +220,3 @@ public class MethodNode extends AnnotatedNode implements Constants {
         return variableScope;
     }
 }
-

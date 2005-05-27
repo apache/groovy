@@ -47,7 +47,7 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 /**
  * Represents a property (member variable, a getter and setter)
@@ -55,7 +55,7 @@ import org.objectweb.asm.Constants;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyNode extends AnnotatedNode implements Constants {
+public class PropertyNode extends AnnotatedNode implements Opcodes {
 
     private FieldNode field;
     private Statement getterBlock;

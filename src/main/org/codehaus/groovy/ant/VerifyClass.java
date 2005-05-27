@@ -55,10 +55,13 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceCodeVisitor;
-import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.*;
-
+import org.objectweb.asm.util.TraceMethodVisitor;
+import org.objectweb.asm.tree.AbstractInsnNode ;
+import org.objectweb.asm.tree.ClassNode ;
+import org.objectweb.asm.tree.MethodNode ;
+import org.objectweb.asm.tree.analysis.Analyzer ;
+import org.objectweb.asm.tree.analysis.Frame ;
+import org.objectweb.asm.tree.analysis.SimpleVerifier ;
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -128,17 +131,22 @@ public class VerifyClass extends MatchingTask {
     
     private boolean readClass(String clazz) throws IOException {
         ClassReader cr = new ClassReader(new FileInputStream(clazz));
-        TreeClassAdapter ca = new TreeClassAdapter(null);
+        ClassNode ca = new ClassNode ( ) 
+          {
+            public void visitEnd () {
+              //accept(cv);
+            }
+          } ;
         cr.accept(new CheckClassAdapter(ca), true);
         boolean failed=false;
         
-        List methods = ca.classNode.methods;
+        List methods = ca.methods;
         for (int i = 0; i < methods.size(); ++i) {
           MethodNode method = (MethodNode)methods.get(i);
           if (method.instructions.size() > 0) {
             Analyzer a = new Analyzer(new SimpleVerifier());
             try {
-              a.analyze(ca.classNode, method);
+              a.analyze(ca.name, method);
               continue;
             } catch (Exception e) {
               e.printStackTrace();
@@ -150,7 +158,7 @@ public class VerifyClass extends MatchingTask {
                 log("verifying of class "+clazz+" failed");
             }
             if (verbose) log(method.name + method.desc);
-            TraceCodeVisitor cv = new TraceCodeVisitor(null) {
+            TraceMethodVisitor cv = new TraceMethodVisitor(null) {
               public void visitMaxs (int maxStack, int maxLocals) {
                 StringBuffer buffer = new StringBuffer();
                 for (int i = 0; i < text.size(); ++i) {

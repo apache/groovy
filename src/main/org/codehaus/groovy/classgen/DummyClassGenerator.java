@@ -37,7 +37,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MissingClassException;
 import org.codehaus.groovy.ast.*;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.CodeVisitor;
+import org.objectweb.asm.MethodVisitor;
 
 import java.util.*;
 
@@ -54,7 +54,7 @@ import java.util.*;
 public class DummyClassGenerator extends ClassGenerator {
 
     private ClassVisitor cw;
-    private CodeVisitor cv;
+    private MethodVisitor cv;
     private GeneratorContext context;
 
     private String sourceFile;
@@ -98,9 +98,10 @@ public class DummyClassGenerator extends ClassGenerator {
                 asmJDKVersion,
                 classNode.getModifiers(),
                 internalClassName,
+                (String)null,
                 internalBaseClassName,
-                BytecodeHelper.getClassInternalNames(classNode.getInterfaces()),
-                sourceFile);
+                BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
+                );
 
             classNode.visitContents(this);
 

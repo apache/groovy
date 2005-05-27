@@ -1,3 +1,4 @@
+
 /*
  $Id$
 
@@ -54,10 +55,9 @@ import java.math.BigInteger;
 
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.objectweb.asm.CodeVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Label;
 
 
@@ -68,15 +68,15 @@ import org.objectweb.asm.Label;
  * @author <a href="mailto:b55r@sina.com">Bing Ran</a>
  * @version $Revision$
  */
-public class BytecodeHelper implements Constants {
+public class BytecodeHelper implements Opcodes {
 
-    private CodeVisitor cv;
+    private MethodVisitor cv;
 
-    public CodeVisitor getCodeVisitor() {
+    public MethodVisitor getMethodVisitor() {
         return cv;
     }
 
-    public BytecodeHelper(CodeVisitor cv) {
+    public BytecodeHelper(MethodVisitor cv) {
         this.cv = cv;
     }
 

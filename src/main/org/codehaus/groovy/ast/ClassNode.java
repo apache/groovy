@@ -42,7 +42,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClassNode extends AnnotatedNode implements Constants {
+public class ClassNode extends AnnotatedNode implements Opcodes {
 
     private static final String[] defaultImports = {"java.lang", "java.util", "groovy.lang", "groovy.util"};
 
@@ -102,7 +102,7 @@ public class ClassNode extends AnnotatedNode implements Constants {
      * @param modifiers  the modifiers,
      * @param superClass the base class name - use "java.lang.Object" if no direct
      *                   base class
-     * @see org.objectweb.asm.Constants
+     * @see org.objectweb.asm.Opcodes
      */
     public ClassNode(String name, int modifiers, String superClass) {
         this(name, modifiers, superClass, EMPTY_STRING_ARRAY, MixinNode.EMPTY_ARRAY);
@@ -113,7 +113,7 @@ public class ClassNode extends AnnotatedNode implements Constants {
      * @param modifiers  the modifiers,
      * @param superClass the base class name - use "java.lang.Object" if no direct
      *                   base class
-     * @see org.objectweb.asm.Constants
+     * @see org.objectweb.asm.Opcodes
      */
     public ClassNode(String name, int modifiers, String superClass, String[] interfaces, MixinNode[] mixins) {
         this.name = name;

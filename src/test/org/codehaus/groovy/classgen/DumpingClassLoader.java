@@ -57,7 +57,7 @@ import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Constants;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 
@@ -68,7 +68,7 @@ import org.objectweb.asm.util.ASMifierClassVisitor;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class DumpingClassLoader extends GroovyClassLoader implements Constants {
+public class DumpingClassLoader extends GroovyClassLoader implements Opcodes {
 
     protected static boolean CHECK_CLASS = false;
     protected static boolean DUMP_CLASS = true;
