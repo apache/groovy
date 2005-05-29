@@ -53,11 +53,11 @@ public class SourceBuffer {
         if (startLine < 1) { startLine = 1;}
         if (endLine < 1) { endLine = 1;}
         if (startLine > lines.size()) { startLine = lines.size() + 1; }
-        if (endLine > lines.size()) { endLine = lines.size(); }
+        if (endLine > lines.size()) { endLine = lines.size() + 1; }
 
         // obtain the snippet from the buffer within specified bounds
         StringBuffer snippet = new StringBuffer();
-        for (int i = startLine - 1; i < endLine;i++) {
+        for (int i = startLine - 1; i < endLine-1;i++) {
             String line = ((StringBuffer)lines.get(i)).toString();
             if (startLine == endLine) {
                 line = line.substring(startColumn - 1, endColumn - 1);
