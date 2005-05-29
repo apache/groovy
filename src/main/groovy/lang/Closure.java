@@ -48,6 +48,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
+import java.util.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -72,8 +73,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private Object delegate;
     private final Object owner;
     private final Method doCallMethod;
+    private final HashMap callsMap;
     private final boolean supportsVarargs;
-    private final Class parameterTypes[];
+    private final Class[] parameterTypes;
     private final int numberOfParameters;
     private Object curriedParams[] = emptyArray;
 
@@ -87,36 +89,45 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         this.owner = delegate;
 
         Class closureClass = this.getClass();
-
-        Method tmpCallMethod = null;
+        callsMap = new HashMap();
+        int paramLenTemp = -1;
+        Method doCallTemp = null;
 
         while (true) {
             final Method methods[] = closureClass.getDeclaredMethods();
 
-            int tmpCounter = -1;
-            for (int i = 0; i < methods.length; i++) {
-                 if ("doCall".equals(methods[i].getName()) && methods[i].getParameterTypes().length > tmpCounter) {
-                     tmpCallMethod = methods[i];
-                     tmpCounter = methods[i].getParameterTypes().length;
-                }
+            int i = 0;
+
+            for (int j = 0; j < methods.length; j++) {
+                 if ("doCall".equals(methods[j].getName())) {
+                     callsMap.put(new Integer(methods[j].getParameterTypes().length), methods[j]);
+                     if (methods[j].getParameterTypes().length > paramLenTemp) {
+                         doCallTemp = methods[j];
+                         paramLenTemp = methods[j].getParameterTypes().length;
+                     }
+                 }
             }
 
-            if (tmpCallMethod != null)
+            if (!callsMap.isEmpty()) {
                 break;
+            }
 
             closureClass = closureClass.getSuperclass();
         }
 
-        this.doCallMethod = tmpCallMethod;
-        this.parameterTypes = this.doCallMethod.getParameterTypes();
-        this.numberOfParameters = this.parameterTypes.length;
+        this.doCallMethod = doCallTemp;
 
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                Closure.this.doCallMethod.setAccessible(true);
+                for (Iterator iter = callsMap.values().iterator(); iter.hasNext(); ) {
+                   ((Method) iter.next()).setAccessible(true);
+                }
                 return null;
             }
         });
+
+        this.parameterTypes = this.doCallMethod.getParameterTypes();
+        this.numberOfParameters = this.parameterTypes.length;
 
         if (this.numberOfParameters > 0) {
             this.supportsVarargs = this.parameterTypes[this.numberOfParameters - 1].equals(Object[].class);
@@ -127,22 +138,21 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
     public Object invokeMethod(String method, Object arguments) {
         if ("doCall".equals(method) || "call".equals(method)) {
-            if (arguments == null) {
-                return call(arguments);
-            }
-            else {
-                 if (arguments instanceof Object[]) {
-                    if (((Object[])arguments).length <= 1)
-                          return call(arguments);
-                    else
-                         if (((Object[])arguments)[0] instanceof Object[])
-                             return callViaReflection((Object[]) ((Object[])arguments)[0]);
-                         else
-                             return callViaReflection((Object[]) arguments);
+            if (arguments instanceof Object[]) {
+                Object[] objs = (Object[]) arguments;
+                if ((objs != null) && (objs.length > 1) && (objs[0] instanceof Object[])) {
+                   boolean allNull = true;
+                   for (int j = 1; j < objs.length; j++) {
+                       if (objs[j] != null) {
+                           allNull = false;
+                           break;
+                       }
+                   }
+                   if (allNull)
+                       return callViaReflection((Object[]) (objs[0]));
                 }
-                else
-                    return call(arguments);
             }
+            return callSpecial(arguments);
         } else if ("curry".equals(method)) {
             return curry((Object[]) arguments);
         } else {
@@ -315,6 +325,93 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         }
     }
 
+    public Object callSpecial(final Object arguments) {
+        final Object params[];
+
+        if (this.curriedParams.length > 0) {
+            final Object args[];
+
+            if (arguments instanceof Object[]) {
+                args = (Object[]) arguments;
+            } else {
+                args = new Object[]{arguments};
+            }
+
+            params = new Object[this.curriedParams.length + args.length];
+
+            System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
+            System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
+        } else {
+            Object[] tmpParams = null;
+            if (arguments instanceof Object[]) {
+                tmpParams = (Object[]) arguments;
+
+                if ((tmpParams != null) && (tmpParams.length > 1)) {
+                    boolean allNull = true;
+                    for (int j = 1; j < tmpParams.length; j++) {
+                        if (tmpParams[j] != null) {
+                            allNull = false;
+                            break;
+                        }
+                    }
+                    if (allNull) {
+                        if (tmpParams[0] instanceof Object[])
+                            tmpParams = (Object[]) (tmpParams[0]);
+                        else
+                            throw new IncorrectClosureArgumentsException(this, new Object[] { tmpParams[0] }, this.parameterTypes);
+                    }
+                }
+                params = tmpParams;
+
+            } else {
+                return doCall(arguments);
+            }
+        }
+
+        final int lastParam = this.numberOfParameters - 1;
+
+        if (this.supportsVarargs && !(this.numberOfParameters == params.length && (params.length > lastParam) && (params[lastParam] == null || params[lastParam].getClass() == Object[].class))) {
+            final Object actualParameters[] = new Object[this.numberOfParameters];
+
+            //
+            // We have a closure which supports variable arguments and we haven't got actual
+            // parameters which have exactly the right number of parameters and ends with a null or an Object[]
+            //
+            if (params.length < lastParam) {
+                //
+                // Not enough parameters throw exception
+                //
+                // Note we allow there to be one fewer actual parameter than the number of formal parameters
+                // in this case we pass an zero length Object[] as the last parameter
+                //
+                throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
+            } else {
+                final Object rest[] = new Object[params.length - lastParam];	 // array used to pass the rest of the paraters
+
+                // fill the parameter array up to but not including the last one
+                System.arraycopy(params, 0, actualParameters, 0, lastParam);
+
+                // put the rest of the parameters in the overflow araay
+                System.arraycopy(params, lastParam, rest, 0, rest.length);
+
+                // pass the overflow array as the last parameter
+                actualParameters[lastParam] = rest;
+
+                return callViaReflection(actualParameters);
+            }
+        }
+
+        if (params.length == 0) {
+            return doCall();
+        } else if (params.length == 1) {
+            return doCall(params[0]);
+        } else if (params.length == 2) {
+            return doCall(params[0], params[1]);
+        } else {
+            return callViaReflection(params);
+        }
+    }
+
     protected static Object throwRuntimeException(Throwable throwable) {
         if (throwable instanceof RuntimeException) {
             throw (RuntimeException) throwable;
@@ -333,10 +430,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the result of calling the closure
      */
     protected Object doCall(final Object p1) {
-        if (p1 instanceof Object[])
-            return callViaReflection((Object[]) p1);
-        else
-            return callViaReflection(new Object[] {p1});
+        return callViaReflection(new Object[]{p1});
     }
     
     /**
@@ -360,14 +454,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @param p1
      * @return the result of calling the closure
      */
-
     protected Object doCall(final Object p1, final Object p2) {
-        return callViaReflection(new Object[]{p1, p2});
+         return callViaReflection(new Object[]{p1, p2});
     }
 
     private Object callViaReflection(final Object params[]) {
         try {
-            return this.doCallMethod.invoke(this, params);
+            // invoke the closure
+            return ((Method) callsMap.get(new Integer(params.length))).invoke(this, params);
         } catch (final IllegalArgumentException e) {
             throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
         } catch (final IllegalAccessException e) {
