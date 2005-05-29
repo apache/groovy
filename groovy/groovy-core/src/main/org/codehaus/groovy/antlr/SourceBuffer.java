@@ -53,7 +53,7 @@ public class SourceBuffer {
         if (startLine < 1) { startLine = 1;}
         if (endLine < 1) { endLine = 1;}
         if (startLine > lines.size()) { startLine = lines.size() + 1; }
-        if (endLine > lines.size()) { endLine = lines.size() + 1; }
+        if (endLine > lines.size()) { endLine = lines.size(); }
 
         // obtain the snippet from the buffer within specified bounds
         StringBuffer snippet = new StringBuffer();
