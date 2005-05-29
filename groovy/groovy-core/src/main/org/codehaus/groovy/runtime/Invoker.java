@@ -190,7 +190,6 @@ public class Invoker {
     }
 
     public Object invokeConstructor(String type, Object arguments) {
-        //System.out.println("Invoking constructor of type: " + type);
         return invokeConstructorOf(loadClass(type), arguments);
     }
 
@@ -206,6 +205,9 @@ public class Invoker {
     public Object[] asArray(Object arguments) {
         if (arguments == null) {
             return EMPTY_ARGUMENTS;
+        }
+        else if ((arguments instanceof Object[]) && ((Object[]) arguments).length == 0) {
+            return (Object[]) arguments;
         }
         else if (arguments instanceof Tuple) {
             Tuple tuple = (Tuple) arguments;
@@ -240,18 +242,16 @@ public class Invoker {
             }
             return array.toArray();
         }
+        else if (arguments instanceof SpreadList) {
+            ArrayList array = new ArrayList();
+            SpreadList slist = (SpreadList) arguments;
+            for (int j = 0; j < slist.size(); j++) {
+                array.add(slist.get(j));
+            }
+            return array.toArray();
+        }
         else {
-            if (arguments instanceof SpreadList) {
-                ArrayList array = new ArrayList();
-                SpreadList slist = (SpreadList) arguments;
-                for (int j = 0; j < slist.size(); j++) {
-                    array.add(slist.get(j));
-                }
-                return array.toArray();
-            }
-            else {
-                return new Object[]{arguments};
-            }
+            return new Object[]{arguments};
         }
     }
 
