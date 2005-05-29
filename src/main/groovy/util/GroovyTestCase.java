@@ -230,28 +230,8 @@ public class GroovyTestCase extends TestCase {
      * @param script the script that should pass without any exception thrown
      */
     protected void assertScript(final String script) throws Exception {
-        log.info("About to execute script");
-        //log.info(script);
-
-        // lets write the file to the target directory so its available
-        // to the MetaClass.getClassNode()
-        // the file is also used to determine the CodeSource if running with a security manager
-        String testClassName = getTestClassName();
-
-        File dir = new File("target/test-script/");
-        dir.mkdirs();
-        File file = new File(dir, testClassName);
-
-        log.info("Creating file " + file);
-
-        DefaultGroovyMethods.withPrintWriter(file, new Closure(null) {
-            protected void doCall(PrintWriter writer) {
-                writer.println(script);
-            }
-        });
-
         GroovyShell shell = new GroovyShell();
-        shell.evaluate(new GroovyCodeSource(file));
+        shell.evaluate(script, getTestClassName());
     }
 
     protected String getTestClassName() {
