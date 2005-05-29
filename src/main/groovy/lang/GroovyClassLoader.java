@@ -494,42 +494,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
-            //  RLW 2004.12.19
-            Class theClass = null ;
-            try {
-              theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
-            } catch ( ClassFormatError cfe ) {
-              System.out.println("============ GroovyClassLoader.onClassNode cl.defineClass created a ClassFormatError.") ;
-              System.out.println(cfe.getMessage()) ;
-              System.out.println(cfe.getCause() != null ? cfe.getCause().getMessage() : "Cause unknown.") ;
-              System.out.println("============") ;
-              (new org.objectweb.asm.ClassReader (code)).accept(new org.codehaus.groovy.classgen.ClassFormatVerifier (), false) ;
-              java.io.Writer out = null ;
-              try {
-                out = new java.io.FileWriter ("faultClass.class") ;
-              } catch ( java.io.IOException ioe ) {
-                System.out.println("Could not open the file to write to.") ;
-              }
-              for ( int i = 0 ; i < code.length ; ++i ) {
-                try {
-                  out.write(code[i]) ;
-                } catch ( java.io.IOException ioe ) {
-                  System.out.println("Could not write byte " + i + " to output file.") ;
-                }
-              }
-              try {
-                out.flush() ;
-              } catch ( java.io.IOException ioe ) {
-                System.out.println("Could not flush the output file.") ;
-              }
-              try {
-                out.close() ;
-              } catch ( java.io.IOException ioe ) {
-                System.out.println("Could not close the output file.") ;
-              }
-              System.exit(1) ;
-            }
-            //Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
+            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
             
             if (generatedClass == null) {
                 generatedClass = theClass;
