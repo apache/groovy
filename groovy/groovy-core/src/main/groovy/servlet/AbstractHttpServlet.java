@@ -38,9 +38,17 @@
  */
 package groovy.servlet;
 
-import java.io.File;
+import groovy.util.ResourceConnector;
+import groovy.util.ResourceException;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
@@ -49,7 +57,8 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author Christian Stein
  */
-public abstract class AbstractHttpServlet extends HttpServlet {
+public abstract class AbstractHttpServlet extends HttpServlet implements
+    ResourceConnector {
 
   /**
    * Content type of the HTTP response.
@@ -62,6 +71,31 @@ public abstract class AbstractHttpServlet extends HttpServlet {
   public static final String INC_PATH_INFO = "javax.servlet.include.path_info";
   // public static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
   public static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
+
+  /**
+   * Servlet (or the web application) context.
+   */
+  protected ServletContext servletContext;
+
+  /**
+   * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
+   */
+  public URLConnection getResourceConnection(String name)
+      throws ResourceException {
+    try {
+      URL url = servletContext.getResource("/" + name);
+      if (url == null) {
+        url = servletContext.getResource("/WEB-INF/groovy/" + name);
+        if (url == null) {
+          throw new ResourceException("Resource " + name + " not found");
+        }
+      }
+      return url.openConnection();
+    }
+    catch (IOException ioe) {
+      throw new ResourceException("Problem reading resource " + name);
+    }
+  }
 
   /**
    * Returns the include-aware uri of the script or template file.
@@ -149,6 +183,11 @@ public abstract class AbstractHttpServlet extends HttpServlet {
     // //}   
 
     return file;
+  }
+
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
+    this.servletContext = config.getServletContext();
   }
 
 }

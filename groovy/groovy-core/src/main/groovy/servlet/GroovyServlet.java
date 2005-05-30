@@ -32,22 +32,18 @@
 package groovy.servlet;
 
 import groovy.lang.Binding;
-import groovy.lang.MetaClass;
 import groovy.lang.Closure;
+import groovy.lang.MetaClass;
 import groovy.util.GroovyScriptEngine;
-import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 
+import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -83,202 +79,132 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
  *    <servlet-mapping>
  *      <servlet-name>Groovy</servlet-name>
  *      <url-pattern>*.groovy</url-pattern>
+ *      <url-pattern>*.gdo</url-pattern>
  *    </servlet-mapping>
  * </pre>
  *
  * <p>The URL pattern does not require the "*.groovy" mapping.  You can, for
  * example, make it more Struts-like but groovy by making your mapping "*.gdo".
  *
- * <p>Whatever your mapping, the GroovyServlet will check to see if your
- * URL ends with ".groovy" and, if it does not, it will strip your mapping
- * and append ".groovy".
- *
- * <p>NOTE!  The GroovyServlet only handles mappings of the *.* type, not the
- * path-like type of /groovy/*</p>
- *
  * @author Sam Pullara
  * @author Mark Turansky (markturansky at hotmail.com)
  * @author Guillaume Laforge
+ * @author Christian Stein
+ * 
+ * @see groovy.servlet.ServletBinding
  */
-public class GroovyServlet extends AbstractHttpServlet implements ResourceConnector {
+public class GroovyServlet extends AbstractHttpServlet {
 
-    // ------------------------------------------------------ instance variables
+  /**
+   * The context in which this servlet is executing
+   */
+  private ServletContext sc;
 
-    /**
-     * A constant for ".groovy" which gets appended to script paths as needed.
-     */
-    public static final String GROOVY_EXTENSION = ".groovy";
+  /**
+   * The script engine executing the Groovy scripts for this servlet
+   */
+  private static GroovyScriptEngine gse;
 
-    /**
-     * The context in which this servlet is executing
-     */
-    private ServletContext sc;
+  /**
+   * Initialize the GroovyServlet.
+   *
+   * @throws ServletException if init() method defined in super class 
+   * javax.servlet.GenericServlet throws it
+   */
+  public void init(ServletConfig config) throws ServletException {
+    super.init(config);
 
-    /**
-     * The classloader associated with this servlet
-     */
-    private static ClassLoader parent;
+    // Use reflection, some containers don't load classes properly
+    MetaClass.setUseReflection(true);
 
-    /**
-     * The script engine executing the Groovy scripts for this servlet
-     */
-    private static GroovyScriptEngine gse;
+    // Get the servlet context
+    sc = servletContext;
+    sc.log("Groovy servlet initialized");
 
-    // ---------------------------------------------------------- public methods
+    // Set up the scripting engine
+    gse = new GroovyScriptEngine(this);
+  }
 
-    //
-    // (cstein) Do NOT override GenericServlet - using super.init() instead
-    //
-    //    /**
-    //     * Returns the ServletContext for this servlet
-    //     */
-    //    public ServletContext getServletContext() {
-    //        return sc;
-    //    }
+  /**
+   * Handle web requests to the GroovyServlet
+   */
+  public void service(HttpServletRequest request,
+      HttpServletResponse response) throws IOException {
 
-    /**
-     * Initialize the GroovyServlet.
-     *
-     * @throws ServletException if init() method defined in super class 
-     * javax.servlet.GenericServlet throws it
-     */
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-
-        // Use reflection, some containers don't load classes properly
-        MetaClass.setUseReflection(true);
-
-        // Get the servlet context
-        sc = config.getServletContext();
-        sc.log("Groovy servlet initialized");
-
-        // Ensure that we use the correct classloader so that we can find
-        // classes in an application server.
-        //
-        // TODO (cstein) Is parent used? Somewhere else then here?
-        //
-        parent = Thread.currentThread().getContextClassLoader();
-        if (parent == null)
-            parent = GroovyServlet.class.getClassLoader();
-
-        // Set up the scripting engine
-        gse = new GroovyScriptEngine(this);
+    // Get the Groovy script file - include aware (GROOVY-815)
+    File file = super.getScriptUriAsFile(request, sc);
+    if (!file.exists()) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found!");
+      return; // throw new IOException(file.getAbsolutePath());
+    }
+    if (!file.canRead()) {
+      response.sendError(HttpServletResponse.SC_FORBIDDEN, "Can not read!");
+      return; // throw new IOException(file.getAbsolutePath());
     }
 
-    /**
-     * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
-     */
-    public URLConnection getResourceConnection(String name) throws ResourceException {
-        try {
-            URL url = sc.getResource("/" + name);
-            if (url == null) {
-                url = sc.getResource("/WEB-INF/groovy/" + name);
-                if (url == null) {
-                    throw new ResourceException("Resource " + name + " not found");
-                }
-            }
-            return url.openConnection();
-        } catch (IOException ioe) {
-            throw new ResourceException("Problem reading resource " + name);
-        }
-    }
+    // get the script path from the request
+    final String scriptFilename = file.getName();
+    // log("Serving " + scriptFilename);
 
-    /**
-     * Handle web requests to the GroovyServlet
-     */
-    public void service(ServletRequest request, ServletResponse response)
-        throws IOException {
+    // Set it to HTML by default
+    response.setContentType("text/html");
 
-        // Convert the generic servlet request and response to their Http versions
-        final HttpServletRequest httpRequest = (HttpServletRequest) request;
-        final HttpServletResponse httpResponse = (HttpServletResponse) response;
+    // Set up the script context
+    final Binding binding = new ServletBinding(request, response, sc);
 
-        // get the script path from the request
-        final String scriptFilename = getGroovyScriptPath(httpRequest);
-        // log("Serving " + scriptFilename);
+    // Run the script
+    try {
+      Closure closure = new Closure(gse) {
 
-        // Set it to HTML by default
-        response.setContentType("text/html");
-
-        // Set up the script context
-        final Binding binding = new ServletBinding(httpRequest, httpResponse, sc);
-
-        // Run the script
-        try {
-            Closure closure = new Closure(gse) {
-                public Object call() {
-                    try {
-                        return ((GroovyScriptEngine)getDelegate()).run(scriptFilename, binding);
-                    } catch (ResourceException e) {
-                        throw new RuntimeException(e);
-                    } catch (ScriptException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-            GroovyCategorySupport.use(ServletCategory.class, closure);
-            // Set reponse code 200 and flush buffers
-            httpResponse.setStatus(HttpServletResponse.SC_OK);
-            httpResponse.flushBuffer();            
-            // log("Flushed response buffer.");
-        } catch (RuntimeException re) {
-
-            StringBuffer error = new StringBuffer("GroovyServlet Error: ");
-            error.append(" script: '");
-            error.append(scriptFilename);
-            error.append("': ");
-
-            Throwable e = re.getCause();
-            if (e instanceof ResourceException) {
-                error.append(" Script not found, sending 404.");
-                sc.log(error.toString());
-                System.out.println(error.toString());
-                httpResponse.sendError(HttpServletResponse.SC_NOT_FOUND);
-            } else {
-
-                // write the script errors (if any) to the servlet context's log
-                if (re.getMessage() != null)
-                    error.append(re.getMessage());
-
-                if (e != null) {
-                    sc.log("An error occurred processing the request", e);
-                } else {
-                    sc.log("An error occurred processing the request", re);
-                }
-                sc.log(error.toString());
-                System.out.println(error.toString());
-
-                httpResponse.sendError(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            }
+        public Object call() {
+          try {
+            return ((GroovyScriptEngine) getDelegate()).run(scriptFilename,
+                binding);
+          }
+          catch (ResourceException e) {
+            throw new RuntimeException(e);
+          }
+          catch (ScriptException e) {
+            throw new RuntimeException(e);
+          }
         }
 
+      };
+      GroovyCategorySupport.use(ServletCategory.class, closure);
+      // Set reponse code 200 and flush buffers
+      response.setStatus(HttpServletResponse.SC_OK);
+      response.flushBuffer();
+      // log("Flushed response buffer.");
+    }
+    catch (RuntimeException re) {
+      StringBuffer error = new StringBuffer("GroovyServlet Error: ");
+      error.append(" script: '");
+      error.append(scriptFilename);
+      error.append("': ");
+      Throwable e = re.getCause();
+      if (e instanceof ResourceException) {
+        error.append(" Script not found, sending 404.");
+        sc.log(error.toString());
+        System.out.println(error.toString());
+        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+      }
+      else {
+        // write the script errors (if any) to the servlet context's log
+        if (re.getMessage() != null)
+          error.append(re.getMessage());
+
+        if (e != null) {
+          sc.log("An error occurred processing the request", e);
+        }
+        else {
+          sc.log("An error occurred processing the request", re);
+        }
+        sc.log(error.toString());
+        System.out.println(error.toString());
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+      }
     }
 
-    // --------------------------------------------------------- private methods
+  }
 
-    /**
-     * From the HttpServletRequest, parse the groovy script path using the URL,
-     * adding the extension ".groovy" as needed.
-     */
-    private String getGroovyScriptPath(HttpServletRequest request) {
-
-        // Get the name of the Groovy script - include aware (GROOVY-815)
-        String strURI = super.getScriptUri(request);
-
-        int contextLength = request.getContextPath().length();
-        String scriptFilename = strURI.substring(contextLength).substring(1);
-
-        // if the servlet mapping is .groovy, we don't need to strip the mapping from the filename.
-        // if the mapping is anything else, we need to strip it and append .groovy
-        if (scriptFilename.endsWith(GROOVY_EXTENSION))
-            return scriptFilename;
-
-        // strip the servlet mapping (from the last ".") and append .groovy
-        int lastDot = scriptFilename.lastIndexOf(".");
-        scriptFilename = scriptFilename.substring(0, lastDot)
-            + GROOVY_EXTENSION;
-        return scriptFilename;
-
-    }
 }
