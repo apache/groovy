@@ -58,9 +58,26 @@ import java.util.HashMap;
 import java.io.IOException;
 
 /**
- * Servlet-specific binding extesion to lazy load the writer or the output stream from the response.
- * This binding also provide a markup builder named "html".
- *
+ * Servlet-specific binding extesion to lazy load the writer or the output
+ * stream from the response.
+ * 
+ * <ul>
+ * <li><tt>"request"</tt> : HttpServletRequest </li>
+ * <li><tt>"response"</tt> : HttpServletResponse </li>
+ * <li><tt>"context"</tt> : ServletContext </li>
+ * <li><tt>"application"</tt> : ServletContext </li>
+ * <li><tt>"session"</tt> : request.getSession(true) </li>
+ * <li><tt>"param"</tt> : form parameter(s) map </li>
+ * <li><tt>"header"</tt> : header map </li>
+ * </ul>
+ * 
+ * <ul>
+ * <li><tt>"out"</tt> : response.getWriter() </li>
+ * <li><tt>"sout"</tt> : response.getOutputStream() </li>
+ * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
+ * </ul>
+ * </p>
+ * 
  * @author Guillaume Laforge
  */
 public class ServletBinding extends Binding {

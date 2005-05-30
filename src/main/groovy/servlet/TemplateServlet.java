@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -148,11 +147,6 @@ public class TemplateServlet extends AbstractHttpServlet {
   private final Map cache;
 
   /**
-   * Servlet (or the application) context.
-   */
-  private ServletContext context;
-
-  /**
    * Underlying template engine used to evaluate template source files.
    */
   private TemplateEngine engine;
@@ -168,7 +162,7 @@ public class TemplateServlet extends AbstractHttpServlet {
   public TemplateServlet() {
     // Java 5 this.cache = new WeakHashMap<String, TemplateCacheEntry>();
     this.cache = new WeakHashMap();
-    this.context = null; // assigned later by init()
+    //this.context = null; // assigned later by super.init()
     this.engine = null; // assigned later by init()
     this.generatedBy = true; // may be changed by init()
   }
@@ -308,10 +302,6 @@ public class TemplateServlet extends AbstractHttpServlet {
    */
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
-    this.context = config.getServletContext();
-    if (context == null) {
-      throw new ServletException("Context must not be null!");
-    }
     this.engine = initTemplateEngine(config);
     if (engine == null) {
       throw new ServletException("Template engine not instantiated.");
@@ -390,7 +380,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     //
     // Get the template source file handle.
     //
-    File file = super.getScriptUriAsFile(request, context);
+    File file = super.getScriptUriAsFile(request, servletContext);
     if (!file.exists()) {
       response.sendError(HttpServletResponse.SC_NOT_FOUND);
       return; // throw new IOException(file.getAbsolutePath());
@@ -410,7 +400,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     //
     // Create new binding for the current request.
     //
-    ServletBinding binding = new ServletBinding(request, response, context);
+    ServletBinding binding = new ServletBinding(request, response, servletContext);
     setVariables(binding);
 
     //
