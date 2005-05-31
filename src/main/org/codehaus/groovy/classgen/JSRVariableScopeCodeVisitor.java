@@ -31,19 +31,19 @@
  * DAMAGE.
  *
  */
+
 package org.codehaus.groovy.classgen;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.List;
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ConstructorNode;
@@ -52,10 +52,11 @@ import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.PropertyExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -64,305 +65,617 @@ import org.codehaus.groovy.ast.stmt.DoWhileStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
-
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-
 import org.codehaus.groovy.syntax.SyntaxException;
 
-import groovy.lang.GroovyRuntimeException;
-
-
 public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements GroovyClassVisitor {
-    private VariableScope currentScope = null;  
-    private CompileUnit unit;
-    private SourceUnit source;
-    
-    public JSRVariableScopeCodeVisitor(VariableScope scope, SourceUnit source) {
-        currentScope = scope;
-        this.source = source;
-        if (source.getAST()==null) return;
-        this.unit = source.getAST().getUnit();
+
+    private static class Var {
+        //TODO: support final and native
+        boolean isStatic=false, isFinal=false, isDynamicTyped=false;
+        String name, type=null;
+        Class typeClass=null;
+        
+        public boolean equals(Object o){
+            Var v = (Var) o;
+            return v.name.equals(name);
+        }
+        
+        public int hashCode() {
+            return name.hashCode();
+        }
+        
+        public Var(String name) {
+            // a Variable without type and other modifiers
+            // make it dynamic type, non final and non static
+            this.name=name;
+        }
+        
+        public Var(VariableExpression ve) {
+            name = ve.getVariable();
+            if(ve.isDynamic()) {
+                isDynamicTyped=true;
+            } else {
+                type = ve.getType();
+                typeClass = ve.getTypeClass();
+            }
+        }
+        
+        public Var(Parameter par, boolean methodIsStatic) {
+            name = par.getName();
+            if (par.isDynamicType()) {
+                isDynamicTyped=true;
+            } else {
+                type = par.getType();
+            }
+            //TODO: this is not a clean method to say this parameter is part of a static method header
+            isStatic = methodIsStatic;
+        }
+
+        public Var(FieldNode f) {
+            name = f.getName();
+            if (f.isDynamicType()) {
+                isDynamicTyped=true;
+            } else {
+                type = f.getType();
+            }
+            isStatic=f.isStatic();
+        }
+
+        public Var(String pName, MethodNode f) {
+            name = pName;
+            if (f.isDynamicReturnType()) {
+                isDynamicTyped=true;
+            } else {
+                type = f.getReturnType();
+            }
+            isStatic=f.isStatic();
+        }
+
+        public Var(PropertyNode f) {
+            //TODO: no static? What about read-/write-only? abstract?
+            name = f.getName();
+            if (f.isDynamicType()) {
+                isDynamicTyped=true;
+            } else {
+                type = f.getType();
+            }
+        }
+
+        public Var(Field f) {
+            name = f.getName();
+            typeClass = f.getType();            
+            isStatic=Modifier.isStatic(f.getModifiers());
+            isFinal=Modifier.isFinal(f.getModifiers());
+        }
+
+        public Var(String pName, Method m) {
+            name = pName;
+            typeClass = m.getReturnType();            
+            isStatic=Modifier.isStatic(m.getModifiers());
+            isFinal=Modifier.isFinal(m.getModifiers());
+        }
     }
     
+    private static class VarScope {
+        boolean isClass=true;
+        VarScope parent;
+        HashMap declares = new HashMap();
+        HashMap visibles = new HashMap();
+        
+        public VarScope(boolean isClass, VarScope parent) {
+            this.isClass=isClass;
+            this.parent = parent;
+        }
+        
+        public VarScope(VarScope parent) {
+            this(false,parent);
+        }
+    }
+    
+    private static class JRoseCheck  extends CodeVisitorSupport{
+        boolean closureStarted=false;
+        boolean itUsed=false;
+        
+        public void visitClosureExpression(ClosureExpression expression) {
+            // don't visit subclosures if already in a closure
+            if (closureStarted) return;
+            closureStarted=true;
+            Parameter[] param = expression.getParameters();
+            for (int i=0; i<param.length; i++) {
+                itUsed = (param[i].getName().equals("it")) && closureStarted || itUsed;
+            }
+            super.visitClosureExpression(expression);
+        }
+        
+        public void visitVariableExpression(VariableExpression expression) {
+            itUsed = (expression.getVariable().equals("it")) && closureStarted || itUsed;
+        }
+        
+    }
+    
+    
+    private VarScope currentScope = null;
+    private CompileUnit unit;
+    private SourceUnit source; 
+    private boolean dynamicContext=true;
+    private boolean scriptMode=false;
+    
+    private boolean jroseRule=false;
+    
+    public JSRVariableScopeCodeVisitor(VarScope scope, SourceUnit source) {
+        //System.out.println("scope check enabled");
+        if ("true".equals(System.getProperty("groovy.jsr.check.rule.jrose"))) {
+            jroseRule=true;
+            //System.out.println("jrose check enabled");
+        }
+        currentScope = scope;
+        this.source = source;
+        if (source.getAST() == null) return;
+        this.unit = source.getAST().getUnit();
+    }
+
     public void visitBlockStatement(BlockStatement block) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
         super.visitBlockStatement(block);
         currentScope = scope;
     }
-    
+
     public void visitForLoop(ForStatement forLoop) {
-        VariableScope scope = currentScope;
-        //TODO: always define a varibale here?
-        declare(forLoop.getVariable(),forLoop);
-        currentScope = new VariableScope(currentScope);
+        VarScope scope = currentScope;
+        // TODO: always define a variable here? What about type?
+        currentScope = new VarScope(currentScope);
+        declare(new Var(forLoop.getVariable()), forLoop);
         super.visitForLoop(forLoop);
         currentScope = scope;
     }
-    
+
     public void visitWhileLoop(WhileStatement loop) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
+        //TODO: check while loop variables
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
         super.visitWhileLoop(loop);
         currentScope = scope;
     }
-    
+
     public void visitDoWhileLoop(DoWhileStatement loop) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
+        //TODO: still existant?
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
         super.visitDoWhileLoop(loop);
         currentScope = scope;
     }
 
     public void visitDeclarationExpression(DeclarationExpression expression) {
-        // visit right side first
+        // visit right side first to avoid the usage of a 
+        // variable before its declaration
         expression.getRightExpression().visit(this);
-        // no need to visit left side, just get the varibale name
-        String variable = expression.getVariableExpression().getVariable();
-        declare(variable,expression);
+        // no need to visit left side, just get the variable name
+        VariableExpression vex = expression.getVariableExpression();
+        if (!jroseRule && "it".equals(vex.getVariable())) {
+            // we are not in jrose mode, so don't allow variables 
+            // of the name 'it'
+            addError("'it' is a keyword in this mode.",vex);
+        } else {
+            declare(vex);
+        }
     }
     
     private void addError(String msg, ASTNode expr) {
         int line = expr.getLineNumber();
         int col = expr.getColumnNumber();
-        source.addErrorAndContinue(new SyntaxErrorMessage(new SyntaxException(msg+"\n",line,col)));
+        source.addErrorAndContinue(
+          new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col))
+        );
+    }
+
+    private void declare(VariableExpression expr) {
+        declare(new Var(expr),expr);
     }
     
-    protected void declare(String name, ASTNode expr) {
-        Set declares = currentScope.getDeclaredVariables();
-        if (declares.contains(name)) {
-            String msg = "The current scope does already contain a variable of the name "+name;
-            addError(msg,expr);
+    private void declare(Var var, ASTNode expr) {
+        String scopeType = "scope";
+        String variableType = "variable";
+        
+        if (expr.getClass()==FieldNode.class){
+            scopeType = "class"; 
+            variableType = "field";
+        } else if (expr.getClass()==PropertyNode.class){
+            scopeType = "class"; 
+            variableType = "property";
         }
-        declares.add(name);        
+        
+        StringBuffer msg = new StringBuffer();
+        msg.append("The current ").append(scopeType);
+        msg.append(" does already contain a ").append(variableType);
+        msg.append(" of the name ").append(var.name);
+        
+        if (currentScope.declares.get(var.name)!=null) {
+            addError(msg.toString(),expr);
+            return;
+        }
+        
+        //TODO: this case is not visited I think
+        if (currentScope.isClass) {
+            currentScope.declares.put(var.name,var);
+        }
+        
+        for (VarScope scope = currentScope.parent; scope!=null; scope = scope.parent) {
+            HashMap declares = scope.declares;
+            if (scope.isClass) break;
+            if (declares.get(var.name)!=null) {
+                // variable already declared
+                addError(msg.toString(), expr);
+                break;
+            }
+        }
+        // declare the variable even if there was an error to allow more checks
+        currentScope.declares.put(var.name,var);
     }
-    
-    /*public void visitBinaryExpression(BinaryExpression expression) {
-        // evaluate right first because for an expression like "def a = a"
-        // we need first to know if the a on the rhs is defined, before 
-        // defining a new a for the lhs
-        Expression right = expression.getRightExpression();
-        right.visit(this);
-        Expression left = expression.getLeftExpression();
-        left.visit(this);        
-    }*/
+
+    /*
+     * public void visitBinaryExpression(BinaryExpression expression) {
+     *  // evaluate right first because for an expression like "def a = a"
+     *  // we need first to know if the a on the rhs is defined, before
+     *  // defining a new a for the lhs
+     * 
+     * Expression right = expression.getRightExpression();
+     * 
+     * right.visit(this);
+     * 
+     * Expression left = expression.getLeftExpression();
+     * 
+     * left.visit(this);
+     *  }
+     */
     
     public void visitVariableExpression(VariableExpression expression) {
-        checkVariableNameForDeclaration(expression.getVariable(),expression);
+        String name = expression.getVariable();
+        Var v = checkVariableNameForDeclaration(name,expression);
+        if (v==null) return;
+        checkVariableContextAccess(v,expression);
     }
     
-    protected void checkVariableNameForDeclaration(String name, Expression expression) {
-        if (expression==VariableExpression.THIS_EXPRESSION) return;
-        //TODO: this line is not working
-        //if (expression==VariableExpression.SUPER_EXPRESSION) return;
-        if ("super".equals(name)) return;
-        VariableScope scope = currentScope;
-        while (scope!=null) {
-            if (scope.getDeclaredVariables().contains(name)) break;
-            if (scope.getReferencedVariables().contains(name)) break;
-            //scope.getReferencedVariables().add(name);
-            scope = scope.getParent();
+    
+    public void visitFieldExpression(FieldExpression expression) {
+        String name = expression.getFieldName();
+        //TODO: change that to get the correct scope
+        Var v = checkVariableNameForDeclaration(name,expression);
+        checkVariableContextAccess(v,expression);  
+    }
+    
+    private void checkVariableContextAccess(Var v, Expression expr) {
+        if (v.isStatic || dynamicContext) return;        
+        String accessContext = "dynamic";
+        if (!dynamicContext) accessContext = "static";        
+        String varContext = "dynamic";
+        if (v.isStatic) varContext = "static";
+        
+        String msg =  v.name+
+                      " is declared in a dynamic context, but you tried to"+
+                      " access it from a static context.";
+        
+        addError(msg,expr);
+    }
+    
+    private Var checkVariableNameForDeclaration(VariableExpression expression) {
+        if (expression == VariableExpression.THIS_EXPRESSION) return null;
+        String name = expression.getVariable();
+        return checkVariableNameForDeclaration(name,expression);
+    }
+    
+    private Var checkVariableNameForDeclaration(String name, Expression expression) {
+        Var var = new Var(name);
+        
+        // TODO: this line is not working
+        // if (expression==VariableExpression.SUPER_EXPRESSION) return;
+        if ("super".equals(var.name) || "this".equals(var.name)) return null;
+        
+        VarScope scope = currentScope;
+        while (scope != null) {
+            if (scope.declares.get(var.name)!=null) {
+                var = (Var) scope.declares.get(var.name);
+                break;
+            }
+            if (scope.visibles.get(var.name)!=null) {
+                var = (Var) scope.visibles.get(var.name);
+                break;
+            }
+            // scope.getReferencedVariables().add(name);
+            scope = scope.parent;
         }
-        VariableScope end = scope; 
-        if (scope==null) {
-            declare(name,expression);
-            addError("The variable "+name+" is undefined in the current scope",expression);
+
+        VarScope end = scope;
+
+        if (scope == null) {
+            declare(var,expression);
+            // don't create an error when inside a script body 
+            if (!scriptMode) addError("The variable " + var.name +
+                                      " is undefined in the current scope", expression);
         } else {
             scope = currentScope;
-            while (scope!=end) {
-                scope.getReferencedVariables().add(name);
-                scope = scope.getParent();
+            while (scope != end) {
+                scope.visibles.put(var.name,var);
+                scope = scope.parent;
             }
-        }        
-    }    
-    
+        }
+        
+        return var;
+    }
+
     public void visitClosureExpression(ClosureExpression expression) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
-        //TODO: set scope
-        //expression.setVariableScope(currentScope);
-        Set declares = currentScope.getDeclaredVariables();
+        VarScope scope = currentScope;
+        currentScope = new VarScope(!jroseRule,currentScope);
+    
+        // TODO: set scope
+        // expression.setVarScope(currentScope);
+
         if (expression.isParameterSpecified()) {
             Parameter[] parameters = expression.getParameters();
-            for (int i = 0; i<parameters.length; i++) {
-                declares.add(parameters[i].getName());
+            for (int i = 0; i < parameters.length; i++) {
+                declare(new Var(parameters[i],false),expression);
             }
         } else {
-            //TODO: when to add "it" and when not?
-            declares.add("it");
+            // TODO: when to add "it" and when not?
+            // John's rule is to add it only to the closures using 'it'
+            // and only to the closure itself, not to subclosures
+            if (jroseRule) {
+                JRoseCheck check = new JRoseCheck();
+                expression.visit(check);
+                if (check.itUsed) declare(new Var("it"),expression);
+            } else {
+                currentScope.declares.put("it",new Var("it"));
+            }
         }
-        //currentScope = new VariableScope(currentScope);
+
+        // currentScope = new VarScope(currentScope);
         super.visitClosureExpression(expression);
         currentScope = scope;
     }
-    
-    private String getPropertyName(String name) {
-        if (! (name.startsWith("set") || name.startsWith("get")) ) return null;
-        
-        String pname = name.substring(3);
-        if (pname.length()==0) return null;
-        String s = pname.substring(0,1).toLowerCase();
-        String rest = pname.substring(1);
-        return s+rest;
-    }        
 
     public void visitClass(ClassNode node) {
-        //if (node instanceof InnerClassNode) return;
-        //System.err.println("-------------"+hashCode()+":"+node.getName()+"-------------");
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
-        Set declares = currentScope.getDeclaredVariables();
-
+        VarScope scope = currentScope;
+        currentScope = new VarScope(true,currentScope);
+        boolean scriptModeBackup = scriptMode;
+        scriptMode = node.isScript();
+        HashMap declares = currentScope.declares;
         // first pass, add all possible variable names (properies and fields)
-        //TODO: handle interfaces
-        //TODO: handle static imports
+        // TODO: handle interfaces
+        // TODO: handle static imports
         try {
-            addVarNames(node,currentScope.getDeclaredVariables(),false);
-            addVarNames(node.getOuterClass(),currentScope.getReferencedVariables(),true);
-            addVarNames(node.getSuperClass(),currentScope.getReferencedVariables(),true);
+            addVarNames(node);
+            addVarNames(node.getOuterClass(), currentScope.visibles, true);
+            addVarNames(node.getSuperClass(), currentScope.visibles, true);
         } catch (ClassNotFoundException cnfe) {
-            //throw new GroovyRuntimeException("couldn't find super class",cnfe);
+            //TODO: handle this case properly
+            // throw new GroovyRuntimeException("couldn't find super
+            // class",cnfe);
             cnfe.printStackTrace();
         }
-        
+       
         // second pass, check contents
         node.visitContents(this);
         currentScope = scope;
+        scriptMode = scriptModeBackup;
     }
-    
-    
-    private void addVarNames(Class c, Set refs, boolean visitParent) throws ClassNotFoundException{
-        if (c==null) return;
+
+    private void addVarNames(Class c, HashMap refs, boolean visitParent)
+            throws ClassNotFoundException 
+    {
+        if (c == null) return;
         // to prefer compiled code try to get a ClassNode via name first
-        addVarNames(c.getName(),refs,visitParent);
+        addVarNames(c.getName(), refs, visitParent);
     }
     
-    private void addVarNames(ClassNode cn, Set refs, boolean visitParent) throws ClassNotFoundException{
-        if (cn==null) return;
+    private void addVarNames(ClassNode cn) {
+        //TODO: change test for currentScope.declares
+        //TODO: handle indexed properties
+        if (cn == null) return;
+        List l = cn.getFields();
+        Set fields = new HashSet();        
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            FieldNode f = (FieldNode) iter.next();
+            Var var = new Var(f);
+            if (fields.contains(var)) {
+                declare(var,f);
+            } else {
+                fields.add(var);
+                currentScope.declares.put(var.name,var);
+            }            
+        }
+
+        //TODO: ignore double delcaration of methods for the moment
+        l = cn.getMethods();
+        Set setter = new HashSet();
+        Set getter = new HashSet();
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            MethodNode f = (MethodNode) iter.next();
+            String methodName = f.getName();
+            String pName = getPropertyName(methodName);
+            if (pName == null) continue; 
+            Var var = new Var(pName,f);
+            currentScope.declares.put(var.name,var);
+        }
+
+        l = cn.getProperties();
+        Set props = new HashSet();
+        for (Iterator iter = l.iterator(); iter.hasNext();) {
+            PropertyNode f = (PropertyNode) iter.next();
+            Var var = new Var(f);
+            if (props.contains(var)) {
+                declare(var,f);
+            } else {
+                props.add(var);
+                currentScope.declares.put(var.name,var);
+            } 
+        }
+    }
+
+    private void addVarNames(ClassNode cn, HashMap refs, boolean visitParent)
+            throws ClassNotFoundException {
+        if (cn == null) return;
         List l = cn.getFields();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
             FieldNode f = (FieldNode) iter.next();
-            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
-            refs.add(f.getName());
+            if (visitParent && Modifier.isPrivate(f.getModifiers()))
+                continue;
+            refs.put(f.getName(),new Var(f));
         }
-
         l = cn.getMethods();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
             MethodNode f = (MethodNode) iter.next();
-            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
+            if (visitParent && Modifier.isPrivate(f.getModifiers()))
+                continue;
             String name = getPropertyName(f.getName());
-            if (name!=null) refs.add(name);             
+            if (name == null) continue;
+            refs.put(name, new Var(name,f));
         }
-        
+
         l = cn.getProperties();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
             PropertyNode f = (PropertyNode) iter.next();
-            if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
-            refs.add(f.getName());
+            if (visitParent && Modifier.isPrivate(f.getModifiers()))
+                continue;
+            refs.put(f.getName(),new Var(f));
         }
-           
-        if (!visitParent) return; 
-            
-        addVarNames(cn.getSuperClass(),refs,visitParent);
-        
+
+        if (!visitParent) return;
+
+        addVarNames(cn.getSuperClass(), refs, visitParent);
         MethodNode enclosingMethod = cn.getEnclosingMethod();
-        if (enclosingMethod==null) return;
+
+        if (enclosingMethod == null) return;
+
         Parameter[] params = enclosingMethod.getParameters();
         for (int i = 0; i < params.length; i++) {
-            refs.add(params[i].getName());
-        }        
-        if (visitParent) addVarNames(enclosingMethod.getDeclaringClass(),refs,visitParent);
+            refs.put(params[i].getName(),new Var(params[i],enclosingMethod.isStatic()));
+        }
 
-        addVarNames(cn.getOuterClass(),refs,visitParent);
-        
+        if (visitParent)
+            addVarNames(enclosingMethod.getDeclaringClass(), refs, visitParent);
+
+        addVarNames(cn.getOuterClass(), refs, visitParent);
     }
-    
-    private void addVarNames(String superclassName, Set refs, boolean visitParent) throws ClassNotFoundException{
-        if (superclassName==null) return;
+
+    private void addVarNames(String superclassName, HashMap refs, boolean visitParent) 
+      throws ClassNotFoundException 
+    {
+
+        if (superclassName == null) return;
+
         ClassNode cn = unit.getClass(superclassName);
-        if (cn!=null) {
-            addVarNames(cn,refs,visitParent);
+        if (cn != null) {
+            addVarNames(cn, refs, visitParent);
             return;
-        } 
-        
+        }
+
         Class c = unit.getClassLoader().loadClass(superclassName);
         Field[] fields = c.getFields();
-        for (int i=0; i<fields.length; i++) {
-           Field f = fields[i];
-           if (visitParent && Modifier.isPrivate(f.getModifiers())) continue;
-           refs.add(f.getName());
+        for (int i = 0; i < fields.length; i++) {
+            Field f = fields[i];
+            if (visitParent && Modifier.isPrivate(f.getModifiers()))
+                continue;
+            refs.put(f.getName(),new Var(f));
         }
+
         Method[] methods = c.getMethods();
-        for (int i=0; i<methods.length; i++) {
+        for (int i = 0; i < methods.length; i++) {
             Method m = methods[i];
-            if (visitParent && Modifier.isPrivate(m.getModifiers())) continue;
+            if (visitParent && Modifier.isPrivate(m.getModifiers()))
+                continue;
             String name = getPropertyName(m.getName());
-            if (name!=null) refs.add(name);
+            if (name == null) continue;
+            refs.put(name,new Var(name,m));
         }
-        
+
         if (!visitParent) return;
-            
-        addVarNames(c.getSuperclass(),refs,visitParent);
-        
-        //it's not possible to know the variable names used for an enclosing method 
-        //addVarNames(c.getEnclosingClass(),refs,visitParent);
+
+        addVarNames(c.getSuperclass(), refs, visitParent);
+
+        // it's not possible to know the variable names used for an enclosing
+        // method
+
+        // addVarNames(c.getEnclosingClass(),refs,visitParent);
     }
+    
+    private String getPropertyName(String name) {
+        if (!(name.startsWith("set") || name.startsWith("get"))) return null;
+        String pname = name.substring(3);
+        if (pname.length() == 0) return null;
+        String s = pname.substring(0, 1).toLowerCase();
+        String rest = pname.substring(1);
+        return s + rest;
+    }    
 
     public void visitConstructor(ConstructorNode node) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
-        //TODO: set scope
-        //node.setVariableScope(currentScope);
-        Set declares = currentScope.getDeclaredVariables();
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
+        
+        // TODO: set scope
+        // node.setVarScope(currentScope);
+        
+        HashMap declares = currentScope.declares;
         Parameter[] parameters = node.getParameters();
-        for (int i=0; i<parameters.length; i++) {
-            declares.add(parameters[i].getName());
+        for (int i = 0; i < parameters.length; i++) {
+            // a constructor is never static
+            declare(new Var(parameters[i],false),node);
         }
-        currentScope = new VariableScope(currentScope);
+        currentScope = new VarScope(currentScope);
         Statement code = node.getCode();
-        if (code!=null) code.visit(this);        
+        if (code != null) code.visit(this);
         currentScope = scope;
     }
 
     public void visitMethod(MethodNode node) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
-        //TODO: set scope
-        //node.setVariableScope(currentScope);
-        Set declares = currentScope.getDeclaredVariables();
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
+        
+        // TODO: set scope
+        // node.setVarScope(currentScope);
+        
+        HashMap declares = currentScope.declares;
         Parameter[] parameters = node.getParameters();
-        for (int i=0; i<parameters.length; i++) {
-            declares.add(parameters[i].getName());
-        }        
-        currentScope = new VariableScope(currentScope);
-        node.getCode().visit(this);        
+        for (int i = 0; i < parameters.length; i++) {
+            declares.put(parameters[i].getName(),new Var(parameters[i],node.isStatic()));
+        }
+
+        boolean oldContext = dynamicContext;
+        dynamicContext = !node.isStatic();
+        currentScope = new VarScope(currentScope);
+        Statement code = node.getCode();
+        if (code!=null) code.visit(this);
         currentScope = scope;
+        dynamicContext = oldContext;
     }
 
     public void visitField(FieldNode node) {
         Expression init = node.getInitialValueExpression();
-        if (init!=null) init.visit(this);
+        if (init != null) init.visit(this);
     }
 
     public void visitProperty(PropertyNode node) {
         Statement statement = node.getGetterBlock();
-        if (statement!=null) statement.visit(this);
+        if (statement != null) statement.visit(this);
+        
         statement = node.getSetterBlock();
-        if (statement!=null) statement.visit(this);
+        if (statement != null) statement.visit(this);
+        
         Expression init = node.getInitialValueExpression();
-        if (init!=null) init.visit(this);
+        if (init != null) init.visit(this);
     }
-    
+
     public void visitPropertyExpression(PropertyExpression expression) {
 
     }
-    
+
     public void visitCatchStatement(CatchStatement statement) {
-        VariableScope scope = currentScope;
-        currentScope = new VariableScope(currentScope);
-        declare(statement.getVariable(),statement);
+        VarScope scope = currentScope;
+        currentScope = new VarScope(currentScope);
+        declare(new Var(statement.getVariable()), statement);
         super.visitCatchStatement(statement);
         currentScope = scope;
     }
+
 }
