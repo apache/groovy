@@ -563,9 +563,7 @@ public class CompilationUnit extends ProcessingUnit {
             throw new GroovyBugError("CompilationUnit not ready for classgen()");
         }
 
-
         applyToPrimaryClassNodes(classgen);
-
 
         completePhase();
         applyToSourceUnits(mark);
@@ -578,9 +576,7 @@ public class CompilationUnit extends ProcessingUnit {
             this.progressCallback.call(this, CompilationUnit.this.phase);
         }
     }
-   
-
-
+ 
     /**
      * Runs classgen() on a single ClassNode.
      */
@@ -594,23 +590,16 @@ public class CompilationUnit extends ProcessingUnit {
             } catch (GroovyRuntimeException rpe) {
                 ASTNode node = rpe.getNode();
                 source.addError(new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()));
-            }
-          
-
-
+            }          
+            
             //
             // do scoping 
             //
-            if ("true".equals(System.getProperty("groovy.jsr.check"))) {
-                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(new VariableScope(),source);
-                try {
-                    scopeVisitor.visitClass(classNode);
-                } catch (GroovyRuntimeException rpe) {
-                    ASTNode node = rpe.getNode();
-                    source.addError(new SyntaxException(rpe.getMessage(),node.getLineNumber(),node.getColumnNumber()));
-                }
-            }
-
+            if ((!classNode.isSynthetic()) && ("true".equals(System.getProperty("groovy.jsr.check")))) {
+                JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(null ,source);
+                scopeVisitor.visitClass(classNode);
+                source.fail();
+            }  
 
             //
             // Prep the generator machinery
