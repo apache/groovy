@@ -19,7 +19,6 @@ package org.codehaus.groovy.antlr;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
-import antlr.NoViableAltException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
 
@@ -35,6 +34,7 @@ import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Numbers;
 import org.codehaus.groovy.syntax.Reduction;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.ASTHelper;
@@ -80,7 +80,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             parser.compilationUnit();
         }
         catch (RecognitionException e) {
-            sourceUnit.addException(e);
+            SyntaxException se = new SyntaxException(e.getMessage(),e,e.getLine(),e.getColumn());
+            se.setFatal(true);
+            sourceUnit.addError(se);
         }
         catch (TokenStreamException e) {
             sourceUnit.addException(e);
