@@ -272,8 +272,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public void visitMethod(MethodNode node) {
+        
         this.methodNode = node;
-
+        
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
             if (statement instanceof ExpressionStatement) {
@@ -303,7 +304,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 node.setCode(new BlockStatement(filterStatements(list)));
             }
         }
-        else {
+        else if (!node.isAbstract()) {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
                 newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
@@ -323,7 +324,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
             }
         }
-        node.getCode().visit(new VerifierCodeVisitor(this));
+        statement = node.getCode();
+        if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
     }
 
     public void visitField(FieldNode node) {
@@ -382,7 +384,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     // Implementation methods
     //-------------------------------------------------------------------------
-
+    
     /**
      * Creates a new helper method for each combination of default parameter expressions 
      */

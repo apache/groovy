@@ -296,8 +296,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Parameter[] parameters = parameters(node);
         node = node.getNextSibling();
 
-        assertNodeType(SLIST, node);
-        Statement code = statementList(node);
+        Statement code = null;
+        if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
+            if (node==null) {
+                throw new ASTRuntimeException(methodDef, "You defined a method without body. Try adding a body, or declare it abstract.");
+            }
+            assertNodeType(SLIST, node);
+            code = statementList(node);
+        }
 
         MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, code);
         methodNode.addAnnotations(annotations);

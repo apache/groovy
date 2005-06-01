@@ -52,7 +52,6 @@ import org.codehaus.groovy.ast.GroovyClassVisitor;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
@@ -201,6 +200,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     private SourceUnit source; 
     private boolean dynamicContext=true;
     private boolean scriptMode=false;
+    private ClassNode currentClass=null;
     
     private boolean jroseRule=false;
     
@@ -346,6 +346,14 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         checkVariableContextAccess(v,expression);  
     }
     
+    private void checkAbstractDeclaration(MethodNode methodNode) {
+        if (!Modifier.isAbstract(methodNode.getModifiers())) return;
+        if (Modifier.isAbstract(currentClass.getModifiers())) return;
+        addError("Can't have an abstract method in a non abstract class." +
+                 " The class '" + currentClass.getName() +  "' must be declared abstract or the method '" +
+                 methodNode.getName() + "' must not be abstract.",methodNode);
+    }
+    
     private void checkVariableContextAccess(Var v, Expression expr) {
         if (v.isStatic || dynamicContext) return;        
         String accessContext = "dynamic";
@@ -440,6 +448,9 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         currentScope = new VarScope(true,currentScope);
         boolean scriptModeBackup = scriptMode;
         scriptMode = node.isScript();
+        ClassNode classBackup = currentClass;
+        currentClass = node;
+        
         HashMap declares = currentScope.declares;
         // first pass, add all possible variable names (properies and fields)
         // TODO: handle interfaces
@@ -457,6 +468,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
        
         // second pass, check contents
         node.visitContents(this);
+        
+        currentClass = classBackup;
         currentScope = scope;
         scriptMode = scriptModeBackup;
     }
@@ -627,8 +640,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (code != null) code.visit(this);
         currentScope = scope;
     }
-
+    
     public void visitMethod(MethodNode node) {
+        checkAbstractDeclaration(node);
+        
         VarScope scope = currentScope;
         currentScope = new VarScope(currentScope);
         

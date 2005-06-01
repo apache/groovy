@@ -387,46 +387,48 @@ public class AsmClassGenerator extends ClassGenerator {
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
-        Label labelStart = new Label();
-        cv.visitLabel(labelStart);
-        helper = new BytecodeHelper(cv);
-
-        findMutableVariables();
-        resetVariableStack(node.getParameters());
-
-
-        outputReturn = false;
-
-        node.getCode().visit(this);
-
-        if (!outputReturn) {
-            cv.visitInsn(RETURN);
-        }
-
-        // lets do all the exception blocks
-        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
-            Runnable runnable = (Runnable) iter.next();
-            runnable.run();
-        }
-        exceptionBlocks.clear();
-
-        Label labelEnd = new Label();
-        cv.visitLabel(labelEnd);
-
-        // br experiment with local var table so debuggers can retrieve variable names
-        if (CREATE_DEBUG_INFO) {
-            Set vars = this.variableStack.keySet();
-            for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
-                String varName = (String) iterator.next();
-                Variable v = (Variable)variableStack.get(varName);
-                String type = v.getTypeName();
-                type = BytecodeHelper.getTypeDescription(type);
-                Label start = v.getStartLabel() != null ? v.getStartLabel() : labelStart;
-                Label end = v.getEndLabel() != null ? v.getEndLabel() : labelEnd;
-                cv.visitLocalVariable(varName, type, null, start, end, v.getIndex());
+        if (node.getCode()!=null) {
+            Label labelStart = new Label();
+            cv.visitLabel(labelStart);
+            helper = new BytecodeHelper(cv);
+    
+            findMutableVariables();
+            resetVariableStack(node.getParameters());
+    
+    
+            outputReturn = false;
+    
+            node.getCode().visit(this);
+    
+            if (!outputReturn) {
+                cv.visitInsn(RETURN);
             }
+    
+            // lets do all the exception blocks
+            for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
+                Runnable runnable = (Runnable) iter.next();
+                runnable.run();
+            }
+            exceptionBlocks.clear();
+    
+            Label labelEnd = new Label();
+            cv.visitLabel(labelEnd);
+    
+            // br experiment with local var table so debuggers can retrieve variable names
+            if (CREATE_DEBUG_INFO) {
+                Set vars = this.variableStack.keySet();
+                for (Iterator iterator = vars.iterator(); iterator.hasNext();) {
+                    String varName = (String) iterator.next();
+                    Variable v = (Variable)variableStack.get(varName);
+                    String type = v.getTypeName();
+                    type = BytecodeHelper.getTypeDescription(type);
+                    Label start = v.getStartLabel() != null ? v.getStartLabel() : labelStart;
+                    Label end = v.getEndLabel() != null ? v.getEndLabel() : labelEnd;
+                    cv.visitLocalVariable(varName, type, null, start, end, v.getIndex());
+                }
+            }
+            cv.visitMaxs(0, 0);
         }
-        cv.visitMaxs(0, 0);
     }
 
     protected void visitParameters(ASTNode node, Parameter[] parameters) {
@@ -3463,6 +3465,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         InnerClassNode answer = new InnerClassNode(owner, name, 0, "groovy.lang.Closure"); // clsures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
+        answer.setSynthetic(true);
+        
         if (staticMethodOrInStaticClass) {
             answer.setStaticClass(true);
         }

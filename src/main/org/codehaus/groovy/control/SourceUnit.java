@@ -296,7 +296,9 @@ public class SourceUnit extends ProcessingUnit {
 
             cst = parserPlugin.parseCST(this, reader);
 
+            reader.close();
             completePhase();
+            
         }
         catch (IOException e) {
             addFatalError(new SimpleMessage(e.getMessage()));
