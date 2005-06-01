@@ -677,5 +677,4 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         super.visitCatchStatement(statement);
         currentScope = scope;
     }
-
 }
