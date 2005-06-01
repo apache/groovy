@@ -916,7 +916,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Writes error messages to the specified PrintWriter.
      */
     public void write(PrintWriter writer, Janitor janitor) {
-        super.write(writer, janitor);
+        //super.write(writer, janitor);
 
         Iterator keys = names.iterator();
         while (keys.hasNext()) {

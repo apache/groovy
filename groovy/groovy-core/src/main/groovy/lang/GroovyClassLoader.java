@@ -235,7 +235,11 @@ public class GroovyClassLoader extends SecureClassLoader {
             // try {
             ClassCollector collector = createCollector(unit);
 
-            unit.addSource(name, codeSource.getInputStream());
+            if (codeSource.getFile()==null) {
+                unit.addSource(name, codeSource.getInputStream());
+            } else {
+                unit.addSource(codeSource.getFile());
+            }
             unit.setClassgenCallback(collector);
             unit.compile(Phases.CLASS_GENERATION);
 

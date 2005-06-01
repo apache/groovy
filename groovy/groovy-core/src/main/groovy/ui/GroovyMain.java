@@ -53,6 +53,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.tools.ErrorReporter;
 
 import java.io.*;
 import java.util.Iterator;
@@ -233,6 +234,9 @@ public class GroovyMain {
                 processOnce();
             }
             return true;
+        } catch (CompilationFailedException e) {
+            new ErrorReporter( e, debug ).write( System.err );
+            return false;
         } catch (Throwable e) {
             if (e instanceof InvokerInvocationException) {
                 InvokerInvocationException iie = (InvokerInvocationException) e;
