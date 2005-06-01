@@ -114,7 +114,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      */
     public void visitClass(ClassNode node) {
         this.classNode = node;
-
+                
+        if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+            node.visitContents(this);
+            return;
+        }
+        
         addDefaultParameterMethods(node);
 
         if (!node.isDerivedFromGroovyObject()) {
@@ -272,9 +277,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public void visitMethod(MethodNode node) {
-        
         this.methodNode = node;
-        
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
             if (statement instanceof ExpressionStatement) {

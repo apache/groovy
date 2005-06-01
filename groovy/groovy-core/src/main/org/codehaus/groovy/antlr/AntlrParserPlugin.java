@@ -140,6 +140,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     classDef(node);
                     break;
 
+                case INTERFACE_DEF:
+                    interfaceDef(node);
+                    break;
+                    
                 case METHOD_DEF:
                     methodDef(node);
                     break;
@@ -200,6 +204,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             String name = identifier(nameNode);
             importClass(packageName, name, alias);
         }
+    }
+    
+    protected void interfaceDef(AST classDef) {
+        List annotations = new ArrayList();
+        AST node = classDef.getFirstChild();
+        int modifiers = Opcodes.ACC_PUBLIC;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, annotations, modifiers);
+            node = node.getNextSibling();
+        }
+        modifiers |= Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE;
+
+        String name = identifier(node);
+        node = node.getNextSibling();
+        String superClass = "java.lang.Object";
+
+        String[] interfaces = {};
+        if (isType(EXTENDS_CLAUSE, node)) {
+            interfaces = interfaces(node);
+            node = node.getNextSibling();
+        }
+
+        addNewClassName(name);
+        String fullClassName = dot(getPackageName(), name);
+        classNode = new ClassNode(fullClassName, modifiers, superClass, interfaces, null);
+        classNode.addAnnotations(annotations);
+        configureAST(classNode, classDef);
+
+        assertNodeType(OBJBLOCK, node);
+        objectBlock(node);
+        output.addClass(classNode);
+        classNode = null;
     }
 
     protected void classDef(AST classDef) {
@@ -279,6 +315,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
+        if (classNode!=null && (classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+            modifiers |= Opcodes.ACC_ABSTRACT;
+        }
+        
         String returnType = null;
 
         if (isType(TYPE, node)) {
