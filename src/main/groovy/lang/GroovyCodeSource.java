@@ -35,6 +35,8 @@ public class GroovyCodeSource {
 	private InputStream inputStream;
 	/** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
+    
+    private File file;
 	
 	public GroovyCodeSource(String script, String name, String codeBase) {
 		this(new ByteArrayInputStream(script.getBytes()), name, codeBase);
@@ -86,7 +88,9 @@ public class GroovyCodeSource {
 	}
 	
 	public GroovyCodeSource(final File file) throws FileNotFoundException {
-		this.inputStream = new FileInputStream(file);
+		//this.inputStream = new FileInputStream(file);
+        this.file = file;
+        this.inputStream = null;
 		//The calls below require access to user.dir - allow here since getName() and getCodeSource() are
 		//package private and used only by the GroovyClassLoader.
 		try {
@@ -120,10 +124,17 @@ public class GroovyCodeSource {
 	}
 
 	public InputStream getInputStream() {
+        try {
+            if (file!=null) return new FileInputStream(file);
+        } catch (FileNotFoundException fnfe) {}
 		return inputStream;
 	}
 
 	public String getName() {
 		return name;
 	}
+    
+    public File getFile() {
+        return file;
+    }
 }

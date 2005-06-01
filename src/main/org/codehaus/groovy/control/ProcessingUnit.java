@@ -491,6 +491,9 @@ public abstract class ProcessingUnit {
                 warning.write(writer, this, janitor);
             }
 
+            writer.print(warnings.size());
+            writer.println(" Warnings");
+            
             this.warnings = null;
         }
 
@@ -501,6 +504,8 @@ public abstract class ProcessingUnit {
                 message.write(writer, this, janitor);
             }
 
+            writer.print(errors.size());
+            writer.println(" Errors");
             //why? this nukes the errors once a getString call is made
             //this.errors = null;
         }
