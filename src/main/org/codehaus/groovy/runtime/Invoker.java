@@ -55,6 +55,7 @@ import groovy.lang.MissingMethodException;
 import groovy.lang.Range;
 import groovy.lang.SpreadList;
 import groovy.lang.Tuple;
+import groovy.lang.GroovyInterceptable;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Element;
@@ -155,8 +156,14 @@ public class Invoker {
                 else {
                     GroovyObject groovy = (GroovyObject) object;
                     try {
-                        // if there's a statically typed method or a GDK method
-                        return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
+                        // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+                        if (groovy instanceof GroovyInterceptable) {
+                            return groovy.invokeMethod(methodName, asArray(arguments));
+                        }
+                        // else if there's a statically typed method or a GDK method
+                        else {
+                            return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
+                        }
                     }
                     catch (MissingMethodException e) {
                         if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
@@ -279,8 +286,10 @@ public class Invoker {
     }
 
     /**
-     * @param arguments
-     * @return
+     * Converts the value parameter into a <code>Collection</code>.
+     *
+     * @param value value to convert
+     * @return a Collection
      */
     public Collection asCollection(Object value) {
         if (value == null) {
