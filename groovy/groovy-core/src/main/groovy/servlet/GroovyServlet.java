@@ -38,11 +38,9 @@ import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,11 +94,6 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
 public class GroovyServlet extends AbstractHttpServlet {
 
   /**
-   * The context in which this servlet is executing
-   */
-  private ServletContext sc;
-
-  /**
    * The script engine executing the Groovy scripts for this servlet
    */
   private static GroovyScriptEngine gse;
@@ -117,12 +110,10 @@ public class GroovyServlet extends AbstractHttpServlet {
     // Use reflection, some containers don't load classes properly
     MetaClass.setUseReflection(true);
 
-    // Get the servlet context
-    sc = servletContext;
-    sc.log("Groovy servlet initialized");
-
     // Set up the scripting engine
     gse = new GroovyScriptEngine(this);
+
+    servletContext.log("Groovy servlet initialized");
   }
 
   /**
@@ -131,26 +122,14 @@ public class GroovyServlet extends AbstractHttpServlet {
   public void service(HttpServletRequest request,
       HttpServletResponse response) throws IOException {
 
-    // Get the Groovy script file - include aware (GROOVY-815)
-    File file = super.getScriptUriAsFile(request, sc);
-    if (!file.exists()) {
-      response.sendError(HttpServletResponse.SC_NOT_FOUND, "Not found!");
-      return; // throw new IOException(file.getAbsolutePath());
-    }
-    if (!file.canRead()) {
-      response.sendError(HttpServletResponse.SC_FORBIDDEN, "Can not read!");
-      return; // throw new IOException(file.getAbsolutePath());
-    }
-
-    // get the script path from the request
-    final String scriptFilename = file.getName();
-    // log("Serving " + scriptFilename);
+    // Get the script path from the request - include aware (GROOVY-815)
+    final String scriptUri = getScriptUri(request);
 
     // Set it to HTML by default
     response.setContentType("text/html");
 
     // Set up the script context
-    final Binding binding = new ServletBinding(request, response, sc);
+    final Binding binding = new ServletBinding(request, response, servletContext);
 
     // Run the script
     try {
@@ -158,8 +137,7 @@ public class GroovyServlet extends AbstractHttpServlet {
 
         public Object call() {
           try {
-            return ((GroovyScriptEngine) getDelegate()).run(scriptFilename,
-                binding);
+            return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);
           }
           catch (ResourceException e) {
             throw new RuntimeException(e);
@@ -179,12 +157,12 @@ public class GroovyServlet extends AbstractHttpServlet {
     catch (RuntimeException re) {
       StringBuffer error = new StringBuffer("GroovyServlet Error: ");
       error.append(" script: '");
-      error.append(scriptFilename);
+      error.append(scriptUri);
       error.append("': ");
       Throwable e = re.getCause();
       if (e instanceof ResourceException) {
         error.append(" Script not found, sending 404.");
-        sc.log(error.toString());
+        servletContext.log(error.toString());
         System.out.println(error.toString());
         response.sendError(HttpServletResponse.SC_NOT_FOUND);
       }
@@ -194,14 +172,14 @@ public class GroovyServlet extends AbstractHttpServlet {
           error.append(re.getMessage());
 
         if (e != null) {
-          sc.log("An error occurred processing the request", e);
+          servletContext.log("An error occurred processing the request", e);
         }
         else {
-          sc.log("An error occurred processing the request", re);
+          servletContext.log("An error occurred processing the request", re);
         }
-        sc.log(error.toString());
+        servletContext.log(error.toString());
         System.out.println(error.toString());
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
       }
     }
 
