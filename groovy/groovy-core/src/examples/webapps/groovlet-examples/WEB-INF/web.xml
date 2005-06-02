@@ -1,0 +1,30 @@
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
+    version="2.4">
+
+<servlet>
+    <servlet-name>groovy</servlet-name>
+    <servlet-class>groovy.servlet.GroovyServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>groovy</servlet-name>
+    <url-pattern>*.groovy</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>groovy</servlet-name>
+    <url-pattern>*.gdo</url-pattern>
+  </servlet-mapping>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+    <welcome-file>index.htm</welcome-file>
+    <welcome-file>index.jsp</welcome-file>
+    <welcome-file>index.jspx</welcome-file>
+    <welcome-file>index.groovy</welcome-file>
+    <welcome-file>hello.groovy</welcome-file>
+  </welcome-file-list>
+
+</web-app>
