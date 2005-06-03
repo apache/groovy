@@ -67,6 +67,7 @@ import java.util.regex.Pattern;
  * @author Rod Cope
  * @author Guillaume Laforge
  * @author John Wilson
+ * @author Hein Meling
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -3669,6 +3670,67 @@ PropertyValue pv = (PropertyValue) itr.next();
     //-------------------------------------------------------------------------
 
     /**
+     * Helper method to create an object input stream from the given file.
+     * 
+     * @param file a file
+     * @return an object input stream
+     * @throws FileNotFoundException 
+     * @throws IOException
+     */
+    public static ObjectInputStream newObjectInputStream(File file) throws FileNotFoundException, IOException {
+        return new ObjectInputStream(new FileInputStream(file));
+    }
+
+    /**
+     * Iterates through the given file object by object
+     *
+     * @param self    a File
+     * @param closure a closure
+     * @throws IOException
+     * @throws ClassNotFoundException 
+     */
+    public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
+        eachObject(newObjectInputStream(self), closure);
+    }
+
+    /**
+     * Iterates through the given object stream object by object
+     *
+     * @param self    an ObjectInputStream
+     * @param closure a closure
+     * @throws IOException
+     * @throws ClassNotFoundException 
+     */
+    public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
+        try {
+            while (true) {
+                try {
+                    Object obj = ois.readObject();
+                    // we allow null objects in the object stream
+                    closure.call(obj);
+                } catch (EOFException e) {
+                    break;
+                }
+            }
+            ois.close();
+        } catch (ClassNotFoundException e) {
+            try {
+                ois.close();
+            } catch (Exception e2) {
+                // ignore as we're already throwing
+            }
+            throw e;
+        } catch (IOException e) {
+            try {
+               ois.close();
+            } catch (Exception e2) {
+               // ignore as we're already throwing
+            }
+            throw e;
+        }
+    }
+
+    /**
      * Iterates through the given file line by line
      *
      * @param self    a File
@@ -4028,6 +4090,57 @@ PropertyValue pv = (PropertyValue) itr.next();
                 closure.call(files[i]);
             }
         }
+    }
+
+    /**
+     * Invokes the closure for each directory in the given directory,
+     * ignoring regular files.
+     *
+     * @param self    a directory
+     * @param closure a closure
+     */
+    public static void eachDir(File self, Closure closure) {
+        File[] files = self.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].isDirectory()) {
+                closure.call(files[i]);
+            }
+        }
+    }
+
+    /**
+     * Invokes the closure for each file matching the given filter in the given directory 
+     * - calling the isCase() method used by switch statements.  This method can be used
+     * with different kinds of filters like regular expresions, classes, ranges etc.
+     *
+     * @param self   a file
+     * @param filter the filter to perform on the directory (using the isCase(object) method)
+     * @param closure
+     */
+    public static void eachFileMatch(File self, Object filter, Closure closure) {
+        File[] files = self.listFiles();
+        MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        for (int i = 0; i < files.length; i++) {
+            if (InvokerHelper.asBool(metaClass.invokeMethod(filter, "isCase", files[i].getName()))) {
+                closure.call(files[i]);
+            }
+        }
+    }
+
+    /**
+     * Allow simple syntax for using timers.
+     * 
+     * @param timer a timer object
+     * @param delay the delay in milliseconds before running the closure code
+     * @param closure
+     */
+    public static void runAfter(Timer timer, int delay, final Closure closure) {
+        TimerTask timerTask = new TimerTask() {
+            public void run() {
+                closure.call();
+            }
+        };
+        timer.schedule(timerTask, delay);
     }
 
     /**
