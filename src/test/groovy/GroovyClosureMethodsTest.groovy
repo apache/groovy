@@ -123,7 +123,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testRunAfter() {
-        timer = new Timer("TestTimer", true)
+        timer = new Timer()
         boolean status = false
         timer.runAfter(2000) {
             println "Running after 2 seconds wait"

@@ -103,6 +103,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(Groovy389_Bug.class);
         suite.addTestSuite(Groovy513_Bug.class);
         suite.addTestSuite(GroovyInterceptableTest.class);
+        suite.addTestSuite(GroovyClosureMethodsTest.class);
         suite.addTestSuite(GroovyMethodsTest.class);
         suite.addTestSuite(GuillaumesBug.class);
         suite.addTestSuite(GuillaumesMapBug.class);
