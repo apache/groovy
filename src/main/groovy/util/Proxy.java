@@ -34,152 +34,46 @@
 package groovy.util;
 
 import groovy.lang.GroovyObjectSupport;
-import groovy.lang.MetaClass;
-import groovy.lang.MissingPropertyException;
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * Dynamic groovy proxy for another object.  All property accesses and method
+ * Dynamic groovy proxy for another object.  All method
  * invocations get forwarded to actual object, unless the proxy overrides it.
- * The calling order can be set to try the real or proxy first.
+ * See groovy/util/ProxyTest.groovy for usage details.
  *
  * @author Troy Heninger
+ * @author Dierk Koenig
  */
 public class Proxy extends GroovyObjectSupport {
 
-    private boolean tryRealFirst;
-    private Object realObject;
-    private MetaClass realMeta, first, second;
+    private Object adaptee = null;
 
     /**
-     * Constructor.  Takes real object to be excapsulated and set's the order
-     * to the real object first.
-     *
-     * @param real the real object
+     * This method is for convenience.
+     * It allows to get around the need for defining dump ctors is subclasses.
+     * See unit tests for details.
      */
-    public Proxy(Object real) {
-        this(real, true);
+    public Proxy wrap(Object adaptee){
+        setAdaptee(adaptee);
+        return this;
     }
 
-    /**
-     * Constructor.  Takes real object to be excapsulated and order.
-     *
-     * @param real the real object
-     * @param tryRealFirst call real object first if true
-     */
-    public Proxy(Object real, boolean tryRealFirst) {
-        this.tryRealFirst = tryRealFirst;
-        this.realObject = real;
-        setMetaClass(InvokerHelper.getMetaClass(real));
+    public Object getAdaptee() {
+        return adaptee;
     }
 
-    /**
-     * Get the property of this proxy, or the real object if property doesn't
-     * exist.
-     *
-     * @param property property to retrieve
-     * @return property's value
-     */
-    public Object getProperty(String property) {
-        try {
-            return first.getProperty(this, property);
-        }
-        catch (MissingPropertyException e) {
-            return second.getProperty(realObject, property);
-        }
+    public void setAdaptee(Object adaptee) {
+        this.adaptee = adaptee;
     }
 
-    /**
-     * Set the property of this proxy, or the real object if property doesn't
-     * exist.
-     *
-     * @param property property to set
-     * @param newValue value to store
-     */
-    public void setProperty(String property, Object newValue) {
-        try {
-            first.setProperty(this, property, newValue);
-        }
-        catch (MissingPropertyException e) {
-            second.setProperty(realObject, property, newValue);
-        }
-    }
-
-    /**
-     * Returns the MetaClass for the <b>real</b> object.
-     *
-     * @return MetaClass of real object
-     */
-    public MetaClass getMetaClass() {
-        return realMeta;
-    }
-
-    /**
-     * Returns the MetaClass for the <b>proxy </b> object.
-     *
-     * @return MetaClass of proxy object
-     */
-    public MetaClass getProxyMetaClass() {
-        return super.getMetaClass();
-    }
-
-    /**
-     * Returns the encapsulated object.
-     *
-     * @return the real object
-     */
-    public Object getRealObject() {
-        return realObject;
-    }
-
-    /**
-     * Call a method of this proxy, or the real object if method doesn't exist.
-     *
-     * @param name method to invoke
-     * @param args arguments to pass
-     * @return
-     */
     public Object invokeMethod(String name, Object args) {
         try {
-            return first.invokeMethod(this, name, args);
+            return super.invokeMethod(name, args);
         }
         catch (MissingMethodException e) {
-            return second.invokeMethod(this, name, args);
+            return InvokerHelper.getMetaClass(adaptee).invokeMethod(adaptee, name, args);
         }
     }
 
-    /**
-     * Dynamically change the meta class to use for the <b>real</b> object.
-     *
-     * @param metaClass substitute real meta class
-     */
-    public void setMetaClass(MetaClass metaClass) {
-        realMeta = metaClass;
-        if (tryRealFirst) {
-            first = realMeta;
-            second = getMetaClass();
-        }
-        else {
-            first = getMetaClass();
-            second = realMeta;
-        }
-    }
-
-    /**
-     * Dynamically change the meta class to use for the <b>proxy</b> object.
-     *
-     * @param metaClass substitute meta class for the proxy object
-     */
-    public void setProxyMetaClass(MetaClass metaClass) {
-        super.setMetaClass(metaClass);
-        if (tryRealFirst) {
-            first = realMeta;
-            second = getMetaClass();
-        }
-        else {
-            first = getMetaClass();
-            second = realMeta;
-        }
-    }
 }
