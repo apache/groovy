@@ -3587,7 +3587,7 @@ LETTER
 options {
     paraphrase="a letter";
 }
-    :   'a'..'z'|'A'..'Z'|'_'
+    :   'a'..'z'|'A'..'Z'|'\u0100'..'\uFFFE'|'_'
     // TODO:  Recognize all the Java identifier starts here (except '$').
     ;
 
