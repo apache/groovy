@@ -28,38 +28,54 @@ import java.util.ArrayList;
  * @version $Revision$
  */
 public class SourceBuffer {
-    List lines;
-    StringBuffer current;
+    private List lines;
+    private StringBuffer current;
 
     public SourceBuffer() {
         lines = new ArrayList();
+        //lines.add(new StringBuffer()); // dummy row for position [0] in the List
+
         current = new StringBuffer();
         lines.add(current);
     }
 
     /**
      * Obtains a snippet of the source code within the bounds specified
-     * @param startLine
-     * @param startColumn
-     * @param endLine
-     * @param endColumn
+     * @param start (inclusive line/ inclusive column)
+     * @param end (inclusive line / exclusive column)
      * @return specified snippet of source code as a String, or null if no source available
      */
-    public String getSnippet(int startLine, int startColumn, int endLine, int endColumn) {
-        if (startLine == endLine && startColumn == endColumn) { return null; } // no text to return
+    public String getSnippet(LineColumn start, LineColumn end) {
+        // preconditions
+        if (start == null || end == null) { return null; } // no text to return
+        if (start.equals(end)) { return null; } // no text to return
         if (lines.size() == 1 && current.length() == 0) { return null; } // buffer hasn't been filled yet
 
-        // lets not allow out of bounds requests
+        // working variables
+        int startLine = start.getLine();
+        int startColumn = start.getColumn();
+        int endLine = end.getLine();
+        int endColumn = end.getColumn();
+
+        // reset any out of bounds requests
         if (startLine < 1) { startLine = 1;}
         if (endLine < 1) { endLine = 1;}
-        if (startLine > lines.size()) { startLine = lines.size() + 1; }
-        if (endLine > lines.size()) { endLine = lines.size() + 1; }
+        if (startColumn < 1) { startColumn = 1;}
+        if (endColumn < 1) { endColumn = 1;}
+        if (startLine > lines.size()) { startLine = lines.size(); }
+        if (endLine > lines.size()) { endLine = lines.size(); }
 
         // obtain the snippet from the buffer within specified bounds
         StringBuffer snippet = new StringBuffer();
-        for (int i = startLine - 1; i < endLine-1;i++) {
+        for (int i = startLine - 1; i < endLine;i++) {
             String line = ((StringBuffer)lines.get(i)).toString();
             if (startLine == endLine) {
+                // reset any out of bounds requests (again)
+                if (startColumn > line.length()) { startColumn = line.length();}
+                if (startColumn < 1) { startColumn = 1;}
+                if (endColumn > line.length()) { endColumn = line.length() + 1;}
+                if (endColumn < 1) { endColumn = 1;}
+
                 line = line.substring(startColumn - 1, endColumn - 1);
             } else {
                 if (i == startLine - 1) {
@@ -83,8 +99,9 @@ public class SourceBuffer {
      * @param c
      */
     public void write(int c) {
-        current.append((char)c);
-
+        if (c != -1) {
+            current.append((char)c);
+        }
         if (c == '\n') {
             current = new StringBuffer();
             lines.add(current);

@@ -44,9 +44,15 @@ public class GroovySourceAST extends CommonAST {
     public int getLineLast() {
         return lineLast;
     }
+    public void setLineLast(int lineLast) {
+        this.lineLast = lineLast;
+    }
 
     public int getColumnLast() {
         return colLast;
+    }
+    public void setColumnLast(int colLast) {
+        this.colLast = colLast;
     }
 
     public int getLine() {
