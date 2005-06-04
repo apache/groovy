@@ -9,6 +9,7 @@ import junit.framework.*;
 public class UberTestCase3 extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        suite.addTestSuite(org.codehaus.groovy.antlr.SourceBufferTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
 
