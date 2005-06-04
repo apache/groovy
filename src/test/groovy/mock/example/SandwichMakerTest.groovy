@@ -4,10 +4,8 @@ import groovy.mock.GroovyMock
 
 class SandwichMakerTest extends GroovyTestCase {
 
-    void testStuff() {
-
-        /** @todo I'm not sure why this stuff fails
-         * 
+    void testStuff()
+    
         mockCheeseSlicer = GroovyMock.newInstance()
         sandwichMaker = new SandwichMaker()
         sandwichMaker.cheeseSlicer = mockCheeseSlicer.instance
@@ -20,7 +18,7 @@ class SandwichMakerTest extends GroovyTestCase {
 
         // verify
         mockCheeseSlicer.verify()
-        */
+
     }
 
 }
