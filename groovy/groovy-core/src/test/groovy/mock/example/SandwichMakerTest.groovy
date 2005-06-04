@@ -4,8 +4,8 @@ import groovy.mock.GroovyMock
 
 class SandwichMakerTest extends GroovyTestCase {
 
-    void testStuff()
-    
+    void testStuff(){
+
         mockCheeseSlicer = GroovyMock.newInstance()
         sandwichMaker = new SandwichMaker()
         sandwichMaker.cheeseSlicer = mockCheeseSlicer.instance
