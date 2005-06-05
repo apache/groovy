@@ -38,6 +38,7 @@
  */
 package groovy.servlet;
 
+import groovy.lang.MetaClass;
 import groovy.util.ResourceConnector;
 import groovy.util.ResourceException;
 
@@ -65,17 +66,39 @@ public abstract class AbstractHttpServlet extends HttpServlet implements
    */
   public static final String CONTENT_TYPE_TEXT_HTML = "text/html";
 
-  /*
-   * Servlet API include key names.
+  /**
+   * Servlet API include key name: path_info
    */
   public static final String INC_PATH_INFO = "javax.servlet.include.path_info";
+  
+  /* Not used, yet. See comments in getScriptUri(HttpServletRequest request)!
+   * Servlet API include key name: request_uri
+   */
   // public static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
+  
+  /**
+   * Servlet API include key name: servlet_path
+   */
   public static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
 
+  /**
+   * Debug flag logging the class the class loader of the request.
+   */
+  private boolean logRequestClassAndLoaderOnce;
+  
   /**
    * Servlet (or the web application) context.
    */
   protected ServletContext servletContext;
+  
+  /**
+   * Initializes all fields.
+   * 
+   */
+  public AbstractHttpServlet() {
+    this.logRequestClassAndLoaderOnce = true;
+    this.servletContext = null;
+  }
 
   /**
    * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
@@ -106,6 +129,15 @@ public abstract class AbstractHttpServlet extends HttpServlet implements
    *  hints provided by the servlet container
    */
   protected String getScriptUri(HttpServletRequest request) {
+    // 
+    if (logRequestClassAndLoaderOnce) {
+      log("Logging request class and its class loader:");
+      log(" c = request.getClass() :\"" + request.getClass()+ "\"");
+      log(" l = c.getClassLoader() :\"" + request.getClass().getClassLoader()+ "\"");
+      log(" l.getClass()           :\"" + request.getClass().getClassLoader().getClass()+ "\"");
+      logRequestClassAndLoaderOnce = false;
+    }
+
     //
     // NOTE: This piece of code is heavily inspired by Apaches Jasper2!
     // 
@@ -159,10 +191,9 @@ public abstract class AbstractHttpServlet extends HttpServlet implements
    *  the context of this servlet used to get the real path string
    * @return a file object using an absolute file path name
    */
-  protected File getScriptUriAsFile(HttpServletRequest request,
-      ServletContext context) {
+  protected File getScriptUriAsFile(HttpServletRequest request) {
     String uri = getScriptUri(request);
-    String real = context.getRealPath(uri);
+    String real = servletContext.getRealPath(uri);
     File file = new File(real).getAbsoluteFile();
 
     // log("\tInclude-aware URI: " + uri);
@@ -185,9 +216,30 @@ public abstract class AbstractHttpServlet extends HttpServlet implements
     return file;
   }
 
+  /**
+   * Overrides the generic init method.
+   * 
+   * Enables a fix, that tells Groovy to use (slower) reflection than compiling
+   * metaclass proxies. This is needed due to some container implementation hide
+   * their classes from the servlet by using different class loaders. See
+   * {@link http://jira.codehaus.org/browse/GROOVY-861} for details.
+   * 
+   * @param config
+   *  the servlet coniguration provided by the container
+   * @throws ServletException if init() method defined in super class 
+   *  javax.servlet.GenericServlet throws it
+   */
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
     this.servletContext = config.getServletContext();
+
+    // FIXME http://jira.codehaus.org/browse/GROOVY-861
+    MetaClass.setUseReflection(true);
+    String value = config.getInitParameter("logRequestClassAndLoaderOnce");
+    if (value != null) {
+      this.logRequestClassAndLoaderOnce = Boolean.valueOf(value).booleanValue();
+    }
+
   }
 
 }
