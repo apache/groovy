@@ -38,7 +38,6 @@
  */
 package groovy.servlet;
 
-import groovy.lang.MetaClass;
 import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import groovy.text.TemplateEngine;
@@ -170,7 +169,9 @@ public class TemplateServlet extends AbstractHttpServlet {
   /**
    * Triggers the template creation eliminating all new line characters.
    * 
-   * Its a work around
+   * Its a work around! New lines should cause troubles when compiling. But
+   * sometimes(?) the do: http://jira.codehaus.org/browse/GROOVY-818
+   * See FIXME note around line 250, where this method is called.
    * 
    * @see TemplateServlet#getTemplate(File)
    * @see BufferedReader#readLine()
@@ -306,10 +307,6 @@ public class TemplateServlet extends AbstractHttpServlet {
     if (engine == null) {
       throw new ServletException("Template engine not instantiated.");
     }
-    
-    // Use reflection, some containers don't load classes properly
-    MetaClass.setUseReflection(true);
-    
     String value = config.getInitParameter("generatedBy");
     if (value != null) {
       this.generatedBy = Boolean.valueOf(value).booleanValue();
@@ -380,7 +377,7 @@ public class TemplateServlet extends AbstractHttpServlet {
     //
     // Get the template source file handle.
     //
-    File file = super.getScriptUriAsFile(request, servletContext);
+    File file = super.getScriptUriAsFile(request);
     if (!file.exists()) {
       response.sendError(HttpServletResponse.SC_NOT_FOUND);
       return; // throw new IOException(file.getAbsolutePath());

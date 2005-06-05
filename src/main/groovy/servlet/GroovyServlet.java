@@ -33,7 +33,6 @@ package groovy.servlet;
 
 import groovy.lang.Binding;
 import groovy.lang.Closure;
-import groovy.lang.MetaClass;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
 import groovy.util.ScriptException;
@@ -101,14 +100,11 @@ public class GroovyServlet extends AbstractHttpServlet {
   /**
    * Initialize the GroovyServlet.
    *
-   * @throws ServletException if init() method defined in super class 
-   * javax.servlet.GenericServlet throws it
+   * @throws ServletException
+   *  if this method encountered difficulties
    */
   public void init(ServletConfig config) throws ServletException {
     super.init(config);
-
-    // Use reflection, some containers don't load classes properly
-    MetaClass.setUseReflection(true);
 
     // Set up the scripting engine
     gse = new GroovyScriptEngine(this);
