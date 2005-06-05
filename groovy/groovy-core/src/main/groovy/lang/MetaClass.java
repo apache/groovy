@@ -110,8 +110,8 @@ public class MetaClass {
 
     private static boolean useReflection = false;
 
-    private MetaClassRegistry registry;
-    private Class theClass;
+    protected MetaClassRegistry registry;
+    protected Class theClass;
     private ClassNode classNode;
     private Map methodIndex = new HashMap();
     private Map staticMethodIndex = new HashMap();
