@@ -332,7 +332,15 @@
           <role>Developer</role>
         </roles>
    </developer>
-   
+   <developer>
+      <name>Dierk Koenig</name>
+      <id>mittie</id>
+      <email>dierk.koenig@canoo.com</email>
+      <organization>Canoo Engineering AG</organization>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
   </developers>
 
   <contributors>

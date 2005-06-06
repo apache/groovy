@@ -62,24 +62,18 @@ public class ProxyMetaClass extends MetaClass {
         this.interceptor = interceptor;
     }
 
-    // todo dk: remove the obvious duplication in the next 3 methods
-
     /**
      * Call invokeMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
      * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
      * The method call is suppressed if Interceptor.doInvoke() returns false.
      * See Interceptor for details.
      */
-    public Object invokeMethod(Object object, String methodName, Object[] arguments) {
-        if (null == interceptor) {
-            return adaptee.invokeMethod(object, methodName, arguments);
-        }
-        Object result = interceptor.beforeInvoke(object, methodName, arguments);
-        if (interceptor.doInvoke()) {
-            result = adaptee.invokeMethod(object, methodName, arguments);
-        }
-        result = interceptor.afterInvoke(object, methodName, arguments, result);
-        return result;
+    public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
+        return doCall(object, methodName, arguments, new Callable(){
+            public Object call() {
+                return adaptee.invokeMethod(object, methodName, arguments);
+            }
+        });
     }
     /**
      * Call invokeStaticMethod on adaptee with logic like in MetaClass unless we have an Interceptor.
@@ -87,33 +81,41 @@ public class ProxyMetaClass extends MetaClass {
      * The method call is suppressed if Interceptor.doInvoke() returns false.
      * See Interceptor for details.
      */
-    public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
-        if (null == interceptor) {
-            return adaptee.invokeStaticMethod(object, methodName, arguments);
-        }
-        Object result = interceptor.beforeInvoke(object, methodName, arguments);
-        if (interceptor.doInvoke()) {
-            result = adaptee.invokeStaticMethod(object, methodName, arguments);
-        }
-        result = interceptor.afterInvoke(object, methodName, arguments, result);
-        return result;
+    public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
+        return doCall(object, methodName, arguments, new Callable(){
+            public Object call() {
+                return adaptee.invokeStaticMethod(object, methodName, arguments);
+            }
+        });
     }
+
     /**
      * Call invokeConstructor on adaptee with logic like in MetaClass unless we have an Interceptor.
      * With Interceptor the call is nested in its beforeInvoke and afterInvoke methods.
      * The method call is suppressed if Interceptor.doInvoke() returns false.
      * See Interceptor for details.
      */
-    public Object invokeConstructor(Object[] arguments) {
-        if (null == interceptor) {
-            return adaptee.invokeConstructor(arguments);
-        }
-        Object result = interceptor.beforeInvoke(theClass, "ctor", arguments);
-        if (interceptor.doInvoke()) {
-            result = adaptee.invokeConstructor(arguments);
-        }
-        result = interceptor.afterInvoke(theClass, "ctor", arguments, result);
-        return result;
+    public Object invokeConstructor(final Object[] arguments) {
+        return doCall(theClass, "ctor", arguments, new Callable(){
+            public Object call() {
+                return adaptee.invokeConstructor(arguments);
+            }
+        });
     }
 
+    // since Java has no Closures...
+    private interface Callable{
+        Object call();
+    }
+    private Object doCall(Object object, String methodName, Object[] arguments, Callable howToInvoke) {
+        if (null == interceptor) {
+            return howToInvoke.call();
+        }
+        Object result = interceptor.beforeInvoke(object, methodName, arguments);
+        if (interceptor.doInvoke()) {
+            result = howToInvoke.call();
+        }
+        result = interceptor.afterInvoke(object, methodName, arguments, result);
+        return result;
+    }
 }

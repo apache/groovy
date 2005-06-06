@@ -35,7 +35,8 @@ public class TracingInterceptor implements Interceptor {
             writer.write("Interceptor ");
             writer.write(origin);
             writer.write(" ");
-            writeInfo(object.getClass(), methodName, arguments);
+            Class theClass = object instanceof Class ? (Class) object: object.getClass();
+            writeInfo(theClass, methodName, arguments);
             writer.write("\n");
             writer.flush();
         } catch (IOException e) {
