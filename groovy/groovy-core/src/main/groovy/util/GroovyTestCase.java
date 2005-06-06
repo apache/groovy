@@ -46,16 +46,12 @@
 package groovy.util;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyCodeSource;
 import groovy.lang.GroovyShell;
 
-import java.io.File;
-import java.io.PrintWriter;
 import java.util.logging.Logger;
 
 import junit.framework.TestCase;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**

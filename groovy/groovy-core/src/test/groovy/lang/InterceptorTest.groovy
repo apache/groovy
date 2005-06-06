@@ -23,6 +23,12 @@ class InterceptorTest extends GroovyTestCase{
         // we intercept calls from Groovy to the java.lang.String object
         interceptable = 'Interceptable String'
     }
+    ProxyMetaClass initProxy(){
+        proxy = ProxyMetaClass.getInstance(interceptable.class)
+        proxy.setInterceptor(logInterceptor)
+        proxy.register()
+        return proxy
+    }
 
     void testUnIntercepted() {
         interceptable.size()                // GDK method
@@ -32,10 +38,7 @@ class InterceptorTest extends GroovyTestCase{
     }
 
     void testSimpleInterception() {
-        proxy = ProxyMetaClass.getInstance(interceptable.class)
-        proxy.setInterceptor(logInterceptor)
-        proxy.register()
-
+        initProxy()
         assertEquals 20, interceptable.size()
         assertEquals 20,interceptable.length()
         assertTrue interceptable.startsWith('I',0)
@@ -50,9 +53,7 @@ Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Intege
     }
 
     void testNoInterceptionAfterUnregister() {
-        proxy = ProxyMetaClass.getInstance(interceptable.class)
-        proxy.setInterceptor(logInterceptor)
-        proxy.register()
+        proxy = initProxy()
         proxy.unRegister()
 
         interceptable.size()
@@ -60,10 +61,9 @@ Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Intege
         interceptable.startsWith('I',0)
         assertEquals 0, log.length()
     }
+
     void testNoInterceptionWithNullInterceptor() {
-        proxy = ProxyMetaClass.getInstance(interceptable.class)
-        proxy.setInterceptor(logInterceptor)
-        proxy.register()
+        proxy = initProxy()
         proxy.setInterceptor(null)
 
         interceptable.size()
@@ -72,7 +72,37 @@ Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Intege
         assertEquals 0, log.length()
     }
 
-    // todo: tests for ctors and static method calls
+    void testConstructorInterception() {
+        initProxy()
+        new String('some string')
+        assertEquals(
+"""Interceptor before java.lang.String.ctor(java.lang.String)
+Interceptor after java.lang.String.ctor(java.lang.String)
+""", log.toString())
+    }
+
+    void testStaticMethodInterception() {
+        initProxy()
+        assertEquals 'true', String.valueOf(true)
+        assertEquals(
+"""Interceptor before java.lang.String.valueOf(java.lang.Boolean)
+Interceptor after java.lang.String.valueOf(java.lang.Boolean)
+""", log.toString())
+    }
+
+    void testNoInterceptionOfGroovyClasses(){
+        slicer = new groovy.mock.example.CheeseSlicer()
+        proxy = ProxyMetaClass.getInstance(slicer.class)
+        proxy.setInterceptor(logInterceptor)
+        proxy.register()
+
+        slicer.sliceSomeCheese('')
+
+        assertEquals 0, log.length()
+        // 	at gjdk.groovy.lang.InterceptorTest_GroovyReflector.invoke(Unknown Source)
+    }
+
+
 }
 
 
