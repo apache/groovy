@@ -127,7 +127,7 @@ public class Invoker {
                     */
 
         if (object == null) {
-            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
+            throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
 
         // if the object is a Class, call a static method from that class
@@ -181,7 +181,7 @@ public class Invoker {
 
     public Object invokeSuperMethod(Object object, String methodName, Object arguments) {
         if (object == null) {
-            throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
+            throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
 
         Class theClass = object.getClass();

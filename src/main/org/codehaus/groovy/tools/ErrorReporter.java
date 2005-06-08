@@ -52,7 +52,7 @@ import java.io.PrintWriter;
 
 import org.codehaus.groovy.GroovyExceptionInterface;
 import org.codehaus.groovy.control.CompilationFailedException;
-
+import groovy.lang.GroovyRuntimeException;
 
 
 /**
@@ -79,7 +79,7 @@ public class ErrorReporter
     */
 
     public ErrorReporter( Throwable e )
-    { 
+    {
         this.base     = e;
     }
 
@@ -135,6 +135,10 @@ public class ErrorReporter
         else if( object instanceof GroovyExceptionInterface )
         {
             report( (GroovyExceptionInterface)object, child );
+        }
+        else if( object instanceof GroovyRuntimeException )
+        {
+            report( (GroovyRuntimeException)object, child );
         }
         else if( object instanceof Exception )
         {
