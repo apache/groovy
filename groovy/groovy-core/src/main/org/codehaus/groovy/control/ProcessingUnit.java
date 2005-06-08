@@ -490,11 +490,11 @@ public abstract class ProcessingUnit {
                 WarningMessage warning = (WarningMessage) iterator.next();
                 warning.write(writer, this, janitor);
             }
-
+            writer.println();
             writer.print(warnings.size());
             writer.println(" Warnings");
             
-            this.warnings = null;
+            //this.warnings = null;
         }
 
         if (this.errors != null) {
@@ -503,7 +503,7 @@ public abstract class ProcessingUnit {
                 Message message = (Message) iterator.next();
                 message.write(writer, this, janitor);
             }
-
+            writer.println();
             writer.print(errors.size());
             writer.println(" Errors");
             //why? this nukes the errors once a getString call is made

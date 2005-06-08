@@ -155,8 +155,6 @@ public class InteractiveShell {
                     shell.evaluate(command, "CommandLine.groovy");
                 }
                 catch (Exception e) {
-                    err.println("Exception: " + e.getMessage());
-                    e.printStackTrace(err);
                     // TODO: figure out what value ErrorReporter adds here and below
                     // and how to use it more effectively if so. It seems either
                     // err.println and printStackTrace() should be used, or 
