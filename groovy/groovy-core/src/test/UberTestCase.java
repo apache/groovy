@@ -26,6 +26,8 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(BlockAsClosureBug.class);
         suite.addTestSuite(BooleanBug.class);
         suite.addTestSuite(BooleanOperationTest.class);
+        suite.addTestSuite(BreakContinueLabelTest.class); // todo: resolve its todo's
+        // todo: add BreakContinueLabelWithClosureTest
         suite.addTestSuite(ByteIndexBug.class);
         suite.addTestSuite(Bytecode2Bug.class);
         suite.addTestSuite(Bytecode3Bug.class);
