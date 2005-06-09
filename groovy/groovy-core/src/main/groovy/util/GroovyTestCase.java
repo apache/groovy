@@ -65,6 +65,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class GroovyTestCase extends TestCase {
 
+    protected Logger log = Logger.getLogger(getClass().getName());
     private static int counter;
     private boolean useAgileDoxNaming = false;
 
