@@ -4,6 +4,7 @@ import java.io.PrintWriter;
 
 import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.ProcessingUnit;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.CSTNode;
@@ -66,9 +67,9 @@ public class WarningMessage extends LocatedMessage
     *  @param context    context information for locating the offending source text
     */
      
-    public WarningMessage( int importance, String message, CSTNode context )
+    public WarningMessage( int importance, String message, CSTNode context, SourceUnit owner )
     {
-        super( message, context );
+        super( message, context, owner );
         this.importance = importance;
     }
 
@@ -83,17 +84,17 @@ public class WarningMessage extends LocatedMessage
     *  @param context    context information for locating the offending source text
     */
      
-    public WarningMessage( int importance, String message, Object data, CSTNode context )
+    public WarningMessage( int importance, String message, Object data, CSTNode context, SourceUnit owner )
     {
-        super( message, data, context );
+        super( message, data, context, owner );
         this.importance = importance;
     }
     
     
-    public void write( PrintWriter writer, ProcessingUnit owner, Janitor janitor )
+    public void write( PrintWriter writer, Janitor janitor )
     {
         writer.print( "warning: " );
-        super.write( writer, owner, janitor );
+        super.write( writer, janitor );
     }
 
      

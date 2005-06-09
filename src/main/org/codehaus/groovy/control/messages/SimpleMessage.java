@@ -20,21 +20,22 @@ public class SimpleMessage extends Message
 {
     protected String message;  // Message text
     protected Object data;     // Data, when the message text is an I18N identifier
+    protected ProcessingUnit owner;
     
-    
-    public SimpleMessage( String message ) 
+    public SimpleMessage( String message, ProcessingUnit source ) 
     {
-        this( message, null );
+        this( message, null, source );
     }
     
-    public SimpleMessage( String message, Object data )
+    public SimpleMessage( String message, Object data, ProcessingUnit source )
     {
         this.message = message;
         this.data    = null;
+        this.owner = source;
     }
     
     
-    public void write( PrintWriter writer, ProcessingUnit owner, Janitor janitor )
+    public void write( PrintWriter writer, Janitor janitor )
     {
         if( owner instanceof SourceUnit )
         {

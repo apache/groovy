@@ -82,7 +82,7 @@ import java.io.FileWriter;
 import java.net.URL;
 import java.util.List;
 
-import antlr.NoViableAltException;
+import antlr.NoViableAltException;import antlr.TokenStreamException;
 import antlr.MismatchedTokenException;
 
 
@@ -123,9 +123,8 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Initializes the SourceUnit from existing machinery.
      */
-
-    public SourceUnit(String name, ReaderSource source, CompilerConfiguration flags, ClassLoader loader) {
-        super(flags, loader);
+    public SourceUnit(String name, ReaderSource source, CompilerConfiguration flags, ClassLoader loader, ErrorCollector er) {
+        super(flags, loader, er);
 
         this.name = name;
         this.source = source;
@@ -135,34 +134,30 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Initializes the SourceUnit from the specified file.
      */
-
-    public SourceUnit(File source, CompilerConfiguration configuration, ClassLoader loader) {
-        this(source.getPath(), new FileReaderSource(source, configuration), configuration, loader);
+    public SourceUnit(File source, CompilerConfiguration configuration, ClassLoader loader, ErrorCollector er) {
+        this(source.getPath(), new FileReaderSource(source, configuration), configuration, loader, er);
     }
 
 
     /**
      * Initializes the SourceUnit from the specified URL.
      */
-
-    public SourceUnit(URL source, CompilerConfiguration configuration, ClassLoader loader) {
-        this(source.getPath(), new URLReaderSource(source, configuration), configuration, loader);
+    public SourceUnit(URL source, CompilerConfiguration configuration, ClassLoader loader, ErrorCollector er) {
+        this(source.getPath(), new URLReaderSource(source, configuration), configuration, loader, er);
     }
 
 
     /**
      * Initializes the SourceUnit for a string of source.
      */
-
-    public SourceUnit(String name, String source, CompilerConfiguration configuration, ClassLoader loader) {
-        this(name, new StringReaderSource(source, configuration), configuration, loader);
+    public SourceUnit(String name, String source, CompilerConfiguration configuration, ClassLoader loader, ErrorCollector er) {
+        this(name, new StringReaderSource(source, configuration), configuration, loader, er);
     }
 
 
     /**
      * Returns the name for the SourceUnit.
      */
-
     public String getName() {
         return name;
     }
@@ -171,7 +166,6 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Returns the Concrete Syntax Tree produced during parse()ing.
      */
-
     public Reduction getCST() {
         return this.cst;
     }
@@ -181,7 +175,6 @@ public class SourceUnit extends ProcessingUnit {
      * Returns the Abstract Syntax Tree produced during parse()ing
      * and expanded during later phases.
      */
-
     public ModuleNode getAST() {
         return this.ast;
     }
@@ -191,14 +184,11 @@ public class SourceUnit extends ProcessingUnit {
      * Convenience routine, primarily for use by the InteractiveShell,
      * that returns true if parse() failed with an unexpected EOF.
      */
-
     public boolean failedWithUnexpectedEOF() {
         boolean result = false;
-
-        if (this.errors != null) {
-
+        if (getErrorCollector().hasErrors()) {
             // Classic support
-            Message last = (Message) errors.get(errors.size() - 1);
+            Message last = (Message) getErrorCollector().getLastError();
             if (last instanceof SyntaxErrorMessage) {
                 SyntaxException cause = ((SyntaxErrorMessage) last).getCause();
                 if (cause instanceof UnexpectedTokenException) {
@@ -208,7 +198,6 @@ public class SourceUnit extends ProcessingUnit {
                     }
                 }
             }
-
             // JSR support
             if (last instanceof ExceptionMessage) {
                 ExceptionMessage exceptionMessage = (ExceptionMessage) last;
@@ -223,8 +212,7 @@ public class SourceUnit extends ProcessingUnit {
                 }
             }
         }
-
-        return result;
+        return result;    
     }
 
     protected boolean isEofToken(antlr.Token token) {
@@ -241,12 +229,11 @@ public class SourceUnit extends ProcessingUnit {
      * A convenience routine to create a standalone SourceUnit on a String
      * with defaults for almost everything that is configurable.
      */
-
     public static SourceUnit create(String name, String source) {
         CompilerConfiguration configuration = new CompilerConfiguration();
         configuration.setTolerance(1);
 
-        return new SourceUnit(name, source, configuration, null);
+        return new SourceUnit(name, source, configuration, null, new ErrorCollector(configuration));
     }
 
 
@@ -254,12 +241,11 @@ public class SourceUnit extends ProcessingUnit {
      * A convenience routine to create a standalone SourceUnit on a String
      * with defaults for almost everything that is configurable.
      */
-
     public static SourceUnit create(String name, String source, int tolerance) {
         CompilerConfiguration configuration = new CompilerConfiguration();
         configuration.setTolerance(tolerance);
 
-        return new SourceUnit(name, source, configuration, null);
+        return new SourceUnit(name, source, configuration, null, new ErrorCollector(configuration));
     }
 
 
@@ -273,7 +259,6 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Parses the source to a CST.  You can retrieve it with getCST().
      */
-
     public void parse() throws CompilationFailedException {
         if (this.phase > Phases.PARSING) {
             throw new GroovyBugError("parsing is already complete");
@@ -301,7 +286,7 @@ public class SourceUnit extends ProcessingUnit {
             
         }
         catch (IOException e) {
-            addFatalError(new SimpleMessage(e.getMessage()));
+            getErrorCollector().addFatalError(new SimpleMessage(e.getMessage(),this));
         }
         finally {
             if (reader != null) {
@@ -318,7 +303,6 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Generates an AST from the CST.  You can retrieve it with getAST().
      */
-
     public void convert() throws CompilationFailedException {
         if (this.phase == Phases.PARSING && this.phaseComplete) {
             gotoPhase(Phases.CONVERSION);
@@ -338,7 +322,7 @@ public class SourceUnit extends ProcessingUnit {
             this.ast.setDescription(this.name);
         }
         catch (SyntaxException e) {
-            addError(new SyntaxErrorMessage(e));
+            getErrorCollector().addError(new SyntaxErrorMessage(e,this));
         }
 
         if ("xml".equals(System.getProperty("groovy.ast"))) {
@@ -358,67 +342,12 @@ public class SourceUnit extends ProcessingUnit {
             e.printStackTrace();
         }
     }
-
-
-
-
-    //---------------------------------------------------------------------------
-    // ERROR REPORTING
-
-
-    /**
-     * Convenience wrapper for addWarning() that won't create an object
-     * unless it is relevant.
-     */
-
-    public void addWarning(int importance, String text, CSTNode context) {
-        if (WarningMessage.isRelevant(importance, this.warningLevel)) {
-            addWarning(new WarningMessage(importance, text, context));
-        }
-    }
-
-
-    /**
-     * Convenience wrapper for addWarning() that won't create an object
-     * unless it is relevant.
-     */
-
-    public void addWarning(int importance, String text, Object data, CSTNode context) {
-        if (WarningMessage.isRelevant(importance, this.warningLevel)) {
-            addWarning(new WarningMessage(importance, text, data, context));
-        }
-    }
-
-
-    /**
-     * Convenience wrapper for addError().
-     */
-
-    public void addError(SyntaxException error) throws CompilationFailedException {
-        addError(Message.create(error), error.isFatal());
-    }
-
-
-    /**
-     * Convenience wrapper for addError().
-     */
-
-    public void addError(String text, CSTNode context) throws CompilationFailedException {
-        addError(new LocatedMessage(text, context));
-    }
-
-
-
-
-    //---------------------------------------------------------------------------
-    // SOURCE SAMPLING
-
+    //---------------------------------------------------------------------------    // SOURCE SAMPLING
 
     /**
      * Returns a sampling of the source at the specified line and column,
      * of null if it is unavailable.
      */
-
     public String getSample(int line, int column, Janitor janitor) {
         String sample = null;
         String text = source.getLine(line, janitor);
@@ -515,6 +444,14 @@ public class SourceUnit extends ProcessingUnit {
         String suffix = "\n }";
         return prefix + code + suffix;
 
+    }
+    
+    public void addException(Exception e) throws CompilationFailedException {
+        getErrorCollector().addException(e,this);
+    }
+    
+    public void addError(SyntaxException se) throws CompilationFailedException {
+        getErrorCollector().addError(se,this);
     }
 }
 

@@ -378,9 +378,9 @@ public class InteractiveShell {
             parsed = true;
         }
 
-                // We report errors other than unexpected EOF to the user.
+        // We report errors other than unexpected EOF to the user.
         catch (CompilationFailedException e) {
-            if (parser.getErrorCount() > 1 || !parser.failedWithUnexpectedEOF()) {
+            if (parser.getErrorCollector().getErrorCount() > 1 || !parser.failedWithUnexpectedEOF()) {
                 error = e;
             }
         }

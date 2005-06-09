@@ -69,19 +69,6 @@ import java.util.List;
 public abstract class ProcessingUnit {
 
     /**
-     * WarningMessages collected during processing
-     */
-    protected LinkedList warnings;
-    /**
-     * ErrorMessages collected during processing
-     */
-    protected LinkedList errors;
-    /**
-     * Set on the first fatal error
-     */
-    protected boolean fatal;
-
-    /**
      * The current phase
      */
     protected int phase;
@@ -94,37 +81,28 @@ public abstract class ProcessingUnit {
      * Configuration and other settings that control processing
      */
     protected CompilerConfiguration configuration;
-    /**
-     * Warnings will be filtered on this level
-     */
-    protected int warningLevel;
-    /**
-     * A place to send warning output
-     */
-    protected PrintWriter output;
-    /**
-     * The number of non-fatal errors to allow before fail()
-     */
-    protected int tolerance;
-
+  
     /**
      * The ClassLoader to use during processing
      */
     protected ClassLoader classLoader;
+    
+    /**
+     * a helper to share errors and report them
+     */
+    protected ErrorCollector errorCollector;
 
 
     /**
      * Initialize the ProcessingUnit to the empty state.
      */
 
-    public ProcessingUnit(CompilerConfiguration configuration, ClassLoader classLoader) {
-        this.warnings = null;
-        this.errors = null;
-        this.fatal = false;
+    public ProcessingUnit(CompilerConfiguration configuration, ClassLoader classLoader, ErrorCollector er) {
 
         this.phase = Phases.INITIALIZATION;
         this.classLoader = (classLoader == null ? new CompilerClassLoader() : classLoader);
 
+        this.errorCollector = er;
         configure((configuration == null ? new CompilerConfiguration() : configuration));
     }
 
@@ -132,12 +110,8 @@ public abstract class ProcessingUnit {
     /**
      * Reconfigures the ProcessingUnit.
      */
-
     public void configure(CompilerConfiguration configuration) {
         this.configuration = configuration;
-        this.warningLevel = configuration.getWarningLevel();
-        this.output = configuration.getOutput();
-        this.tolerance = configuration.getTolerance();
     }
 
 
@@ -184,195 +158,12 @@ public abstract class ProcessingUnit {
         return Phases.getDescription(this.phase);
     }
 
-
-    /**
-     * Returns the list of warnings, or null if there are none.
-     */
-
-    public List getWarnings() {
-        return this.warnings;
-    }
-
-
-    /**
-     * Returns the list of errors, or null if there are none.
-     */
-
-    public List getErrors() {
-        return this.errors;
-    }
-
-
-    /**
-     * Returns the number of warnings.
-     */
-
-    public int getWarningCount() {
-        return ((this.warnings == null) ? 0 : this.warnings.size());
-    }
-
-
-    /**
-     * Returns the number of errors.
-     */
-
-    public int getErrorCount() {
-        return ((this.errors == null) ? 0 : this.errors.size());
-    }
-
-
-    /**
-     * Returns the specified warning message, or null.
-     */
-
-    public WarningMessage getWarning(int index) {
-        if (index < getWarningCount()) {
-            return (WarningMessage) this.warnings.get(index);
-        }
-
-        return null;
-    }
-
-
-    /**
-     * Returns the specified error message, or null.
-     */
-
-    public Message getError(int index) {
-        if (index < getErrorCount()) {
-            return (Message) this.errors.get(index);
-        }
-
-        return null;
-    }
-
-
-    /**
-     * Convenience routine to return the specified error's
-     * underlying SyntaxException, or null if it isn't one.
-     */
-
-    public SyntaxException getSyntaxError(int index) {
-        SyntaxException exception = null;
-
-        Message message = getError(index);
-        if (message != null && message instanceof SyntaxErrorMessage) {
-            exception = ((SyntaxErrorMessage) message).getCause();
-        }
-
-        return exception;
-    }
-
-
-    /**
-     * Convenience routine to return the specified error's
-     * underlying Exception, or null if it isn't one.
-     */
-
-    public Exception getException(int index) {
-        Exception exception = null;
-
-        Message message = getError(index);
-        if (message != null) {
-            if (message instanceof ExceptionMessage) {
-                exception = ((ExceptionMessage) message).getCause();
-            }
-            else if (message instanceof SyntaxErrorMessage) {
-                exception = ((SyntaxErrorMessage) message).getCause();
-            }
-        }
-
-        return exception;
-    }
-
-
-
-
-    //---------------------------------------------------------------------------
-    // MESSAGES
-
-
-    /**
-     * Adds a WarningMessage to the message set.
-     */
-
-    public void addWarning(WarningMessage message) {
-        if (message.isRelevant(this.warningLevel)) {
-            if (this.warnings == null) {
-                this.warnings = new LinkedList();
-            }
-
-            this.warnings.add(message);
-        }
-    }
-
-
-    /**
-     * Adds a non-fatal error to the message set.
-     */
-    public void addError(Message message) throws CompilationFailedException {
-        addErrorAndContinue(message);
-
-        if (this.errors.size() >= this.tolerance) {
-            fail();
-        }
-    }
-
-
-    /**
-     * Adds a non-fatal error to the message set.
-     */
-    public void addErrorAndContinue(Message message) {
-        if (this.errors == null) {
-            this.errors = new LinkedList();
-        }
-
-        this.errors.add(message);
+    public ErrorCollector getErrorCollector() {
+        return errorCollector;
     }
     
-    /**
-     * Adds an optionally-fatal error to the message set.  Throws
-     * the unit as a PhaseFailedException, if the error is fatal.
-     */
-
-    public void addError(Message message, boolean fatal) throws CompilationFailedException {
-        if (fatal) {
-            addFatalError(message);
-        }
-        else {
-            addError(message);
-        }
-    }
-
-
-    /**
-     * Adds a fatal exception to the message set and throws
-     * the unit as a PhaseFailedException.
-     */
-
-    public void addFatalError(Message message) throws CompilationFailedException {
-        addError(message);
-        fail();
-    }
-
-
-    public void addException(Exception cause) throws CompilationFailedException {
-        addError(new ExceptionMessage(cause));
-        fail();
-    }
-
-
     //---------------------------------------------------------------------------
     // PROCESSING
-
-
-    /**
-     * Returns true if there are any errors pending.
-     */
-
-    public boolean hasErrors() {
-        return this.errors != null;
-    }
 
 
     /**
@@ -380,43 +171,15 @@ public abstract class ProcessingUnit {
      * errors.
      */
 
-    public void completePhase() throws CompilationFailedException {
-        //
-        // First up, display and clear any pending warnings.
-
-        if (this.warnings != null) {
-            Janitor janitor = new Janitor();
-
-            try {
-                Iterator iterator = this.warnings.iterator();
-                while (iterator.hasNext()) {
-                    WarningMessage warning = (WarningMessage) iterator.next();
-                    warning.write(output, this, janitor);
-                }
-
-                this.warnings = null;
-            }
-            finally {
-                janitor.cleanup();
-            }
-        }
-
-        //
-        // Then either fail() or update the phase and return
-
-        if (this.hasErrors()) {
-            fail();
-        }
-        else {
-            phaseComplete = true;
-        }
+    public void completePhase() throws CompilationFailedException {       
+        errorCollector.failIfErrors();
+        phaseComplete = true;
     }
 
 
     /**
      * A synonym for <code>gotoPhase( phase + 1 )</code>.
      */
-
     public void nextPhase() throws CompilationFailedException {
         gotoPhase(this.phase + 1);
     }
@@ -426,7 +189,6 @@ public abstract class ProcessingUnit {
      * Wraps up any pending operations for the current phase
      * and switches to the next phase.
      */
-
     public void gotoPhase(int phase) throws CompilationFailedException {
         if (!this.phaseComplete) {
             completePhase();
@@ -435,82 +197,6 @@ public abstract class ProcessingUnit {
         this.phase = phase;
         this.phaseComplete = false;
     }
-
-
-    /**
-     * Causes the current phase to fail by throwing a
-     * CompilationFailedException.
-     */
-
-    protected void fail() throws CompilationFailedException {
-        // lets find the first error exception
-        Throwable firstException = null;
-        if (errors==null) return;
-        for (Iterator iter = errors.iterator(); iter.hasNext();) {
-            Message message = (Message) iter.next();
-            if (message instanceof ExceptionMessage) {
-                ExceptionMessage exceptionMessage = (ExceptionMessage) message;
-                firstException = exceptionMessage.getCause();
-                if (firstException != null) {
-                    break;
-                }
-            }
-            if (message instanceof SyntaxErrorMessage) {
-                SyntaxErrorMessage exceptionMessage = (SyntaxErrorMessage) message;
-                firstException = exceptionMessage.getCause();
-                if (firstException != null) {
-                    break;
-                }
-            }
-        }
-
-        if (firstException != null) {
-            throw new CompilationFailedException(phase, this, firstException);
-        }
-        else {
-            throw new CompilationFailedException(phase, this);
-        }
-    }
-
-
-
-
-    //---------------------------------------------------------------------------
-    // OUTPUT
-
-
-    /**
-     * Writes error messages to the specified PrintWriter.
-     */
-
-    public void write(PrintWriter writer, Janitor janitor) {
-        if (this.warnings != null) {
-            Iterator iterator = this.warnings.iterator();
-            while (iterator.hasNext()) {
-                WarningMessage warning = (WarningMessage) iterator.next();
-                warning.write(writer, this, janitor);
-            }
-            writer.println();
-            writer.print(warnings.size());
-            writer.println(" Warnings");
-            
-            //this.warnings = null;
-        }
-
-        if (this.errors != null) {
-            Iterator iterator = this.errors.iterator();
-            while (iterator.hasNext()) {
-                Message message = (Message) iterator.next();
-                message.write(writer, this, janitor);
-            }
-            writer.println();
-            writer.print(errors.size());
-            writer.println(" Errors");
-            //why? this nukes the errors once a getString call is made
-            //this.errors = null;
-        }
-    }
-
 
 }
 

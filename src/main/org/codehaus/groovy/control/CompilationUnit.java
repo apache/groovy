@@ -157,7 +157,7 @@ public class CompilationUnit extends ProcessingUnit {
      * security stuff and a class loader for loading classes.
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, ClassLoader loader) {
-        super(configuration, loader);
+        super(configuration, loader, new ErrorCollector(configuration));
 
 
         this.names = new ArrayList();
@@ -299,7 +299,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Adds a source file to the unit.
      */
     public SourceUnit addSource(File file) {
-        return addSource(new SourceUnit(file, configuration, classLoader));
+        return addSource(new SourceUnit(file, configuration, classLoader, getErrorCollector()));
     }
 
 
@@ -307,7 +307,7 @@ public class CompilationUnit extends ProcessingUnit {
      * Adds a source file to the unit.
      */
     public SourceUnit addSource(URL url) {
-        return addSource(new SourceUnit(url, configuration, classLoader));
+        return addSource(new SourceUnit(url, configuration, classLoader,getErrorCollector()));
     }
 
 
@@ -316,7 +316,7 @@ public class CompilationUnit extends ProcessingUnit {
      */
     public SourceUnit addSource(String name, InputStream stream) {
         ReaderSource source = new InputStreamReaderSource(stream, configuration);
-        return addSource(new SourceUnit(name, source, configuration, classLoader));
+        return addSource(new SourceUnit(name, source, configuration, classLoader, getErrorCollector()));
     }
 
 
@@ -589,7 +589,10 @@ public class CompilationUnit extends ProcessingUnit {
                 verifier.visitClass(classNode);
             } catch (GroovyRuntimeException rpe) {
                 ASTNode node = rpe.getNode();
-                source.addError(new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()));
+                getErrorCollector().addError(
+                        new SyntaxException(rpe.getMessage(),null,node.getLineNumber(),node.getColumnNumber()),
+                        source
+                );
             }          
             
             //
@@ -598,7 +601,7 @@ public class CompilationUnit extends ProcessingUnit {
             if ((!classNode.isSynthetic()) && ("true".equals(System.getProperty("groovy.jsr.check")))) {
                 JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(null ,source);
                 scopeVisitor.visitClass(classNode);
-                source.fail();
+                source.getErrorCollector().failIfErrors();
             }  
 
             //
@@ -629,16 +632,7 @@ public class CompilationUnit extends ProcessingUnit {
 
 
             if (CompilationUnit.this.classgenCallback != null) {
-                if (debug) {
-                    try {
-                        classgenCallback.call(visitor, classNode);
-                    } catch (Throwable t) {
-                        output.println("Classgen callback threw: " + t);
-                        t.printStackTrace(output);
-                    }
-                } else {
-                    classgenCallback.call(visitor, classNode);
-                }
+                classgenCallback.call(visitor, classNode);
             }
 
 
@@ -714,7 +708,7 @@ public class CompilationUnit extends ProcessingUnit {
                 stream = new FileOutputStream(path);
                 stream.write(bytes, 0, bytes.length);
             } catch (IOException e) {
-                addError(Message.create(e.getMessage()));
+                getErrorCollector().addError(Message.create(e.getMessage(),this));
                 failures = true;
             } finally {
                 if (stream != null) {
@@ -727,9 +721,7 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
 
-        if (failures) {
-            fail();
-        }
+        getErrorCollector().failIfErrors();
 
 
         completePhase();
@@ -744,30 +736,6 @@ public class CompilationUnit extends ProcessingUnit {
             CompilationUnit.this.progressCallback.call(this, this.phase);
         }
     }
-
-
-    /**
-     * Returns true if there are any errors pending.
-     */
-    public boolean hasErrors() {
-        boolean hasErrors = false;
-
-
-        Iterator keys = names.iterator();
-        while (keys.hasNext()) {
-            String name = (String) keys.next();
-            SourceUnit source = (SourceUnit) sources.get(name);
-
-
-            if (source.hasErrors()) {
-                hasErrors = true;
-                break;
-            }
-        }
-        return hasErrors || super.hasErrors();
-    }
-
-
 
     //---------------------------------------------------------------------------
     // PHASE HANDLING
@@ -841,14 +809,9 @@ public class CompilationUnit extends ProcessingUnit {
         }
 
 
-        if (failures) {
-            fail();
-        }
+        getErrorCollector().failIfErrors();
     }
-
-
-
-
+    
 
     //---------------------------------------------------------------------------
     // LOOP SIMPLIFICATION FOR PRIMARY ClassNode OPERATIONS
@@ -888,8 +851,7 @@ public class CompilationUnit extends ProcessingUnit {
                     }
                 }
             } catch (CompilationFailedException e) {
-                failures = true;
-                addError(new ExceptionMessage(e));
+                // fall thorugh, getErrorREporter().failIfErrors() will triger
             } catch (Exception e) {
                 failures = true;
 //                String msg = e.getMessage();
@@ -898,13 +860,11 @@ public class CompilationUnit extends ProcessingUnit {
 //                    ASTNode node = rpe.getNode();
 //                    msg += ". The probable error location: [" + node.getLineNumber() + ":" + node.getColumnNumber() + "]";
 //                }
-                addError(new ExceptionMessage(e));
+                getErrorCollector().addError(new ExceptionMessage(e,configuration.getDebug(),this));
             }
         }
 
-        if (failures) {
-            fail();
-        }
+        getErrorCollector().failIfErrors();
     }
 
 
@@ -915,8 +875,8 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Writes error messages to the specified PrintWriter.
      */
-    public void write(PrintWriter writer, Janitor janitor) {
-        //super.write(writer, janitor);
+    /*public void write(PrintWriter writer, Janitor janitor) {
+        super.write(writer, janitor);
 
         Iterator keys = names.iterator();
         while (keys.hasNext()) {
@@ -927,7 +887,7 @@ public class CompilationUnit extends ProcessingUnit {
                 source.write(writer, janitor);
             }
         }
-    }
+    }*/
 
 
 }

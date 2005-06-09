@@ -5,6 +5,7 @@ import org.codehaus.groovy.control.ProcessingUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.SyntaxException;
 
+import java.io.PrintStream;
 import java.io.PrintWriter;
 
 
@@ -17,9 +18,11 @@ import java.io.PrintWriter;
 
 public class SyntaxErrorMessage extends Message {
     protected SyntaxException cause = null;
-
-    public SyntaxErrorMessage(SyntaxException cause) {
+    protected SourceUnit source;
+    
+    public SyntaxErrorMessage(SyntaxException cause, SourceUnit source) {
         this.cause = cause;
+        this.source = source;
     }
 
 
@@ -36,9 +39,7 @@ public class SyntaxErrorMessage extends Message {
      * Writes out a nicely formatted summary of the syntax error.
      */
 
-    public void write(PrintWriter output, ProcessingUnit context, Janitor janitor) {
-        SourceUnit source = (SourceUnit) context;   // This is reliably true
-
+    public void write(PrintWriter output, Janitor janitor) {
         String name = source.getName();
         int line = getCause().getStartLine();
         int column = getCause().getStartColumn();
@@ -47,7 +48,8 @@ public class SyntaxErrorMessage extends Message {
         output.print(name + ": " + line + ": " + getCause().getMessage());
         if (sample != null) {
             output.println();
-            output.print(source.getSample(line, column, janitor));
+            output.print(sample);
+            output.println();
         }
     }
 

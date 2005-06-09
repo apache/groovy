@@ -21,24 +21,23 @@ public class LocatedMessage extends SimpleMessage
 {
     protected CSTNode context;  // The CSTNode that indicates the location to which the message applies
     
-    
-    public LocatedMessage( String message, CSTNode context ) 
+    public LocatedMessage( String message, CSTNode context, SourceUnit source ) 
     {
-        super( message );
+        super( message, source );
         this.context = context;
     }
     
     
-    public LocatedMessage( String message, Object data, CSTNode context ) 
+    public LocatedMessage( String message, Object data, CSTNode context, SourceUnit source ) 
     {
-        super( message, data );
+        super( message, data, source );
         this.context = context;
     }
     
     
-    public void write( PrintWriter writer, ProcessingUnit owner, Janitor janitor )
+    public void write( PrintWriter writer, Janitor janitor )
     {
-        SourceUnit source = (SourceUnit)owner;   // This is reliably true
+        SourceUnit source = (SourceUnit) owner;
         
         String name   = source.getName();
         int    line   = context.getStartLine();
