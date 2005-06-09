@@ -65,7 +65,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class GroovyTestCase extends TestCase {
 
-    protected Logger log = Logger.getLogger(getClass().getName());
     private static int counter;
     private boolean useAgileDoxNaming = false;
 
@@ -246,7 +245,6 @@ public class GroovyTestCase extends TestCase {
         }
         catch (Exception e) {
             failed = true;
-            System.out.println("Worked: caught expected exception: " + e);
         }
         assertTrue("Closure " + code + " should have failed", failed);
     }
@@ -266,7 +264,6 @@ public class GroovyTestCase extends TestCase {
         catch (Exception e) {
             if (clazz.isInstance(e)) {
                 failed = true;
-                System.out.println("Worked: caught expected exception: " + e);
             }
             assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + e, failed);
             return;
