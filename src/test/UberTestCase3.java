@@ -30,7 +30,6 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.classgen.VerifierCodeVisitorTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.DefaultGroovyMethodsTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InheritedInterfaceMethodTest.class);
-        suite.addTestSuite(org.codehaus.groovy.runtime.InvokeConstructorTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokeGroovyMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokeMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokerTest.class);
