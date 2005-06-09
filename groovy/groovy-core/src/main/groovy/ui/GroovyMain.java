@@ -192,6 +192,7 @@ public class GroovyMain {
 
         main.isScriptFile = !line.hasOption('e');
         main.debug = line.hasOption('d');
+        main.conf.setDebug(main.debug);
         main.processFiles = line.hasOption('p') || line.hasOption('n');
         main.autoOutput = line.hasOption('p');
         main.editFiles = line.hasOption('i');
@@ -235,7 +236,7 @@ public class GroovyMain {
             }
             return true;
         } catch (CompilationFailedException e) {
-            new ErrorReporter( e, debug ).write( System.err );
+            System.err.println(e);
             return false;
         } catch (Throwable e) {
             if (e instanceof InvokerInvocationException) {

@@ -64,7 +64,6 @@ public class CompilationFailedException extends GroovyException {
     protected int phase;   // The phase in which the failures occurred
     protected ProcessingUnit unit;    // The *Unit object this exception wraps
 
-
     public CompilationFailedException(int phase, ProcessingUnit unit, Throwable cause) {
         super(Phases.getDescription(phase) + " failed", cause);
         this.phase = phase;
@@ -83,20 +82,20 @@ public class CompilationFailedException extends GroovyException {
      * Formats the error data as a String.
      */
 
-    public String toString() {
+    /*public String toString() {
         StringWriter data = new StringWriter();
         PrintWriter writer = new PrintWriter(data);
         Janitor janitor = new Janitor();
 
         try {
-            unit.write(writer, janitor);
+            unit.getErrorReporter().write(writer, janitor);
         }
         finally {
             janitor.cleanup();
         }
 
         return data.toString();
-    }
+    }*/
 
 
     /**

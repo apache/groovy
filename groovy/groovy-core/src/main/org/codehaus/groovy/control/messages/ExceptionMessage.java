@@ -17,14 +17,16 @@ import org.codehaus.groovy.control.ProcessingUnit;
 
 public class ExceptionMessage extends Message
 {
-    protected static final boolean verbose = true;
+    protected boolean verbose = true;
 
     private Exception cause = null;   // The exception source of the message, if any
-    
+    ProcessingUnit owner = null;
 
-    public ExceptionMessage( Exception cause )
+    public ExceptionMessage( Exception cause, boolean v, ProcessingUnit owner )
     {
+        this.verbose = v;
         this.cause = cause;
+        this.owner = owner;
     }
     
     
@@ -44,9 +46,9 @@ public class ExceptionMessage extends Message
     *  Writes out a nicely formatted summary of the exception. 
     */
     
-    public void write( PrintWriter output, ProcessingUnit context, Janitor janitor )
+    public void write( PrintWriter output, Janitor janitor )
     {
-        String description = "General error during " + context.getPhaseDescription() + ": "; 
+        String description = "General error during " + owner.getPhaseDescription() + ": "; 
         
         String message = cause.getMessage();
         if( message != null )
@@ -63,7 +65,6 @@ public class ExceptionMessage extends Message
             cause.printStackTrace(output);
         }
     }
-    
     
 }
 

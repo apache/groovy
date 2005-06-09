@@ -266,8 +266,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     private void addError(String msg, ASTNode expr) {
         int line = expr.getLineNumber();
         int col = expr.getColumnNumber();
-        source.addErrorAndContinue(
-          new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col))
+        source.getErrorCollector().addErrorAndContinue(
+          new SyntaxErrorMessage(new SyntaxException(msg + '\n', line, col), source)
         );
     }
 

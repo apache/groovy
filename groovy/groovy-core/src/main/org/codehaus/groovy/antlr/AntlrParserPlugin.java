@@ -19,6 +19,7 @@ package org.codehaus.groovy.antlr;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
+import antlr.TokenStreamRecognitionException;
 import antlr.collections.AST;
 import com.thoughtworks.xstream.XStream;
 
@@ -78,6 +79,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         // start parsing at the compilationUnit rule
         try {
             parser.compilationUnit();
+        }
+        catch (TokenStreamRecognitionException tsre) {
+            RecognitionException e = tsre.recog;
+            SyntaxException se = new SyntaxException(e.getMessage(),e,e.getLine(),e.getColumn());
+            se.setFatal(true);
+            sourceUnit.addError(se);
         }
         catch (RecognitionException e) {
             SyntaxException se = new SyntaxException(e.getMessage(),e,e.getLine(),e.getColumn());

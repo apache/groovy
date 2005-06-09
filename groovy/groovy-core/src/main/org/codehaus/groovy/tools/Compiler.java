@@ -138,7 +138,7 @@ public class Compiler
     public void compile( String name, String code ) throws CompilationFailedException
     {
         CompilationUnit unit = new CompilationUnit( configuration );
-        unit.addSource( new SourceUnit(name, code, configuration, unit.getClassLoader()) );
+        unit.addSource( new SourceUnit(name, code, configuration, unit.getClassLoader(), unit.getErrorCollector()) );
         unit.compile();
     }
 
