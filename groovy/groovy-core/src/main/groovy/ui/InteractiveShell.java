@@ -50,6 +50,7 @@ import groovy.lang.GroovyShell;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.sandbox.ui.Prompt;
 import org.codehaus.groovy.sandbox.ui.PromptFactory;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -153,16 +154,22 @@ public class InteractiveShell {
                 // We have a command that parses, so evaluate it.
                 try {
                     shell.evaluate(command, "CommandLine.groovy");
-                }
-                catch (Exception e) {
-                    // TODO: figure out what value ErrorReporter adds here and below
-                    // and how to use it more effectively if so. It seems either
-                    // err.println and printStackTrace() should be used, or 
-                    // ErrorReporter should, but not both.
-                    new ErrorReporter(e, false).write(err);
-                }
-                catch (Throwable e) {
-                    new ErrorReporter(e, false).write(err);
+                } catch (CompilationFailedException e) {
+                    err.println(e);
+                } catch (Throwable e) {
+                    if (e instanceof InvokerInvocationException) {
+                        InvokerInvocationException iie = (InvokerInvocationException) e;
+                        e = iie.getCause();
+                    }
+                    err.println("Caught: " + e);
+                    StackTraceElement[] stackTrace = e.getStackTrace();
+                    for (int i = 0; i < stackTrace.length; i++) {
+                        StackTraceElement element = stackTrace[i];
+                        String fileName = element.getFileName();
+                        if (fileName==null || (!fileName.endsWith(".java"))) {
+                            err.println("\tat " + element);
+                        }
+                    }
                 }
             }
         }
