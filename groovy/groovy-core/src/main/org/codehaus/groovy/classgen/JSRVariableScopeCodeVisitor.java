@@ -159,17 +159,24 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     
     private static class VarScope {
         boolean isClass=true;
+        boolean isInStaticContext = false;
+        
         VarScope parent;
         HashMap declares = new HashMap();
         HashMap visibles = new HashMap();
         
-        public VarScope(boolean isClass, VarScope parent) {
+        public VarScope(boolean isClass, VarScope parent, boolean staticContext) {
             this.isClass=isClass;
             this.parent = parent;
+            isInStaticContext = staticContext;
+        }
+        
+        public VarScope(VarScope parent, boolean staticContext) {
+            this(false,parent,staticContext);
         }
         
         public VarScope(VarScope parent) {
-            this(false,parent);
+            this(false,parent,parent!=null?parent.isInStaticContext:false);
         }
     }
     
@@ -198,7 +205,6 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     private VarScope currentScope = null;
     private CompileUnit unit;
     private SourceUnit source; 
-    private boolean dynamicContext=true;
     private boolean scriptMode=false;
     private ClassNode currentClass=null;
     
@@ -355,9 +361,9 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
     
     private void checkVariableContextAccess(Var v, Expression expr) {
-        if (v.isStatic || dynamicContext) return;        
+        if (v.isStatic || !currentScope.isInStaticContext) return;        
         String accessContext = "dynamic";
-        if (!dynamicContext) accessContext = "static";        
+        if (currentScope.isInStaticContext) accessContext = "static";        
         String varContext = "dynamic";
         if (v.isStatic) varContext = "static";
         
@@ -415,7 +421,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
     public void visitClosureExpression(ClosureExpression expression) {
         VarScope scope = currentScope;
-        currentScope = new VarScope(!jroseRule,currentScope);
+        currentScope = new VarScope(!jroseRule,currentScope,scope.isInStaticContext);
     
         // TODO: set scope
         // expression.setVarScope(currentScope);
@@ -445,7 +451,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
     public void visitClass(ClassNode node) {
         VarScope scope = currentScope;
-        currentScope = new VarScope(true,currentScope);
+        currentScope = new VarScope(true,currentScope,false);
         boolean scriptModeBackup = scriptMode;
         scriptMode = node.isScript();
         ClassNode classBackup = currentClass;
@@ -645,7 +651,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         checkAbstractDeclaration(node);
         
         VarScope scope = currentScope;
-        currentScope = new VarScope(currentScope);
+        currentScope = new VarScope(currentScope,node.isStatic());
         
         // TODO: set scope
         // node.setVarScope(currentScope);
@@ -656,13 +662,10 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             declares.put(parameters[i].getName(),new Var(parameters[i],node.isStatic()));
         }
 
-        boolean oldContext = dynamicContext;
-        dynamicContext = !node.isStatic();
         currentScope = new VarScope(currentScope);
         Statement code = node.getCode();
         if (code!=null) code.visit(this);
         currentScope = scope;
-        dynamicContext = oldContext;
     }
 
     public void visitField(FieldNode node) {
