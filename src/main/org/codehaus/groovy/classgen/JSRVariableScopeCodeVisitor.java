@@ -37,7 +37,6 @@ package org.codehaus.groovy.classgen;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -450,7 +449,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                 for (Iterator iter = methods.iterator(); iter.hasNext();) {
                     MethodNode m = (MethodNode) iter.next();
                     Parameter[] np = m.getParameters();
-                    if (hasEqualParameterTypes(parameters,np)) continue;
+                    if (!hasEqualParameterTypes(parameters,np)) continue;
                     if (!Modifier.isFinal(m.getModifiers())) return;
                     
                     StringBuffer msg = new StringBuffer();
