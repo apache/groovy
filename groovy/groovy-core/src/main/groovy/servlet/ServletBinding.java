@@ -58,19 +58,23 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet-specific binding extesion to lazy load the writer or the output
+ * Servlet-specific binding extension to lazy load the writer or the output
  * stream from the response.
  * 
+ * <p>
+ * <h3>Default variables bound</h3>
  * <ul>
- * <li><tt>"request"</tt> : HttpServletRequest </li>
- * <li><tt>"response"</tt> : HttpServletResponse </li>
- * <li><tt>"context"</tt> : ServletContext </li>
- * <li><tt>"application"</tt> : ServletContext </li>
- * <li><tt>"session"</tt> : request.getSession(true) </li>
- * <li><tt>"param"</tt> : form parameter(s) map </li>
- * <li><tt>"header"</tt> : header map </li>
+ * <li><tt>"request"</tt> : the HttpServletRequest object</li>
+ * <li><tt>"response"</tt> : the HttpServletResponse object</li>
+ * <li><tt>"context"</tt> : the ServletContext object </li>
+ * <li><tt>"application"</tt> : same as context</li>
+ * <li><tt>"session"</tt> : convenient for <code>request.getSession(<b>false</b>)</code> - can be null!</li>
+ * <li><tt>"params"</tt> : map of all form parameters - can be empty</li>
+ * <li><tt>"headers"</tt> : map of all <b>request</b> header fields</li>
  * </ul>
  * 
+ * <p>
+ * <h3>Implicite bound variables</h3>
  * <ul>
  * <li><tt>"out"</tt> : response.getWriter() </li>
  * <li><tt>"sout"</tt> : response.getOutputStream() </li>
@@ -133,7 +137,7 @@ public class ServletBinding extends Binding {
                 }
             }
         }
-        binding.setVariable("param", params);
+        binding.setVariable("params", params);
 
         /*
          * Bind request header key-value hash map.
@@ -144,7 +148,7 @@ public class ServletBinding extends Binding {
             String headerValue = request.getHeader(headerName);
             headers.put(headerName, headerValue);
         }
-        binding.setVariable("header", headers);
+        binding.setVariable("headers", headers);
     }
 
     public void setVariable(String name, Object value) {
@@ -170,7 +174,7 @@ public class ServletBinding extends Binding {
             throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
         }
         /*
-         * Check default key names. See constructor(s).
+         * TODO Check default key names. See constructor(s).
          */
         
         /*
