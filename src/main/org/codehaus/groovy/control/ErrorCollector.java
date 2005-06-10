@@ -313,7 +313,6 @@ public class ErrorCollector {
     /**
      * Writes error messages to the specified PrintWriter.
      */
-
     public void write(PrintWriter writer, Janitor janitor) {
         if (this.warnings != null) {
             Iterator iterator = this.warnings.iterator();
@@ -324,7 +323,9 @@ public class ErrorCollector {
 
             writer.println();
             writer.print(warnings.size());
-            writer.println(" Warnings");
+            writer.print(" Warning");
+            if (warnings.size()>1) warnings.print("s");
+            writer.println();
             
             this.warnings = null;
         }
@@ -344,7 +345,9 @@ public class ErrorCollector {
 
             writer.println();
             writer.print(errors.size());
-            writer.println(" Errors");
+            writer.print(" Error");
+            if (errors.size()>1) writer.print("s");
+            writer.println();
         }
     }
 
