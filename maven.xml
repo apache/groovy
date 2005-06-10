@@ -514,6 +514,17 @@
   <preGoal name="jar:jar">
      <attainGoal name="groovy:compile"/>
   </preGoal>
+	
+  <goal name="war:notests">
+   <j:set var="maven.test.skip" value="true"/>
+   <echo>Rebuilding groovlet-examples.war without running the unit test cases</echo>
+   <attainGoal name="war"/>
+  </goal>	
+	
+  <postGoal name="war:webapp">
+  	<echo>Replacing class folder with Groovy.jar...</echo>
+  	<copy file="${maven.build.dir}/${maven.final.name}.jar" toDir="${maven.war.build.dir}/WEB-INF/lib"/>
+  </postGoal>
     
   <goal name="groovy:make-install" prereqs="jar:jar">
     <echo>${groovy.install.staging.dest}</echo>

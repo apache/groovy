@@ -425,12 +425,18 @@
       <groupId>antlr</groupId>
       <artifactId>antlr</artifactId>
       <version>2.7.5</version>
+      <properties>
+         <war.bundle>true</war.bundle>
+      </properties>      
     </dependency>    
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>2.0</version>
       <url>http://asm.objectweb.org/</url>
+      <properties>
+         <war.bundle>true</war.bundle>
+      </properties>      
     </dependency>
 
     <!-- dependencies used by optional features -->
