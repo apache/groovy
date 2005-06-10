@@ -83,7 +83,7 @@ public class SecurityTestSupport extends GroovyTestCase {
 		    printFailures(result);
 		    printFooter(result);
 		}
-	};
+	}
 
     protected GroovyClassLoader loader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
 		public Object run() {

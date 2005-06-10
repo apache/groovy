@@ -47,7 +47,6 @@
 package groovy.bugs;
 
 import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.syntax.RuntimeParserException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

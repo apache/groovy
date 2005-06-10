@@ -3,10 +3,6 @@ package org.codehaus.groovy.syntax;
 
 import groovy.util.GroovyTestCase;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
-
 public class TokenTest
     extends GroovyTestCase
 {
