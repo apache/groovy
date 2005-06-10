@@ -8,9 +8,10 @@
  */
 class GroovyClosureMethodsTest extends GroovyTestCase {
 
-    private String dirname = "src/test/groovy"
+    private String dirname_target = "target"
+    private String dirname_source = "src/test/groovy"
 
-    private String filename = "${dirname}/eachObject"
+    private String filename = "${dirname_target}/GroovyClosureMethodsTest.each.object"
 
     void testEachObjectMany() {
         def file = new File(filename)
@@ -85,7 +86,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testEachDir() {
-        def dir = new File(dirname)
+        def dir = new File(dirname_source)
 
         println("Directories in: " + dir)
         int c = 0
@@ -98,7 +99,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testEachFileMatch() {
-        def file = new File(dirname)
+        def file = new File(dirname_source)
 
         print "Files with the text Groovy: "
         file.eachFileMatch(~"^Groovy.*") {
