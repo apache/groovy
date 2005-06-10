@@ -50,7 +50,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
 
 /**

@@ -20,7 +20,6 @@ package org.codehaus.groovy.antlr;
 import org.codehaus.groovy.control.ParserPlugin;
 import org.codehaus.groovy.control.ParserPluginFactory;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import groovy.lang.MetaClass;
 
 /**
  * @version $Revision$

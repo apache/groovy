@@ -58,7 +58,6 @@ import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
-import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.management.MBeanServerConnection;
 

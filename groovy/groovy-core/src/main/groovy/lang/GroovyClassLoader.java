@@ -80,10 +80,10 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     private class PARSING {
-    };
+    }
 
     private class NOT_RESOLVED {
-    };
+    }
 
     private CompilerConfiguration config;
 

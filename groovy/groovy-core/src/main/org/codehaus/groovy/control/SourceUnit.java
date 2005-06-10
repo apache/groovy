@@ -46,6 +46,13 @@
 
 package org.codehaus.groovy.control;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Reader;
+import java.net.URL;
+import java.util.List;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
@@ -57,33 +64,21 @@ import org.codehaus.groovy.control.io.FileReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
 import org.codehaus.groovy.control.io.StringReaderSource;
 import org.codehaus.groovy.control.io.URLReaderSource;
-import org.codehaus.groovy.control.messages.LocatedMessage;
+import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
-import org.codehaus.groovy.control.messages.WarningMessage;
-import org.codehaus.groovy.control.messages.ExceptionMessage;
-import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.syntax.Reduction;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.UnexpectedTokenException;
-import org.codehaus.groovy.syntax.UnexpectedTokenException;
-import org.codehaus.groovy.syntax.CSTNode;
 import org.codehaus.groovy.tools.Utilities;
 
-import com.thoughtworks.xstream.XStream;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.FileWriter;
-import java.net.URL;
-import java.util.List;
-
-import antlr.NoViableAltException;import antlr.TokenStreamException;
 import antlr.MismatchedTokenException;
+import antlr.NoViableAltException;
+
+import com.thoughtworks.xstream.XStream;
 
 
 /**

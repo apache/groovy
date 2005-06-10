@@ -46,18 +46,31 @@
 
 package org.codehaus.groovy.ant;
 
-import org.apache.tools.ant.types.*;
-import java.io.*;
-import java.util.*;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Field;
-
-import org.apache.tools.ant.*;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 import groovy.util.AntBuilder;
+
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.Reference;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Executes a series of Groovy statements.
