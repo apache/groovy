@@ -37,6 +37,7 @@ package org.codehaus.groovy.classgen;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -337,6 +338,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         }
         // declare the variable even if there was an error to allow more checks
         currentScope.declares.put(var.name,var);
+        var.isInStaticContext = currentScope.isInStaticContext;
     }
 
     /*
@@ -376,6 +378,101 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         addError("Can't have an abstract method in a non abstract class." +
                  " The class '" + currentClass.getName() +  "' must be declared abstract or the method '" +
                  methodNode.getName() + "' must not be abstract.",methodNode);
+    }
+    
+    private String getTypeName(String name) {
+        if (!name.endsWith("[]")) return name;
+        
+        String prefix = "";
+        while (name.endsWith("[]")) {
+            name = name.substring(0,name.length()-2);
+            prefix = "[";
+        }
+        
+        if (name.equals("int")) {
+            return prefix + "I";
+        }
+        else if (name.equals("long")) {
+            return prefix + "J";
+        }
+        else if (name.equals("short")) {
+            return prefix + "S";
+        }
+        else if (name.equals("float")) {
+            return prefix + "F";
+        }
+        else if (name.equals("double")) {
+            return prefix + "D";
+        }
+        else if (name.equals("byte")) {
+            return prefix + "B";
+        }
+        else if (name.equals("char")) {
+            return prefix + "C";
+        }
+        else if (name.equals("boolean")) {
+            return prefix + "Z";
+        }
+        
+        throw new AssertionError(false);
+    }
+    
+    private boolean hasEqualParameterTypes(Parameter[] first, Parameter[] second) {
+        if (first.length!=second.length) return false;
+        for (int i=0; i<first.length; i++) {
+            String ft = getTypeName(first[i].getType());
+            String st = getTypeName(second[i].getType());
+            if (ft.equals(st)) continue;
+            return false;
+        }        
+        return true; 
+    }
+    
+    private void checkClassForOverwritingFinal(ClassNode cn) {
+        ClassNode superCN = cn.getSuperClassNode();
+        if (superCN==null) return;
+        if (!Modifier.isFinal(superCN.getModifiers())) return;
+        StringBuffer msg = new StringBuffer();
+        msg.append("you are not allowed to overwrite the final class ");
+        msg.append(superCN.getName());
+        msg.append(".");
+        addError(msg.toString(),cn);
+        
+    }
+    
+    private void checkMethodsForOverwritingFinal(ClassNode cn) {
+        List l = cn.getMethods();     
+        for (Iterator cnIter = l.iterator(); cnIter.hasNext();) {
+            MethodNode method =(MethodNode) cnIter.next();
+            Parameter[] parameters = method.getParameters();
+            for (ClassNode superCN = cn.getSuperClassNode(); superCN!=null; superCN=superCN.getSuperClassNode()){
+                List methods = superCN.getMethods(method.getName());
+                for (Iterator iter = methods.iterator(); iter.hasNext();) {
+                    MethodNode m = (MethodNode) iter.next();
+                    Parameter[] np = m.getParameters();
+                    if (hasEqualParameterTypes(parameters,np)) continue;
+                    if (!Modifier.isFinal(m.getModifiers())) return;
+                    
+                    StringBuffer msg = new StringBuffer();
+                    msg.append("you are not allowed to overwrite the final method ").append(method.getName());
+                    msg.append("(");
+                    boolean semi = false;
+                    for (int i=0; i<parameters.length;i++) {
+                        if (semi) {
+                            msg.append(",");
+                        } else {
+                            semi = true;
+                        }
+                        msg.append(parameters[i].getType());
+                    }
+                    msg.append(")");
+                    msg.append(" from class ").append(superCN.getName()); 
+                    msg.append(".");
+                    addError(msg.toString(),method);
+                    return;
+                }
+            }
+        }        
     }
     
     private void checkVariableContextAccess(Var v, Expression expr) {
@@ -468,6 +565,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
 
     public void visitClass(ClassNode node) {
+        checkClassForOverwritingFinal(node);
+        checkMethodsForOverwritingFinal(node);
         VarScope scope = currentScope;
         currentScope = new VarScope(true,currentScope,false);
         boolean scriptModeBackup = scriptMode;
@@ -528,7 +627,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         Set setter = new HashSet();
         Set getter = new HashSet();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
-            MethodNode f = (MethodNode) iter.next();
+            MethodNode f =(MethodNode) iter.next();
             String methodName = f.getName();
             String pName = getPropertyName(methodName);
             if (pName == null) continue; 
