@@ -48,14 +48,14 @@ package groovy.servlet;
 import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletResponse;
-import java.util.Map;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.io.IOException;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Servlet-specific binding extesion to lazy load the writer or the output
@@ -79,48 +79,68 @@ import java.io.IOException;
  * </p>
  * 
  * @author Guillaume Laforge
+ * @author Christian Stein
  */
 public class ServletBinding extends Binding {
 
-    protected Binding binding = new Binding();
-    private ServletResponse response;
+    private final Binding binding;
+
+    private final ServletContext context;
+
+    private final HttpServletRequest request;
+
+    private final HttpServletResponse response;
+
     private MarkupBuilder html;
-    private ServletContext sc;
 
-    public ServletBinding(HttpServletRequest request, final HttpServletResponse response, ServletContext sc) {
+    /**
+     * Initializes a servlet binding.
+     */
+    public ServletBinding(HttpServletRequest request, HttpServletResponse response, ServletContext context) {
+        this.binding = new Binding();
+        this.request = request;
         this.response = response;
-        this.sc = sc;
+        this.context = context;
 
+        /*
+         * Bind the default variables.
+         */
         binding.setVariable("request", request);
         binding.setVariable("response", response);
-        binding.setVariable("context", sc);
-        binding.setVariable("application", sc);
-        binding.setVariable("session", request.getSession(true));
+        binding.setVariable("context", context);
+        binding.setVariable("application", context);
 
-        // Form parameters. If there are multiple its passed as a list.
+        /*
+         * Bind the HTTP session object - if there is one.
+         * Note: we don't create one here!
+         */
+        binding.setVariable("session", request.getSession(false));
+
+        /*
+         * Bind form parameter key-value hash map.
+         *
+         * If there are multiple, they are passed as an array.
+         */
         Map params = new HashMap();
-        for (Enumeration paramEnum = request.getParameterNames(); paramEnum.hasMoreElements();) {
-            String key = (String) paramEnum.nextElement();
-            if (!binding.getVariables().containsKey(key)) {
-                String[] values = request.getParameterValues(key);
+        for (Enumeration names = request.getParameterNames(); names.hasMoreElements();) {
+            String name = (String) names.nextElement();
+            if (!binding.getVariables().containsKey(name)) {
+                String[] values = request.getParameterValues(name);
                 if (values.length == 1) {
-                    params.put(key, values[0]);
+                    params.put(name, values[0]);
                 } else {
-                    params.put(key, values);
+                    params.put(name, values);
                 }
             }
         }
         binding.setVariable("param", params);
 
-        // Headers
-        Map headers = new HashMap() {
-            public Object put(Object key, Object value) {
-                response.setHeader(key.toString(), value.toString());
-                return null;
-            }
-        };
-        for (Enumeration headerEnum = request.getHeaderNames(); headerEnum.hasMoreElements(); ) {
-            String headerName = (String) headerEnum.nextElement();
+        /*
+         * Bind request header key-value hash map.
+         */
+        Map headers = new HashMap();
+        for (Enumeration names = request.getHeaderNames(); names.hasMoreElements();) {
+            String headerName = (String) names.nextElement();
             String headerValue = request.getHeader(headerName);
             headers.put(headerName, headerValue);
         }
@@ -128,6 +148,34 @@ public class ServletBinding extends Binding {
     }
 
     public void setVariable(String name, Object value) {
+        /*
+         * Check sanity.
+         */
+        if (name == null) {
+            throw new IllegalArgumentException("Can't bind variable to null key.");
+        }
+        if (name.length() == 0) {
+            throw new IllegalArgumentException("Can't bind variable to blank key name. [length=0]");
+        }
+        /*
+         * Check implicite key names. See getVariable(String)!
+         */
+        if ("out".equals(name)) {
+            throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
+        }
+        if ("sout".equals(name)) {
+            throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
+        }
+        if ("html".equals(name)) {
+            throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
+        }
+        /*
+         * Check default key names. See constructor(s).
+         */
+        
+        /*
+         * All checks passed, set the variable.
+         */
         binding.setVariable(name, value);
     }
 
@@ -139,30 +187,39 @@ public class ServletBinding extends Binding {
      * @return a writer, an output stream, a markup builder or another requested object
      */
     public Object getVariable(String name) {
-            if ("out".equals(name))
-                try {
-                    return response.getWriter();
-                } catch (IOException e) {
-                    sc.log("Failed to get writer from response", e);
-                    return null;
-                }
-            if ("sout".equals(name))
-                try {
-                    return response.getOutputStream();
-                } catch (IOException e) {
-                    sc.log("Failed to get outputstream from response", e);
-                    return null;
-                }
+        /*
+         * Check sanity.
+         */
+        if (name == null) {
+            throw new IllegalArgumentException("Can't bind variable to null key.");
+        }
+        if (name.length() == 0) {
+            throw new IllegalArgumentException("Can't bind variable to blank key name. [length=0]");
+        }
+        /*
+         * Check implicite key names. See setVariable(String, Object)!
+         */
+        try {
+            if ("out".equals(name)) {
+                return response.getWriter();
+            }
+            if ("sout".equals(name)) {
+                return response.getOutputStream();
+            }
             if ("html".equals(name)) {
-                if (html == null)
-                    try {
-                        html = new MarkupBuilder(response.getWriter());
-                    } catch (IOException e) {
-                        sc.log("Failed to get writer from response", e);
-                        return null;
-                    }
+                if (html == null) {
+                    html = new MarkupBuilder(response.getWriter());
+                }
                 return html;
             }
+        } catch (IOException e) {
+            String message = "Failed to get writer or output stream from response.";
+            context.log(message, e);
+            throw new RuntimeException(message, e);
+        }
+        /*
+         * Still here? Delegate to the binding object.
+         */
         return binding.getVariable(name);
     }
 }
