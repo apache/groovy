@@ -92,93 +92,100 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
  */
 public class GroovyServlet extends AbstractHttpServlet {
 
-  /**
-   * The script engine executing the Groovy scripts for this servlet
-   */
-  private static GroovyScriptEngine gse;
+    /**
+     * The script engine executing the Groovy scripts for this servlet
+     */
+    private static GroovyScriptEngine gse;
 
-  /**
-   * Initialize the GroovyServlet.
-   *
-   * @throws ServletException
-   *  if this method encountered difficulties
-   */
-  public void init(ServletConfig config) throws ServletException {
-    super.init(config);
+    /**
+     * Initialize the GroovyServlet.
+     *
+     * @throws ServletException
+     *  if this method encountered difficulties
+     */
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
 
-    // Set up the scripting engine
-    gse = new GroovyScriptEngine(this);
+        // Set up the scripting engine
+        gse = new GroovyScriptEngine(this);
 
-    servletContext.log("Groovy servlet initialized");
-  }
-
-  /**
-   * Handle web requests to the GroovyServlet
-   */
-  public void service(HttpServletRequest request,
-      HttpServletResponse response) throws IOException {
-
-    // Get the script path from the request - include aware (GROOVY-815)
-    final String scriptUri = getScriptUri(request);
-
-    // Set it to HTML by default
-    response.setContentType("text/html");
-
-    // Set up the script context
-    final Binding binding = new ServletBinding(request, response, servletContext);
-
-    // Run the script
-    try {
-      Closure closure = new Closure(gse) {
-
-        public Object call() {
-          try {
-            return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);
-          }
-          catch (ResourceException e) {
-            throw new RuntimeException(e);
-          }
-          catch (ScriptException e) {
-            throw new RuntimeException(e);
-          }
-        }
-
-      };
-      GroovyCategorySupport.use(ServletCategory.class, closure);
-      // Set reponse code 200 and flush buffers
-      response.setStatus(HttpServletResponse.SC_OK);
-      response.flushBuffer();
-      // log("Flushed response buffer.");
-    }
-    catch (RuntimeException re) {
-      StringBuffer error = new StringBuffer("GroovyServlet Error: ");
-      error.append(" script: '");
-      error.append(scriptUri);
-      error.append("': ");
-      Throwable e = re.getCause();
-      if (e instanceof ResourceException) {
-        error.append(" Script not found, sending 404.");
-        servletContext.log(error.toString());
-        System.out.println(error.toString());
-        response.sendError(HttpServletResponse.SC_NOT_FOUND);
-      }
-      else {
-        // write the script errors (if any) to the servlet context's log
-        if (re.getMessage() != null)
-          error.append(re.getMessage());
-
-        if (e != null) {
-          servletContext.log("An error occurred processing the request", e);
-        }
-        else {
-          servletContext.log("An error occurred processing the request", re);
-        }
-        servletContext.log(error.toString());
-        System.out.println(error.toString());
-        response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
-      }
+        servletContext.log("Groovy servlet initialized on " + gse + ".");
     }
 
-  }
+    /**
+     * Handle web requests to the GroovyServlet
+     */
+    public void service(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        // Get the script path from the request - include aware (GROOVY-815)
+        final String scriptUri = getScriptUri(request);
+
+        // Set it to HTML by default
+        response.setContentType("text/html");
+
+        // Set up the script context
+        final Binding binding = new ServletBinding(request, response, servletContext);
+
+        // Run the script
+        try {
+            Closure closure = new Closure(gse) {
+
+                public Object call() {
+                    try {
+                        return ((GroovyScriptEngine) getDelegate()).run(scriptUri, binding);
+                    } catch (ResourceException e) {
+                        throw new RuntimeException(e);
+                    } catch (ScriptException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+            };
+            GroovyCategorySupport.use(ServletCategory.class, closure);
+            /*
+             * Set reponse code 200.
+             */
+            response.setStatus(HttpServletResponse.SC_OK);
+        } catch (RuntimeException runtimeException) {
+            StringBuffer error = new StringBuffer("GroovyServlet Error: ");
+            error.append(" script: '");
+            error.append(scriptUri);
+            error.append("': ");
+            Throwable e = runtimeException.getCause();
+            /*
+             * Null cause?!
+             */
+            if (e == null) {
+                error.append(" Script processing failed.");
+                servletContext.log(error.toString());
+                System.err.println(error.toString());
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+            /*
+             * Resource not found.
+             */
+            if (e instanceof ResourceException) {
+                error.append(" Script not found, sending 404.");
+                servletContext.log(error.toString());
+                System.err.println(error.toString());
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            /*
+             * Other internal error. Perhaps syntax?! 
+             */
+            servletContext.log("An error occurred processing the request", e);
+            servletContext.log(error.toString());
+            System.err.println(error.toString());
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
+        } finally {
+            /*
+             * Finally, flush the response buffer.
+             */
+            response.flushBuffer();
+            // servletContext.log("Flushed response buffer.");
+        }
+    }
 
 }
