@@ -85,7 +85,7 @@ class DocGenerator
 							}
 						  }
 							
-			def sortedClasses = ([] + jdkEnhancedClasses.keySet()).sort()
+			def sortedClasses = new TreeSet(jdkEnhancedClasses.keySet()))
 							
 			def summary = { this.mkp.yield {
 					            def counter = 0
