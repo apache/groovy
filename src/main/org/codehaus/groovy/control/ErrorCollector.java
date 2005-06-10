@@ -324,7 +324,7 @@ public class ErrorCollector {
             writer.println();
             writer.print(warnings.size());
             writer.print(" Warning");
-            if (warnings.size()>1) warnings.print("s");
+            if (warnings.size()>1) writer.print("s");
             writer.println();
             
             this.warnings = null;
