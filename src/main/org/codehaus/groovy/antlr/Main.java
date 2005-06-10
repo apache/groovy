@@ -1,12 +1,18 @@
 package org.codehaus.groovy.antlr;
-import java.io.*;
+
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileReader;
+
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+
+import antlr.ASTFactory;
+import antlr.CommonAST;
+import antlr.Token;
 import antlr.collections.AST;
-import antlr.collections.impl.*;
-import antlr.debug.misc.*;
-import antlr.*;
-//import com.thoughtworks.xstream.XStream;
-import org.codehaus.groovy.antlr.parser.*;
-import java.awt.event.*;
+import antlr.debug.misc.ASTFrame;
 
 class Main {
 
@@ -121,7 +127,7 @@ class Main {
 	public static void doTreeAction(String f, AST t, String[] tokenNames) {
 		if ( t==null ) return;
 		if ( showTree ) {
-			((CommonAST)t).setVerboseStringConversion(true, tokenNames);
+			CommonAST.setVerboseStringConversion(true, tokenNames);
 			ASTFactory factory = new ASTFactory();
 			AST r = factory.create(0,"AST ROOT");
 			r.setFirstChild(t);

@@ -80,7 +80,6 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.IfStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;

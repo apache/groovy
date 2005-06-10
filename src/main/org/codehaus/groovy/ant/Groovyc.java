@@ -53,7 +53,6 @@ import java.nio.charset.Charset;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
-import org.apache.tools.ant.DefaultLogger;
 import org.apache.tools.ant.listener.AnsiColorLogger;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;

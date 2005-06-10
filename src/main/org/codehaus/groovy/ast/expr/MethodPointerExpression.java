@@ -45,13 +45,10 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import groovy.lang.Closure;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.classgen.AsmClassGenerator;
-import groovy.lang.Closure;
 
 /**
  * Represents a method pointer on an object such as

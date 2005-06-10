@@ -62,7 +62,6 @@ import org.codehaus.groovy.ast.ClassNode;
 
 import org.codehaus.groovy.ast.CompileUnit;
 import org.codehaus.groovy.ast.ModuleNode;
-import org.codehaus.groovy.ast.VariableScope;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;

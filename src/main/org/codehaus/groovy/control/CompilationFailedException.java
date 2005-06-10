@@ -48,10 +48,6 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.GroovyException;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-
 /**
  * Thrown when compilation fails from source errors.
  *

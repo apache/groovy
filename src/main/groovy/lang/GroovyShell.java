@@ -247,7 +247,6 @@ public class GroovyShell extends GroovyObjectSupport {
                 return null;
             }
         }
-        ;
 
         AccessController.doPrivileged(new DoSetContext(loader));
 
