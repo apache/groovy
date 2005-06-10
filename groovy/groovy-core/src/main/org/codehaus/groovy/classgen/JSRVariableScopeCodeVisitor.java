@@ -75,6 +75,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         boolean isStatic=false, isFinal=false, isDynamicTyped=false;
         String name, type=null;
         Class typeClass=null;
+        boolean isInStaticContext=false;
         
         public boolean equals(Object o){
             Var v = (Var) o;
@@ -91,7 +92,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             this.name=name;
         }
         
-        public Var(VariableExpression ve) {
+        public Var(VariableExpression ve, VarScope scope) {
             name = ve.getVariable();
             if(ve.isDynamic()) {
                 isDynamicTyped=true;
@@ -99,6 +100,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                 type = ve.getType();
                 typeClass = ve.getTypeClass();
             }
+            isInStaticContext = scope.isInStaticContext;
         }
         
         public Var(Parameter par, boolean methodIsStatic) {
@@ -108,8 +110,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             } else {
                 type = par.getType();
             }
-            //TODO: this is not a clean method to say this parameter is part of a static method header
-            isStatic = methodIsStatic;
+            isInStaticContext = methodIsStatic;
         }
 
         public Var(FieldNode f) {
@@ -120,6 +121,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                 type = f.getType();
             }
             isStatic=f.isStatic();
+            isInStaticContext = isStatic;
         }
 
         public Var(String pName, MethodNode f) {
@@ -130,31 +132,47 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
                 type = f.getReturnType();
             }
             isStatic=f.isStatic();
+            isInStaticContext = isStatic;
+        }
+        
+        public Var(String pName, Method m) {
+            name = pName;
+            typeClass = m.getReturnType();            
+            isStatic=Modifier.isStatic(m.getModifiers());
+            isFinal=Modifier.isFinal(m.getModifiers());
+            isInStaticContext = isStatic;
         }
 
         public Var(PropertyNode f) {
             //TODO: no static? What about read-/write-only? abstract?
+            isInStaticContext = false;
             name = f.getName();
             if (f.isDynamicType()) {
                 isDynamicTyped=true;
             } else {
                 type = f.getType();
             }
+            isInStaticContext = false;
         }
 
         public Var(Field f) {
             name = f.getName();
             typeClass = f.getType();            
             isStatic=Modifier.isStatic(f.getModifiers());
+            isInStaticContext = isStatic;
             isFinal=Modifier.isFinal(f.getModifiers());
+            isInStaticContext = isStatic;
         }
 
-        public Var(String pName, Method m) {
-            name = pName;
-            typeClass = m.getReturnType();            
-            isStatic=Modifier.isStatic(m.getModifiers());
-            isFinal=Modifier.isFinal(m.getModifiers());
-        }
+        public Var(Var v) {
+            isStatic=v.isStatic;
+            isFinal=v.isFinal;
+            isDynamicTyped=v.isDynamicTyped;
+            name=v.name;
+            type=v.type;
+            typeClass=v.typeClass;
+            isInStaticContext=v.isInStaticContext;
+        }        
     }
     
     private static class VarScope {
@@ -278,7 +296,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
 
     private void declare(VariableExpression expr) {
-        declare(new Var(expr),expr);
+        declare(new Var(expr,currentScope),expr);
     }
     
     private void declare(Var var, ASTNode expr) {
@@ -361,17 +379,17 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
     
     private void checkVariableContextAccess(Var v, Expression expr) {
-        if (v.isStatic || !currentScope.isInStaticContext) return;        
-        String accessContext = "dynamic";
-        if (currentScope.isInStaticContext) accessContext = "static";        
-        String varContext = "dynamic";
-        if (v.isStatic) varContext = "static";
+        if (v.isInStaticContext || !currentScope.isInStaticContext) return;        
         
         String msg =  v.name+
                       " is declared in a dynamic context, but you tried to"+
                       " access it from a static context.";
-        
         addError(msg,expr);
+        
+        // decalre a static variable to be able to continue the check
+        Var v2 = new Var(v);
+        v2.isInStaticContext = true;
+        currentScope.declares.put(v2.name,v2);
     }
     
     private Var checkVariableNameForDeclaration(VariableExpression expression) {
