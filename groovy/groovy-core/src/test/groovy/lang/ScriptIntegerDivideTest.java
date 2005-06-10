@@ -1,7 +1,6 @@
 package groovy.lang;
 
 import org.codehaus.groovy.classgen.TestSupport;
-import org.codehaus.groovy.control.CompilationFailedException;
 
 
 /**

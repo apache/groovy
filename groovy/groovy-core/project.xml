@@ -422,6 +422,11 @@
 
     <!-- core dependencies -->
     <dependency>
+      <groupId>antlr</groupId>
+      <artifactId>antlr</artifactId>
+      <version>2.7.5</version>
+    </dependency>    
+    <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>2.0</version>
@@ -477,6 +482,11 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>    
       <version>3.8.1</version>
+    </dependency>    
+    <dependency>
+      <groupId>jmock</groupId>
+      <artifactId>jmock</artifactId>    
+      <version>1.0.1</version>
     </dependency>
 
     <!-- only used for testing/debugging-->
@@ -600,13 +610,6 @@
       <groupId>commons-httpclient</groupId>
       <artifactId>commons-httpclient</artifactId>
       <version>2.0.1</version>
-    </dependency>
-
-    <!-- initially only used in the jsr parser -->
-    <dependency>
-      <groupId>antlr</groupId>
-      <artifactId>antlr</artifactId>
-      <version>2.7.5</version>
     </dependency>
 
     <!-- used to dump out the AST -->

@@ -46,7 +46,6 @@
 
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.Closure;
 import groovy.lang.MissingMethodException;
 import groovy.util.GroovyTestCase;
 import groovy.util.Node;
