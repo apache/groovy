@@ -43,11 +43,20 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 package groovy.ui;
-import groovy.lang.*;
-import java.io.*;
-import java.net.*;
+
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URL;
 
 /**
  * Simple server that executes supplied script against a socket
@@ -102,11 +111,11 @@ public class GroovySocketServer implements Runnable {
         private Socket socket;
         private BufferedReader reader;
         private PrintWriter writer;
-        private boolean autoOutput;
+        private boolean autoOutputFlag;
     
         GroovyClientConnection(Script script, boolean autoOutput,Socket socket) throws IOException {
             this.script = script;
-            this.autoOutput = autoOutput;
+            this.autoOutputFlag = autoOutput;
             this.socket = socket;
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new PrintWriter(socket.getOutputStream());
@@ -127,7 +136,7 @@ public class GroovySocketServer implements Runnable {
                         if ("success".equals(o)) {
                             break; // to close sockets gracefully etc...
                         } else {
-                            if (autoOutput) {
+                            if (autoOutputFlag) {
                                 writer.println(o);
                             }
                         }
