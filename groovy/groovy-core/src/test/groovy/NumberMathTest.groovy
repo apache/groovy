@@ -116,10 +116,10 @@ class NumberMathTest extends GroovyTestCase {
     	assert I1/BD2 instanceof BigDecimal;
     	
     	//Test keeping max scale of (L, R or 10)
-    	BBD1 = new BigDecimal("0.12345678901234567");
+    	def BBD1 = new BigDecimal("0.12345678901234567");
     	assert BD1 + BBD1 == new BigDecimal("1.12345678901234567");
 
-    	BBD2 = new BigDecimal(".000000000000000008");
+    	def BBD2 = new BigDecimal(".000000000000000008");
     	assert BBD1 + BBD2 == new BigDecimal("0.123456789012345678");
 	}
 	

@@ -16,7 +16,7 @@ class SwitchTest extends GroovyTestCase {
     def callSwitch(x, expected) {
         println("Calling switch with ${x}")
 
-        result = ""
+        def result = ""
 
         switch (x) {
             case "bar":
@@ -54,8 +54,8 @@ class SwitchTest extends GroovyTestCase {
 
     // test the continue in switch, which should jump to the the while start
     void testSwitchScope() {
-        i = 0
-        j = 0
+        def i = 0
+        def j = 0
         while (true) {
             ++i;
             switch(i) {

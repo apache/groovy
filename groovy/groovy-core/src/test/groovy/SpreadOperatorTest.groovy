@@ -12,13 +12,13 @@ class SpreadOperatorTest extends GroovyTestCase {
         println([1, *[222, 333], 456])
         assert [1, *[222, 333], 456] == [1, 222, 333, 456]
 
-        y = [1,2,3]
+        def y = [1,2,3]
         println([*y])
         assert [*y] == y
     }
 
     void testSpreadingRange() {
-        r = 1..10
+        def r = 1..10
         assert [*r] == r
         assert [*1..10] == r
     }
@@ -29,7 +29,7 @@ class SpreadOperatorTest extends GroovyTestCase {
         assert sum(1, *[2, 3], 4) == 10
         assert sum(*[10, 20, 30, 40]) == 100
 
-        z = [11, 22, 33]
+        def z = [11, 22, 33]
         // println sum(1, *z)
         // println sum(*z, 2)
         // println sum(*z, 44)
@@ -37,7 +37,7 @@ class SpreadOperatorTest extends GroovyTestCase {
         assert sum(*z, 2) == 68
         assert sum(*z, 44) == 110
 
-        x = ["foo", "Bar-"]
+        def x = ["foo", "Bar-"]
         // println sum(*x, *x)
         assert sum(*x, *x) == "fooBar-fooBar-"
     }
@@ -47,7 +47,7 @@ class SpreadOperatorTest extends GroovyTestCase {
     }
 
     void testSpreadingInClosureParameters() {
-        twice = {-> it*2}
+        def twice = {-> it*2}
         // println twice(3)
         // println twice("abcd")
         // println twice(*[11])

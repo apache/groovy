@@ -2,7 +2,7 @@ class MapTest extends GroovyTestCase {
 
     void testMap() {
 
-        m = [1:'one', '2':'two', 3:'three']
+        def m = [1:'one', '2':'two', 3:'three']
 
         assert m.size() == 3
         assert m.get(1) == 'one'
@@ -53,7 +53,7 @@ class MapTest extends GroovyTestCase {
     }
     
     void testEmptyMap() {
-        m = [:]
+        def m = [:]
 
         assert m.size() == 0
         assert !m.containsKey("cheese")
@@ -65,7 +65,7 @@ class MapTest extends GroovyTestCase {
     }
     
     void testMapMutation() {    
-        m = [ 'abc' : 'def', 'def' : 134, 'xyz' : 'zzz' ]
+        def m = [ 'abc' : 'def', 'def' : 134, 'xyz' : 'zzz' ]
 
         assert m['unknown'] == null
 

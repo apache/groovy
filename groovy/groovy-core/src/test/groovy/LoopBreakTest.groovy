@@ -37,13 +37,15 @@ class LoopBreakTest extends GroovyTestCase {
     */
 
     void testForWithBreak() {
+        def returnValue
         for (x in 0..20) {
             if (x == 5) {
+                returnValue = x
                 break
             }
             assert x < 10 , "Should never get here"
         }
         
-        println "worked: for loop completed with value ${x}"
+        println "worked: for loop completed with value ${returnValue}"
     }
  }

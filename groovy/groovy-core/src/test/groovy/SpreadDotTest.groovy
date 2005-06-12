@@ -12,26 +12,26 @@
 
 public class SpreadDotTest extends GroovyTestCase {
     public void testSpreadDot() {
-        m1 = ["a":1, "b":2]
-        m2 = ["a":11, "b":22]
-        m3 = ["a":111, "b":222]
-        x = [m1,m2,m3]
+        def m1 = ["a":1, "b":2]
+        def m2 = ["a":11, "b":22]
+        def m3 = ["a":111, "b":222]
+        def x = [m1,m2,m3]
         println x*.a
         println x*."a"
         assert x == [m1, m2, m3]
 
-        m4 = null
+        def m4 = null
         x << m4
         println x*.a
         println x*."a"
         assert x == [m1, m2, m3, null]
 
-        d = new SpreadDotDemo()
+        def d = new SpreadDotDemo()
         x << d
         println x*."a"
         assert x == [m1, m2, m3, null, d]
 
-        y = new SpreadDotDemo2()
+        def y = new SpreadDotDemo2()
         println y."a"
         println y.a
 
@@ -41,9 +41,9 @@ public class SpreadDotTest extends GroovyTestCase {
     }
 
     public void testSpreadDot2() {
-        a = new SpreadDotDemo()
-        b = new SpreadDotDemo2()
-        x = [a, b]
+        def a = new SpreadDotDemo()
+        def b = new SpreadDotDemo2()
+        def x = [a, b]
 
         println ([a,b]*.fnB("1"))
         assert [a,b]*.fnB("1") == [a.fnB("1"), b.fnB("1")]

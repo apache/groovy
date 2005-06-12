@@ -5,14 +5,14 @@ class StaticThisTest extends GroovyTestCase {
     }
 
     static def staticMethod() {
-        foo = this
+        def foo = this
 
         assert foo != null
         assert foo.name.endsWith("StaticThisTest")
 
         println("this: " + this)
 
-        s = super
+        def s = super
 
         assert s != null
         assert s.name.endsWith("GroovyTestCase")

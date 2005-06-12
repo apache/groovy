@@ -12,7 +12,7 @@ class MinMaxTest extends GroovyTestCase {
         def n = list.min()
         assert n == 1
         
-        def n = list.max()
+        n = list.max()
         assert n == 9
     }
     

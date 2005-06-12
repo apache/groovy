@@ -1,9 +1,9 @@
 class TernaryOperatorTest extends GroovyTestCase {
 
     void testSimpleUse() {
-        y = 5
+        def y = 5
 
-        x = (y > 1) ? "worked" : "failed"
+        def x = (y > 1) ? "worked" : "failed"
         assert x == "worked"
 
 
@@ -12,7 +12,7 @@ class TernaryOperatorTest extends GroovyTestCase {
     }
 
     void testUseInParameterCalling() {
-        z = 123
+        def z = 123
         assertCalledWithFoo(z > 100 ? "foo" : "bar")
         assertCalledWithFoo(z < 100 ? "bar" : "foo")
        }
