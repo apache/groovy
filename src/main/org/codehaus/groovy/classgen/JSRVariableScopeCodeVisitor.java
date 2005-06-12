@@ -518,10 +518,17 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         VarScope end = scope;
 
         if (scope == null) {
-            declare(var,expression);
-            // don't create an error when inside a script body 
-            if (!scriptMode) addError("The variable " + var.name +
-                                      " is undefined in the current scope", expression);
+            //TODO add a check to be on the lhs!
+            ClassNode vn = unit.getClass(var.name);
+            // vn==null means there is no class of that name
+            // note: we need to do this check because it's possible in groovy to access
+            //       Classes without the .class known from Java. Example: def type = String;
+            if (vn==null) {
+                declare(var,expression);
+                // don't create an error when inside a script body 
+                if (!scriptMode) addError("The variable " + var.name +
+                                          " is undefined in the current scope", expression);
+            }
         } else {
             scope = currentScope;
             while (scope != end) {
