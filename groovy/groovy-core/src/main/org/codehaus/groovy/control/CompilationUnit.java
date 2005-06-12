@@ -156,9 +156,8 @@ public class CompilationUnit extends ProcessingUnit {
      * security stuff and a class loader for loading classes.
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, ClassLoader loader) {
-        super(configuration, loader, new ErrorCollector(configuration));
-
-
+        super(configuration, loader, null);        
+        
         this.names = new ArrayList();
         this.sources = new HashMap();
 

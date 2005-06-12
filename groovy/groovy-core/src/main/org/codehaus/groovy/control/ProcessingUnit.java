@@ -90,8 +90,9 @@ public abstract class ProcessingUnit {
         this.phase = Phases.INITIALIZATION;
         this.classLoader = (classLoader == null ? new CompilerClassLoader() : classLoader);
 
-        this.errorCollector = er;
         configure((configuration == null ? new CompilerConfiguration() : configuration));
+        if (er==null) er = new ErrorCollector(getConfiguration());
+        this.errorCollector = er;
     }
 
 
