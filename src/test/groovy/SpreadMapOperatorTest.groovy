@@ -81,14 +81,14 @@ public class SpreadMapOperatorTest extends GroovyTestCase {
     }
 
     void testSpreadMapFunctionCall() {
-             m = ['a':10, 'b':20, 'c':30]
+             def m = ['a':10, 'b':20, 'c':30]
              f(*:m)                 // Call with only one spread map argument
              f(*:m, 'e':50)      // Call with one spread map argument and one named argument
              f('e':100, *:m)     // Call with one named argument and one spread map argument
 
              func('e':100, 1, 2, 3, *:m)       // Call with one named argument, three usual arguments,  and one spread map argument
 
-             l = [4, 5]
+             def l = [4, 5]
              func('e':100, *l, *:m, 6)       // Call with one named argument, one spread list argument, one spread map argument, and  one usual argument
              func(7, 'e':100, *l, *:m)       // Call with one usual argument, one named argument, one spread list argument, and one spread map argument 
     }

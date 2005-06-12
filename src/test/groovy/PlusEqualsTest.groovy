@@ -43,7 +43,7 @@ class PlusEqualsTest extends GroovyTestCase {
         
         assert x == "bbc2"
         
-        foo = "nice cheese"
+        def foo = "nice cheese"
         foo += " gromit"
         
         assert foo == "nice cheese gromit"

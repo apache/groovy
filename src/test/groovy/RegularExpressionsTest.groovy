@@ -107,7 +107,7 @@ class RegularExpressionsTest extends GroovyTestCase {
             case ~"cheesecheese":
                 assert false;
             case ~"(cheese)(foo)":
-                m = Matcher.getLastMatcher();
+                def m = Matcher.getLastMatcher();
                 assert m.group(0) == "cheesefoo"
                 assert m.group(1) == "cheese"
                 assert m.group(2) == "foo"

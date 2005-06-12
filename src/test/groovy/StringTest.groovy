@@ -1,7 +1,7 @@
 class StringTest extends GroovyTestCase {
 
     void testString() {
-        s = "abcd"
+        def s = "abcd"
         assert s.length() == 4
         assert 4 == s.length()
         
@@ -15,23 +15,23 @@ class StringTest extends GroovyTestCase {
     }
 
     void testStringPlusNull() {
-        y = null
+        def y = null
         
-        x = "hello " + y
+        def x = "hello " + y
         
         assert x == "hello null"
     }
     
     void testNextPrevious() {
-    	x = 'a'
-    	y = x.next() 
+    	def x = 'a'
+    	def y = x.next()
     	assert y == 'b'
     
-    	z = 'z'.previous()
+    	def z = 'z'.previous()
     	assert z == 'y'
     	
     	z = 'z'
-    	b = z.next()
+    	def b = z.next()
     	assert b != 'z'
     	
     	println(z.charAt(0))
@@ -43,16 +43,16 @@ class StringTest extends GroovyTestCase {
     }
     
     void testApppendToString() {
-        name = "Gromit"
-        result = "hello " << name << "!" 
+        def name = "Gromit"
+        def result = "hello " << name << "!"
         
         assert result.toString() == "hello Gromit!"
     }
     
     void testApppendToStringBuffer() {
-        buffer = new StringBuffer()
+        def buffer = new StringBuffer()
         
-        name = "Gromit"
+        def name = "Gromit"
         buffer << "hello " << name << "!" 
         
         assert buffer.toString() == "hello Gromit!"

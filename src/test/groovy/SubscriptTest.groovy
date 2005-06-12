@@ -1,15 +1,15 @@
 class SubscriptTest extends GroovyTestCase {
 
     void testListRange() {
-        list = ['a', 'b', 'c', 'd', 'e']
+        def list = ['a', 'b', 'c', 'd', 'e']
 
-        sub = list[2..4]
+        def sub = list[2..4]
         assert sub == ['c', 'd', 'e']
         
         sub = list[2...5]
         assert sub == ['c', 'd', 'e']
         
-        value = list[-1]
+        def value = list[-1]
         assert value == 'e'
         
         sub = list[-4..-2]
@@ -30,12 +30,12 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testObjectRangeRange() {
-        list = 'a'..'e'
+        def list = 'a'..'e'
         
-        sub = list[2..4]
+        def sub = list[2..4]
         assert sub == ['c', 'd', 'e']
         
-        value = list[-1]
+        def value = list[-1]
         assert value == 'e'
         
         sub = list[-4..-2]
@@ -52,10 +52,10 @@ class SubscriptTest extends GroovyTestCase {
     void testStringArrayRange() {
         String[] list = ['a', 'b', 'c', 'd', 'e']
         
-        sub = list[2..4]
+        def sub = list[2..4]
         assert sub == ['c', 'd', 'e']
         
-        value = list[-1]
+        def value = list[-1]
         assert value == 'e'
         
         sub = list[-4..-2]
@@ -70,12 +70,12 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testIntRangeRange() {
-        list = 10..15
+        def list = 10..15
         
-        sub = list[2..4]
+        def sub = list[2..4]
         assert sub == [12, 13, 14]
         
-        value = list[-1]
+        def value = list[-1]
         assert value == 15
         
         sub = list[-4..-2]
@@ -92,10 +92,10 @@ class SubscriptTest extends GroovyTestCase {
     void testIntArrayRange() {
         Integer[] list = [ 10, 11, 12, 13, 14, 15 ]
         
-        sub = list[2..4]
+        def sub = list[2..4]
         assert sub == [12, 13, 14]
         
-        value = list[-1]
+        def value = list[-1]
         assert value == 15
         
         sub = list[-4..-2]
@@ -110,14 +110,14 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testStringSubscript() {
-        text = "nice cheese gromit!"
+        def text = "nice cheese gromit!"
         
-        x = text[2]
+        def x = text[2]
         
         assert x == "c"
         assert x.class == String
         
-        sub = text[5..10]
+        def sub = text[5..10]
         assert sub == 'cheese'
         
         sub = text[10..5]
@@ -132,10 +132,10 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testListSubscriptWithList() {
-        list = ['a', 'b', 'c', 'd', 'e']
+        def list = ['a', 'b', 'c', 'd', 'e']
         
-        indices = [0, 2, 4]
-        sub = list[indices]
+        def indices = [0, 2, 4]
+        def sub = list[indices]
         assert sub == ['a', 'c', 'e']
         
         // verbose but valid
@@ -149,31 +149,31 @@ class SubscriptTest extends GroovyTestCase {
     
     
     void testListSubscriptWithListAndRange() {
-        list = 100..200
+        def list = 100..200
 
-        sub = list[1, 3, 20..25, 33]
+        def sub = list[1, 3, 20..25, 33]
         assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
 
         // now lets try it on an array
-        array = list.toArray()
+        def array = list.toArray()
 
         sub = array[1, 3, 20..25, 33]
         assert sub == [101, 103, 120, 121, 122, 123, 124, 125, 133]
     }
 
     void testStringWithSubscriptList() {
-        text = "nice cheese gromit!"
+        def text = "nice cheese gromit!"
         
-        sub = text[1, 2, 3, 5..10]
+        def sub = text[1, 2, 3, 5..10]
         
         assert sub == "icecheese"
     }
     
     void testSubMap() {
-        map = ['a':123, 'b':456, 'c':789]
+        def map = ['a':123, 'b':456, 'c':789]
         
-        keys = ['b', 'a']
-        sub = map.subMap(keys)
+        def keys = ['b', 'a']
+        def sub = map.subMap(keys)
         
         assert sub.size() == 2
         assert sub['a'] == 123
@@ -182,23 +182,23 @@ class SubscriptTest extends GroovyTestCase {
     }
     
     void testListWithinAListSyntax() {
-        list = [1, 2, 3, 4..10, 5, 6]
+        def list = [1, 2, 3, 4..10, 5, 6]
         
         assert list.size() == 6
-        sublist = list[3]
+        def sublist = list[3]
         assert sublist == 4..10
         assert sublist == [4, 5, 6, 7, 8, 9, 10]
     }
 
 
     void testBeanProperties() {
-        foo = new Foo()
+        def foo = new Foo()
 
         foo['name'] = 'Gromit'
 
         assert foo.name == 'Gromit'
 
-        value = foo['name']
+        def value = foo['name']
         assert value == 'Gromit'
     }
 }

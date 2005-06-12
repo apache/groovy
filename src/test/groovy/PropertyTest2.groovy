@@ -40,7 +40,7 @@ class PropertyTest2 extends GroovyTestCase {
 			assert prop.name != "invisible"
 			assert prop.name != "prot"
 			
-			value = props[prop.name]
+			def value = props[prop.name]
 			if(value != null)
 				assert prop.value == value
 			

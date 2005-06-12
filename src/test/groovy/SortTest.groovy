@@ -5,8 +5,8 @@
 class SortTest extends GroovyTestCase {
 
     void testSortWithOrderBy() {
-        list = getPeople()
-        order = new OrderBy( { it.cheese } )
+        def list = getPeople()
+        def order = new OrderBy( { it.cheese } )
         list.sort(order)
         
         assert list[0].name == 'Joe'
@@ -18,7 +18,7 @@ class SortTest extends GroovyTestCase {
     }
     
     void testSortWithClosure() {
-        list = getPeople()
+        def list = getPeople()
         list.sort { it.cheese }
         
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
@@ -28,7 +28,7 @@ class SortTest extends GroovyTestCase {
     }
     
     def getPeople() {
-        answer = []
+        def answer = []
         answer << new Expando(name:'James', cheese:'Edam', location:'London')
         answer << new Expando(name:'Bob', cheese:'Cheddar', location:'Atlanta')
         answer << new Expando(name:'Chris', cheese:'Red Leicester', location:'London')

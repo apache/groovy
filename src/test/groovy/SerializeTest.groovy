@@ -31,7 +31,7 @@ class SerializeTest extends GroovyTestCase {
     
     def write(object) {
         def buffer = new ByteArrayOutputStream()
-        out = new ObjectOutputStream(buffer)
+        def out = new ObjectOutputStream(buffer)
         out.writeObject(object)
         out.close()
         return buffer.toByteArray()
