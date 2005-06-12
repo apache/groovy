@@ -2,9 +2,9 @@ import java.io.File
 
 class ScriptTest extends GroovyTestCase {
     void testScripts() {
-        file = new File("src/test/groovy/script")
+        def file = new File("src/test/groovy/script")
         file.eachFile {
-            name = it.name
+            def name = it.name
             if (name.endsWith('.groovy')) {
                 if (name.startsWith('ScriptTest')) {
                     //
@@ -19,8 +19,8 @@ class ScriptTest extends GroovyTestCase {
     protected def runScript(file) {
         println("Running script: " + file)
         
-        shell = new GroovyShell()
-        args = ['a', 'b', 'c']
+        def shell = new GroovyShell()
+        def args = ['a', 'b', 'c']
         
         shell.run(file, args)
 

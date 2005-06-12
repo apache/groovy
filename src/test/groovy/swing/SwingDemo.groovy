@@ -9,7 +9,7 @@ class SwingDemo {
     def swing = new SwingBuilder()
 
     static void main(args) {
-        demo = new SwingDemo()
+        def demo = new SwingDemo()
         demo.run()
     }
 
@@ -78,27 +78,27 @@ class SwingDemo {
     void showAbout() {
         // this version doesn't auto-size & position the dialog
         /*
-        dialog = swing.dialog(owner:frame, title:'About GroovySwing') {
+        def dialog = swing.dialog(owner:frame, title:'About GroovySwing') {
             optionPane(message:'Welcome to the wonderful world of GroovySwing')
         }
         */
-         pane = swing.optionPane(message:'Welcome to the wonderful world of GroovySwing')
-         dialog = pane.createDialog(frame, 'About GroovySwing')
+         def pane = swing.optionPane(message:'Welcome to the wonderful world of GroovySwing')
+         def dialog = pane.createDialog(frame, 'About GroovySwing')
          dialog.show()
     }
     
     void showGroovyTableDemo() {
-        demo = new TableDemo()
+        def demo = new TableDemo()
         demo.run()
     }
 
     void showMVCDemo() {
-        demo = new MvcDemo()
+        def demo = new MvcDemo()
         demo.run()
     }
 
     void showTableLayoutDemo() {
-        demo = new TableLayoutDemo()
+        def demo = new TableLayoutDemo()
         demo.run()
     }
 }

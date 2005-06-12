@@ -12,9 +12,9 @@ class MvcDemo {
     def swing
     
     void run() {
-        swing = new SwingBuilder()
+        def swing = new SwingBuilder()
         
-        frame = swing.frame(title:'MVC Demo', location:[200,200], size:[300,200]) {
+        def frame = swing.frame(title:'MVC Demo', location:[200,200], size:[300,200]) {
             menuBar {
 		        menu(text:'Help') {
 		            menuItem() {
@@ -37,8 +37,8 @@ class MvcDemo {
     }
  
     void showAbout() {
- 		pane = swing.optionPane(message:'This demo shows how you can create UI models from simple MVC models')
- 		dialog = pane.createDialog(frame, 'About MVC Demo')
+ 		def pane = swing.optionPane(message:'This demo shows how you can create UI models from simple MVC models')
+ 		def dialog = pane.createDialog(frame, 'About MVC Demo')
  		dialog.show()
     }
 }

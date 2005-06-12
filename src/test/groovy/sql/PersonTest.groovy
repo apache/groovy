@@ -9,27 +9,27 @@ class PersonTest extends GroovyTestCase {
     def type
     
     void testFoo() {
-        persons = createDataSet()
+        def persons = createDataSet()
 		
-        blogs = persons.findAll { it.lastName == "Bloggs" }
+        def blogs = persons.findAll { it.lastName == "Bloggs" }
 		
         assertSql(blogs, "select * from person where lastName = ?", ['Bloggs'])
     }
 
     void testWhereWithAndClause() {
-        persons = createDataSet()
+        def persons = createDataSet()
 		
-        blogs = persons.findAll { it.lastName == "Bloggs" }
+        def blogs = persons.findAll { it.lastName == "Bloggs" }
         
-        bigBlogs = blogs.findAll { it.size > 100 }
+        def bigBlogs = blogs.findAll { it.size > 100 }
 		
         assertSql(bigBlogs, "select * from person where lastName = ? and size > ?", ['Bloggs', 100])
     }
 
     void testWhereClosureWithAnd() {
-        persons = createDataSet()
+        def persons = createDataSet()
 		
-        blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
+        def blogs = persons.findAll { it.size < 10 && it.lastName == "Bloggs" }
 		
         assertSql(blogs, "select * from person where size < ? and lastName = ?", [10, 'Bloggs'])
     }
@@ -39,8 +39,8 @@ class PersonTest extends GroovyTestCase {
     }
     
     protected def assertSql(dataSet, expectedSql, expectedParams) {
-        sql = dataSet.sql
-        params = dataSet.parameters
+        def sql = dataSet.sql
+        def params = dataSet.parameters
         assert sql == expectedSql
         assert params == expectedParams
     }
@@ -54,7 +54,7 @@ class PersonTest extends GroovyTestCase {
 
         assert type != null , "failed to load Person class"
 
-        dataSource = createDataSource()
+        def dataSource = createDataSource()
         sql = new Sql(dataSource)
 
         return sql.dataSet(type)

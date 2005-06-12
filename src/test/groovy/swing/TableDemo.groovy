@@ -13,7 +13,7 @@ class TableDemo {
     @Property swing
     
     static void main(args) {
-        demo = new TableDemo()
+        def demo = new TableDemo()
         demo.run()
     }
     
@@ -45,8 +45,8 @@ class TableDemo {
     }
     
     void showAbout() {
-         pane = swing.optionPane(message:'This demo shows how GroovySwing can use Groovy closures to create simple table models')
-         dialog = pane.createDialog(frame, 'About GroovySwing')
+         def pane = swing.optionPane(message:'This demo shows how GroovySwing can use Groovy closures to create simple table models')
+         def dialog = pane.createDialog(frame, 'About GroovySwing')
          dialog.show()
     }
 }
