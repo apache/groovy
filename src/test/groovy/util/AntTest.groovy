@@ -79,7 +79,7 @@ class AntTest extends GroovyTestCase {
 
     void testTaskContainerAddTaskIsCalled() {
         def ant = new AntBuilder()
-        taskContainer = ant.parallel(){ // "Parallel" serves as a sample TaskContainer
+        def taskContainer = ant.parallel(){ // "Parallel" serves as a sample TaskContainer
             ant.echo()                  // "Echo" without message to keep tests silent
         }
         // not very elegant, but the easiest way to get the ant internals...
