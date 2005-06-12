@@ -2,6 +2,7 @@ class IntegerOperationTest extends GroovyTestCase {
 
     def x
     def y
+    def z
     
     void testPlus() {
         x = 2 + 2

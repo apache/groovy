@@ -3,7 +3,7 @@ package org.codehaus.groovy.sandbox.util
 class XmlSlurperTest extends GroovyTestCase {
     
     void testXmlParser() {
-        text = """
+        def text = """
 <characters>
     <character id="1" name="Wallace">
     	<likes>cheese</likes>
@@ -14,12 +14,12 @@ class XmlSlurperTest extends GroovyTestCase {
 </characters>
 """
         
-        node = new XmlSlurper().parseText(text);
+        def node = new XmlSlurper().parseText(text);
         
         assert node != null
         assert node.children().size() == 2 , "Children ${node.children()}"
         
-        characters = node.character
+        def characters = node.character
         
         for (c in characters) {
             println c['@name']
@@ -30,7 +30,7 @@ class XmlSlurperTest extends GroovyTestCase {
         assert node.character.likes.size() == 2 , "Likes ${node.character.likes}"
         
         // lets find Gromit
-        gromit = node.character.find { it['@id'] == '2' }
+        def gromit = node.character.find { it['@id'] == '2' }
         assert gromit != null , "Should have found Gromit!"
         assert gromit['@name'] == "Gromit"
         

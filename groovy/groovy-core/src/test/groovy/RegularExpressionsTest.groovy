@@ -12,9 +12,9 @@ import java.util.regex.Pattern
 class RegularExpressionsTest extends GroovyTestCase {
 
      void testSubscript() {
-         a = "cheesecheese"
-         b = a =~ "e+"
-         value = b[2]
+         def a = "cheesecheese"
+         def b = a =~ "e+"
+         def value = b[2]
          assert value == "ee"
 
          value = b[0, 2]
@@ -29,12 +29,12 @@ class RegularExpressionsTest extends GroovyTestCase {
      void testFindRegex() {
          assert "cheese" =~ "cheese"
 
-         regex = "cheese"
-         string = "cheese"
+         def regex = "cheese"
+         def string = "cheese"
          assert string =~ regex
 
-         i = 0
-         m = "cheesecheese" =~ "cheese"
+         def i = 0
+         def m = "cheesecheese" =~ "cheese"
 
          assert m instanceof Matcher
 
@@ -71,14 +71,14 @@ class RegularExpressionsTest extends GroovyTestCase {
      }
 
      void testSimplePattern() {
-         pattern = ~"foo"
+         def pattern = ~"foo"
          assert pattern instanceof Pattern
          assert pattern.matcher("foo").matches()
          assert !pattern.matcher("bar").matches()
      }
 
      void testMultiLinePattern() {
-         pattern = ~"""foo"""
+         def pattern = ~"""foo"""
 
          assert pattern instanceof Pattern
          assert pattern.matcher("foo").matches()
@@ -91,11 +91,11 @@ class RegularExpressionsTest extends GroovyTestCase {
 
 
      void testMatcher() {
-         matcher = "cheese-cheese" =~ "cheese"
-         answer = matcher.replaceAll("edam")
+         def matcher = "cheese-cheese" =~ "cheese"
+         def answer = matcher.replaceAll("edam")
          assert answer == 'edam-edam'
 
-         cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
+         def cheese = ("cheese cheese!" =~ "cheese").replaceFirst("nice")
          assert cheese == "nice cheese!"
      }
 

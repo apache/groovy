@@ -7,25 +7,25 @@
 class MinMaxTest extends GroovyTestCase {
 
     void testSimpleMinMax() {
-        list = [5, 2, 6, 1, 9, 8]
+        def list = [5, 2, 6, 1, 9, 8]
         
-        n = list.min()
+        def n = list.min()
         assert n == 1
         
-        n = list.max()
+        def n = list.max()
         assert n == 9
     }
     
     void testMinMaxWithComparator() {
-        people = getPeople()
+        def people = getPeople()
 
         // lets find the maximum by name
 
-        order = new OrderBy( { it.get('@cheese') } )
+        def order = new OrderBy( { it.get('@cheese') } )
 
         println("People ${people}")
 
-        p = people.min(order)
+        def p = people.min(order)
 
         println("Found ${p}")
 
@@ -36,7 +36,7 @@ class MinMaxTest extends GroovyTestCase {
     }
     
     def getPeople() {
-        builder = new NodeBuilder()
+        def builder = new NodeBuilder()
         tree = builder.people {
             person(name:'James', cheese:'Edam', location:'London')
             person(name:'Bob', cheese:'Cheddar', location:'Atlanta')

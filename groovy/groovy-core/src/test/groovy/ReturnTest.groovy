@@ -6,12 +6,12 @@
  */
 class ReturnTest extends GroovyTestCase {
     void testIntegerReturnValues() {
-        value = foo(5)
+        def value = foo(5)
         assert value == 10
     }
 
     void testBooleanReturnValues() {
-        value = bar(6)
+        def value = bar(6)
         assert value
     }
 
@@ -39,7 +39,7 @@ class ReturnTest extends GroovyTestCase {
     }
 
     void explicitVoidReturnWithoutFinalReturn() {
-        x = 4;
+        def x = 4;
         if (x == 3) {
             return;
         } else {
@@ -53,7 +53,7 @@ class ReturnTest extends GroovyTestCase {
     }
 
     def implicitVoidReturnWithoutFinalReturn() {
-        x = 4;
+        def x = 4;
         if (x == 3) {
             return;
         } else {

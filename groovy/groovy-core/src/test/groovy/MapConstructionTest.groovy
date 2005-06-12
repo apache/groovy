@@ -10,11 +10,11 @@ import java.util.Map
 class MapConstructionTest extends GroovyTestCase {
 
     void testMap() {
-        m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
+        def m = [ 1 : 'abc', 2 : 'def', 3 : 'xyz' ]
 
         println(m)
 
-        mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ]
+        def mtoo = [ 1 : [ "innerKey" : "innerValue" ], 2 : m ]
 
         println(mtoo)
 
@@ -26,7 +26,7 @@ class MapConstructionTest extends GroovyTestCase {
     }
 
     def testMapViaHashMap() {
-        m = new HashMap()
+        def m = new HashMap()
         m.put(1, 'abc')
         m.put(2, 'def')
         m.put(3, 'xyz')
@@ -37,8 +37,8 @@ class MapConstructionTest extends GroovyTestCase {
         assert m instanceof Map
         assert m.getClass().getName() == "java.util.HashMap"
 
-        result = 0
-        text = ""
+        def result = 0
+        def text = ""
         for ( e in m ) {
             result = result + e.key
             text = text + e.value

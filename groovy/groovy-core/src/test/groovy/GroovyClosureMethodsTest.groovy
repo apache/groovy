@@ -15,8 +15,8 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
 
     void testEachObjectMany() {
         def file = new File(filename)
-        oos = new ObjectOutputStream(new FileOutputStream(file))
-        list = [1, 2, 3, "foo", 9, "bar", 191, file, 9129]
+        def oos = new ObjectOutputStream(new FileOutputStream(file))
+        def list = [1, 2, 3, "foo", 9, "bar", 191, file, 9129]
         list.each {
             oos.writeObject(it)
         }
@@ -35,7 +35,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
 
     void testEachObjectOne() {
         def file = new File(filename)
-        oos = new ObjectOutputStream(new FileOutputStream(file))
+        def oos = new ObjectOutputStream(new FileOutputStream(file))
         oos.writeObject(file)
 
         println("Contents of file with one object: " + file)
@@ -52,7 +52,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
 
     void testEachObjectEmptyFile() {
         def file = new File(filename)
-        oos = new ObjectOutputStream(new FileOutputStream(file))
+        def oos = new ObjectOutputStream(new FileOutputStream(file))
 
         println("Contents of empty file: " + file)
         int c = 0
@@ -68,7 +68,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
 
     void testEachObjectNullFile() {
         def file = new File(filename)
-        oos = new ObjectOutputStream(new FileOutputStream(file))
+        def oos = new ObjectOutputStream(new FileOutputStream(file))
         oos.writeObject(null)
         oos.writeObject("foo")
         oos.writeObject(null)
@@ -124,7 +124,7 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
     }
 
     void testRunAfter() {
-        timer = new Timer()
+        def timer = new Timer()
         boolean status = false
         timer.runAfter(2000) {
             println "Running after 2 seconds wait"

@@ -1,21 +1,21 @@
 class OrderByTest extends GroovyTestCase {
 
     void testSortByOneField() {
-        builder = new NodeBuilder()
-        tree = builder.people {
+        def builder = new NodeBuilder()
+        def tree = builder.people {
             person(name:'James', cheese:'Edam', location:'London')
             person(name:'Bob', cheese:'Cheddar', location:'Atlanta')
             person(name:'Chris', cheese:'Red Leicester', location:'London')
             person(name:'Joe', cheese:'Brie', location:'London')
         }
         
-        people = tree.children()
+        def people = tree.children()
         
         /** @todo parser should allow this syntax sugar
-        order = new OrderBy { it.get('@cheese') }
+        def order = new OrderBy { it.get('@cheese') }
         */
-        order = new OrderBy( { it.get('@cheese') } )
-        sorted = people.sort(order)
+        def order = new OrderBy( { it.get('@cheese') } )
+        def sorted = people.sort(order)
         
         assert sorted.get(0).get('@name') == 'Joe'
         assert sorted.get(1).get('@name') == 'Bob'
@@ -33,18 +33,18 @@ class OrderByTest extends GroovyTestCase {
 
 
     void testSortByMultipleFields() {
-        builder = new NodeBuilder()
-        tree = builder.people {
+        def builder = new NodeBuilder()
+        def tree = builder.people {
             person(name:'James', cheese:'Edam', location:'London')
             person(name:'Bob', cheese:'Cheddar', location:'Atlanta')
             person(name:'Chris', cheese:'Red Leicester', location:'London')
             person(name:'Joe', cheese:'Brie', location:'London')
         }
         
-        people = tree.children()
+        def people = tree.children()
 
-        order = new OrderBy([ { it.get('@location') }, { it.get('@cheese') } ])
-        sorted = people.sort(order)
+        def order = new OrderBy([ { it.get('@location') }, { it.get('@cheese') } ])
+        def sorted = people.sort(order)
         
         assert sorted.get(0).get('@name') == 'Bob'
         assert sorted.get(1).get('@name') == 'Joe'

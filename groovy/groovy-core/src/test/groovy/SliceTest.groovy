@@ -1,7 +1,7 @@
 class SliceTest extends GroovyTestCase {
 
     void testListSlice() {
-        list = [1, 2, 3, 4]
+        def list = [1, 2, 3, 4]
         list[1,2] = 5
 
         assert list == [1, 5, 4]

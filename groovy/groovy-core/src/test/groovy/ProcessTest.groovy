@@ -16,21 +16,21 @@ class ProcessTest extends GroovyTestCase {
     }
     
     void testProcessAppendBytes() {
-        myBytes = "mooky".getBytes()
+        def myBytes = "mooky".getBytes()
                   
         myProcess << myBytes
                   
-        result = myProcess.outputStream.toByteArray()          
+        def result = myProcess.outputStream.toByteArray()
         assert result != null
         assert Arrays.equals(myBytes,result)
     }
     void testProcessAppendTwoByteArrays() {
-        myBytes1 = "foo".getBytes()
-        myBytes2 = "bar".getBytes()
+        def myBytes1 = "foo".getBytes()
+        def myBytes2 = "bar".getBytes()
                   
         myProcess << myBytes1 << myBytes2
                   
-        result = myProcess.outputStream.toByteArray()
+        def result = myProcess.outputStream.toByteArray()
         assert result != null
         assert result.size() == myBytes1.size() + myBytes2.size()          
     }

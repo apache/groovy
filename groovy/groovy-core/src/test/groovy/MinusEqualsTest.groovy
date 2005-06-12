@@ -1,8 +1,8 @@
 class MinusEqualsTest extends GroovyTestCase {
 
     void testIntegerMinusEquals() {
-        x = 4
-        y = 2
+        def x = 4
+        def y = 2
         x -= y
         
         assert x == 2
@@ -25,8 +25,8 @@ class MinusEqualsTest extends GroovyTestCase {
     }
     
     void testNumberMinusEquals() {
-        x = 4.2
-        y = 2
+        def x = 4.2
+        def y = 2
         x -= y
         
         assert x == 2.2
@@ -37,7 +37,7 @@ class MinusEqualsTest extends GroovyTestCase {
     }
     
     void testStringMinusEquals() {
-        foo = "nice cheese"
+        def foo = "nice cheese"
         foo -= "cheese"
         
         assert foo == "nice "

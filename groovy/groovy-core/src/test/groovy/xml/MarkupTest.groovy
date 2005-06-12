@@ -7,7 +7,7 @@ package groovy.xml
 class MarkupTest extends TestXmlSupport {
     
     void testSmallTree() {
-        b = new MarkupBuilder()
+        def b = new MarkupBuilder()
         
         b.root1(a:5, b:7) {
             elem1('hello1')
@@ -17,7 +17,7 @@ class MarkupTest extends TestXmlSupport {
     }
     
     void testTree() {
-        b = new MarkupBuilder()
+        def b = new MarkupBuilder()
         
         b.root2(a:5, b:7) {
             elem1('hello1')
@@ -35,7 +35,7 @@ class MarkupTest extends TestXmlSupport {
     }
 
     void testContentAndDataInMarkup() {
-        b = new MarkupBuilder()
+        def b = new MarkupBuilder()
 
         b.a(href:"http://groovy.codehaus.org", "groovy")
     }

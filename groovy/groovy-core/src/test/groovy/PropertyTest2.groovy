@@ -8,10 +8,10 @@
 class PropertyTest2 extends GroovyTestCase {
 
     void testEachPropertyName() {
-        foo = new Foo()
+        def foo = new Foo()
 		
 		// these are the properties that should be there
-		props = ['name', 'count', 'location', 'blah']
+		def props = ['name', 'count', 'location', 'blah']
 		foo.eachPropertyName { prop ->
 			//println "looking for ${prop} in ${props}"
 
@@ -29,10 +29,10 @@ class PropertyTest2 extends GroovyTestCase {
     }
 
 	void testEachProperty() {
-        foo = new Foo()
+        def foo = new Foo()
 
 		// these are the properties and their values that should be there
-		props = ['name':'James', 'count':1, 'location':'London', 'blah':9]
+		def props = ['name':'James', 'count':1, 'location':'London', 'blah':9]
 		foo.eachProperty { prop ->
 			//println "looking for ${prop.name} in ${props}"
 			
@@ -54,10 +54,10 @@ class PropertyTest2 extends GroovyTestCase {
 	}
 	
 	void testAllProperties() {
-        foo = new Foo()
+        def foo = new Foo()
 		
 		// these are the properties that should be there
-		props = ['name', 'count', 'location', 'blah']
+		def props = ['name', 'count', 'location', 'blah']
 		
 		foo.allProperties().each { props -= [it.name] }
 		
@@ -68,7 +68,7 @@ class PropertyTest2 extends GroovyTestCase {
 	
 	// make sure allProperties() works with expando objects too
     void testAllPropertiesExpando() {
-        foo = new Expando()
+        def foo = new Expando()
 		
 		foo.name = 'John'
 		foo.location = 'Colorado'
@@ -76,7 +76,7 @@ class PropertyTest2 extends GroovyTestCase {
 		foo.blah = true
 		
 		// these are the properties that should be there
-		props = ['name', 'count', 'location', 'blah']
+		def props = ['name', 'count', 'location', 'blah']
 		foo.allProperties().each { props -= [it.name] }
 		
 		// there should be none left

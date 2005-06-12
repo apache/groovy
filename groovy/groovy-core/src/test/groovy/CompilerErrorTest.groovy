@@ -6,8 +6,8 @@ class CompilerErrorTest extends GroovyTestCase {
             println "About to call shell script"
             println "Really am about to call shell script"
 
-            shell = new GroovyShell()
-            text = 'badMethod(); println "Called method"'
+            def shell = new GroovyShell()
+            def text = 'badMethod(); println "Called method"'
             println "About to test script ${text}"
             shell.evaluate(text)
         }
@@ -16,9 +16,9 @@ class CompilerErrorTest extends GroovyTestCase {
     void testBadPropertyName() {
 
         shouldFail {
-            shell = new GroovyShell()
+            def shell = new GroovyShell()
             shell.evaluate """
-                x = [:]
+                def x = [:]
                 x.$foo = 123
             """
         }
@@ -27,9 +27,9 @@ class CompilerErrorTest extends GroovyTestCase {
     void testBadVariableName() {
 
         shouldFail {
-            shell = new GroovyShell()
+            def shell = new GroovyShell()
             shell.evaluate """
-                $x = 123
+                def $x = 123
             """
         }
     }

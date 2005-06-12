@@ -8,17 +8,17 @@ class MetaClassTest extends GroovyTestCase {
     }
     
     protected def test(object) {
-        metaClass = object.metaClass
+        def metaClass = object.metaClass
         assert metaClass != null
         
         println(metaClass)
         
-        classNode = metaClass.getClassNode()
+        def classNode = metaClass.getClassNode()
         assert classNode != null
 
         println(classNode)
         
-        name = object.getClass().getName()
+        def name = object.getClass().getName()
         assert classNode.name == name
     }
 }

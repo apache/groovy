@@ -16,21 +16,21 @@ class SocketTest extends GroovyTestCase {
     }
     
     void testSocketAppendBytes() {
-        myBytes = "mooky".getBytes()
+        def myBytes = "mooky".getBytes()
                   
         mySocket << myBytes
                   
-        result = mySocket.outputStream.toByteArray()          
+        def result = mySocket.outputStream.toByteArray()
         assert result != null
         assert Arrays.equals(myBytes,result)
     }
     void testSocketAppendTwoByteArrays() {
-        myBytes1 = "foo".getBytes()
-        myBytes2 = "bar".getBytes()
+        def myBytes1 = "foo".getBytes()
+        def myBytes2 = "bar".getBytes()
                   
         mySocket << myBytes1 << myBytes2
                   
-        result = mySocket.outputStream.toByteArray()
+        def result = mySocket.outputStream.toByteArray()
         assert result != null
         assert result.size() == myBytes1.size() + myBytes2.size()          
     }

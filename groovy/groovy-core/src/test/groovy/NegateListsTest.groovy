@@ -10,12 +10,12 @@ class NegateListsTest extends GroovyTestCase {
     void testNegateList() {
         assert -[1, 2, 3] == [-1, -2, -3]
 
-        x = [1, 2, 3]
+        def x = [1, 2, 3]
         assert -x == [-1, -2, -3]
         assert x == -[-1, -2, -3]
         assert -(-x) == x
 
-        y = [-1, -2, -3]
+        def y = [-1, -2, -3]
         assert -x == y
         assert x == -y
     }
@@ -23,19 +23,19 @@ class NegateListsTest extends GroovyTestCase {
     void testBitwiseNegateList() {
         assert ~[1, 2, 3] == [-2, -3, -4]
 
-        x = [1, 2, 3]
+        def x = [1, 2, 3]
         assert ~x == [-2, -3, -4]
         assert x == ~[-2, -3, -4]
         assert ~~x == x
         assert ~(~x) == x
 
-        y = [-2, -3, -4]
+        def y = [-2, -3, -4]
         assert ~x == [-2, -3, -4]
         assert x == ~y
     }
 
     void testEvenFunction() {
-        PI = Math.PI
+        def PI = Math.PI
 
         /////////////////////////////////////////////////////////////////////
         // A case of partition having 10 subintervals.
@@ -44,20 +44,20 @@ class NegateListsTest extends GroovyTestCase {
 
         /////////////////////////////////////////////////////////////////////
         // Generate a domain of function used om testing.
-        n = 1000    // the number of partitions for the interval 0..2/PI
-        x = []
+        def n = 1000    // the number of partitions for the interval 0..2/PI
+        def x = []
         for (i in 0..n) {
             x << i*PI/n
         }
         // println x
 
-        cos = { Math.cos(it) }
+        def cos = { Math.cos(it) }
         assertTrue(isEvenFn(cos, x))
 
-        sin = { Math.sin(it) }
+        def sin = { Math.sin(it) }
         assertTrue(isOddFn(sin, x))
 
-        tan = { Math.tan(it) }
+        def tan = { Math.tan(it) }
         assertTrue(isOddFn(tan, x))
     }
 

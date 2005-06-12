@@ -3,10 +3,10 @@ package groovy.xml
 class SmallNamespaceDOMTest extends TestXmlSupport {
     
     void testTree() {
-        builder = DOMBuilder.newInstance()
-        xsd = new Namespace(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
+        def builder = DOMBuilder.newInstance()
+        def xsd = new Namespace(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
         
-        root = xsd.schema() {
+        def root = xsd.schema() {
           element(name:'purchaseOrder', type:'PurchaseOrderType')
           element(name:'comment', type:'xsd:string')
           complexType(name:'PurchaseOrderType') {

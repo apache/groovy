@@ -7,9 +7,9 @@ package groovy.xml
 class DOMTest extends TestXmlSupport {
     
     void testSmallTree() {
-        b = DOMBuilder.newInstance()
+        def b = DOMBuilder.newInstance()
         
-        root = b.root1(a:5, b:7) {
+        def root = b.root1(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             elem3(x:7)
@@ -21,9 +21,9 @@ class DOMTest extends TestXmlSupport {
     }
     
     void testTree() {
-        b = DOMBuilder.newInstance()
+        def b = DOMBuilder.newInstance()
         
-        root = b.root2(a:5, b:7) {
+        def root = b.root2(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             nestedElem(x:'abc', y:'def') {
@@ -42,10 +42,10 @@ class DOMTest extends TestXmlSupport {
         dump(root)
 
 /*
-		elem1 = root.elem1
+        def elem1 = root.elem1
         assert elem1.value() := 'hello1'
         
-        elem2 = root.elem2
+        def elem2 = root.elem2
         assert elem2.value() := 'hello2'
 
         assert root.elem1.value() := 'hello1'
@@ -61,7 +61,7 @@ class DOMTest extends TestXmlSupport {
         assert root.nestedElem2.child2.value() := 'hello'
         assert root.nestedElem2.child2.text() := 'hello'
         
-        list = root.value()
+        def list = root.value()
         assert list.size() := 4
         
         assert root.attributes().a := 5

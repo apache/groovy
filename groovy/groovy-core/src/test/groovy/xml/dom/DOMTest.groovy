@@ -11,15 +11,15 @@ class DOMTest extends GroovyTestCase {
 
   /*
   void testDOMParser() {
-    xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");
-    doc = DOMBuilder.parse(xml);
-    html = doc.documentElement;
+    def xml = new StringReader("<html><head><title class='mytitle'>Test</title></head><body><p class='mystyle'>This is a test.</p></body></html>");
+    def doc = DOMBuilder.parse(xml);
+    def html = doc.documentElement;
     
     if (!benchmark) { assertCorrect html }
   }
 
   void testDOMBuilder() {
-    html = DOMBuilder.newInstance().
+    def html = DOMBuilder.newInstance().
         
     html {
       head {
@@ -36,7 +36,7 @@ class DOMTest extends GroovyTestCase {
  
   void testStreamingDOMBuilder() {
 
-    doc = new StreamingDOMBuilder().bind {
+    def doc = new StreamingDOMBuilder().bind {
       html {
         head {
 		  title (class:"mytitle", "Test")
@@ -65,22 +65,22 @@ class DOMTest extends GroovyTestCase {
   	// Parser:    1.0
   	// Builder:   1.05
   	// Streaming: 0.77
-  	x = args.size() == 0 ? 1000 : Integer.parseInt(args[0]);
-  	mydomtest = new DOMTest();
-  	standard = 0;
+  	def x = args.size() == 0 ? 1000 : Integer.parseInt(args[0]);
+  	def mydomtest = new DOMTest();
+  	def standard = 0;
   	mydomtest.benchmark = true;
   	[mydomtest.testDOMParser, mydomtest.testDOMBuilder, mydomtest.testStreamingDOMBuilder].each {
   		// Run the method once to fill any caches and to load classes
   		it();
-	  	start = System.currentTimeMillis();
+	  	def start = System.currentTimeMillis();
   		for (i in 1..x) {
   			it();
 	  	}
-  		elapsed = System.currentTimeMillis() - start;
-  		result = i * 1000 / elapsed;
+  		def elapsed = System.currentTimeMillis() - start;
+  		def result = i * 1000 / elapsed;
 
-		standard = (standard == 0 ? result : standard);  		
-		factor = result/standard;
+		def standard = (standard == 0 ? result : standard);
+		def factor = result/standard;
   		
 	  	println "${it.method}: ${factor}x (${result} trees/s)";
 	}

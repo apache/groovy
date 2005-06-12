@@ -9,34 +9,34 @@ class Html2Wiki {
     protected out
     
     static void main(args) {
-        gen = new Html2Wiki()
+        def gen = new Html2Wiki()
         for (arg in args) {
             gen.createWiki(arg)
         }
     }
     
     void createWiki(fileName) {
-        htmlParser = new SAXParser()
+        def htmlParser = new SAXParser()
         htmlParser.setProperty("http://cyberneko.org/html/properties/names/elems", "lower")
         htmlParser.setProperty("http://cyberneko.org/html/properties/names/attrs", "lower")
-        parser = new XmlParser(htmlParser)
+        def parser = new XmlParser(htmlParser)
         println "Parsing ${fileName}"
-        node = parser.parse(fileName)
+        def node = parser.parse(fileName)
         
-        outputName = getOutputName(fileName)
+        def outputName = getOutputName(fileName)
         new File(outputName).eachPrintWriter { out = it; makeWikiPage(node) }
     }
 
     def getOutputName(fileName) {
-	    lastIdx = fileName.lastIndexOf(".")
+	    def lastIdx = fileName.lastIndexOf(".")
 	    if (lastIdx > 0) {
-	        fileName = fileName.substring(0, lastIdx)
+	        def fileName = fileName.substring(0, lastIdx)
 	    }
 	    return fileName + ".wiki"
 	}
     
     void makeWikiPage(node) {
-        body = node.html.body
+        def body = node.html.body
         if (body == null) {
             println "Warning empty document, no <html><body> section"
         }

@@ -137,8 +137,8 @@ class GStringTest extends GroovyTestCase {
     }
     
     void testCoerce() {
-        def it = "US-ASCII"
-        def value = "test".getBytes("${it}")
+        def enc = "US-ASCII"
+        def value = "test".getBytes("${enc}")
         
         println "Created ${value}"
         assert value != null

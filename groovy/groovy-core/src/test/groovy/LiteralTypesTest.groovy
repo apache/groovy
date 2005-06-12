@@ -11,7 +11,7 @@ import java.math.BigInteger;
 class LiteralTypesTest extends GroovyTestCase {
 
     void testIntegral() {
-        x = 42;
+        def x = 42;
         assert x instanceof Integer;
 
         x = 42I;
@@ -89,7 +89,7 @@ class LiteralTypesTest extends GroovyTestCase {
     }
 
     void testDecimal() {
-        x = 3.2;
+        def x = 3.2;
         assert x instanceof BigDecimal;
         assert x == new BigDecimal("3.2");
 
@@ -123,7 +123,7 @@ class LiteralTypesTest extends GroovyTestCase {
     }
 
     void testExponential() {
-        x = 3.1415926535e42;
+        def x = 3.1415926535e42;
         assert x instanceof BigDecimal;
         assert x == new BigDecimal("3.1415926535e42");
 

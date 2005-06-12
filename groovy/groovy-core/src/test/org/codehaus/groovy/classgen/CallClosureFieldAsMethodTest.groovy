@@ -15,7 +15,7 @@ class CallClosureFieldAsMethodTest extends GroovyTestCase {
      */
     void testCallToClosureAsMethod() {
 
-        obj = new CallClosureFieldAsMethodTest()
+        def obj = new CallClosureFieldAsMethodTest()
 
         assert obj.closureMethod("Hello") == "Hello Guillaume"
     }

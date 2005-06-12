@@ -6,8 +6,8 @@ package groovy.util
 class ProxyTest extends GroovyTestCase {
 
     void testStringDecoration(){
-        original = 'decorated String'
-        proxy = new StringDecorator().wrap(original)
+        def original = 'decorated String'
+        def proxy = new StringDecorator().wrap(original)
         // method, that is only known on proxy
         assertSame original, proxy.adaptee
         // method, that is only known on adaptee is relayed through the proxy

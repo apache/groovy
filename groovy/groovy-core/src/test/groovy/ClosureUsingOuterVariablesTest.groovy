@@ -51,7 +51,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
     
     void testExampleUseOfClosureScopes() {
         def a = 123
-		
+        def b
         def c = { b = a + it }
         c(5)
         
@@ -61,7 +61,7 @@ class ClosureUsingOuterVariablesTest extends GroovyTestCase {
 
     void testExampleUseOfClosureScopesUsingEach() {
         def a = 123
-        
+        def b
         [5].each { b = a + it }
 
         assert b == a + 5

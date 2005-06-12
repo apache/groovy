@@ -1,8 +1,8 @@
 class ListTest extends GroovyTestCase {
 
     void testList() {
-        x = [10, 11]
-		
+        def x = [10, 11]
+
         assert x.size() == 2
 
         x.add("cheese")
@@ -44,7 +44,7 @@ class ListTest extends GroovyTestCase {
     }
     
     void testEmptyList() {
-        x = []
+        def x = []
         
         assert x.size() == 0
         
@@ -58,7 +58,7 @@ class ListTest extends GroovyTestCase {
     }
     
     void testSubscript() {
-        x = []
+        def x = []
         x[1] = 'cheese'
         
         assert x[0] == null
@@ -79,15 +79,15 @@ class ListTest extends GroovyTestCase {
     }
     
     void testClosure() {
-        l = [1, 2, 3, "abc"]
-        block = {i -> println(i) }
+        def l = [1, 2, 3, "abc"]
+        def block = {i -> println(i) }
         l.each(block)
 
         l.each {i-> println(i) }
     }
     
     void testMax() {
-        l = [1, 2, 5, 3, 7, 1]        
+        def l = [1, 2, 5, 3, 7, 1]
         assert l.max() == 7
         
         l = [7, 2, 3]
@@ -98,7 +98,7 @@ class ListTest extends GroovyTestCase {
     }
     
     void testMin() {
-        l = [6, 4, 5, 1, 7, 2]        
+        def l = [6, 4, 5, 1, 7, 2]
         assert l.min() == 1
         
         l = [7, 1, 3]
@@ -109,73 +109,73 @@ class ListTest extends GroovyTestCase {
     }
     
     void testPlus() {
-        l1 = [6, 4, 5, 1, 7, 2]        
-        l2 = [6, 4, 5, 1, 7, [4,5]]
-        l3 = l1 + l2
+        def l1 = [6, 4, 5, 1, 7, 2]
+        def l2 = [6, 4, 5, 1, 7, [4,5]]
+        def l3 = l1 + l2
         assert l3 == [6, 4, 5, 1, 7, 2, [6, 4, 5, 1, 7, [4,5]]]            
     }
     
     void testPlusOneElement() {
-        l1 = [6, 4, 5, 1, 7, 2]        
-        l2 = "erererer"
+        def l1 = [6, 4, 5, 1, 7, 2]
+        def l2 = "erererer"
         assert l1 + l2 == [6, 4, 5, 1, 7, 2, "erererer"]            
     }
 
     void testListAppend() {
-        list = [1, 2]
+        def list = [1, 2]
         
         list << 3 << 4 << 5
         
         assert list == [1, 2, 3, 4, 5]
         
-        x = [] << 'a' << 'hello' << [2, 3] << 5
+        def x = [] << 'a' << 'hello' << [2, 3] << 5
         
         assert x == ['a', 'hello', [2, 3], 5]
     }
 
     void testTimes() {
-        l = [4,7,8]
+        def l = [4,7,8]
         assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]
     }
     
     void testMinus() {
-        l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5] 
-        l2 = [1, 2, 4] 
+        def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5]
+        def l2 = [1, 2, 4]
         assert l1 - l2 == [3, 5] 
     }
 
     void testMinusDifferentTypes() {
-        l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"] 
-        l2 = [1, 2, "w"] 
+        def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
+        def l2 = [1, 2, "w"]
         assert l1 - l2 == ["wrer", 3, "wrewer", 4, 5] 
     }  
      
     void testIntersect() {
-        l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"] 
-        l2 = [1, 2, "f", "w"] 
+        def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
+        def l2 = [1, 2, "f", "w"]
         assert l1.intersect(l2) == [1, 2, "w"] 
     }
       
     void testFlatten() {
-        l= [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
+        def l = [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
         assert l.flatten() == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
     }
     
     void testFlattenWithRanges() {
-        flat = [1, 3, 20..24, 33].flatten()
+        def flat = [1, 3, 20..24, 33].flatten()
         assert flat == [1, 3, 20, 21, 22, 23, 24, 33]
     }
     
     void testListsAndRangesCompare() {
-        l = [1, 2, 3]
-        r = 1..3
+        def l = [1, 2, 3]
+        def r = 1..3
         
         assert r == l
         assert l == r
     }
     
     void testRemove() {
-        l = ['a', 'b', 'c']
+        def l = ['a', 'b', 'c']
         
         l.remove(1)
         
@@ -188,9 +188,9 @@ class ListTest extends GroovyTestCase {
     }
     
     void testPop() {
-        l = []
+        def l = []
         l << 'a' << 'b'
-        value = l.pop()
+        def value = l.pop()
         assert value == 'b'
         assert l == ['a']
         

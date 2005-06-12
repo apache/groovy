@@ -1,9 +1,9 @@
 class PrefixTest extends GroovyTestCase {
 
     void testIntegerPrefix() {
-        x = 1
+        def x = 1
         
-        y = ++x
+        def y = ++x
         
         assert y == 2
         assert x == 2
@@ -12,8 +12,8 @@ class PrefixTest extends GroovyTestCase {
     }
     
     void testDoublePrefix() {
-        x = 1.2
-        y = ++x
+        def x = 1.2
+        def y = ++x
         
         assert y == 2.2
         assert x == 2.2
@@ -22,7 +22,7 @@ class PrefixTest extends GroovyTestCase {
     }
 
     void testStringPrefix() {
-        x = "bbc"
+        def x = "bbc"
         ++x
         
         assert x == "bbd"
