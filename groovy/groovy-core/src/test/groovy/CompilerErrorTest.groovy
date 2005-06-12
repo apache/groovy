@@ -19,7 +19,7 @@ class CompilerErrorTest extends GroovyTestCase {
             def shell = new GroovyShell()
             shell.evaluate """
                 def x = [:]
-                x.$foo = 123
+                x.\$foo = 123
             """
         }
     }
@@ -29,7 +29,7 @@ class CompilerErrorTest extends GroovyTestCase {
         shouldFail {
             def shell = new GroovyShell()
             shell.evaluate """
-                def $x = 123
+                def \$x = 123
             """
         }
     }
