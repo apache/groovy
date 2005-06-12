@@ -6,12 +6,12 @@ package groovy.xml
 class NamespaceDOMTest extends TestXmlSupport {
     
     void testTree() {
-        builder = DOMBuilder.newInstance()
-        xmlns = new NamespaceBuilder(builder)
+        def builder = DOMBuilder.newInstance()
+        def xmlns = new NamespaceBuilder(builder)
         
-        xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema', 'xsd')
+        def xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema', 'xsd')
         
-        root = xsd.schema(xmlns:['foo':'http://someOtherNamespace']) {
+        def root = xsd.schema(xmlns:['foo':'http://someOtherNamespace']) {
           annotation {
               documentation("Purchase order schema for Example.com.")
               //documentation(xmlns=[xml.lang:'en']) ["Purchase order schema for Example.com."]

@@ -8,14 +8,14 @@ import java.math.BigInteger;
 class NumberMathTest extends GroovyTestCase {
 
     void testPromotions() {
-    	C = '1'.toCharacter();
-    	B = new Byte("1");
-    	I = new Integer(1);
-    	L = new Long(1);
-    	F = new Float("1.0");
-    	D = new Double("1.0");
-    	BI = new BigInteger("1");
-    	BD = new BigDecimal("1.0");
+    	def C = '1'.toCharacter();
+    	def B = new Byte("1");
+    	def I = new Integer(1);
+    	def L = new Long(1);
+    	def F = new Float("1.0");
+    	def D = new Double("1.0");
+    	def BI = new BigInteger("1");
+    	def BD = new BigDecimal("1.0");
     	
     	//+, -, and * all promote the same way, so sample the matrix
     	assert C+B instanceof Integer;
@@ -72,21 +72,21 @@ class NumberMathTest extends GroovyTestCase {
     }
     
     void testOperations() {
-    	I1 = new Integer(1);
-    	I2 = new Integer(2);
-    	I3 = new Integer(3);
-    	L1 = new Long(1);
-    	L2 = new Long(2);
-    	L3 = new Long(3);
-    	F1 = new Float("1.0");
-    	F2 = new Float("2.0");
-    	D1 = new Double("1.0");
-    	D2 = new Double("2.0");
-    	BI1 = new BigInteger("1");
-    	BI2 = new BigInteger("2");
-    	BD1 = new BigDecimal("1.0");
-    	BD2 = new BigDecimal("2.0");
-    	BD20 = new BigDecimal("2.00");
+    	def I1 = new Integer(1);
+    	def I2 = new Integer(2);
+    	def I3 = new Integer(3);
+    	def L1 = new Long(1);
+    	def L2 = new Long(2);
+    	def L3 = new Long(3);
+    	def F1 = new Float("1.0");
+    	def F2 = new Float("2.0");
+    	def D1 = new Double("1.0");
+    	def D2 = new Double("2.0");
+    	def BI1 = new BigInteger("1");
+    	def BI2 = new BigInteger("2");
+    	def BD1 = new BigDecimal("1.0");
+    	def BD2 = new BigDecimal("2.0");
+    	def BD20 = new BigDecimal("2.00");
 
     	
     	assert I1/I2 instanceof BigDecimal;

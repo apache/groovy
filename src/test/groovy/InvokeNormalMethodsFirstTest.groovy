@@ -11,32 +11,32 @@ class InvokeNormalMethodsFirstTest extends GroovyTestCase {
     }
 
     void testStaticMethodOnJdkObject() {
-        myString = " static method "
-        newString = myString.trim()
+        def myString = " static method "
+        def newString = myString.trim()
 
         assert newString == "static method"
     }
 
     void testCallClosure() {
-        clos = { msg -> msg + " is Groovy" }
-        str = clos("Guillaume")
+        def clos = { msg -> msg + " is Groovy" }
+        def str = clos("Guillaume")
 
         assert str == "Guillaume is Groovy"
     }
 
     void testCallNormalMethodFromAGroovyDefinedClass() {
-        p = new Printer()
-        str = "Guillaume"
-        result = p.returnSelf(str)
+        def p = new Printer()
+        def str = "Guillaume"
+        def result = p.returnSelf(str)
 
         assert result == str
     }
 
     void testCallNormalMethodFirstFromWackyObject() {
-        w = new Wacky()
-        str = "Groovy"
-        staticResult = w.returnSelf(str)
-        invokeResult = w.nonExistingMethod(str)
+        def w = new Wacky()
+        def str = "Groovy"
+        def staticResult = w.returnSelf(str)
+        def invokeResult = w.nonExistingMethod(str)
 
         assert staticResult == str
         assert invokeResult == "invokerMethod call"

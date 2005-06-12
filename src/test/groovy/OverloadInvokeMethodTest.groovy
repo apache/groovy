@@ -4,7 +4,7 @@
 class OverloadInvokeMethodTest extends GroovyTestCase {
     
     void testBug() {
-        value = foo(123)
+        def value = foo(123)
         assert value == 246
     }
 

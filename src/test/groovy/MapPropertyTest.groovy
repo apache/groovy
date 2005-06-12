@@ -5,7 +5,7 @@
 class MapPropertyTest extends GroovyTestCase {
 
     void testGetAndSetProperties() {
-        m = [ 'name' : 'James', 'location' : 'London', 'id':1 ]
+        def m = [ 'name' : 'James', 'location' : 'London', 'id':1 ]
         
         assert m.name == 'James'
         assert m.location == 'London'
@@ -21,7 +21,7 @@ class MapPropertyTest extends GroovyTestCase {
     }
 
     void testSetupAndEmptyMap() {
-        m = [:]
+        def m = [:]
         
         m.name = 'Bob'
         m.location = 'Atlanta'

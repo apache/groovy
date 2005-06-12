@@ -4,8 +4,8 @@ class InstanceofTest extends GroovyTestCase {
 
     void testTrue() {
 
-        x = false
-        o = 12
+        def x = false
+        def o = 12
         
         if ( o instanceof Integer ) {
             x = true
@@ -16,8 +16,8 @@ class InstanceofTest extends GroovyTestCase {
     
     void testFalse() {
 
-        x = false
-        o = 12
+        def x = false
+        def o = 12
         
         if ( o instanceof Double ) {
             x = true
@@ -27,7 +27,7 @@ class InstanceofTest extends GroovyTestCase {
     }
     
     void testImportedClass() {
-        m = ["xyz":2]
+        def m = ["xyz":2]
         assert m instanceof Map
         assert !(m instanceof Double)
         
@@ -36,7 +36,7 @@ class InstanceofTest extends GroovyTestCase {
     }
     
     void testFullyQualifiedClass() {
-        l = [1, 2, 3]
+        def l = [1, 2, 3]
         assert l instanceof java.util.List
         assert !(l instanceof Map)
         

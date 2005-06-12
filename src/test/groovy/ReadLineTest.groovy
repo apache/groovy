@@ -13,11 +13,13 @@ class ReadLineTest extends GroovyTestCase {
         file = new File("src/test/groovy/ReadLineTest.groovy")
     }
     void testReadOneLineFromReader() {
+        def line
         file.withReader() {line = it.readLine()}
         assert line == "import java.io.File"
     }
     
     void testReadOneLineFromInputStream() {
+        def line
         file.withInputStream() {line = it.readLine()}
         assert line == "import java.io.File"
     }

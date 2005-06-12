@@ -6,18 +6,18 @@
  */
 class LogTest extends GroovyTestCase {
 
-	void testUseLog() {
-	    file = "something.txt"
-	    
-        log = GroovyLog.newInstance(getClass())
+    void testUseLog() {
+        def file = "something.txt"
+
+        def log = GroovyLog.newInstance(getClass())
         
         log.starting("Hey I'm starting up...")
         
-	    log.openFile("Am about to open file ${file}")
-	    
-	    // ...
-	    
-	    log.closeFile("Have closed the file ${file}")
+        log.openFile("Am about to open file ${file}")
+
+        // ...
+
+        log.closeFile("Have closed the file ${file}")
 
         log.stopping("..Finished")
 	}

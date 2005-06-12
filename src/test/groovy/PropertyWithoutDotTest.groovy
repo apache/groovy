@@ -4,7 +4,7 @@ class PropertyWithoutDotTest extends GroovyTestCase {
     }
     
     void testProperty() {
-        value = foo
+        def value = foo
         
         assert value == "cheese"
     }

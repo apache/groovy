@@ -20,7 +20,7 @@ class PowerOperationTest extends GroovyTestCase {
     }
 
     void testPowerOperation() {
-        x = 9
+        def x = 9
         --x
         assert x == 8
         println(--x)
@@ -51,7 +51,7 @@ class PowerOperationTest extends GroovyTestCase {
     }
 
     void testConstantPowerAssignmentOperation() {
-        x = 5
+        def x = 5
         x **= 2
         assert x == 25
         assert x**2 == 625
@@ -60,8 +60,8 @@ class PowerOperationTest extends GroovyTestCase {
     }
 
     void testPowerAssignmentOperation() {
-        x = 5
-        y = 2
+        def x = 5
+        def y = 2
         x **= y
         assert x == 25
         assert x**y == 625

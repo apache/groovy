@@ -6,8 +6,8 @@ package groovy.xml
 class MarkupWithWriterTest extends TestXmlSupport {
 
     void testSmallTreeWithStringWriter() {
-        writer = new java.io.StringWriter()
-        b = new MarkupBuilder(writer)
+        def writer = new java.io.StringWriter()
+        def b = new MarkupBuilder(writer)
 
         b.root1(a:5, b:7) {
             elem1('hello1')

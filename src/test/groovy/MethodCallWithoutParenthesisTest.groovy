@@ -29,13 +29,13 @@ class MethodCallWithoutParenthesisTest extends GroovyTestCase {
 
         // not allowed in New Groovy
         // value = methodWithTwoParams 5, 6
-        value = methodWithTwoParams(5, 6)
+        def value = methodWithTwoParams(5, 6)
 
         assert value == 11
     }
     
     void testMethodCallWithTwoParamsUsingThis() {
-        value = this.methodWithTwoParams(5, 6)
+        def value = this.methodWithTwoParams(5, 6)
         
         assert value == 11
     }

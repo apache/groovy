@@ -1,7 +1,7 @@
 class RangeTest extends GroovyTestCase {
 	
 	void testRange() {
-	    x = 0
+	    def x = 0
 
 	    for ( i in 0..9 ) {
 	        x = x + i
@@ -27,7 +27,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testRangeEach() {
-	    x = 0
+	    def x = 0
 
 	    (0..9).each {
 	        x = x + it
@@ -75,7 +75,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testRangeContains() {
-	    range = 0..10
+	    def range = 0..10
 	    assert range.contains(0)
 	    assert range.contains(10)
 	    
@@ -85,7 +85,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testBackwardsRangeContains() {
-	    range = 10..0
+	    def range = 10..0
 	    assert range.contains(0)
 	    assert range.contains(10)
 	    
@@ -95,7 +95,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testObjectRangeContains() {
-	    range = 'a'..'x'
+	    def range = 'a'..'x'
 	    assert range.contains('a')
 	    assert range.contains('x')
 	    assert range.contains('z') == false
@@ -108,7 +108,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testBackwardsObjectRangeContains() {
-	    range = 'x'..'a'
+	    def range = 'x'..'a'
 	    assert range.contains('a')
 	    assert range.contains('x')
 	    assert range.contains('z') == false
@@ -150,29 +150,29 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	void testStringRange() {
-	    range = 'a'..'d'
+	    def range = 'a'..'d'
 	    
-	    list = []
+	    def list = []
 	    range.each { list << it }
 	    assert list == ['a', 'b', 'c', 'd']
 	    
-	    s = range.size()
+	    def s = range.size()
 	    assert s == 4
 	}
 	
 	void testBackwardsStringRange() {
-	    range = 'd'..'a'
+	    def range = 'd'..'a'
 	    
-	    list = []
+	    def list = []
 	    range.each { list << it }
 	    assert list == ['d', 'c', 'b', 'a']
 	    
-	    s = range.size()
+	    def s = range.size()
 	    assert s == 4
 	}
 	
 	protected void assertIterate(range, expected) {
-	    list = []
+	    def list = []
 	    for (it in range) {
 	        list << it
 	    }
@@ -184,26 +184,26 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	protected void assertSize(range, expected) {
-	    size = range.size()
+	    def size = range.size()
 	    assert size == expected , range
 	}
 	
 	protected void assertToString(range, expected) {
-	    text = range.toString()
+	    tdef ext = range.toString()
 	    assert text == expected , "toString() for ${range}"
 	    text = range.inspect()
 	    assert text == expected , "inspect() for ${range}"
 	}
 	
 	protected void assertToString(range, expectedString, expectedInspect) {
-	    text = range.toString()
+	    def text = range.toString()
 	    assert text == expectedString , "toString() for ${range}"
 	    text = range.inspect()
 	    assert text == expectedInspect , "inspect() for ${range}"
 	}
 	
 	protected void assertStep(range, stepValue, expected) {
-	    list = []
+	    def list = []
 	    range.step(stepValue) {
 	        list << it
 	    }

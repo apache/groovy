@@ -56,10 +56,10 @@ class BitwiseOperationsTest extends GroovyTestCase {
        /*
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
-        a = 13
+        def a = 13
         assert a & 3 == 1    // 0x0000000D & 0x00000003
         assert a & 7 == 5    // 0x0000000D & 0x00000007
-        b = -13
+        def b = -13
         assert b & 3 == 3    // 0xFFFFFFF3 & 0x00000003
         assert b & 7 == 3    // 0xFFFFFFF3 & 0x00000007
        */
@@ -89,10 +89,10 @@ class BitwiseOperationsTest extends GroovyTestCase {
        /*
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
-        a = 13
+        def a = 13
         assert a | 8 == 13      // 0x0000000D | 0x00000008
         assert a | 16 == 29     // 0x0000000D | 0x00000010
-        b = -13
+        def b = -13
         assert b | 8 == -5      // 0xFFFFFFF3 | 0x00000008
         assert b | 16 == -13    // 0xFFFFFFF3 | 0x00000010
        */
@@ -122,10 +122,10 @@ class BitwiseOperationsTest extends GroovyTestCase {
        /*
         // Oprator Precedence Problem
         // ^, &, | should be prior to ==, <, >, <=, >=
-        a = 13
+        def a = 13
         assert a ^ 10 == 7     // 0x0000000D ^ 0x0000000A = 0x000000007
         assert a ^ 15 == 2     // 0x0000000D ^ 0x0000000F = 0x000000002
-        b = -13
+        def b = -13
         assert b ^ 10 == -7    // 0xFFFFFFF3 ^ 0x0000000A = 0xFFFFFFF9
         assert b ^ 15 == -4    // 0xFFFFFFF3 ^ 0x0000000F = 0xFFFFFFFC
        */
@@ -172,16 +172,16 @@ class BitwiseOperationsTest extends GroovyTestCase {
 
         def x = 3
         def y = 5
-        c1 = { x -> return y }         // -> is a closure delimiter
+        c1 = { xx -> return y }         // -> is a closure delimiter
         c2 = { return x & y }        // & is a bitAnd
         def c3 = { return x ^ y }      // & is a bitXor
         def c11 = {
-             x -> return y             // -> is a closure delimiter
+             xx -> return y             // -> is a closure delimiter
         }
         def c12 = {
              return (x | y)            // | is a bitOr
         }
-        def c13 = { x -> return y      // -> is a closure delimiter
+        def c13 = { xx -> return y      // -> is a closure delimiter
         }
         def c14 = {-> return x | y     // last | is a bitOr
         }
@@ -196,16 +196,16 @@ class BitwiseOperationsTest extends GroovyTestCase {
 
         x = 0x03
 
-        def d1 = { x -> return x }      // -> is a closure delimiter
+        def d1 = { xx -> return xx }      // -> is a closure delimiter
         def d2 = { return x & x }       // & is a bitAnd
         def d3 = { return x ^ x }       // & is a bitXor
         def d11 = {
-             x -> return x              // -> is a closure delimiter
+             xx -> return xx              // -> is a closure delimiter
         }
         def d12 = {
              return (x | x)            // | is a bitOr
         }
-        def d13 = {x -> return x       // -> is a closure delimiter
+        def d13 = {xx -> return xx       // -> is a closure delimiter
         }
         def d14 = {-> return x | x     // last | is a bitOr
         }

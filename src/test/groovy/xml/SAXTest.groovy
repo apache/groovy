@@ -7,9 +7,9 @@ package groovy.xml
 class SAXTest extends TestXmlSupport {
     
     void testSmallTree() {
-        b = createSAXBuilder()
+        def b = createSAXBuilder()
         
-        root = b.root1(a:5, b:7) {
+        def root = b.root1(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             elem3(x:7)
@@ -17,9 +17,9 @@ class SAXTest extends TestXmlSupport {
     }
     
     void testTree() {
-        b = createSAXBuilder()
+        def b = createSAXBuilder()
         
-        root = b.root2(a:5, b:7) {
+        def root = b.root2(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             nestedElem(x:'abc', y:'def') {

@@ -15,7 +15,7 @@ class ConstructorIssueTest extends TestSupport {
     static void main(args) {
         //println("in main() - called with ${array}")
         
-        foo = new ConstructorIssueTest()
+        def foo = new ConstructorIssueTest()
         foo.done()
 
         //System.out.println("Done");
@@ -26,7 +26,7 @@ class ConstructorIssueTest extends TestSupport {
     }
     
     void testConstructorIssue() {
-        array = getMockArguments()
+        def array = getMockArguments()
 
         main(array)
 

@@ -10,7 +10,7 @@ class ListIteratingTest extends GroovyTestCase {
 
 /** @todo parser
     testIteratingWithTuples() {
-        s = 1, 2, 3, 4
+        def s = 1, 2, 3, 4
         assertSequence(s)
     }
 
@@ -20,7 +20,7 @@ class ListIteratingTest extends GroovyTestCase {
 */
 
     void testIteratingWithSequences() {
-        s = [1, 2, 3, 4 ]
+        def s = [1, 2, 3, 4 ]
         assertSequence(s)
     }
     
@@ -29,7 +29,7 @@ class ListIteratingTest extends GroovyTestCase {
     }
     
     def testIteratingWithList() {
-        s = new ArrayList()
+        def s = new ArrayList()
         s.add(1)
         s.add(2)
         s.add(3)
@@ -38,7 +38,7 @@ class ListIteratingTest extends GroovyTestCase {
     }
 
     protected void assertSequence(s) {
-        result = 0
+        def result = 0
         for ( i in s ) {
             result = result + i
         }

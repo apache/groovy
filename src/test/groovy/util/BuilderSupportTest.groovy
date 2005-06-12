@@ -14,27 +14,27 @@ import groovy.lang.MissingMethodException
 
 class BuilderSupportTest extends GroovyTestCase{
     void testSimpleNode() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         assert b.log == []
-        node = b.foo()
+        def node = b.foo()
         assert b.log == ['create_with_name','foo','node_completed',null, node]
     }
 
     void testSimpleNodeWithValue() {
-        b = new SpoofBuilder()
-        node = b.foo('value')
+        def b = new SpoofBuilder()
+        def node = b.foo('value')
         assert b.log == ['create_with_name_and_value','foo','value', 'node_completed',null,node]
     }
 
     void testSimpleNodeWithOneAttribute() {
-        b = new SpoofBuilder()
-        node = b.foo(name:'value')
+        def b = new SpoofBuilder()
+        def node = b.foo(name:'value')
         assert b.log == [
             'create_with_name_and_map','foo', 'name','value', 'node_completed',null,'x']
     }
 
     void testSimpleNodeWithClosure() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         b.foo(){
             b.bar()
         }
@@ -47,46 +47,46 @@ class BuilderSupportTest extends GroovyTestCase{
     }
 
     void testSimpleNodeWithOneAttributeAndValue() {
-        b = new SpoofBuilder()
-        node = b.foo(bar:'baz', 'value')
+        def b = new SpoofBuilder()
+        def node = b.foo(bar:'baz', 'value')
         assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
     }
 
     void testSimpleNodeWithValueAndOneAttribute() {
-        b = new SpoofBuilder()
-        node = b.foo('value', bar:'baz')
+        def b = new SpoofBuilder()
+        def node = b.foo('value', bar:'baz')
         assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
     }
 
     void testSimpleNodeWithOneAttributeAndValueAndClosure() {
-        b = new SpoofBuilder()
-        node = b.foo(bar:'baz', 'value') { 1 }
+        def b = new SpoofBuilder()
+        def node = b.foo(bar:'baz', 'value') { 1 }
         assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
     }
 
     void testSimpleNodeWithValueAndOneAttributeAndClosure() {
-        b = new SpoofBuilder()
-        node = b.foo('value', bar:'baz') { 1 }
+        def b = new SpoofBuilder()
+        def node = b.foo('value', bar:'baz') { 1 }
         assert b.log == ['create_with_name_map_and_value', 'foo', 'bar', 'baz','value', 'node_completed',null,node]
     }
 
     void testSimpleNodeTwoValues() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2')})
     }
 
     void testSimpleNodeTwoValuesClosure() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2') { 1 } })
     }
 
     void testSimpleNodeThreeValues() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3') })
     }
 
     void testSimpleNodeFourValues() {
-        b = new SpoofBuilder()
+        def b = new SpoofBuilder()
         shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
     }
 }

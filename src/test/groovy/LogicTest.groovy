@@ -2,8 +2,8 @@ class LogicTest extends GroovyTestCase {
 
     void testAndWithTrue() {
 
-        x = false
-        n = 2
+        def x = false
+        def n = 2
         
         if ( n > 1 && n < 10 ) {
             x = true
@@ -14,8 +14,8 @@ class LogicTest extends GroovyTestCase {
 
     void testAndWithFalse() {
 
-        x = false
-        n = 20
+        def x = false
+        def n = 20
         
         if ( n > 1 && n < 10 ) {
             x = true
@@ -30,12 +30,12 @@ class LogicTest extends GroovyTestCase {
         }
 
         assert x == false
-	}
+    }
 
     void testOrWithTrue() {
 
-        x = false
-        n = 2
+        def x = false
+        def n = 2
         
         if ( n > 1 || n < 10 ) {
             x = true
@@ -55,8 +55,8 @@ class LogicTest extends GroovyTestCase {
 
     void testOrWithFalse() {
 
-        x = false
-        n = 11
+        def x = false
+        def n = 11
         
         if ( n < 10 || n > 20 ) {
             x = true

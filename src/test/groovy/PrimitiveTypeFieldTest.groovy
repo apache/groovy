@@ -7,14 +7,14 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
     }
 
     def getValue() {
-        x = longField
+        def x = longField
         return x
     }
 
     void testPrimitiveField() {
         setValue()
 
-        value = getValue()
+        def value = getValue()
         assert value == 1
 
         assert longField == 1
@@ -25,7 +25,7 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
         assert bugMethod2(123) == 246
 
         // @todo GROOVY-133
-        closure = {int x-> x * 2 }
+        def closure = {int x-> x * 2 }
         assert closure.call(123) == 246
 
     }
@@ -45,13 +45,13 @@ class PrimitiveTypeFieldTest extends GroovyTestCase {
 
     void testIntLocalVariable() {
         int x = 123
-        y = x + 1
+        def y = x + 1
         assert y == 124
     }
 
     void testLongLocalVariable() {
         long x = 123
-        y = x + 1
+        def y = x + 1
         assert y == 124
     }
 }

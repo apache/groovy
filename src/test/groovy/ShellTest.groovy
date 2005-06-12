@@ -1,11 +1,11 @@
 class ShellTest extends GroovyTestCase {
 
     void testReadAndWriteVariable() {
-        shell = new GroovyShell()
+        def shell = new GroovyShell()
         
         shell.foo = 1
         
-        value = shell.evaluate("""
+        def value = shell.evaluate("""
 println('foo is currently ' + foo)
 foo = 2 
 println('foo is now ' + foo)                
@@ -18,9 +18,9 @@ return foo
 	}
     
     void testDefineNewVariable() {
-        shell = new GroovyShell()
+        def shell = new GroovyShell()
         
-        value = shell.evaluate( """
+        def value = shell.evaluate( """
 bar = 3 
 println('bar is now ' + bar)                
 return bar

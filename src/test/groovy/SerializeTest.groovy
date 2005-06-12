@@ -6,15 +6,15 @@ import java.io.ObjectOutputStream
 class SerializeTest extends GroovyTestCase {
 
     void testFoo() {
-        foo = new Foo()
+        def foo = new Foo()
         
         println("Created ${foo}")
         
         foo.name = "Gromit"
         foo.location = "Moon"
         
-        buffer = write(foo)
-        object = read(buffer)
+        def buffer = write(foo)
+        def object = read(buffer)
         
         println("Found ${object}")
         println("Found ${object} with name ${object.name} and location ${object.location}")
@@ -30,7 +30,7 @@ class SerializeTest extends GroovyTestCase {
     
     
     def write(object) {
-        buffer = new ByteArrayOutputStream()
+        def buffer = new ByteArrayOutputStream()
         out = new ObjectOutputStream(buffer)
         out.writeObject(object)
         out.close()
@@ -38,8 +38,8 @@ class SerializeTest extends GroovyTestCase {
     }
     
     def read(buffer) {
-        input = new ObjectInputStream(new ByteArrayInputStream(buffer))
-        object = input.readObject()
+        def input = new ObjectInputStream(new ByteArrayInputStream(buffer))
+        def object = input.readObject()
         input.close()
         return object
     }

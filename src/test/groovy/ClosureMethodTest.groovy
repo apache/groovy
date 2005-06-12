@@ -144,7 +144,7 @@ class ClosureMethodTest extends GroovyTestCase {
         def value = [1, 2, 3].inject('counting: ') { str, item -> str + item }
         assert value == "counting: 123"
 
-        def value = [1, 2, 3].inject(0) { c, item -> c + item }
+        value = [1, 2, 3].inject(0) { c, item -> c + item }
         assert value == 6
     }
 

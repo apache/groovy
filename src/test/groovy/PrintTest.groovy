@@ -29,7 +29,7 @@ class PrintTest extends GroovyTestCase {
     }
     
     void testCPlusPlusStylePrinting() {
-        endl = "\n"
+        def endl = "\n"
         
         System.out << "Hello world!" << endl
     }

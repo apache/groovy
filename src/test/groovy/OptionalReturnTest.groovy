@@ -3,19 +3,19 @@ class OptionalReturnTest extends GroovyTestCase {
 	def y
 	
     void testSingleExpression() {
-        value = foo()
+        def value = foo()
 		
         assert value == 'fooReturn'
     }
 
     void testLastExpressionIsSimple() {
-        value = bar()
+        def value = bar()
         
         assert value == 'barReturn'
     }
 
     void testLastExpressionIsBooleanExpression() {
-        value = foo2()
+        def value = foo2()
         
         assert value
 
@@ -25,7 +25,7 @@ class OptionalReturnTest extends GroovyTestCase {
     }
 
     void testLastExpressionIsAssignment() {
-        value = assign()
+        def value = assign()
         
         assert value == 'assignReturn'
         
@@ -35,26 +35,26 @@ class OptionalReturnTest extends GroovyTestCase {
     }
 
     void testLastExpressionIsMethodCall() {
-        value = methodCall()
+        def value = methodCall()
         
         assert value == 'fooReturn'
     }
 
     void testEmptyExpression() {
-        value = nullReturn()
+        def value = nullReturn()
         
         assert value == null
     }
 
 //  now is  a compile time error
 //    void testVoidMethod() {
-//        value = voidMethod()
+//        def value = voidMethod()
 //
 //        assert value == null
 //    }
 
     void testNonAssignmentLastExpressions() {
-        value = lastIsAssert()
+        def value = lastIsAssert()
         
         assert value == null
     }
@@ -64,22 +64,22 @@ class OptionalReturnTest extends GroovyTestCase {
     }	
 	
     def bar() {
-        x = 'barReturn'
+        def x = 'barReturn'
         x
     }
 	
     def foo2() {
-        x = 'cheese'
+        def x = 'cheese'
         x == 'cheese'
     }
 	
     def foo3() {
-        x = 'cheese'
+        def x = 'cheese'
         x == 'edam'
     }
 	
     def assign() {
-        x = 'assignReturn'
+        def x = 'assignReturn'
     }
 	
     def assignField() {

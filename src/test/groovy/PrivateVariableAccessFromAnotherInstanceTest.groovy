@@ -17,14 +17,14 @@ class PrivateVariableAccessFromAnotherInstanceTest extends GroovyTestCase implem
     }
               
     public Object clone() {
-        result = new PrivateVariableAccessFromAnotherInstanceTest()
+        def result = new PrivateVariableAccessFromAnotherInstanceTest()
         result.foo = foo
         result.bar = bar
         return result
     }
     
     void testClone() {
-        fred = new PrivateVariableAccessFromAnotherInstanceTest()
+        def fred = new PrivateVariableAccessFromAnotherInstanceTest()
         //@todo fails due to private access to 'bar'
         //barney = fred.clone()
 
