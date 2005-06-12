@@ -5,7 +5,7 @@ import java.io.File
 class AntTest extends GroovyTestCase {
     
     void testAnt() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
 
         // lets just call one task
         ant.echo("hello")
@@ -14,7 +14,7 @@ class AntTest extends GroovyTestCase {
         ant.sequential {
             echo("inside sequential")
             
-            myDir = "target/AntTest/"
+            def myDir = "target/AntTest/"
             
             mkdir(dir:myDir) 
             copy(todir:myDir) {
@@ -27,22 +27,22 @@ class AntTest extends GroovyTestCase {
         }
         
         // now lets do some normal Groovy again
-        file = new File("target/AntTest/groovy/util/AntTest.groovy")
+        def file = new File("target/AntTest/groovy/util/AntTest.groovy")
         assert file.exists()
     }
     
     void testFileIteration() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
         
         // lets create a scanner of filesets
-        scanner = ant.fileScanner {
+        def scanner = ant.fileScanner {
             fileset(dir:"src/test") {
                 include(name:"**/Ant*.groovy")
             }
         }
         
         // now lets iterate over 
-        found = false
+        def found = false
         for (f in scanner) {
             println("Found file ${f}")
             
@@ -55,7 +55,7 @@ class AntTest extends GroovyTestCase {
     }
     
     void testJunitTask() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
         
         ant.junit {
             test(name:'groovy.util.SomethingThatDoesNotExist')
@@ -63,9 +63,9 @@ class AntTest extends GroovyTestCase {
     }
     
     void testPathBuilding() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
         
-        value = ant.path {
+        def value = ant.path {
             fileset(dir:"xdocs") {
                 include(name:"*.wiki")
             }
@@ -78,7 +78,7 @@ class AntTest extends GroovyTestCase {
     }
 
     void testTaskContainerAddTaskIsCalled() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
         taskContainer = ant.parallel(){ // "Parallel" serves as a sample TaskContainer
             ant.echo()                  // "Echo" without message to keep tests silent
         }
@@ -87,9 +87,9 @@ class AntTest extends GroovyTestCase {
     }
 
     void testTaskContainerExecutionSequence() {
-        ant = new AntBuilder()
+        def ant = new AntBuilder()
         SpoofTaskContainer.getSpoof().length = 0
-        PATH = 'task.path'
+        def PATH = 'task.path'
         ant.path(id:PATH){ant.pathelement(location:'classes')}
         ['spoofcontainer':'SpoofTaskContainer', 'spoof':'SpoofTask'].each{ pair ->
             ant.taskdef(name:pair.key, classname:'groovy.util.'+pair.value, classpathref:PATH)
@@ -97,7 +97,7 @@ class AntTest extends GroovyTestCase {
         ant.spoofcontainer(){
             ant.spoof()
         }
-        expectedSpoof =
+        def expectedSpoof =
             "SpoofTaskContainer ctor\n"+
             "SpoofTask ctor\n"+
             "in addTask\n"+

@@ -7,7 +7,8 @@ import groovy.model.MvcDemo
 class SwingDemo {
 
     def swing = new SwingBuilder()
-
+    def frame
+    
     static void main(args) {
         def demo = new SwingDemo()
         demo.run()

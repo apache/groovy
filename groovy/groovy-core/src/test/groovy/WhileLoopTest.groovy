@@ -1,7 +1,7 @@
 class WhileLoopTest extends GroovyTestCase {
 
     void testVerySimpleWhile() {
-        val = doWhileMethod(0, 5)
+        def val = doWhileMethod(0, 5)
         println(val)
     }
 

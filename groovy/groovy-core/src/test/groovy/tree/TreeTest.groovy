@@ -6,9 +6,9 @@
 class TreeTest extends GroovyTestCase {
     
     void testSmallTree() {
-        b = NodeBuilder.newInstance()
+        def b = NodeBuilder.newInstance()
         
-        root = b.root1(a:5, b:7) {
+        def root = b.root1(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             elem3(x:7)
@@ -20,9 +20,9 @@ class TreeTest extends GroovyTestCase {
     }
     
     void testTree() {
-        b = NodeBuilder.newInstance()
+        def b = NodeBuilder.newInstance()
         
-        root = b.root2(a:5, b:7) {
+        def root = b.root2(a:5, b:7) {
             elem1('hello1')
             elem2('hello2')
             nestedElem(x:'abc', y:'def') {
@@ -40,10 +40,10 @@ class TreeTest extends GroovyTestCase {
         
         print(root)
 
-		e1 = root.elem1.get(0)
+        def e1 = root.elem1.get(0)
         assert e1.value() == 'hello1'
         
-        e2 = root.elem2.get(0)
+        def e2 = root.elem2.get(0)
         assert e2.value() == 'hello2'
 
         assert root.elem1.get(0).value() == 'hello1'
@@ -60,7 +60,7 @@ class TreeTest extends GroovyTestCase {
         assert root.nestedElem2.child2.get(0).value() == 'hello'
         assert root.nestedElem2.child2.get(0).text() == 'hello'
         
-        list = root.value()
+        def list = root.value()
         assert list.size() == 4
 
         assert root.attributes().a == 5

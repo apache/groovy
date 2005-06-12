@@ -30,7 +30,7 @@ class Html2Wiki {
     def getOutputName(fileName) {
 	    def lastIdx = fileName.lastIndexOf(".")
 	    if (lastIdx > 0) {
-	        def fileName = fileName.substring(0, lastIdx)
+	        fileName = fileName.substring(0, lastIdx)
 	    }
 	    return fileName + ".wiki"
 	}

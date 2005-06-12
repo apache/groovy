@@ -73,11 +73,13 @@ class DOMTest extends GroovyTestCase {
   		// Run the method once to fill any caches and to load classes
   		it();
 	  	def start = System.currentTimeMillis();
+	  	def lastIndex
   		for (i in 1..x) {
   			it();
+  			lastIndex = i
 	  	}
   		def elapsed = System.currentTimeMillis() - start;
-  		def result = i * 1000 / elapsed;
+  		def result = lastIndex * 1000 / elapsed;
 
 		def standard = (standard == 0 ? result : standard);
 		def factor = result/standard;

@@ -3,7 +3,7 @@ package groovy.txn
 class TransactionTest extends GroovyTestCase {
 
     void testTxn() {
-		builder = new TransactionBuilder()
+		def builder = new TransactionBuilder()
 		builder.transaction {
 		    run {
 		        println("run code!")
