@@ -71,5 +71,23 @@ class SwitchTest extends GroovyTestCase {
         }
         assert j == 6
     }
+
+    void testSwitchWithClosure(){
+        switch(0){
+            case {true}: break
+            default: assert false
+        }
+        switch(0){
+            case {false}: assert false
+        }
+        switch(0){
+            case {it == 0}: break
+            default: assert false
+        }
+        switch(0){
+            case { candidate -> candidate == 0}: break
+            default: assert false
+        }
+    }
     
 }

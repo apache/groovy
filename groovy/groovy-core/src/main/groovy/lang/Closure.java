@@ -242,6 +242,10 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         }
     }
 
+    public boolean isCase(Object candidate){
+        return InvokerHelper.asBool(call(candidate));
+    }
+
     /**
      * Invokes the closure without any parameters, returning any value if applicable.
      *
