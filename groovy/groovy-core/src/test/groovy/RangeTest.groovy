@@ -189,7 +189,7 @@ class RangeTest extends GroovyTestCase {
 	}
 	
 	protected void assertToString(range, expected) {
-	    tdef ext = range.toString()
+	    def text = range.toString()
 	    assert text == expected , "toString() for ${range}"
 	    text = range.inspect()
 	    assert text == expected , "inspect() for ${range}"
