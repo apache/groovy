@@ -72,22 +72,22 @@ class BuilderSupportTest extends GroovyTestCase{
 
     void testSimpleNodeTwoValues() {
         def b = new SpoofBuilder()
-        shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2')})
+        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2')})
     }
 
     void testSimpleNodeTwoValuesClosure() {
         def b = new SpoofBuilder()
-        shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2') { 1 } })
+        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2') { 1 } })
     }
 
     void testSimpleNodeThreeValues() {
         def b = new SpoofBuilder()
-        shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3') })
+        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3') })
     }
 
     void testSimpleNodeFourValues() {
         def b = new SpoofBuilder()
-        shouldFail(MissingMethodException, {node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
+        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
     }
 }
 

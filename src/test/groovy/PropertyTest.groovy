@@ -68,7 +68,7 @@ class PropertyTest extends GroovyTestCase {
         def foo = new Foo()
 
         // def access fails on non-existent def
-        shouldFail { x = foo.invisible }
+        shouldFail { def x = foo.invisible }
 
         // methods should fail on non-existent method calls
         shouldFail { foo.getQ() }

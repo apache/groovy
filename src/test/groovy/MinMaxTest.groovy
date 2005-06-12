@@ -37,7 +37,7 @@ class MinMaxTest extends GroovyTestCase {
     
     def getPeople() {
         def builder = new NodeBuilder()
-        tree = builder.people {
+        def tree = builder.people {
             person(name:'James', cheese:'Edam', location:'London')
             person(name:'Bob', cheese:'Cheddar', location:'Atlanta')
             person(name:'Chris', cheese:'Red Leicester', location:'London')

@@ -28,7 +28,7 @@ class NodeGPathTest extends GroovyTestCase {
     protected def createTree() {       
         def builder = NodeBuilder.newInstance()
         
-        root = builder.people() {
+        def root = builder.people() {
             person(name:'James') {
                 location(name:'London')
                 projects {

@@ -48,7 +48,7 @@ hello
     void testWithJustVariable() {
         def name = "Bob"
 
-        template = """
+        def template = """
 ${name}
 """
         def string = template.toString().trim()

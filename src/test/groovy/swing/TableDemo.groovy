@@ -31,7 +31,7 @@ class TableDemo {
             panel(layout:new BorderLayout()) {
                 scrollPane(constraints:BorderLayout.CENTER) {
                     table() {
-                        model = [['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]
+                        def model = [['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]
 
                         tableModel(list:model) {
                             closureColumn(header:'Name', read:{row -> return row.name})
