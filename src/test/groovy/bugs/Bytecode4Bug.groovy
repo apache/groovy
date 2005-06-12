@@ -6,7 +6,7 @@ class Bytecode4Bug extends GroovyTestCase {
     @Property def count = 0
      
     void testInject() {
-        x = [1, 2, 3].inject(0) { c, s -> c += s }
+        def x = [1, 2, 3].inject(0) { c, s -> c += s }
         assert x == 6
     }
      

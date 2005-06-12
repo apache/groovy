@@ -4,9 +4,11 @@
 class AssignmentInsideExpressionBug extends GroovyTestCase {
     
     void testBug() {
+        def x
         if ((x = someMethod()) != null) {
             println x
         }
+        def y
         if ((y = getFoo()) > 5) {
             println "y is greater than 5"
         }

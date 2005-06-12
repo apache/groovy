@@ -17,14 +17,14 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
         count += 1
         assert count == 1
 
-        foo =
+        def foo =
             {i->
                 return {j->
                     i += j
                     i
                 }
             }
-        x = foo(1)
+        def x = foo(1)
         x(5)
         foo(3)
         println x(2.3)
@@ -32,14 +32,14 @@ class ClassGeneratorFixesTest extends GroovyTestCase {
 
     void testIfAndSwitchInClosure (){ // 321, 324, 412
 
-        a = 1
+        def a = 1
         1.times {
             if (a ==1) {
                 a = 2
             }
         }
 
-        noneYet=true;
+        def noneYet=true;
         ["a","b","c","d"].each { c ->
           if (noneYet) {
             noneYet=false;

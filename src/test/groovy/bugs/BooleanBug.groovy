@@ -4,8 +4,8 @@
 class BooleanBug extends GroovyTestCase {
     
     void testBug() {
-        x = new BooleanBean(name:'James', foo:true)
-        y = new BooleanBean(name:'Bob', foo:false)
+        def x = new BooleanBean(name:'James', foo:true)
+        def y = new BooleanBean(name:'Bob', foo:false)
 
         assert x.foo
         assert ! y.foo
@@ -15,7 +15,7 @@ class BooleanBug extends GroovyTestCase {
     
     void testBug2() {
         BooleanBean bean = new BooleanBean(name:'Gromit', foo:false)
-        value = isApplicableTo(bean)
+        def value = isApplicableTo(bean)
         assert value
     }
     

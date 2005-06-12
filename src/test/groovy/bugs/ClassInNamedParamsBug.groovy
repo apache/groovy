@@ -3,7 +3,7 @@ import java.util.Map
 class ClassInNamedParamsBug extends GroovyTestCase {
     
     void testBug() {
-        foo = method(class:'cheese', name:'cheddar')
+        def foo = method(class:'cheese', name:'cheddar')
         
         assert foo.name == "cheddar"
         assert foo.class == "cheese"

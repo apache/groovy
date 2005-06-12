@@ -4,12 +4,12 @@
 class CallingClosuresWithClosuresBug extends GroovyTestCase {
 
     void testBug() {
-        a = {1}
+        def a = {1}
         // old workaround
-        //b = {a.call()}
-        b = {a()}
+        //def b = {a.call()}
+        def b = {a()}
         
-        value = b()
+        def value = b()
         
         assert value == 1
     }

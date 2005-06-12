@@ -4,8 +4,8 @@
 class ClosureVariableBug extends GroovyTestCase {
     
     void testClosurePassingBug() {
-        count = 0
-        closure = { assert count == it }
+        def count = 0
+        def closure = { assert count == it }
         closure(0)
         
         count = 1
@@ -13,29 +13,29 @@ class ClosureVariableBug extends GroovyTestCase {
     }
     
     void testPassingClosureAsNamedParameter() {
-        x = 123
+        def x = 123
         
-        foo = new Expando(a:{x}, b:456)
+        def foo = new Expando(a:{x}, b:456)
     
-    	assert foo.a != null
+        assert foo.a != null
         
         println "Foo has a = ${foo.a}"
         
-    	value = foo.a()
-    	assert value == 123
+        def value = foo.a()
+        assert value == 123
     }
     
     void testBug() {
-    	value = callClosure([1, 2])
-    	assert value == 2
+        def value = callClosure([1, 2])
+        assert value == 2
     }
     
     protected Integer callClosure(collection) {
-    	Integer x
-    	/** @todo
-    	Integer x = 0
-    	*/
-    	collection.each { x = it }
-    	return x
+        Integer x
+        /** @todo
+        Integer x = 0
+        */
+        collection.each { x = it }
+        return x
     }
 }
