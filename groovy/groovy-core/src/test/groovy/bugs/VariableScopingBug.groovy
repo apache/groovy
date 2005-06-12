@@ -11,15 +11,20 @@ class VariableScopingBug extends TestSupport {
         shouldFail {
             def shell = new GroovyShell()
             shell.evaluate("""
-                for (z in 0..2) {
-                    x = makeCollection()
-                }
+                class SomeTest {
+                    void run() {
+                        for (z in 0..2) {
+                            def x = [1, 2, 3]
+                        }
 
-                for (t in 0..3) {
-                    for (y in x) {
-                        println x
+                        for (t in 0..3) {
+                            for (y in x) {
+                                println x
+                            }
+                        }
                     }
-               }""")
+               }
+               new SomeTest().run()""")
            }
     }
 
@@ -27,16 +32,12 @@ class VariableScopingBug extends TestSupport {
         def shell = new GroovyShell()
         shell.evaluate("""
             for (z in 0..2) {
-                def x = makeCollection()
+                def x = [1, 2, 3]
             }
 
             for (t in 0..3) {
                 def x = 123
                 println x
             }""")
-    }
-
-    def makeCollection() {
-        return [1, 2, 3]
     }
 }

@@ -29,6 +29,5 @@ class ClosureWithStaticVariablesBug extends TestSupport {
 }
 
 class Cheese {
-    @Property static def z = [:]
-
+    public static z = [:]
 }
