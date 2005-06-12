@@ -13,7 +13,7 @@ class AssignmentInsideExpressionBug extends GroovyTestCase {
             println "y is greater than 5"
         }
         
-        def a = b = 123
+        def a = 123, b = 123
         assert a == 123
         assert b == 123
     }

@@ -6,11 +6,11 @@ import org.codehaus.groovy.classgen.TestSupport
 class VariableScopingBug extends TestSupport {
     
     void testBug() {
-    	// undeclared variable x
-    	
-    	shouldFail {
+        // undeclared variable x
+
+        shouldFail {
             for (z in 0..2) {
-                def x = makeCollection()
+                x = makeCollection()
             }
 
                for (t in 0..3) {

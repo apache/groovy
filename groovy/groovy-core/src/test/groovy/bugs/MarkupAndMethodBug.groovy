@@ -17,7 +17,7 @@ class MarkupAndMethodBug extends GroovyTestCase {
     protected def createTree() {
         def builder = NodeBuilder.newInstance()
         
-        root = builder.people() {
+        def root = builder.people() {
             person(name:getTestName()) {
             /*
                 location(name:'London')

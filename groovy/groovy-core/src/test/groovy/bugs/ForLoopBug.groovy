@@ -38,10 +38,12 @@ for (i in 1..10) {
         def a = 1
         def b = 5
 
+        def lastIndex
         for (i in a..b) {
             println i
+            lastIndex = i
         }
-        a = i
+        a = lastIndex
         
 		assert a == 5
     }
