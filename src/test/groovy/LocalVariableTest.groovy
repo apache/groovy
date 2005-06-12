@@ -12,15 +12,12 @@ class LocalVariableTest extends GroovyTestCase {
     }
     
     void testUnknownVariable() {
-        try {
-            def y = x
-            fail("x is undefined, should throw an exception")
-        }
-        catch (MissingPropertyException e) {
-            assert e.getProperty() == "x"
-            def text = e.message
-            //e.printStackTrace()
-            assert text == "No such property: x for class: LocalVariableTest"
+
+        shouldFail {
+            def shell = new GroovyShell()
+            shell.evaluate """
+                def y = x
+            """
         }
     }
 }

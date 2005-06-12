@@ -9,27 +9,31 @@ class VariableScopingBug extends TestSupport {
         // undeclared variable x
 
         shouldFail {
-            for (z in 0..2) {
-                x = makeCollection()
-            }
-
-               for (t in 0..3) {
-                for (y in x) {
-                    println x
+            def shell = new GroovyShell()
+            shell.evaluate("""
+                for (z in 0..2) {
+                    x = makeCollection()
                 }
-               }
+
+                for (t in 0..3) {
+                    for (y in x) {
+                        println x
+                    }
+               }""")
            }
     }
 
     void testVariableReuse() {
-        for (z in 0..2) {
-            def x = makeCollection()
-        }
+        def shell = new GroovyShell()
+        shell.evaluate("""
+            for (z in 0..2) {
+                def x = makeCollection()
+            }
 
-           for (t in 0..3) {
-            def x = 123
-            println x
-           }
+            for (t in 0..3) {
+                def x = 123
+                println x
+            }""")
     }
 
     def makeCollection() {
