@@ -6,27 +6,27 @@
 class NodeGPathTest extends GroovyTestCase {
     
     void testSimpleGPathExpressions() {
-        tree = createTree()
+        def tree = createTree()
 
         assert tree.person.find { it['@name'] == 'James' }.location[0]['@name'] == 'London'
     }
     
     void testFindAll() {
-        tree = createTree()
+        def tree = createTree()
         
-        coll = tree.person.findAll { it['@name'] != 'Bob' }
+        def coll = tree.person.findAll { it['@name'] != 'Bob' }
         assert coll.size() == 1
     }
     
     void testCollect() {
-        tree = createTree()
+        def tree = createTree()
         
-        coll = tree.person.collect { it['@name'] }
+        def coll = tree.person.collect { it['@name'] }
         assert coll == ['James', 'Bob']
     }
     
     protected def createTree() {       
-        builder = NodeBuilder.newInstance()
+        def builder = NodeBuilder.newInstance()
         
         root = builder.people() {
             person(name:'James') {

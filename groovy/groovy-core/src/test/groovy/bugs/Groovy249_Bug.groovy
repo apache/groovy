@@ -7,13 +7,13 @@ import groovy.xml.MarkupBuilder
 class Groovy249_Bug extends GroovyTestCase {
 
     void testBug() {
-		t = new Bean249()
+		def t = new Bean249()
 		t.b = "hello"
 		println t.b
 		println "test: ${t.b}"
 		
-		xml = new MarkupBuilder()
-		root = xml.foo {
+		def xml = new MarkupBuilder()
+		def root = xml.foo {
 			bar {
 				// works
 				baz("test")
@@ -35,12 +35,12 @@ class Groovy249_Bug extends GroovyTestCase {
 				String b
 			};
 			
-			t = new Bean()
+			def t = new Bean()
 			t.b = "hello"
 			println t.b
 			println "test: ${t.b}"
 			
-			xml = new MarkupBuilder()
+			def xml = new MarkupBuilder()
 			root = xml.foo {
 				bar {
 					// works

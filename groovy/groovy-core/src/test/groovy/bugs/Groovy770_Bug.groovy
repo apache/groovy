@@ -7,23 +7,23 @@ package groovy.bugs
 class Groovy770_Bug extends GroovyTestCase {
      
     void testBug() {
-        a = new Pair(sym:"x")
-        b = new Pair(sym:"y")
-        c = new Pair(sym:"y")
+        def a = new Pair(sym:"x")
+        def b = new Pair(sym:"y")
+        def c = new Pair(sym:"y")
 
-        l1 = [a, b]
-        l2 = [c]
+        def l1 = [a, b]
+        def l2 = [c]
         println (l1)
         println (l2)
         println (l1 - l2)
         assert l1 - l2 == l1
 
 
-        a = new CPair(sym:"x")
-        b = new CPair(sym:"y")
-        c = new CPair(sym:"y")
-        l1 = [a, b]
-        l2 = [c]
+        def a = new CPair(sym:"x")
+        def b = new CPair(sym:"y")
+        def c = new CPair(sym:"y")
+        def l1 = [a, b]
+        def l2 = [c]
         println (l1)
         println (l2)
         println (l1 - l2)

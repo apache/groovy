@@ -8,30 +8,30 @@ class NestedClosure2Bug extends TestSupport {
     Object f
      
     void testFieldBug() {
-    	closure = {
+    	def closure = {
     		return {
 	    		f = 123
 	    		return null
 	        }
 	    }
-        value = closure()
+        def value = closure()
         value = value()
         assert f == 123
     }
      
     void testBugOutsideOfScript() {
-    	a = 123
-    	b = 456
-    	closure = { 
+    	def a = 123
+    	def b = 456
+    	def closure = {
     		println b
-    		c = 999
+    		def c = 999
     		return {
     			f = 2222111
     			
     			println f
     			
     			println c
-    			d = 678
+    			def d = 678
     			return { 
     				println f
     				assert f == 2222111
@@ -40,9 +40,9 @@ class NestedClosure2Bug extends TestSupport {
     			}
     		}
     	}
-    	c2 = closure()
-    	c3 = c2()
-    	value = c3()
+    	def c2 = closure()
+    	def c3 = c2()
+    	def value = c3()
 
 		assert f == 2222111    	
     	assert value == 123
@@ -50,16 +50,16 @@ class NestedClosure2Bug extends TestSupport {
     
     void testBug() {
     	assertScript """
-	    	a = 123
-	    	closure = { 
+	    	def a = 123
+	    	def closure = {
 	    		return {
 	    			return { 
 	    				return a
 	    			}
 	    		}
 	    	}
-	    	c2 = closure()
-	    	c3 = c2()
+	    	def c2 = closure()
+	    	def c3 = c2()
 	    	value = c3()
 	    	
 	    	assert value == 123

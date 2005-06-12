@@ -17,7 +17,7 @@ class PrimitivePropertyBug extends GroovyTestCase {
     @Property char x7
 
     void testBug() {
-        y = new PrimitivePropertyBug() 
+        def y = new PrimitivePropertyBug()
         y.x1 = 10.0
         y.x2 = 10.0
         y.x3 = 10.0

@@ -9,10 +9,10 @@ class VariablePrecedenceTest {
     }
 
     static void main(args) {
-        vfoo = new VariablePrecedenceTest()
+        def vfoo = new VariablePrecedenceTest()
         vfoo.c.call(1)
 
-        z = 874;
+        def z = 874;
         1.times { assert vfoo.x == 100; assert z == 874; z = 39; }
         assert z == 39;
 
@@ -22,7 +22,7 @@ class VariablePrecedenceTest {
     void local() {
         c.call(1);
 
-        z = 874;
+        def z = 874;
         1.times { assert x == 100; assert z == 874; z = 39; }
         assert z == 39;
     }

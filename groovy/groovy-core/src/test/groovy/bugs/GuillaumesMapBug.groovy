@@ -5,8 +5,8 @@
 class GuillaumesMapBug extends GroovyTestCase {
     
     void testBug2() {
-        list = [1, 2, 3]
-        map = [:]
+        def list = [1, 2, 3]
+        def map = [:]
         
         doLoop(list, map)
     
@@ -16,7 +16,7 @@ class GuillaumesMapBug extends GroovyTestCase {
     }
     
     void doLoop(list, map) {
-        i = 0
+        def i = 0
         for (it in list) {
             map[i++] = it
         }
@@ -24,8 +24,8 @@ class GuillaumesMapBug extends GroovyTestCase {
     
     
     void testBug() {
-        list = [1, 2, 3]
-        map = [:]
+        def list = [1, 2, 3]
+        def map = [:]
         doClosureLoop(list, map)
         
         assert map[0] == 1 
@@ -34,7 +34,7 @@ class GuillaumesMapBug extends GroovyTestCase {
     }
     
     void doClosureLoop(list, map) {
-        i = 0
+        def i = 0
         list.each { map[i++] = it }
     }    
 }

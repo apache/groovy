@@ -13,7 +13,7 @@ class DefVariableBug extends GroovyTestCase {
         assert def == 123
      */
         
-        foo = new Expando(a:123, def:456)
+        def foo = new Expando(a:123, def:456)
         assert foo.def == 456
     }
 }

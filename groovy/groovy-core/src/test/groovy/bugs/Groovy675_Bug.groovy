@@ -18,7 +18,7 @@ class Groovy675_Bug extends GroovyTestCase {
 	assert "\\\\" == "\\" + "\\"
 	assert "\\\\".length() == 2
 
-	z = 100 + 200
+	def z = 100 + 200
 	assert "\\\\ \\ ${z}" == "\\\\ \\ 300"
 	assert "\\\\ \\ ${z}" == "\\" + "\\" + " " + "\\" + " " + "300"
 	assert "Hello\\, \\World\\".charAt(4) == "o".charAt(0)

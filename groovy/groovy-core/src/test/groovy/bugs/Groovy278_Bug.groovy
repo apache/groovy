@@ -7,7 +7,7 @@ package groovy.bugs
 class Groovy278_Bug extends GroovyTestCase {
     
     void testBug() {
-        value = new MyRange()
+        def value = new MyRange()
         println value
         assert value != null
     }

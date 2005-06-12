@@ -8,7 +8,7 @@ import java.io.File
 class ConstructorBug extends GroovyTestCase {
     
     void testBug() {
-        type = new GroovyClassLoader().parseClass(new File("src/test/groovy/bugs/TestBase.groovy"))
+        def type = new GroovyClassLoader().parseClass(new File("src/test/groovy/bugs/TestBase.groovy"))
         assert type != null
 
         println "created type: ${type}"
@@ -18,14 +18,14 @@ class ConstructorBug extends GroovyTestCase {
 
         println "created type: ${type} of type: ${type.class}"
 
-        mytest = InvokerHelper.invokeConstructorOf(type, ["Hello"] as Object[])
+        def mytest = InvokerHelper.invokeConstructorOf(type, ["Hello"] as Object[])
         assert mytest.foo == "Hello"
         /** @todo fix bug
         */
         
         /*
-        test = type.newInstance()
-        asert test.foo == null
+        def test = type.newInstance()
+        assert test.foo == null
         */
         
 //foo = new type('hello')

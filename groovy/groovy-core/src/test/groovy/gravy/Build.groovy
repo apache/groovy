@@ -12,7 +12,7 @@ class Build implements Runnable {
 
     static void main(args) {
         // autogenerate this
-        b = new Build(args)
+        def b = new Build(args)
         //b.args = args
         b.run()
     }

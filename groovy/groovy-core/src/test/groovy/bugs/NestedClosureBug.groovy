@@ -4,7 +4,7 @@
 class NestedClosureBug extends GroovyTestCase {
      
     void testBug() {
-    	a = 123
+    	def a = 123
     	getValues().each { 
     		println it
     		it.each { 

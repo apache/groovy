@@ -6,7 +6,7 @@ class Groovy252_Bug extends GroovyTestCase {
     def count = 0
     
     void testBug() {
-        value = f()
+        def value = f()
         assert value == null
         
         value = g()

@@ -15,7 +15,7 @@ class Groovy558_616_Bug extends GroovyTestCase {
         assert java.util.ArrayList.class == ArrayList.class
         assert java.util.ArrayList.class == ArrayList
         assert ArrayList != Class
-        list = new ArrayList()
+        def list = new ArrayList()
         assert list.class == ArrayList
     }
 
@@ -23,7 +23,7 @@ class Groovy558_616_Bug extends GroovyTestCase {
         assert java.lang.String.class == String.class
         assert java.lang.String.class == String
         assert String != Class
-        st = ""
+        def st = ""
         assert st.class == String
     }
 
@@ -31,14 +31,14 @@ class Groovy558_616_Bug extends GroovyTestCase {
         assert groovy.util.Dummy.class == Dummy.class
         assert groovy.util.Dummy.class == Dummy
         assert Dummy != Class
-        dum = new Dummy()
+        def dum = new Dummy()
         assert dum.class == Dummy
     }
 
     void testFooClass() {
         assert groovy.bugs.Groovy558_616_Bug.class == Groovy558_616_Bug
         assert Groovy558_616_Bug != Class
-        f = new Groovy558_616_Bug()
+        def f = new Groovy558_616_Bug()
         assert f.class == Groovy558_616_Bug
     }
 }

@@ -6,7 +6,7 @@ class ToStringBug extends GroovyTestCase {
     void testBug() {
     	println "Starting test"
     	
-    	value = toString()
+    	def value = toString()
     	assert value != null
     	
     	println value
