@@ -103,14 +103,14 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
             isInStaticContext = scope.isInStaticContext;
         }
         
-        public Var(Parameter par, boolean methodIsStatic) {
+        public Var(Parameter par, boolean staticContext) {
             name = par.getName();
             if (par.isDynamicType()) {
                 isDynamicTyped=true;
             } else {
                 type = par.getType();
             }
-            isInStaticContext = methodIsStatic;
+            isInStaticContext = staticContext;
         }
 
         public Var(FieldNode f) {
@@ -543,18 +543,20 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         if (expression.isParameterSpecified()) {
             Parameter[] parameters = expression.getParameters();
             for (int i = 0; i < parameters.length; i++) {
-                declare(new Var(parameters[i],false),expression);
+                declare(new Var(parameters[i],scope.isInStaticContext),expression);
             }
         } else {
+            Var var = new Var("it");
+            var.isInStaticContext = scope.isInStaticContext;
             // TODO: when to add "it" and when not?
             // John's rule is to add it only to the closures using 'it'
             // and only to the closure itself, not to subclosures
             if (jroseRule) {
                 JRoseCheck check = new JRoseCheck();
                 expression.visit(check);
-                if (check.itUsed) declare(new Var("it"),expression);
-            } else {
-                currentScope.declares.put("it",new Var("it"));
+                if (check.itUsed) declare(var,expression);
+            } else {                
+                currentScope.declares.put("it",var);
             }
         }
 
