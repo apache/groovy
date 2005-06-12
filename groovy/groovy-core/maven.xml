@@ -324,6 +324,7 @@
 
     <!-- lets fork a JVM to avoid classpath hell -->
     <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failsonerror="true">
+      <sysproperty key="groovy.jsr.check" value="${groovy.jsr.check}"/>
       <classpath refid="test.classpath"/>
       <arg value="${basedir}/target/test-classes"/>
       <arg value="${basedir}/target/test-classes"/>
@@ -597,41 +598,44 @@
 <!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
   </goal>
 
-  <goal name="groovy:exe" prereqs="rebuild">
+  <goal name="groovy:exe" depends="rebuild">
     <echo>Building a Groovy executable</echo>
-    <mkdir dir="${maven.build.dir}/native/classes"/>
-    <unzip src="${maven.build.dir}/${maven.final.name}.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/antlr-2.7.5.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-2.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-util-2.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-attrs-2.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/asm-analysis-2.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/commons-cli-1.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/xerces-2.4.0.jar" dest="${maven.build.dir}/native/classes"/>
-    <unzip src="${groovy.install.staging.dest}/lib/xml-apis-1.0.b2.jar" dest="${maven.build.dir}/native/classes"/>
+    <property name="groovy.build.native" value="${maven.build.dir}/native"/>
+    <property name="groovy.src.native" value="${maven.src.dir}/native"/>
+    <mkdir dir="${groovy.build.native}"/>
     <exec executable="gcc">
       <arg value='-DJAVA_CLASS_NAME="groovy.lang.GroovyShell"'/>
       <arg value="-g"/>
       <arg value="-o"/>
-      <arg value="${maven.build.dir}/native/groovybase"/>
-      <arg value="${maven.src.dir}/native/base.c"/>
+      <arg value="${groovy.build.native}/groovybase"/>
+      <arg value="${groovy.src.native}/base.c"/>
     </exec>
     <exec executable="gcc">
       <arg value='-DJAVA_CLASS_NAME="org.codehaus.groovy.tools.FileSystemCompiler"'/>
       <arg value="-g"/>
       <arg value="-o"/>
-      <arg value="${maven.build.dir}/native/groovycbase"/>
-      <arg value="${maven.src.dir}/native/base.c"/>
+      <arg value="${groovy.build.native}/groovycbase"/>
+      <arg value="${groovy.src.native}/base.c"/>
     </exec>
-    <jar destfile="${maven.build.dir}/native/groovy.jar" basedir="${maven.build.dir}/native/classes"/>
-    <concat destfile="${maven.build.dir}/native/groovy">
-      <filelist dir="${maven.build.dir}/native" files="groovybase,groovy.jar"/>
+    <jar destfile="${groovy.build.native}/groovy.jar" manifest="${groovy.embeddable.working.dir}/META-INF/MANIFEST.MF">
+      <zipfileset src="${maven.build.dir}/${maven.final.name}.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/antlr-2.7.5.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-2.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-util-2.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-attrs-2.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/asm-analysis-2.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/commons-cli-1.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/xerces-2.4.0.jar"/>
+      <zipfileset src="${groovy.install.staging.dest}/lib/xml-apis-1.0.b2.jar"/>
+    </jar>
+    <concat destfile="${groovy.build.native}/groovy">
+      <filelist dir="${groovy.build.native}" files="groovybase,groovy.jar"/>
     </concat>
-    <concat destfile="${maven.build.dir}/native/groovyc">
-      <filelist dir="${maven.build.dir}/native" files="groovycbase,groovy.jar"/>
+    <concat destfile="${groovy.build.native}/groovyc">
+      <filelist dir="${groovy.build.native}" files="groovycbase,groovy.jar"/>
     </concat>
-    <chmod file="${maven.build.dir}/native/groovy" perm="ugo+rx"/>
-    <chmod file="${maven.build.dir}/native/groovyc" perm="ugo+rx"/>
+    <chmod file="${groovy.build.native}/groovy" perm="ugo+rx"/>
+    <chmod file="${groovy.build.native}/groovyc" perm="ugo+rx"/>
   </goal>
  
 </project>
