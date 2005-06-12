@@ -16,7 +16,7 @@ class MethodPointerBug extends GroovyTestCase {
 
     // Test a standard method pointer operator ".&".  For example, foo.&bar.
     void testMethodPointer() {
-        bug = new MethodPointerBug()
+        def bug = new MethodPointerBug()
         def x = bug.&sayHello
         x()
     } 

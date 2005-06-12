@@ -14,7 +14,7 @@ class IterateOverCustomTypeBug extends TestSupport {
         }
         assert answer == ['a', 'b', 'c']
         
-        def answer = []
+        answer = []
         object.each { answer << it }
         assert answer == ['a', 'b', 'c']
     }
