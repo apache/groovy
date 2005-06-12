@@ -598,7 +598,7 @@
 <!--	<delete dir="${groovy.embeddable.working.dir}"/>-->
   </goal>
 
-  <goal name="groovy:exe" depends="rebuild">
+  <goal name="groovy:exe">
     <echo>Building a Groovy executable</echo>
     <property name="groovy.build.native" value="${maven.build.dir}/native"/>
     <property name="groovy.src.native" value="${maven.src.dir}/native"/>
