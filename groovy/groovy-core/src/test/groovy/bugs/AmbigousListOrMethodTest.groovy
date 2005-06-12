@@ -10,7 +10,7 @@ class AmbigousListOrMethodTest extends GroovyTestCase {
 
     void testUndefinedPropertyVersion() {
         try {
-            def val = foo [0]
+            def val = this.foo [0]
             println val
         }
         catch (MissingPropertyException e) {
