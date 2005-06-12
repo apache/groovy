@@ -6,8 +6,8 @@ class SandwichMakerTest extends GroovyTestCase {
 
     void testStuff(){
 
-        mockCheeseSlicer = GroovyMock.newInstance()
-        sandwichMaker = new SandwichMaker()
+        def mockCheeseSlicer = GroovyMock.newInstance()
+        def sandwichMaker = new SandwichMaker()
         sandwichMaker.cheeseSlicer = mockCheeseSlicer.instance
 
         // expectation

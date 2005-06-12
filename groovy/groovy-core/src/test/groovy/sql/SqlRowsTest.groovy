@@ -5,41 +5,41 @@ import org.axiondb.jdbc.AxionDriver
 class SqlRowsTest extends TestHelper {
 
     void testFirstRowWithPropertyName() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.firstRow("select firstname, lastname from PERSON where id=1").firstname 
-        expected = "James"
+        def results = sql.firstRow("select firstname, lastname from PERSON where id=1").firstname
+        def expected = "James"
         assert results == expected
     }
 
     void testFirstRowWithPropertyNameAndParams() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1]).lastname 
-        expected = "Strachan"
+        def results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1]).lastname
+        def expected = "Strachan"
         assert results == expected
     }
 
     void testFirstRowWithPropertyNumber() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.firstRow("select firstname, lastname from PERSON where id=1")[0] 
-        expected = "James"
+        def results = sql.firstRow("select firstname, lastname from PERSON where id=1")[0]
+        def expected = "James"
         assert results == expected
     }
     
     void testFirstRowWithPropertyNumberAndParams() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1])[0] 
-        expected = "James"
+        def results = sql.firstRow("select firstname, lastname from PERSON where id=?", [1])[0]
+        def expected = "James"
         assert results == expected
     }
     
     void testAllRowsWithPropertyNumber() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
+        def results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
         assert results[0][0] == "James"
         assert results[0][1] == "Strachan"
         assert results[1][0] == "Bob"
@@ -47,9 +47,9 @@ class SqlRowsTest extends TestHelper {
     }
 
     void testAllRowsWithPropertyNumberAndParams() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
+        def results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
         assert results[0][0] == "James"
         assert results[0][1] == "Strachan"
         assert results[1][0] == "Bob"
@@ -57,9 +57,9 @@ class SqlRowsTest extends TestHelper {
     }
 
     void testAllRowsWithPropertyName() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
+        def results = sql.rows("select firstname, lastname from PERSON where id=1 or id=2 order by id")
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
         assert results[1].firstname == "Bob"
@@ -67,9 +67,9 @@ class SqlRowsTest extends TestHelper {
     }
 
     void testAllRowsWithPropertyNameAndParams() {
-        sql = createSql()
+        def sql = createSql()
 
-        results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
+        def results = sql.rows("select firstname, lastname from PERSON where id=? or id=? order by id", [1,2])
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
         assert results[1].firstname == "Bob"

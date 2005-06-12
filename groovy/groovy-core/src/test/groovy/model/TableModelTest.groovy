@@ -3,12 +3,12 @@ package groovy.model
 class TableModelTest extends GroovyTestCase {
     
     void testTableModel() {
-        list = [ ['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
+        def list = [ ['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
         
-        listModel = new ValueHolder(list)
+        def listModel = new ValueHolder(list)
         
-        model = new DefaultTableModel(listModel)
-        rowModel = model.getRowModel()
+        def model = new DefaultTableModel(listModel)
+        def rowModel = model.getRowModel()
         model.addColumn(new DefaultTableColumn("Name", new PropertyModel(rowModel, "name")))
         model.addColumn(new DefaultTableColumn("Location", new PropertyModel(rowModel, "location")))
         
@@ -27,12 +27,12 @@ class TableModelTest extends GroovyTestCase {
         assertValueAt(model, 0, 1, 'Antigua')
         
         // lets check the real model changed too
-        james = list.get(0)
+        def james = list.get(0)
         assert james.location == 'Antigua'
     }
     
     protected void assertValueAt(model, row, col, expected) {
-        value = model.getValueAt(row, col)
+        def value = model.getValueAt(row, col)
         assert value == expected , "for row " + row + " col " + col
     }
 }

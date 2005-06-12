@@ -9,11 +9,11 @@ import groovy.xml.MarkupBuilder
 class SqlWithTypedResultsTest extends TestHelper {
 
     void testSqlQuery() {
-         sql = createEmptySql()
+         def sql = createEmptySql()
          
          sql.execute("create table groovytest ( anint integer, astring varchar )");
 
-         groovytest = sql.dataSet("groovytest")
+         def groovytest = sql.dataSet("groovytest")
          groovytest.add( anint:1, astring:"Groovy" )
          groovytest.add( anint:2, astring:"rocks" )
 

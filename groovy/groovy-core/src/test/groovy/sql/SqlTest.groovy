@@ -9,15 +9,15 @@ import org.axiondb.jdbc.AxionDataSource
 class SqlTest extends GroovyTestCase {
 
     void testSqlQuery() {
-        sql = createSql()     
+        def sql = createSql()
         
         sql.eachRow("select * from PERSON") { println("Hello ${it.firstname} ${it.lastname}") }
     }
     
     void testQueryUsingColumnIndex() {
-            sql = createSql()
+            def sql = createSql()
 
-            answer = null
+            def answer = null
 
             sql.eachRow("select count(*) from PERSON") { answer = it[0] }
 
@@ -27,10 +27,10 @@ class SqlTest extends GroovyTestCase {
         }
     
     void testQueryUsingNegativeColumnIndex() {
-            sql = createSql()
+            def sql = createSql()
 
-        first = null
-        last = null
+        def first = null
+        def last = null
 
             sql.eachRow("select firstname, lastname from PERSON where firstname='James'") { row ->
                 first = row[-2]
@@ -44,66 +44,66 @@ class SqlTest extends GroovyTestCase {
     }
     
     void testSqlQueryWithWhereClause() {
-        sql = createSql()     
+        def sql = createSql()
         
-        foo = "drink"
+        def foo = "drink"
         sql.eachRow("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
-        sql = createSql()     
+        def sql = createSql()
         
-        foo = "cheese"
-        bar = "edam"
+        def foo = "cheese"
+        def bar = "edam"
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
     }
     
     void testSqlQueryWithIncorrectlyQuotedDynamicExpressions() {
-        sql = createSql()     
+        def sql = createSql()
         
-        foo = "cheese"
-        bar = "edam"
+        def foo = "cheese"
+        def bar = "edam"
         sql.eachRow("select * from FOOD where type='${foo}' and name != '${bar}'") { println("Found cheese ${it.name}") }
     }
     
     void testDataSet() {
-        sql = createSql()     
+        def sql = createSql()
         
-        people = sql.dataSet("PERSON")
+        def people = sql.dataSet("PERSON")
         people.each { println("Hey ${it.firstname}") }
     }
     
     void testDataSetWithClosurePredicate() {
-        sql = createSql()     
+        def sql = createSql()
         
-        food = sql.dataSet("FOOD")
+        def food = sql.dataSet("FOOD")
         food.findAll { it.type == "cheese" }.each { println("Cheese ${it.name}") }
     }
     
     void testExecuteUpdate(){
-        foo='food-drink'
-        bar='guinness'
-        sql = createSql();
-        nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
+        def foo='food-drink'
+        def bar='guinness'
+        def sql = createSql();
+        def nRows = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
         if(nRows == 0){
             sql.executeUpdate("insert into FOOD (type,name) values (${foo},${bar})");
             }
     }
     
     protected def createSql() {
-        dataSource = new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
-        sql = new Sql(dataSource)
+        def dataSource = new AxionDataSource("jdbc:axiondb:foo" + getMethodName())
+        def sql = new Sql(dataSource)
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")
         
         // now lets populate the datasets
-        people = sql.dataSet("PERSON")
+        def people = sql.dataSet("PERSON")
         people.add( firstname:"James", lastname:"Strachan" )
         people.add( firstname:"Bob", lastname:"Mcwhirter" )
         people.add( firstname:"Sam", lastname:"Pullara" )
         
-        food = sql.dataSet("FOOD")
+        def food = sql.dataSet("FOOD")
         food.add( type:"cheese", name:"edam" )
         food.add( type:"cheese", name:"brie" )
         food.add( type:"cheese", name:"cheddar" )

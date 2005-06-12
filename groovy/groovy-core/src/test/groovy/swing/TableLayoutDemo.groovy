@@ -50,8 +50,8 @@ class TableLayoutDemo {
     }
     
     void showAbout() {
-         pane = swing.optionPane(message:'This demo shows how you can use HTML style table layouts with Swing components')
-         dialog = pane.createDialog(frame, 'About TableLayout Demo')
+         def pane = swing.optionPane(message:'This demo shows how you can use HTML style table layouts with Swing components')
+         def dialog = pane.createDialog(frame, 'About TableLayout Demo')
          dialog.show()
     }
 }

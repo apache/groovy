@@ -3,76 +3,76 @@ package groovy.sql
 class SqlCompleteTest extends TestHelper {
 
     void testSqlQuery() {
-        sql = createSql()     
+        def sql = createSql()
         
-        results = [:]
+        def results = [:]
         sql.eachRow("select * from PERSON") { results.put(it.firstname, it.lastname) }
         
-        expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
+        def expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
 					
         assert results == expected
     }
     
     void testSqlQueryWithWhereClause() {
-        sql = createSql()     
+        def sql = createSql()
         
-        foo = "drink"
-        results = []
+        def foo = "drink"
+        def results = []
         sql.eachRow("select * from FOOD where type=${foo}") { results.add(it.name) }
         
-        expected = ["beer", "coffee"]
+        def expected = ["beer", "coffee"]
         assert results == expected
     }
     
     void testSqlQueryWithWhereClauseWith2Arguments() {
-        sql = createSql()     
+        def sql = createSql()
         
-        foo = "cheese"
-        bar = "edam"
-        results = []
+        def foo = "cheese"
+        def bar = "edam"
+        def results = []
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { results.add(it.name) }
         
-        expected = ["brie", "cheddar"]
+        def expected = ["brie", "cheddar"]
         assert results == expected
     }
 
     void testSqlQueryWith2ParametersUsingQuestionMarkNotation() {
-        sql = createSql()     
+        def sql = createSql()
         
-        results = []
+        def results = []
         sql.eachRow("select * from FOOD where type=? and name != ?", ["cheese", "edam"]) { results.add(it.name) }
         
-        expected = ["brie", "cheddar"]
+        def expected = ["brie", "cheddar"]
         assert results == expected
     }
 
     void testDataSet() {
-        sql = createSql()     
+        def sql = createSql()
         
-        results = []
-        people = sql.dataSet("PERSON")
+        def results = []
+        def people = sql.dataSet("PERSON")
         people.each { results.add(it.firstname) }
         
-        expected = ["James", "Bob", "Sam"]
+        def expected = ["James", "Bob", "Sam"]
         assert results == expected
     }
     
     void testDataSetWithClosurePredicate() {
-        sql = createSql()     
+        def sql = createSql()
         
-        results = []
-        food = sql.dataSet("FOOD")
+        def results = []
+        def food = sql.dataSet("FOOD")
         food.findAll { it.type == "cheese" }.each { results.add(it.name) }
         
-        expected = ["edam", "brie", "cheddar"]
+        def expected = ["edam", "brie", "cheddar"]
         assert results == expected
     }
     
     void testUpdatingDataSet() {
-        sql = createSql()     
+        def sql = createSql()
         
-        results = []
-        features = sql.dataSet("FEATURE")
+        def results = []
+        def features = sql.dataSet("FEATURE")
         features.each { 
             /** @todo Axion doesn't yet support ResultSet updating
             if (it.id == 1) {
@@ -83,28 +83,28 @@ class SqlCompleteTest extends TestHelper {
             results.add(it.name) 
         }
         
-        expected = ["GDO", "GPath", "GroovyMarkup"]
+        def expected = ["GDO", "GPath", "GroovyMarkup"]
         assert results == expected
     }
     
     void testGStringToSqlConversion(){
-       foo = 'loincloth'
-       bar = 'wasteband'
-       sql = createSql()
-       expected = "A narrow ? supported by a ?!!"
-       gstring = "A narrow ${foo} supported by a ${bar}!!"
-       result = sql.asSql(gstring, gstring.values.toList())
+       def foo = 'loincloth'
+       def bar = 'wasteband'
+       def sql = createSql()
+       def expected = "A narrow ? supported by a ?!!"
+       def gstring = "A narrow ${foo} supported by a ${bar}!!"
+       def result = sql.asSql(gstring, gstring.values.toList())
        assert result == expected
     }
     
     void testExecuteUpdate(){
-        foo='food-drink'
-        food = 'food'
-        drink = 'drink'
-        bar='guinness'
-        sql = createSql();
-        expected = 0
-        result = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
+        def foo='food-drink'
+        def food = 'food'
+        def drink = 'drink'
+        def bar='guinness'
+        def sql = createSql();
+        def expected = 0
+        def result = sql.executeUpdate("update FOOD set type=? where name=?",[foo,bar]);
         assert result == expected
         expected  = 1
         result = sql.executeUpdate("insert into FOOD (type,name) values (${food},${bar})");

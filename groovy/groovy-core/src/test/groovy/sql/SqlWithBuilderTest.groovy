@@ -9,10 +9,10 @@ import groovy.xml.MarkupBuilder
 class SqlWithBuilderTest extends TestHelper {
 
     void testSqlQuery() {
-         sql = createSql()
+         def sql = createSql()
          println "Created ${sql}"
         
-         doc = new MarkupBuilder()
+         def doc = new MarkupBuilder()
         
          doc.people {
              sql.eachRow("select * from PERSON") {

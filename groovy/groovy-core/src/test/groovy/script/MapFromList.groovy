@@ -4,8 +4,8 @@ class MapFromList {
     }
 
     void doit(args) {
-        i = 1
-        l = [:]
+        def i = 1
+        def l = [:]
         args.each { 
 	    talk(it)
 	    l.put(it,i++)
@@ -16,8 +16,8 @@ class MapFromList {
     }
 
     static void main(args) {
-        a = ['tom','dick','harry']
-        t = new MapFromList()
+        def a = ['tom','dick','harry']
+        def t = new MapFromList()
         t.doit(a)
     }
 }

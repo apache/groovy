@@ -24,7 +24,7 @@ class InterceptorTest extends GroovyTestCase{
         interceptable = 'Interceptable String'
     }
     ProxyMetaClass initProxy(){
-        proxy = ProxyMetaClass.getInstance(interceptable.class)
+        def proxy = ProxyMetaClass.getInstance(interceptable.class)
         proxy.setInterceptor(logInterceptor)
         proxy.register()
         return proxy
@@ -53,7 +53,7 @@ Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Intege
     }
 
     void testNoInterceptionAfterUnregister() {
-        proxy = initProxy()
+        def proxy = initProxy()
         proxy.unRegister()
 
         interceptable.size()
@@ -63,7 +63,7 @@ Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Intege
     }
 
     void testNoInterceptionWithNullInterceptor() {
-        proxy = initProxy()
+        def proxy = initProxy()
         proxy.setInterceptor(null)
 
         interceptable.size()
@@ -91,8 +91,8 @@ Interceptor after java.lang.String.valueOf(java.lang.Boolean)
     }
 
     void testNoInterceptionOfGroovyClasses(){
-        slicer = new groovy.mock.example.CheeseSlicer()
-        proxy = ProxyMetaClass.getInstance(slicer.class)
+        def slicer = new groovy.mock.example.CheeseSlicer()
+        def proxy = ProxyMetaClass.getInstance(slicer.class)
         proxy.setInterceptor(logInterceptor)
         proxy.register()
 
