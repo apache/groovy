@@ -8,10 +8,10 @@ import java.io.*
 class Groovy308_Bug extends GroovyTestCase {
     
     void testBug() {
-    	out = new StringWriter()
+    	def out = new StringWriter()
     	out << "hello " << "world!"
     	
-    	value = out.toString()
+    	def value = out.toString()
     	assert value == "hello world!"
     	
     	out = new ByteArrayOutputStream()

@@ -13,7 +13,7 @@ class TryCatch2Bug extends GroovyTestCase {
     
     void testBug2() {
     	try {
-    		x = 123
+    		def x = 123
     	}
     }
 }

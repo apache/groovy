@@ -11,29 +11,29 @@
   * @author Guillaume Laforge
   */
 class InvokeNormalMethodFromBuilder_Bug657 extends GroovyTestCase {
-	void testInvokeNormalMethod() {
-		b = new Builder()
-		assert b.callNormalMethod() == "first"
-		
-		value = b.someNode() {}
-		assert value == "second"
-	}
+    void testInvokeNormalMethod() {
+        def b = new Builder()
+        assert b.callNormalMethod() == "first"
+
+        def value = b.someNode() {}
+        assert value == "second"
+    }
 }
 
 class Builder extends BuilderSupport {
 
-	void setParent(Object parent, Object child) {}
-	
-	Object createNode(Object name)                 { return createNode(name, [:], null) }
-	Object createNode(Object name, Map attributes) { return createNode(name, attributes, null) }
-	Object createNode(Object name, Object value)   { return createNode(name, [:], value) }
-	
-	Object createNode(Object name, Map attributes, Object value) { 
-		println "create ${name}"
-		return callOtherStaticallyTypedMethod()
-	}
-	
-	String callNormalMethod()               { println "normalMethod"; return "first" }
-	String callOtherStaticallyTypedMethod() { println "otherMethod";  return "second" }
-	
+    void setParent(Object parent, Object child) {}
+
+    Object createNode(Object name)                 { return createNode(name, [:], null) }
+    Object createNode(Object name, Map attributes) { return createNode(name, attributes, null) }
+    Object createNode(Object name, Object value)   { return createNode(name, [:], value) }
+
+    Object createNode(Object name, Map attributes, Object value) {
+        println "create ${name}"
+        return callOtherStaticallyTypedMethod()
+    }
+
+    String callNormalMethod()               { println "normalMethod"; return "first" }
+    String callOtherStaticallyTypedMethod() { println "otherMethod";  return "second" }
+    
 }

@@ -14,7 +14,7 @@ class Groovy303_Bug extends GroovyTestCase {
     
     void testBug() {
         try {
-            scholastic = new Scholastic()
+            def scholastic = new Scholastic()
                scholastic.createUI()
            }
            catch (HeadlessException e) {
@@ -28,11 +28,11 @@ class Scholastic implements ActionListener {
 
     void createUI() {
        println('createUI called')
-       frame = new JFrame("Hello World")
-       contents = frame.getContentPane()
-       pane = new JPanel()
+       def frame = new JFrame("Hello World")
+       def contents = frame.getContentPane()
+       def pane = new JPanel()
        pane.setLayout(new BorderLayout())
-       button = new JButton("A button")
+       def button = new JButton("A button")
        button.addActionListener(this)
        pane.add(button, BorderLayout.CENTER)
        contents.add(pane)

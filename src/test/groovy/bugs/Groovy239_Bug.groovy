@@ -5,9 +5,9 @@
 class Groovy239_Bug extends GroovyTestCase {
     
     void testBug() {
-        a = makeClosure()
-        b = makeClosure()
-        c = makeClosure()
+        def a = makeClosure()
+        def b = makeClosure()
+        def c = makeClosure()
 
         a() {
             println("A")
@@ -25,9 +25,9 @@ class Groovy239_Bug extends GroovyTestCase {
     }
 
     void testBug2() {
-        a = { it() }
-        b = { it() }
-        c = { it() }
+        def a = { it() }
+        def b = { it() }
+        def c = { it() }
 
         a() {
             b() {

@@ -3,7 +3,7 @@ package groovy.bugs
 class SubscriptOnStringArrayBug extends TestSupport {
 
     void testArraySubscript() {
-        array = getMockArguments()
+        def array = getMockArguments()
  
         assert array[1] == "b"
         
@@ -15,7 +15,7 @@ class SubscriptOnStringArrayBug extends TestSupport {
     }
     
     void testRobsTestCase() {
-        array = "one two three".split(" ")
+        def array = "one two three".split(" ")
         
         assert array[1] == "two"
     }

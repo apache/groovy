@@ -5,9 +5,9 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
     int i1;
 
     void testBug() {
-        array = getIntArray() // this function returns [I, true primitive array
+        def array = getIntArray() // this function returns [I, true primitive array
         
-        value = array[2]
+        def value = array[2]
         
         assert value == 3
         
@@ -17,7 +17,7 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
         assert value == 8
         
         // lets test a range
-        range = array[1..2]
+        def range = array[1..2]
         
         assert range == [2, 8]
     }
@@ -25,7 +25,7 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
     void testGroovyIntArray() {
         int[] ia = [1, 2]
         int[] ia1 = ia; // type is not necessary
-        i1 = ia1[0]
+        def i1 = ia1[0]
         int i2 = i1
         assert i2 == 1
     }

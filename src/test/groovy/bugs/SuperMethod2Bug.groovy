@@ -5,8 +5,8 @@
 class SuperMethod2Bug extends GroovyTestCase {
      
     void testBug() {
-    	base = new SuperBase()
-    	value = base.doSomething()
+    	def base = new SuperBase()
+    	def value = base.doSomething()
     	assert value == "TestBase"
     	
     	
@@ -16,8 +16,8 @@ class SuperMethod2Bug extends GroovyTestCase {
     }
 
     void testBug2() {
-    	base = new SuperBase()
-    	value = base.foo(2)
+    	def base = new SuperBase()
+    	def value = base.foo(2)
     	assert value == "TestBase2"
     	
     	
@@ -27,8 +27,8 @@ class SuperMethod2Bug extends GroovyTestCase {
     }
 
     void testBug3() {
-    	base = new SuperBase()
-    	value = base.foo(2,3)
+    	def base = new SuperBase()
+    	def value = base.foo(2,3)
     	assert value == "foo(x,y)Base2,3"
     	
     	
@@ -38,8 +38,8 @@ class SuperMethod2Bug extends GroovyTestCase {
     }
 
     void testBug4() {
-    	base = new SuperBase("Cheese")
-    	value = base.name
+    	def base = new SuperBase("Cheese")
+    	def value = base.name
     	assert value == "Cheese"
     	
     	

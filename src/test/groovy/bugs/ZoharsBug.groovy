@@ -5,7 +5,7 @@
 class ZoharsBug extends GroovyTestCase {
     
     void testBug() {
-        values = [1,2,3,4]
+        def values = [1,2,3,4]
         result = bloo(values, {it > 1})
         result.each{println(it)}
     }

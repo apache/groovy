@@ -8,14 +8,14 @@
 class MarkupAndMethodBug extends GroovyTestCase {
     
     void testBug() {
-        tree = createTree()
+        def tree = createTree()
 
-        name = tree.person[0]['@name']
+        def name = tree.person[0]['@name']
         assert name == 'James'
     }
     
     protected def createTree() {
-        builder = NodeBuilder.newInstance()
+        def builder = NodeBuilder.newInstance()
         
         root = builder.people() {
             person(name:getTestName()) {

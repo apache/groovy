@@ -10,9 +10,9 @@ class ClosureWithStaticVariablesBug extends TestSupport {
     static def y = [:]
     
     void testBug() {
-        c = { x ->
+        def c = { x ->
             return {
-                foo = Cheese.z
+                def foo = Cheese.z
                 println foo
                 assert foo.size() == 0
 
@@ -22,8 +22,8 @@ class ClosureWithStaticVariablesBug extends TestSupport {
                 return 6
             }
         }
-        c2 = c(5)
-        answer = c2()
+        def c2 = c(5)
+        def answer = c2()
         assert answer == 6
     }
 }

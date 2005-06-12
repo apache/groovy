@@ -15,7 +15,7 @@ class TestCaseBug extends TestCase {
     	}
 
     static void main(args) {
-        foo = new TestCaseBug("hey")
+        def foo = new TestCaseBug("hey")
         foo.testDummy()
     }
     

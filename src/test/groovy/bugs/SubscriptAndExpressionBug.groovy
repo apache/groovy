@@ -1,20 +1,20 @@
 class SubscriptAndExpressionBug extends GroovyTestCase {
     
     void testBug() {
-        foo = ["nice cheese grommit"]
+        def foo = ["nice cheese grommit"]
         
-        cheese = foo[0].startsWith("nice")
+        def cheese = foo[0].startsWith("nice")
         
         assert cheese == true
     }
 
     void testSubscriptIncrement() {
-        foo = [5, 6, 7]
+        def foo = [5, 6, 7]
         foo[0] += 5
         
         assert foo[0] == 10
         
-        i = 0
+        def i = 0
         foo[i++] = 1
         assert foo[0] == 1
         assert i == 1
@@ -25,7 +25,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
     }
 
     void testLargeSubscript() {
-        foo = [1]
+        def foo = [1]
         
         foo[10] = 123
         
@@ -34,7 +34,7 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
         foo.putAt(12, 55)
         assert foo[12] == 55
         
-        i = 20
+        def i = 20
         foo[i] = 1
         foo[i++] += 5
         
@@ -43,17 +43,17 @@ class SubscriptAndExpressionBug extends GroovyTestCase {
     }
     
     void testDoubleSubscript() {
-        foo = ["nice cheese grommit"]
+        def foo = ["nice cheese grommit"]
         
-        cheese = foo[0][5..10]
+        def cheese = foo[0][5..10]
         
         assert cheese == "cheese"
     }
     
     void testSubscriptAndProperty() {
-        foo = [['gromit':'cheese']]
+        def foo = [['gromit':'cheese']]
         
-        cheese = foo[0].gromit
+        def cheese = foo[0].gromit
         
         assert cheese == "cheese"
     }

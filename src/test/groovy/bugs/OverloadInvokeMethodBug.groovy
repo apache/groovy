@@ -5,10 +5,10 @@
 class OverloadInvokeMethodBug extends GroovyTestCase {
      
     void testBug() {
-    	a = new OverloadA()
+    	def a = new OverloadA()
     	a.duh()
     	
-    	b = new OverloadB()
+    	def b = new OverloadB()
     	b.duh()
     }
 

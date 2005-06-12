@@ -4,9 +4,9 @@
 class UseClosureInClosureBug extends GroovyTestCase {
     
     void testBug() {
-        closure = { println it }
+        def closure = { println it }
         
-        anotherClosure = { closure(it) }
+        def anotherClosure = { closure(it) }
         anotherClosure("Hello")
     }
 }

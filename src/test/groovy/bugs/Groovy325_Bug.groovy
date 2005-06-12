@@ -4,7 +4,7 @@ class Groovy325_Bug extends GroovyTestCase {
   }
 
   static void main(args) {
-    c = { staticMethod() }
+    def c = { staticMethod() }
     c()
   }
 }

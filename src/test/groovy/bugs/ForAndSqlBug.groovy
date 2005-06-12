@@ -7,9 +7,9 @@ import groovy.sql.TestHelper
 class ForAndSqlBug extends GroovyTestCase {
     
     void testBugInNormalMethod() {
-        sql = TestHelper.makeSql()
+        def sql = TestHelper.makeSql()
         
-        li = ["a", "b"]
+        def li = ["a", "b"]
         for (x in li) {
             sql.eachRow("SELECT count(*) FROM FOOD") { e ->
             	println " ${x}"
@@ -22,9 +22,9 @@ class ForAndSqlBug extends GroovyTestCase {
     void testBugInsideScript() {
         assertScript( """
 import groovy.sql.TestHelper
-sql = TestHelper.makeSql()
+def sql = TestHelper.makeSql()
 
-li = ["a", "b"]
+def li = ["a", "b"]
 for (x in li) {
     sql.eachRow("SELECT count(*) FROM FOOD") { e ->
     	println " \${x}"

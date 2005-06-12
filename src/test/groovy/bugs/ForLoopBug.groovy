@@ -6,9 +6,9 @@ class ForLoopBug extends GroovyTestCase {
     
     void testBug() {
         assertScript( """
-list = []
-a = 1
-b = 5
+def list = []
+def a = 1
+def b = 5
 for (c in a..b) {
     list << c
 }
@@ -25,9 +25,9 @@ for (i in 1..10) {
     }
 
     void testNormalMethod() {
-        list = []
-        a = 1
-        b = 5
+        def list = []
+        def a = 1
+        def b = 5
         for (c in a..b) {
             list << c
         }
@@ -35,8 +35,8 @@ for (i in 1..10) {
     }
     
      void testBytecodeGenBug() {
-        a = 1
-        b = 5
+        def a = 1
+        def b = 5
 
         for (i in a..b) {
             println i
@@ -50,7 +50,7 @@ for (i in 1..10) {
     void testVisibility() {
         assertScript( """
 
-array = [ true, true, true ];
+def array = [ true, true, true ];
 for( boolean i in array ) {
    1.times {
        assert i == true;

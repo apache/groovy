@@ -4,7 +4,7 @@
 class InconsistentStackHeightBug extends GroovyTestCase {
 
     void testBug() {
-        server = 0
+        def server = 0
         def tmp = server + 1
         try {
         }
@@ -13,7 +13,7 @@ class InconsistentStackHeightBug extends GroovyTestCase {
     }
 
     void testBug2() {
-        server = 0
+        def server = 0
         def tmp = server == 2
         try {
         }
@@ -22,7 +22,7 @@ class InconsistentStackHeightBug extends GroovyTestCase {
     }
 
     void testBug3() {
-        server = 0
+        def server = 0
         def foo = server
         try {
         }

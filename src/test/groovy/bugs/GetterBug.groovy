@@ -20,7 +20,7 @@ class GetterBug extends GroovyTestCase {
     void testTypedGetterAndSetter() {
     	println "Running test"
     	
-    	value = getFoo()
+    	def value = getFoo()
     	
     	println "Value is ${value}"
     	
@@ -48,7 +48,7 @@ class GetterBug extends GroovyTestCase {
     void testUntypedGetterAndSetter() {
     	println "Running test"
     	
-    	value = getBar()
+    	def value = getBar()
     	
     	println "Value is ${value}"
     	

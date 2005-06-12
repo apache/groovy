@@ -7,7 +7,7 @@ import groovy.xml.MarkupBuilder
 class TedsClosureBug extends GroovyTestCase {
     
     void testBug() {
-		f = new Feed()
+		def f = new Feed()
 		
 		f.author = new Person(name:'Ted Leung',url:'http://www.sauria.com/blog', email:'twl@sauria.com')
 		
@@ -16,9 +16,9 @@ class TedsClosureBug extends GroovyTestCase {
 		//f.entries.each { println it.title }
 		//println f.author.name
 		
-		xml = new MarkupBuilder()
+		def xml = new MarkupBuilder()
 		
-		atom = xml.atom() {
+		def atom = xml.atom() {
 		  title("Ted Leung off the air")
 		  link("http://www.sauria.com/noblog")
 		  author() {

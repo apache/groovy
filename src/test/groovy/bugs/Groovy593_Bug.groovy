@@ -43,7 +43,7 @@ class Groovy593_Bug extends GroovyTestCase {
 
         // Test MarkupBuilder state with expectedXML
   	    // Handling the cr lf characters, depending on operating system. 
-        outputValue = writer.toString()
+        def outputValue = writer.toString()
         if (expectedXML.indexOf("\r\n") >= 0)  expectedXML = expectedXML.replaceAll("\r\n", "\n");
         if (outputValue.indexOf("\r\n") >= 0)  outputValue = outputValue.replaceAll("\r\n", "\n");
         assertEquals(expectedXML.replaceAll("\r\n", "\n"), outputValue)

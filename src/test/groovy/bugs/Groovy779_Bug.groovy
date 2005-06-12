@@ -14,11 +14,11 @@ class Groovy779_Bug extends GroovyTestCase {
 
     public void testFieldProperty() {
 
-        exceptionCalled = false
-        finallyCalled = false
+        def exceptionCalled = false
+        def finallyCalled = false
 
         try {
-            p = new Groovy779OnePerson(nameID:"foo-", age:12.2)
+            def p = new Groovy779OnePerson(nameID:"foo-", age:12.2)
             assert p.age == 12
             assert p.nameID == "foo-"
             p = new Groovy779OnePerson(nameID:"foo-", age:"12")
@@ -37,11 +37,11 @@ class Groovy779_Bug extends GroovyTestCase {
     }
 
     public void testBeanProperty() {
-        exceptionCalled = false
-        finallyCalled = false
+        def exceptionCalled = false
+        def finallyCalled = false
 
         try {
-            p2 = new Groovy779AnotherPerson(nameID:1234, age:12.2)
+            def p2 = new Groovy779AnotherPerson(nameID:1234, age:12.2)
             assert p2.age == 12
             assert p2.nameID == "1234"
             p2 = new Groovy779AnotherPerson(nameID:111, age:"12")
@@ -60,7 +60,7 @@ class Groovy779_Bug extends GroovyTestCase {
     }
 
     public void testAutoboxingProperty() {
-        p = new Groovy779OneProfit(signal:"bar", rate:15)
+        def p = new Groovy779OneProfit(signal:"bar", rate:15)
         assert p.signal == "bar"
         assert p.rate == 15.0
 
@@ -68,7 +68,7 @@ class Groovy779_Bug extends GroovyTestCase {
         assert p.signal == "133"
         assert p.rate == 15.0
 
-        p2 = new Groovy779AnotherProfit(signal:"bar~", rate:15)
+        def p2 = new Groovy779AnotherProfit(signal:"bar~", rate:15)
         assert p2.signal == "bar~"
         assert p2.rate == 15.0
 
