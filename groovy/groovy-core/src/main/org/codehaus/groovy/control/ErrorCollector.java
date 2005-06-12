@@ -110,7 +110,7 @@ public class ErrorCollector {
     public void addError(Message message) throws CompilationFailedException {
         addErrorAndContinue(message);
 
-        if (this.errors.size() >= configuration.getTolerance()) {
+        if (errors!=null && this.errors.size() >= configuration.getTolerance()) {
             failIfErrors();
         }
     }
