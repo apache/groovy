@@ -5,7 +5,10 @@ class UnknownVariableBug extends GroovyTestCase {
 
     void testBug() {
         shouldFail {
-            println(foo)
+            def shell = new GroovyShell()
+            shell.evaluate """
+                println(foo)
+            """
         }
     }
 }
