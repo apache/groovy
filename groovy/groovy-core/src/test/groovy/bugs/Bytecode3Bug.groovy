@@ -6,8 +6,8 @@ class Bytecode3Bug extends GroovyTestCase {
     def count
          
     void testIncrementPropertyInclosure() {
-        args = [1, 2, 3]
-        m = [:]
+        def args = [1, 2, 3]
+        def m = [:]
         count = 0
         doLoop(args, m)
         assert count == 3

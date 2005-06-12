@@ -14,7 +14,7 @@ class Loop {
   }
 
   static void main(args){
-     s = new Loop()
+     def s = new Loop()
      for (i in 1..1000000){
        s.push(i)
      }

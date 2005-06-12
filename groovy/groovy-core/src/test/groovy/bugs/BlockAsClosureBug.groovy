@@ -4,7 +4,7 @@
 class BlockAsClosureBug extends GroovyTestCase {
     
    void testBug() {
-        c = 0 
+        def c = 0
         
         block: { 
             c = 9 
@@ -24,7 +24,7 @@ class BlockAsClosureBug extends GroovyTestCase {
     }
     
     static void main(args) {
-        c = 0 
+        def c = 0
         
         block: {
             c = 9 
@@ -36,7 +36,7 @@ class BlockAsClosureBug extends GroovyTestCase {
     }
     
     def foo() {
-        c = 0 
+        def c = 0 
         
         block: { 
             c = 9 

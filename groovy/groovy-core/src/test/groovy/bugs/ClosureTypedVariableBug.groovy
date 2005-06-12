@@ -4,7 +4,7 @@
 class ClosureTypedVariableBug extends GroovyTestCase {
     
     void testBug2() {
-        count = makeClosure(0)
+        def count = makeClosure(0)
         assert count == 1
         
         count = makeClosure2(0)
@@ -13,29 +13,29 @@ class ClosureTypedVariableBug extends GroovyTestCase {
 
 
     def makeClosure(Number count) {
-        closure = { count = it }
+        def closure = { count = it }
         closure(1)
         return count
     }
 
     def makeClosure2(Number c) {
-        count = c
-        closure = { count = it }
+        def count = c
+        def closure = { count = it }
         closure(1)
         return count
     }
 
     void testBug() {
         Integer count = 0
-        closure = { count = it }
+        def closure = { count = it }
         closure(1)
         assert count == 1
     }
     
     void testBug3() {
-        closure = getElementClosure("p")
-        answer = closure("b")
-        value = answer("c")
+        def closure = getElementClosure("p")
+        def answer = closure("b")
+        def value = answer("c")
         println "returned : ${value}"
     }
     

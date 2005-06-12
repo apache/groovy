@@ -3,7 +3,7 @@ package groovy.bugs
 class ArrayMethodCallBug extends TestSupport {
 
     void testMethodCallingWithArrayBug() {
-        array = getMockArguments()
+        def array = getMockArguments()
         
         dummyMethod(array)
     }

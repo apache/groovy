@@ -1,8 +1,8 @@
 class AutoboxingOfComparisonsBug extends GroovyTestCase {
     
     void testBug() {
-        y = true
-        x = y == true
+        def y = true
+        def x = y == true
         
         assert x
         

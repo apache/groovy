@@ -6,19 +6,19 @@ class Bytecode2Bug extends GroovyTestCase {
     Integer count = 0
     
     void testBytecodeBug() {
-		getCollection().each { count += it }       
+        getCollection().each { count += it }
     }
     
     void testTedsBytecodeBug() {
         //doTest(getCollection())
-        a = [1, 2, 3, 4]
+        def a = [1, 2, 3, 4]
         doTest(a)
 
     }
     
     void doTest(args) {
-        m = [:]
-        i = 1
+        def m = [:]
+        def i = 1
         args.each { m.put(it, i++) }     
         
         assert m[1] == 1
@@ -33,8 +33,8 @@ class Bytecode2Bug extends GroovyTestCase {
     
     
     void testTedsBytecode2Bug() {
-        m = [:]
-        i = 1
+        def m = [:]
+        def i = 1
         getCollection().each { m.put(it, i++) }     
         
         assert m[1] == 1

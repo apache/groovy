@@ -4,18 +4,18 @@
 class Bytecode6Bug extends GroovyTestCase {
 
     void testPostFixReturn() {
-        i = 1
-        closure = { i++ }
-        value = closure()
+        def i = 1
+        def closure = { i++ }
+        def value = closure()
         
         assert value == 1
         assert i == 2
     }
     
     void testPreFixReturn() {
-        i = 1
-        closure = { return ++i }
-        value = closure()
+        def i = 1
+        def closure = { return ++i }
+        def value = closure()
         
         assert value == 2
         assert i == 2
