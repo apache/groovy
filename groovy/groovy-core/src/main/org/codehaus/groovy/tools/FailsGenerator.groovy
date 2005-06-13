@@ -132,54 +132,54 @@ class FailsGenerator {
         def reader = new LineNumberReader(new FileReader(conf));
         def line = null;
 
-        def readLine = {line ->
-            if (line!=null) return line
+        def readLine = {l ->
+            if (l!=null) return l
             while (true) {
-                line = reader.readLine()
-                if (line==null) return null
-                if (""==line) continue
-                line=line.trim()
-                if (line[0] == "#") continue
-                return line
+                l = reader.readLine()
+                if (l==null) return null
+                if (""==l) continue
+                l=l.trim()
+                if (l[0] == "#") continue
+                return l
             }
         }
 
-        def lineloop = {line,lbreak,func ->
+        def lineloop = {l,lbreak,func ->
             while(true) {
-                if (line!=null && lbreak) return line
-                if (line==null) line = readLine(line)
-                if (line==null) return
+                if (l!=null && lbreak) return l
+                if (l==null) l = readLine(l)
+                if (l==null) return
                 nr= reader.lineNumber;
-                line = func(line)
+                l = func(l)
             }
-            return line
+            return l
         }
 
-        def attRead = {el,line->
-            line = lineloop(line,true) {line ->
-                if (line[0]=="[" || line[-1]=="]") return line
-                int index = line.indexOf('=');
-                if (index==-1) throw new RuntimeException(" ${conf.name}:${nr} = expected somewhere, but got ${line}");
-                String name = line.substring(0,index).trim();
+        def attRead = {el,l->
+            l = lineloop(l,true) {ll ->
+                if (ll[0]=="[" || ll[-1]=="]") return ll
+                int index = ll.indexOf('=');
+                if (index==-1) throw new RuntimeException(" ${conf.name}:${nr} = expected somewhere, but got ${ll}");
+                String name = ll.substring(0,index).trim();
                 String value = "";
-                if (line.length()>=index) value = line.substring(index+1).trim();
+                if (ll.length()>=index) value = ll.substring(index+1).trim();
                 el.put(name,value);
                 return null
             }
-            return line
+            return l
         }
 
 
         def fileStart = {->
-            lineloop(null,false) {line ->
-                if (line[0]!="[" || line[-1]!="]") {
+            lineloop(null,false) {l ->
+                if (l[0]!="[" || l[-1]!="]") {
                     throw new RuntimeException("${conf.name}:${nr} filename inside of [] expected, but got ${line}")
                 }
                 def el = new HashMap()
-                def file = line.substring(1,line.length()-1)
+                def file = line.substring(1,l.length()-1)
                 addToMap(file,el);
-                line = attRead(el,null)
-                return line
+                l = attRead(el,null)
+                return l
             }
         }
         
