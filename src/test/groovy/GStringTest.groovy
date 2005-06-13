@@ -30,10 +30,8 @@ class GStringTest extends GroovyTestCase {
 
         check("hello $name", teststr)
         check("hello ${name}", teststr)
-        check("hello ${def name = "Bob"; name}", teststr)
         check(/hello $name/, teststr)
         check(/hello ${name}/, teststr)
-        check(/hello ${def name = "Bob"; name}/, teststr)
     }
     
     void testWithVariableAtBeginning() {
