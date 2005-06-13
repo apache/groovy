@@ -596,7 +596,7 @@ public class CompilationUnit extends ProcessingUnit {
             //
             // do scoping 
             //
-            if (source!=null && (!classNode.isSynthetic()) && ("true".equals(System.getProperty("groovy.jsr.check")))) {
+            if (source!=null && (!classNode.isSynthetic()) && (!"false".equals(System.getProperty("groovy.jsr.check")))) {
                 JSRVariableScopeCodeVisitor scopeVisitor = new JSRVariableScopeCodeVisitor(null ,source);
                 scopeVisitor.visitClass(classNode);
                 source.getErrorCollector().failIfErrors();
