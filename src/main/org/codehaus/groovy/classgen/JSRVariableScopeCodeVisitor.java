@@ -542,7 +542,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
     public void visitClosureExpression(ClosureExpression expression) {
         VarScope scope = currentScope;
-        currentScope = new VarScope(!jroseRule,currentScope,scope.isInStaticContext);
+        currentScope = new VarScope(false,currentScope,scope.isInStaticContext);
     
         // TODO: set scope
         // expression.setVarScope(currentScope);
