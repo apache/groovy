@@ -13,10 +13,10 @@ class VariblePrecedence extends GroovyTestCase {
                 @Property c = {x -> assert x == 1; assert y == 93; }
 
                 static void main(args) {
-                    vfoo = new VariableFoo()
+                    def vfoo = new VariableFoo()
                     vfoo.c.call(1)
 
-                    z = 874;
+                    def z = 874;
                     1.times { assert vfoo.x == 100; assert z == 874; z = 39; }
                     assert z == 39;
 
@@ -26,7 +26,7 @@ class VariblePrecedence extends GroovyTestCase {
                 void local() {
                     c.call(1);
 
-                    z = 874;
+                    def z = 874;
                     1.times { assert x == 100; assert z == 874; z = 39; }
                     assert z == 39;
                 }
