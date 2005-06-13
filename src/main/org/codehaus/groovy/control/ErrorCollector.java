@@ -89,9 +89,28 @@ public class ErrorCollector {
     public ErrorCollector(CompilerConfiguration configuration) {
         this.warnings = null;
         this.errors = null;
-
+        
         this.configuration = configuration;
     }
+    
+    public void addCollectorContents(ErrorCollector er) {
+        if (er.errors!=null) {
+            if (errors==null) {
+                errors = er.errors;
+            } else {
+                errors.addAll(errors);
+            }
+        }
+        if (er.warnings!=null) {
+            if (warnings==null) {
+                warnings = er.warnings;
+            } else {
+                warnings.addAll(warnings);
+            }            
+        }
+    }
+    
+    
     
     /**
      * Adds an error to the message set, but don't fail.
