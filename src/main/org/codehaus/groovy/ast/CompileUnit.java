@@ -143,7 +143,9 @@ public class CompileUnit {
     		if (cause !=null && cause instanceof CompilationFailedException){
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }
-    	}
+    	} catch (NoClassDefFoundError e) {
+           // fall through   
+        }
     	
         try {
             ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -157,6 +159,8 @@ public class CompileUnit {
             if (cause !=null && cause instanceof CompilationFailedException){
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }
+        } catch (NoClassDefFoundError e) {
+            // fall through   
         }
         
         // lets try our class loader
@@ -173,6 +177,9 @@ public class CompileUnit {
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }        
         }
+        catch (NoClassDefFoundError e) {
+            // fall through   
+         }
         
         try {
         	if (answer == null ) {
@@ -185,6 +192,9 @@ public class CompileUnit {
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }
         }
+        catch (NoClassDefFoundError e) {
+            // fall through   
+         }
 
         if ( answer == null ) {
         	cachedClasses.put(type,NO_CLASS);

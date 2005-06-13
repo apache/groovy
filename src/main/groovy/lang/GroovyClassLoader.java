@@ -578,7 +578,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                 throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
             }
         }
-        
+        if (cls==null) throw last;
         return cls;
     }
 
