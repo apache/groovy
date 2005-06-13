@@ -80,6 +80,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(DollarEscapingTest.class);
         suite.addTestSuite(DoubleOperationTest.class);
         suite.addTestSuite(DownUpStepTest.class);
+        //suite.addTestSuite(groovy.DummyMethodsFailing.class);
 
         suite.addTestSuite(EscapedUnicodeTest.class);
         suite.addTestSuite(ExceptionInClosureTest.class);
