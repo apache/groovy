@@ -202,6 +202,8 @@ public class ASTHelper {
                     if (cnfe.getCause() instanceof CompilationFailedException) {
                         break;
                     }
+                } catch (NoClassDefFoundError ncdfe) {
+                    //fall through
                 }
             }
             if (resolution != null) {
