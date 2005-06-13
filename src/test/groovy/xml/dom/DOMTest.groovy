@@ -81,7 +81,7 @@ class DOMTest extends GroovyTestCase {
   		def elapsed = System.currentTimeMillis() - start;
   		def result = lastIndex * 1000 / elapsed;
 
-		def standard = (standard == 0 ? result : standard);
+		standard = (standard == 0 ? result : standard);
 		def factor = result/standard;
   		
 	  	println "${it.method}: ${factor}x (${result} trees/s)";
