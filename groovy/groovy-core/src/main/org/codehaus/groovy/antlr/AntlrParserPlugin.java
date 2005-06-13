@@ -1050,8 +1050,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case SPREAD_MAP_ARG:
                 return spreadMapExpression(node);
 
-            case MEMBER_POINTER_DEFAULT:
-                return defaultMethodPointerExpression(node);
+            // commented out of groovy.g due to non determinisms
+            //case MEMBER_POINTER_DEFAULT:
+            //    return defaultMethodPointerExpression(node);
 
             case MEMBER_POINTER:
                 return methodPointerExpression(node);
@@ -1344,14 +1345,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return methodPointerExpression;
     }
 
-    protected Expression defaultMethodPointerExpression(AST node) {
+/*  commented out due to groovy.g non-determinisms
+  protected Expression defaultMethodPointerExpression(AST node) {
         AST exprNode = node.getFirstChild();
         String methodName = exprNode.toString();
         MethodPointerExpression methodPointerExpression = new MethodPointerExpression(null, methodName);
         configureAST(methodPointerExpression, node);
         return methodPointerExpression;
     }
-
+*/
 
     protected Expression listExpression(AST listNode) {
         List expressions = new ArrayList();
