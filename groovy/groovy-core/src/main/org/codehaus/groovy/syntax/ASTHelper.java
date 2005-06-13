@@ -128,7 +128,9 @@ public class ASTHelper {
                 resolutions.put(name,name);
                 return name;
             }
-        } 
+        } catch (NoClassDefFoundError ncdfe) {
+            //fall through
+        }
 
         do {
             //
