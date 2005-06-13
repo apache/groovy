@@ -80,7 +80,6 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(DollarEscapingTest.class);
         suite.addTestSuite(DoubleOperationTest.class);
         suite.addTestSuite(DownUpStepTest.class);
-        //suite.addTestSuite(groovy.DummyMethodsFailing.class);
 
         suite.addTestSuite(EscapedUnicodeTest.class);
         suite.addTestSuite(ExceptionInClosureTest.class);
@@ -150,6 +149,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(MinusEqualsTest.class);
         suite.addTestSuite(ModuloTest.class);
         suite.addTestSuite(MorgansBug.class);
+        suite.addTestSuite(groovy.MultiDimArraysTest.class); // adapt as soon as Multi Dim handling changes
         suite.addTestSuite(MultilineStringTest.class);
         suite.addTestSuite(MultiplyDivideEqualsTest.class);
         suite.addTestSuite(NamedParameterTest.class);
