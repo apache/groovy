@@ -134,6 +134,10 @@ public class Expando extends GroovyObjectSupport {
         
     }
     
+    public String toString() {
+        return expandoProperties.toString();
+    }
+    
     /**
      * Factory method to create a new Map used to store the expando properties map
      * @return a newly created Map implementation
