@@ -224,6 +224,8 @@ public class ASTHelper {
                     if (cnfe.getCause() instanceof CompilationFailedException) {
                         break;
                     }
+                } catch (NoClassDefFoundError ncdfee) {
+                    // fall through
                 }
             }
 
