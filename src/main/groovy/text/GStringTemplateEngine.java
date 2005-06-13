@@ -93,7 +93,7 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         public GStringTemplate(final Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
-            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\nclass C { def getTemplate() { return { out -> out << \"\"\"");
+            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> out << \"\"\"");
             boolean writingString = true;
        
             while(true) {
@@ -133,7 +133,7 @@ public class GStringTemplateEngine extends TemplateEngine {
                     templateExpressions.append("\"\"\"");
             }
 
-            templateExpressions.append("}.asWritable()}}");
+            templateExpressions.append("}.asWritable()}");
 
 //            System.out.println(templateExpressions.toString());
 
