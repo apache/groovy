@@ -2104,7 +2104,7 @@ pathElementStart!
     :   DOT
     |   SPREAD_DOT
     |   OPTIONAL_DOT
-    |   MEMBER_POINTER_DEFAULT
+//todo - nondeterminisms    |   MEMBER_POINTER_DEFAULT
     |   MEMBER_POINTER
     |   LBRACK
     |   LPAREN
@@ -2387,8 +2387,9 @@ unaryExpression[int lc_stmt]
 
 // ~(BNOT)/!(LNOT)/(type casting) (level 1)
 unaryExpressionNotPlusMinus[int lc_stmt]
-    :   BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
-    |   BNOT^ nls! unaryExpression[0]
+    :   //BAND^    {#BAND.setType(MEMBER_POINTER_DEFAULT);}   nls!  namePart
+    //|
+        BNOT^ nls! unaryExpression[0]
     |   LNOT^ nls! unaryExpression[0]
     |   (   // subrule allows option to shut off warnings
             options {
