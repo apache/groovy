@@ -18,6 +18,7 @@
 package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
@@ -118,6 +119,16 @@ public class ASTHelper {
             return (String) resolution;
         }
 
+        try {
+            getClassLoader().loadClass(name);
+            resolutions.put(name,name);
+            return name;
+        } catch (ClassNotFoundException cnfe){
+            if (cnfe.getCause() instanceof CompilationFailedException) {
+                resolutions.put(name,name);
+                return name;
+            }
+        } 
 
         do {
             //
@@ -169,10 +180,11 @@ public class ASTHelper {
                     resolution = dot(packageName, name);
 
                     break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                }
-                catch (Throwable e) {
-                    /* ignore */
-                }
+                } catch (ClassNotFoundException cnfe){
+                    if (cnfe.getCause() instanceof CompilationFailedException) {
+                        break;
+                    }
+                } 
             }
 
             // search the package imports path
@@ -184,9 +196,10 @@ public class ASTHelper {
                     getClassLoader().loadClass(clsName);
                     resolution = clsName;
                     break;
-                }
-                catch (Throwable e) {
-                    //
+                } catch (ClassNotFoundException cnfe){
+                    if (cnfe.getCause() instanceof CompilationFailedException) {
+                        break;
+                    }
                 }
             }
             if (resolution != null) {
@@ -203,9 +216,10 @@ public class ASTHelper {
 
                     resolution = qualified + postfix;
                     break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                }
-                catch (Throwable e) {
-                    /* ignore */
+                } catch (ClassNotFoundException cnfe){
+                    if (cnfe.getCause() instanceof CompilationFailedException) {
+                        break;
+                    }
                 }
             }
 

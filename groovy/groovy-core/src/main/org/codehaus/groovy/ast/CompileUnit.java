@@ -41,6 +41,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.classgen.ClassGeneratorException;
+import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 /**
@@ -137,7 +139,10 @@ public class CompileUnit {
     	try {
     		answer = lastLoader.loadClass(type);
     	} catch (ClassNotFoundException e) {
-    		// fall through
+            Throwable cause = e.getCause();
+    		if (cause !=null && cause instanceof CompilationFailedException){
+                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
+            }
     	}
     	
         try {
@@ -148,7 +153,10 @@ public class CompileUnit {
         	}
         }
         catch (ClassNotFoundException e1) {
-            // fall through
+            Throwable cause = e1.getCause();
+            if (cause !=null && cause instanceof CompilationFailedException){
+                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
+            }
         }
         
         // lets try our class loader
@@ -160,7 +168,10 @@ public class CompileUnit {
         	}
         }
         catch (ClassNotFoundException e2) {
-            // fall through
+            Throwable cause = e2.getCause();
+            if (cause !=null && cause instanceof CompilationFailedException){
+                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
+            }        
         }
         
         try {
@@ -169,7 +180,10 @@ public class CompileUnit {
         	}
         }
         catch (ClassNotFoundException e2) {
-            // fall through
+            Throwable cause = e2.getCause();
+            if (cause !=null && cause instanceof CompilationFailedException){
+                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
+            }
         }
 
         if ( answer == null ) {

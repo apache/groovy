@@ -858,7 +858,21 @@ public class CompilationUnit extends ProcessingUnit {
 //                    ASTNode node = rpe.getNode();
 //                    msg += ". The probable error location: [" + node.getLineNumber() + ":" + node.getColumnNumber() + "]";
 //                }
-                getErrorCollector().addError(new ExceptionMessage(e,configuration.getDebug(),this));
+                
+                // check the exception for a nested compilation exception
+                ErrorCollector nestedCollector = null;
+                for (Throwable next = e.getCause(); next!=e && next!=null; next=next.getCause()) {
+                    if (!(next instanceof MultipleCompilationErrorsException)) continue;
+                    MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) next;
+                    nestedCollector = mcee.collector;
+                    break;
+                }
+                
+                if (nestedCollector!=null) {
+                    getErrorCollector().addCollectorContents(nestedCollector);
+                } else {
+                    getErrorCollector().addError(new ExceptionMessage(e,configuration.getDebug(),this));
+                }
             }
         }
 

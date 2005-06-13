@@ -42,6 +42,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.classgen.ClassGeneratorException;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Constructor;
@@ -698,12 +699,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             try {
                 theCompileUnit.loadClass(type);
                 return type;
-            }
-            catch (AccessControlException ace) {
+            } catch (AccessControlException ace) {
                 //Percolate this for better diagnostic info
                 throw ace;
-            }
-            catch (Throwable e) {
+            } catch (ClassGeneratorException cge) {
+                throw cge;
+            }catch (Throwable e) {
                 // fall through
             }
         }
