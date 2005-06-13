@@ -29,4 +29,11 @@ class ExpandoPropertyTest extends GroovyTestCase {
         shouldFail { foo.multiParam(1) }
         shouldFail { foo.nameLength(1, 2) }
     }
+    
+    void testExpandoConstructorAndToString() {
+        def foo = new Expando(type:"sometype", value:42)
+        println foo
+        assert foo.toString() == "{type=sometype, value=42}"
+        assert "${foo}" == "{type=sometype, value=42}"
+    }
 }
