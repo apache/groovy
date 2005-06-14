@@ -5,6 +5,8 @@
  * 
  * Mangled by John Wilson September 2004
  *
+ * Small adaptions to JSR Version by Dierk Koenig, June 2005
+ *
  * Used in Marc's article at:
  *    http://www.oreillynet.com/pub/a/network/2004/09/28/bloglines.html
  *
@@ -43,9 +45,9 @@ import org.apache.commons.httpclient.methods.GetMethod
 //Set up global variables and data types
 server = 'rpc.bloglines.com'
 
-class Feed { name; id; unread; String toString() { (unread == "0" ? name : "${name} (${unread})") } }
+class Feed { @Property name; @Property id; @Property unread; String toString() { (unread == "0" ? name : "${name} (${unread})") } }
 
-class Item { title; description; String toString() { title } }
+class Item { @Property title; @Property description; String toString() { title } }
 
 //Ask the user for account information (using simple dialogs)
 email = 
@@ -134,7 +136,7 @@ feedTree.valueChanged = { | event |
 
 itemList.valueChanged = { | event |
   item = event.source.selectedValue
-  if (item instanceof Item && item->description != null) {
+  if (item instanceof Item && item?.description != null) {
     itemText.text = "<html><body>${item.description}</body></html>"
   }
 }
