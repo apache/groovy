@@ -241,7 +241,9 @@ public class GroovyClassLoader extends SecureClassLoader {
                 unit.addSource(codeSource.getFile());
             }
             unit.setClassgenCallback(collector);
-            unit.compile(Phases.CLASS_GENERATION);
+            int goalPhase = Phases.CLASS_GENERATION;
+            if (config != null && config.getTargetDirectory()!=null) goalPhase = Phases.OUTPUT;
+            unit.compile(goalPhase);
 
             answer = collector.generatedClass;
             // }
