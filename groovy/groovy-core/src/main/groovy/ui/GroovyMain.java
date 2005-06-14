@@ -264,7 +264,8 @@ public class GroovyMain {
                 StackTraceElement[] stackTrace = e.getStackTrace();
                 for (int i = 0; i < stackTrace.length; i++) {
                     StackTraceElement element = stackTrace[i];
-                    if (!element.getFileName().endsWith(".java")) {
+                    String fileName = element.getFileName();
+                    if (fileName!=null && !fileName.endsWith(".java")) {
                         System.err.println("\tat " + element);
                     }
                 }
