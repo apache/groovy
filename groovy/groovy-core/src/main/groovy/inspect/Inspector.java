@@ -9,8 +9,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.lang.reflect.Constructor;
-import java.util.List;
-import java.util.Iterator;
+import java.util.*;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
@@ -88,10 +87,10 @@ public class Inspector {
      * Get info about usual Java instance and class Methods as well as Constructors.
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public String[][] getMethods(){
+    public Object[] getMethods(){
         Method[] methods = getClassUnderInspection().getMethods();
         Constructor[] ctors = getClassUnderInspection().getConstructors();
-        String[][] result = new String[methods.length + ctors.length][7];
+        Object[] result = new Object[methods.length + ctors.length];
         int resultIndex = 0;
         for (; resultIndex < methods.length; resultIndex++) {
             Method method = methods[resultIndex];
@@ -107,10 +106,10 @@ public class Inspector {
      * Get info about instance and class Methods that are dynamically added through Groovy.
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public String[][] getMetaMethods(){
+    public Object[] getMetaMethods(){
         MetaClass metaClass = InvokerHelper.getMetaClass(objectUnderInspection);
         List metaMethods = metaClass.getMetaMethods();
-        String[][] result = new String[metaMethods.size()][7];
+        Object[] result = new Object[metaMethods.size()];
         int i=0;
         for (Iterator iter = metaMethods.iterator(); iter.hasNext(); i++) {
             MetaMethod metaMethod = (MetaMethod) iter.next();
@@ -122,9 +121,9 @@ public class Inspector {
      * Get info about usual Java public fields incl. constants.
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public String[][] getPublicFields(){
+    public Object[] getPublicFields(){
         Field[] fields = getClassUnderInspection().getFields();
-        String[][] result = new String[fields.length][6];
+        Object[] result = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
             Field field = fields[i];
             result[i] = fieldInfo(field);
@@ -135,9 +134,9 @@ public class Inspector {
      * Get info about Properties (Java and Groovy alike).
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public String[][] getProperties(){
+    public Object[] getProperties(){
         List props = DefaultGroovyMethods.allProperties(objectUnderInspection);
-        String[][] result = new String[props.size()][6];
+        Object[] result = new Object[props.size()];
         int i=0;
         for (Iterator iter = props.iterator(); iter.hasNext(); i++) {
             PropertyValue pv = (PropertyValue) iter.next();
@@ -158,7 +157,7 @@ public class Inspector {
         } catch (IllegalAccessException e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
-        return result;
+        return withoutNulls(result);
     }
     protected String[] fieldInfo(PropertyValue pv) {
         String[] result = new String[MEMBER_VALUE_IDX+1];
@@ -172,7 +171,7 @@ public class Inspector {
         } catch (Exception e) {
             result[MEMBER_VALUE_IDX] = NOT_APPLICABLE;
         }
-        return result;
+        return withoutNulls(result);
     }
 
     protected Class getClassUnderInspection() {
@@ -212,7 +211,7 @@ public class Inspector {
 		    if (k < (exceptions.length - 1)) sb.append(", ");
 	    }
         result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
-	    return result;
+	    return withoutNulls(result);
     }
     protected String[] methodInfo(Constructor ctor){
         String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
@@ -236,7 +235,7 @@ public class Inspector {
 		    if (k < (exceptions.length - 1)) sb.append(", ");
 	    }
         result[MEMBER_EXCEPTIONS_IDX] = sb.toString();
-	    return result;
+	    return withoutNulls(result);
     }
     protected String[] methodInfo(MetaMethod method){
         String[] result = new String[MEMBER_EXCEPTIONS_IDX+1];
@@ -253,7 +252,50 @@ public class Inspector {
 		    if (j < (params.length - 1)) sb.append(", ");
 	    }
         result[MEMBER_PARAMS_IDX] = sb.toString();
-        result[MEMBER_EXCEPTIONS_IDX] = ""; // no exception info for Groovy MetaMethods
-	    return result;
+        result[MEMBER_EXCEPTIONS_IDX] = NOT_APPLICABLE; // no exception info for Groovy MetaMethods
+        return withoutNulls(result);
+    }
+
+    protected String[] withoutNulls(String[] toNormalize){
+        for (int i = 0; i < toNormalize.length; i++) {
+            String s = toNormalize[i];
+            if (null == s) toNormalize[i] = NOT_APPLICABLE;
+        }
+        return toNormalize;
+    }
+
+    public static void print(Object[] memberInfo) {
+        for (int i = 0; i < memberInfo.length; i++) {
+            String[] metaMethod = (String[]) memberInfo[i];
+            System.out.print(i+":\t");
+            for (int j = 0; j < metaMethod.length; j++) {
+                String s = metaMethod[j];
+                System.out.print(s+" ");
+            }
+            System.out.println("");
+        }
+    }
+    public static Object[] sort(Object[] memberInfo) {
+        Arrays.sort(memberInfo, new MemberComparator());
+        return memberInfo;
+    }
+
+    public static class MemberComparator implements Comparator {
+        public int compare(Object a, Object b) {
+            String[] aStr = (String[]) a;
+            String[] bStr = (String[]) b;
+            int result = aStr[Inspector.MEMBER_NAME_IDX].compareTo(bStr[Inspector.MEMBER_NAME_IDX]);
+            if (0 != result) return result;
+            result = aStr[Inspector.MEMBER_TYPE_IDX].compareTo(bStr[Inspector.MEMBER_TYPE_IDX]);
+            if (0 != result) return result;
+            result = aStr[Inspector.MEMBER_PARAMS_IDX].compareTo(bStr[Inspector.MEMBER_PARAMS_IDX]);
+            if (0 != result) return result;
+            result = aStr[Inspector.MEMBER_DECLARER_IDX].compareTo(bStr[Inspector.MEMBER_DECLARER_IDX]);
+            if (0 != result) return result;
+            result = aStr[Inspector.MEMBER_MODIFIER_IDX].compareTo(bStr[Inspector.MEMBER_MODIFIER_IDX]);
+            if (0 != result) return result;
+            result = aStr[Inspector.MEMBER_ORIGIN_IDX].compareTo(bStr[Inspector.MEMBER_ORIGIN_IDX]);
+            return result;
+        }
     }
 }
