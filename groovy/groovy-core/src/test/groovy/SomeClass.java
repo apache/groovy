@@ -11,6 +11,6 @@ public class SomeClass {
         return new String[][]{{"whatever"}};
     }
     public Object[] anArrayOfStringArraysWorkaround(){
-        return new Object[]{ new String[]{"whatever"}};
+        return new Object[]{ new String[]{"whatever",null}};
     }
 }
