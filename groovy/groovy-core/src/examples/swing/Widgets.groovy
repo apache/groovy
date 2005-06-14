@@ -10,21 +10,21 @@ import groovy.model.MvcDemo
 
 class Widgets {
 
-    swing = new SwingBuilder()
-    unownedDialog
-    ownedDialog
+    def swing = new SwingBuilder()
+    def unownedDialog
+    def ownedDialog
     
 
     static void main(args) {
-        demo = new Widgets()
+        def demo = new Widgets()
         demo.run()
     }
 
-    showUnownedDialog(event) {
+    def showUnownedDialog(event) {
         unownedDialog.show();
     }
     
-    showOwnedDialog(event) {
+    def showOwnedDialog(event) {
         ownedDialog.show();
     }
 
@@ -38,7 +38,7 @@ class Widgets {
                 label("I am unowned, but not unwanted");
             }
 
-        frame = swing.frame(
+        def frame = swing.frame(
             title:'FrameTitle',
             location:[100,100],
             size:[800,400],
@@ -59,12 +59,12 @@ class Widgets {
                 }
                 menu(text:'Dialogs') {
                     menuItem() {
-                        action(name:'Owned Dialog', closure: showOwnedDialog)
+                        action(name:'Owned Dialog', closure: this.&showOwnedDialog)
                     }
                     menuItem() {
-                        action(name:'Unowned Dialog', closure: showUnownedDialog)
+                        action(name:'Unowned Dialog', closure: this.&showUnownedDialog)
                     }
-                    deeplyOwnedDialog = swing.dialog(
+                    def deeplyOwnedDialog = swing.dialog(
                         title:'rooted dialog #2',
                         location: [200, 200],
                         size: [100, 100],
