@@ -273,7 +273,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * filename and the file must be located in a directory structure that
      * matches the package structure.
      */
-    protected Class findClass(final String name) throws ClassNotFoundException {
+    /*protected Class findClass(final String name) throws ClassNotFoundException {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String className = name.replace('/', '.');
@@ -291,7 +291,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         } catch (PrivilegedActionException pae) {
             throw (ClassNotFoundException) pae.getException();
         }
-    }
+    }*/
 
     protected Class findGroovyClass(String name) throws ClassNotFoundException {
         //Use a forward slash here for the path separator. It will work as a
@@ -529,6 +529,12 @@ public class GroovyClassLoader extends SecureClassLoader {
      *      groovy here to see if the soource file has been updated first?
      */
     protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
+        synchronized (cache) {
+            Class cls = (Class) cache.get(name);
+            if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
+            if (cls!=null) return cls;
+        }
+        
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String className = name.replace('/', '.');
@@ -571,15 +577,19 @@ public class GroovyClassLoader extends SecureClassLoader {
                 }
             }
         } catch (Exception e) {
-            synchronized (cache) {
-                cache.put(name, NOT_RESOLVED.class);
-            }
-            throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
+            cls = null;
+            last = new ClassNotFoundException("Failed to parse groovy file: " + name, e);
         }
         if (cls==null) {
             if (last==null) throw new AssertionError(true);
+            synchronized (cache) {
+                cache.put(name, NOT_RESOLVED.class);
+            }
             throw last;            
-        }        
+        }     
+        synchronized (cache) {
+            cache.put(name, cls);
+        }
         return cls;
     }
 
