@@ -538,47 +538,48 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
         }
         
-        boolean loadGroovyFile = false;
         Class cls = null;
         ClassNotFoundException last = null;
         try {
             cls = super.loadClass(name, resolve);
     
+            boolean recompile = false;
             if (getTimeStamp(cls) < Long.MAX_VALUE) {
-                Class[] inters = cls.getInterfaces();
-                boolean isGroovyObject = false;
+                Class[] inters = cls.getInterfaces();                
                 for (int i = 0; i < inters.length; i++) {
                     if (inters[i].getName().equals(GroovyObject.class.getName())) {
-                        loadGroovyFile = true;
+                        recompile=true;
                         break;
                     }
-                }
+                }                
             }
+            if (!recompile) return cls;
         } catch (ClassNotFoundException cnfe) {
             last = cnfe; 
-            loadGroovyFile=true;
         }
         
-        if (loadGroovyFile) {
-            try {
-                File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        return getSourceFile(name);
-                    }
-                });
-                if (source != null) {
-                    if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
-                      cls = parseClass(source);
-                    }
+        // try groovy file
+        try {
+            File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    return getSourceFile(name);
                 }
-            } catch (Exception e) {
-                synchronized (cache) {
-                    cache.put(name, NOT_RESOLVED.class);
+            });
+            if (source != null) {
+                if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
+                    cls = parseClass(source);
                 }
-                throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
             }
+        } catch (Exception e) {
+            synchronized (cache) {
+                cache.put(name, NOT_RESOLVED.class);
+            }
+            throw new ClassNotFoundException("Failed to parse groovy file: " + name, e);
         }
-        if (cls==null) throw last;
+        if (cls==null) {
+            if (last==null) throw new AssertionError(true);
+            throw last;            
+        }        
         return cls;
     }
 
