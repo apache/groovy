@@ -14,17 +14,13 @@ interest with
 ObjectBrowser.inspect(myObject)
 </code>.
 
-Todo:
-- make the columns sortable,
-- include the field info table 
 @author Dierk Koenig
 **/
 class ObjectBrowser {
     
-    @Property frame
-    @Property swing
     @Property inspector
-    
+    def swing, frame, fieldTable, methodTable
+
     static void main(args) {
         inspect("some String")
     }
@@ -38,7 +34,7 @@ class ObjectBrowser {
         swing = new SwingBuilder()
         
         frame = swing.frame(title:'Groovy Object Browser', location:[200,200], size:[800,600],
-                defaultCloseOperation:WindowConstants.EXIT_ON_CLOSE) {
+                defaultCloseOperation:WindowConstants.DISPOSE_ON_CLOSE) {
             menuBar {
                 menu(text:'Help') {
                     menuItem() {
@@ -56,25 +52,50 @@ class ObjectBrowser {
                     def classLabel = '<html>' + props.join('<br>')
                     label(classLabel)
                 }
-                scrollPane(
-                        constraints:BorderLayout.CENTER,
-                        border: BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),' (Meta) Methods ') ) {
-                    table() {
-                        def model = safeCopy(Inspector.sort(inspector.methods))
-                        model.addAll(safeCopy(Inspector.sort(inspector.metaMethods)))
-                        tableModel(list:model) {
-                            closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                            closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                            closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                            closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
-                            closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
-                            closureColumn(header:'Params',      read:{it[Inspector.MEMBER_PARAMS_IDX]})
-                            closureColumn(header:'Exceptions',  read:{it[Inspector.MEMBER_EXCEPTIONS_IDX]})
+                splitPane(constraints:BorderLayout.CENTER,orientation:JSplitPane.VERTICAL_SPLIT, oneTouchExpandable:true){
+                    scrollPane(
+                            border: BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),' Public Fields ') ) {
+                        fieldTable = table() {
+                            def data = safeCopy(Inspector.sort(inspector.publicFields))
+
+                            tableModel(list:data) {
+                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
+                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
+                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
+                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
+                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
+                                closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
+                            }
+                        }
+                    }
+                    scrollPane(
+                            border: BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),' (Meta) Methods ') ) {
+                        methodTable = table() {
+                            def data = safeCopy(Inspector.sort(inspector.methods))
+                            data.addAll(safeCopy(Inspector.sort(inspector.metaMethods)))
+
+                            tableModel(list:data) {
+                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
+                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
+                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
+                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
+                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
+                                closureColumn(header:'Params',      read:{it[Inspector.MEMBER_PARAMS_IDX]})
+                                closureColumn(header:'Exceptions',  read:{it[Inspector.MEMBER_EXCEPTIONS_IDX]})
+                            }
                         }
                     }
                 }
             }
         }
+        def fieldSorter = new TableSorter(fieldTable.model)
+        fieldTable.model = fieldSorter
+        fieldSorter.addMouseListenerToHeaderInTable(fieldTable)
+
+        def methodSorter = new TableSorter(methodTable.model)
+        methodTable.model = methodSorter
+        methodSorter.addMouseListenerToHeaderInTable(methodTable)
+
         frame.show()
     }
     
