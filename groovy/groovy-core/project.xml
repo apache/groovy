@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-jsr-02-SNAPSHOT</currentVersion>
+  <currentVersion>1.0-jsr-02</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -103,6 +103,11 @@
       <id>jsr01</id>
       <name>1.0-JSR-01</name>
       <tag>GROOVY_1_0_JSR_01</tag>
+    </version>
+    <version>
+      <id>jsr02</id>
+      <name>1.0-JSR-02</name>
+      <tag>GROOVY_1_0_JSR_02</tag>
     </version>
   </versions>
 
