@@ -62,6 +62,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * A simple interactive shell for evaluating groovy expressions
@@ -72,6 +74,7 @@ import java.util.Set;
  * @author Yuri Schimke
  * @author Brian McCallistair
  * @author Guillaume Laforge
+ * @author Dierk Koenig, include the inspect command, June 2005
  * @version $Revision$
  */
 public class InteractiveShell {
@@ -80,6 +83,7 @@ public class InteractiveShell {
     private final InputStream in;
     private final PrintStream out;
     private final PrintStream err;
+    private Object lastResult;
 
 
     /**
@@ -153,7 +157,7 @@ public class InteractiveShell {
             if (command.length() > 0) {
                 // We have a command that parses, so evaluate it.
                 try {
-                    shell.evaluate(command, "CommandLine.groovy");
+                    lastResult = shell.evaluate(command, "CommandLine.groovy");
                 } catch (CompilationFailedException e) {
                     err.println(e);
                 } catch (Throwable e) {
@@ -276,6 +280,9 @@ public class InteractiveShell {
                     case COMMAND_ID_DISCARD_LOADED_CLASSES:
                         resetLoadedClasses();
                         break;
+                    case COMMAND_ID_INSPECT:
+                        inspect();
+                        break;
                 }
 
                 continue;                                     // <<<< LOOP CONTROL <<<<<<<<
@@ -310,6 +317,23 @@ public class InteractiveShell {
 
         // Get and return the statement.
         return accepted(complete);
+    }
+
+    private void inspect() {
+        if (null == lastResult){
+            err.println("nothing to inspect (preceding \"go\" missing?)");
+            return;
+        }
+        // this should read: groovy.inspect.swingui.ObjectBrowser.inspect(lastResult)
+        // but this doesnt compile since ObjectBrowser.groovy is compiled after this class.
+        try {
+            Class browserClass = Class.forName("groovy.inspect.swingui.ObjectBrowser");
+            Method inspectMethod = browserClass.getMethod("inspect", new Class[]{Object.class});
+            inspectMethod.invoke(browserClass, new Object[]{lastResult});
+        } catch (Exception e) {
+            err.println("cannot invoke ObjectBrowser");
+            e.printStackTrace();
+        }
     }
 
 
@@ -419,10 +443,11 @@ public class InteractiveShell {
     private static final int COMMAND_ID_EXECUTE = 5;
     private static final int COMMAND_ID_BINDING = 6;
     private static final int COMMAND_ID_DISCARD_LOADED_CLASSES = 7;
+    private static final int COMMAND_ID_INSPECT = 8;
 
-    private static final int LAST_COMMAND_ID = 7;
+    private static final int LAST_COMMAND_ID = 8;
 
-    private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding", "discardclasses"};
+    private static final String[] COMMANDS = {"exit", "help", "discard", "display", "explain", "execute", "binding", "discardclasses", "inspect"};
 
     private static final Map COMMAND_MAPPINGS = new HashMap();
 
@@ -444,10 +469,11 @@ public class InteractiveShell {
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_HELP], "help             - displays this help text");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD], "discard           - discards the current statement");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISPLAY], "display           - displays the current statement");
-        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain           - explains the parsing of the current statement");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXPLAIN], "explain           - explains the parsing of the current statement (currently disabled)");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_EXECUTE], "execute/go        - temporary command to cause statement execution");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_BINDING], "binding           - shows the binding used by this interactive shell");
         COMMAND_HELP.put(COMMANDS[COMMAND_ID_DISCARD_LOADED_CLASSES], "discardclasses    - discards all former unbound class definitions");
+        COMMAND_HELP.put(COMMANDS[COMMAND_ID_INSPECT], "inspect           - opens ObjectBrowser on expression returned from previous \"go\"");
     }
 
 
