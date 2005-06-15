@@ -5,7 +5,7 @@
   <name>groovy</name>
   <groupId>groovy</groupId>
   <id>groovy</id>
-  <currentVersion>1.0-jsr-02</currentVersion>
+  <currentVersion>1.0-jsr-03-SNAPSHOT</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
@@ -726,7 +726,9 @@
     <report>maven-file-activity-plugin</report>
     <report>maven-developer-activity-plugin</report>
     <report>maven-jxr-plugin</report>
+    <!--
     <report>maven-javadoc-plugin</report>
+    -->
     <report>maven-junit-report-plugin</report>
     <report>maven-faq-plugin</report>
     <!--
