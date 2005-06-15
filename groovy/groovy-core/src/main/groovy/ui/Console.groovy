@@ -10,15 +10,9 @@ import java.awt.Font
 import java.awt.event.KeyEvent
 import java.util.EventObject
 
-import javax.swing.event.CaretListener
-import javax.swing.event.CaretEvent
-import javax.swing.KeyStroke
-import javax.swing.JSplitPane
-import javax.swing.JFileChooser
-import javax.swing.JOptionPane
-import javax.swing.SwingUtilities
-import javax.swing.text.StyleContext
-import javax.swing.text.BadLocationException;
+import javax.swing.*
+import javax.swing.text.*
+import javax.swing.event.*
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
@@ -47,6 +41,7 @@ class Console extends ConsoleSupport implements CaretListener {
     }
 
     void run() {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         scriptList = []
         // if menu modifier is two keys we are out of luck as the javadocs
         // indicates it returns "Control+Shift" instead of "Control Shift"
