@@ -1,6 +1,7 @@
 package groovy.ui
 
 import groovy.swing.SwingBuilder
+import groovy.inspect.swingui.ObjectBrowser
 
 import java.awt.Toolkit
 import java.awt.Insets
@@ -25,6 +26,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * Groovy Swing console.
  *
  * @author Danno Ferrin
+ * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
  */
 class Console extends ConsoleSupport implements CaretListener {
 
@@ -34,6 +36,7 @@ class Console extends ConsoleSupport implements CaretListener {
     def outputArea
     def scriptList
     def scriptFile
+    def lastResult
     private boolean dirty
     private int textSelectionStart  // keep track of selections in textArea
     private int textSelectionEnd
@@ -72,6 +75,10 @@ class Console extends ConsoleSupport implements CaretListener {
                 name:'Run', closure: this.&runScript, mnemonic: 'R', keyStroke: 'ctrl ENTER',
                 accelerator: 'ctrl R'
             )
+            def inspectAction = action(
+                name:'Inspect', closure: this.&inspect, mnemonic: 'I', keyStroke: 'ctrl I',
+                accelerator: 'ctrl I'
+            )
             def aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
             menuBar {
                 menu(text:'File', mnemonic:0x46) {
@@ -84,6 +91,7 @@ class Console extends ConsoleSupport implements CaretListener {
                 }
                 menu(text:'Actions', mnemonic: 'A') {
                     menuItem() { action(runAction) }
+                    menuItem() { action(inspectAction) }
                 }
                 menu(text:'Help', mnemonic: 'H') {
                     menuItem() { action(aboutAction) }
@@ -168,6 +176,11 @@ class Console extends ConsoleSupport implements CaretListener {
     void append(doc, text, style){
         doc.insertString(doc.getLength(), text, style)
     }
+
+    void inspect(EventObject evt = null){
+        if (null == lastResult) return
+        ObjectBrowser.inspect(lastResult)
+    }
     
     void runScript(EventObject evt = null) {
         def text = textArea.getText()
@@ -184,8 +197,8 @@ class Console extends ConsoleSupport implements CaretListener {
             append(doc, line, commandStyle)
         }
 
-        def answer = evaluate(text)
-        def output = "\n" + InvokerHelper.inspect(answer)
+        lastResult = evaluate(text)
+        def output = "\n" + InvokerHelper.inspect(lastResult)
 
         append(doc, output, outputStyle)
 
