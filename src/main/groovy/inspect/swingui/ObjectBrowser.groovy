@@ -31,6 +31,7 @@ class ObjectBrowser {
     }
     
     void run() {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         swing = new SwingBuilder()
         
         frame = swing.frame(title:'Groovy Object Browser', location:[200,200], size:[800,600],
@@ -52,24 +53,8 @@ class ObjectBrowser {
                     def classLabel = '<html>' + props.join('<br>')
                     label(classLabel)
                 }
-                splitPane(constraints:BorderLayout.CENTER,orientation:JSplitPane.VERTICAL_SPLIT, oneTouchExpandable:true){
-                    scrollPane(
-                            border: BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),' Public Fields ') ) {
-                        fieldTable = table() {
-                            def data = safeCopy(Inspector.sort(inspector.publicFields))
-
-                            tableModel(list:data) {
-                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
-                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
-                                closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
-                            }
-                        }
-                    }
-                    scrollPane(
-                            border: BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.black),' (Meta) Methods ') ) {
+                tabbedPane(constraints:BorderLayout.CENTER){
+                    scrollPane(name:' (Meta) Methods ' ) {
                         methodTable = table() {
                             def data = safeCopy(Inspector.sort(inspector.methods))
                             data.addAll(safeCopy(Inspector.sort(inspector.metaMethods)))
@@ -82,6 +67,20 @@ class ObjectBrowser {
                                 closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
                                 closureColumn(header:'Params',      read:{it[Inspector.MEMBER_PARAMS_IDX]})
                                 closureColumn(header:'Exceptions',  read:{it[Inspector.MEMBER_EXCEPTIONS_IDX]})
+                            }
+                        }
+                    }
+                    scrollPane(name: ' Public Fields ') {
+                        fieldTable = table() {
+                            def data = safeCopy(Inspector.sort(inspector.publicFields))
+
+                            tableModel(list:data) {
+                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
+                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
+                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
+                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
+                                closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
+                                closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
                             }
                         }
                     }
@@ -105,7 +104,7 @@ class ObjectBrowser {
          dialog.show()
     }
 
-    // work around bug
+    // work around bug GROOVY-886-764-888-584
     def safeCopy(objectArrayOfStringArrays){
         def copy = []
         for (i in 0..<objectArrayOfStringArrays.size()){
