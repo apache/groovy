@@ -50,7 +50,7 @@ import org.codehaus.groovy.ast.ModuleNode;
 
 /**
  * An exception thrown by the interpreter
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -86,6 +86,10 @@ public class GroovyRuntimeException extends RuntimeException {
 
     public ASTNode getNode() {
         return node;
+    }
+
+    public String getMessageWithoutLocationText() {
+        return super.getMessage();
     }
 
     protected String getLocationText() {
