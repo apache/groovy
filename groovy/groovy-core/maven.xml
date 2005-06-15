@@ -20,9 +20,6 @@
        goals="jar"
        />
   </goal>
-  <preGoal name="site:deploy">
-    <attainGoal name="javadoc"/>
-  </preGoal>
 
   <preGoal name="java:compile">
     <attainGoal name="generate"/>
