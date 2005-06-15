@@ -95,8 +95,8 @@ class ObjectBrowser {
         def methodSorter = new TableSorter(methodTable.model)
         methodTable.model = methodSorter
         methodSorter.addMouseListenerToHeaderInTable(methodTable)
-
         frame.show()
+        frame.toFront()
     }
     
     void showAbout() {
