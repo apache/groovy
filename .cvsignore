@@ -9,3 +9,4 @@ dist
 groovy.iml
 groovy.ipr
 groovy.iws
+.DS_Store
