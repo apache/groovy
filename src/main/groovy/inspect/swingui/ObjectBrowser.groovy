@@ -60,27 +60,27 @@ class ObjectBrowser {
                             data.addAll(safeCopy(Inspector.sort(inspector.metaMethods)))
 
                             tableModel(list:data) {
-                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
                                 closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
                                 closureColumn(header:'Params',      read:{it[Inspector.MEMBER_PARAMS_IDX]})
+                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
+                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
+                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
+                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
                                 closureColumn(header:'Exceptions',  read:{it[Inspector.MEMBER_EXCEPTIONS_IDX]})
                             }
                         }
                     }
-                    scrollPane(name: ' Public Fields ') {
+                    scrollPane(name: ' Public Fields and Properties ') {
                         fieldTable = table() {
                             def data = safeCopy(Inspector.sort(inspector.publicFields))
-
+                            data.addAll(safeCopy(Inspector.sort(inspector.properties)))
                             tableModel(list:data) {
-                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
-                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
-                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
-                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
                                 closureColumn(header:'Name',        read:{it[Inspector.MEMBER_NAME_IDX]})
                                 closureColumn(header:'Value',       read:{it[Inspector.MEMBER_VALUE_IDX]})
+                                closureColumn(header:'Type',        read:{it[Inspector.MEMBER_TYPE_IDX]})
+                                closureColumn(header:'Origin',      read:{it[Inspector.MEMBER_ORIGIN_IDX]})
+                                closureColumn(header:'Modifier',    read:{it[Inspector.MEMBER_MODIFIER_IDX]})
+                                closureColumn(header:'Declarer',    read:{it[Inspector.MEMBER_DECLARER_IDX]})
                             }
                         }
                     }

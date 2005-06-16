@@ -117,6 +117,7 @@ public class Inspector {
         }
         return result;
     }
+    
     /**
      * Get info about usual Java public fields incl. constants.
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
