@@ -74,6 +74,14 @@ class Console extends ConsoleSupport implements CaretListener {
                 name:'Inspect', closure: this.&inspect, mnemonic: 'I', keyStroke: 'ctrl I',
                 accelerator: 'ctrl I'
             )
+            def largerFontAction = action(
+                name:'Larger Font', closure: this.&largerFont, mnemonic: 'L', keyStroke: 'ctrl L',
+                accelerator: 'ctrl L'
+            )
+            def smallerFontAction = action(
+                name:'Smaller Font', closure: this.&smallerFont, mnemonic: 'S', keyStroke: 'ctrl S',
+                accelerator: 'ctrl S'
+            )
             def aboutAction = action(name:'About', closure: this.&showAbout, mnemonic: 'A')
             menuBar {
                 menu(text:'File', mnemonic:0x46) {
@@ -87,6 +95,8 @@ class Console extends ConsoleSupport implements CaretListener {
                 menu(text:'Actions', mnemonic: 'A') {
                     menuItem() { action(runAction) }
                     menuItem() { action(inspectAction) }
+                    menuItem() { action(largerFontAction) }
+                    menuItem() { action(smallerFontAction) }
                 }
                 menu(text:'Help', mnemonic: 'H') {
                     menuItem() { action(aboutAction) }
@@ -175,6 +185,20 @@ class Console extends ConsoleSupport implements CaretListener {
     void inspect(EventObject evt = null){
         if (null == lastResult) return
         ObjectBrowser.inspect(lastResult)
+    }
+
+    void largerFont(EventObject evt = null){
+        if (textArea.font.size > 40) return
+        def newFont = new Font('Monospaced', Font.PLAIN, textArea.font.size + 2)
+        textArea.font = newFont
+        outputArea.font = newFont
+    }
+
+    void smallerFont(EventObject evt = null){
+        if (textArea.font.size < 5) return
+        def newFont = new Font('Monospaced', Font.PLAIN, textArea.font.size - 2)
+        textArea.font = newFont
+        outputArea.font = newFont
     }
     
     void runScript(EventObject evt = null) {
