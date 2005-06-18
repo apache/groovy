@@ -74,7 +74,6 @@ import javax.servlet.http.HttpServletResponse;
  *        Hello World!
  *      &lt;% } %&gt;
  *      &lt;br&gt;
- *      session.id = ${session.id}
  *    &lt;/body&gt;
  *  &lt;/html&gt; 
  * </code></pre>
@@ -327,8 +326,6 @@ public class TemplateServlet extends AbstractHttpServlet {
    *  Current serlvet configuration passed by the container.
    * 
    * @return The underlying template engine or <code>null</code> on error.
-   *
-   * @see TemplateServlet#initTemplateEngine(javax.servlet.ServletConfig)
    */
   protected TemplateEngine initTemplateEngine(ServletConfig config) {
     String name = config.getInitParameter("templateEngine");
@@ -463,29 +460,28 @@ public class TemplateServlet extends AbstractHttpServlet {
    * <li><tt>"response"</tt> : HttpServletResponse </li>
    * <li><tt>"context"</tt> : ServletContext </li>
    * <li><tt>"application"</tt> : ServletContext </li>
-   * <li><tt>"session"</tt> : request.getSession(true) </li>
+   * <li><tt>"session"</tt> : request.getSession(<b>false</b>) </li>
    * </ul>
    * </p>
    * <p>
-   * And via explicit hard-coded keywords:
+   * And via implicite hard-coded keywords:
    * <ul>
    * <li><tt>"out"</tt> : response.getWriter() </li>
    * <li><tt>"sout"</tt> : response.getOutputStream() </li>
    * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
    * </ul>
    * </p>
-   * 
+   *
    * <p>Example binding all servlet context variables:
    * <pre><code>
    * class Mytlet extends TemplateServlet {
    * 
-   *   private ServletContext context;
-   *   
-   *   public void init(ServletConfig config) {
-   *     this.context = config.getServletContext();
-   *   }
-   * 
    *   protected void setVariables(ServletBinding binding) {
+   *     // Bind a simple variable
+   *     binding.setVariable("answer", new Long(42));
+   *   
+   *     // Bind all servlet context attributes...
+   *     ServletContext context = (ServletContext) binding.getVariable("context");
    *     Enumeration enumeration = context.getAttributeNames();
    *     while (enumeration.hasMoreElements()) {
    *       String name = (String) enumeration.nextElement();
@@ -498,9 +494,7 @@ public class TemplateServlet extends AbstractHttpServlet {
    * </p>
    * 
    * @param binding
-   *  to get modified
-   * 
-   * @see TemplateServlet
+   *  to be modified
    */
   protected void setVariables(ServletBinding binding) {
     // empty
