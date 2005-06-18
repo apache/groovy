@@ -195,10 +195,10 @@ public class ServletBinding extends Binding {
          * Check sanity.
          */
         if (name == null) {
-            throw new IllegalArgumentException("Can't bind variable to null key.");
+            throw new IllegalArgumentException("No variable with null key name.");
         }
         if (name.length() == 0) {
-            throw new IllegalArgumentException("Can't bind variable to blank key name. [length=0]");
+            throw new IllegalArgumentException("No variable with blank key name. [length=0]");
         }
         /*
          * Check implicite key names. See setVariable(String, Object)!
