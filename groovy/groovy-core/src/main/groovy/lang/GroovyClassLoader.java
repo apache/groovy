@@ -412,7 +412,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             classpath = System.getProperty("java.class.path", ".");
           }
           final List pathList = new ArrayList();
-          expandClassPath(pathList, null, classpath);
+          expandClassPath(pathList, null, classpath, false);
           _searchPaths = new String[pathList.size()];
           _searchPaths = (String[]) pathList.toArray(_searchPaths);
         }
@@ -423,7 +423,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @param pathList
      * @param classpath
      */
-    protected void expandClassPath(List pathList, String base, String classpath) {
+    protected void expandClassPath(List pathList, String base, String classpath, boolean isManifestClasspath) {
 
         // checking against null prevents an NPE when recursevely expanding the
         // classpath
@@ -434,7 +434,12 @@ public class GroovyClassLoader extends SecureClassLoader {
             // entry with spaces
             // but some libraries don't respect that convention and add commas,
             // colons, semi-colons
-            String[] paths = classpath.split("[\\ ,:;]");
+            String[] paths;
+            if (isManifestClasspath) {
+                paths = classpath.split("[\\ ,:;]");
+            } else {
+                paths = classpath.split(File.pathSeparator);
+            }
 
             for (int i = 0; i < paths.length; i++) {
                 if (paths.length > 0) {
@@ -458,7 +463,7 @@ public class GroovyClassLoader extends SecureClassLoader {
                                     String manifestClassPath = classPathAttributes.getValue("Class-Path");
 
                                     if (manifestClassPath != null)
-                                        expandClassPath(pathList, paths[i], manifestClassPath);
+                                        expandClassPath(pathList, paths[i], manifestClassPath, true);
                                 }
                             } catch (IOException e) {
                                 // Bad jar, ignore
