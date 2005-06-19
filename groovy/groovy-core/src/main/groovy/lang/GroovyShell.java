@@ -138,17 +138,23 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public GroovyShell(ClassLoader parent, Binding binding) {
-        this(parent, binding, null);
+        this(parent, binding, CompilerConfiguration.DEFAULT);
     }
 
     public GroovyShell(ClassLoader parent) {
-        this(parent, new Binding(), null);
+        this(parent, new Binding(), CompilerConfiguration.DEFAULT);
     }
     
-    public GroovyShell(final ClassLoader parent, Binding binding, final CompilerConfiguration config) {
-        this.config = config;
+    public GroovyShell(ClassLoader parent, Binding binding, CompilerConfiguration config) {
+        if (binding == null) {
+            throw new IllegalArgumentException("Binding must not be null.");
+        }
+        if (config == null) {
+            throw new IllegalArgumentException("Compiler configuration must not be null.");
+        }
         this.loader = new MainClassLoader(parent);
         this.context = binding;        
+        this.config = config;
     }
     
     public void initialiseBinding() {
