@@ -46,6 +46,8 @@
 
 package org.codehaus.groovy.control;
 
+import groovy.lang.GroovyClassLoader;
+
 /**
  * A base class for data structures that can collect messages and errors
  * during processing.
@@ -88,9 +90,10 @@ public abstract class ProcessingUnit {
     public ProcessingUnit(CompilerConfiguration configuration, ClassLoader classLoader, ErrorCollector er) {
 
         this.phase = Phases.INITIALIZATION;
-        this.classLoader = (classLoader == null ? new CompilerClassLoader() : classLoader);
-
+        ClassLoader parent = Thread.currentThread().getContextClassLoader();
+        if (parent == null) parent = ProcessingUnit.class.getClassLoader();
         configure((configuration == null ? new CompilerConfiguration() : configuration));
+        this.classLoader = (classLoader == null ? new GroovyClassLoader(parent, configuration) : classLoader);
         if (er==null) er = new ErrorCollector(getConfiguration());
         this.errorCollector = er;
     }
