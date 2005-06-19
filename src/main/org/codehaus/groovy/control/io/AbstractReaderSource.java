@@ -73,6 +73,11 @@ public abstract class AbstractReaderSource implements ReaderSource
     
     public AbstractReaderSource( CompilerConfiguration configuration )
     {
+        if (configuration == null) {
+            throw new IllegalArgumentException("Compiler configuration must not be null!");
+            // ... or more relaxed?
+            // configuration = CompilerConfiguration.DEFAULT;
+        }
         this.configuration = configuration;
     }
     
