@@ -75,7 +75,45 @@ public class GroovyCategorySupport {
         if (methodList.size() == 0) return null;
         return methodList;
     }
-    
+
+    private static class CategoryMethod extends NewInstanceMetaMethod implements Comparable {
+        private Class metaClass;
+
+        public CategoryMethod(MetaMethod metaMethod, Class metaClass) {
+            super(metaMethod);
+            this.metaClass = metaClass;
+        }
+
+        public boolean isCacheable() { return false; }
+
+        /**
+         * Sort by most specific to least specific.
+         * @param o
+         * @return
+         */
+        public int compareTo(Object o) {
+            CategoryMethod thatMethod = (CategoryMethod) o;
+            Class thisClass = metaClass;
+            Class thatClass = thatMethod.metaClass;
+            if (thisClass == thatClass) return 0;
+            Class loop = thisClass;
+            while(loop != Object.class) {
+                loop = thisClass.getSuperclass();
+                if (loop == thatClass) {
+                    return -1;
+                }
+            }
+            loop = thatClass;
+            while (loop != Object.class) {
+                loop = thatClass.getSuperclass();
+                if (loop == thisClass) {
+                    return 1;
+                }
+            }
+            return 0;
+        }
+    }
+
     /**
      * This method is delegated to from the global use(CategoryClass) method.  It scans the Category class for static methods
      * that take 1 or more parameters.  The first parameter is the class you are adding the category method to, additional parameters
@@ -94,10 +132,9 @@ public class GroovyCategorySupport {
                     Class metaClass = paramTypes[0];
                     Map metaMethodsMap = getMetaMethods(properties, metaClass);
                     List methodList = getMethodList(metaMethodsMap, method.getName());
-                    MetaMethod mmethod = new NewInstanceMetaMethod(new MetaMethod(method)) {
-                        public boolean isCacheable() { return false; }
-                    };
+                    MetaMethod mmethod = new CategoryMethod(new MetaMethod(method), metaClass);
                     methodList.add(mmethod);
+                    Collections.sort(methodList);
                 }
             }
         }
