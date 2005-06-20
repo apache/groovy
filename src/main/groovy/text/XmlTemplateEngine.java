@@ -48,12 +48,15 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         public XmlPrinter(IndentPrinter out) {
             if (out == null) {
-                throw new NullPointerException("IndentPrinter 'out' must not be null!");
+                throw new IllegalArgumentException("Argument 'IndentPrinter out' must not be null!");
             }
             this.out = out;
         }
 
-        private String nameToString(Node node) {
+        public String getNameOfNode(Node node) {
+            if (node == null) {
+                throw new IllegalArgumentException("Node must not be null!");
+            }
             Object name = node.name();
             if (name instanceof QName) {
                 QName qname = (QName) name;
@@ -62,106 +65,171 @@ public class XmlTemplateEngine extends TemplateEngine {
             return name.toString();
         }
 
-        public void print(Node node) {
+        public boolean isEmptyElement(Node node) {
+            if (node == null) {
+                throw new IllegalArgumentException("Node must not be null!");
+            }
+            if (!node.children().isEmpty()) {
+                return false;
+            }
+            String text = node.text();
+            if (text.length() > 0) {
+                return false;
+            }
+            return true;
+        }
 
+        public void print(Node node) {
             /*
-             * 
+             * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
              */
-            if (node.text() == null || node.text().length() == 0) {
-                // System.err.println("nodetextemptyof: " + node.name());
-                out.print("out.print(\"");
-                out.printIndent();
+            if (isEmptyElement(node)) {
+                printLineBegin();
                 out.print("<");
-                out.print(nameToString(node));
-                out.print("/>\\n\");\n");
+                out.print(getNameOfNode(node));
+                printNameAttributes(node.attributes());
+                out.print("/>");
+                printLineEnd("empty element"); // "node named '" + node.name() + "'"
                 return;
             }
 
-            if (node.name() != null && node.name() instanceof QName) {
-                String s = ((QName) node.name()).getPrefix();
+            /*
+             * Handle GSP tag element!
+             */
+            Object name = node.name();
+            if (name != null && name instanceof QName) {
+                /*
+                 * FIXME Somethings wrong with the SAX- or XMLParser. Prefix should only contain 'gsp'?!
+                 */
+                String s = ((QName) name).getPrefix();
                 if (s.startsWith("gsp:")) {
                     s = s.substring(4); // 4 = "gsp:".length()
                     if (s.length() == 0) {
                         throw new RuntimeException("No local part after 'gsp:' given in node " + node);
                     }
-                    if (s.equals("scriptlet")) {
-                        out.print(node.text() + "\n");
-                        return;
-                    }
-                    throw new RuntimeException("Unsupported local part gsp:" + s);
+                    printGroovyTag(s, node.text());
+                    return;
                 }
             }
 
-            printName(node, true);
+            /*
+             * Handle normal element like <html> ... </html>.
+             */
             Object value = node.value();
-
             if (value instanceof List) {
+                printName(node, true);
                 printList((List) value);
-            } else {
-                throw new RuntimeException("Unsupported node value: " + node.value());
+                printName(node, false);
+                return;
             }
-            printName(node, false);
-            out.flush();
+
+            /*
+             * Still here?!
+             */
+            throw new RuntimeException("Unsupported node value: " + node.value());
+        }
+
+        protected void printGroovyTag(String tag, String text) {
+            if (tag.equals("scriptlet")) {
+                out.print(text);
+                out.print("\n");
+                return;
+            }
+            if (tag.equals("expression")) {
+                printLineBegin();
+                out.print("${");
+                out.print(text);
+                out.print("}");
+                printLineEnd();
+                return;
+            }
+            throw new RuntimeException("Unsupported tag named \"" + tag + "\".");
+        }
+
+        protected void printLineBegin() {
+            out.print("out.print(\"");
+            out.printIndent();
+        }
+
+        protected void printLineEnd() {
+            printLineEnd(null);
+        }
+
+        protected void printLineEnd(String comment) {
+            out.print("\\n\");");
+            if (comment != null) {
+                out.print(" // ");
+                out.print(comment);
+            }
+            out.print("\n");
         }
 
         protected void printList(List list) {
-            if (list.isEmpty()) {
-                out.print("\\n");
-            } else {
-                out.incrementIndent();
-                for (Iterator iter = list.iterator(); iter.hasNext();) {
-                    Object value = iter.next();
-                    if (value instanceof Node) {
-                        print((Node) value);
-                    } else {
-                        // System.out.println("DATA[" + InvokerHelper.toString(value) + "]");
-                        out.print("out.print(\"");
-                        out.printIndent();
-                        out.print(InvokerHelper.toString(value));
-                        out.print("\\n\");\n");
-                    }
+            out.incrementIndent();
+            for (Iterator iter = list.iterator(); iter.hasNext();) {
+                Object value = iter.next();
+                /*
+                 * If the current value is a node, recurse into that node.
+                 */
+                if (value instanceof Node) {
+                    print((Node) value);
+                    continue;
                 }
-                out.decrementIndent();
+                /*
+                 * Print out "simple" text nodes.
+                 */
+                printLineBegin();
+                out.print(InvokerHelper.toString(value));
+                printLineEnd();
             }
+            out.decrementIndent();
         }
 
-        protected void printName(Node node, boolean start) {
+        protected void printName(Node node, boolean begin) {
+            if (node == null) {
+                throw new NullPointerException("Node must not be null.");
+            }
             Object name = node.name();
             if (name == null) {
                 throw new NullPointerException("Name must not be null.");
             }
-
-            out.print("out.print(\"");
-            out.printIndent();
+            printLineBegin();
             out.print("<");
-            if (!start) {
+            if (!begin) {
                 out.print("/");
             }
-            out.print(nameToString(node));
-
-            if (start) {
-                Map attributes = node.attributes();
-                if (attributes != null && !attributes.isEmpty()) {
-                    out.print(" ");
-                    boolean first = true;
-                    for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-                        Map.Entry entry = (Map.Entry) iter.next();
-                        if (first) {
-                            first = false;
-                        } else {
-                            out.print(" ");
-                        }
-                        out.print(entry.getKey().toString());
-                        out.print("=");
-                        if (entry.getValue() instanceof String) {
-                            out.print("\\\"" + entry.getValue() + "\\\"");
-                        } else {
-                            out.print(InvokerHelper.toString(entry.getValue()));
-                        }
-                    }
-                }
+            out.print(getNameOfNode(node));
+            if (begin) {
+                printNameAttributes(node.attributes());
             }
-            out.print(">\\n\");\n");
+            out.print(">");
+            printLineEnd();
+        }
+
+        protected void printNameAttributes(Map attributes) {
+            if (attributes == null || attributes.isEmpty()) {
+                return;
+            }
+            out.print(" ");
+            boolean first = true;
+            for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                if (first) {
+                    first = false;
+                } else {
+                    out.print(" ");
+                }
+                out.print(entry.getKey().toString());
+                out.print("=");
+                Object value = entry.getValue();
+                if (value instanceof String) {
+                    out.print("\\\"");
+                    out.print((String) value);
+                    out.print("\\\"");
+                    continue;
+                }
+                out.print(InvokerHelper.toString(value));
+            }
         }
 
     }
@@ -244,7 +312,8 @@ public class XmlTemplateEngine extends TemplateEngine {
         if (root == null) {
             throw new IOException("Parsing XML source failed: root node is null.");
         }
-        //new NodePrinter().print(root);
+
+        // new NodePrinter().print(root);
 
         StringWriter writer = new StringWriter(1024);
         writer.write("/* Generated by XmlTemplateEngine */\n");
