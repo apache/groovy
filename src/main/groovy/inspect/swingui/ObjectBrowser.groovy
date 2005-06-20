@@ -105,16 +105,16 @@ class ObjectBrowser {
     }
 
     // work around bug GROOVY-886-764-888-584
-    def safeCopy(objectArrayOfStringArrays){
+    def safeCopy(Object[] objectArrayOfStringArrays){
         def copy = []
         for (i in 0..<objectArrayOfStringArrays.size()){
             def row = []
-            for (j in 0..<objectArrayOfStringArrays[i].size()){
-                row << objectArrayOfStringArrays[i][j]
+            String[] stringArray = objectArrayOfStringArrays[i]
+            for (j in 0..<stringArray.size()){
+                row << stringArray[j]
             }
             copy << row
         }
-        // copy.each(){println it}  // only for logging
         return copy
     }
 }
