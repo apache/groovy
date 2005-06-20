@@ -170,10 +170,11 @@ public class TemplateServlet extends AbstractHttpServlet {
    * 
    * Its a work around! New lines should cause troubles when compiling. But
    * sometimes(?) the do: http://jira.codehaus.org/browse/GROOVY-818
-   * See FIXME note around line 250, where this method is called.
+   * See note around line 250, where this method is called.
    * 
    * @see TemplateServlet#getTemplate(File)
    * @see BufferedReader#readLine()
+   * @deprecated
    */
   private Template createTemplate(int bufferCapacity, FileReader fileReader)
       throws Exception {
@@ -245,14 +246,10 @@ public class TemplateServlet extends AbstractHttpServlet {
       try {
         reader = new FileReader(file);
         //
-        // FIXME Template creation should eliminate '\n' by default?!
+        // FIXED Template creation should eliminate '\n' by default?!
+        // *** template = createTemplate((int) file.length(), reader);
         //
-        // template = engine.createTemplate(reader);
-        //
-        //    General error during parsing: 
-        //    expecting anything but ''\n''; got it anyway
-        //
-        template = createTemplate((int) file.length(), reader);
+        template = engine.createTemplate(reader);
       }
       catch (Exception e) {
         throw new ServletException("Creation of template failed: " + e, e);
