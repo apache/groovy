@@ -448,6 +448,9 @@ public class InvokerHelper {
 
     public static List createRange(Object from, Object to, boolean inclusive) {
         if (!inclusive) {
+            if (compareEqual(from,to)){
+                return new EmptyRange((Comparable)from);
+            }
             if (compareGreaterThan(from, to)) {
                 to = invokeMethod(to, "next", EMPTY_ARGS);
             }

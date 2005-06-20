@@ -148,6 +148,29 @@ class RangeTest extends GroovyTestCase {
 	    assertSize(30..21, 10)
 	    assertSize(40..<30, 10)
 	}
+
+	void testBorderCases() {
+	    assertIterate(0..1, [0,1])
+	    assertIterate(0..0, [0])
+	    assertIterate(0..-1, [0,-1])
+	    assertIterate(0..<-1, [0])
+	}
+
+	void testEmptyRanges(){
+	    assertSize(0..<0, 0)
+	    assertSize(1..<1, 0)
+	    assertSize(-1..<-1, 0)
+	    assertSize('a'..<'a', 0)
+	    assertSize(0.0G..<0.0G, 0)
+	    (0..<0).each{assert false}
+	    (0..<0).step(1){assert false}
+	    for (i in 0..<0) assert false
+	    assertToString(0..<0, '0..<0', '0..<0')
+	    assertToString('a'..<'a', 'a..<a', '"a"..<"a"')
+	    assertToString(null..<null, 'null..<null', 'null..<null')
+	    assertStep(0..<0, 3, [])
+	    assertIterate(0..<0, [])
+	}
 	
 	void testStringRange() {
 	    def range = 'a'..'d'
