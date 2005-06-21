@@ -1783,10 +1783,8 @@ public class MetaClass {
             Class[] paramTypes = wrap(getParameterTypes(method));
             if (Arrays.equals(wrappedArguments, paramTypes)) directMatches.add(method);
         }
+        if (directMatches.size()==1) return directMatches.getFirst();
         if (directMatches.size()>0) {
-            matchingMethods = directMatches;
-        }
-        if (directMatches.size()>1) {
             matchingMethods = directMatches;
             // we have more then one possible match for wrapped natives
             // so next test without using wrapping
@@ -1796,7 +1794,7 @@ public class MetaClass {
                 Class[] paramTypes = getParameterTypes(method);
                 if (Arrays.equals(arguments, paramTypes)) directMatches.add(method);
             }
-            if (directMatches.size()==1) matchingMethods = directMatches;
+            if (directMatches.size()==1) return directMatches.getFirst();            
         }
         
         // filter out cases where we don't have a superclass
@@ -1811,7 +1809,7 @@ public class MetaClass {
                 }
             }
         }
-        if (superclassMatches.size()!=0) {
+        if (superclassMatches.size()>0) {
             //if not all methods are filtered out use the filtered methods
             matchingMethods = superclassMatches;
         }
@@ -2007,8 +2005,7 @@ public class MetaClass {
                 else if (type == short.class) {
                     return value == Short.class;
                 }
-            }
-            else if(type.isArray() && value.isArray()) {
+            } else if (type.isArray() && value.isArray()) {
                 return isCompatibleClass(type.getComponentType(), value.getComponentType(), false);
             }
             else if (includeCoerce) {
