@@ -96,7 +96,7 @@ public class GroovyClassLoader extends SecureClassLoader {
     }
 
     public GroovyClassLoader(ClassLoader loader) {
-        this(loader, new CompilerConfiguration());
+        this(loader, null);
     }
 
     public GroovyClassLoader(GroovyClassLoader parent) {
@@ -105,6 +105,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     public GroovyClassLoader(ClassLoader loader, CompilerConfiguration config) {
         super(loader);
+        if (config==null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
     }
 
