@@ -115,7 +115,7 @@ public class MetaClass {
     private ClassNode classNode;
     private Map methodIndex = new HashMap();
     private Map staticMethodIndex = new HashMap();
-    private List newGroovyMethodsList = new ArrayList();
+    private List newGroovyMethodsList = new LinkedList();
     //private Map propertyDescriptors = Collections.synchronizedMap(new HashMap());
     private Map propertyMap = Collections.synchronizedMap(new HashMap());
     private Map listeners = new HashMap();
@@ -266,13 +266,11 @@ public class MetaClass {
         }
         else {
             NewInstanceMetaMethod newMethod = new NewInstanceMetaMethod(createMetaMethod(method));
-            addMethod(newMethod,false);
-            addNewInstanceMethod(newMethod);
+            if (! newGroovyMethodsList.contains(newMethod)){
+                newGroovyMethodsList.add(newMethod);
+                addMethod(newMethod,false);
+            }
         }
-    }
-
-    protected void addNewInstanceMethod(MetaMethod method) {
-        newGroovyMethodsList.add(method);
     }
 
     protected void addNewStaticMethod(Method method) {
@@ -281,13 +279,11 @@ public class MetaClass {
         }
         else {
             NewStaticMetaMethod newMethod = new NewStaticMetaMethod(createMetaMethod(method));
-            addMethod(newMethod,false);
-            addNewStaticMethod(newMethod);
+            if (! newGroovyMethodsList.contains(newMethod)){
+                newGroovyMethodsList.add(newMethod);
+                addMethod(newMethod,false);
+            }
         }
-    }
-
-    protected void addNewStaticMethod(MetaMethod method) {
-        newGroovyMethodsList.add(method);
     }
 
     public Object invokeMethod(Object object, String methodName, Object arguments) {
@@ -1270,8 +1266,10 @@ public class MetaClass {
         Iterator iter = interfaceMetaClass.newGroovyMethodsList.iterator();
         while (iter.hasNext()) {
             MetaMethod method = (MetaMethod) iter.next();
-            addMethod(method,false);
-            newGroovyMethodsList.add(method);
+            if (! newGroovyMethodsList.contains(method)){
+                newGroovyMethodsList.add(method);
+                addMethod(method,false);
+            }
         }
     }
 
@@ -2320,7 +2318,7 @@ public class MetaClass {
     }
 
     public List getMetaMethods() {
-        return (List) ((ArrayList)newGroovyMethodsList).clone();
+        return new ArrayList(newGroovyMethodsList);
     }
 
     protected synchronized List getInterfaceMethods() {
