@@ -104,6 +104,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(Groovy252_Bug.class);
         suite.addTestSuite(Groovy389_Bug.class);
         suite.addTestSuite(Groovy513_Bug.class);
+        suite.addTestSuite(Groovy662.class);
         suite.addTestSuite(GroovyInterceptableTest.class);
         suite.addTestSuite(GroovyClosureMethodsTest.class);
         suite.addTestSuite(GroovyMethodsTest.class);
