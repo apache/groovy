@@ -37,6 +37,8 @@ package groovy.lang;
 import groovy.util.GroovyTestCase;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -160,6 +162,28 @@ public class MetaClassTest extends GroovyTestCase {
         // test Integer[]
         metaClass.setProperty(dymmyClass, "integers", list);
     }
+
+    public void testMetaMethodsOnlyAddedOnce() {
+        MetaClass metaClass = InvokerHelper.getMetaClass("some String");
+
+        List methods = metaClass.getMetaMethods();
+        for (Iterator iter = methods.iterator(); iter.hasNext();) {
+            MetaMethod method = (MetaMethod) iter.next();
+            int count = 0;
+            for (Iterator inner = methods.iterator(); inner.hasNext(); ) {
+                MetaMethod runner = (MetaMethod) inner.next();
+                if (method.equals(runner)) {
+                    System.out.println("runner = " + runner);
+                    System.out.println("method = " + method);
+                    count++;
+                }
+            }
+            assertEquals("count of Method "+method.getName(), 1, count);
+        }
+
+    }
+
+
     
     public void doSomething() {
         System.out.println("Called doSomething()");

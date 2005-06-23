@@ -74,11 +74,7 @@ public class InspectorTest extends TestCase implements Serializable {
         Matcher matcher = Pattern.compile("").matcher("");
         Inspector insp = new Inspector(matcher);
         Object[] metaMethods = insp.getMetaMethods();
-
-        // todo: this currently fails under JDK 1.5 for whatever reason...
-        if (! System.getProperty("java.version").startsWith("1.5")){
-            assertUnique(Inspector.sort(metaMethods));
-        }
+        assertUnique(Inspector.sort(metaMethods));
         String[] details = {"GROOVY","public static","Matcher","Matcher","getLastMatcher","","n/a"};
         assertContains(metaMethods, details);
     }
