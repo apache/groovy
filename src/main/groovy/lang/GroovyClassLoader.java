@@ -69,12 +69,6 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
 
-    /**
-     * Mirror the value in the superclass since it's private and we need to
-     * access it for the classpath.
-     */
-    private String[] _searchPaths;
-
     public void removeFromCache(Class aClass) {
         cache.remove(aClass);
     }
@@ -393,9 +387,12 @@ public class GroovyClassLoader extends SecureClassLoader {
 
       /**
        * Workaround for Groovy-835
+       *
+       * @return the classpath as an array of strings, uses the classpath in the CompilerConfiguration object if possible,
+       *         otherwise defaults to the value of the <tt>java.class.path</tt> system property
        */
       protected String[] getClassPath() {
-        if (null == _searchPaths) {
+        if (null == searchPaths) {
           final String classpath;
           if(null != config && null != config.getClasspath()) {
             //there's probably a better way to do this knowing the internals of
@@ -414,15 +411,15 @@ public class GroovyClassLoader extends SecureClassLoader {
           }
           final List pathList = new ArrayList();
           expandClassPath(pathList, null, classpath, false);
-          _searchPaths = new String[pathList.size()];
-          _searchPaths = (String[]) pathList.toArray(_searchPaths);
+          searchPaths = new String[pathList.size()];
+          searchPaths = (String[]) pathList.toArray(searchPaths);
         }
-        return _searchPaths;
+        return searchPaths;
       }
 
     /**
-     * @param pathList
-     * @param classpath
+     * @param pathList an empty list that will contain the elements of the classpath
+     * @param classpath the classpath specified as a single string
      */
     protected void expandClassPath(List pathList, String base, String classpath, boolean isManifestClasspath) {
 
