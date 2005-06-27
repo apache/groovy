@@ -496,8 +496,18 @@
     </dependency>    
     <dependency>
       <groupId>jmock</groupId>
-      <artifactId>jmock</artifactId>    
-      <version>1.0.1</version>
+      <artifactId>jmock</artifactId>
+      <version>SNAPSHOT</version>
+    </dependency>
+    <dependency>
+      <groupId>jmock</groupId>
+      <artifactId>jmock-cglib</artifactId>
+      <version>SNAPSHOT</version>
+    </dependency>
+    <dependency>
+        <groupId>cglib</groupId>
+        <artifactId>cglib</artifactId>
+        <version>nodep-2.1</version>
     </dependency>
 
     <!-- only used for testing/debugging-->

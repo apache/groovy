@@ -92,8 +92,8 @@ public abstract class ProcessingUnit {
         this.phase = Phases.INITIALIZATION;
         ClassLoader parent = Thread.currentThread().getContextClassLoader();
         if (parent == null) parent = ProcessingUnit.class.getClassLoader();
-        configure((configuration == null ? new CompilerConfiguration() : configuration));
         this.classLoader = (classLoader == null ? new GroovyClassLoader(parent, configuration) : classLoader);
+        configure((configuration == null ? new CompilerConfiguration() : configuration));
         if (er==null) er = new ErrorCollector(getConfiguration());
         this.errorCollector = er;
     }
