@@ -34,6 +34,33 @@
  */
 package groovy.lang;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.security.SecureClassLoader;
+import java.security.cert.Certificate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilationFailedException;
@@ -42,18 +69,6 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-
-import java.io.*;
-import java.lang.reflect.Field;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.util.*;
-import java.util.jar.Attributes;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.jar.Manifest;
 
 /**
  * A ClassLoader which can load Groovy classes
@@ -83,7 +98,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     private String[] searchPaths;
 
-    private List additionalPaths = new ArrayList();
+    private Set additionalPaths = new HashSet();
 
     public GroovyClassLoader() {
         this(Thread.currentThread().getContextClassLoader());
@@ -393,13 +408,12 @@ public class GroovyClassLoader extends SecureClassLoader {
        */
       protected String[] getClassPath() {
         if (null == searchPaths) {
-          final String classpath;
+          String classpath;
           if(null != config && null != config.getClasspath()) {
             //there's probably a better way to do this knowing the internals of
             //Groovy, but it works for now
-            final List paths = config.getClasspath();
-            final StringBuffer sb = new StringBuffer();
-            for(Iterator iter = paths.iterator(); iter.hasNext(); ) {
+            StringBuffer sb = new StringBuffer();
+            for(Iterator iter = config.getClasspath().iterator(); iter.hasNext(); ) {
               sb.append(iter.next().toString());
               sb.append(File.pathSeparatorChar);
             }
@@ -409,7 +423,7 @@ public class GroovyClassLoader extends SecureClassLoader {
           } else {
             classpath = System.getProperty("java.class.path", ".");
           }
-          final List pathList = new ArrayList();
+          List pathList = new ArrayList(additionalPaths);
           expandClassPath(pathList, null, classpath, false);
           searchPaths = new String[pathList.size()];
           searchPaths = (String[]) pathList.toArray(searchPaths);
