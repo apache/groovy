@@ -18,14 +18,19 @@
 
 package org.codehaus.groovy.antlr;
 
+import antlr.collections.AST;
+
 /**
  * An interface for processing antlr AST objects
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-import antlr.collections.AST;
-
 public interface AntlrASTProcessor {
+    /**
+     * performs some processing on the supplied AST node.
+     * @param t the AST node to process.
+     * @return possibly returns the AST modified or null, depends on the implementation.
+     */
     AST process(AST t);
 }

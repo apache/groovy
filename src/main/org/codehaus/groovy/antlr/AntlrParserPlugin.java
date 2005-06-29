@@ -27,6 +27,7 @@ import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+import org.codehaus.groovy.antlr.treewalker.*;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -42,8 +43,7 @@ import org.codehaus.groovy.syntax.ASTHelper;
 import org.codehaus.groovy.syntax.ParserException;
 import org.objectweb.asm.Opcodes;
 
-import java.io.FileWriter;
-import java.io.Reader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -98,13 +98,60 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ast = parser.getAST();
 
         AntlrASTProcessor snippets = new AntlrASTProcessSnippets(sourceBuffer);
-        ast = snippets.process(ast);        
+        ast = snippets.process(ast);
 
+        outputASTInVariousFormsIfNeeded(sourceUnit);
+
+        return null; //new Reduction(Tpken.EOF);
+    }
+
+    private void outputASTInVariousFormsIfNeeded(SourceUnit sourceUnit) {
+        // straight xstream output of AST
         if ("xml".equals(System.getProperty("antlr.ast"))) {
             saveAsXML(sourceUnit.getName(), ast);
         }
 
-        return null; //new Reduction(Tpken.EOF);
+        // 'pretty printer' output of AST
+        if ("groovy".equals(System.getProperty("antlr.ast"))) {
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".pretty.groovy"));
+                Visitor visitor = new SourcePrinter(out,tokenNames);
+                AntlrASTProcessor treewalker = new SourceCodeTraversal(visitor);
+                treewalker.process(ast);
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot create " + sourceUnit.getName() + ".pretty.groovy");
+            }
+        }
+
+        // output AST in format suitable for opening in http://freemind.sourceforge.net
+        // which is a really nice way of seeing the AST, folding nodes etc
+        if ("mindmap".equals(System.getProperty("antlr.ast"))) {
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".mm"));
+                Visitor visitor = new MindMapPrinter(out,tokenNames);
+                AntlrASTProcessor treewalker = new PreOrderTraversal(visitor);
+                treewalker.process(ast);
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot create " + sourceUnit.getName() + ".mm");
+            }
+        }
+
+        // html output of AST
+        if ("html".equals(System.getProperty("antlr.ast"))) {
+            try {
+                PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".html"));
+                List v = new ArrayList();
+                v.add(new NodeAsHTMLPrinter(out,tokenNames));
+                v.add(new SourcePrinter(out,tokenNames));
+                Visitor visitors = new CompositeVisitor(v);
+                AntlrASTProcessor treewalker = new SourceCodeTraversal(visitors);
+                treewalker.process(ast);
+            } catch (FileNotFoundException e) {
+                System.out.println("Cannot create " + sourceUnit.getName() + ".html");
+            }
+        }
+
+
     }
 
     private void saveAsXML(String name, AST ast) {
