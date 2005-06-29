@@ -11,6 +11,7 @@ public class UberTestCase3 extends TestCase {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(org.codehaus.groovy.antlr.GroovySourceASTTest.class);
         suite.addTestSuite(org.codehaus.groovy.antlr.SourceBufferTest.class);
+        suite.addTestSuite(org.codehaus.groovy.antlr.treewalker.SourcePrinterTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.BytecodeHelperTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.CallClosureFieldAsMethodTest.class);
 

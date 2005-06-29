@@ -3,6 +3,9 @@ package org.codehaus.groovy.antlr;
 import antlr.collections.AST;
 import antlr.*;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * We have an AST subclass so we can track source information.
  * Very odd that ANTLR doesn't do this by default.
@@ -108,4 +111,28 @@ public class GroovySourceAST extends CommonAST implements Comparable {
 
         return 0;
     }
+
+    public GroovySourceAST childAt(int position) {
+        List list = new ArrayList();
+        AST child = this.getFirstChild();
+        while (child != null) {
+            list.add(child);
+            child = child.getNextSibling();
+        }
+        try {
+            return (GroovySourceAST)list.get(position);
+        } catch (IndexOutOfBoundsException e) {
+            return null;
+        }
+    }
+
+    public GroovySourceAST childOfType(int type) {
+        AST child = this.getFirstChild();
+        while (child != null) {
+            if (child.getType() == type) { return (GroovySourceAST)child; }
+            child = child.getNextSibling();
+        }
+        return null;
+    }
+
 }
