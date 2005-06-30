@@ -96,6 +96,7 @@ import org.objectweb.asm.ClassWriter;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
+ * @author Jochen Theodorou
  * @version $Revision$
  */
 public class MetaClass {
@@ -1795,13 +1796,14 @@ public class MetaClass {
             if (directMatches.size()==1) return directMatches.getFirst();            
         }
         
-        // filter out cases where we don't have a superclass
+        // filter out cases where we don't have a useable superclass or interface
         List superclassMatches = new ArrayList(matchingMethods);
         for (Iterator iter = superclassMatches.iterator(); iter.hasNext(); ) {
             Object method = iter.next();
-            Class[] paramTypes = getParameterTypes(method);
+            Class[] paramTypes = wrap(getParameterTypes(method));
             for (int i=0; i<paramTypes.length; i++) {
-                if (!isSuperclass(arguments[i],paramTypes[i])) {
+                
+                if (!isSuperclass(wrappedArguments[i],paramTypes[i])) {
                     iter.remove();
                     break; //return from the inner for
                 }
@@ -1905,7 +1907,7 @@ public class MetaClass {
             int paramLength = paramTypes.length;
             if (paramLength == 1) {
                 Class theType = paramTypes[0];
-				if (theType.isPrimitive()) continue;
+                if (theType.isPrimitive()) continue;
                 if (closestClass == null || isAssignableFrom(closestClass, theType)) {
                     closestClass = theType;
                     answer = method;
@@ -2067,6 +2069,10 @@ public class MetaClass {
                 }
             }
         }
+        if (type==String.class) {
+            return  mostSpecificType == String.class || 
+                    GString.class.isAssignableFrom(mostSpecificType);
+        }
 
         boolean answer = type.isAssignableFrom(mostSpecificType);
         if (!answer) {
@@ -2193,10 +2199,7 @@ public class MetaClass {
                 }
             });
         }
-        if (useReflection) {
-            //log.warning("Creating reflection based dispatcher for: " + method);
-            return new ReflectionMetaMethod(method);
-        }
+        
         MetaMethod answer = new MetaMethod(method);
         if (isValidReflectorMethod(answer)) {
             allMethods.add(answer);
@@ -2206,6 +2209,12 @@ public class MetaClass {
             //log.warning("Creating reflection based dispatcher for: " + method);
             answer = new ReflectionMetaMethod(method);
         }
+        
+        if (useReflection) {
+            //log.warning("Creating reflection based dispatcher for: " + method);
+            return new ReflectionMetaMethod(method);
+        }
+ 
         return answer;
     }
 
@@ -2214,28 +2223,40 @@ public class MetaClass {
         if (!method.isPublic()) {
             return false;
         }
-        Class declaringClass = method.getDeclaringClass();
-        if (!Modifier.isPublic(declaringClass.getModifiers())) {
-            // lets see if this method is implemented on an interface
-            List list = getInterfaceMethods();
-            for (Iterator iter = list.iterator(); iter.hasNext();) {
-                MetaMethod aMethod = (MetaMethod) iter.next();
-                if (method.isSame(aMethod)) {
-                    method.setInterfaceClass(aMethod.getDeclaringClass());
-                    return true;
-                }
+        // lets see if this method is implemented on an interface
+        List interfaceMethods = getInterfaceMethods();
+        for (Iterator iter = interfaceMethods.iterator(); iter.hasNext();) {
+            MetaMethod aMethod = (MetaMethod) iter.next();
+            if (method.isSame(aMethod)) {
+                method.setInterfaceClass(aMethod.getDeclaringClass());
+                return true;
             }
-            /** todo */
-            //log.warning("Cannot invoke method on protected/private class which isn't visible on an interface so must use reflection instead: " + method);
-            return false;
         }
+        // it's no interface method, so try to find the highest class
+        // in hierarchy defining this method
+        Class declaringClass = method.getDeclaringClass();
+        for (Class clazz=declaringClass; clazz!=null; clazz=clazz.getSuperclass()) {
+            try {
+                Method m = clazz.getDeclaredMethod(method.getName(),method.getParameterTypes());
+                if (!Modifier.isPublic(clazz.getModifiers())) continue;
+                if (!Modifier.isPublic(m.getModifiers())) continue;
+                declaringClass = clazz;
+            } catch (SecurityException e) {
+                continue;
+            } catch (NoSuchMethodException e) {
+                continue;
+            }            
+        }
+        if (!Modifier.isPublic(declaringClass.getModifiers())) return false;
+        method.setDeclaringClass(declaringClass);
+        
         return true;
     }
 
     protected void generateReflector() {
         reflector = loadReflector(allMethods);
         if (reflector == null) {
-            throw new RuntimeException("Should have a reflector!");
+            throw new RuntimeException("Should have a reflector for "+theClass.getName());
         }
         // lets set the reflector on all the methods
         for (Iterator iter = allMethods.iterator(); iter.hasNext();) {
@@ -2245,25 +2266,20 @@ public class MetaClass {
         }
     }
 
-    protected Reflector loadReflector(List methods) {
-        ReflectorGenerator generator = new ReflectorGenerator(methods);
+    private String getReflectorName() {
         String className = theClass.getName();
         String packagePrefix = "gjdk.";
-        /*
-        if (className.startsWith("java.")) {
-            packagePrefix = "gjdk.";
-        }
-        */
         String name = packagePrefix + className + "_GroovyReflector";
         if (theClass.isArray()) {
             String componentName = theClass.getComponentType().getName();
-            /*
-            if (componentName.startsWith("java.")) {
-                packagePrefix = "gjdk.";
-            }
-            */
             name = packagePrefix + componentName + "_GroovyReflectorArray";
         }
+        return name;
+    }
+
+    protected Reflector loadReflector(List methods) {
+        ReflectorGenerator generator = new ReflectorGenerator(methods);
+        String name = getReflectorName();
         // lets see if its already loaded
         try {
             Class type = loadReflectorClass(name);
@@ -2285,7 +2301,7 @@ public class MetaClass {
         try {
             Class type = loadReflectorClass(name, bytecode);
             return (Reflector) type.newInstance();
-        }
+        } 
         catch (Exception e) {
             throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
         }
