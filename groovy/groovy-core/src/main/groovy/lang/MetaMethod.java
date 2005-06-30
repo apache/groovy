@@ -123,6 +123,10 @@ public class MetaMethod implements Cloneable {
     public Class getDeclaringClass() {
         return declaringClass;
     }
+    
+    public void setDeclaringClass(Class c) {
+        declaringClass=c;
+    }
 
     public int getMethodIndex() {
         return methodIndex;
