@@ -58,7 +58,7 @@ import junit.framework.AssertionFailedError;
  */
 public class InvokeMethodTest extends GroovyTestCase {
 
-    protected Invoker invoker = new Invoker();
+    protected Invoker invoker = InvokerHelper.getInstance();
 
     // Method invocation tests
     //-------------------------------------------------------------------------
