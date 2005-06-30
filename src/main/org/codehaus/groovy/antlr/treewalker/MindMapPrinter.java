@@ -19,6 +19,7 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
 import org.codehaus.groovy.antlr.GroovySourceAST;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 /**
  * An antlr AST visitor that prints a format suitable for viewing in http://freemind.sourceforge.net
@@ -66,7 +67,15 @@ public class MindMapPrinter extends VisitorAdapter {
     }
 
     private String getFolded(GroovySourceAST t) {
-        if (depth == 3 && t.getNumberOfChildren() > 0) {
+        if (depth > 2 && t.getNumberOfChildren() > 0) {
+            switch (t.getType()) {
+                case GroovyTokenTypes.EXPR :
+                case GroovyTokenTypes.METHOD_DEF :
+                case GroovyTokenTypes.VARIABLE_DEF :
+                    return " FOLDED='true'";
+            }
+        }
+        if (t.getType() == GroovyTokenTypes.IMPORT) {
             return " FOLDED='true'";
         }
         return "";
@@ -81,9 +90,17 @@ public class MindMapPrinter extends VisitorAdapter {
     }
 
     private String getName(GroovySourceAST t) {
-        String name = tokenNames[t.getType()];
-        if (!(escape(name).equals(escape(t.getText())))) {
+        String name = tokenNames[t.getType()] + " <" + t.getType() + ">";
+        if (!(escape(tokenNames[t.getType()]).equals(escape(t.getText())))) {
             name = name + " : " + t.getText();
+        }
+        switch (t.getType()) {
+            case GroovyTokenTypes.METHOD_DEF :
+            case GroovyTokenTypes.VARIABLE_DEF :
+                GroovySourceAST identNode = t.childOfType(GroovyTokenTypes.IDENT);
+                if (identNode != null) {
+                    name = name + " : " + identNode.getText() + "";
+                }
         }
         name = escape(name);
         return name;

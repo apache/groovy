@@ -115,7 +115,10 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.CLASS_DEF:
                 case GroovyTokenTypes.DOT:
+                case GroovyTokenTypes.LABELED_ARG:
+                case GroovyTokenTypes.MEMBER_POINTER:
                 case GroovyTokenTypes.METHOD_CALL:
+                case GroovyTokenTypes.PLUS:
                 case GroovyTokenTypes.STAR:
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
@@ -127,7 +130,10 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.LITERAL_if:
                     accept_v_FirstChildsFirstChild_v_Child2_Child3_v_Child4_v___v_LastChild(t);
+                    break;
 
+                case GroovyTokenTypes.CLOSED_BLOCK:
+                    accept_v_FirstChild_v_RestOfTheChildren_v(t);
                     break;
 
                 case GroovyTokenTypes.LITERAL_catch:
