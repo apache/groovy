@@ -43,23 +43,27 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testAssign() throws Exception {
-        assertEquals("a = 12", pretty("a = 12"));
+        assertEquals("a = 12", pretty("a=12"));
     }
 
     public void testClassDef() throws Exception {
-        assertEquals("class Foo {def bar}", pretty("class Foo {def bar}"));
+        assertEquals("class Foo {def bar}", pretty("class Foo{def bar}"));
     }
+
+    public void testClosedBlock() throws Exception {
+            //todo assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
+        }
 
     public void testDot() throws Exception {
         assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
     }
 
     public void testElist() throws Exception {
-        assertEquals("foo(bar,mooky)", pretty("foo(bar,mooky)"));
+        assertEquals("foo(bar,mooky)", pretty("foo( bar , mooky )"));
     }
 
     public void testEqual() throws Exception {
-        assertEquals("a == b", pretty("a == b"));
+        assertEquals("a == b", pretty("a==b"));
     }
 
     public void testExpr() throws Exception {
@@ -82,16 +86,20 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("import foo.bar.Wibble", pretty("import foo.bar.Wibble"));
     }
 
+    public void testLabeledArg() throws Exception {
+        //todo assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
+    }
+
     public void testListConstructor() throws Exception {
         //todo assertEquals("[a,b]", pretty("[a,b]"));
     }
 
     public void testLiteralAssert() throws Exception {
-        assertEquals("assert a == true", pretty("assert a == true"));
+        assertEquals("assert a == true", pretty("assert a== true"));
     }
 
     public void testLiteralBoolean() throws Exception {
-        assertEquals("boolean b = true", pretty("boolean b = true"));
+        assertEquals("boolean b = true", pretty("boolean b =true"));
     }
 
     public void testLiteralCatch() throws Exception {
@@ -103,7 +111,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLiteralIf() throws Exception {
-        assertEquals("if (a == b) {}", pretty("if (a == b) {}"));
+        assertEquals("if (a == b) {}", pretty("if (a==b) {}"));
     }
 
     public void testLiteralInt() throws Exception {
@@ -138,6 +146,9 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("while (true) {}", pretty("while(true){}"));
     }
 
+    public void testMemberPointer() throws Exception {
+        assertEquals("def x = foo.&bar()", pretty("def x=foo.&bar()"));
+    }
     public void testMethodCall() throws Exception {
         assertEquals("foo(bar)", pretty("foo(bar)"));
     }
@@ -151,11 +162,11 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testNumInt() throws Exception {
-        assertEquals("a = 12", pretty("a = 12"));
+        assertEquals("a = 12", pretty("a=12"));
     }
 
     public void testNumFloat() throws Exception {
-        assertEquals("b = 34.4f", pretty("b = 34.4f"));
+        assertEquals("b = 34.4f", pretty("b=34.4f"));
     }
 
     public void testObjblock() throws Exception {
@@ -173,7 +184,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testParameters() throws Exception {
         //todo assertEquals("", pretty(""));
     }
-
+    public void testPlus() throws Exception {
+        assertEquals("a + b", pretty("a+b"));
+    }
     public void testSlist() throws Exception {
         assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
     }
@@ -189,6 +202,7 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testStringLiteral() throws Exception {
         assertEquals("\"mooky\"", pretty("\"mooky\""));
+        //todo assertEquals("'mooky'", pretty("'mooky'"));
     }
 
     public void testType() throws Exception {

@@ -81,6 +81,21 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,"class ");
         }
     }
+
+    public void visitClosedBlock(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            tabLevel++;
+            print(t,visit," {");
+        }
+        if (visit == SUBSEQUENT_VISIT) {
+            print(t,visit," -> ");
+        }
+        if (visit == CLOSING_VISIT) {
+            tabLevel--;
+            print(t,visit,"}");
+        }
+    }
+
     public void visitDot(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,".");
@@ -129,6 +144,12 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitImport(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText() + " ");
+        }
+    }
+
+    public void visitLabeledArg(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,":");
         }
     }
 
@@ -222,6 +243,13 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,")");
         }
     }
+
+    public void visitMemberPointer(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,".&");
+        }
+    }
+
     public void visitMethodCall(GroovySourceAST t,int visit) {
         //do nothing
     }
@@ -271,6 +299,13 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,")");
         }
     }
+
+    public void visitPlus(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit," + ");
+        }
+    }
+
     public void visitSlist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
