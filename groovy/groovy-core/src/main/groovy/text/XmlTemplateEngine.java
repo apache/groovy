@@ -291,14 +291,20 @@ public class XmlTemplateEngine extends TemplateEngine {
 
     private final GroovyShell groovyShell;
     private final XmlParser xmlParser;
+    private String indention;
 
     public XmlTemplateEngine() throws SAXException, ParserConfigurationException {
-        this(new GroovyShell(), new XmlParser(false, true));
+        this(DEFAULT_INDENTION, false);
     }
 
-    public XmlTemplateEngine(GroovyShell groovyShell, XmlParser xmlParser) {
+    public XmlTemplateEngine(String indention, boolean validating) throws SAXException, ParserConfigurationException {
+        this(new XmlParser(validating, true), new GroovyShell(), indention);
+    }
+
+    public XmlTemplateEngine(XmlParser xmlParser, GroovyShell groovyShell, String indention) {
         this.groovyShell = groovyShell;
         this.xmlParser = xmlParser;
+        this.indention = indention;
     }
 
     public Template createTemplate(Reader reader) throws CompilationFailedException, ClassNotFoundException, IOException {
@@ -325,6 +331,17 @@ public class XmlTemplateEngine extends TemplateEngine {
         Script script = groovyShell.parse(scriptText);
         Template template = new XmlTemplate(script);
         return template;
+    }
+
+    public String getIndention() {
+        return indention;
+    }
+
+    public void setIndention(String indention) {
+        if (indention == null) {
+            indention = DEFAULT_INDENTION;
+        }
+        this.indention = indention;
     }
 
     public String toString() {
