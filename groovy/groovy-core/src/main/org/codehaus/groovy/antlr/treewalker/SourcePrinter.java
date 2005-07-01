@@ -227,6 +227,12 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    public void visitLiteralThis(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,"this");
+        }
+    }
+
     public void visitLiteralTrue(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText());
@@ -265,6 +271,13 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitModifiers(GroovySourceAST t,int visit) {
         //do nothing
     }
+
+    public void visitNotEqual(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit," != ");
+        }
+    }
+
     public void visitNumInt(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText());
@@ -309,6 +322,16 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitPlus(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit," + ");
+        }
+    }
+
+    public void visitQuestion(GroovySourceAST t, int visit) {
+        // ternary operator
+        if (visit == OPENING_VISIT) {
+            print(t,visit,"?");
+        }
+        if (visit == SUBSEQUENT_VISIT) {
+            print(t,visit,":");
         }
     }
 

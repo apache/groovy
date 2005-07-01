@@ -23,7 +23,7 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
-/**
+/**                                                  
  * Helper Class for Antlr AST traversal and visitation.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
@@ -270,12 +270,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
             default                                             :   v.visitDefault(ast,n);                      break;
         }
     }
-    protected abstract void accept(GroovySourceAST currentNode, boolean followSiblings);
-
-    protected void accept(GroovySourceAST currentNode) {
-        accept(currentNode,true);
-    }
-
+    protected abstract void accept(GroovySourceAST currentNode);
 
     protected void accept_v_FirstChildsFirstChild_v_Child2_Child3_v_Child4_v___v_LastChild(GroovySourceAST t) {
         openingVisit(t);
@@ -302,18 +297,26 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         skip(expr);
         accept(expr.childAt(0));
         closingVisit(t);
-        acceptSiblings(expr,true);
+        acceptSiblings(expr);
     }
 
+    protected void accept_FirstChild_v_SecondChild_v_ThirdChild_v(GroovySourceAST t) {
+        accept(t.childAt(0));
+        openingVisit(t);
+        accept(t.childAt(1));
+        subsequentVisit(t);
+        accept(t.childAt(2));
+        closingVisit(t);
+    }
     protected void accept_v_FirstChild_v_SecondChild_v___LastChild_v(GroovySourceAST t) {
         openingVisit(t);
         GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
         if (child != null){
-            accept(child,false);
+            accept(child);
             GroovySourceAST sibling = (GroovySourceAST)child.getNextSibling();
             while (sibling != null) {
                 subsequentVisit(t);
-                accept(sibling,false);
+                accept(sibling);
                 sibling = (GroovySourceAST)sibling.getNextSibling();
             }
         }
@@ -326,11 +329,11 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         closingVisit(t);
     }
 
-    protected void accept_v_AllChildren_v_Siblings(GroovySourceAST t, boolean followSiblings) {
+    protected void accept_v_AllChildren_v_Siblings(GroovySourceAST t) {
         openingVisit(t);
         acceptChildren(t);
         closingVisit(t);
-        acceptSiblings(t,followSiblings);
+        acceptSiblings(t);
     }
 
     protected void accept_v_AllChildren_v(GroovySourceAST t) {
@@ -343,23 +346,23 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         accept(t.childAt(0));
         openingVisit(t);
         closingVisit(t);
-        acceptSiblings(t.childAt(0),true);
+        acceptSiblings(t.childAt(0));
     }
     protected void accept_v_FirstChild_v_RestOfTheChildren(GroovySourceAST t) {
         accept_v_FirstChild_v(t);
-        acceptSiblings(t.childAt(0),true);
+        acceptSiblings(t.childAt(0));
     }
 
     protected void accept_v_FirstChild_v_RestOfTheChildren_v(GroovySourceAST t) {
         openingVisit(t);
         accept(t.childAt(0));
         subsequentVisit(t);
-        acceptSiblings(t.childAt(0),true);
+        acceptSiblings(t.childAt(0));
         closingVisit(t);
     }
 
-    protected void acceptSiblings(GroovySourceAST t, boolean followSiblings) {
-        if (followSiblings && t != null) {
+    protected void acceptSiblings(GroovySourceAST t) {
+        if (t != null) {
             GroovySourceAST sibling = (GroovySourceAST)t.getNextSibling();
             while (sibling != null) {
                 accept(sibling);
@@ -372,7 +375,7 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
         if (child != null){
             accept(child);
-            acceptSiblings(child,true);
+            acceptSiblings(child);
         }
     }
 

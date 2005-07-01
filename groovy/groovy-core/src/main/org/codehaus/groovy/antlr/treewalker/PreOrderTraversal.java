@@ -45,17 +45,9 @@ public class PreOrderTraversal extends TraversalHelper {
         return null;
     }
 
-    public void accept(GroovySourceAST currentNode,boolean ignoreSiblings) {
+    public void accept(GroovySourceAST currentNode) {
         openingVisit(currentNode);
         acceptChildren(currentNode);
         closingVisit(currentNode);
-    }
-
-    private void acceptSiblings(GroovySourceAST t) {
-        GroovySourceAST sibling = (GroovySourceAST)t.getNextSibling();
-        while (sibling != null) {
-            accept(sibling);
-            sibling = (GroovySourceAST)sibling.getNextSibling();
-        }
     }
 }

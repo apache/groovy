@@ -53,6 +53,7 @@ public class SourceCodeTraversal extends TraversalHelper {
 
         // process each node in turn
         accept((GroovySourceAST)t);
+        acceptSiblings((GroovySourceAST)t);
 
         tearDown();
         return null;
@@ -77,7 +78,7 @@ public class SourceCodeTraversal extends TraversalHelper {
         }
     }
 
-    protected void accept(GroovySourceAST currentNode, boolean followSiblings) {
+    protected void accept(GroovySourceAST currentNode) {
         if (currentNode != null && unvisitedNodes != null && unvisitedNodes.size() > 0) {
             GroovySourceAST t = currentNode;
 
@@ -86,11 +87,9 @@ public class SourceCodeTraversal extends TraversalHelper {
             }
 
             switch (t.getType()) {
-                case GroovyTokenTypes.EXPR:
-                case GroovyTokenTypes.IMPORT:
-                case GroovyTokenTypes.PACKAGE_DEF:
-                case GroovyTokenTypes.VARIABLE_DEF:
-                    accept_v_AllChildren_v_Siblings(t, followSiblings);
+
+                case GroovyTokenTypes.QUESTION:
+                    accept_FirstChild_v_SecondChild_v_ThirdChild_v(t);
                     break;
 
                 case GroovyTokenTypes.ELIST:
@@ -98,14 +97,20 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
                     break;
 
+                case GroovyTokenTypes.EXPR:
+                case GroovyTokenTypes.IMPORT:
+                case GroovyTokenTypes.PACKAGE_DEF:
+                case GroovyTokenTypes.VARIABLE_DEF:
                 case GroovyTokenTypes.METHOD_DEF:
+                case GroovyTokenTypes.OBJBLOCK:
                 case GroovyTokenTypes.PARAMETER_DEF:
                 case GroovyTokenTypes.SLIST:
                     accept_v_AllChildren_v(t);
                     break;
 
-                case GroovyTokenTypes.EQUAL:
                 case GroovyTokenTypes.ASSIGN:
+                case GroovyTokenTypes.EQUAL:
+                case GroovyTokenTypes.NOT_EQUAL:
                     if (t.childAt(1) != null) {
                         accept_FirstChild_v_RestOfTheChildren(t);
                     } else {
@@ -148,6 +153,5 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
             }
         }
-        //acceptSiblings(currentNode,followSiblings);
     }
 }
