@@ -412,8 +412,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         else if (name.equals("boolean")) {
             return prefix + "Z";
         }
-        
-        throw new AssertionError(false);
+        // no primitive
+        return prefix+"L"+name+";";
     }
     
     private boolean hasEqualParameterTypes(Parameter[] first, Parameter[] second) {
