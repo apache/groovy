@@ -4,23 +4,51 @@
     version="2.4">
 
   <servlet>
-    <servlet-name>groovy</servlet-name>
+    <servlet-name>Groovlet</servlet-name>
     <servlet-class>groovy.servlet.GroovyServlet</servlet-class>
   </servlet>
+    
+  <servlet>
+    <servlet-name>Template|GSP</servlet-name>
+    <servlet-class>groovy.servlet.TemplateServlet</servlet-class>
+  </servlet>
+  
+  <servlet>
+    <servlet-name>Template|GString</servlet-name>
+    <servlet-class>groovy.servlet.TemplateServlet</servlet-class>
+    <init-param>
+      <param-name>templateEngine</param-name>
+      <param-value>groovy.text.GStringTemplateEngine</param-value>
+    </init-param>
+  </servlet>
+  
+  <servlet>
+    <servlet-name>Template|XML</servlet-name>
+    <servlet-class>groovy.servlet.TemplateServlet</servlet-class>
+    <init-param>
+      <param-name>templateEngine</param-name>
+      <param-value>groovy.text.XmlTemplateEngine</param-value>
+    </init-param>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>Template|GSP</servlet-name>
+    <url-pattern>*.html</url-pattern>
+  </servlet-mapping>
+  
+  <servlet-mapping>
+    <servlet-name>Template|XML</servlet-name>
+    <url-pattern>*.xhtml</url-pattern>
+  </servlet-mapping>
 
   <servlet-mapping>
-    <servlet-name>groovy</servlet-name>
+    <servlet-name>Groovlet</servlet-name>
     <url-pattern>*.groovy</url-pattern>
   </servlet-mapping>
 
-  <servlet-mapping>
-    <servlet-name>groovy</servlet-name>
-    <url-pattern>*.gdo</url-pattern>
-  </servlet-mapping>
-
   <welcome-file-list>
+    <welcome-file>index.xhtml</welcome-file>
     <welcome-file>index.html</welcome-file>
-    <welcome-file>index.htm</welcome-file>
     <welcome-file>index.jsp</welcome-file>
     <welcome-file>index.jspx</welcome-file>
     <welcome-file>index.groovy</welcome-file>
