@@ -58,188 +58,193 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author Christian Stein
  */
-public abstract class AbstractHttpServlet extends HttpServlet implements
-    ResourceConnector {
+public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 
-  /**
-   * Content type of the HTTP response.
-   */
-  public static final String CONTENT_TYPE_TEXT_HTML = "text/html";
+    /**
+     * Content type of the HTTP response.
+     */
+    public static final String CONTENT_TYPE_TEXT_HTML = "text/html";
 
-  /**
-   * Servlet API include key name: path_info
-   */
-  public static final String INC_PATH_INFO = "javax.servlet.include.path_info";
-  
-  /* Not used, yet. See comments in getScriptUri(HttpServletRequest request)!
-   * Servlet API include key name: request_uri
-   */
-  // public static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
-  
-  /**
-   * Servlet API include key name: servlet_path
-   */
-  public static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
+    /**
+     * Servlet API include key name: path_info
+     */
+    public static final String INC_PATH_INFO = "javax.servlet.include.path_info";
 
-  /**
-   * Debug flag logging the class the class loader of the request.
-   */
-  private boolean logRequestClassAndLoaderOnce;
-  
-  /**
-   * Servlet (or the web application) context.
-   */
-  protected ServletContext servletContext;
-  
-  /**
-   * Initializes all fields.
-   * 
-   */
-  public AbstractHttpServlet() {
-    this.logRequestClassAndLoaderOnce = true;
-    this.servletContext = null;
-  }
+    /* Not used, yet. See comments in getScriptUri(HttpServletRequest request)!
+     * Servlet API include key name: request_uri
+     */
+    // public static final String INC_REQUEST_URI = "javax.servlet.include.request_uri";
+    /**
+     * Servlet API include key name: servlet_path
+     */
+    public static final String INC_SERVLET_PATH = "javax.servlet.include.servlet_path";
 
-  /**
-   * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
-   */
-  public URLConnection getResourceConnection(String name)
-      throws ResourceException {
-    try {
-      URL url = servletContext.getResource("/" + name);
-      if (url == null) {
-        url = servletContext.getResource("/WEB-INF/groovy/" + name);
-        if (url == null) {
-          throw new ResourceException("Resource " + name + " not found");
+    /**
+     * Debug flag logging the class the class loader of the request.
+     */
+    private boolean logRequestClassAndLoaderOnce;
+
+    /**
+     * Mirrors the static value of the reflection flag in MetaClass.
+     */
+    protected boolean metaClassUseReflection;
+
+    /**
+     * Servlet (or the web application) context.
+     */
+    protected ServletContext servletContext;
+
+    /**
+     * Initializes all fields.
+     */
+    public AbstractHttpServlet() {
+        this.logRequestClassAndLoaderOnce = false;
+        this.metaClassUseReflection = false;
+        this.servletContext = null;
+    }
+
+    /**
+     * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
+     */
+    public URLConnection getResourceConnection(String name) throws ResourceException {
+        try {
+            URL url = servletContext.getResource("/" + name);
+            if (url == null) {
+                url = servletContext.getResource("/WEB-INF/groovy/" + name);
+                if (url == null) {
+                    throw new ResourceException("Resource " + name + " not found");
+                }
+            }
+            return url.openConnection();
+        } catch (IOException ioe) {
+            throw new ResourceException("Problem reading resource named \"" + name + "\"");
         }
-      }
-      return url.openConnection();
-    }
-    catch (IOException ioe) {
-      throw new ResourceException("Problem reading resource " + name);
-    }
-  }
-
-  /**
-   * Returns the include-aware uri of the script or template file.
-   * 
-   * @param request
-   *  the http request to analyze
-   * @return the include-aware uri either parsed from request attributes or
-   *  hints provided by the servlet container
-   */
-  protected String getScriptUri(HttpServletRequest request) {
-    // 
-    if (logRequestClassAndLoaderOnce) {
-      log("Logging request class and its class loader:");
-      log(" c = request.getClass() :\"" + request.getClass()+ "\"");
-      log(" l = c.getClassLoader() :\"" + request.getClass().getClassLoader()+ "\"");
-      log(" l.getClass()           :\"" + request.getClass().getClassLoader().getClass()+ "\"");
-      logRequestClassAndLoaderOnce = false;
     }
 
-    //
-    // NOTE: This piece of code is heavily inspired by Apaches Jasper2!
-    // 
-    // http://cvs.apache.org/viewcvs.cgi/jakarta-tomcat-jasper/jasper2/ \
-    //        src/share/org/apache/jasper/servlet/JspServlet.java?view=markup
-    //
-    // Why doesn't it use request.getRequestURI() or INC_REQUEST_URI?
-    //
+    /**
+     * Returns the include-aware uri of the script or template file.
+     * 
+     * @param request
+     *  the http request to analyze
+     * @return the include-aware uri either parsed from request attributes or
+     *  hints provided by the servlet container
+     */
+    protected String getScriptUri(HttpServletRequest request) {
+        /*
+         * Log some debug information for http://jira.codehaus.org/browse/GROOVY-861
+         */
+        if (logRequestClassAndLoaderOnce) {
+            log("Logging request class and its class loader:");
+            log(" c = request.getClass() :\"" + request.getClass() + "\"");
+            log(" l = c.getClassLoader() :\"" + request.getClass().getClassLoader() + "\"");
+            log(" l.getClass()           :\"" + request.getClass().getClassLoader().getClass() + "\"");
+            logRequestClassAndLoaderOnce = false;
+        }
 
-    String uri = null;
-    String info = null;
+        //
+        // NOTE: This piece of code is heavily inspired by Apaches Jasper2!
+        // 
+        // http://cvs.apache.org/viewcvs.cgi/jakarta-tomcat-jasper/jasper2/ \
+        //        src/share/org/apache/jasper/servlet/JspServlet.java?view=markup
+        //
+        // Why doesn't it use request.getRequestURI() or INC_REQUEST_URI?
+        //
 
-    //
-    // Check to see if the requested script/template source file has been the
-    // target of a RequestDispatcher.include().
-    //
-    uri = (String) request.getAttribute(INC_SERVLET_PATH);
-    if (uri != null) {
-      //
-      // Requested script/template file has been target of 
-      // RequestDispatcher.include(). Its path is assembled from the relevant
-      // javax.servlet.include.* request attributes and returned!
-      //
-      info = (String) request.getAttribute(INC_PATH_INFO);
-      if (info != null) {
-        uri += info;
-      }
-      return uri;
+        String uri = null;
+        String info = null;
+
+        //
+        // Check to see if the requested script/template source file has been the
+        // target of a RequestDispatcher.include().
+        //
+        uri = (String) request.getAttribute(INC_SERVLET_PATH);
+        if (uri != null) {
+            //
+            // Requested script/template file has been target of 
+            // RequestDispatcher.include(). Its path is assembled from the relevant
+            // javax.servlet.include.* request attributes and returned!
+            //
+            info = (String) request.getAttribute(INC_PATH_INFO);
+            if (info != null) {
+                uri += info;
+            }
+            return uri;
+        }
+
+        //
+        // Requested script/template file has not been the target of a 
+        // RequestDispatcher.include(). Reconstruct its path from the request's
+        // getServletPath() and getPathInfo() results.
+        //
+        uri = request.getServletPath();
+        info = request.getPathInfo();
+        if (info != null) {
+            uri += info;
+        }
+
+        return uri;
     }
 
-    //
-    // Requested script/template file has not been the target of a 
-    // RequestDispatcher.include(). Reconstruct its path from the request's
-    // getServletPath() and getPathInfo() results.
-    //
-    uri = request.getServletPath();
-    info = request.getPathInfo();
-    if (info != null) {
-      uri += info;
+    /**
+     * Parses the http request for the real script or template source file.
+     * 
+     * @param request
+     *  the http request to analyze
+     * @param context
+     *  the context of this servlet used to get the real path string
+     * @return a file object using an absolute file path name
+     */
+    protected File getScriptUriAsFile(HttpServletRequest request) {
+        String uri = getScriptUri(request);
+        String real = servletContext.getRealPath(uri);
+        File file = new File(real).getAbsoluteFile();
+
+        // log("\tInclude-aware URI: " + uri);
+        // log("\tContext real path: " + real); // context.getRealPath(uri)
+        // log("\t             File: " + file);
+        // log("\t      File exists? " + file.exists());
+        // log("\t    File can read? " + file.canRead());
+        // log("\t      ServletPath: " + request.getServletPath());
+        // log("\t         PathInfo: " + request.getPathInfo()); 
+        // log("\t       RequestURI: " + request.getRequestURI());
+        // log("\t      QueryString: " + request.getQueryString());
+
+        // //log("\t  Request Params: ");
+        // //Enumeration e = request.getParameterNames();
+        // //while (e.hasMoreElements()) {
+        // //  String name = (String) e.nextElement();
+        // //  log("\t\t " + name + " = " + request.getParameter(name));
+        // //}   
+
+        return file;
     }
 
-    return uri;
-  }
+    /**
+     * Overrides the generic init method to set some debug flags.
+     * 
+     * @param config
+     *  the servlet coniguration provided by the container
+     * @throws ServletException if init() method defined in super class 
+     *  javax.servlet.GenericServlet throws it
+     */
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+        this.servletContext = config.getServletContext();
 
-  /**
-   * Parses the http request for the real script or template source file.
-   * 
-   * @param request
-   *  the http request to analyze
-   * @param context
-   *  the context of this servlet used to get the real path string
-   * @return a file object using an absolute file path name
-   */
-  protected File getScriptUriAsFile(HttpServletRequest request) {
-    String uri = getScriptUri(request);
-    String real = servletContext.getRealPath(uri);
-    File file = new File(real).getAbsoluteFile();
+        String value;
 
-    // log("\tInclude-aware URI: " + uri);
-    // log("\tContext real path: " + real); // context.getRealPath(uri)
-    // log("\t             File: " + file);
-    // log("\t      File exists? " + file.exists());
-    // log("\t    File can read? " + file.canRead());
-    // log("\t      ServletPath: " + request.getServletPath());
-    // log("\t         PathInfo: " + request.getPathInfo()); 
-    // log("\t       RequestURI: " + request.getRequestURI());
-    // log("\t      QueryString: " + request.getQueryString());
+        value = config.getInitParameter("MetaClass.useReflection");
+        if (value != null) {
+            this.metaClassUseReflection = Boolean.valueOf(value).booleanValue();
+        }
+        log("Setting MetaClass reflection to " + metaClassUseReflection + ".");
+        MetaClass.setUseReflection(metaClassUseReflection);
 
-    // //log("\t  Request Params: ");
-    // //Enumeration e = request.getParameterNames();
-    // //while (e.hasMoreElements()) {
-    // //  String name = (String) e.nextElement();
-    // //  log("\t\t " + name + " = " + request.getParameter(name));
-    // //}   
+        value = config.getInitParameter("logRequestClassAndLoaderOnce");
+        if (value != null) {
+            this.logRequestClassAndLoaderOnce = Boolean.valueOf(value).booleanValue();
+        }
 
-    return file;
-  }
-
-  /**
-   * Overrides the generic init method.
-   * 
-   * Enables a fix, that tells Groovy to use (slower) reflection than compiling
-   * metaclass proxies. This is needed due to some container implementation hide
-   * their classes from the servlet by using different class loaders. See
-   * {@link http://jira.codehaus.org/browse/GROOVY-861} for details.
-   * 
-   * @param config
-   *  the servlet coniguration provided by the container
-   * @throws ServletException if init() method defined in super class 
-   *  javax.servlet.GenericServlet throws it
-   */
-  public void init(ServletConfig config) throws ServletException {
-    super.init(config);
-    this.servletContext = config.getServletContext();
-
-    // FIXME http://jira.codehaus.org/browse/GROOVY-861
-    MetaClass.setUseReflection(true);
-    String value = config.getInitParameter("logRequestClassAndLoaderOnce");
-    if (value != null) {
-      this.logRequestClassAndLoaderOnce = Boolean.valueOf(value).booleanValue();
     }
-
-  }
 
 }
