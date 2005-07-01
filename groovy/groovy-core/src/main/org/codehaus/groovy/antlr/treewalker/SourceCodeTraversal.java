@@ -43,20 +43,13 @@ public class SourceCodeTraversal extends TraversalHelper {
      * gather, sort and process all unvisited nodes
      * @param t the AST to process
      */
-    public AST process(AST t) {
-        setUp();
-
+    public void setUp(GroovySourceAST t) {
+        super.setUp(t);
+        
         // gather and sort all unvisited AST nodes
         unvisitedNodes = new ArrayList();
         traverse((GroovySourceAST)t);
         Collections.sort(unvisitedNodes);
-
-        // process each node in turn
-        accept((GroovySourceAST)t);
-        acceptSiblings((GroovySourceAST)t);
-
-        tearDown();
-        return null;
     }
 
     /**

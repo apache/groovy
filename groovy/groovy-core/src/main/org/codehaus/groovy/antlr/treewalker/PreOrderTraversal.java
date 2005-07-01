@@ -17,7 +17,6 @@
  **/
 package org.codehaus.groovy.antlr.treewalker;
 
-import antlr.collections.AST;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 
 /**
@@ -26,23 +25,14 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-
 public class PreOrderTraversal extends TraversalHelper {
+    
     /**
      * A simple preorder traversal over the supplied antlr AST.
      * @param visitor the Visitor to call for each node visited 
      */
     public PreOrderTraversal(Visitor visitor) {
         super(visitor);
-    }
-
-    public AST process(AST t) {
-        // process each node in turn
-        setUp();
-        accept((GroovySourceAST)t);
-        acceptSiblings((GroovySourceAST)t);
-        tearDown();
-        return null;
     }
 
     public void accept(GroovySourceAST currentNode) {
