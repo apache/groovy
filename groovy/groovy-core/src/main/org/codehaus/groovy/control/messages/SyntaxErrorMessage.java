@@ -21,6 +21,7 @@ public class SyntaxErrorMessage extends Message {
     public SyntaxErrorMessage(SyntaxException cause, SourceUnit source) {
         this.cause = cause;
         this.source = source;
+        cause.setSourceLocator(source.getName());
     }
 
 
