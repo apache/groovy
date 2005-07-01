@@ -4061,12 +4061,30 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * This method is used to throw useful exceptions when the eachFile* and eachDir closure methods
+     * are used incorrectly.
+     * 
+     * @param dir The directory to check
+     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
+     */
+    private static void checkDir(File dir) throws FileNotFoundException, IllegalArgumentException {
+        if (!dir.exists())
+          throw new FileNotFoundException(dir.getAbsolutePath());
+        if (!dir.isDirectory())
+          throw new IllegalArgumentException("The provided File object is not a directory: " + dir.getAbsolutePath());
+    }
+
+    /**
      * Invokes the closure for each file in the given directory
      *
      * @param self    a File
      * @param closure a closure
+     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachFile(File self, Closure closure) {
+    public static void eachFile(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
             closure.call(files[i]);
@@ -4079,8 +4097,11 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self    a File
      * @param closure a closure
+     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachFileRecurse(File self, Closure closure) {
+    public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
@@ -4098,8 +4119,11 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self    a directory
      * @param closure a closure
+     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachDir(File self, Closure closure) {
+    public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
@@ -4116,8 +4140,11 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param self   a file
      * @param filter the filter to perform on the directory (using the isCase(object) method)
      * @param closure
+     * @throws FileNotFoundException Thrown if the given directory does not exist
+     * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
      */
-    public static void eachFileMatch(File self, Object filter, Closure closure) {
+    public static void eachFileMatch(File self, Object filter, Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
         File[] files = self.listFiles();
         MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {

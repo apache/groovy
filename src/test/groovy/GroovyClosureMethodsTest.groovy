@@ -123,6 +123,24 @@ class GroovyClosureMethodsTest extends GroovyTestCase {
         println ""
     }
 
+    void testEachFileOnNonExistingDir() {
+        shouldFail {
+            File dir = new File("SomeNonExistingDir")
+            dir.eachFile {
+                println "${it} "
+            }
+        }
+    }
+
+    void testEachFileOnNonDirFile() {
+        shouldFail {
+            File dir = new File("${dirname_source}/GroovyClosureMethodsTest.groovy")
+            dir.eachFile {
+                println "${it} "
+            }
+        }
+    }
+
     void testRunAfter() {
         def timer = new Timer()
         boolean status = false
