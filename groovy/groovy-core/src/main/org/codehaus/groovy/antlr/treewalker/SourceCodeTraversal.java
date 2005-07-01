@@ -148,5 +148,6 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
             }
         }
+        acceptSiblings(currentNode,followSiblings);
     }
 }
