@@ -23,6 +23,8 @@ import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
+import antlr.collections.AST;
+
 /**                                                  
  * Helper Class for Antlr AST traversal and visitation.
  *
@@ -39,10 +41,10 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         this.v = visitor;
     }
 
-    protected void setUp() {
+    protected void setUp(GroovySourceAST ast) {
         v.setUp();
     }
-    protected void tearDown() {
+    protected void tearDown(GroovySourceAST ast) {
         v.tearDown();
     }
 
@@ -399,4 +401,15 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         int n = Visitor.CLOSING_VISIT;
         visitNode(t, n);
     }
+    
+    public AST process(AST t) {
+        GroovySourceAST node = (GroovySourceAST) t;
+        
+        // process each node in turn
+        setUp(node);
+        accept(node);
+        acceptSiblings(node);
+        tearDown(node);
+        return null;
+    }    
 }
