@@ -122,6 +122,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("new Foo()", pretty("new Foo()"));
     }
 
+    public void testLiteralNull() throws Exception {
+        assertEquals("def foo = null", pretty("def foo=null"));
+    }
+
     public void testLiteralPrivate() throws Exception {
         //todo assertEquals("private bar", pretty("private bar"));
     }
@@ -130,6 +134,9 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("static void foo() {}", pretty("static void foo() {}"));
     }
 
+    public void testLiteralThis() throws Exception {
+        assertEquals("this.x = this.y", pretty("this.x=this.y"));
+    }
     public void testLiteralTrue() throws Exception {
         assertEquals("foo = true", pretty("foo = true"));
     }
@@ -155,12 +162,15 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testMethodDef() throws Exception {
         assertEquals("def foo(int bar) {}", pretty("def foo(int bar) {}"));
+        //todo assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
     }
 
     public void testModifiers() throws Exception {
         //todo assertEquals("", pretty(""));
     }
-
+    public void testNotEqual() throws Exception {
+        assertEquals("a != b", pretty("a!=b"));
+    }
     public void testNumInt() throws Exception {
         assertEquals("a = 12", pretty("a=12"));
     }
@@ -186,6 +196,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testPlus() throws Exception {
         assertEquals("a + b", pretty("a+b"));
+    }
+    public void testQuestion() throws Exception {
+        assertEquals("foo == bar?10:20", pretty("foo==bar?10:20"));
     }
     public void testSlist() throws Exception {
         assertEquals("if (true) {foo}", pretty("if (true) {foo}"));
