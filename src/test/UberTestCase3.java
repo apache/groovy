@@ -5,10 +5,13 @@
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
  * @version $Revision$
  */
-import junit.framework.*;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 public class UberTestCase3 extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        suite.addTestSuite(groovy.lang.GroovyClassLoaderTest.class);
         suite.addTestSuite(org.codehaus.groovy.antlr.GroovySourceASTTest.class);
         suite.addTestSuite(org.codehaus.groovy.antlr.SourceBufferTest.class);
         suite.addTestSuite(org.codehaus.groovy.antlr.treewalker.SourcePrinterTest.class);
@@ -30,6 +33,8 @@ public class UberTestCase3 extends TestCase {
         suite.addTestSuite(org.codehaus.groovy.classgen.RunGroovyTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.TupleListTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.VerifierCodeVisitorTest.class);
+        suite.addTestSuite(org.codehaus.groovy.control.CompilationUnitTest.class);
+        suite.addTestSuite(org.codehaus.groovy.control.messages.SyntaxErrorMessageTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.DefaultGroovyMethodsTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InheritedInterfaceMethodTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.InvokeGroovyMethodTest.class);
