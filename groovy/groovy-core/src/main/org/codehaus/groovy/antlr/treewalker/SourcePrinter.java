@@ -209,6 +209,12 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    public void visitLiteralNull(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,t.getText());
+        }
+    }
+
     public void visitLiteralPrivate(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText() + " ");
