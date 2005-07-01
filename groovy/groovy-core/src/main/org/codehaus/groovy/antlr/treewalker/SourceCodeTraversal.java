@@ -80,13 +80,12 @@ public class SourceCodeTraversal extends TraversalHelper {
             }
 
             switch (t.getType()) {
-
-                case GroovyTokenTypes.QUESTION:
+                case GroovyTokenTypes.QUESTION: // expr?foo:bar
                     accept_FirstChild_v_SecondChild_v_ThirdChild_v(t);
                     break;
 
-                case GroovyTokenTypes.ELIST:
-                case GroovyTokenTypes.STRING_CONSTRUCTOR:
+                case GroovyTokenTypes.ELIST: // a,b,c
+                case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
                     break;
 
@@ -95,14 +94,14 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.PACKAGE_DEF:
                 case GroovyTokenTypes.VARIABLE_DEF:
                 case GroovyTokenTypes.METHOD_DEF:
-                case GroovyTokenTypes.OBJBLOCK:
+                case GroovyTokenTypes.OBJBLOCK: //class Foo {def bar()}  <-- this block
                 case GroovyTokenTypes.PARAMETER_DEF:
-                case GroovyTokenTypes.SLIST:
+                case GroovyTokenTypes.SLIST: // list of expressions, variable defs etc
                     accept_v_AllChildren_v(t);
                     break;
 
-                case GroovyTokenTypes.ASSIGN:
-                case GroovyTokenTypes.EQUAL:
+                case GroovyTokenTypes.ASSIGN: // a=b
+                case GroovyTokenTypes.EQUAL: // a==b
                 case GroovyTokenTypes.NOT_EQUAL:
                     if (t.childAt(1) != null) {
                         accept_FirstChild_v_RestOfTheChildren(t);
@@ -111,13 +110,15 @@ public class SourceCodeTraversal extends TraversalHelper {
                     }
                     break;
 
-                case GroovyTokenTypes.CLASS_DEF:
-                case GroovyTokenTypes.DOT:
-                case GroovyTokenTypes.LABELED_ARG:
-                case GroovyTokenTypes.MEMBER_POINTER:
+                case GroovyTokenTypes.CLASS_DEF: // class Foo...
+                case GroovyTokenTypes.DOT: // foo.bar
+                case GroovyTokenTypes.GT: // a > b
+                case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
+                case GroovyTokenTypes.LT: // a < b
+                case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
                 case GroovyTokenTypes.METHOD_CALL:
                 case GroovyTokenTypes.PLUS:
-                case GroovyTokenTypes.STAR:
+                case GroovyTokenTypes.STAR: // a * b   or    import foo.*
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
 
@@ -126,18 +127,18 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_v_FirstChildsFirstChild_v_RestOfTheChildren(t);
                     break;
 
-                case GroovyTokenTypes.LITERAL_if:
+                case GroovyTokenTypes.LITERAL_if: // if (grandchild) {child1} else {child2} ...
                     accept_v_FirstChildsFirstChild_v_Child2_Child3_v_Child4_v___v_LastChild(t);
                     break;
 
-                case GroovyTokenTypes.CLOSED_BLOCK:
+                case GroovyTokenTypes.CLOSED_BLOCK: // [1,2,3].each {foo(it)}  <-- Closure
                     accept_v_FirstChild_v_RestOfTheChildren_v(t);
                     break;
 
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_new:
                 case GroovyTokenTypes.LITERAL_try:
-                case GroovyTokenTypes.TYPECAST:
+                case GroovyTokenTypes.TYPECAST: // (String)itr.next()
                     accept_v_FirstChild_v_RestOfTheChildren(t);
                     break;
 

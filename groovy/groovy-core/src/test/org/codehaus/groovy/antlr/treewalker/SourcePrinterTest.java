@@ -67,11 +67,15 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testExpr() throws Exception {
-        //todo assertEquals("foo(bar);mooky(bar)", pretty("foo(bar);mooky(bar)"));
+        //todo assertEquals("foo(bar) mooky(bar)", pretty("foo(bar) mooky(bar)"));
     }
 
     public void testExtendsClause() throws Exception {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
+    }
+
+    public void testGt() throws Exception {
+        assertEquals("if (2070 > 354) {}", pretty("if (2070 > 354) {}"));
     }
 
     public void testIdent() throws Exception {
@@ -106,6 +110,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         //todo assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
+    public void testLiteralFalse() throws Exception {
+        assertEquals("if (false) {}", pretty("if (false) {}"));
+    }
+
     public void testLiteralFloat() throws Exception {
         assertEquals("float x", pretty("float x"));
     }
@@ -130,6 +138,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         //todo assertEquals("private bar", pretty("private bar"));
     }
 
+    public void testLiteralReturn() throws Exception {
+        assertEquals("def foo() {return false}", pretty("def  foo() { return false }"));
+    }
+
     public void testLiteralStatic() throws Exception {
         assertEquals("static void foo() {}", pretty("static void foo() {}"));
     }
@@ -151,6 +163,10 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralWhile() throws Exception {
         assertEquals("while (true) {}", pretty("while(true){}"));
+    }
+
+    public void testLt() throws Exception {
+        assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
     }
 
     public void testMemberPointer() throws Exception {
