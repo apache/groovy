@@ -684,4 +684,13 @@ public class GroovyClassLoader extends SecureClassLoader {
         additionalPaths.add(path);
         searchPaths = null;
     }
+
+    /**
+     * <p>Returns all Groovy classes loaded by this class loader.
+     *
+     * @return all classes loaded by this class loader
+     */
+    public Class[] getLoadedClasses() {
+        return (Class[])this.cache.values().toArray(new Class[] {});
+    }
 }
