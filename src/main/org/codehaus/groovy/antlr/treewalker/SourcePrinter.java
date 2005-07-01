@@ -129,6 +129,12 @@ public class SourcePrinter extends VisitorAdapter {
             }
         }
     }
+    public void visitGt(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit," > ");
+        }
+    }
+
     public void visitIdent(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText());
@@ -181,6 +187,11 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,")");
         }
     }
+    public void visitLiteralFalse(GroovySourceAST t,int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,t.getText());
+        }
+    }
 
     public void visitLiteralFloat(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
@@ -221,6 +232,12 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    public void visitLiteralReturn(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,t.getText() + " ");
+        }
+    }
+
     public void visitLiteralStatic(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText() + " ");
@@ -253,6 +270,12 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,t.getText() + " (");
         } else {
             print(t,visit,")");
+        }
+    }
+
+    public void visitLt(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit," < ");
         }
     }
 
