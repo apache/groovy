@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src/web"/>
+	<classpathentry kind="src" path="test/web"/>
+	<classpathentry kind="src" path="test/commons"/>
+	<classpathentry kind="src" path="src/commons"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/asm-2.0.jar"/>
+	<classpathentry kind="lib" path="lib/asm-util-2.0.jar"/>
+	<classpathentry kind="lib" path="lib/junit.jar"/>
+	<classpathentry kind="lib" path="lib/antlr-2.7.5.jar"/>
+	<classpathentry kind="lib" path="lib/spring.jar"/>
+	<classpathentry kind="lib" path="lib/commons-logging.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="lib/springmodules-sandbox.jar"/>
+	<classpathentry kind="lib" path="lib/spring-mock.jar"/>
+	<classpathentry kind="lib" path="lib/groovy-all-1.0-jsr-03-SNAPSHOT.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

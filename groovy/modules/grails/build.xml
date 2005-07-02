@@ -1,0 +1,56 @@
+<project name="grails" default="test" basedir=".">
+
+	<property file="build.properties"/>
+	
+	<path id="classpath">
+		<fileset dir="${grails.lib}">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="clean">
+		<delete dir="${grails.build}"/>
+		<delete dir="${grails.test.build}"/>
+	</target>
+			
+	<target name="init" depends="clean">
+		<mkdir dir="${grails.build}"/>
+		<mkdir dir="${grails.test.build}"/>
+		<mkdir dir="${grails.test.reports}"/>
+	</target>
+	
+	<target name="build" depends="init">
+		<javac debug="on" deprecation="on" destdir="${grails.build}" source="1.3" target="1.3">
+			<src path="${grails.src.commons}"/>
+			<src path="${grails.src.web}"/>
+			<classpath refid="classpath"/>
+		</javac>
+	</target>
+	
+	<target name="build-test" depends="build">
+		<javac debug="on" deprecation="on" destdir="${grails.test.build}" source="1.3" target="1.3" includes="**/*">			
+			<src path="${grails.test.src.commons}"/>
+			<src path="${grails.test.src.web}"/>
+			<classpath refid="classpath"/>
+			<classpath location="${grails.build}"/>
+		</javac>
+	</target>
+	
+	<target name="test" depends="build-test">
+		<junit>
+			<classpath refid="classpath"/>
+			<classpath location="${grails.build}"/>
+			<classpath location="${grails.test.build}"/>
+			<classpath location="${grails.test.src.web}"/>
+			
+			<formatter type="plain" usefile="no"/>
+			<formatter type="xml"/>
+			<batchtest todir="${grails.test.reports}" fork="yes">
+				<fileset dir="${grails.test.build}" includes="**/*Tests.class" excludes="**/Abstract*"/>
+			</batchtest>
+			
+		</junit>
+	</target>
+	
+	
+</project>
