@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/web"/>
-	<classpathentry kind="src" path="test/web"/>
-	<classpathentry kind="src" path="test/commons"/>
+	<classpathentry output="target/test-classes" kind="src" path="test/web"/>
+	<classpathentry output="target/test-classes" kind="src" path="test/commons"/>
 	<classpathentry kind="src" path="src/commons"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/asm-2.0.jar"/>
@@ -15,5 +15,5 @@
 	<classpathentry kind="lib" path="lib/springmodules-sandbox.jar"/>
 	<classpathentry kind="lib" path="lib/spring-mock.jar"/>
 	<classpathentry kind="lib" path="lib/groovy-all-1.0-jsr-03-SNAPSHOT.jar"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>
