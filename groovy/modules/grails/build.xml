@@ -1,4 +1,4 @@
-<project name="grails" default="test" basedir=".">
+<project name="grails" default="jar" basedir=".">
 
 	<property file="build.properties"/>
 	
@@ -17,6 +17,7 @@
 		<mkdir dir="${grails.build}"/>
 		<mkdir dir="${grails.test.build}"/>
 		<mkdir dir="${grails.test.reports}"/>
+		<mkdir dir="${grails.dist}"/>
 	</target>
 	
 	<target name="build" depends="init">
@@ -42,6 +43,7 @@
 			<classpath location="${grails.build}"/>
 			<classpath location="${grails.test.build}"/>
 			<classpath location="${grails.test.src.web}"/>
+			<classpath location="${grails.test.src.commons}"/>
 			
 			<formatter type="plain" usefile="no"/>
 			<formatter type="xml"/>
@@ -52,5 +54,9 @@
 		</junit>
 	</target>
 	
+	<target name="jar" depends="build-test">
+		<delete file="${grails.dist}/${grails.dist.jar}"/>
+		<jar destfile="${grails.dist}/${grails.dist.jar}" basedir="${grails.build}"/>
+	</target>
 	
 </project>
