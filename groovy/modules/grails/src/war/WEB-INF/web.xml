@@ -23,7 +23,7 @@
 	<!-- Map all requests to the Grails dispatcher servlet -->
 	<servlet-mapping>
 		<servlet-name>grails</servlet-name>
-		<url-pattern>/*</url-pattern>
+		<url-pattern>/app/*</url-pattern>
 	</servlet-mapping>
 	
 	
