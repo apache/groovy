@@ -15,10 +15,10 @@
  */ 
 package org.codehaus.groovy.grails.web.servlet.mvc;
 
-import java.util.Map;
-
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
+
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -77,13 +77,13 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 	 * @return the model
 	 */
 	public ModelAndView handleRequest(HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
+			HttpServletResponse response) throws Exception {		
 		// Step 1: determine the name of the controller.
 		// This maps to a slash + the name of the controller.
 		String uri = this.urlPathHelper.getLookupPathForRequest(request);
 		String[] uriParts = StringUtils.tokenizeToStringArray(uri, SLASH, true, true);
 		String controllerName = uriParts[0];
-		
+			
 		// Step 2: lookup the controller in the application.
 		GrailsControllerClass controllerClass = this.application.getController(controllerName);
 		if (controllerClass == null) {
@@ -127,7 +127,7 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 			}
 		} else if (returnValue instanceof Map) {
 			if (viewNameBlank) {
-				throw new NoViewNameDefinedException("Map instance returned by and view name specified for closure on property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
+				throw new NoViewNameDefinedException("Map instance returned by and no view name specified for closure on property [" + closurePropertyName + "] in controller [" + controllerClass.getFullName() + "]!");
 			} else {
 				return new ModelAndView(viewName, (Map)returnValue);
 			}
