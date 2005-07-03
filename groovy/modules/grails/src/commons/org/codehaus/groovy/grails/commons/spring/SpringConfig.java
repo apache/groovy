@@ -15,12 +15,14 @@
  */ 
 package org.codehaus.groovy.grails.commons.spring;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
+import org.springframework.util.Assert;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springmodules.beans.factory.drivers.Bean;
@@ -41,7 +43,11 @@ public class SpringConfig {
 	}
 
 	public Collection getBeanReferences() {
-		Collection beanReferences = null;
+		Collection beanReferences = new ArrayList();
+		StringBuffer urlMappings = new StringBuffer();
+		
+		Assert.notNull(application);
+		
 		
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
 		simpleGrailsController.setAutowire("byType");
@@ -63,6 +69,8 @@ public class SpringConfig {
 				continue;
 			}
 			String name = simpleController.getName().substring(0, 1).toLowerCase() + simpleController.getName().substring(1);
+//			urlMappings.append("/" + name + "*=simpleGrailsController");
+//			urlMappings.append("\n");
 			Bean controllerClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
 			controllerClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 			controllerClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getController"));
@@ -79,6 +87,8 @@ public class SpringConfig {
 			}
 			beanReferences.add(SpringConfigUtils.createBeanReference(name + "Controller", controller));
 		}
+		
+//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
 		
 		return beanReferences;
 	}
