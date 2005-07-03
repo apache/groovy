@@ -16,7 +16,7 @@
 package org.codehaus.groovy.grails.web.servlet.mvc.exceptions;
 
 /**
- * <p>Thrown when a closure has an incompatible parameter count.
+ * <p>Thrown when a closure has an incompatible parameter count for a controller implementation.
  * 
  * @author Steven Devijver
  * @since Jul 2, 2005
