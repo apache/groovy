@@ -35,20 +35,22 @@ import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDrive
  */
 public class GrailsDispatcherServlet extends DispatcherServlet {
 
-	private GrailsApplication application = null;
-	
+	private static final String GRAILS_APPLICATION_ID = "grailsApplication";
+		
 	public GrailsDispatcherServlet() {
 		super();
 	}
 
-	public void setApplication(GrailsApplication application) {
-		this.application = application;
-	}
-	
 	protected WebApplicationContext createWebApplicationContext(
 			WebApplicationContext parent) throws BeansException {
+		GrailsApplication application = (GrailsApplication)parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
 		SpringConfig springConfig = new SpringConfig(application);
-		return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), StringUtils.tokenizeToStringArray(
+		if (getContextConfigLocation() != null) {
+			return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), StringUtils.tokenizeToStringArray(
 				getContextConfigLocation(), ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS));
+		} else {
+			return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), null);
+		}
 	}
+	
 }
