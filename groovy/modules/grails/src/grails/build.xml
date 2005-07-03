@@ -1,0 +1,78 @@
+<project default="init">
+
+	<target name="init">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<mkdir dir="jsp"/>
+		<mkdir dir="grails-app"/>
+		<mkdir dir="lib"/>
+		<mkdir dir="spring"/>
+		<mkdir dir="war"/>
+		<mkdir dir="war/WEB-INF"/>
+		<copy todir="war/WEB-INF">
+			<fileset dir="${grails.home}/src/war/WEB-INF">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+		<copy todir="spring">
+			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
+				<include name="*.xml"/>
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="war">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<delete file="grails-app.war"/>
+		<delete dir="tmp"/>
+		<mkdir dir="tmp/war"/>
+		<copy todir="tmp/war">
+			<fileset dir="war">
+				<include name="WEB-INF/*.xml"/>
+			</fileset>
+		</copy>
+		<mkdir dir="tmp/war/WEB-INF/classes"/>
+		<touch file="tmp/war/WEB-INF/classes/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/lib"/>
+		<touch file="tmp/war/WEB-INF/lib/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/jsp"/>
+		<touch file="tmp/war/WEB-INF/jsp/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/spring"/>
+		<touch file="tmp/war/WEB-INF/spring/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/grails-app"/>
+		<touch file="tmp/war/WEB-INF/grails-app/.dummy"/>
+		<mkdir dir="tmp/war/WEB-INF/tld"/>
+		<copy todir="tmp/war/WEB-INF/tld">
+			<fileset dir="${grails.home}/src/war/WEB-INF/tld"/>
+		</copy>
+		<copy todir="tmp/war/WEB-INF/lib">
+			<fileset dir="${grails.home}/lib">
+				<include name="antlr-2.7.5.jar"/>
+				<include name="asm-2.0.jar"/>
+				<include name="asm-util-2.0.jar"/>
+				<include name="commons-logging.jar"/>
+				<include name="spring.jar"/>
+				<include name="groovy-1.0-jsr-03-SNAPSHOT.jar"/>
+				<include name="springmodules-sandbox.jar"/>
+				<include name="standard.jar"/>
+				<include name="jstl.jar"/>
+			</fileset>
+			<fileset dir="${grails.home}/dist"/>
+			<fileset dir="lib"/>
+		</copy>
+		<copy todir="tmp/war/WEB-INF/jsp">
+			<fileset dir="jsp" includes="**"/>
+		</copy>
+		<copy todir="tmp/war/WEB-INF/grails-app">
+			<fileset dir="grails-app" includes="**"/>
+		</copy>
+		<copy todir="tmp/war/WEB-INF/spring">
+			<fileset dir="spring" includes="**"/>
+		</copy>
+		<jar destfile="grails-app.war" basedir="tmp/war" />
+	</target>
+
+</project>
