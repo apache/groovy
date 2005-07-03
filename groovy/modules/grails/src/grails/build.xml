@@ -1,6 +1,7 @@
 <project default="init">
 
 	<target name="init">
+	        <property name="servlet.version" value="2.3"/>
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -12,9 +13,10 @@
 		<mkdir dir="war/WEB-INF"/>
 		<copy todir="war/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
-				<include name="*.xml"/>
+				<include name="applicationContext.xml"/>
 			</fileset>
 		</copy>
+		<copy file="${grails.home}/src/war/WEB-INF/web${servlet.version}.xml" tofile="war/WEB-INF/web.xml"/>
 		<copy todir="spring">
 			<fileset dir="${grails.home}/src/war/WEB-INF/spring">
 				<include name="*.xml"/>
