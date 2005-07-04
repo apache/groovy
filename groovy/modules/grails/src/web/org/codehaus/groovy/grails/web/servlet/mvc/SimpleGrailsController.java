@@ -100,8 +100,8 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 			throw new NoClosurePropertyForURIException("Could not find closure property for URI [" + uri + "] for controller [" + controllerClass.getFullName() + "]!");
 		}
 		
-		// Step 5: get the view name for this closure property.
-		String viewName = controllerClass.getViewName(closurePropertyName);
+		// Step 5: get the view name for this URI.
+		String viewName = controllerClass.getViewName(uri);
 		boolean viewNameBlank = (viewName == null || viewName.length() == 0);
 		
 		// Step 6: get closure from closure property

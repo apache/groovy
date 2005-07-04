@@ -18,7 +18,10 @@ package org.codehaus.groovy.grails.commons;
 import groovy.lang.Closure;
 
 import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -32,6 +35,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 
 	private static final String SLASH = "/";
 	private static final String VIEW = "View";
+	private static final String TYPED_VIEWS = "TypedViews";
 	private static final String DEFAULT_CLOSURE_PROPERTY = "defaultClosure";
 	public static final String CONTROLLER = "Controller";
 	
@@ -44,6 +48,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		super(clazz, CONTROLLER);
 		String uri = SLASH + getName().substring(0, 1).toLowerCase() + getName().substring(1, getName().length());
 		String defaultClosureName = (String)getPropertyValue(DEFAULT_CLOSURE_PROPERTY, String.class);
+		Collection closureNames = new ArrayList();
 		
 		this.viewNames = new HashMap();
 		this.uri2closureMap = new HashMap();
@@ -51,18 +56,47 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		for (int i = 0; i < propertyDescriptors.length; i++) {
 			PropertyDescriptor propertyDescriptor = propertyDescriptors[i];
 			if (propertyDescriptor.getPropertyType().equals(Closure.class)) {
-				this.viewNames.put(propertyDescriptor.getName(), getPropertyValue(propertyDescriptor.getName() + VIEW, String.class));
+				closureNames.add(propertyDescriptor.getName());
+				String viewName = (String)getPropertyValue(propertyDescriptor.getName() + VIEW, String.class);
+				Map typedViews = (Map)getPropertyValue(propertyDescriptor.getName() + TYPED_VIEWS, Map.class);
+				String tmpUri = uri + SLASH + propertyDescriptor.getName();
+				this.viewNames.put(tmpUri, viewName);
 				Closure closure = (Closure)getPropertyValue(propertyDescriptor.getName(), Closure.class);
 				if (closure != null) {
-					this.uri2closureMap.put(uri + SLASH + propertyDescriptor.getName(), propertyDescriptor.getName());
+					this.uri2closureMap.put(tmpUri, propertyDescriptor.getName());
+					if (typedViews != null) {
+						for (Iterator iter = typedViews.keySet().iterator(); iter.hasNext();) {
+							String viewType = (String)iter.next();
+							String typedViewName = (String)typedViews.get(viewType);
+							String typedUri = tmpUri + SLASH + viewType;
+							this.viewNames.put(typedUri, typedViewName);
+							this.uri2closureMap.put(typedUri, propertyDescriptor.getName());
+							if (defaultClosureName != null && defaultClosureName.equals(propertyDescriptor.getName())) {
+								this.uri2closureMap.put(uri + SLASH + viewType, propertyDescriptor.getName());
+								this.viewNames.put(uri + SLASH + viewType, typedViewName);
+							}
+						}
+					}
 					if (defaultClosureName != null && defaultClosureName.equals(propertyDescriptor.getName())) {
 						this.uri2closureMap.put(uri, propertyDescriptor.getName());
+						this.viewNames.put(uri, viewName);
 					}
 				}
 			}
 		}
-		if (this.uri2closureMap.size() == 1) {
+		if (closureNames.size() == 1) {
+			String closureName = ((String)closureNames.iterator().next());
 			this.uri2closureMap.put(uri, this.uri2closureMap.values().iterator().next());
+			this.viewNames.put(uri, this.viewNames.values().iterator().next());
+			Map typedViews = (Map)getPropertyValue(closureName + TYPED_VIEWS, Map.class);
+			if (typedViews != null) {
+				for (Iterator iter = typedViews.keySet().iterator(); iter.hasNext();) {
+					String viewType = (String)iter.next();
+					String typedViewName = (String)typedViews.get(viewType);
+					this.uri2closureMap.put(uri + SLASH + viewType, this.uri2closureMap.values().iterator().next());
+					this.viewNames.put(uri + SLASH + viewType, typedViewName);
+				}
+			}
 		}
 		this.uris = (String[])this.uri2closureMap.keySet().toArray(new String[this.uri2closureMap.size()]); 
 	}

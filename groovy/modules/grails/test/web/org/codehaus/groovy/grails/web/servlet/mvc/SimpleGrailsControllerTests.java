@@ -108,6 +108,17 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 		assertNotNull(modelAndView.getModel().get("response"));
 		assertTrue(modelAndView.getModel().get("response") instanceof HttpServletResponse);
 	}
+
+	public void testParameterControllerTwoParametersRss() throws Exception {
+		ModelAndView modelAndView = execute("/parameter/rss", null);
+		assertNotNull(modelAndView);
+		assertEquals("someRssView", modelAndView.getViewName());
+		assertNotNull(modelAndView.getModel().get("request"));
+		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
+		assertNotNull(modelAndView.getModel().get("response"));
+		assertTrue(modelAndView.getModel().get("response") instanceof HttpServletResponse);
+	}
+
 	
 	public void testParameterControllerOneParameter() throws Exception {
 		ModelAndView modelAndView = execute("/parameter/oneParameter", null);
@@ -116,4 +127,13 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 		assertNotNull(modelAndView.getModel().get("request"));
 		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
 	}
+	
+	public void testParameterControllerOneParameterRss() throws Exception {
+		ModelAndView modelAndView = execute("/parameter/oneParameter/rss", null);
+		assertNotNull(modelAndView);
+		assertEquals("someOtherRssView", modelAndView.getViewName());
+		assertNotNull(modelAndView.getModel().get("request"));
+		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
+	}
+
 }
