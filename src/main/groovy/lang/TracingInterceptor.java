@@ -7,6 +7,7 @@ import java.io.Writer;
 public class TracingInterceptor implements Interceptor {
 
     protected Writer writer = new PrintWriter(System.out);
+    private int indent = 0;
 
     public Writer getWriter() {
         return writer;
@@ -18,21 +19,30 @@ public class TracingInterceptor implements Interceptor {
 
     public Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         write(object, methodName, arguments, "before");
+        indent++ ;
         return null;
     }
 
     public Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
-        write(object, methodName, arguments, "after");
+        indent--;
+        write(object, methodName, arguments, "after ");
         return result;
     }
 
     public boolean doInvoke() {
         return true;
     }
+    private String indent(){
+        StringBuffer result = new StringBuffer();
+        for (int i=0; i<indent;i++){
+            result.append("  ");
+        }
+        return result.toString();
+    }
 
     protected void write(Object object, String methodName, Object[] arguments, final String origin) {
         try {
-            writer.write("Interceptor ");
+            writer.write(indent());
             writer.write(origin);
             writer.write(" ");
             Class theClass = object instanceof Class ? (Class) object: object.getClass();
