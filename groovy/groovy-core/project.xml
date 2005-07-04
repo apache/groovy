@@ -654,6 +654,20 @@
       <version>0.5</version>
     </dependency>
 
+    <!-- prepare for EMMA
+    <dependency>
+            <id>emma</id>
+            <version>2.0.latest</version>
+            <url>http://emma.sourceforge.net</url>
+        </dependency>
+        <dependency>
+            <id>emma_ant</id>
+            <groupId>emma</groupId>
+            <version>2.0.latest</version>
+            <url>http://emma.sourceforge.net</url>
+        </dependency>
+    -->
+
   </dependencies>
 
   <build>
@@ -745,6 +759,10 @@
     <report>maven-clover-plugin</report>
     -->
     <report>maven-changes-plugin</report>
+    
+    <!-- prepare for EMMA
+    <report>maven-emma-plugin</report>
+    -->
   </reports>
 
 </project>

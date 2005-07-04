@@ -15,94 +15,77 @@ class InterceptorTest extends GroovyTestCase{
     def Interceptor logInterceptor
     def StringBuffer log
     def interceptable   // the object to intercept method calls on
+    def proxy
 
     void setUp() {
         logInterceptor = new TracingInterceptor()
-        log = new StringBuffer()
+        log = new StringBuffer("\n")
         logInterceptor.writer = new StringBufferWriter(log)
         // we intercept calls from Groovy to the java.lang.String object
         interceptable = 'Interceptable String'
-    }
-    ProxyMetaClass initProxy(){
-        def proxy = ProxyMetaClass.getInstance(interceptable.class)
+        proxy = ProxyMetaClass.getInstance(interceptable.class)
         proxy.setInterceptor(logInterceptor)
-        proxy.register()
-        return proxy
-    }
-
-    void testUnIntercepted() {
-        interceptable.size()                // GDK method
-        interceptable.length()              // JDK method
-        interceptable.startsWith('I',0)     // with parameters
-        assertEquals 0, log.length()        // todo: StringBuffer should have a size() method !
     }
 
     void testSimpleInterception() {
-        initProxy()
-        assertEquals 20, interceptable.size()
-        assertEquals 20,interceptable.length()
-        assertTrue interceptable.startsWith('I',0)
+        proxy.use {
+            assertEquals 20, interceptable.size()
+            assertEquals 20, interceptable.length()
+            assertTrue interceptable.startsWith('I',0)
+        }
         assertEquals(
-"""Interceptor before java.lang.String.size()
-Interceptor after java.lang.String.size()
-Interceptor before java.lang.String.length()
-Interceptor after java.lang.String.length()
-Interceptor before java.lang.String.startsWith(java.lang.String, java.lang.Integer)
-Interceptor after java.lang.String.startsWith(java.lang.String, java.lang.Integer)
+"""
+before java.lang.String.size()
+after  java.lang.String.size()
+before java.lang.String.length()
+after  java.lang.String.length()
+before java.lang.String.startsWith(java.lang.String, java.lang.Integer)
+after  java.lang.String.startsWith(java.lang.String, java.lang.Integer)
 """, log.toString())
     }
 
-    void testNoInterceptionAfterUnregister() {
-        def proxy = initProxy()
-        proxy.unRegister()
-
-        interceptable.size()
-        interceptable.length()
-        interceptable.startsWith('I',0)
-        assertEquals 0, log.length()
-    }
-
     void testNoInterceptionWithNullInterceptor() {
-        def proxy = initProxy()
         proxy.setInterceptor(null)
-
-        interceptable.size()
-        interceptable.length()
-        interceptable.startsWith('I',0)
-        assertEquals 0, log.length()
+        proxy.use {
+            interceptable.size()
+        }
     }
 
     void testConstructorInterception() {
-        initProxy()
-        new String('some string')
+        proxy.use {
+            new String('some string')
+        }
         assertEquals(
-"""Interceptor before java.lang.String.ctor(java.lang.String)
-Interceptor after java.lang.String.ctor(java.lang.String)
+"""
+before java.lang.String.ctor(java.lang.String)
+after  java.lang.String.ctor(java.lang.String)
 """, log.toString())
     }
 
     void testStaticMethodInterception() {
-        initProxy()
-        assertEquals 'true', String.valueOf(true)
+        proxy.use {
+            assertEquals 'true', String.valueOf(true)
+        }
         assertEquals(
-"""Interceptor before java.lang.String.valueOf(java.lang.Boolean)
-Interceptor after java.lang.String.valueOf(java.lang.Boolean)
+"""
+before java.lang.String.valueOf(java.lang.Boolean)
+after  java.lang.String.valueOf(java.lang.Boolean)
 """, log.toString())
     }
 
-    void testNoInterceptionOfGroovyClasses(){
+    void testInterceptionOfGroovyClasses(){
         def slicer = new groovy.mock.example.CheeseSlicer()
         def proxy = ProxyMetaClass.getInstance(slicer.class)
         proxy.setInterceptor(logInterceptor)
-        proxy.register()
-
-        slicer.sliceSomeCheese('')
-
-        assertEquals 0, log.length()
-        // 	at gjdk.groovy.lang.InterceptorTest_GroovyReflector.invoke(Unknown Source)
+        proxy.use(slicer) {
+            slicer.sliceSomeCheese('')
+        }
+        assertEquals(
+"""
+before groovy.mock.example.CheeseSlicer.sliceSomeCheese(java.lang.String)
+after  groovy.mock.example.CheeseSlicer.sliceSomeCheese(java.lang.String)
+""", log.toString())
     }
-
-
 }
 
 

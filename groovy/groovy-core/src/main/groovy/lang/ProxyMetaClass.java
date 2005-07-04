@@ -35,17 +35,25 @@ public class ProxyMetaClass extends MetaClass {
     }
 
     /**
-     * Make this ProxyMetaClass the funnel for all method calls, thus enabling interceptions.
+     * Use the ProxyMetaClass for the given Closure.
+     * Cares for balanced register/unregister.
+     * @param closure piece of code to be executed with registered ProxyMetaClass
      */
-    public void register() {
+    public void use(Closure closure){
         registry.setMetaClass(theClass, this);
+        closure.call();
+        registry.setMetaClass(theClass, adaptee);
     }
 
-    /**
-     * Reset to using the decorated adaptee, disable interception.
+     /**
+     * Use the ProxyMetaClass for the given Closure.
+     * Cares for balanced setting/unsetting ProxyMetaClass.
+     * @param closure piece of code to be executed with ProxyMetaClass
      */
-    public void unRegister() {
-        registry.setMetaClass(theClass, adaptee);
+    public void use(GroovyObject object, Closure closure){
+        object.setMetaClass(this);
+        closure.call();
+        object.setMetaClass(adaptee);
     }
 
     /**
