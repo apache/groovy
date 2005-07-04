@@ -302,6 +302,13 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         acceptSiblings(expr);
     }
 
+    protected void accept_FirstChild_v_SecondChild_v(GroovySourceAST t) {
+        accept(t.childAt(0));
+        openingVisit(t);
+        accept(t.childAt(1));
+        closingVisit(t);
+    }
+
     protected void accept_FirstChild_v_SecondChild_v_ThirdChild_v(GroovySourceAST t) {
         accept(t.childAt(0));
         openingVisit(t);
@@ -349,6 +356,12 @@ public abstract class TraversalHelper implements AntlrASTProcessor {
         openingVisit(t);
         closingVisit(t);
         acceptSiblings(t.childAt(0));
+    }
+    protected void accept_FirstChild_v_RestOfTheChildren_v(GroovySourceAST t) {
+        accept(t.childAt(0));
+        openingVisit(t);
+        acceptSiblings(t.childAt(0));
+        closingVisit(t);
     }
     protected void accept_v_FirstChild_v_RestOfTheChildren(GroovySourceAST t) {
         accept_v_FirstChild_v(t);

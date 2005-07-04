@@ -84,14 +84,12 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            tabLevel++;
             print(t,visit," {");
         }
         if (visit == SUBSEQUENT_VISIT) {
             print(t,visit," -> ");
         }
         if (visit == CLOSING_VISIT) {
-            tabLevel--;
             print(t,visit,"}");
         }
     }
@@ -103,13 +101,13 @@ public class SourcePrinter extends VisitorAdapter {
     }
     public void visitElist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
-            print(t,visit,"(");
+            //print(t,visit,"(");
         }
         if (visit == SUBSEQUENT_VISIT) {
             print(t,visit,",");
         }
         if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
+            //print(t,visit,")");
         }
     }
 
@@ -147,9 +145,22 @@ public class SourcePrinter extends VisitorAdapter {
             }
         }
     }
+
+    public void visitImplicitParameters(GroovySourceAST t, int visit) {
+    }
+
     public void visitImport(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText() + " ");
+        }
+    }
+
+    public void visitIndexOp(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit,"[");
+        }
+        if (visit == CLOSING_VISIT) {
+            print(t,visit,"]");
         }
     }
 
@@ -217,6 +228,12 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralNew(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,t.getText() + " ");
+        }
+        if (visit == SUBSEQUENT_VISIT) {
+            print(t,visit,"(");
+        }
+        if (visit == CLOSING_VISIT) {
+            print(t,visit,")");
         }
     }
 
@@ -286,7 +303,17 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitMethodCall(GroovySourceAST t,int visit) {
-        //do nothing
+        if (visit == OPENING_VISIT) {
+            print(t,visit,"(");
+        }
+        if (visit == CLOSING_VISIT) {
+            print(t,visit,")");
+        }
+    }
+    public void visitMinus(GroovySourceAST t,int visit) {
+        if (visit == OPENING_VISIT) {
+            print(t,visit," - ");
+        }
     }
     public void visitMethodDef(GroovySourceAST t,int visit) {
         //do nothing

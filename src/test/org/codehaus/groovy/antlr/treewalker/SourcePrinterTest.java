@@ -51,8 +51,8 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testClosedBlock() throws Exception {
-            //todo assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
-        }
+        //todo assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
+    }
 
     public void testDot() throws Exception {
         assertEquals("foo.bar.mooky()", pretty("foo.bar.mooky()"));
@@ -90,12 +90,16 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("import foo.bar.Wibble", pretty("import foo.bar.Wibble"));
     }
 
+    public void testIndexOp() throws Exception {
+        assertEquals("foo.bar()[fred.wilma()]", pretty("foo.bar()[fred.wilma()]"));
+    }
+
     public void testLabeledArg() throws Exception {
         //todo assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
     }
 
     public void testListConstructor() throws Exception {
-        //todo assertEquals("[a,b]", pretty("[a,b]"));
+        assertEquals("[a,b]", pretty("[a,b]"));
     }
 
     public void testLiteralAssert() throws Exception {
@@ -179,6 +183,10 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testMethodDef() throws Exception {
         assertEquals("def foo(int bar) {}", pretty("def foo(int bar) {}"));
         //todo assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
+    }
+
+    public void testMinus() throws Exception {
+        assertEquals("def bar = 4 - foo", pretty("def bar=4-foo"));
     }
 
     public void testModifiers() throws Exception {
