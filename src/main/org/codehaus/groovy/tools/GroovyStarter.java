@@ -50,6 +50,8 @@ import org.codehaus.classworlds.ClassWorld;
 import java.lang.reflect .*;
 import groovy.ui.GroovyMain;
 import groovy.ui.InteractiveShell;
+import java.net.URL;
+import java.io.File;
 
 
 
@@ -74,6 +76,13 @@ public class GroovyStarter {
             // import everything from the system realm, because imports
             // are searched *first* in Classworlds
             groovy.importFrom("system", "");
+            
+            //add tools.jar to classpath
+            String tools = System.getProperty("tools.jar");
+            if (tools!=null) {
+            	URL ref = (new File(tools)).toURI().toURL();
+            	groovy.addConstituent(ref);
+            }
         
             if (oldArgs.length==0) {
                 printUsage();
