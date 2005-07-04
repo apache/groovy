@@ -50,6 +50,7 @@ import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -83,6 +84,7 @@ import org.objectweb.asm.ClassWriter;
 public class GroovyClassLoader extends SecureClassLoader {
 
     private Map cache = new HashMap();
+    private Collection loadedClasses = null;
 
     public void removeFromCache(Class aClass) {
         cache.remove(aClass);
@@ -116,6 +118,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         super(loader);
         if (config==null) config = CompilerConfiguration.DEFAULT;
         this.config = config;
+        this.loadedClasses = new ArrayList();
     }
 
     /**
@@ -260,6 +263,9 @@ public class GroovyClassLoader extends SecureClassLoader {
             // catch( CompilationFailedException e ) {
             //     throw new RuntimeException( e );
             // }
+            synchronized (this.loadedClasses) {
+                this.loadedClasses.addAll(collector.getLoadedClasses());
+            }
         } finally {
             synchronized (cache) {
                 if (answer == null || !shouldCache) {
@@ -509,16 +515,20 @@ public class GroovyClassLoader extends SecureClassLoader {
 
         private CompilationUnit unit;
 
+        private Collection loadedClasses = null;
+
         protected ClassCollector(GroovyClassLoader cl, CompilationUnit unit) {
             this.cl = cl;
             this.unit = unit;
+            this.loadedClasses = new ArrayList();
         }
 
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
             Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
-            
+            this.loadedClasses.add(theClass);
+
             if (generatedClass == null) {
                 generatedClass = theClass;
             }
@@ -529,11 +539,15 @@ public class GroovyClassLoader extends SecureClassLoader {
         public void call(ClassVisitor classWriter, ClassNode classNode) {
             onClassNode((ClassWriter) classWriter, classNode);
         }
+
+        public Collection getLoadedClasses() {
+            return this.loadedClasses;
+        }
     }
 
     /**
      * open up the super class define that takes raw bytes
-     *  
+     *
      */
     public Class defineClass(String name, byte[] b) {
         return super.defineClass(name, b, 0, b.length);
@@ -541,7 +555,7 @@ public class GroovyClassLoader extends SecureClassLoader {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
      *      Implemented here to check package access prior to returning an
      *      already loaded class. todo : br shall we search for the source
@@ -553,7 +567,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             if (cls == NOT_RESOLVED.class) throw new ClassNotFoundException(name);
             if (cls!=null) return cls;
         }
-        
+
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             String className = name.replace('/', '.');
@@ -562,27 +576,27 @@ public class GroovyClassLoader extends SecureClassLoader {
                 sm.checkPackageAccess(className.substring(0, i));
             }
         }
-        
+
         Class cls = null;
         ClassNotFoundException last = null;
         try {
             cls = super.loadClass(name, resolve);
-    
+
             boolean recompile = false;
             if (getTimeStamp(cls) < Long.MAX_VALUE) {
-                Class[] inters = cls.getInterfaces();                
+                Class[] inters = cls.getInterfaces();
                 for (int i = 0; i < inters.length; i++) {
                     if (inters[i].getName().equals(GroovyObject.class.getName())) {
                         recompile=true;
                         break;
                     }
-                }                
+                }
             }
             if (!recompile) return cls;
         } catch (ClassNotFoundException cnfe) {
-            last = cnfe; 
+            last = cnfe;
         }
-        
+
         // try groovy file
         try {
             File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
@@ -604,8 +618,8 @@ public class GroovyClassLoader extends SecureClassLoader {
             synchronized (cache) {
                 cache.put(name, NOT_RESOLVED.class);
             }
-            throw last;            
-        }     
+            throw last;
+        }
         synchronized (cache) {
             cache.put(name, cls);
         }
@@ -691,6 +705,10 @@ public class GroovyClassLoader extends SecureClassLoader {
      * @return all classes loaded by this class loader
      */
     public Class[] getLoadedClasses() {
-        return (Class[])this.cache.values().toArray(new Class[] {});
+        Class[] loadedClasses = null;
+        synchronized (this.loadedClasses) {
+            loadedClasses = (Class[])this.loadedClasses.toArray(new Class[this.loadedClasses.size()]);
+        }
+        return loadedClasses;
     }
 }
