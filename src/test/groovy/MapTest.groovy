@@ -84,4 +84,12 @@ class MapTest extends GroovyTestCase {
         assert m['def'] == null
         assert m.size() == 2
     }
+
+    void testFindAll(){
+        assert [a:1] == ['a':1, 'b':2].findAll {it.value == 1}
+        assert [a:1] == ['a':1, 'b':2].findAll {it.key == 'a'}
+        assert [a:1] == ['a':1, 'b':2].findAll {key,value -> key == 'a'}
+        assert [a:1] == ['a':1].findAll {true}
+        assert [:]   == ['a':1].findAll {false}
+    }
 }
