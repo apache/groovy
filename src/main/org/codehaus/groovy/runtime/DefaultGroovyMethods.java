@@ -911,6 +911,16 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
+     * Provide standard Groovy size() method for StringBuffers
+     *
+     * @param buffer a StringBuffer
+     * @return the length of the StringBuffer
+     */
+    public static int size(StringBuffer buffer) {
+        return buffer.length();
+    }
+
+    /**
      * Makes an Array look like a Collection by adding support for the size() method
      *
      * @param self an Array of Object
