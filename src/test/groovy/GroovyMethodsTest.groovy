@@ -209,4 +209,18 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testReplaceAllClosure() {
         assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") { it * 2 } == "11 a 22 b 33 c 44"
     }
+
+    void testObjectIdentity() {
+        def a = new Object()
+        def b = a
+        assert a.is(b)
+        assert ! a.is(null)
+        assert ! 1.is(2)
+        // naive impl would fall for this trap
+        assert ! new WackyHashCode().is(new WackyHashCode())
+    }
+}
+
+class WackyHashCode {
+    int hashCode(){ return 1;}
 }
