@@ -68,6 +68,7 @@ import java.util.regex.Pattern;
  * @author Guillaume Laforge
  * @author John Wilson
  * @author Hein Meling
+ * @author Dierk Koenig
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -76,6 +77,17 @@ public class DefaultGroovyMethods {
 
     private static final Integer ONE = new Integer(1);
     private static final char ZERO_CHAR = '\u0000';
+
+    /**
+     * Identity check. Since == is overridden in Groovy with the meaning of equality
+     * we need some fallback to check for object identity.
+     * @param self
+     * @param other
+     * @return true if self and other are identical, false otherwise
+     */
+    public static boolean is(Object self, Object other){
+        return System.identityHashCode(self) == System.identityHashCode(other);
+    }
 
     /**
      * Allows the closure to be called for the object reference self
