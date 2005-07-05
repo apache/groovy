@@ -399,6 +399,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (declaredMethods.isEmpty()) {
             method =
                     addMethod("<clinit>", ACC_PUBLIC | ACC_STATIC, "void", Parameter.EMPTY_ARRAY, new BlockStatement());
+            method.setSynthetic(true);
         }
         else {
             method = (MethodNode) declaredMethods.get(0);
