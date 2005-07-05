@@ -96,7 +96,7 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 	}
 	
 	public void testReturnModelAndViewControllerDefaultClosure() throws Exception {
-		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView", null);
+		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView?test1=test2&test3=test4", null);
 		assertNotNull(modelAndView);
 		assertEquals("someView", modelAndView.getViewName());
 	}

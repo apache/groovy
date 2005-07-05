@@ -79,8 +79,12 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 			HttpServletResponse response) throws Exception {		
 		// Step 1: determine the name of the controller.
 		// This maps to a slash + the name of the controller.
-		String uri = this.urlPathHelper.getLookupPathForRequest(request);
-			
+		String uri = this.urlPathHelper.getRequestUri(request);
+		
+		if (uri.indexOf("?") > -1) {
+			uri = uri.substring(0, uri.indexOf("?"));
+		}
+		
 		// Step 2: lookup the controller in the application.
 		GrailsControllerClass controllerClass = this.application.getControllerByURI(uri);
 		if (controllerClass == null) {
