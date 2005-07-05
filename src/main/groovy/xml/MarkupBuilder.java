@@ -84,6 +84,10 @@ public class MarkupBuilder extends BuilderSupport {
         this.out = out;
     }
 
+    protected IndentPrinter getPrinter() {
+        return this.out;
+    }
+
     protected void setParent(Object parent, Object child) {
     }
 
