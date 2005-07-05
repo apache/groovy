@@ -421,17 +421,12 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param closure the closure applied on each entry of the map
      */
     public static void each(Map self, Closure closure) {
-        if (closure.getParameterTypes().length == 2) {
-            for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                closure.call(new Object[]{entry.getKey(), entry.getValue()});
-            }
-        } else {
-            for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-                closure.call(iter.next());
-            }
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            callClosureForMapEntry(closure, entry);
         }
     }
+
 
     /**
      * Iterates over every element of a collection, and check whether a predicate is valid for all elements.
@@ -691,22 +686,34 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
-     * Finds all values matching the closure condition
+     * Finds all entries matching the closure condition. If the
+     * closure takes one parameter then it will be passed the Map.Entry
+     * otherwise if the closure takes two parameters then it will be
+     * passed the key and the value.
      *
      * @param self    a Map
-     * @param closure a closure condition applying on the keys
-     * @return a List of keys
+     * @param closure a closure condition applying on the entries
+     * @return a new subMap
      */
-    public static List findAll(Map self, Closure closure) {
-        List answer = new ArrayList(self.size());
+    public static Map findAll(Map self, Closure closure) {
+        Map answer = new HashMap(self.size());
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
-                answer.add(value);
+            Map.Entry entry = (Map.Entry) iter.next();
+            if (InvokerHelper.asBool(callClosureForMapEntry(closure, entry))) {
+                answer.put(entry.getKey(),entry.getValue());
             }
         }
         return answer;
     }
+
+    // internal helper method
+    protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
+        if (closure.getParameterTypes().length == 2) {
+            return closure.call(new Object[]{entry.getKey(), entry.getValue()});
+        }
+        return closure.call(entry);
+    }
+
 
     /**
      * Iterates through the given collection, passing in the initial value to
