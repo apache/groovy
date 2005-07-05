@@ -73,7 +73,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testExtendsClause() throws Exception {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
     }
-
+    public void testForInIterable() throws Exception {
+        assertEquals("for (i in [1,2]) {}", pretty("for (i in [1,2]) {}"));
+    }
     public void testGt() throws Exception {
         assertEquals("if (2070 > 354) {}", pretty("if (2070 > 354) {}"));
     }
@@ -97,7 +99,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLabeledArg() throws Exception {
         //todo assertEquals("myMethod(argOne:123,argTwo:123)", pretty("myMethod(argOne:123,argTwo:123)"));
     }
-
+    public void testLand() throws Exception {
+        assertEquals("true && false", pretty("true && false"));
+    }
     public void testListConstructor() throws Exception {
         assertEquals("[a,b]", pretty("[a,b]"));
     }
@@ -122,6 +126,10 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("float x", pretty("float x"));
     }
 
+    public void testLiteralFor() throws Exception {
+        assertEquals("for (i in [1,2,3]) {}", pretty("for (i in [1,2,3]) {}"));
+    }
+
     public void testLiteralIf() throws Exception {
         assertEquals("if (a == b) {}", pretty("if (a==b) {}"));
     }
@@ -140,6 +148,14 @@ public class SourcePrinterTest extends GroovyTestCase {
 
     public void testLiteralPrivate() throws Exception {
         //todo assertEquals("private bar", pretty("private bar"));
+    }
+
+    public void testLiteralProtected() throws Exception {
+        //todo assertEquals("protected mooky", pretty("protected mooky"));
+    }
+
+    public void testLiteralPublic() throws Exception {
+        //todo assertEquals("public foo", pretty("public foo"));
     }
 
     public void testLiteralReturn() throws Exception {
@@ -223,6 +239,12 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testQuestion() throws Exception {
         assertEquals("foo == bar?10:20", pretty("foo==bar?10:20"));
+    }
+    public void testRangeExclusive() throws Exception {
+        assertEquals("foo[45..<89]", pretty("foo[45 ..< 89]"));
+    }
+    public void testRangeInclusive() throws Exception {
+        assertEquals("foo[bar..12]", pretty("foo[bar .. 12]"));
     }
     public void testSlist() throws Exception {
         assertEquals("if (true) {foo}", pretty("if (true) {foo}"));

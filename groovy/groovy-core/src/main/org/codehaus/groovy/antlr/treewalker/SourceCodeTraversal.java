@@ -84,6 +84,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_FirstChild_v_SecondChild_v_ThirdChild_v(t);
                     break;
 
+                case GroovyTokenTypes.CASE_GROUP: // a,b,c
                 case GroovyTokenTypes.ELIST: // a,b,c
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
@@ -118,10 +119,13 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.DOT: // foo.bar
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
+                case GroovyTokenTypes.LAND: // true && false
                 case GroovyTokenTypes.LT: // a < b
                 case GroovyTokenTypes.MEMBER_POINTER: // this.&foo()
                 case GroovyTokenTypes.MINUS:
                 case GroovyTokenTypes.PLUS:
+                case GroovyTokenTypes.RANGE_EXCLUSIVE:
+                case GroovyTokenTypes.RANGE_INCLUSIVE:
                 case GroovyTokenTypes.STAR: // a * b   or    import foo.*
                     accept_FirstChild_v_RestOfTheChildren(t);
                     break;
@@ -140,7 +144,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.CLOSED_BLOCK: // [1,2,3].each {foo(it)}  <-- Closure
+                case GroovyTokenTypes.FOR_IN_ITERABLE:
+                case GroovyTokenTypes.LITERAL_for:
                 case GroovyTokenTypes.LITERAL_new:
+                case GroovyTokenTypes.LITERAL_switch:
                     accept_v_FirstChild_v_RestOfTheChildren_v(t);
                     break;
 
