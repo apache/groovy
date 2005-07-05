@@ -27,6 +27,7 @@ import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
+import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.IncompatibleParameterCountException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoClosurePropertyForURIException;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
@@ -113,7 +114,7 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 			// closure may have zero or one parameter, we cannot be sure.
 			returnValue = closure.call(new Object[] { new GrailsHttpServletRequest(request) });
 		} else if (closure.getParameterTypes().length == 2) {
-			returnValue = closure.call(new Object[] { new  GrailsHttpServletRequest(request), response });
+			returnValue = closure.call(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) });
 		} else {
 			throw new IncompatibleParameterCountException("Closure on property [" + closurePropertyName + "] in [" + controllerClass.getFullName() + "] has an incompatible parameter count [" + closure.getParameterTypes().length + "]! Supported values are 0 and 2.");
 		}
