@@ -32,6 +32,13 @@ public interface GrailsControllerClass extends InjectableGrailsClass {
 	public String[] getURIs();
 	
 	/**
+	 * <p>Tests if a controller maps to a given URI.
+	 * 
+	 * @return true if controller maps to URI
+	 */
+	public boolean mapsToURI(String uri);
+	
+	/**
 	 * <p>Looks for a string property named &lt;closureName&gt;View and returns
 	 * that value as view name or null if not found.
 	 * 

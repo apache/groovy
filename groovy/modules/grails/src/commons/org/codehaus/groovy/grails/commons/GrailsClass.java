@@ -33,16 +33,25 @@ public interface GrailsClass {
 	public GroovyObject newInstance();
 	
 	/**
-	 * <p>Returns the logical name of the class in the application without the trailing convention part if applicable.
+	 * <p>Returns the logical name of the class in the application without the trailing convention part if applicable
+	 * and without the package name.
 	 * 
 	 * @return the logical name
 	 */
 	public String getName();
 	
 	/**
-	 * <p>Returns the full name of the class in the application with the the trailing convention part if applicable.
+	 * <p>Returns the full name of the class in the application with the the trailing convention part and with
+	 * the package name.
 	 * 
 	 * @return the full name
 	 */
 	public String getFullName();
+	
+	/**
+	 * <p>Returns the package name of the class.
+	 * 
+	 * @return the package name
+	 */
+	public String getPackageName();
 }

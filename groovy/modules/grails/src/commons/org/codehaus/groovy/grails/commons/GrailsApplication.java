@@ -32,10 +32,18 @@ public interface GrailsApplication {
 	public GrailsControllerClass[] getControllers();
 	
 	/**
-	 * <p>Returns the controller with the given name or null if no controller was found with that name.
+	 * <p>Returns the controller with the given full name or null if no controller was found with that name.
 	 * 
-	 * @param name the controller name
+	 * @param name the controller full name
 	 * @return the controller or null if no controller was found.
 	 */
-	public GrailsControllerClass getController(String name);
+	public GrailsControllerClass getController(String fullname);
+	
+	/**
+	 * <p>Returns the controllers that maps to the given URI or null if no controller was found with that name.
+	 * 
+	 * @param uri the uri of the request
+	 * @return the controller or null if no controller was found
+	 */
+	public GrailsControllerClass getControllerByURI(String uri);
 }

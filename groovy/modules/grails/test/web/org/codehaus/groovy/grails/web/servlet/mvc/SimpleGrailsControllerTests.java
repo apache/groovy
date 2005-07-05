@@ -21,6 +21,7 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.NoViewNameDefinedException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -40,6 +41,7 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 		setPopulateProtectedVariables(true);
 	}
 
+	protected GrailsApplication grailsApplication = null;
 	protected SimpleGrailsController controller = null;
 	
 	protected String[] getConfigLocations() {
@@ -74,13 +76,13 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 	}
 	
 	public void testReturnModelAndViewControllerWithView() throws Exception {
-		ModelAndView modelAndView = execute("/returnModelAndView/withView", null);
+		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/withView", null);
 		assertNotNull(modelAndView);
 	}
 	
 	public void testReturnModelAndViewControlerWithoutView() throws Exception {
 		try {
-			execute("/returnModelAndView/withoutView", null);
+			execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/withoutView", null);
 			fail();
 		} catch (NoViewNameDefinedException e) {
 			// expected
@@ -88,13 +90,13 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 	}
 	
 	public void testReturnModelAndViewControllerViewConfigured() throws Exception {
-		ModelAndView modelAndView = execute("/returnModelAndView/viewConfigured", null);
+		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView/viewConfigured", null);
 		assertNotNull(modelAndView);
 		assertEquals("someOtherView", modelAndView.getViewName());
 	}
 	
 	public void testReturnModelAndViewControllerDefaultClosure() throws Exception {
-		ModelAndView modelAndView = execute("/returnModelAndView", null);
+		ModelAndView modelAndView = execute("/org/codehaus/groovy/grails/web/servlet/mvc/returnModelAndView", null);
 		assertNotNull(modelAndView);
 		assertEquals("someView", modelAndView.getViewName());
 	}

@@ -8,11 +8,9 @@
 			<value>org/codehaus/groovy/grails/web/servlet/mvc/*.groovy</value>
 		</property>
 	</bean>
-	
 	<bean id="controller" class="org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController">
 		<description>Grails controller to handle simple or plain old controllers</description>
 	</bean>
-	
 	<bean id="controllerClass" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" abstract="true">
 		<property name="targetObject">
 			<ref bean="grailsApplication"/>
@@ -21,36 +19,29 @@
 			<value>getController</value>
 		</property>
 	</bean>
-
 	<bean id="testControllerClass" parent="controllerClass">
 		<property name="arguments">
-			<value>test</value>
+			<value>TestController</value>
 		</property>
 	</bean>
-		
-	<bean id="testController" factory-bean="testControllerClass" factory-method="newInstance"/>
-	
+	<bean id="TestController" factory-bean="testControllerClass" factory-method="newInstance"/>
 	<bean id="simpleControllerClass" parent="controllerClass">
 		<property name="arguments">
-			<value>simple</value>
+			<value>SimpleController</value>
 		</property>
 	</bean>
-	
-	<bean id="simpleController" factory-bean="simpleControllerClass" factory-method="newInstance"/>
-	
+	<bean id="SimpleController" factory-bean="simpleControllerClass" factory-method="newInstance"/>
 	<bean id="returnModelAndViewControllerClass" parent="controllerClass">
 		<property name="arguments">
-			<value>returnModelAndView</value>
+			<value>org.codehaus.groovy.grails.web.servlet.mvc.ReturnModelAndViewController</value>
 		</property>
 	</bean>
-	
-	<bean id="returnModelAndViewController" factory-bean="returnModelAndViewControllerClass" factory-method="newInstance"/>
-	
+	<bean id="org.codehaus.groovy.grails.web.servlet.mvc.ReturnModelAndViewController" 
+		factory-bean="returnModelAndViewControllerClass" factory-method="newInstance"/>
 	<bean id="parameterControllerClass" parent="controllerClass">
 		<property name="arguments">
-			<value>parameter</value>
+			<value>ParameterController</value>
 		</property>
 	</bean>
-	
-	<bean id="parameterController" factory-bean="parameterControllerClass" factory-method="newInstance"/>
+	<bean id="ParameterController" factory-bean="parameterControllerClass" factory-method="newInstance"/>
 </beans>

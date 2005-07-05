@@ -23,7 +23,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.codehaus.groovy.grails.commons.DefaultGrailsControllerClass;
+import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletRequest;
@@ -35,7 +35,6 @@ import org.codehaus.groovy.grails.web.servlet.mvc.exceptions.UnsupportedReturnVa
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.springframework.web.util.UrlPathHelper;
@@ -81,18 +80,16 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 		// Step 1: determine the name of the controller.
 		// This maps to a slash + the name of the controller.
 		String uri = this.urlPathHelper.getLookupPathForRequest(request);
-		String[] uriParts = StringUtils.tokenizeToStringArray(uri, SLASH, true, true);
-		String controllerName = uriParts[0];
 			
 		// Step 2: lookup the controller in the application.
-		GrailsControllerClass controllerClass = this.application.getController(controllerName);
+		GrailsControllerClass controllerClass = this.application.getControllerByURI(uri);
 		if (controllerClass == null) {
-			String fullControllerName = controllerName.substring(0, 1).toUpperCase() + controllerName.substring(1) + DefaultGrailsControllerClass.CONTROLLER;
-			throw new UnknownControllerException("Controller named [" + controllerName + "] could not be found. Make sure [" + fullControllerName + "] is defined and available!");
+			throw new UnknownControllerException("No controller found for URI [" + uri + "]!");
 		}
+		String controllerName = WordUtils.uncapitalize(controllerClass.getName());
 		
 		// Step 3: load controller from application context.
-		GroovyObject controller = (GroovyObject)this.applicationContext.getBean(controllerName + DefaultGrailsControllerClass.CONTROLLER);
+		GroovyObject controller = (GroovyObject)this.applicationContext.getBean(controllerClass.getFullName());
 		
 		// Step 4: get closure property name for URI.
 		String closurePropertyName = controllerClass.getClosurePropertyName(uri);

@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
+
 /**
  * 
  * 
@@ -46,7 +49,7 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 	
 	public DefaultGrailsControllerClass(Class clazz) {
 		super(clazz, CONTROLLER);
-		String uri = SLASH + getName().substring(0, 1).toLowerCase() + getName().substring(1, getName().length());
+		String uri = SLASH + (StringUtils.isNotBlank(getPackageName()) ? getPackageName().replace('.', '/')  + SLASH : "" ) + WordUtils.uncapitalize(getName());
 		String defaultClosureName = (String)getPropertyValue(DEFAULT_CLOSURE_PROPERTY, String.class);
 		Collection closureNames = new ArrayList();
 		
@@ -103,6 +106,15 @@ public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 
 	public String[] getURIs() {
 		return this.uris;
+	}
+
+	public boolean mapsToURI(String uri) {
+		for (int i = 0; i < uris.length; i++) {
+			if (uris[i].equals(uri)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public String getViewName(String closureName) {

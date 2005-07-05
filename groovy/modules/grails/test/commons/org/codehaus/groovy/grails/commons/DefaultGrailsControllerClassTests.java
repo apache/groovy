@@ -45,7 +45,9 @@ public class DefaultGrailsControllerClassTests extends TestCase {
 		GroovyClassLoader cl = new GroovyClassLoader();
 		Class clazz = cl.parseClass("class OverviewController { @Property String listView = \"listPage\"; @Property Closure list = { request, response -> return null }; } ");
 		GrailsControllerClass grailsClass = new DefaultGrailsControllerClass(clazz);
-		assertEquals("listPage", grailsClass.getViewName("list"));
+		assertEquals("Overview", grailsClass.getName());
+		assertEquals("OverviewController", grailsClass.getFullName());
+		assertEquals("listPage", grailsClass.getViewName("/overview/list"));
 		assertEquals(2, grailsClass.getURIs().length);
 	}
 

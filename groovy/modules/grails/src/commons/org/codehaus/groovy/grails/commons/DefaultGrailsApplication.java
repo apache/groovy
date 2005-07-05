@@ -54,7 +54,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 			if (classes[i].getName().endsWith(DefaultGrailsControllerClass.CONTROLLER) /* && not ends with FromController */) {
 				GrailsControllerClass grailsControllerClass = new DefaultGrailsControllerClass(classes[i]);
 				if (grailsControllerClass.getAvailable()) {
-					this.controllerMap.put(grailsControllerClass.getName().substring(0, 1).toLowerCase() + grailsControllerClass.getName().substring(1), grailsControllerClass);
+					this.controllerMap.put(grailsControllerClass.getFullName(), grailsControllerClass);
 				}
 			}
 		}
@@ -68,5 +68,14 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
 	public GrailsControllerClass getController(String name) {
 		return (GrailsControllerClass)this.controllerMap.get(name);
+	}
+	
+	public GrailsControllerClass getControllerByURI(String uri) {
+		for (int i = 0; i < controllerClasses.length; i++) {
+			if (controllerClasses[i].mapsToURI(uri)) {
+				return controllerClasses[i];
+			}
+		}
+		return null;
 	}
 }

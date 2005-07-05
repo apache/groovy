@@ -17,6 +17,8 @@ package org.codehaus.groovy.grails.commons;
 
 import java.lang.reflect.InvocationTargetException;
 
+import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.grails.exceptions.NewInstanceCreationException;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -34,6 +36,7 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	private Class clazz = null;
 	private String fullName = null;
 	private String name = null;
+	private String packageName = null;
 	private BeanWrapper reference = null;
 	
 	/**
@@ -48,11 +51,13 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 		setClazz(clazz);
 		
 		this.reference = new BeanWrapperImpl(newInstance());
-		this.fullName = getShortClassname(clazz);
-		if (trailingName == null || trailingName.length() == 0) {
+		this.fullName = clazz.getName();
+		this.packageName = ClassUtils.getPackageName(clazz);
+		if (StringUtils.isBlank(trailingName)) {
 			this.name = fullName;
 		} else {
-			this.name = this.fullName.substring(0, this.fullName.length() - trailingName.length());
+			String shortName = getShortClassname(clazz);
+			this.name = shortName.substring(0, shortName.length() - trailingName.length());
 		}
 	}
 
@@ -89,12 +94,12 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 		return this.fullName;
 	}
 
+	public String getPackageName() {
+		return this.packageName;
+	}
+	
 	private static String getShortClassname(Class clazz) {
-		if (clazz.getName().indexOf(".") > -1) {
-			return clazz.getName().substring(clazz.getName().lastIndexOf(".") + 1, clazz.getName().length());
-		} else {
-			return clazz.getName();
-		}
+		return ClassUtils.getShortClassName(clazz);
 	}
 	
 	/**

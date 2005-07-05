@@ -61,6 +61,7 @@
 				<include name="springmodules-sandbox.jar"/>
 				<include name="standard.jar"/>
 				<include name="jstl.jar"/>
+				<include name="commons-lang-2.0.jar"/>
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>

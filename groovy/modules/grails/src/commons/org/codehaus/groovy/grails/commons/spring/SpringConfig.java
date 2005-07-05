@@ -68,27 +68,22 @@ public class SpringConfig {
 			if (!simpleController.getAvailable()) {
 				continue;
 			}
-			String name = simpleController.getName().substring(0, 1).toLowerCase() + simpleController.getName().substring(1);
-//			urlMappings.append("/" + name + "*=simpleGrailsController");
-//			urlMappings.append("\n");
 			Bean controllerClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
 			controllerClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 			controllerClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getController"));
-			controllerClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(name));
-			beanReferences.add(SpringConfigUtils.createBeanReference(name + "ControllerClass", controllerClass));
+			controllerClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(simpleController.getFullName()));
+			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class", controllerClass));
 			
 			Bean controller = SpringConfigUtils.createSingletonBean();
-			controller.setFactoryBean(SpringConfigUtils.createBeanReference(name + "ControllerClass"));
+			controller.setFactoryBean(SpringConfigUtils.createBeanReference(simpleController.getFullName() + "Class"));
 			controller.setFactoryMethod("newInstance");
 			if (simpleController.byType()) {
 				controller.setAutowire("byType");
 			} else if (simpleController.byName()) {
 				controller.setAutowire("byName");
 			}
-			beanReferences.add(SpringConfigUtils.createBeanReference(name + "Controller", controller));
+			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 		}
-		
-//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
 		
 		return beanReferences;
 	}
