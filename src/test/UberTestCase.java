@@ -151,6 +151,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(ModuloTest.class);
         suite.addTestSuite(MorgansBug.class);
         suite.addTestSuite(groovy.MultiDimArraysTest.class); // adapt as soon as Multi Dim handling changes
+        suite.addTestSuite(MultilineChainExpressionTest.class);
         suite.addTestSuite(MultilineStringTest.class);
         suite.addTestSuite(MultiplyDivideEqualsTest.class);
         suite.addTestSuite(NamedParameterTest.class);
