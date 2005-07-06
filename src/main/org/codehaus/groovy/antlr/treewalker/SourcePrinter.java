@@ -59,9 +59,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitAnnotation(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"@");
-        }
+        print(t,visit,"@",null,null);
     }
 
     public void visitAnnotations(GroovySourceAST t, int visit) {
@@ -72,9 +70,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitAssign(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," = ");
-        }
+        print(t,visit," = ",null,null);
     }
 
     public void visitCaseGroup(GroovySourceAST t, int visit) {
@@ -82,44 +78,22 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitClassDef(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"class ");
-        }
+        print(t,visit,"class ",null,null);
     }
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," {");
-        }
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit," -> ");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,"}");
-        }
+        print(t,visit," {"," -> ","}");
     }
 
     public void visitDot(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,".");
-        }
+        print(t,visit,".",null,null);
     }
     public void visitElist(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            //print(t,visit,"(");
-        }
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit,",");
-        }
-        if (visit == CLOSING_VISIT) {
-            //print(t,visit,")");
-        }
+        print(t,visit,null,",",null);
     }
 
     public void visitEqual(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," == ");
-        }
+        print(t,visit," == ",null,null);
     }
 
     public void visitExpr(GroovySourceAST t,int visit) {
@@ -134,27 +108,15 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitForInIterable(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"(");
-        }
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit," in ");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
-        }
+        print(t,visit,"("," in ",")");
     }
 
     public void visitGt(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," > ");
-        }
+        print(t,visit," > ",null,null);
     }
 
     public void visitIdent(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,t.getText());
-        }
+        print(t,visit,t.getText(),null,null);
     }
     public void visitImplementsClause(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
@@ -168,148 +130,90 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitImport(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,t.getText() + " ");
-        }
+        print(t,visit,"import ",null,null);
     }
 
     public void visitIndexOp(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"[");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,"]");
-        }
+        print(t,visit,"[",null,"]");
     }
 
     public void visitLabeledArg(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,":");
-        }
+        print(t,visit,":",null,null);
     }
 
     public void visitLand(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," && ");
-        }
+        print(t,visit," && ",null,null);
     }
 
     public void visitListConstructor(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"[");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,"]");
-        }
+        print(t,visit,"[",null,"]");
     }
 
     public void visitLiteralAssert(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"assert ");
-        }
+        print(t,visit,"assert ",null,null);
     }
 
     public void visitLiteralBoolean(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"boolean");
-        }
+        print(t,visit,"boolean",null,null);
+    }
+
+    public void visitLiteralBreak(GroovySourceAST t, int visit) {
+        print(t,visit,"break",null,null);
     }
 
     public void visitLiteralCase(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"case ");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,":");
-        }
+        print(t,visit,"case ",null,":");
     }
 
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"catch (");
-        } else {
-            print(t,visit,")");
-        }
+        print(t,visit,"catch (",null,")");
     }
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"false");
-        }
+        print(t,visit,"false",null,null);
     }
 
     public void visitLiteralFloat(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"float");
-        }
+        print(t,visit,"float",null,null);
     }
 
     public void visitLiteralFor(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"for ");
-        }
+        print(t,visit,"for ",null,null);
     }
 
     public void visitLiteralIf(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"if (");
-        } else if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
-        } else if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit," else ");
-        }
+        // slightly strange as subsequent visit is done after closing visit
+        print(t,visit,"if ("," else ",")");
     }
     public void visitLiteralInt(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"int");
-        }
+        print(t,visit,"int",null,null);
     }
 
     public void visitLiteralNew(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"new ");
-        }
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit,"(");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
-        }
+        print(t,visit,"new ","(",")");
     }
 
     public void visitLiteralNull(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"null");
-        }
+        print(t,visit,"null",null,null);
     }
 
     public void visitLiteralPrivate(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"private ");
-        }
+        print(t,visit,"private ",null,null);
     }
 
     public void visitLiteralProtected(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"protected ");
-        }
+        print(t,visit,"protected ",null,null);
     }
 
     public void visitLiteralPublic(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"public ");
-        }
+        print(t,visit,"public ",null,null);
     }
 
     public void visitLiteralReturn(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"return ");
-        }
+        print(t,visit,"return ",null,null);
     }
 
     public void visitLiteralStatic(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"static ");
-        }
+        print(t,visit,"static ",null,null);
     }
 
     public void visitLiteralSwitch(GroovySourceAST t, int visit) {
@@ -327,58 +231,39 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralThis(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"this");
-        }
+        print(t,visit,"this",null,null);
     }
 
     public void visitLiteralTrue(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"true");
-        }
+        print(t,visit,"true",null,null);
     }
     public void visitLiteralTry(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"try");
-        }
+        print(t,visit,"try",null,null);
     }
     public void visitLiteralVoid(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"void");
-        }
+        print(t,visit,"void",null,null);
     }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"while (");
-        } else {
-            print(t,visit,")");
-        }
+        print(t,visit,"while (",null,")");
+    }
+
+    public void visitLnot(GroovySourceAST t, int visit) {
+        print(t,visit,"!",null,null);
     }
 
     public void visitLt(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," < ");
-        }
+        print(t,visit," < ",null,null);
     }
 
     public void visitMemberPointer(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,".&");
-        }
+        print(t,visit,".&",null,null);
     }
 
     public void visitMethodCall(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"(");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
-        }
+        print(t,visit,"(",null,")");
     }
     public void visitMinus(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," - ");
-        }
+        print(t,visit," - ",null,null);
     }
     public void visitMethodDef(GroovySourceAST t,int visit) {
         //do nothing
@@ -388,20 +273,14 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitNotEqual(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," != ");
-        }
+        print(t,visit," != ",null,null);
     }
 
     public void visitNumInt(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,t.getText());
-        }
+        print(t,visit,t.getText(),null,null);
     }
     public void visitNumFloat(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,t.getText());
-        }
+        print(t,visit,t.getText(),null,null);
     }
     public void visitObjblock(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
@@ -414,52 +293,32 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitPackageDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"package ");
-        }
+        print(t,visit,"package ",null,null);
     }
 
     public void visitParameterDef(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            //todoprint(t,visit,"[[[" + t.getText() + "]]]");
-        }
+        //do nothing
     }
 
     public void visitParameters(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"(");
-        }
-        if (visit == CLOSING_VISIT) {
-            print(t,visit,")");
-        }
+        print(t,visit,"(",",",")");
     }
 
     public void visitPlus(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit," + ");
-        }
+        print(t,visit," + ",null,null);
     }
 
     public void visitQuestion(GroovySourceAST t, int visit) {
         // ternary operator
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"?");
-        }
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit,":");
-        }
+        print(t,visit,"?",":",null);
     }
 
     public void visitRangeExclusive(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"..<");
-        }
+        print(t,visit,"..<",null,null);
     }
 
     public void visitRangeInclusive(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"..");
-        }
+        print(t,visit,"..",null,null);
     }
 
     public void visitSlist(GroovySourceAST t,int visit) {
@@ -474,20 +333,14 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitStar(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"*");
-        }
+        print(t,visit,"*",null,null);
     }
     public void visitStringConstructor(GroovySourceAST t,int visit) {
-        if (visit == SUBSEQUENT_VISIT) {
-            print(t,visit," + "); // string concatenate, so ("abc$foo") becomes ("abc" + foo) for now (todo)
-        }
+        print(t,visit,null," + ",null); // string concatenate, so ("abc$foo") becomes ("abc" + foo) for now (todo)
     }
 
     public void visitStringLiteral(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"\"" + t.getText() + "\"");
-        }
+        print(t,visit,"\"" + t.getText() + "\"",null,null);
     }
 
     public void visitType(GroovySourceAST t,int visit) {
@@ -502,11 +355,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitTypecast(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            print(t,visit,"(");
-        } else {
-            print(t,visit,")");
-        }
+        print(t,visit,"(",null,")");
     }
 
     public void visitVariableDef(GroovySourceAST t,int visit) {
@@ -523,6 +372,17 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
+    private void print(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
+        if (visit == OPENING_VISIT && opening != null) {
+            print(t,visit,opening);
+        }
+        if (visit == SUBSEQUENT_VISIT && subsequent != null) {
+            print(t,visit,subsequent);
+        }
+        if (visit == CLOSING_VISIT && closing != null) {
+            print(t,visit,closing);
+        }
+    }
     private void print(GroovySourceAST t,int visit,String value) {
         print(t,visit,value,false);
     }

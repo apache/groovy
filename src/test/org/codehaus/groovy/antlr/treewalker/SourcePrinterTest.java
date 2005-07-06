@@ -185,7 +185,11 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("while (true) {}", pretty("while(true){}"));
     }
 
-    public void testLt() throws Exception {
+    public void testLnot() throws Exception {
+            assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
+        }
+
+        public void testLt() throws Exception {
         assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
     }
 
@@ -197,7 +201,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testMethodDef() throws Exception {
-        assertEquals("def foo(int bar) {}", pretty("def foo(int bar) {}"));
+        assertEquals("def foo(int bar,boolean boo) {}", pretty("def foo(int bar,boolean boo) {}"));
         //todo assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
     }
 

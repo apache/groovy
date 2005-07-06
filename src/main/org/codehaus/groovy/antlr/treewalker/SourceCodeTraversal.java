@@ -86,6 +86,7 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.CASE_GROUP: // a,b,c
                 case GroovyTokenTypes.ELIST: // a,b,c
+                case GroovyTokenTypes.PARAMETERS: // a,b,c
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
                     accept_v_FirstChild_v_SecondChild_v___LastChild_v(t);
                     break;
