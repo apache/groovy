@@ -44,4 +44,10 @@
 		</property>
 	</bean>
 	<bean id="ParameterController" factory-bean="parameterControllerClass" factory-method="newInstance"/>
+	<bean id="noViewControllerClass" parent="controllerClass">
+		<property name="arguments">
+			<value>NoViewController</value>
+		</property>
+	</bean>
+	<bean id="NoViewController" factory-bean="noViewControllerClass" factory-method="newInstance"/>
 </beans>

@@ -138,4 +138,8 @@ public class SimpleGrailsControllerTests extends AbstractDependencyInjectionSpri
 		assertTrue(modelAndView.getModel().get("request") instanceof HttpServletRequest);
 	}
 
+	public void testNoViewController() throws Exception {
+		ModelAndView modelAndView = execute("/noView", null);
+		assertNull(modelAndView);
+	}
 }
