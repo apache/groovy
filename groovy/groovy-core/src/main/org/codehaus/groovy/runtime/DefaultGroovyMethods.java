@@ -1218,23 +1218,21 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self  a List
      * @param range a Range
-     * @return a range of a list from the range's from index up to but not including the ranges's to value
+     * @return a sublist based on range borders or a new list if range is reversed
+     * @see java.util.List#subList(int, int) 
      */
-    public static List getAt(List self, Range range) {
+    public static List getAt(List self, IntRange range) {
         int size = self.size();
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
         boolean reverse = range.isReverse();
-        if (from > to) {
+        if (from > to) {                        // support list[1..-1]
             int tmp = to;
             to = from;
             from = tmp;
             reverse = !reverse;
         }
-        if (++to > size) {
-            to = size;
-        }
-        List answer = self.subList(from, to);
+        List answer = self.subList(from, to+1);  // sublist is always exclusive, but Ranges are not
         if (reverse) {
             answer = reverse(answer);
         }
@@ -2181,7 +2179,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object getAt(double[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
-    
+
     public static Object getAt(boolean[] array, int idx) {
         return primitiveArrayGet(array, idx);
     }
@@ -2213,7 +2211,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object getAt(double[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
-    
+
     public static Object getAt(boolean[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
@@ -2249,11 +2247,11 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object getAt(boolean[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
-    
+
     public static void putAt(boolean[] array, int idx, Boolean newValue) {
         primitiveArrayPut(array, idx, newValue);
     }
-    
+
     public static void putAt(byte[] array, int idx, Object newValue) {
         if (!(newValue instanceof Byte)) {
             Number n = (Number) newValue;
@@ -3700,10 +3698,10 @@ PropertyValue pv = (PropertyValue) itr.next();
 
     /**
      * Helper method to create an object input stream from the given file.
-     * 
+     *
      * @param file a file
      * @return an object input stream
-     * @throws FileNotFoundException 
+     * @throws FileNotFoundException
      * @throws IOException
      */
     public static ObjectInputStream newObjectInputStream(File file) throws FileNotFoundException, IOException {
@@ -3716,7 +3714,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param self    a File
      * @param closure a closure
      * @throws IOException
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
         eachObject(newObjectInputStream(self), closure);
@@ -3728,7 +3726,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param self    an ObjectInputStream
      * @param closure a closure
      * @throws IOException
-     * @throws ClassNotFoundException 
+     * @throws ClassNotFoundException
      */
     public static void eachObject(ObjectInputStream ois, Closure closure) throws IOException, ClassNotFoundException {
         try {
@@ -4092,7 +4090,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     /**
      * This method is used to throw useful exceptions when the eachFile* and eachDir closure methods
      * are used incorrectly.
-     * 
+     *
      * @param dir The directory to check
      * @throws FileNotFoundException Thrown if the given directory does not exist
      * @throws IllegalArgumentException Thrown if the provided File object does not represent a directory
@@ -4162,7 +4160,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     /**
-     * Invokes the closure for each file matching the given filter in the given directory 
+     * Invokes the closure for each file matching the given filter in the given directory
      * - calling the isCase() method used by switch statements.  This method can be used
      * with different kinds of filters like regular expresions, classes, ranges etc.
      *
