@@ -1222,6 +1222,16 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @see java.util.List#subList(int, int)
      */
     public static List getAt(List self, IntRange range) {
+        RangeInfo info = subListBorders(self, range);
+        List answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
+        if (info.reverse) {
+            answer = reverse(answer);
+        }
+        return answer;
+    }
+
+    // helper method for getAt and putAt
+    protected static RangeInfo subListBorders(List self, IntRange range){
         int size = self.size();
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
@@ -1232,15 +1242,13 @@ PropertyValue pv = (PropertyValue) itr.next();
             from = tmp;
             reverse = !reverse;
         }
-        List answer = self.subList(from, to+1);  // sublist is always exclusive, but Ranges are not
-        if (reverse) {
-            answer = reverse(answer);
-        }
-        return answer;
+        return new RangeInfo(from, to+1, reverse);
     }
 
-    protected int[] subListBorders(){
-        
+    // helper method for getAt and putAt
+    protected static RangeInfo subListBorders(List self, EmptyRange range){
+        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), self.size());
+        return new RangeInfo(from, from, false);
     }
 
     /**
@@ -1484,13 +1492,20 @@ PropertyValue pv = (PropertyValue) itr.next();
      * A helper method to allow lists to work with subscript operators
      *
      * @param self  a List
-     * @param splice  the subset of the list to set
-     * @param values the value to put at the given sublist
+     * @param range  the subset of the list to set
+     * @param value the values to put at the given sublist or a Collection of values
      */
-    public static void putAt(List self, List splice, List values) {
-        List sublist = getSubList(self, splice);
+    public static void putAt(List self, EmptyRange range, Object value) {
+        RangeInfo info = subListBorders(self, range);
+        List sublist = self.subList(info.from,  info.to);
         sublist.clear();
-        sublist.addAll(values);
+        if (value instanceof Collection){
+            Collection col = (Collection) value;
+            if (col.size() == 0) return;
+            sublist.addAll(col);
+        } else {
+            sublist.add(value);
+        }
     }
 
     /**
@@ -1498,24 +1513,34 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self  a List
      * @param range  the subset of the list to set
-     * @param values the value to put at the given sublist
+     * @param value the value to put at the given sublist or a Collection of values
      */
-    public static void putAt(List self, IntRange range, List values) {
-        if (range.isReverse()){
-             // nothing
-        }  else {
-            List sublist = getAt(self, range);
-            System.out.println("sublist = " + sublist);
-            System.out.println("self = " + self);
-            sublist.clear();
-            System.out.println("sublist = " + sublist);
-            System.out.println("self = " + self);
-            sublist.addAll(values);
-            System.out.println("sublist = " + sublist);
-            System.out.println("self = " + self);
+    public static void putAt(List self, IntRange range, Object value) {
+        RangeInfo info = subListBorders(self, range);
+        List sublist = self.subList(info.from,  info.to);
+        sublist.clear();
+        if (value instanceof Collection){
+            Collection col = (Collection) value;
+            if (col.size() == 0) return;
+            sublist.addAll(col);
+        } else {
+            sublist.add(value);
         }
     }
 
+    /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param splice  the subset of the list to set
+     * @param values the value to put at the given sublist
+     * @deprecated replace with putAt(List self, Range range, List value)
+     */
+     public static void putAt(List self, List splice, List values) {
+         List sublist = getSubList(self, splice);
+         sublist.clear();
+         sublist.addAll(values);
+     }
 
     /**
      * A helper method to allow lists to work with subscript operators
@@ -1523,6 +1548,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param self  a List
      * @param splice  the subset of the list to set
      * @param value the value to put at the given sublist
+     * @deprecated replace with putAt(List self, Range range, Object value)
      */
     public static void putAt(List self, List splice, Object value) {
         List sublist = getSubList(self, splice);
@@ -1530,6 +1556,8 @@ PropertyValue pv = (PropertyValue) itr.next();
         sublist.add(value);
     }
 
+    // helper method for putAt(Splice)
+    // todo: remove after putAt(Splice) gets deleted
     protected static List getSubList(List self, List splice) {
         if (splice.size() != 2) {
             throw new IllegalArgumentException("You must specify a list of 2 indexes to create a sub-list");
@@ -5159,6 +5187,16 @@ PropertyValue pv = (PropertyValue) itr.next();
                     process.destroy();
                 }
             }
+        }
+    }
+    protected static class RangeInfo{
+        protected int from, to;
+        protected boolean reverse;
+
+        public RangeInfo(int from, int to, boolean reverse) {
+            this.from = from;
+            this.to = to;
+            this.reverse = reverse;
         }
     }
 }

@@ -229,7 +229,6 @@ class ListTest extends GroovyTestCase {
         } else {
             fail("[] should have evaluated to false, but didn't")
         }
-        
     }
 
     // see also SubscriptTest
@@ -287,19 +286,16 @@ class ListTest extends GroovyTestCase {
         assert list == [0, 'x','x','x', 3]  , 'extending'
     }
 
-    // todo: provide analogous testPutAtRange
-
     void testPutAtRange(){
         // usual assignments
         def list = [0,1,2,3]
         list[1..2] = [11,12]
-        println list
         assert list == [0, 11, 12, 3 ]      , 'same length assignment'
         list = [0,1,2,3]
         list[1..1] = [11]
         assert list == [0, 11, 2, 3 ]       , 'length 1 assignment'
         list = [0,1,2,3]
-        list[0..<0] = [ ]
+        list[0..<0] = []
         assert list == [0, 1, 2, 3 ]        , 'length 0 assignment, empty splice'
         // assignments at bounds
         list = [0,1,2,3]
@@ -324,5 +320,20 @@ class ListTest extends GroovyTestCase {
         list = [0,1,2,3]
         list[1..2] = ['x','x','x']
         assert list == [0, 'x','x','x', 3]  , 'extending'
+    }
+
+    void testCrazyPutAtRange(){
+        def list = []
+        list[0..<0] = [0,1,2,3]
+        assert list == [0, 1, 2, 3 ]        , 'fill by empty Range'
+        list = [0,1,2,3]
+        list[3..0] = []
+        assert list == []                   , 'delete by reverse Range'
+        list = [0,1,2,3]
+        list[-4..-1] = []
+        assert list == []                   , 'delete by negativ Range'
+        list = [0,1,2,3]
+        list[0..-1] = []
+        assert list == []                   , 'delete by pos-negativ Range'
     }
 }
