@@ -2038,6 +2038,7 @@ pathExpression[int lc_stmt]
             // The lookahead is also necessary to reach across newline in foo \n {bar}.
             // (Apparently antlr's basic approximate LL(k) lookahead is too weak for this.)
         :   (pathElementStart)=>
+            nls!
             pe:pathElement[prefix]!
             { prefix = #pe; }
         |
@@ -2065,7 +2066,7 @@ pathElement[AST prefix]
         |   // Member pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
             MEMBER_POINTER^
         |   // The all-powerful dot.
-            DOT^
+            (nls! DOT^)
         ) nls!
         (typeArguments)?   // TODO: Java 5 type argument application via prefix x.<Integer>y
         namePart
@@ -2101,7 +2102,7 @@ pathElement[AST prefix]
     ;
 
 pathElementStart!
-    :   DOT
+    :   (nls! DOT)
     |   SPREAD_DOT
     |   OPTIONAL_DOT
 //todo - nondeterminisms    |   MEMBER_POINTER_DEFAULT
