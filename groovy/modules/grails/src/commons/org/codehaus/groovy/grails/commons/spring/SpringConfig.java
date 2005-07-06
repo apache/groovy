@@ -59,7 +59,7 @@ public class SpringConfig {
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));
 		
 		Bean simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(SimpleUrlHandlerMapping.class);
-		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue("/*=simpleGrailsController"));
+//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue("/*=simpleGrailsController"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
 		
 		GrailsControllerClass[] simpleControllers = application.getControllers();
@@ -83,7 +83,13 @@ public class SpringConfig {
 				controller.setAutowire("byName");
 			}
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
+			for (int x = 0; x < simpleController.getURIs().length; x++) {
+				urlMappings.append(simpleController.getURIs()[x]);
+				urlMappings.append("=simpleGrailsController\n");
+			}
 		}
+		
+		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
 		
 		return beanReferences;
 	}
