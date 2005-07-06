@@ -9,6 +9,7 @@ import junit.framework.*;
 public class UberTestCase extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        suite.addTestSuite(AbstractClassAndInterfaceTest.class);
         suite.addTestSuite(AmbiguousInvocationTest.class);
         suite.addTestSuite(ArrayAutoboxingTest.class);        
         suite.addTestSuite(ArrayParamMethodTest.class);
