@@ -893,4 +893,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         while (node != null);
         return false;
     }
+    
+    public boolean isInterface(){
+        return (getModifiers() & Opcodes.ACC_INTERFACE) > 0; 
+    }
 }
