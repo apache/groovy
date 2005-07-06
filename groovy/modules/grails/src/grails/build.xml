@@ -9,6 +9,7 @@
 		<mkdir dir="grails-app"/>
 		<mkdir dir="lib"/>
 		<mkdir dir="spring"/>
+		<mkdir dir="html"/>
 		<mkdir dir="war"/>
 		<mkdir dir="war/WEB-INF"/>
 		<copy todir="war/WEB-INF">
@@ -48,6 +49,9 @@
 		<touch file="tmp/war/WEB-INF/grails-app/.dummy"/>
 		<mkdir dir="tmp/war/WEB-INF/tld"/>
 		<mkdir dir="tmp/war/openrico"/>
+		<copy todir="tmp/war">
+			<fileset dir="html"/>
+		</copy>
 		<copy todir="tmp/war/openrico">
 			<fileset dir="${grails.home}/src/war/openrico"/>
 		</copy>
