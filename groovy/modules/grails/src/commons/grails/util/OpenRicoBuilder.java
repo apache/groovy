@@ -34,7 +34,7 @@ import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
  * <p>This builder will set the content type of the response to "text/xml" and will 
  * render a correct XML prolog (<?xml version="1.0" encoding="ISO-8859-1"?>).
  * 
- * <p>This builder supports no namespaces or hyphens in element names..
+ * <p>This builder supports no namespaces or hyphens in element and attribute names.
  * 
  * <p>Use this builder to write a OpenRico reponse to the client. Sending a simple
  * DIV tag to the client requires this code:
@@ -62,12 +62,16 @@ import org.codehaus.groovy.grails.web.servlet.GrailsHttpServletResponse;
  * 
  * <p>OpenRico responses can contain multiple element and/or object nodes which is supported by this builder.
  * 
+ * <p>When using OpenRicoBuilder in controllers you may need to return a null value at the end of a closure to avoid an
+ * UnsupporterReturnValueException.
+ * 
  * @author Steven Devijver
  * @since Jul 5, 2005
  */
 public class OpenRicoBuilder extends MarkupBuilder {
 
 	private static final String TEXT_XML = "text/xml";
+	private static final String UTF_8 = "UTF-8";
 	private static final String AJAX = "ajax";
 	private static final String AJAX_RESPONSE = "ajax-response";
 	private static final String ELEMENT = "element";
@@ -76,7 +80,7 @@ public class OpenRicoBuilder extends MarkupBuilder {
 	private static final String TYPE = "type";
 	private static final String ID = "id";
 	private static final String OPENRICO = "OpenRicoBuilder: ";
-	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 	private boolean ajaxOnly = true;
 	private boolean responseOnly = false;
 	private boolean start = true;
@@ -86,7 +90,7 @@ public class OpenRicoBuilder extends MarkupBuilder {
 	}
 	
 	public OpenRicoBuilder(GrailsHttpServletResponse response) throws IOException {
-		super(response.getWriter(TEXT_XML));
+		super(response.getWriter(TEXT_XML, UTF_8));
 		getPrinter().println(XML_HEADER);
 	}
 
