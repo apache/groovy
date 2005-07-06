@@ -41,5 +41,14 @@ class NewExpressionTest extends GroovyTestCase {
 
         assert bean != null
     }
+    
+    void testNewOnMultipleLines() {
+        def bean = 
+          new
+            File
+            ("Foo")
+
+        assert bean != null
+    }
 
 }
