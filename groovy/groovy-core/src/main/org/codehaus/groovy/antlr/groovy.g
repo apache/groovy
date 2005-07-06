@@ -2654,8 +2654,9 @@ identPrimary
  *
  */
 newExpression
-    :   "new"^ (typeArguments)? type
-        (   mca:methodCallArgs[null]!
+    :   "new"^ nls! (typeArguments)? type
+        (   nls!
+            mca:methodCallArgs[null]!
 
             (
                 options { greedy=true; }:
