@@ -427,6 +427,16 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
         return true; 
     }
     
+    private void checkImplementsAndExtends(ClassNode node) {
+        ClassNode cn = node.getSuperClassNode();
+        if (cn.isInterface()) addError("you are not allowed to extend the Interface "+cn.getName()+", use implements instead", node);
+        String[] interfaces = node.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            cn = node.findClassNode(interfaces[i]);
+            if (!cn.isInterface()) addError ("you are not allowed to implement the Class "+cn.getName()+", use extends instead", node); 
+        }
+    }
+    
     private void checkClassForOverwritingFinal(ClassNode cn) {
         ClassNode superCN = cn.getSuperClassNode();
         if (superCN==null) return;
@@ -573,6 +583,7 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
     }
 
     public void visitClass(ClassNode node) {
+        checkImplementsAndExtends(node);
         checkClassForOverwritingFinal(node);
         checkMethodsForOverwritingFinal(node);
         VarScope scope = currentScope;
@@ -659,6 +670,8 @@ public class JSRVariableScopeCodeVisitor extends CodeVisitorSupport implements G
 
     private void addVarNames(ClassNode cn, HashMap refs, boolean visitParent)
             throws ClassNotFoundException {
+        // note this method is only called for parent classes
+        
         if (cn == null) return;
         List l = cn.getFields();
         for (Iterator iter = l.iterator(); iter.hasNext();) {
