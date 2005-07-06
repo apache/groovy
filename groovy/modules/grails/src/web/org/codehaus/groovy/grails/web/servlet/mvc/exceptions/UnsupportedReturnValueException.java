@@ -18,6 +18,10 @@ package org.codehaus.groovy.grails.web.servlet.mvc.exceptions;
 /**
  * <p>Thrown when the return value of a closure is unsupported.
  * 
+ * <p>If you are using a builder in your code and this exception
+ * is thrown you may need to return a null value at the end of
+ * the closure to avoid this exception.
+ * 
  * @author Steven Devijver
  * @since Jul 2, 2005
  */
