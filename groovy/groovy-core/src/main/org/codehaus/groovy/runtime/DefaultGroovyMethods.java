@@ -1219,7 +1219,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param self  a List
      * @param range a Range
      * @return a sublist based on range borders or a new list if range is reversed
-     * @see java.util.List#subList(int, int) 
+     * @see java.util.List#subList(int, int)
      */
     public static List getAt(List self, IntRange range) {
         int size = self.size();
@@ -1237,6 +1237,10 @@ PropertyValue pv = (PropertyValue) itr.next();
             answer = reverse(answer);
         }
         return answer;
+    }
+
+    protected int[] subListBorders(){
+        
     }
 
     /**
@@ -1488,6 +1492,30 @@ PropertyValue pv = (PropertyValue) itr.next();
         sublist.clear();
         sublist.addAll(values);
     }
+
+    /**
+     * A helper method to allow lists to work with subscript operators
+     *
+     * @param self  a List
+     * @param range  the subset of the list to set
+     * @param values the value to put at the given sublist
+     */
+    public static void putAt(List self, IntRange range, List values) {
+        if (range.isReverse()){
+             // nothing
+        }  else {
+            List sublist = getAt(self, range);
+            System.out.println("sublist = " + sublist);
+            System.out.println("self = " + self);
+            sublist.clear();
+            System.out.println("sublist = " + sublist);
+            System.out.println("self = " + self);
+            sublist.addAll(values);
+            System.out.println("sublist = " + sublist);
+            System.out.println("self = " + self);
+        }
+    }
+
 
     /**
      * A helper method to allow lists to work with subscript operators
