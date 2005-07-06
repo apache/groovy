@@ -231,4 +231,39 @@ class ListTest extends GroovyTestCase {
         }
         
     }
+
+    // see also SubscriptTest
+    void testGetAtRange(){
+        def list = [0,1,2,3]
+        println list[0..3]
+        assert list[0..3] == list           , 'full list'
+        assert list[0..0] == [0]            , 'one element range'
+        assert list[0..<0] == []            , 'empty range'
+        assert list[3..0] == [3,2,1,0]      , 'reverse range'
+        assert list[3..<0] == [3,2,1]       , 'reverse exclusive range'
+        assert list[-2..-1] == [2,3]        , 'negative index range'
+        assert list[-2..<-1] == [2]         , 'negative index range exclusive'
+        assert list[-1..-2] == [3,2]        , 'negative index range reversed'
+        assert list[-1..<-2] == [3]         , 'negative index range reversed exclusive'  // aaaahhhhh !
+        assert list[0..-1] == list          , 'pos - neg value'
+        assert list[0..<-1] == [0]          , 'pos - neg value exclusive -> empty'
+        assert list[0..<-2] == list         , 'pos - neg value exclusive -> full'
+        shouldFail (NullPointerException.class)      { list[null] }
+        shouldFail (IndexOutOfBoundsException.class) { list[5..6] }
+    }
+
+    // todo: provide analogouy testGetAtSplice
+
+    void testPutAtSplice(){
+        // assignments at bounds
+        // assignments outside current bounds
+        // compacting assignments
+        // extending assignments
+        // empty splice
+        // negative splice
+        // reversed splice
+    }
+
+    // todo: provide analogous testPutAtRange
+
 }
