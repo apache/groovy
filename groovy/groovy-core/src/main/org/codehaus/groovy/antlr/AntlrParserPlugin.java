@@ -549,7 +549,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         VariableExpression leftExpression = new VariableExpression(name, type);
         configureAST(leftExpression, paramNode);
 
-        Expression rightExpression = ConstantExpression.NULL;
+        Expression rightExpression = null;
         if (node != null) {
             assertNodeType(ASSIGN, node);
 
