@@ -1222,7 +1222,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @see java.util.List#subList(int, int)
      */
     public static List getAt(List self, IntRange range) {
-        RangeInfo info = subListBorders(self, range);
+        RangeInfo info = subListBorders(self.size(), range);
         List answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
         if (info.reverse) {
             answer = reverse(answer);
@@ -1231,8 +1231,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(List self, IntRange range){
-        int size = self.size();
+    protected static RangeInfo subListBorders(int size, IntRange range){
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), size);
         boolean reverse = range.isReverse();
@@ -1246,8 +1245,8 @@ PropertyValue pv = (PropertyValue) itr.next();
     }
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(List self, EmptyRange range){
-        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), self.size());
+    protected static RangeInfo subListBorders(int size, EmptyRange range){
+        int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), size);
         return new RangeInfo(from, from, false);
     }
 
@@ -1488,6 +1487,30 @@ PropertyValue pv = (PropertyValue) itr.next();
         }
     }
 
+
+     /**
+     * Support the range subscript operator for StringBuffer
+     *
+     * @param self  a StringBuffer
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuffer self, IntRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to,  value.toString());
+    }
+    /**
+     * Support the range subscript operator for StringBuffer
+     *
+     * @param self  a StringBuffer
+     * @param range a Range                                
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuffer self, EmptyRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to,  value.toString());
+    }
+
     /**
      * A helper method to allow lists to work with subscript operators
      *
@@ -1496,7 +1519,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param value the values to put at the given sublist or a Collection of values
      */
     public static void putAt(List self, EmptyRange range, Object value) {
-        RangeInfo info = subListBorders(self, range);
+        RangeInfo info = subListBorders(self.size(), range);
         List sublist = self.subList(info.from,  info.to);
         sublist.clear();
         if (value instanceof Collection){
@@ -1516,7 +1539,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * @param value the value to put at the given sublist or a Collection of values
      */
     public static void putAt(List self, IntRange range, Object value) {
-        RangeInfo info = subListBorders(self, range);
+        RangeInfo info = subListBorders(self.size(), range);
         List sublist = self.subList(info.from,  info.to);
         sublist.clear();
         if (value instanceof Collection){

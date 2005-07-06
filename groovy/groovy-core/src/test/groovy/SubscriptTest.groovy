@@ -130,6 +130,10 @@ class SubscriptTest extends GroovyTestCase {
         assert sub == "ice cheese gromi"
         
     }
+
+    void testStringPutAtRange(){
+        def text = "0123"
+    }
     
     void testListSubscriptWithList() {
         def list = ['a', 'b', 'c', 'd', 'e']
