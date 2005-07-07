@@ -1503,7 +1503,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      * Support the range subscript operator for StringBuffer
      *
      * @param self  a StringBuffer
-     * @param range a Range                                
+     * @param range a Range
      * @param value the object that's toString() will be inserted
      */
     public static void putAt(StringBuffer self, EmptyRange range, Object value) {
@@ -2085,16 +2085,10 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self  a String
      * @param value an Obect
-     * @return a StringWriter
+     * @return a StringBuffer
      */
-    public static StringWriter leftShift(String self, Object value) {
-        StringWriter answer = createStringWriter(self);
-        try {
-            leftShift(answer, value);
-        } catch (IOException e) {
-            throw new StringWriterIOException(e);
-        }
-        return answer;
+    public static StringBuffer leftShift(String self, Object value) {
+        return new StringBuffer(self).append(value);
     }
 
     protected static StringWriter createStringWriter(String self) {
@@ -2113,16 +2107,11 @@ PropertyValue pv = (PropertyValue) itr.next();
      *
      * @param self  a StringBuffer
      * @param value a value to append
-     * @return a StringWriter
+     * @return a StringBuffer
      */
-    public static Writer leftShift(StringBuffer self, Object value) {
-        StringBufferWriter answer = createStringBufferWriter(self);
-        try {
-            leftShift(answer, value);
-        } catch (IOException e) {
-            throw new StringWriterIOException(e);
-        }
-        return answer;
+    public static StringBuffer leftShift(StringBuffer self, Object value) {
+        self.append(value);
+        return self;
     }
 
     /**

@@ -58,6 +58,12 @@ class StringTest extends GroovyTestCase {
         assert buffer.toString() == "hello Gromit!"
     }
 
+    void testApppendAndSubscipt() {
+        def result =  'hello' << " Gromit!"
+        result[1..4] = 'i'
+        assert result.toString() == "hi Gromit!"
+    }
+
     void assertLength(s, len) {
         if (s.length() != len)  println "*** length != $len: $s"
         assert s.length() == len
