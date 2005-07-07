@@ -387,6 +387,30 @@ PropertyValue pv = (PropertyValue) itr.next();
     //-------------------------------------------------------------------------
 
     /**
+     * Remove all duplicates from the Collection.
+     * Works on the receiver object and returns it.
+     * From any duplicate, the first that is returned by the Collections iterator
+     * is retained, all other instances are removed.
+     * The Collection's original sequence is retained.
+     * @param self
+     * @return self without duplicates
+     */
+    public static Collection unique(Collection self){
+        if (self instanceof Set) return self;
+        if (self.size() == new HashSet(self).size()) return self;
+        Collection seen = new HashSet(self.size());
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object o =  iter.next();
+            if (seen.contains(o)){
+                iter.remove();
+            } else {
+                seen.add(o);
+            }
+        }
+        return self;
+    }
+
+    /**
      * Allows objects to be iterated through using a closure
      *
      * @param self    the object over which we iterate
