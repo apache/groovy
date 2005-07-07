@@ -70,6 +70,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(ClosureUsingOuterVariablesTest.class);
         suite.addTestSuite(ClosureVariableBug.class);
         suite.addTestSuite(ClosureWithDefaultParamTest.class);
+        suite.addTestSuite(groovy.CollectionTest.class);
         suite.addTestSuite(CompareToTest.class);
         suite.addTestSuite(CompilerErrorTest.class);
         suite.addTestSuite(ConstructorBug.class);
