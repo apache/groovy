@@ -35,6 +35,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GroovyClassLoader cl = null;
 	private GrailsControllerClass[] controllerClasses = null;
 	private Map controllerMap = null;
+		
 	
 	public DefaultGrailsApplication(Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
@@ -77,5 +78,12 @@ public class DefaultGrailsApplication implements GrailsApplication {
 			}
 		}
 		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsApplication#getClassLoader()
+	 */
+	public GroovyClassLoader getClassLoader() {
+		return this.cl;
 	}
 }
