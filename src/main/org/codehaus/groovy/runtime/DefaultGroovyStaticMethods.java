@@ -44,6 +44,7 @@ import java.util.regex.Matcher;
  * first parameter as the destination class.
  *
  * @author Guillaume Laforge
+ * @author Dierk Koenig
  * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
@@ -77,9 +78,44 @@ public class DefaultGroovyStaticMethods {
      * Get the last hidden matcher that system used to do a match.
      * 
      * @param matcher
-     * @return
+     * @return the last regex matcher
      */
     public static Matcher getLastMatcher(Matcher matcher) {
         return RegexSupport.getLastMatcher();
+    }
+
+    /**
+     * Sleep for so many seconds, even if interrupted.
+     * @param object receiver
+     * @param seconds the number of seconds to sleep
+     */
+    public static void sleep(Object object, long seconds){
+        long millis = seconds * 1000;
+        sleepImpl(object, millis);
+    }
+
+    protected static void sleepImpl(Object object, long millis) {
+        long start = System.currentTimeMillis();
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            long slept = System.currentTimeMillis() - start;
+            long rest  = millis - slept;
+            if (rest > 0) sleepImpl(object, rest);    // recursion to sleep the rest
+        }
+    }
+
+    /**
+     * Sleep for so many seconds
+     * @param object receiver
+     * @param seconds the number of seconds to sleep
+     * @param onInterrupt interrupt handler, InterruptedException is passed to the Closure
+     */
+    public static void sleep(Object object, long seconds, Closure onInterrupt){
+        try {
+            Thread.sleep(seconds * 1000);
+        } catch (InterruptedException e) {
+            onInterrupt.call(e);
+        }
     }
 }

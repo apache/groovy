@@ -210,6 +210,31 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") { it * 2 } == "11 a 22 b 33 c 44"
     }
 
+    void testObjectSleep(){
+        long start = System.currentTimeMillis()
+        sleep 1
+        long slept = System.currentTimeMillis() - start
+        assertTrue("should have slept >=1 second but was ${slept}ms", slept >= 1000)
+    }
+
+    // Verify Error on run() call: cannot pop off empty stack
+    void disabled_testObjectSleepInterrupted(){
+        new Thread(new Interruptor(caller:this)).start()
+        long start = System.currentTimeMillis()
+        sleep 1
+        long slept = System.currentTimeMillis() - start
+        assertTrue("should have slept >=1 second but was ${slept}ms", slept >= 1000)
+    }
+
+    void disabled_testObjectSleepWithOnInterruptHandler(){
+        def log = ''
+        new Thread(new Interruptor(caller:this)).start()
+        long start = System.currentTimeMillis()
+        sleep(1){e -> log << e}
+        assert System.currentTimeMillis() - start < 1000, 'should have been interrupted'
+        assert log.toString().contains('InterruptedException')
+    }
+
     void testObjectIdentity() {
         def a = new Object()
         def b = a
@@ -223,4 +248,14 @@ class GroovyMethodsTest extends GroovyTestCase {
 
 class WackyHashCode {
     int hashCode(){ return 1;}
+}
+class Interruptor implements Runnable{
+    @Property caller
+    void run(){
+        Thread.currentThread().sleep(100) // enforce yield
+        synchronized(caller){
+            caller.wait()
+            caller.notifyAll()
+        }
+    }
 }
