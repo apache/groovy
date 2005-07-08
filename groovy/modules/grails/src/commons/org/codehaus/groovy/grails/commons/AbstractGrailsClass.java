@@ -57,7 +57,12 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 			this.name = fullName;
 		} else {
 			String shortName = getShortClassname(clazz);
-			this.name = shortName.substring(0, shortName.length() - trailingName.length());
+			if(shortName.indexOf( trailingName ) > - 1) {
+				this.name = shortName.substring(0, shortName.length() - trailingName.length());
+			}
+			else {
+				this.name = fullName;
+			}
 		}
 	}
 
@@ -68,7 +73,7 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 		this.clazz = clazz;
 	}
 	
-	private Class getClazz() {
+	public Class getClazz() {
 		return this.clazz;
 	}
 	
