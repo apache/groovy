@@ -54,4 +54,11 @@ public interface GrailsClass {
 	 * @return the package name
 	 */
 	public String getPackageName();
+	
+	/**
+	 * <p> Returns the actual clazz represented by the GrailsClass
+	 * 
+	 * @return the class
+	 */
+	public Class getClazz();
 }
