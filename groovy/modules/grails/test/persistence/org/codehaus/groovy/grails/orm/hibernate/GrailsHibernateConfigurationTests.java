@@ -46,7 +46,6 @@ public class GrailsHibernateConfigurationTests extends
 	/* (non-Javadoc)
 	 * @see org.springframework.test.AbstractDependencyInjectionSpringContextTests#getConfigLocations()
 	 */
-	@Override
 	protected String[] getConfigLocations() {
 		return new String[] { "org/codehaus/groovy/grails/orm/hibernate/grails-hibernate-configuration-tests.xml" };
 	}
