@@ -15,6 +15,8 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+import groovy.lang.GroovyClassLoader;
+
 /**
  *  <p>Exposes all classes for a Grails application.
  * 
@@ -46,4 +48,11 @@ public interface GrailsApplication {
 	 * @return the controller or null if no controller was found
 	 */
 	public GrailsControllerClass getControllerByURI(String uri);
+	
+	/**
+	 * <p>Returns the class loader instance for the Grails application</p>
+	 * 
+	 * @return The GroovyClassLoader instance
+	 */
+	public GroovyClassLoader getClassLoader();
 }
