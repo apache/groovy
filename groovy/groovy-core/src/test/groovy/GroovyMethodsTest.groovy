@@ -214,25 +214,27 @@ class GroovyMethodsTest extends GroovyTestCase {
         long start = System.currentTimeMillis()
         sleep 1
         long slept = System.currentTimeMillis() - start
-        assertTrue("should have slept >=1 second but was ${slept}ms", slept >= 1000)
+        assertTrue("should have slept >= 1s but was ${slept}ms", slept >= 1000)
     }
 
-    // Verify Error on run() call: cannot pop off empty stack
-    void disabled_testObjectSleepInterrupted(){
-        new Thread(new Interruptor(caller:this)).start()
+    void testObjectSleepInterrupted(){
+        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+        new Thread(interruptor).start()
         long start = System.currentTimeMillis()
         sleep 1
         long slept = System.currentTimeMillis() - start
-        assertTrue("should have slept >=1 second but was ${slept}ms", slept >= 1000)
+        long epsilon = 100
+        assertTrue("should have slept >= 1s but was ${slept}ms", slept >= 1000-epsilon)
     }
-
-    void disabled_testObjectSleepWithOnInterruptHandler(){
+    void testObjectSleepWithOnInterruptHandler(){
         def log = ''
-        new Thread(new Interruptor(caller:this)).start()
+        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+        new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep(1){e -> log << e}
-        assert System.currentTimeMillis() - start < 1000, 'should have been interrupted'
-        assert log.toString().contains('InterruptedException')
+        sleep(1){ log += it.toString() }
+        long slept = System.currentTimeMillis() - start
+        assert slept < 1000, "should have been interrupted but slept ${slept}ms > 2s"
+        assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
 
     void testObjectIdentity() {
@@ -248,14 +250,4 @@ class GroovyMethodsTest extends GroovyTestCase {
 
 class WackyHashCode {
     int hashCode(){ return 1;}
-}
-class Interruptor implements Runnable{
-    @Property caller
-    void run(){
-        Thread.currentThread().sleep(100) // enforce yield
-        synchronized(caller){
-            caller.wait()
-            caller.notifyAll()
-        }
-    }
 }
