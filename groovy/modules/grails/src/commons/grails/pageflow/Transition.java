@@ -17,7 +17,7 @@ package grails.pageflow;
 
 import java.lang.String;
 
-import org.springframework.core.ToStringCreator;
+import org.springframework.core.style.ToStringCreator;
 
 /**
  * <p>Simple container class for a transition a in page flow.

@@ -66,13 +66,14 @@
 				<include name="asm-util-2.0.jar"/>
 				<include name="commons-logging.jar"/>
 				<include name="spring-webflow.jar"/>
-				<include name="spring-webflow-support.jar"/>
+				<include name="spring-binding.jar"/>
 				<include name="spring.jar"/>
 				<include name="groovy-all-1.0-jsr-03-SNAPSHOT.jar"/>
 				<include name="springmodules-sandbox.jar"/>
 				<include name="standard-${servlet.version}.jar"/>
 				<include name="jstl-${servlet.version}.jar"/>
 				<include name="commons-lang-2.0.jar"/>
+				<include name="ognl-2.7.jar"/>
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
