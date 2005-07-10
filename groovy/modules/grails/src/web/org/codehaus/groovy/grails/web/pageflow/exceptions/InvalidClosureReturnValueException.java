@@ -19,7 +19,7 @@ import java.lang.String;
 import java.lang.Throwable;
 
 /**
- * <p>Thrown the a closure returns a null value or not an instance of {@link org.springframework.web.flow.Event}
+ * <p>Thrown the a closure returns a null value or not an instance of {@link org.springframework.webflow.Event}
  * or {@link String}.
  * 
  * @author Steven Devijver

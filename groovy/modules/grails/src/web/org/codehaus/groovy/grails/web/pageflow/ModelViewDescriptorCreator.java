@@ -22,13 +22,13 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.springframework.util.Assert;
-import org.springframework.web.flow.RequestContext;
-import org.springframework.web.flow.ViewDescriptor;
-import org.springframework.web.flow.ViewDescriptorCreator;
+import org.springframework.webflow.RequestContext;
+import org.springframework.webflow.ViewDescriptor;
+import org.springframework.webflow.ViewDescriptorCreator;
 
 /**
  * <p>All closures in the model associated with a view
- * state will be executed everytime a (@link org.springframework.web.flow.ViewDescriptor}
+ * state will be executed everytime a (@link org.springframework.webflow.ViewDescriptor}
  * is created.
  * 
  * @author Steven Devijver

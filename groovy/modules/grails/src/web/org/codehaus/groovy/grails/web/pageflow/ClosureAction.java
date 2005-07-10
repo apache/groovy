@@ -21,9 +21,9 @@ import java.lang.Exception;
 
 import org.codehaus.groovy.grails.web.pageflow.exceptions.InvalidClosureReturnValueException;
 import org.springframework.util.Assert;
-import org.springframework.web.flow.Action;
-import org.springframework.web.flow.Event;
-import org.springframework.web.flow.RequestContext;
+import org.springframework.webflow.Action;
+import org.springframework.webflow.Event;
+import org.springframework.webflow.RequestContext;
 
 /**
  * <p>Wrapper class to execute a Groovy closure as a SWF actions.

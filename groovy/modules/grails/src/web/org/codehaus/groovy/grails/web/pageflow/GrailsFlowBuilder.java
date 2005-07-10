@@ -35,13 +35,13 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
-import org.springframework.web.flow.Action;
-import org.springframework.web.flow.AnnotatedAction;
-import org.springframework.web.flow.TransitionCriteria;
-import org.springframework.web.flow.TransitionCriteriaFactory;
-import org.springframework.web.flow.action.FormAction;
-import org.springframework.web.flow.config.AbstractFlowBuilder;
-import org.springframework.web.flow.config.FlowBuilderException;
+import org.springframework.webflow.Action;
+import org.springframework.webflow.AnnotatedAction;
+import org.springframework.webflow.TransitionCriteria;
+import org.springframework.webflow.TransitionCriteriaFactory;
+import org.springframework.webflow.action.FormAction;
+import org.springframework.webflow.config.AbstractFlowBuilder;
+import org.springframework.webflow.config.FlowBuilderException;
 
 /**
  * 
@@ -146,13 +146,13 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 		}
 	}
 
-	private org.springframework.web.flow.Transition[] getTransitions(List transitions) {
-		org.springframework.web.flow.Transition[] transitionArray = new org.springframework.web.flow.Transition[transitions.size()];
+	private org.springframework.webflow.Transition[] getTransitions(List transitions) {
+		org.springframework.webflow.Transition[] transitionArray = new org.springframework.webflow.Transition[transitions.size()];
 		int i = 0;
 		for (Iterator iter2 = transitions.iterator(); iter2.hasNext(); i++) {
 			Transition transition = (Transition)iter2.next();
 			TransitionCriteria transitionCriteria = TransitionCriteriaFactory.eventId(transition.getName());
-			transitionArray[i] = new org.springframework.web.flow.Transition(transitionCriteria, transition.getTargetStateId());
+			transitionArray[i] = new org.springframework.webflow.Transition(transitionCriteria, transition.getTargetStateId());
 		}
 		return transitionArray;
 	}
