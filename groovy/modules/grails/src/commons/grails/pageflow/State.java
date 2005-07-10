@@ -73,6 +73,7 @@ public class State {
 	private static final String MAPPER = "mapper";
 	private static final String TRUE_STATE = "trueState";
 	private static final String FALSE_STATE = "falseState";
+	private static final String METHOD = "method";
 	
 	/**
 	 * <p>Class that implements org.springframework.webflow.Action
@@ -123,6 +124,11 @@ public class State {
 	 * <p>Holds properties names and values for instances of {@link #actionProperties}.
 	 */
 	private Map actionProperties = null;
+	
+	/**
+	 * <p>Method that has to be executed on action.
+	 */
+	private String actionMethod = null;
 	
 	/**
 	 * <p>Holds the view name of this state.
@@ -375,7 +381,7 @@ public class State {
 				} else if (entry.getValue() instanceof String) {
 					decisionTrueStateId = (String)entry.getValue();
 				} else {
-					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] attribute [" + TRUE_STATE + "] on state [" + id + "]!");
+					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] for attribute [" + TRUE_STATE + "] on state [" + id + "]!");
 				}
 			} else if (FALSE_STATE.equals(entry.getKey())) {
 				if (entry.getValue() == null) {
@@ -383,7 +389,15 @@ public class State {
 				} else if (entry.getValue() instanceof String) {
 					decisionFalseStateId = (String)entry.getValue();
 				} else {
-					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] attribute [" + FALSE_STATE + "] on state [" + id + "]!");
+					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] for attribute [" + FALSE_STATE + "] on state [" + id + "]!");
+				}
+			} else if (METHOD.equals(entry.getKey())) {
+				if (entry.getValue() == null) {
+					throw new IllegalArgumentException("Value for property [" + METHOD + "] on state [" + id + "] must not be null!");
+				} else if (entry.getValue() instanceof String) {
+					actionMethod = (String)entry.getValue();
+				} else {
+					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] for attribute [" + METHOD + "] on state [" + id + "]!");
 				}
 			} else {
 				throw new IllegalArgumentException("Unknow property [" + entry.getValue() + "] on state [" + id + "]!");
@@ -528,6 +542,12 @@ public class State {
 	public void setViewName(String viewName) {
 		this.viewName = viewName;
 	}
+	public String getActionMethod() {
+		return actionMethod;
+	}
+	public void setActionMethod(String actionMethod) {
+		this.actionMethod = actionMethod;
+	}
 	
 	/**
 	 * <p>Validate the various fields of this class.
@@ -560,11 +580,12 @@ public class State {
 				throw new IllegalStateException("subflow input and subflow output and attribute mapper class must be null if attribute mapper is set!");
 			} else if (attributeMapperClass != null && (subFlowInput != null || subFlowOutput != null || attributeMapper != null)) {
 				throw new IllegalStateException("subflow input and subflow output and attribute mapper class must be null if attribute mapper class is set!");
-			} else if (StringUtils.isBlank(decisionTrueStateId)) {
-				throw new IllegalStateException("Decision true state id must be set!");
-			} else if (StringUtils.isBlank(decisionFalseStateId)) {
-				throw new IllegalStateException("Decision false state id must be set!");
-			}	
+//			} else if (StringUtils.isBlank(decisionTrueStateId)) {
+//				throw new IllegalStateException("Decision true state id must be set!");
+//			} else if (StringUtils.isBlank(decisionFalseStateId)) {
+//				throw new IllegalStateException("Decision false state id must be set!");
+//			}
+			}
 		}
 		
 		if (actionClass != null) {

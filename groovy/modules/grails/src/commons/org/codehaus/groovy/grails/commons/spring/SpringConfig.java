@@ -20,9 +20,14 @@ import java.util.Collection;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
+import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
+import org.codehaus.groovy.grails.web.servlet.view.GrailsView;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.util.Assert;
+import org.springframework.web.flow.config.FlowFactoryBean;
+import org.springframework.web.flow.mvc.FlowController;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springmodules.beans.factory.drivers.Bean;
@@ -48,6 +53,43 @@ public class SpringConfig {
 		
 		Assert.notNull(application);
 		
+		GrailsPageFlowClass[] pageFlows = application.getPageFlows();
+		for (int i = 0; i < pageFlows.length; i++) {
+			GrailsPageFlowClass pageFlow = pageFlows[i];
+			if (!pageFlow.getAvailable()) {
+				continue;
+			}
+			Bean pageFlowClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+			pageFlowClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+			pageFlowClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getPageFlow"));
+			pageFlowClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(pageFlow.getFullName()));
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class", pageFlowClass));
+			
+			Bean pageFlowInstance = SpringConfigUtils.createSingletonBean();
+			pageFlowInstance.setFactoryBean(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
+			pageFlowInstance.setFactoryMethod("newInstance");
+			if (pageFlow.byType()) {
+				pageFlowInstance.setAutowire("byType");
+			} else if (pageFlow.byName()) {
+				pageFlowInstance.setAutowire("byName");
+			}
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName(), pageFlowInstance));
+			
+			Bean flowBuilder = SpringConfigUtils.createSingletonBean(GrailsFlowBuilder.class);
+			flowBuilder.setProperty("pageFlowClass", SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Class"));
+			
+			Bean flowFactoryBean = SpringConfigUtils.createSingletonBean(FlowFactoryBean.class);
+			flowFactoryBean.setProperty("flowBuilder", flowBuilder);
+			
+			Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
+			flowController.setProperty("flow", flowFactoryBean);
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
+			
+			urlMappings.append(pageFlow.getUri());
+			urlMappings.append("=");
+			urlMappings.append(pageFlow.getFullName());
+			urlMappings.append("Controller\n");
+		}
 		
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
 		simpleGrailsController.setAutowire("byType");
@@ -56,11 +98,15 @@ public class SpringConfig {
 		Bean internalResourceViewResolver = SpringConfigUtils.createSingletonBean(InternalResourceViewResolver.class);
 		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/jsp/"));
 		internalResourceViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
+//		internalResourceViewResolver.setProperty("viewClass", SpringConfigUtils.createLiteralValue(GrailsView.class.getName()));
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));
 		
-		Bean simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(SimpleUrlHandlerMapping.class);
-//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue("/*=simpleGrailsController"));
-		beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
+		Bean simpleUrlHandlerMapping = null;
+		if (application.getControllers().length > 0 || application.getPageFlows().length > 0) {
+			simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(SimpleUrlHandlerMapping.class);
+	//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue("/*=simpleGrailsController"));
+			beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
+		}
 		
 		GrailsControllerClass[] simpleControllers = application.getControllers();
 		for (int i = 0; i < simpleControllers.length; i++) {
@@ -88,9 +134,13 @@ public class SpringConfig {
 				urlMappings.append("=simpleGrailsController\n");
 			}
 		}
-		
-		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
-		
+
+		if (simpleUrlHandlerMapping != null) {
+			System.out.println(urlMappings.toString());
+			urlMappings.setLength(urlMappings.length() - "\n".length());
+			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
+		}
+			
 		return beanReferences;
 	}
 }

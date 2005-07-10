@@ -18,6 +18,7 @@ package org.codehaus.groovy.grails.commons;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.IOException;
+import java.lang.String;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +36,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GroovyClassLoader cl = null;
 	private GrailsControllerClass[] controllerClasses = null;
 	private Map controllerMap = null;
-		
+	private GrailsPageFlowClass[] pageFlows = null;	
+	private Map pageFlowMap = null;
 	
 	public DefaultGrailsApplication(Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
@@ -51,16 +53,23 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		Class[] classes = cl.getLoadedClasses();
 		this.controllerMap = new HashMap();
+		this.pageFlowMap = new HashMap();
 		for (int i = 0; i < classes.length; i++) {
 			if (classes[i].getName().endsWith(DefaultGrailsControllerClass.CONTROLLER) /* && not ends with FromController */) {
 				GrailsControllerClass grailsControllerClass = new DefaultGrailsControllerClass(classes[i]);
 				if (grailsControllerClass.getAvailable()) {
 					this.controllerMap.put(grailsControllerClass.getFullName(), grailsControllerClass);
 				}
+			} else if (classes[i].getName().endsWith(DefaultGrailsPageFlowClass.PAGE_FLOW)) {
+				GrailsPageFlowClass grailsPageFlowClass = new DefaultGrailsPageFlowClass(classes[i]);
+				if (grailsPageFlowClass.getAvailable()) {
+					this.pageFlowMap.put(grailsPageFlowClass.getFullName(), grailsPageFlowClass);
+				}
 			}
 		}
 		
 		this.controllerClasses = ((GrailsControllerClass[])controllerMap.values().toArray(new GrailsControllerClass[controllerMap.size()]));
+		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
 	}
 
 	public GrailsControllerClass[] getControllers() {
@@ -80,9 +89,14 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.commons.GrailsApplication#getClassLoader()
-	 */
+	public GrailsPageFlowClass getPageFlow(String fullname) {
+		return (GrailsPageFlowClass)this.pageFlowMap.get(fullname);
+	}
+	
+	public GrailsPageFlowClass[] getPageFlows() {
+		return this.pageFlows;
+	}
+	
 	public GroovyClassLoader getClassLoader() {
 		return this.cl;
 	}

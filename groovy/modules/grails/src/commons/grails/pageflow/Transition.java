@@ -44,6 +44,7 @@ public class Transition {
 		}
 		this.state = state;
 		this.targetStateId = targetStateId;
+		this.name = name;
 	}
 	
 	public String getName() {

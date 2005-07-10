@@ -50,6 +50,21 @@ public interface GrailsApplication {
 	public GrailsControllerClass getControllerByURI(String uri);
 	
 	/**
+	 * <p>Returns all page flows in an application.
+	 * 
+	 * @return page flows in an application.
+	 */
+	public GrailsPageFlowClass[] getPageFlows();
+	
+	/**
+	 * <p>Returns the page flow with the given full name or null if no page flow was found with that name.
+	 * 
+	 * @param fullname the page flow full name
+	 * @return the page flow or null if no controller was found.
+	 */
+	public GrailsPageFlowClass getPageFlow(String fullname);
+	
+	/**
 	 * <p>Returns the class loader instance for the Grails application</p>
 	 * 
 	 * @return The GroovyClassLoader instance

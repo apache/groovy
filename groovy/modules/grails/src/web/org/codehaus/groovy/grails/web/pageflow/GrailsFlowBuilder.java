@@ -36,6 +36,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 import org.springframework.web.flow.Action;
+import org.springframework.web.flow.AnnotatedAction;
 import org.springframework.web.flow.TransitionCriteria;
 import org.springframework.web.flow.TransitionCriteriaFactory;
 import org.springframework.web.flow.action.FormAction;
@@ -51,6 +52,7 @@ import org.springframework.web.flow.config.FlowBuilderException;
 public class GrailsFlowBuilder extends AbstractFlowBuilder implements ApplicationContextAware {
 
 	private static final String FLOW = "flow";
+	private static final String METHOD = "method";
 	
 	private ApplicationContext applicationContext = null;
 	private GrailsPageFlowClass pageFlowClass = null;
@@ -77,36 +79,48 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 		Assert.notNull(pageFlow);
 		Flow flow = (Flow)pageFlow.getProperty(FLOW);
 		Assert.notNull(flow);
+		String firstState = null;
 		
 		for (Iterator iter = flow.getStates().iterator(); iter.hasNext();) {
 			State state = (State)iter.next();
 			
+			if (firstState == null) {
+				firstState = state.getId();
+			}
+			
 			if (state.isActionState()) {
-				Action action = null;
+				AnnotatedAction action = null;
 				
 				if (state.getAction() != null) {
-					action = state.getAction();
+					action = new AnnotatedAction(state.getAction());
 				} else if (state.getActionClass() != null) {
+					Action tmpAction = null;
 					if (Action.class.isAssignableFrom(state.getActionClass())) {
-						action = (Action)BeanUtils.instantiateClass(state.getActionClass());
+						tmpAction = (Action)BeanUtils.instantiateClass(state.getActionClass());
 					} else {
 						throw new UnsupportedOperationException("None " + Action.class.getName() + " action classes are not yet supported!");
 					}
 					if (state.getActionProperties() != null) {
-						BeanWrapper beanWrapper = new BeanWrapperImpl(action);
+						BeanWrapper beanWrapper = new BeanWrapperImpl(tmpAction);
 						for (Iterator iter2 = state.getActionProperties().entrySet().iterator(); iter2.hasNext();) {
 							Map.Entry entry = (Map.Entry)iter2.next();
 							beanWrapper.setPropertyValue((String)entry.getKey(), entry.getValue());
 						}
 					}
+					action = new AnnotatedAction(tmpAction);
 				} else if (state.getActionClosure() != null) {
-					action = new ClosureAction(this.pageFlowClass.getFlowId(), state.getId(), state.getActionClosure());
+					action = new AnnotatedAction(new ClosureAction(this.pageFlowClass.getFlowId(), state.getId(), state.getActionClosure()));
 				} else if (state.getActionFormDetails() != null) {
-					action = new FormAction();
-					BeanWrapper beanWrapper = new BeanWrapperImpl(action);
+					FormAction formAction = new FormAction();
+					BeanWrapper beanWrapper = new BeanWrapperImpl(formAction);
 					for (Iterator iter2 = state.getActionFormDetails().entrySet().iterator(); iter2.hasNext();) {
 						Map.Entry entry = (Map.Entry)iter2.next();
 						beanWrapper.setPropertyValue((String)entry.getKey(), entry.getValue());
+					}
+					formAction.afterPropertiesSet();
+					action = new AnnotatedAction(formAction);
+					if (state.getActionMethod() != null) {
+						action.setProperty(METHOD, state.getActionMethod());
 					}
 				} else {
 					throw new UnsupportedOperationException();
@@ -126,6 +140,9 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 			} else {
 				throw new UnsupportedOperationException();
 			}
+		}
+		if (firstState != null) {
+			getFlow().setStartState(firstState);
 		}
 	}
 

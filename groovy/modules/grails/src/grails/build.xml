@@ -1,7 +1,8 @@
 <project default="init">
 
+	<property name="servlet.version" value="2.3"/>
+	
 	<target name="init">
-	        <property name="servlet.version" value="2.3"/>
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
@@ -56,7 +57,7 @@
 			<fileset dir="${grails.home}/src/war/openrico"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/tld">
-			<fileset dir="${grails.home}/src/war/WEB-INF/tld"/>
+			<fileset dir="${grails.home}/src/war/WEB-INF/tld/${servlet.version}"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/lib">
 			<fileset dir="${grails.home}/lib">
@@ -64,11 +65,13 @@
 				<include name="asm-2.0.jar"/>
 				<include name="asm-util-2.0.jar"/>
 				<include name="commons-logging.jar"/>
+				<include name="spring-webflow.jar"/>
+				<include name="spring-webflow-support.jar"/>
 				<include name="spring.jar"/>
-				<include name="groovy-1.0-jsr-03-SNAPSHOT.jar"/>
+				<include name="groovy-all-1.0-jsr-03-SNAPSHOT.jar"/>
 				<include name="springmodules-sandbox.jar"/>
-				<include name="standard.jar"/>
-				<include name="jstl.jar"/>
+				<include name="standard-${servlet.version}.jar"/>
+				<include name="jstl-${servlet.version}.jar"/>
 				<include name="commons-lang-2.0.jar"/>
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>

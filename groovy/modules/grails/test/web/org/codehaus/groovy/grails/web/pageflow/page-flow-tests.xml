@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans default-autowire="byType">
+	<bean id="grailsApplication" class="org.codehaus.groovy.grails.commons.GrailsApplicationFactoryBean">
+		<description>Grails application factory bean</description>
+		<property name="groovyFiles">
+			<value>org/codehaus/groovy/grails/web/pageflow/*.groovy</value>
+		</property>
+	</bean>
+	<bean id="TestPageFlowClass" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetObject">
+			<ref bean="grailsApplication"/>
+		</property>
+		<property name="targetMethod">
+			<value>getPageFlow</value>
+		</property>
+		<property name="arguments">
+			<value>TestPageFlow</value>
+		</property>
+	</bean>
+	<bean id="TestPageFlow" factory-bean="TestPageFlowClass" factory-method="newInstance"/>
+	<bean id="testPageFlowController" class="org.springframework.web.flow.mvc.FlowController">
+		<property name="flow">
+			<bean class="org.springframework.web.flow.config.FlowFactoryBean">
+				<property name="flowBuilder">
+					<bean class="org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder">
+						<property name="pageFlowClass">
+							<ref bean="TestPageFlowClass"/>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+</beans>
