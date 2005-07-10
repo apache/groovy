@@ -84,7 +84,10 @@ public class SourceCodeTraversal extends TraversalHelper {
                     accept_FirstChild_v_SecondChild_v_ThirdChild_v(t);
                     break;
 
-                case GroovyTokenTypes.CASE_GROUP: // a,b,c
+                case GroovyTokenTypes.CASE_GROUP: //
+                    accept_FirstChild_v_SecondChildsChildren_v(t);
+                    break;
+
                 case GroovyTokenTypes.ELIST: // a,b,c
                 case GroovyTokenTypes.PARAMETERS: // a,b,c
                 case GroovyTokenTypes.STRING_CONSTRUCTOR: // "foo${bar}wibble"
@@ -132,10 +135,21 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.METHOD_CALL:
-                    accept_FirstChild_v_RestOfTheChildren_v(t);
+                    if (t.getNumberOfChildren() == 2 && t.childAt(1) != null && t.childAt(1).getType() == GroovyTokenTypes.CLOSED_BLOCK ) {
+                        // myMethod {...
+                        accept_FirstChild_v_SecondChild(t);
+                    } else {
+                        GroovySourceAST lastChild = t.childAt(t.getNumberOfChildren() -1);
+                        if (lastChild != null && lastChild.getType() == GroovyTokenTypes.CLOSED_BLOCK) {
+                            // myMethod(a,b) {...
+                            accept_FirstChild_v_RestOfTheChildren_v_LastChild(t);
+                        } else {
+                            // myMethod(a,b)
+                            accept_FirstChild_v_RestOfTheChildren_v(t);
+                        }
+                    }
                     break;
 
-                case GroovyTokenTypes.LITERAL_case:
                 case GroovyTokenTypes.LITERAL_while:
                     accept_v_FirstChildsFirstChild_v_RestOfTheChildren(t);
                     break;
@@ -145,6 +159,13 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.CLOSED_BLOCK: // [1,2,3].each {foo(it)}  <-- Closure
+                    if (t.childAt(0) != null && t.childAt(0).getType() == GroovyTokenTypes.IMPLICIT_PARAMETERS) {
+                        accept_v_AllChildren_v(t);
+                    } else {
+                        accept_v_FirstChild_v_RestOfTheChildren_v(t);
+                    }
+                    break;
+
                 case GroovyTokenTypes.FOR_IN_ITERABLE:
                 case GroovyTokenTypes.LITERAL_for:
                 case GroovyTokenTypes.LITERAL_new:

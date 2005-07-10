@@ -74,7 +74,12 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitCaseGroup(GroovySourceAST t, int visit) {
-        //do nothing
+        if (visit == OPENING_VISIT) {
+            tabLevel++;
+        }
+        if (visit == CLOSING_VISIT) {
+            tabLevel--;
+        }
     }
 
     public void visitClassDef(GroovySourceAST t,int visit) {
@@ -82,7 +87,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
-        print(t,visit," {"," -> ","}");
+        print(t,visit,"{"," -> ","}");
     }
 
     public void visitDot(GroovySourceAST t,int visit) {
@@ -108,7 +113,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitForInIterable(GroovySourceAST t, int visit) {
-        print(t,visit,"("," in ",")");
+        print(t,visit,"("," in ",") ");
     }
 
     public void visitGt(GroovySourceAST t, int visit) {
@@ -123,6 +128,10 @@ public class SourcePrinter extends VisitorAdapter {
             if (t.getNumberOfChildren() != 0) {
                 print(t,visit," implements ");
             }
+        }
+        if (visit == CLOSING_VISIT) {
+            //space between classdef and objblock
+            print(t,visit," ");
         }
     }
 
@@ -166,7 +175,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
-        print(t,visit,"catch (",null,")");
+        print(t,visit,"catch (",null,") ");
     }
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
@@ -182,7 +191,7 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitLiteralIf(GroovySourceAST t,int visit) {
         // slightly strange as subsequent visit is done after closing visit
-        print(t,visit,"if ("," else ",")");
+        print(t,visit,"if ("," else ",") ");
     }
     public void visitLiteralInt(GroovySourceAST t,int visit) {
         print(t,visit,"int",null,null);
@@ -219,14 +228,15 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitLiteralSwitch(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             print(t,visit,"switch (");
+            tabLevel++;
         }
         if (visit == SUBSEQUENT_VISIT) {
-            tabLevel++;
             print(t,visit,") {");
         }
         if (visit == CLOSING_VISIT) {
-            print(t,visit,"}");
             tabLevel--;
+            printNewlineAndIndent(t,true);
+            print(t,visit,"}");
         }
     }
 
@@ -244,7 +254,7 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"void",null,null);
     }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
-        print(t,visit,"while (",null,")");
+        print(t,visit,"while (",null,") ");
     }
 
     public void visitLnot(GroovySourceAST t, int visit) {
@@ -260,7 +270,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitMethodCall(GroovySourceAST t,int visit) {
-        print(t,visit,"(",null,")");
+        print(t,visit,"("," ",")");
     }
     public void visitMinus(GroovySourceAST t,int visit) {
         print(t,visit," - ",null,null);
@@ -285,9 +295,10 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitObjblock(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
-            print(t,visit," {");
+            print(t,visit,"{");
         } else {
             tabLevel--;
+            printNewlineAndIndent(t,true);
             print(t,visit,"}");
         }
     }
@@ -301,7 +312,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitParameters(GroovySourceAST t,int visit) {
-        print(t,visit,"(",",",")");
+        print(t,visit,"(",",",") ");
     }
 
     public void visitPlus(GroovySourceAST t, int visit) {
@@ -324,11 +335,11 @@ public class SourcePrinter extends VisitorAdapter {
     public void visitSlist(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             tabLevel++;
-            print(t,visit," {");
+            print(t,visit,"{");
         } else {
             tabLevel--;
             printNewlineAndIndent(t,true);
-            print(t,visit,"}",true);
+            print(t,visit,"}");
         }
     }
 
@@ -340,7 +351,13 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitStringLiteral(GroovySourceAST t,int visit) {
-        print(t,visit,"\"" + t.getText() + "\"",null,null);
+        print(t,visit,"\"" + escape(t.getText()) + "\"",null,null);
+    }
+
+    private String escape(String literal) {
+        literal = literal.replaceAll("\n","\\\\<<REMOVE>>n"); // can't seem to do \n in one go with Java regex
+        literal = literal.replaceAll("<<REMOVE>>","");
+        return literal;
     }
 
     public void visitType(GroovySourceAST t,int visit) {
@@ -398,12 +415,20 @@ public class SourcePrinter extends VisitorAdapter {
         if (lastLinePrinted == 0) { lastLinePrinted = currentLine; }
         if (lastLinePrinted != currentLine || suggestNewline) {
             if (newLines) {
-                out.println();
+//                out.println();
+//                out.println("t:" + t.getText() + " c:" + currentLine + " l:" + lastLinePrinted);
+                if (suggestNewline) {
+                    out.println();
+                } else {
+                    for (int i=lastLinePrinted;i<currentLine;i++) {
+                        out.println();
+                    }
+                }
                 for (int i=0;i<tabLevel;i++) {
                     out.print("    ");
                 }
             }
-            lastLinePrinted = currentLine;
+            lastLinePrinted = Math.max(currentLine,lastLinePrinted);
         }
     }
 }
