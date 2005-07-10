@@ -28,9 +28,9 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.core.ToStringCreator;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.web.flow.Action;
-import org.springframework.web.flow.FlowAttributeMapper;
-import org.springframework.web.flow.RequestContext;
+import org.springframework.webflow.Action;
+import org.springframework.webflow.FlowAttributeMapper;
+import org.springframework.webflow.RequestContext;
 
 /**
  * <p>Simple container object for a state in a page flow.
@@ -104,18 +104,18 @@ public class State {
 	 * <p>A closure that will handle the action logic.
 	 * 
 	 * <p>The closure can have one parameter, the
-	 * {@link org.springframework.web.flow.RequestContext}
+	 * {@link org.springframework.webflow.RequestContext}
 	 * instance.
 	 */
 	private Closure actionClosure = null;
 	
 	/**
-	 * <p>Delegates action handling to {@link org.springframework.web.flow.action.FormAction}.
+	 * <p>Delegates action handling to {@link org.springframework.webflow.action.FormAction}.
 	 * 
 	 * <p>This is a convenience notation for the combination of {@link #actionClass} and
 	 * {@link #actionProperties}.
 	 * 
-	 * <p>All properties available on {@link org.springframework.web.flow.action.FormAction} can
+	 * <p>All properties available on {@link org.springframework.webflow.action.FormAction} can
 	 * be specified in the map.
 	 */
 	private Map actionFormDetails = null;
@@ -139,7 +139,7 @@ public class State {
 	 * <p>A closure that should return the view name.
 	 * 
 	 * <p>The return value should be not null and of
-	 * type {@link String} or {@link org.springframework.web.flow.Event}
+	 * type {@link String} or {@link org.springframework.webflow.Event}
 	 * otherwise an exception is thrown.
 	 */
 	private Closure viewClosure = null;
@@ -162,7 +162,7 @@ public class State {
 	 * <p>A closure that maps values in the flow scope to map. This map
 	 * is added to the flow scope of the subflow that is started.
 	 * 
-	 * <p>The closure can have one parameter, a {@link org.springframework.web.flow.RequestContext}
+	 * <p>The closure can have one parameter, a {@link org.springframework.webflow.RequestContext}
 	 * instance which is the request context of the parent flow.
 	 * 
 	 * <p>The return should be null or an instance of {@link Map}.
@@ -237,7 +237,7 @@ public class State {
 	 * <p>A closure that implements a test to determine the outcome of
 	 * the decision state.
 	 * 
-	 * <p>The closure can have one parameter, an instance of {@link org.springframework.web.flow.RequestContext}.
+	 * <p>The closure can have one parameter, an instance of {@link org.springframework.webflow.RequestContext}.
 	 * 
 	 * <p>Valid return values are:
 	 * 

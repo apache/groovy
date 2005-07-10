@@ -27,10 +27,10 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.springframework.web.flow.Action;
-import org.springframework.web.flow.FlowAttributeMapper;
-import org.springframework.web.flow.RequestContext;
-import org.springframework.web.flow.action.FormAction;
+import org.springframework.webflow.Action;
+import org.springframework.webflow.FlowAttributeMapper;
+import org.springframework.webflow.RequestContext;
+import org.springframework.webflow.action.FormAction;
 
 /**
  * 

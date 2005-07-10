@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.web.pageflow;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
 import org.springframework.test.AbstractDependencyInjectionSpringContextTests;
-import org.springframework.web.flow.mvc.FlowController;
+import org.springframework.webflow.mvc.FlowController;
 
 /**
  * 
