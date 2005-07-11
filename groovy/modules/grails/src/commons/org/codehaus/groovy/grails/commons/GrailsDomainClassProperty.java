@@ -15,6 +15,8 @@
 package org.codehaus.groovy.grails.commons;
 
 /**
+ * A property of a GrailsDomainClass instance
+ * 
  * @author Graeme Rocher
  * @since Jul 5, 2005
  */

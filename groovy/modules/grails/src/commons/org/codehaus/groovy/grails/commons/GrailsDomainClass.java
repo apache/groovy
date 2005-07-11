@@ -16,10 +16,10 @@ package org.codehaus.groovy.grails.commons;
 
 
 /**
+ * <p>Represents a persistable Grails domain class</p>
+ * 
  * @author Graeme Rocher
  * @since Jul 5, 2005
- * 
- * A Grails domain class
  */
 public interface GrailsDomainClass extends GrailsClass {
 

@@ -16,36 +16,27 @@ package org.codehaus.groovy.grails.exceptions;
 
 
 /**
+ * 
+ * Exception which is thrown when a property of a Grails class is invalidated.
+ * 
  * @author Graeme Rocher
  * @since 06-Jul-2005
+ * 
  */
 public class InvalidPropertyException extends GrailsException {
 
-	/**
-	 * 
-	 */
 	public InvalidPropertyException() {
 		super();
 	}
 
-	/**
-	 * @param arg0
-	 * @param arg1
-	 */
 	public InvalidPropertyException(String arg0, Throwable arg1) {
 		super(arg0, arg1);
 	}
 
-	/**
-	 * @param arg0
-	 */
 	public InvalidPropertyException(String arg0) {
 		super(arg0);
 	}
 
-	/**
-	 * @param arg0
-	 */
 	public InvalidPropertyException(Throwable arg0) {
 		super(arg0);
 	}
