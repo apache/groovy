@@ -1,0 +1,45 @@
+BOOKS SAMPLE APPLICATION FOR GRAILS
+===================================
+
+This sample application demonstrates a simple page flow application that maintains a list of books.
+
+The directory structure is:
+
+<root>
+  /grails-app
+    /BookFlow.groovy
+  /jsp
+    /listBooks.jsp
+    /bookDetail.jsp
+
+This application clearly demonstrates how compact Grails applications are and how little configuration is required.
+
+BUILDING
+========
+
+To build this application set the GRAILS_HOME environment to the root directory of the Grails distribution or project.
+
+If you have obtained Grails from CVS make sure the JAR file is build by running: 
+
+ant jar
+
+in the project root directory.
+
+Next run this command to initiate the dictory structure:
+
+${GRAILS_HOME}/bin/grails init
+
+Then run this command to create the WAR file:
+
+${GRAILS_HOME}/bin/grails war
+
+This application is written against the Servlet 2.3 specifications so should run in any servlet container.
+
+Deploy grails-app.war in you servlet container (for most containers this mean copying the file in the webapps folder).
+
+Browse to http://<server_address>:<server_port>/grails-app/app/books to test the application. You can also rename the WAR file to use another context path.
+
+Please post a message on the Grails mailing list if you experience any problems running this sample application.
+
+Steven
+
