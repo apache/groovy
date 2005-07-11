@@ -18,8 +18,8 @@ package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.grails.domain.GrailsDomainClass;
-import org.codehaus.groovy.grails.domain.GrailsDomainClassProperty;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.hibernate.MappingException;
 import org.hibernate.cfg.HbmBinder;
 import org.hibernate.cfg.Mappings;
@@ -307,7 +307,7 @@ public final class GrailsDomainBinder {
 		prop.setInsertable(true);
 		prop.setUpdateable(true);
 		prop.setPropertyAccessorName( mappings.getDefaultAccess() );
-		prop.setOptional( !grailsProperty.isRequired() );
+		prop.setOptional( grailsProperty.isOptional() );
 		// lazy to true
 		prop.setLazy(true);
 		
@@ -337,7 +337,7 @@ public final class GrailsDomainBinder {
 	 * @param column
 	 */
 	private static void bindColumn(GrailsDomainClassProperty grailsProp, Column column) {
-		column.setNullable(!grailsProp.isRequired());
+		column.setNullable(grailsProp.isOptional());
 		column.setName(grailsProp.getFieldName());
 	}
 
