@@ -25,7 +25,7 @@ public interface GrailsDomainClassProperty {
 	String IDENTITY = "id";
 	String VERSION = "version";
 	String OPTIONAL = "optional";
-	String TRANSIENT = "transient";
+	String TRANSIENT = "notPersistent";
 	Object META_CLASS = "metaClass";
 	String CLASS = "class";	
 	/**
