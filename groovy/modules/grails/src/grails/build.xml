@@ -26,6 +26,11 @@
 		</copy>
 	</target>
 	
+	<target name="clean">
+		<delete file="grails-app.war"/>
+		<delete dir="tmp"/>
+	</target>
+	
 	<target name="war">
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
