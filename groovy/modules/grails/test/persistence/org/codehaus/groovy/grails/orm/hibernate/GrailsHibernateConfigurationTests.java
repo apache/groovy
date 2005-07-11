@@ -22,8 +22,8 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.codehaus.groovy.grails.domain.GrailsDomain;
-import org.codehaus.groovy.grails.domain.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -39,7 +39,7 @@ public class GrailsHibernateConfigurationTests extends
 		AbstractDependencyInjectionSpringContextTests {
 
 	protected DataSource dataSource = null;
-	protected GrailsDomain grailsDomain = null;
+	protected GrailsApplication grailsApplication = null;
 	protected SessionFactory sessionFactory = null;
 	
 
@@ -57,13 +57,14 @@ public class GrailsHibernateConfigurationTests extends
 		this.dataSource = dataSource;
 	}
 	
+
 	/**
-	 * @param grailsDomain The grailsDomain to set.
+	 * @param grailsApplication The grailsApplication to set.
 	 */
-	public void setGrailsDomain(GrailsDomain grailsDomain) {
-		this.grailsDomain = grailsDomain;
+	public void setGrailsApplication(GrailsApplication grailsApplication) {
+		this.grailsApplication = grailsApplication;
 	}
-	
+
 	/**
 	 * @param sessionFactory The sessionFactory to set.
 	 */
@@ -77,7 +78,7 @@ public class GrailsHibernateConfigurationTests extends
 	}
 
 	public void testGrailsDomain() throws Exception {
-		GrailsDomainClass[] domainClasses = grailsDomain.getGrailsDomainClasses();
+		GrailsDomainClass[] domainClasses = grailsApplication.getGrailsDomainClasses();
 		assertEquals(2,domainClasses.length);
 	}
 	
@@ -85,7 +86,7 @@ public class GrailsHibernateConfigurationTests extends
 		assertNotNull(this.sessionFactory);
 		
 		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
-		GroovyObject obj = grailsDomain.getGrailsDomainClass("test1").newInstance();
+		GroovyObject obj = grailsApplication.getGrailsDomainClass("test1").newInstance();
 		assertNotNull(obj);
 		
 		obj.setProperty("firstName", "Joe");

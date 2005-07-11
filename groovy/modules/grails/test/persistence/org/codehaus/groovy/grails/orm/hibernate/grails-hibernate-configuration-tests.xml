@@ -21,20 +21,13 @@
 	<bean id="grailsApplication" class="org.codehaus.groovy.grails.commons.GrailsApplicationFactoryBean">
 		<description>Grails application factory bean</description>
 		<property name="groovyFiles">
-			<value>/org/codehaus/groovy/grails/web/servlet/mvc/*.groovy</value>
-		</property>
-	</bean>
-		
-	<bean id="grailsDomain" class="org.codehaus.groovy.grails.domain.GrailsDomainFactoryBean">
-		<description>Grails Domain classes factory bean</description>
-		<property name="groovyFiles">
 			<value>org/codehaus/groovy/grails/domain/*.groovy</value>
 		</property>
-		<property name="grailsApplication" ref="grailsApplication" />
-	</bean>	
+	</bean>
+	
 	
 	<bean id="grailsHibernateConfiguration" class="org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration">
-		<property name="domain" ref="grailsDomain"></property>
+		<property name="grailsApplication" ref="grailsApplication"></property>
 	</bean>
 	
 	<bean id="sessionFactory" class="org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean">
