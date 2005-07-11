@@ -35,9 +35,17 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
 	private GroovyClassLoader cl = null;
 	private GrailsControllerClass[] controllerClasses = null;
+	private GrailsPageFlowClass[] pageFlows = null;
+	private GrailsDomainClass[] domainClasses = null;
+
 	private Map controllerMap = null;
-	private GrailsPageFlowClass[] pageFlows = null;	
+	private Map domainMap = null;
 	private Map pageFlowMap = null;
+	
+		
+	
+	
+	
 	
 	public DefaultGrailsApplication(Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
@@ -50,17 +58,27 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
 			}
 		}
-		
+		// get all the classes that were loaded
 		Class[] classes = cl.getLoadedClasses();
+		// first load the domain classes
+		this.domainMap = new HashMap();
+		for (int i = 0; i < classes.length; i++) {
+			// check that it is a domain class
+			if(GrailsClassUtils.isDomainClass(classes[i])) {				
+				GrailsDomainClass grailsDomainClass = new DefaultGrailsDomainClass(classes[i]);				
+				this.domainMap.put(grailsDomainClass.getName().substring(0, 1).toLowerCase() + grailsDomainClass.getName().substring(1), grailsDomainClass);						
+			}
+		}		
+		
 		this.controllerMap = new HashMap();
 		this.pageFlowMap = new HashMap();
 		for (int i = 0; i < classes.length; i++) {
-			if (classes[i].getName().endsWith(DefaultGrailsControllerClass.CONTROLLER) /* && not ends with FromController */) {
+			if (GrailsClassUtils.isControllerClass(classes[i])  /* && not ends with FromController */) {
 				GrailsControllerClass grailsControllerClass = new DefaultGrailsControllerClass(classes[i]);
 				if (grailsControllerClass.getAvailable()) {
 					this.controllerMap.put(grailsControllerClass.getFullName(), grailsControllerClass);
 				}
-			} else if (classes[i].getName().endsWith(DefaultGrailsPageFlowClass.PAGE_FLOW)) {
+			} else if (GrailsClassUtils.isPageFlowClass(classes[i])) {
 				GrailsPageFlowClass grailsPageFlowClass = new DefaultGrailsPageFlowClass(classes[i]);
 				if (grailsPageFlowClass.getAvailable()) {
 					this.pageFlowMap.put(grailsPageFlowClass.getFullName(), grailsPageFlowClass);
@@ -70,6 +88,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		this.controllerClasses = ((GrailsControllerClass[])controllerMap.values().toArray(new GrailsControllerClass[controllerMap.size()]));
 		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
+		this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
 	}
 
 	public GrailsControllerClass[] getControllers() {
@@ -100,4 +119,16 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	public GroovyClassLoader getClassLoader() {
 		return this.cl;
 	}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.domain.GrailsDomain#getGrailsDomainClasses()
+	 */
+	public GrailsDomainClass[] getGrailsDomainClasses() {
+		return this.domainClasses;
+	}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.domain.GrailsDomain#getGrailsDomainClass(java.lang.String)
+	 */
+	public GrailsDomainClass getGrailsDomainClass(String name) {
+			return (GrailsDomainClass)this.domainMap.get(name);
+	}	
 }
