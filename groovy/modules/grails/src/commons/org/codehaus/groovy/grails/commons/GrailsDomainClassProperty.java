@@ -25,9 +25,11 @@ public interface GrailsDomainClassProperty {
 	String IDENTITY = "id";
 	String VERSION = "version";
 	String OPTIONAL = "optional";
-	String TRANSIENT = "notPersistent";
+	String TRANSIENT = "transients";
+	String EVANESCENT = "evanescent";
 	Object META_CLASS = "metaClass";
 	String CLASS = "class";	
+	
 	/**
 	 * Returns the name of the property
 	 * @return The property name

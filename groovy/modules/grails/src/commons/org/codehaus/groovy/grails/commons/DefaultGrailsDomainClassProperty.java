@@ -15,6 +15,7 @@
 package org.codehaus.groovy.grails.commons;
 
 import java.beans.PropertyDescriptor;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -51,6 +52,14 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 		optionalProps = (List)owner.getPropertyValue( OPTIONAL, List.class );
 		transientProps= (List)owner.getPropertyValue( TRANSIENT, List.class );
 		
+		// Undocumented feature alert! Steve insisted on this :-)
+		List evanescent = (List)owner.getPropertyValue( EVANESCENT, List.class );
+		if(evanescent != null) {
+			if(transientProps == null) 
+				transientProps = new ArrayList();
+			
+			transientProps.addAll(evanescent);
+		}
 		// establish of property is required
 		if(optionalProps != null) {
 			for(Iterator i = optionalProps.iterator();i.hasNext();) {
