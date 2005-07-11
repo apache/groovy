@@ -65,6 +65,21 @@ public interface GrailsApplication {
 	public GrailsPageFlowClass getPageFlow(String fullname);
 	
 	/**
+	 * <p>Returns an array of all the Grails Domain classes</p>
+	 * 
+	 * @return The domain classes in the domain
+	 */
+	public GrailsDomainClass[] getGrailsDomainClasses();
+	
+	/**
+	 * <p>Retrieves a domain class for the specified name</p>
+	 * 
+	 * @param name The name of the domain class to retrieve
+	 * @return The retrieved domain class
+	 */
+	public GrailsDomainClass getGrailsDomainClass(String name);	
+	
+	/**
 	 * <p>Returns the class loader instance for the Grails application</p>
 	 * 
 	 * @return The GroovyClassLoader instance
