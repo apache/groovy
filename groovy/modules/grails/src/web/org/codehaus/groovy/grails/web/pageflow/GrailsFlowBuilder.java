@@ -20,14 +20,13 @@ import grails.pageflow.State;
 import grails.pageflow.Transition;
 import groovy.lang.GroovyObject;
 
-import java.lang.String;
-import java.lang.UnsupportedOperationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
+import org.codehaus.groovy.grails.web.pageflow.action.GrailsFormAction;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
@@ -39,7 +38,6 @@ import org.springframework.webflow.Action;
 import org.springframework.webflow.AnnotatedAction;
 import org.springframework.webflow.TransitionCriteria;
 import org.springframework.webflow.TransitionCriteriaFactory;
-import org.springframework.webflow.action.FormAction;
 import org.springframework.webflow.config.AbstractFlowBuilder;
 import org.springframework.webflow.config.FlowBuilderException;
 
@@ -53,6 +51,7 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 
 	private static final String FLOW = "flow";
 	private static final String METHOD = "method";
+	private static final String BIND_AND_VALIDATE = "bindAndValidate";
 	
 	private ApplicationContext applicationContext = null;
 	private GrailsPageFlowClass pageFlowClass = null;
@@ -111,7 +110,7 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 				} else if (state.getActionClosure() != null) {
 					action = new AnnotatedAction(new ClosureAction(this.pageFlowClass.getFlowId(), state.getId(), state.getActionClosure()));
 				} else if (state.getActionFormDetails() != null) {
-					FormAction formAction = new FormAction();
+					GrailsFormAction formAction = new GrailsFormAction();
 					BeanWrapper beanWrapper = new BeanWrapperImpl(formAction);
 					for (Iterator iter2 = state.getActionFormDetails().entrySet().iterator(); iter2.hasNext();) {
 						Map.Entry entry = (Map.Entry)iter2.next();
@@ -121,6 +120,8 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 					action = new AnnotatedAction(formAction);
 					if (state.getActionMethod() != null) {
 						action.setProperty(METHOD, state.getActionMethod());
+					} else {
+						action.setProperty(METHOD, BIND_AND_VALIDATE);
 					}
 				} else {
 					throw new UnsupportedOperationException();
