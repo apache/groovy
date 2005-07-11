@@ -18,8 +18,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.codehaus.groovy.grails.domain.GrailsDomain;
-import org.codehaus.groovy.grails.domain.GrailsDomainClass;
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.hibernate.MappingException;
 import org.hibernate.cfg.Configuration;
 
@@ -32,7 +32,7 @@ import org.hibernate.cfg.Configuration;
  */
 public class GrailsDomainConfiguration extends Configuration {
 
-	private GrailsDomain domain;
+	private GrailsApplication grailsApplication;
 	private Set domainClasses;
 
 	/**
@@ -55,10 +55,10 @@ public class GrailsDomainConfiguration extends Configuration {
 	/**
 	 * @param domain The domain to set.
 	 */
-	public void setDomain(GrailsDomain domain) {
-		this.domain = domain;
+	public void setGrailsApplication(GrailsApplication application) {
+		this.grailsApplication = application;
 		
-		GrailsDomainClass[] existingDomainClasses = this.domain.getGrailsDomainClasses();
+		GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
 		for(int i = 0; i < existingDomainClasses.length;i++) {
 			addDomainClass(existingDomainClasses[i]);
 		}		
@@ -69,7 +69,7 @@ public class GrailsDomainConfiguration extends Configuration {
 	 */
 	protected void secondPassCompile() throws MappingException {
 		// set the class loader to load Groovy classes
-		Thread.currentThread().setContextClassLoader( this.domain.getGrailsApplication().getClassLoader() );
+		Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
 		// do Grails class configuration
 		for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
 			GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
