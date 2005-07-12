@@ -29,6 +29,10 @@ Next run this command to initiate the dictory structure:
 
 ${GRAILS_HOME}/bin/grails init
 
+(if you get "permission denied", this file is not executable. Use
+chmod +x ${GRAILS_HOME}/bin/grails
+to grant it execution rights.)
+
 Then run this command to create the WAR file:
 
 ${GRAILS_HOME}/bin/grails war
