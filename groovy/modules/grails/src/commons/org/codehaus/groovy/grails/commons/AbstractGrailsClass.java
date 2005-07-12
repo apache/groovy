@@ -15,7 +15,9 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.StringUtils;
@@ -118,15 +120,27 @@ public abstract class AbstractGrailsClass implements GrailsClass {
 	
 	/**
 	 * <p>Looks for a property of the reference instance with a given name and type. If found
-	 * its value is returned, otherwise null.
+	 * its value is returned, otherwise look for a public static field with given name and type,
+	 * otherwise return null.
 	 * 
-	 * @return property value or null if no property was found
+	 * @return property value or null if no property or static field was found
 	 */
 	protected Object getPropertyValue(String name, Class type) {
 		if (getReference().isReadableProperty(name) && getReference().getPropertyType(name).equals(type)) {
 			return getReference().getPropertyValue(name);
 		} else {
-			return null;
+			try {
+				Field field = getReference().getWrappedClass().getField(name);
+				if (Modifier.isStatic(field.getModifiers()) && Modifier.isPublic(field.getModifiers()) && field.getType().equals(type)) {
+					return field.get(getReference().getWrappedInstance());
+				}
+			} catch (NoSuchFieldException e) {
+				// ignore
+			} catch (IllegalAccessException e) {
+				// ignore
+			}
 		}
+		
+		return null;
 	}
 }
