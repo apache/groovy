@@ -1,3 +1,3 @@
 #!/bin/sh
 
-${ANT_HOME}/bin/ant -f ${GRAILS_HOME}/src/grails/build.xml -Dbasedir=`pwd` $@
+${ANT_HOME}/bin/ant -f ${GRAILS_HOME}/src/grails/build.xml -Dbasedir=. $@
