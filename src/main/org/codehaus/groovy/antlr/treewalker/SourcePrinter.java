@@ -19,6 +19,7 @@ package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
 import org.codehaus.groovy.antlr.GroovySourceAST;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
 /**
  * An antlr AST visitor that prints groovy source code for each visited node
@@ -34,6 +35,7 @@ public class SourcePrinter extends VisitorAdapter {
     private int lastLinePrinted;
     private boolean newLines;
     private PrintStream out;
+    private String className;
 
     /**
      * A visitor that prints groovy source code for each node visited.
@@ -84,12 +86,20 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitClassDef(GroovySourceAST t,int visit) {
         print(t,visit,"class ",null,null);
+
+        if (visit == OPENING_VISIT) {
+            // store name of class away for use in constructor ident
+            className = t.childOfType(GroovyTokenTypes.IDENT).getText();
+        }
     }
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
         print(t,visit,"{"," -> ","}");
     }
-
+    public void visitCtorIdent(GroovySourceAST t, int visit) {
+        // use name of class for constructor from the class definition
+        print(t,visit,className,null,null);
+    }
     public void visitDot(GroovySourceAST t,int visit) {
         print(t,visit,".",null,null);
     }
@@ -175,7 +185,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
-        print(t,visit,"catch (",null,") ");
+        print(t,visit," catch (",null,") ");
     }
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
@@ -193,6 +203,11 @@ public class SourcePrinter extends VisitorAdapter {
         // slightly strange as subsequent visit is done after closing visit
         print(t,visit,"if ("," else ",") ");
     }
+
+    public void visitLiteralInstanceof(GroovySourceAST t, int visit) {
+        print(t,visit," instanceof ",null,null);
+    }
+
     public void visitLiteralInt(GroovySourceAST t,int visit) {
         print(t,visit,"int",null,null);
     }
@@ -244,11 +259,15 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"this",null,null);
     }
 
+    public void visitLiteralThrow(GroovySourceAST t, int visit) {
+        print(t,visit,"throw ",null,null);
+    }
+
     public void visitLiteralTrue(GroovySourceAST t,int visit) {
         print(t,visit,"true",null,null);
     }
     public void visitLiteralTry(GroovySourceAST t,int visit) {
-        print(t,visit,"try",null,null);
+        print(t,visit,"try ",null,null);
     }
     public void visitLiteralVoid(GroovySourceAST t,int visit) {
         print(t,visit,"void",null,null);
@@ -263,6 +282,14 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitLt(GroovySourceAST t, int visit) {
         print(t,visit," < ",null,null);
+    }
+
+    public void visitMapConstructor(GroovySourceAST t, int visit) {
+        if (t.getNumberOfChildren() == 0) {
+            print(t,visit,"[:]",null,null);
+        } else {
+            print(t,visit,"[",null,"]");
+        }
     }
 
     public void visitMemberPointer(GroovySourceAST t, int visit) {
