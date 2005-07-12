@@ -85,6 +85,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.CASE_GROUP: //
+                case GroovyTokenTypes.LITERAL_instanceof: // foo instanceof MyType
                     accept_FirstChild_v_SecondChildsChildren_v(t);
                     break;
 
@@ -120,6 +121,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.CLASS_DEF: // class Foo...
+                case GroovyTokenTypes.CTOR_IDENT: // private Foo() {...
                 case GroovyTokenTypes.DOT: // foo.bar
                 case GroovyTokenTypes.GT: // a > b
                 case GroovyTokenTypes.LABELED_ARG: // myMethod(name:"Jez")
@@ -151,6 +153,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.LITERAL_while:
+                case GroovyTokenTypes.TYPECAST: // (String)itr.next()
                     accept_v_FirstChildsFirstChild_v_RestOfTheChildren(t);
                     break;
 
@@ -175,7 +178,6 @@ public class SourceCodeTraversal extends TraversalHelper {
 
                 case GroovyTokenTypes.LITERAL_catch:
                 case GroovyTokenTypes.LITERAL_try:
-                case GroovyTokenTypes.TYPECAST: // (String)itr.next()
                     accept_v_FirstChild_v_RestOfTheChildren(t);
                     break;
 

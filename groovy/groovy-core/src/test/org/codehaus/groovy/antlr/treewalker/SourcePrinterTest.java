@@ -28,6 +28,7 @@ import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
 import org.codehaus.groovy.antlr.SourceBuffer;
+import org.codehaus.groovy.antlr.GroovySourceAST;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code.
@@ -53,6 +54,9 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testClosedBlock() throws Exception {
         assertEquals("[1,2,3].each {println(it)}", pretty("[1,2,3].each{println it}"));
         //assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
+    }
+    public void testCtorIdent() throws Exception {
+        assertEquals("class Foo {private Foo() {}}", pretty("class Foo {private Foo() {}}"));
     }
 
     public void testDot() throws Exception {
@@ -116,7 +120,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLiteralCatch() throws Exception {
-        //todo assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
+        assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
     public void testLiteralFalse() throws Exception {
@@ -136,6 +140,9 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("if (a == b) {}", pretty("if (a==b) {}"));
     }
 
+    public void testLiteralInstanceOf() throws Exception {
+        assertEquals("if (a instanceof String) {}", pretty("if (a instanceof String) {}"));
+    }
     public void testLiteralInt() throws Exception {
         assertEquals("int a", pretty("int a"));
     }
@@ -171,12 +178,15 @@ public class SourcePrinterTest extends GroovyTestCase {
     public void testLiteralThis() throws Exception {
         assertEquals("this.x = this.y", pretty("this.x=this.y"));
     }
+    public void testLiteralThrow() throws Exception {
+        assertEquals("def foo() {if (false) throw new RuntimeException()}", pretty("def foo() {if (false) throw new RuntimeException()}"));
+    }
     public void testLiteralTrue() throws Exception {
         assertEquals("foo = true", pretty("foo = true"));
     }
 
     public void testLiteralTry() throws Exception {
-        //todo assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
+        assertEquals("try {} catch (Exception e) {}", pretty("try {} catch (Exception e) {}"));
     }
 
     public void testLiteralVoid() throws Exception {
@@ -191,8 +201,12 @@ public class SourcePrinterTest extends GroovyTestCase {
             assertEquals("if (!isRaining) {}", pretty("if (!isRaining) {}"));
         }
 
-        public void testLt() throws Exception {
+    public void testLt() throws Exception {
         assertEquals("if (3.4f < 12f) {}", pretty("if (3.4f < 12f) {}"));
+    }
+    public void testMapConstructor() throws Exception {
+        assertEquals("Map foo = [:]", pretty("Map foo = [:]"));
+        //assertEquals("[a:1,b:2]", pretty("[a:1,b:2]"));
     }
 
     public void testMemberPointer() throws Exception {
@@ -277,7 +291,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testTypecast() throws Exception {
-        //todo assertEquals("foo = (String)bar", pretty("foo = (String)bar"));
+        assertEquals("foo = (String)bar", pretty("foo = (String)bar"));
     }
 
     public void testVariableDef() throws Exception {
