@@ -17,21 +17,21 @@ This application clearly demonstrates how compact Grails applications are and ho
 BUILDING
 ========
 
-To build this application set the GRAILS_HOME environment to the root directory of the Grails distribution or project.
-
-cd to the project root directory, which when checked out from cvs is ${GRAILS_HOME}/samples/books
-
-If you have obtained Grails from CVS make sure the JAR file is build by running: 
+If you have obtained Grails from CVS make sure the JAR file is build by running this command in the Grails home directory: 
 
 ant jar
+
+To deploy this application set the GRAILS_HOME environment to the root directory of the Grails distribution or project.
+
+At the command prompt change directory to the project root directory which is ${GRAILS_HOME}/samples/books.
 
 Next run this command to initiate the dictory structure:
 
 ${GRAILS_HOME}/bin/grails init
 
-(if you get "permission denied", this file is not executable. Use
-chmod +x ${GRAILS_HOME}/bin/grails
-to grant it execution rights.)
+If you get "permission denied", this file is not executable. In that case run the command as follows:
+
+/bin/sh ${GRAILS_HOME}/bin/grails init
 
 Then run this command to create the WAR file:
 
