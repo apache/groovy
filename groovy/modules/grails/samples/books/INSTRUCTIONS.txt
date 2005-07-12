@@ -19,11 +19,11 @@ BUILDING
 
 To build this application set the GRAILS_HOME environment to the root directory of the Grails distribution or project.
 
+cd to the project root directory, which when checked out from cvs is ${GRAILS_HOME}/samples/books
+
 If you have obtained Grails from CVS make sure the JAR file is build by running: 
 
 ant jar
-
-in the project root directory.
 
 Next run this command to initiate the dictory structure:
 
