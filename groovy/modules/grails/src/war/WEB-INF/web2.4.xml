@@ -33,6 +33,10 @@
             <taglib-uri>http://java.sun.com/jsp/jstl/fmt</taglib-uri>
             <taglib-location>/WEB-INF/tld/fmt.tld</taglib-location>
         </taglib>
+		<taglib>
+			<taglib-uri>http://www.springframework.org/tags</taglib-uri>
+			<taglib-location>/WEB-INF/tld/spring.tld</taglib-location>
+		</taglib>
     </jsp-config>
 
 
