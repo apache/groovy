@@ -1,3 +1,31 @@
 #!/bin/sh
 
-${ANT_HOME}/bin/ant -f ${GRAILS_HOME}/src/grails/build.xml -Dbasedir=`pwd` $@
+if [ -z "$JAVA_HOME" ] ; then
+  echo "Error: JAVA_HOME is not defined"
+  echo "Please define JAVA_HOME and start Grails again"
+  exit 1
+fi
+
+if [ -z "$ANT_HOME" ] ; then
+  echo "Error: ANT_HOME is not defined"
+  echo "Please define ANT_HOME and start Grails again"
+  exit 1
+fi
+
+if [ -z "$GRAILS_HOME" ] ; then
+  echo "Error: GRAILS_HOME is not defined"
+  echo "Please define GRAIL_HOME and start Grails again"
+  exit 1
+fi
+
+GRAILS_BUILD_FILE=${GRAILS_HOME}/src/grails/build.xml
+ANT_BIN=${ANT_HOME}/bin/ant
+
+case "`uname`" in
+  CYGWIN*)
+    GRAILS_BUILD_FILE=`cygpath ---windows "$GRAIL_BUILD_FILE"`;
+    ANT_BIN=`cygpath --windows "$ANT_BIN"`;
+    ;;
+esac
+
+${ANT_BIN} -f ${GRAILS_BUILD_FILE} $@
