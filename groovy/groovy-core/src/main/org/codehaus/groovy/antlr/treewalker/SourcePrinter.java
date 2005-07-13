@@ -18,6 +18,7 @@
 package org.codehaus.groovy.antlr.treewalker;
 
 import java.io.PrintStream;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
@@ -94,7 +95,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitClosedBlock(GroovySourceAST t, int visit) {
-        print(t,visit,"{"," -> ","}");
+        printUpdatingTabLevel(t,visit,"{"," -> ","}");
     }
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         // use name of class for constructor from the class definition
@@ -104,7 +105,7 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,".",null,null);
     }
     public void visitElist(GroovySourceAST t,int visit) {
-        print(t,visit,null,",",null);
+        print(t,visit,null,", ",null);
     }
 
     public void visitEqual(GroovySourceAST t,int visit) {
@@ -123,7 +124,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitForInIterable(GroovySourceAST t, int visit) {
-        print(t,visit,"("," in ",") ");
+        printUpdatingTabLevel(t,visit,"("," in ",") ");
     }
 
     public void visitGt(GroovySourceAST t, int visit) {
@@ -153,7 +154,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitIndexOp(GroovySourceAST t, int visit) {
-        print(t,visit,"[",null,"]");
+        printUpdatingTabLevel(t,visit,"[",null,"]");
     }
 
     public void visitLabeledArg(GroovySourceAST t, int visit) {
@@ -165,7 +166,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitListConstructor(GroovySourceAST t, int visit) {
-        print(t,visit,"[",null,"]");
+        printUpdatingTabLevel(t,visit,"[",null,"]");
     }
 
     public void visitLiteralAssert(GroovySourceAST t,int visit) {
@@ -185,7 +186,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitLiteralCatch(GroovySourceAST t,int visit) {
-        print(t,visit," catch (",null,") ");
+        printUpdatingTabLevel(t,visit," catch (",null,") ");
     }
     public void visitLiteralFalse(GroovySourceAST t,int visit) {
         print(t,visit,"false",null,null);
@@ -201,7 +202,7 @@ public class SourcePrinter extends VisitorAdapter {
 
     public void visitLiteralIf(GroovySourceAST t,int visit) {
         // slightly strange as subsequent visit is done after closing visit
-        print(t,visit,"if ("," else ",") ");
+        printUpdatingTabLevel(t,visit,"if ("," else ",") ");
     }
 
     public void visitLiteralInstanceof(GroovySourceAST t, int visit) {
@@ -250,7 +251,6 @@ public class SourcePrinter extends VisitorAdapter {
         }
         if (visit == CLOSING_VISIT) {
             tabLevel--;
-            printNewlineAndIndent(t,true);
             print(t,visit,"}");
         }
     }
@@ -273,7 +273,7 @@ public class SourcePrinter extends VisitorAdapter {
         print(t,visit,"void",null,null);
     }
     public void visitLiteralWhile(GroovySourceAST t,int visit) {
-        print(t,visit,"while (",null,") ");
+        printUpdatingTabLevel(t,visit,"while (",null,") ");
     }
 
     public void visitLnot(GroovySourceAST t, int visit) {
@@ -288,7 +288,7 @@ public class SourcePrinter extends VisitorAdapter {
         if (t.getNumberOfChildren() == 0) {
             print(t,visit,"[:]",null,null);
         } else {
-            print(t,visit,"[",null,"]");
+            printUpdatingTabLevel(t,visit,"[",null,"]");
         }
     }
 
@@ -297,7 +297,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitMethodCall(GroovySourceAST t,int visit) {
-        print(t,visit,"("," ",")");
+        printUpdatingTabLevel(t,visit,"("," ",")");
     }
     public void visitMinus(GroovySourceAST t,int visit) {
         print(t,visit," - ",null,null);
@@ -325,7 +325,6 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,"{");
         } else {
             tabLevel--;
-            printNewlineAndIndent(t,true);
             print(t,visit,"}");
         }
     }
@@ -339,7 +338,7 @@ public class SourcePrinter extends VisitorAdapter {
     }
 
     public void visitParameters(GroovySourceAST t,int visit) {
-        print(t,visit,"(",",",") ");
+        printUpdatingTabLevel(t,visit,"(",", ",") ");
     }
 
     public void visitPlus(GroovySourceAST t, int visit) {
@@ -365,7 +364,6 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,"{");
         } else {
             tabLevel--;
-            printNewlineAndIndent(t,true);
             print(t,visit,"}");
         }
     }
@@ -415,6 +413,19 @@ public class SourcePrinter extends VisitorAdapter {
             //out.print("</" + t.getType() + ">");
         }
     }
+    private void printUpdatingTabLevel(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
+        if (visit == OPENING_VISIT && opening != null) {
+            print(t,visit,opening);
+            tabLevel++;
+        }
+        if (visit == SUBSEQUENT_VISIT && subsequent != null) {
+            print(t,visit,subsequent);
+        }
+        if (visit == CLOSING_VISIT && closing != null) {
+            tabLevel--;
+            print(t,visit,closing);
+        }
+    }
 
     private void print(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
         if (visit == OPENING_VISIT && opening != null) {
@@ -428,31 +439,32 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
     private void print(GroovySourceAST t,int visit,String value) {
-        print(t,visit,value,false);
-    }
-    private void print(GroovySourceAST t,int visit,String value,boolean suggestNewline) {
         if(visit == OPENING_VISIT) {
-            printNewlineAndIndent(t, suggestNewline);
+            printNewlineAndIndent(t, visit);
+        }
+        if (visit == CLOSING_VISIT) {
+            printNewlineAndIndent(t, visit);
         }
         out.print(value);
     }
 
-    private void printNewlineAndIndent(GroovySourceAST t, boolean suggestNewline) {
+    private void printNewlineAndIndent(GroovySourceAST t, int visit) {
         int currentLine = t.getLine();
         if (lastLinePrinted == 0) { lastLinePrinted = currentLine; }
-        if (lastLinePrinted != currentLine || suggestNewline) {
+        if (lastLinePrinted != currentLine) {
             if (newLines) {
-//                out.println();
-//                out.println("t:" + t.getText() + " c:" + currentLine + " l:" + lastLinePrinted);
-                if (suggestNewline) {
-                    out.println();
-                } else {
+                if (!(visit == OPENING_VISIT && t.getType() == GroovyTokenTypes.SLIST)) {
                     for (int i=lastLinePrinted;i<currentLine;i++) {
                         out.println();
                     }
-                }
-                for (int i=0;i<tabLevel;i++) {
-                    out.print("    ");
+                    if (lastLinePrinted > currentLine) {
+                        out.println();
+                    }
+                    if (visit == OPENING_VISIT || (visit == CLOSING_VISIT && lastLinePrinted > currentLine)) {
+                        for (int i=0;i<tabLevel;i++) {
+                            out.print("    ");
+                        }
+                    }
                 }
             }
             lastLinePrinted = Math.max(currentLine,lastLinePrinted);
