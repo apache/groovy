@@ -32,7 +32,7 @@ goto loopArguments
 
 :startGrails
 
-call %ANT_HOME%\bin\ant.bat -f %GRAILS_HOME%\src\grails\build.xml %GRAILS_ARGUMENTS%
+call %ANT_HOME%\bin\ant.bat -f %GRAILS_HOME%\src\grails\build.xml -Dbasedir=%CD% %GRAILS_ARGUMENTS%
 
 :errorExit
 
