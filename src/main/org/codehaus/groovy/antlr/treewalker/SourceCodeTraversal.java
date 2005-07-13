@@ -17,8 +17,9 @@
  **/
 package org.codehaus.groovy.antlr.treewalker;
 
-import antlr.collections.AST;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 

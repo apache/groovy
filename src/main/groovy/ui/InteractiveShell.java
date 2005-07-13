@@ -47,6 +47,16 @@ package groovy.ui;
 
 import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -54,16 +64,6 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.sandbox.ui.Prompt;
 import org.codehaus.groovy.sandbox.ui.PromptFactory;
 import org.codehaus.groovy.tools.ErrorReporter;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * A simple interactive shell for evaluating groovy expressions
