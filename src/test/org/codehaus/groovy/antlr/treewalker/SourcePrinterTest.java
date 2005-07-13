@@ -52,7 +52,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testClosedBlock() throws Exception {
-        assertEquals("[1,2,3].each {println(it)}", pretty("[1,2,3].each{println it}"));
+        assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
         //assertEquals("def x = foo.bar(mooky) {x ->wibble(x)}", pretty("def x = foo.bar(mooky) {x-> wibble(x)}"));
     }
     public void testCtorIdent() throws Exception {
@@ -64,7 +64,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testElist() throws Exception {
-        assertEquals("foo(bar,mooky)", pretty("foo( bar , mooky )"));
+        assertEquals("foo(bar, mooky)", pretty("foo( bar , mooky )"));
     }
 
     public void testEqual() throws Exception {
@@ -79,7 +79,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("class Foo extends Bar {}", pretty("class Foo extends Bar {}"));
     }
     public void testForInIterable() throws Exception {
-        assertEquals("for (i in [1,2]) {}", pretty("for (i in [1,2]) {}"));
+        assertEquals("for (i in [1, 2]) {}", pretty("for (i in [1,2]) {}"));
     }
     public void testGt() throws Exception {
         assertEquals("if (2070 > 354) {}", pretty("if (2070 > 354) {}"));
@@ -108,7 +108,7 @@ public class SourcePrinterTest extends GroovyTestCase {
         assertEquals("true && false", pretty("true && false"));
     }
     public void testListConstructor() throws Exception {
-        assertEquals("[a,b]", pretty("[a,b]"));
+        assertEquals("[a, b]", pretty("[a,b]"));
     }
 
     public void testLiteralAssert() throws Exception {
@@ -132,7 +132,7 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
 
     public void testLiteralFor() throws Exception {
-        assertEquals("for (i in [1,2,3]) {}", pretty("for (i in [1,2,3]) {}"));
+        assertEquals("for (i in [1, 2, 3]) {}", pretty("for (i in [1,2,3]) {}"));
     }
 
     public void testLiteralIf() throws Exception {
@@ -214,12 +214,12 @@ public class SourcePrinterTest extends GroovyTestCase {
     }
     public void testMethodCall() throws Exception {
         assertEquals("foo(bar)", pretty("foo(bar)"));
-        assertEquals("[1,2,3].each {println(it)}", pretty("[1,2,3].each{println it}"));
+        assertEquals("[1, 2, 3].each {println(it)}", pretty("[1,2,3].each{println it}"));
         assertEquals("foo(bar){mooky()}", pretty("foo(bar){mooky()}"));
     }
 
     public void testMethodDef() throws Exception {
-        assertEquals("def foo(int bar,boolean boo) {}", pretty("def foo(int bar,boolean boo) {}"));
+        assertEquals("def foo(int bar, boolean boo) {}", pretty("def foo(int bar,boolean boo) {}"));
         //todo assertEquals("void foo(){} void bar(){}", pretty("void foo(){} void bar(){}"));
     }
 
