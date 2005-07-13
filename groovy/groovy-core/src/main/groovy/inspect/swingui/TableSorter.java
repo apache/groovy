@@ -58,19 +58,16 @@ package groovy.inspect.swingui;
  * @author Minimal adjustments by Dierk Koenig, June 2005
  */
 
-import java.util.*;
-
-import javax.swing.table.TableModel;
-import javax.swing.event.TableModelEvent;
-
-// Imports for picking up mouse events from the JTable.
-
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.InputEvent;
+import java.util.Date;
+import java.util.Vector;
+
 import javax.swing.JTable;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 
 public class TableSorter extends TableMap
 {
