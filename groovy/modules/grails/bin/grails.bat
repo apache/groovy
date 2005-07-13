@@ -3,7 +3,7 @@
 if "%JAVA_HOME%"=="" goto javaHomeNotSet
 if "%ANT_HOME%"=="" goto antHomeNotSet
 if "%GRAILS_HOME"=="" goto grailsHomeNotSet
-goto :getArguments
+goto getArguments
 
 :javaHomeNotSet
 echo Error: JAVA_HOME is not defined
@@ -22,10 +22,10 @@ goto errorExit
 
 :getArguments
 set GRAILS_ARGUMENTS=%1
-if ""%1""="""" goto startGrails
+if ""%1""=="""" goto startGrails
 shift
 :loopArguments
-if ""%1""="""" goto startGrails
+if ""%1""=="""" goto startGrails
 set GRAILS_ARGUMENTS=%GRAILS_ARGUMENTS% %1
 shift
 goto loopArguments

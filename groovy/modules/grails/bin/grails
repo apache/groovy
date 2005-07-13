@@ -20,12 +20,13 @@ fi
 
 GRAILS_BUILD_FILE=${GRAILS_HOME}/src/grails/build.xml
 ANT_BIN=${ANT_HOME}/bin/ant
+BASEDIR=`pwd`
 
 case "`uname`" in
   CYGWIN*)
-    GRAILS_BUILD_FILE=`cygpath ---windows "$GRAIL_BUILD_FILE"`;
-    ANT_BIN=`cygpath --windows "$ANT_BIN"`;
+    GRAILS_BUILD_FILE=`cygpath --windows "$GRAILS_BUILD_FILE"`;
+    BASEDIR=`cygpath --windows "$BASEDIR"`
     ;;
 esac
 
-${ANT_BIN} -f ${GRAILS_BUILD_FILE} $@
+${ANT_BIN} -f ${GRAILS_BUILD_FILE} -Dbasedir=${BASEDIR} $@
