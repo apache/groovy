@@ -32,14 +32,12 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 	public void testDefaultGrailsDomainClass()
 		throws Exception {
 		GroovyClassLoader cl = new GroovyClassLoader();
-		Class clazz = cl.parseClass("class User { @Property int id; @Property int version; @Property List notPersistant = [ \"age\" ]; @Property List notRequired  = [ \"lastName\" ]; @Property String firstName; @Property String lastName; @Property java.util.Date age; }");
+		Class clazz = cl.parseClass("class UserTest { @Property int id; @Property int version; @Property List transients = [ \"age\" ]; @Property List optional  = [ \"lastName\" ]; @Property String firstName; @Property String lastName; @Property java.util.Date age; }");
 				
 		
 		GrailsDomainClass domainClass = new DefaultGrailsDomainClass(clazz);
-		
-		System.out.println(domainClass.newInstance().getClass().getSuperclass());
-		
-		assertEquals("User",domainClass.getName());
+				
+		assertEquals("UserTest",domainClass.getName());
 		
 		assertNotNull(domainClass.getIdentifier());
 		assertNotNull(domainClass.getVersion());
@@ -59,11 +57,11 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		
 		GrailsDomainClassProperty lastName = domainClass.getPropertyByName( "lastName" );
 		assertNotNull(lastName);
-		assertFalse(lastName.isOptional());
+		assertTrue(lastName.isOptional());
 		
 		GrailsDomainClassProperty firstName = domainClass.getPropertyByName( "firstName" );
 		assertNotNull(firstName);
-		assertTrue(firstName.isOptional());
+		assertFalse(firstName.isOptional());
 		assertTrue(firstName.isPersistant());
 		
 
@@ -73,6 +71,27 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		}
 	}
 
-
+	public void testOneToManyRelationship()
+		throws Exception {
+		
+		GroovyClassLoader cl = new GroovyClassLoader();
+		
+		Thread.currentThread().setContextClassLoader(cl);
+				
+		Class c1 = cl.loadClass( "org.codehaus.groovy.grails.domain.OneToManyTest1" );
+		Class c2 = cl.loadClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" );
+				
+		c1.newInstance();
+		
+		//c2.newInstance();
+		//Class c1 = cl.parseClass(new File("test/persistence/org/codehaus/groovy/grails/domain/OneToManyTest1.groovy"));
+						
+		//GrailsDomainClass c1dc = new DefaultGrailsDomainClass(c1);
+		//GrailsDomainClass c2dc = new DefaultGrailsDomainClass(c2);
+		
+		//assertTrue( c1dc.getPropertyByName( "accounts" ).isOneToMany() );
+		//assertTrue( c2dc.getPropertyByName( "holder" ).isManyToOne() );
+		
+	}
 
 }
