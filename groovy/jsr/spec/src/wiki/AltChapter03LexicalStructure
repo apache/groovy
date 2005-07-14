@@ -1,0 +1,28 @@
+*Chapter 3*
+
+h1. Lexical Structure
+
+This chapter specifies the lexical structure of the Groovy programming language. 
+
+Programs are written in Unicode (¤3.1), but lexical translations are provided (¤3.2) so that Unicode escapes (¤3.3) can be used to include any Unicode character using only ASCII characters. 
+Line terminators are defined (¤3.4) to support the different conventions of existing host systems while maintaining consistent line numbers. 
+
+The Unicode characters resulting from the lexical translations are reduced to a sequence of input elements (¤3.5), which are white space (¤3.6), comments (¤3.7), and tokens. 
+The tokens are the identifiers (¤3.8), keywords (¤3.9), literals (¤3.10), separators (¤3.11), and operators (¤3.12) of the syntactic grammar. 
+
+{anchor:3.2}
+h2. 3.1 Unicode
+
+Programs are written using the Unicode character set.
+Information about this character set and its associated character encodings may be found at: 
+
+bq. http://www.unicode.org 
+
+The Java platform tracks the Unicode specification as it evolves. 
+The precise version of Unicode used by a given release is specified in the documentation of the class {{Character}}.
+
+Versions of the Groovy programming language up to and including 1.0 final used Unicode version 3.0. 
+Upgrades to newer versions of the Unicode Standard occurred in J2SE 5.0 (to Unicode 4.0). 
+
+The Unicode standard was originally designed as a fixed-width 16-bit character encoding. 
+It has since been changed to allow for characters whose representation requires more than 16 bits. 
