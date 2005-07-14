@@ -61,4 +61,20 @@ public class XmlTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/xml/SmallNamespaceDOMTest.groovy");
         object.invokeMethod("testTree", null);
     }
+
+    public void testQName() throws Exception {
+        QName qname = new QName("urn:mynamespace","localPart","x");
+
+        assertTrue(qname.equals(new QName("urn:mynamespace","localPart")));
+        assertTrue(qname.equals("urn:mynamespace:localPart"));
+        assertTrue(qname.equals("x:localPart"));
+
+        assertTrue(!qname.equals(null));
+        assertTrue(!qname.equals(""));
+        assertTrue(!qname.equals(" "));
+        assertTrue(!qname.equals("localPart"));
+        assertTrue(!qname.equals("x:"));
+        assertTrue(!qname.equals(":"));
+        assertTrue(!qname.equals(":localPart"));
+    }
 }

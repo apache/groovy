@@ -180,7 +180,7 @@ public class QName implements Serializable {
     /**
      * Tests this QName for equality with another object.
      * <p>
-     * If the given object is not a QName or is null then this method
+     * If the given object is not a QName or String equivalent or is null then this method
      * returns <tt>false</tt>.
      * <p>
      * For two QNames to be considered equal requires that both
@@ -188,29 +188,46 @@ public class QName implements Serializable {
      * <code>String.equals</code> to check equality of localPart
      * and namespaceURI. Any class that extends QName is required
      * to satisfy this equality contract.
+     *
+     * If the supplied object is a String, then it is split in two on the last colon
+     * and the first half is compared against the prefix || namespaceURI
+     * and the second half is compared against the localPart
+     *
+     * i.e. assert new QName("namespace","localPart").equals("namespace:localPart")
+     *
+     * Intended Usage: for gpath accessors, e.g. root.'urn:mynamespace:node'
+     *
+     * Warning: this equivalence is not commutative,
+     * i.e. qname.equals(string) may be true/false  but string.equals(qname) is always false
+     *
      * <p>
      * This method satisfies the general contract of the <code>Object.equals</code> method.
      *
-     * @param obj the reference object with which to compare
+     * @param o the reference object with which to compare
      *
      * @return <code>true</code> if the given object is identical to this
      *      QName: <code>false</code> otherwise.
      */
-    public final boolean equals(Object obj) {
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        if (o instanceof QName) {
+            final QName qName = (QName) o;
+            if (!namespaceURI.equals(qName.namespaceURI)) return false;
+            return localPart.equals(qName.localPart);
 
-        if (obj == this) {
-            return true;
-        }
-
-        if (!(obj instanceof QName)) {
+        } else if (o instanceof String) {
+            final String string = (String)o;
+            if (string.length() == 0) return false;
+            int lastColonIndex = string.lastIndexOf(":");
+            if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
+            final String stringPrefix = string.substring(0,lastColonIndex);
+            final String stringLocalPart = string.substring(lastColonIndex + 1);
+            if (stringPrefix.equals(prefix) || stringPrefix.equals(namespaceURI)) {
+                return localPart.equals(stringLocalPart);
+            }
             return false;
         }
-
-        if ((namespaceURI.equals(((QName) obj).namespaceURI))
-                && (localPart == ((QName) obj).localPart)) {
-            return true;
-        }
-
         return false;
     }
 
@@ -261,8 +278,11 @@ public class QName implements Serializable {
      *
      * @return a hash code value for this Qname object
      */
-    public final int hashCode() {
-        return namespaceURI.hashCode() ^ localPart.hashCode();
+    public int hashCode() {
+        int result;
+        result = namespaceURI.hashCode();
+        result = 29 * result + localPart.hashCode();
+        return result;
     }
 
     /**

@@ -195,7 +195,8 @@ public class Node {
                 Object child = iter.next();
                 if (child instanceof Node) {
                     Node childNode = (Node) child;
-                    if (key.equals(childNode.name())) {
+                    Object childNodeName = childNode.name();
+                    if (childNodeName != null && childNodeName.equals(key)) {
                         answer.add(childNode);
                     }
                 }
