@@ -119,8 +119,7 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 	}
 
 	public ServletOutputStream getOutputStream(String contentType, String characterEncoding) throws IOException {
-		this.delegate.setContentType(contentType);
-		this.delegate.setCharacterEncoding(characterEncoding);
+		this.delegate.setContentType(contentType + ";charset=" + characterEncoding);
 		return this.delegate.getOutputStream();
 	}
 	
@@ -129,8 +128,7 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 	}
 
 	public PrintWriter getWriter(String contentType, String characterEncoding) throws IOException {
-		this.delegate.setContentType(contentType);
-		this.delegate.setCharacterEncoding(characterEncoding);
+		this.delegate.setContentType(contentType + ";charset=" + characterEncoding);
 		return this.delegate.getWriter();
 	}
 	
