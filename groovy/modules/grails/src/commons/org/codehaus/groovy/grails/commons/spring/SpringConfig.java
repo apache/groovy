@@ -17,6 +17,8 @@ package org.codehaus.groovy.grails.commons.spring;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
@@ -48,7 +50,7 @@ public class SpringConfig {
 
 	public Collection getBeanReferences() {
 		Collection beanReferences = new ArrayList();
-		StringBuffer urlMappings = new StringBuffer();
+		Map urlMappings = new HashMap();
 		
 		Assert.notNull(application);
 		
@@ -84,10 +86,12 @@ public class SpringConfig {
 			flowController.setProperty("flow", flowFactoryBean);
 			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
 			
-			urlMappings.append(pageFlow.getUri());
-			urlMappings.append("=");
-			urlMappings.append(pageFlow.getFullName());
-			urlMappings.append("Controller\n");
+			urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
+			
+//			urlMappings.append(pageFlow.getUri());
+//			urlMappings.append("=");
+//			urlMappings.append(pageFlow.getFullName());
+//			urlMappings.append("Controller\n");
 		}
 		
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
@@ -129,15 +133,16 @@ public class SpringConfig {
 			}
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
-				urlMappings.append(simpleController.getURIs()[x]);
-				urlMappings.append("=simpleGrailsController\n");
+				urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
+//				urlMappings.append(simpleController.getURIs()[x]);
+//				urlMappings.append("=simpleGrailsController\n");
 			}
 		}
 
 		if (simpleUrlHandlerMapping != null) {
-			System.out.println(urlMappings.toString());
-			urlMappings.setLength(urlMappings.length() - "\n".length());
-			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue(urlMappings.toString()));
+//			System.out.println(urlMappings.toString());
+//			urlMappings.setLength(urlMappings.length() - "\n".length());
+			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
 			
 		return beanReferences;

@@ -17,11 +17,13 @@ package org.codehaus.groovy.grails.commons.spring;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.springmodules.beans.factory.drivers.Bean;
 import org.springmodules.beans.factory.drivers.BeanReference;
 import org.springmodules.beans.factory.drivers.Instance;
+import org.springmodules.beans.factory.drivers.LiteralProperties;
 import org.springmodules.beans.factory.drivers.LiteralValue;
 
 /**
@@ -189,4 +191,16 @@ public class SpringConfigUtils {
 		};
 	}
 	
+	public static LiteralProperties createProperties(Map properties) {
+		final Map tmpProps = new HashMap();
+		for (Iterator iter = properties.entrySet().iterator(); iter.hasNext();) {
+			Map.Entry entry = (Map.Entry)iter.next();
+			tmpProps.put(createLiteralValue(entry.getKey().toString()), createLiteralValue(entry.getValue() != null ? entry.getValue().toString() : ""));
+		}
+		return new LiteralProperties() {
+			public Map getProperties() {
+				return tmpProps;
+			}
+		};
+	}
 }
