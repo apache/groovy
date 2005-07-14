@@ -34,6 +34,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import groovy.lang.GroovyClassLoader;
+
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -199,6 +201,8 @@ public class CompileUnit {
         if ( answer == null ) {
         	cachedClasses.put(type,NO_CLASS);
         	throw new ClassNotFoundException(type);
+        } else if (answer==GroovyClassLoader.PARSING.class){
+            //no chaching
         } else {
             if (!type.equals(answer.getName())) { // br case sensitive match
                 cachedClasses.put(type,NO_CLASS);

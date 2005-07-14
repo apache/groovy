@@ -184,11 +184,12 @@ public class ASTHelper {
                     break;                                        // <<< FLOW CONTROL <<<<<<<<<
                 } catch (ClassNotFoundException cnfe){
                     if (cnfe.getCause() instanceof CompilationFailedException) {
+                        resolution = dot(packageName, name);
                         break;
                     }
                 } catch (NoClassDefFoundError ncdfe) {
                     //fall through
-                } 
+                }
             }
 
             // search the package imports path
@@ -202,6 +203,7 @@ public class ASTHelper {
                     break;
                 } catch (ClassNotFoundException cnfe){
                     if (cnfe.getCause() instanceof CompilationFailedException) {
+                        resolution = clsName;
                         break;
                     }
                 } catch (NoClassDefFoundError ncdfe) {
@@ -216,14 +218,15 @@ public class ASTHelper {
             // Last chance, check the default imports.
 
             for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
+                String qualified = DEFAULT_IMPORTS[i] + scalar;
                 try {
-                    String qualified = DEFAULT_IMPORTS[i] + scalar;
                     getClassLoader().loadClass(qualified);
 
                     resolution = qualified + postfix;
                     break;                                        // <<< FLOW CONTROL <<<<<<<<<
                 } catch (ClassNotFoundException cnfe){
                     if (cnfe.getCause() instanceof CompilationFailedException) {
+                        resolution = qualified + postfix;
                         break;
                     }
                 } catch (NoClassDefFoundError ncdfee) {
