@@ -112,7 +112,7 @@ class ListTest extends GroovyTestCase {
         def l1 = [6, 4, 5, 1, 7, 2]
         def l2 = [6, 4, 5, 1, 7, [4,5]]
         def l3 = l1 + l2
-        assert l3 == [6, 4, 5, 1, 7, 2, [6, 4, 5, 1, 7, [4,5]]]            
+        assert l3 == [6, 4, 5, 1, 7, 2, 6, 4, 5, 1, 7, [4,5]]
     }
     
     void testPlusOneElement() {
