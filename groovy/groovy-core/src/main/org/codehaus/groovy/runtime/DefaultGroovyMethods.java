@@ -1016,6 +1016,10 @@ PropertyValue pv = (PropertyValue) itr.next();
 
         return text.subSequence(from, to + 1);
     }
+    
+    public static String getAt(String text, IntRange range) {
+        return getAt(text,(Range)range);
+    }
 
     /**
      * Support the range subscript operator for String
@@ -1427,6 +1431,16 @@ PropertyValue pv = (PropertyValue) itr.next();
         List list = Arrays.asList(array);
         return getAt(list, range);
     }
+    
+    public static List getAt(Object[] array, IntRange range) {
+        List list = Arrays.asList(array);
+        return getAt(list, range);
+    }    
+    
+    public static List getAt(Object[] array, ObjectRange range) {
+        List list = Arrays.asList(array);
+        return getAt(list, range);
+    }
 
     /**
      * Support the subscript operator for an Array
@@ -1606,15 +1620,30 @@ PropertyValue pv = (PropertyValue) itr.next();
     // helper method for putAt(Splice)
     // todo: remove after putAt(Splice) gets deleted
     protected static List getSubList(List self, List splice) {
-        if (splice.size() != 2) {
+        int left = 0;
+        int right = 0;
+        boolean emptyRange = false;
+        if (splice.size() == 2) {
+            left = InvokerHelper.asInt(splice.get(0));
+            right = InvokerHelper.asInt(splice.get(1));
+        } else if (splice instanceof IntRange) {
+            IntRange range = (IntRange) splice;
+            left = range.getFromInt();
+            right = range.getToInt();
+        } else if (splice instanceof EmptyRange) {
+            emptyRange = true;
+        } else {
             throw new IllegalArgumentException("You must specify a list of 2 indexes to create a sub-list");
         }
-        int left = InvokerHelper.asInt(splice.get(0));
-        int right = InvokerHelper.asInt(splice.get(1));
         int size = self.size();
         left = normaliseIndex(left, size);
         right = normaliseIndex(right, size);
-        List sublist = self.subList(left, right + 1);
+        List sublist = null;
+        if (!emptyRange) {
+            sublist = self.subList(left, right + 1);
+        } else {
+            sublist = self.subList(left, left);
+        }
         return sublist;
     }
 
@@ -2308,6 +2337,70 @@ PropertyValue pv = (PropertyValue) itr.next();
         return primitiveArrayGet(array, range);
     }
 
+    public static Object getAt(byte[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(char[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(short[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(int[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(long[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(float[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(double[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(boolean[] array, IntRange range) {
+        return primitiveArrayGet(array, range);
+    }
+    
+    public static Object getAt(byte[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(char[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(short[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(int[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(long[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(float[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(double[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+
+    public static Object getAt(boolean[] array, ObjectRange range) {
+        return primitiveArrayGet(array, range);
+    }
+    
     public static Object getAt(byte[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }

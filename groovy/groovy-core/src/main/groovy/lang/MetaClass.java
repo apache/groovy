@@ -1739,6 +1739,11 @@ public class MetaClass {
         return validMethod;
     }
 
+    private boolean implementsInterface (Class clazz, Class iface) {
+        if (!iface.isInterface()) return false;
+        return iface.isAssignableFrom(clazz);
+    }
+    
     private boolean isSuperclass(Class claszz, Class superclass) {
         while (claszz!=null) {
             if (claszz==superclass) return true;
@@ -1772,9 +1777,102 @@ public class MetaClass {
         return wrappedArguments;
     }
     
+    private boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
+        if (arguments.length!=parameters.length) return false;
+        for (int i=0; i<arguments.length; i++) {
+            if (!isAssignableFrom(arguments[i],parameters[i])) return false;
+        }
+        return true;
+    }
+    
+    private int calculateParameterDistance(Class[] arguments, Class[] parameters) {
+        int dist=0;
+        for (int i=0; i<arguments.length; i++) {
+            if (parameters[i]==arguments[i]) continue;
+            
+            if (parameters[i].isInterface()) {
+                dist+=2;
+                continue;
+            }
+            
+            if (arguments[i]!=null) {
+                if (arguments[i].isPrimitive() || parameters[i].isPrimitive()) {
+                    // type is not equal, increase distance by one to reflect
+                    // the change in type
+                    dist++;
+                    continue;
+                }
+            
+                // add one to dist to be sure interfaces are prefered
+                dist++;
+                Class clazz = arguments[i];                
+                while (clazz!=null && clazz!=parameters[i]) {
+                    clazz = clazz.getSuperclass();
+                    dist+=2;
+                }
+            } else {
+                // choose the distance to Object if a parameter is null
+                // this will mean that Object is prefered over a more
+                // specific type
+                // remove one to dist to be sure Object is prefered
+                dist--;
+                Class clazz = parameters[i];                
+                while (clazz!=Object.class) {
+                    clazz = clazz.getSuperclass();
+                    dist+=2;
+                }
+            }
+        }
+        return dist;
+    }
+    
+    
     protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
         
         Class[] wrappedArguments = wrap(arguments);
+        
+        int matchesDistance = -1;
+        LinkedList matches = new LinkedList();
+        for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
+            Object method = iter.next();
+            Class[] paramTypes = getParameterTypes(method);
+            if (!parametersAreCompatible(arguments, paramTypes)) continue;
+            int dist = calculateParameterDistance(arguments, paramTypes);
+            if (matches.size()==0) {
+                matches.add(method);
+                matchesDistance = dist;
+            } else if (dist<matchesDistance) {
+                matchesDistance=dist;
+                matches.clear();
+                matches.add(method);
+            } else if (dist==matchesDistance) {
+                matches.add(method);
+            }
+            
+        }
+        if (matches.size()==1) {
+            return matches.getFirst();
+        }        
+        if (matches.size()==0) {
+            return null;
+        }
+        
+        //more than one matching method found --> ambigous!
+        String msg = "Ambiguous method overloading for method ";
+        msg+= theClass.getName()+"#"+name;
+        msg+= ".\nCannot resolve which method to invoke for ";
+        msg+= InvokerHelper.toString(arguments);
+        msg+= " due to overlapping prototypes between:";
+        for (Iterator iter = matches.iterator(); iter.hasNext();) {
+            Class[] types=getParameterTypes(iter.next());
+            msg+= "\n\t"+InvokerHelper.toString(types);
+        }
+        throw new GroovyRuntimeException(msg);
+        
+        
+        
+        
+        /*
         LinkedList directMatches = new LinkedList();
         // test for a method with equal classes (natives are wrapped
         for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
@@ -1802,8 +1900,9 @@ public class MetaClass {
             Object method = iter.next();
             Class[] paramTypes = wrap(getParameterTypes(method));
             for (int i=0; i<paramTypes.length; i++) {
-                
-                if (!isSuperclass(wrappedArguments[i],paramTypes[i])) {
+                boolean iMatch = implementsInterface(wrappedArguments[i],paramTypes[i]);
+                boolean cMatch = isSuperclass(wrappedArguments[i],paramTypes[i]);
+                if (!iMatch && !cMatch) {
                     iter.remove();
                     break; //return from the inner for
                 }
@@ -1846,7 +1945,7 @@ public class MetaClass {
                 }
             }
         }
-        return answer;
+        return answer;*/
     }
 
     /**
@@ -2023,6 +2122,7 @@ public class MetaClass {
     }
 
     protected boolean isAssignableFrom(Class mostSpecificType, Class type) {
+        if (mostSpecificType==null) return true;
         // let's handle primitives
         if (mostSpecificType.isPrimitive() && type.isPrimitive()) {
             if (mostSpecificType == type) {
