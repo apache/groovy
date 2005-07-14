@@ -57,7 +57,7 @@ public class OpenRicoBuilderTests extends TestCase {
 
 	private void parse(String groovy) throws Exception {
 		GroovyClassLoader cl = new GroovyClassLoader();
-		Class clazz = cl.parseClass("import grails.util.*; class TestClass { @Property Closure test = { response -> new OpenRicoBuilder(response)." + groovy + "; } }");
+		Class clazz = cl.parseClass("import grails.util.*; class TestClass { List names = [\"Steven\", \"Hans\", \"Erwin\"]; @Property Closure test = { response -> new OpenRicoBuilder(response)." + groovy + "; } }");
 		GroovyObject go = (GroovyObject)clazz.newInstance();
 		Closure closure = (Closure)go.getProperty("test");
 		StringWriter sw = new StringWriter();
@@ -96,5 +96,6 @@ public class OpenRicoBuilderTests extends TestCase {
 
 		parse("ajax { object(id:\"test\") { testTag {} }; object(id:\"test2\") {}  }");
 
+		parse("ajax { element(id:\"test\") { select(name:\"test\") { for (name in names) { span(name) } } } }");
 	}
 }
