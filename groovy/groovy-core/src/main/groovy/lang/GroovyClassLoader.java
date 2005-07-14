@@ -48,7 +48,6 @@ import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.SecureClassLoader;
-import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -90,7 +89,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         cache.remove(aClass);
     }
 
-    private class PARSING {
+    public static class PARSING {
     }
 
     private class NOT_RESOLVED {
@@ -311,7 +310,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         }
     }*/
 
-    protected Class findGroovyClass(String name) throws ClassNotFoundException {
+/*    protected Class findGroovyClass(String name) throws ClassNotFoundException {
         //Use a forward slash here for the path separator. It will work as a
         // separator
         //for the File class on all platforms, AND it is required as a jar file
@@ -386,7 +385,7 @@ public class GroovyClassLoader extends SecureClassLoader {
             }
         }
         throw new ClassNotFoundException(name);
-    }
+    }*/
 
     //Read the bytes from a non-null JarEntry. This is done here because the
     // entry must be read completely
@@ -606,6 +605,9 @@ public class GroovyClassLoader extends SecureClassLoader {
             });
             if (source != null) {
                 if ((cls!=null && isSourceNewer(source, cls)) || (cls==null)) {
+                    synchronized (cache) {
+                        cache.put(name,PARSING.class);
+                    }
                     cls = parseClass(source);
                 }
             }
