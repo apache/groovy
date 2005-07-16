@@ -1,5 +1,6 @@
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.ParameterArray;
 import groovy.lang.Closure;
 import groovy.lang.MetaClass;
 
@@ -30,6 +31,9 @@ public class MethodClosure extends Closure {
     }
 
     public Object call(Object arguments) {
+        if (arguments instanceof Object[] && ((Object[])arguments).length > 0)
+            return InvokerHelper.invokeMethod(getDelegate(), method, new ParameterArray(arguments));
+        else
         return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
     }
     
@@ -42,6 +46,9 @@ public class MethodClosure extends Closure {
     }
 
     protected Object doCall(Object arguments) {
-        return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+        if (arguments instanceof Object[] && ((Object[])arguments).length > 0)
+            return InvokerHelper.invokeMethod(getDelegate(), method, new ParameterArray(arguments));
+        else
+            return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
     }
 }
