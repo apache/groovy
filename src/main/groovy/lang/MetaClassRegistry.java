@@ -203,8 +203,12 @@ public class MetaClassRegistry {
 
                         // we can't see the groovy classes here
                         // so lets try create a new loader
-                        ClassLoader localLoader = getClass().getClassLoader();
-                        groovyLoader = new GroovyClassLoader(localLoader);
+                        final ClassLoader localLoader = getClass().getClassLoader();
+                        groovyLoader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
+                            public Object run() {
+                                return new GroovyClassLoader(localLoader);
+                            }
+                        }); 
                     }
                 }
                 loaderMap.put(loader, groovyLoader);

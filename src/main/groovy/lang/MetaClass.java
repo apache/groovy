@@ -136,7 +136,12 @@ public class MetaClass {
         this.registry = registry;
         this.theClass = theClass;
 
-        constructors = Arrays.asList(theClass.getDeclaredConstructors());
+        constructors = (List) AccessController.doPrivileged(new  PrivilegedAction() {
+                public Object run() {
+                    return Arrays.asList (theClass.getDeclaredConstructors());
+                }
+            });
+
         addMethods(theClass,true);
 
         // introspect
@@ -693,7 +698,12 @@ public class MetaClass {
         // first get the public fields and create MetaFieldProperty objects
         klass = theClass;
         while(klass != null) {
-            Field[] fields = klass.getDeclaredFields();
+            final Class clazz = klass;
+            Field[] fields = (Field[]) AccessController.doPrivileged(new  PrivilegedAction() {
+                public Object run() {
+                    return clazz.getDeclaredFields();
+                }
+            });
             for(int i = 0; i < fields.length; i++) {
                 // we're only interested in publics
                 if((fields[i].getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0)
@@ -759,7 +769,12 @@ public class MetaClass {
         // now look for any stray getters that may be used to define a property
         klass = theClass;
         while(klass != null) {
-            Method[] methods = klass.getDeclaredMethods();
+            final Class clazz = klass;
+            Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
+                public Object run() {
+                    return clazz.getDeclaredMethods();
+                }
+            });
             for (int i = 0; i < methods.length; i++) {
                 // filter out the privates
                 if(Modifier.isPublic(methods[i].getModifiers()) == false)
@@ -949,16 +964,30 @@ public class MetaClass {
             catch (MissingMethodException e1) {
                 Field field = null;
                 try {
-                    field = object.getClass().getDeclaredField(property);
-                    //field.setAccessible(true);
-                    field.set(object, newValue);
+                    final Class clazz = object.getClass();
+                    final String prop = property;
+                    try {
+                        field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                            public Object run() throws NoSuchFieldException {
+                                return clazz.getDeclaredField(prop);
+                            }
+                        });  
+                        //field.setAccessible(true);
+                        field.set(object, newValue);
+                    } 
+                    catch (PrivilegedActionException pae) {
+                        if (pae.getException() instanceof NoSuchFieldException) {
+                            throw (NoSuchFieldException) pae.getException();
+                        } else {
+                            throw new RuntimeException(pae.getException());
+                        }
+                    }
                 } catch (IllegalAccessException iae) {
                     throw new IllegalPropertyAccessException(field,object.getClass());
                 } catch (Exception e2) {
                     throw new MissingPropertyException(property, theClass, e2);
                 }
             }
-            
         }
         catch (GroovyRuntimeException e) {
             throw new MissingPropertyException(property, theClass, e);
@@ -970,11 +999,24 @@ public class MetaClass {
     /**
      * Looks up the given attribute (field) on the given object
      */
-    public Object getAttribute(Object object, String attribute) {
+    public Object getAttribute(Object object, final String attribute) {
         try {
-            Field field = theClass.getDeclaredField(attribute);
-            field.setAccessible(true);
-            return field.get(object);
+            final Class clazz = theClass;
+            try {
+                Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws NoSuchFieldException {
+                        return clazz.getDeclaredField(attribute);
+                    }
+                });  
+                field.setAccessible(true);
+                return field.get(object);
+            } catch (PrivilegedActionException pae) {
+                if (pae.getException() instanceof NoSuchFieldException) {
+                    throw (NoSuchFieldException) pae.getException();
+                } else {
+                    throw new RuntimeException(pae.getException());
+                }
+            }                        
         }
         catch (NoSuchFieldException e) {
             throw new MissingFieldException(attribute, theClass);
@@ -987,11 +1029,24 @@ public class MetaClass {
     /**
      * Sets the given attribute (field) on the given object
      */
-    public void setAttribute(Object object, String attribute, Object newValue) {
+    public void setAttribute(Object object, final String attribute, Object newValue) {
         try {
-            Field field = theClass.getDeclaredField(attribute);
-            field.setAccessible(true);
-            field.set(object, newValue);
+            final Class clazz = theClass;
+            try {
+                Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws NoSuchFieldException {
+                        return clazz.getDeclaredField(attribute);
+                    }
+                });  
+                field.setAccessible(true);
+                field.set(object, newValue);
+            } catch (PrivilegedActionException pae) {
+                if (pae.getException() instanceof NoSuchFieldException) {
+                    throw (NoSuchFieldException) pae.getException();
+                } else {
+                    throw new RuntimeException(pae.getException());
+                }
+            }                        
         }
         catch (NoSuchFieldException e) {
             throw new MissingFieldException(attribute, theClass);
@@ -1151,9 +1206,13 @@ public class MetaClass {
      * 
      * @param theClass
      */
-    protected void addMethods(Class theClass, boolean forceOverwrite) {
+    protected void addMethods(final Class theClass, boolean forceOverwrite) {
         // add methods directly declared in the class
-        Method[] methodArray = theClass.getDeclaredMethods();
+        Method[] methodArray = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
+                public Object run() {
+                    return theClass.getDeclaredMethods();
+                }
+            });
         for (int i = 0; i < methodArray.length; i++) {
             Method reflectionMethod = methodArray[i];
             if ( reflectionMethod.getName().indexOf('+') >= 0 ) {
@@ -2337,10 +2396,25 @@ public class MetaClass {
         Class declaringClass = method.getDeclaringClass();
         for (Class clazz=declaringClass; clazz!=null; clazz=clazz.getSuperclass()) {
             try {
-                Method m = clazz.getDeclaredMethod(method.getName(),method.getParameterTypes());
-                if (!Modifier.isPublic(clazz.getModifiers())) continue;
-                if (!Modifier.isPublic(m.getModifiers())) continue;
-                declaringClass = clazz;
+                final Class klazz = clazz;
+                final String mName = method.getName();
+                final Class[] parms = method.getParameterTypes();
+                try {
+                    Method m = (Method) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                        public Object run() throws NoSuchMethodException {
+                            return klazz.getDeclaredMethod(mName, parms);
+                        }
+                    });  
+                    if (!Modifier.isPublic(clazz.getModifiers())) continue;
+                    if (!Modifier.isPublic(m.getModifiers())) continue;
+                    declaringClass = clazz;
+                } catch (PrivilegedActionException pae) {
+                    if (pae.getException() instanceof NoSuchMethodException) {
+                        throw (NoSuchMethodException) pae.getException();
+                    } else {
+                        throw new RuntimeException(pae.getException());
+                    }
+                }                        
             } catch (SecurityException e) {
                 continue;
             } catch (NoSuchMethodException e) {
@@ -2408,7 +2482,11 @@ public class MetaClass {
     }
 
     protected Class loadReflectorClass(final String name, final byte[] bytecode) throws ClassNotFoundException {
-        ClassLoader loader = theClass.getClassLoader();
+        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
+            public Object run() {
+                return theClass.getClassLoader();
+            }
+        }); 
         if (loader instanceof GroovyClassLoader) {
             final GroovyClassLoader gloader = (GroovyClassLoader) loader;
             return (Class) AccessController.doPrivileged(new PrivilegedAction() {
@@ -2421,7 +2499,11 @@ public class MetaClass {
     }
 
     protected Class loadReflectorClass(String name) throws ClassNotFoundException {
-        ClassLoader loader = theClass.getClassLoader();
+        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new  PrivilegedAction() {
+            public Object run() {
+                return theClass.getClassLoader();
+            }
+        }); 
         if (loader instanceof GroovyClassLoader) {
             GroovyClassLoader gloader = (GroovyClassLoader) loader;
             return gloader.loadClass(name);

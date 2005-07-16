@@ -94,7 +94,12 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         Method doCallTemp = null;
 
         while (true) {
-            final Method methods[] = closureClass.getDeclaredMethods();
+            final Class clazz = closureClass;
+            final Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
+                public Object run() {
+                    return clazz.getDeclaredMethods();
+                }
+            });
 
             int i = 0;
 
