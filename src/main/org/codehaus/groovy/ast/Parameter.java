@@ -66,19 +66,30 @@ public class Parameter {
     private boolean dynamicType;
     private Expression defaultValue;
     private String realType;
+    final private boolean hasDefaultValue;
 
     public Parameter(String name) {
-        this(null, name);
+        this.name = null;
+        this.hasDefaultValue = false;
+        this.type = "java.lang.Object";
+        this.dynamicType = true;
     }
 
     public Parameter(String type, String name) {
-        this(type, name, null);
+        this.name = MethodNode.ensureJavaTypeNameSyntax(name);
+        this.type = type;
+        this.hasDefaultValue = false;
+        if (type == null || type.length() == 0) {
+            this.type = "java.lang.Object";
+            this.dynamicType = true;
+        }
     }
 
     public Parameter(String type, String name, Expression defaultValue) {
         this.name = MethodNode.ensureJavaTypeNameSyntax(name);
         this.type = type;
         this.defaultValue = defaultValue;
+        this.hasDefaultValue = true;
         if (type == null || type.length() == 0) {
             this.type = "java.lang.Object";
             this.dynamicType = true;
@@ -86,7 +97,7 @@ public class Parameter {
     }
 
     public String toString() {
-        return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type) + "]";
+        return super.toString() + "[name:" + name + ((type == null) ? "" : " type: " + type) + ", hasDefaultValue: " + this.hasDefaultValue() + "]";
     }
 
     public String getName() {
@@ -103,6 +114,10 @@ public class Parameter {
 
     public boolean isDynamicType() {
         return dynamicType;
+    }
+    
+    public boolean hasDefaultValue() {
+        return this.hasDefaultValue;
     }
     
     /**

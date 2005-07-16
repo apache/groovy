@@ -316,7 +316,7 @@ public class MetaClass {
                 if (value instanceof Closure && object!=this) {
                     Closure closure = (Closure) value;
                     closure.setDelegate(this);
-                    return closure.call(arguments);
+                    return closure.call(new ParameterArray(arguments));
                 }
                 else {
                     throw new MissingMethodException(methodName, theClass, arguments);
@@ -988,6 +988,7 @@ public class MetaClass {
                     throw new MissingPropertyException(property, theClass, e2);
                 }
             }
+            
         }
         catch (GroovyRuntimeException e) {
             throw new MissingPropertyException(property, theClass, e);
@@ -2466,6 +2467,7 @@ public class MetaClass {
         catch (Exception e) {
             // lets ignore, lets generate it && load it
         }
+        finally {
 
         ClassWriter cw = new ClassWriter(true);
         generator.generate(cw, name);
@@ -2478,6 +2480,7 @@ public class MetaClass {
         } 
         catch (Exception e) {
             throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
+        }
         }
     }
 

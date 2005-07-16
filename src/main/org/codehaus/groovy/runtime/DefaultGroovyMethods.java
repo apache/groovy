@@ -383,6 +383,13 @@ PropertyValue pv = (PropertyValue) itr.next();
         }
     }
 
+    private static Object packArray(Object object) {
+        if (object instanceof Object[])
+            return new Object[] {object};
+        else
+            return object;
+    }
+
     // Collection based methods
     //-------------------------------------------------------------------------
 
@@ -418,7 +425,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static void each(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(iter.next());
+            closure.callSpecial(iter.next());
         }
     }
 
@@ -443,7 +450,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static void each(Collection self, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-            closure.call(iter.next());
+            closure.callSpecial(iter.next());
         }
     }
 
@@ -474,7 +481,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static boolean every(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (!InvokerHelper.asBool(closure.call(iter.next()))) {
+            if (!InvokerHelper.asBool(closure.callSpecial(iter.next()))) {
                 return false;
             }
         }
@@ -490,7 +497,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static boolean any(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            if (InvokerHelper.asBool(closure.call(iter.next()))) {
+            if (InvokerHelper.asBool(closure.callSpecial(iter.next()))) {
                 return true;
             }
         }
@@ -570,7 +577,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static Collection collect(Object self, Collection collection, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+            collection.add(closure.callSpecial(iter.next()));
         }
         return collection;
     }
@@ -598,7 +605,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static Collection collect(Collection self, Collection collection, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+            collection.add(closure.callSpecial(iter.next()));
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -616,7 +623,7 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static Collection collect(Map self, Collection collection, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+            collection.add(closure.callSpecial(iter.next()));
         }
         return collection;
     }
@@ -644,7 +651,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object find(Object self, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 return value;
             }
         }
@@ -661,7 +668,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object find(Collection self, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 return value;
             }
         }
@@ -678,7 +685,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static Object find(Map self, Closure closure) {
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 return value;
             }
         }
@@ -696,7 +703,7 @@ PropertyValue pv = (PropertyValue) itr.next();
         List answer = new ArrayList();
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 answer.add(value);
             }
         }
@@ -745,7 +752,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getParameterTypes().length == 2) {
-            return closure.call(new Object[]{entry.getKey(), entry.getValue()});
+            return closure.call(new ParameterArray(new Object[]{entry.getKey(), entry.getValue()}));
         }
         return closure.call(entry);
     }
@@ -767,7 +774,7 @@ PropertyValue pv = (PropertyValue) itr.next();
             Object item = iter.next();
             params[0] = value;
             params[1] = item;
-            value = closure.call(params);
+            value = closure.call(new ParameterArray(params));
         }
         return value;
     }
@@ -2101,7 +2108,7 @@ PropertyValue pv = (PropertyValue) itr.next();
     public static void reverseEach(List self, Closure closure) {
         List reversed = reverse(self);
         for (Iterator iter = reversed.iterator(); iter.hasNext();) {
-            closure.call(iter.next());
+            closure.callSpecial(iter.next());
         }
     }
 
@@ -3919,7 +3926,7 @@ PropertyValue pv = (PropertyValue) itr.next();
                 try {
                     Object obj = ois.readObject();
                     // we allow null objects in the object stream
-                    closure.call(obj);
+                    closure.call(new ParameterArray(obj));
                 } catch (EOFException e) {
                     break;
                 }
@@ -5049,7 +5056,7 @@ PropertyValue pv = (PropertyValue) itr.next();
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            closure.call(new Object[]{input, output});
+            closure.call(new ParameterArray(new Object[]{input, output}));
         } finally {
             try {
                 input.close();

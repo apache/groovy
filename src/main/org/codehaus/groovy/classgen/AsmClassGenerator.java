@@ -3458,7 +3458,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Parameter[] parameters = expression.getParameters();
         if (parameters == null || parameters.length == 0) {
             // lets create a default 'it' parameter
-            parameters = new Parameter[] { new Parameter("it")};
+            parameters = new Parameter[] { new Parameter("java.lang.Object", "it", ConstantExpression.NULL)};
         }
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);

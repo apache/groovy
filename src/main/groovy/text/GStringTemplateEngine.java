@@ -254,7 +254,7 @@ public class GStringTemplateEngine extends TemplateEngine {
                * @see groovy.lang.Writable#writeTo(java.io.Writer)
                */
                public Writer writeTo(final Writer writer) throws IOException {
-                   delegatedClosure.call(new Object[] {new PrintWriter(writer)});
+                   delegatedClosure.call(new ParameterArray(new PrintWriter(writer)));
 
                    return writer;
                }

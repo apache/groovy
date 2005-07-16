@@ -145,19 +145,8 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         if ("doCall".equals(method) || "call".equals(method)) {
             if (arguments instanceof Object[]) {
                 Object[] objs = (Object[]) arguments;
-                if ((objs != null) && (objs.length > 1) && (objs[0] instanceof Object[])) {
-                   boolean allNull = true;
-                   for (int j = 1; j < objs.length; j++) {
-                       if (objs[j] != null) {
-                           allNull = false;
-                           break;
-                       }
-                   }
-                   if (allNull)
-                       return callViaReflection((Object[]) (objs[0]));
-                }
             }
-            return callSpecial(arguments);
+            return callSpecial(new ParameterArray(arguments));
         } else if ("curry".equals(method)) {
             return curry((Object[]) arguments);
         } else {
@@ -257,7 +246,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @return the value if applicable or null if there is no return statement in the closure
      */
     public Object call() {
-        return call(emptyArray);
+        return call(noParameters);
     }
     
     /**
@@ -272,9 +261,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         if (this.curriedParams.length != 0) {
             final Object args[];
 
-            if (arguments instanceof Object[]) {
-                args = (Object[]) arguments;
-            } else {
+            if (arguments instanceof ParameterArray) {
+                Object paramObj  = ((ParameterArray) arguments).get();
+                if (paramObj instanceof Object[])
+                    args = (Object[]) paramObj;
+                else
+                    args = new Object[] { paramObj };
+            }
+            else {
                 args = new Object[]{arguments};
             }
 
@@ -283,10 +277,15 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
             System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
             System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
         } else {
-            if (arguments instanceof Object[]) {
-                params = (Object[]) arguments;
-            } else {
-                return doCall(arguments);
+            if (arguments instanceof ParameterArray) {
+                Object paramObj  = ((ParameterArray) arguments).get();
+                if (paramObj instanceof Object[])
+                    params = (Object[]) paramObj;
+                else
+                    params = new Object[] { paramObj };
+            }
+            else {
+                params = new Object[]{arguments};
             }
         }
 
@@ -325,10 +324,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
         if (params.length == 0) {
             return doCall();
-        } else if (params.length == 1) {
-            return doCall(params[0]);
-        } else if (params.length == 2) {
-            return doCall(params[0], params[1]);
         } else {
             return callViaReflection(params);
         }
@@ -340,9 +335,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         if (this.curriedParams.length > 0) {
             final Object args[];
 
-            if (arguments instanceof Object[]) {
-                args = (Object[]) arguments;
-            } else {
+            if (arguments instanceof ParameterArray) {
+                Object paramObj  = ((ParameterArray) arguments).get();
+                if (paramObj instanceof Object[])
+                    args = (Object[]) paramObj;
+                else
+                    args = new Object[] { paramObj };
+            }
+            else {
                 args = new Object[]{arguments};
             }
 
@@ -350,31 +350,20 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
             System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
             System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
-        } else {
+        }
+        else {
             Object[] tmpParams = null;
-            if (arguments instanceof Object[]) {
-                tmpParams = (Object[]) arguments;
-
-                if ((tmpParams != null) && (tmpParams.length > 1)) {
-                    boolean allNull = true;
-                    for (int j = 1; j < tmpParams.length; j++) {
-                        if (tmpParams[j] != null) {
-                            allNull = false;
-                            break;
-                        }
-                    }
-                    if (allNull) {
-                        if (tmpParams[0] instanceof Object[])
-                            tmpParams = (Object[]) (tmpParams[0]);
-                        else
-                            throw new IncorrectClosureArgumentsException(this, new Object[] { tmpParams[0] }, this.parameterTypes);
-                    }
-                }
-                params = tmpParams;
-
-            } else {
-                return doCall(arguments);
+            if (arguments instanceof ParameterArray) {
+                Object paramObj  = ((ParameterArray) arguments).get();
+                if (paramObj instanceof Object[])
+                    tmpParams = (Object[]) paramObj;
+                else
+                    tmpParams = new Object[] { paramObj };
             }
+            else {
+                tmpParams = new Object[]{arguments};
+            }
+            params = tmpParams;
         }
 
         final int lastParam = this.numberOfParameters - 1;
@@ -412,10 +401,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
 
         if (params.length == 0) {
             return doCall();
-        } else if (params.length == 1) {
-            return doCall(params[0]);
-        } else if (params.length == 2) {
-            return doCall(params[0], params[1]);
         } else {
             return callViaReflection(params);
         }
@@ -470,7 +455,11 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private Object callViaReflection(final Object params[]) {
         try {
             // invoke the closure
-            return ((Method) callsMap.get(new Integer(params.length))).invoke(this, params);
+            if (callsMap.get(new Integer(params.length)) != null) {
+                return ((Method) callsMap.get(new Integer(params.length))).invoke(this, params);
+            }
+            else
+                return this.doCallMethod.invoke(this, params);
         } catch (final IllegalArgumentException e) {
             throw new IncorrectClosureArgumentsException(this, params, this.parameterTypes);
         } catch (final IllegalAccessException e) {
@@ -576,7 +565,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      * @see groovy.lang.Writable#writeTo(java.io.Writer)
      */
         public Writer writeTo(Writer out) throws IOException {
-            Closure.this.call(out);
+            Closure.this.call(new ParameterArray(out));
 
             return out;
         }

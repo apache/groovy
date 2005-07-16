@@ -1,6 +1,7 @@
 package groovy.mock;
 
 import groovy.lang.Closure;
+import groovy.lang.ParameterArray;
 
 import com.mockobjects.constraint.Constraint;
 
@@ -20,7 +21,7 @@ public class ClosureConstraintMatcher implements Constraint {
 
     public boolean eval(Object object) {
         try {
-            closure.call(object);
+            closure.call(new ParameterArray(object));
             return true;
         }
         catch (AssertionError e) {

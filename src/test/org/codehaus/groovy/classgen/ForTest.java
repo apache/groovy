@@ -49,22 +49,52 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Pilho Kim
  * @version $Revision$
  */
 public class ForTest extends TestSupport {
 
+    public void testNonLoop() throws Exception {
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
+        classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
+
+        Parameter[] parameters = {new Parameter("Object", "coll")};
+
+        Statement statement = createPrintlnStatement(new VariableExpression("coll"));
+        classNode.addMethod(new MethodNode("oneParamDemo", ACC_PUBLIC, "void", parameters, statement));
+
+        Class fooClass = loadClass(classNode);
+        assertTrue("Loaded a new class", fooClass != null);
+
+        Object bean = fooClass.newInstance();
+        assertTrue("Managed to create bean", bean != null);
+
+        System.out.println("################ Now about to invoke a method without looping");
+        Object value = new Integer(10000);
+
+        try {
+            InvokerHelper.invokeMethod(bean, "oneParamDemo", new Object[] {value});
+        } catch (InvokerInvocationException e) {
+            System.out.println("Caught: " + e.getCause());
+            e.getCause().printStackTrace();
+            fail("Should not have thrown an exception");
+        }
+        System.out.println("################ Done");
+    }
+
+
     public void testLoop() throws Exception {
         ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
 
-        Parameter[] parameters = {new Parameter("coll")};
+        Parameter[] parameters = {new Parameter("Object[]", "coll")};
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
@@ -77,12 +107,43 @@ public class ForTest extends TestSupport {
         Object bean = fooClass.newInstance();
         assertTrue("Managed to create bean", bean != null);
 
-        System.out.println("################ Now about to invoke method");
-
+        System.out.println("################ Now about to invoke a method with looping");
         Object[] array = {new Integer(1234), "abc", "def"};
 
         try {
             InvokerHelper.invokeMethod(bean, "iterateDemo", new Object[]{array});
+        } catch (InvokerInvocationException e) {
+            System.out.println("Caught: " + e.getCause());
+            e.getCause().printStackTrace();
+            fail("Should not have thrown an exception");
+        }
+        System.out.println("################ Done");
+    }
+
+    public void testManyParam() throws Exception {
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
+        classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
+
+        Parameter[] parameters = { new Parameter("Object", "coll1"), new Parameter("Object", "coll2"), new Parameter("Object", "coll3") };
+
+        BlockStatement statement = new BlockStatement();
+        statement.addStatement(createPrintlnStatement(new VariableExpression("coll1")));
+        statement.addStatement(createPrintlnStatement(new VariableExpression("coll2")));
+        statement.addStatement(createPrintlnStatement(new VariableExpression("coll3")));
+
+        classNode.addMethod(new MethodNode("manyParamDemo", ACC_PUBLIC, "void", parameters, statement));
+
+        Class fooClass = loadClass(classNode);
+        assertTrue("Loaded a new class", fooClass != null);
+
+        Object bean = fooClass.newInstance();
+        assertTrue("Managed to create bean", bean != null);
+
+        System.out.println("################ Now about to invoke a method with many parameters");
+        Object[] array = {new Integer(1000*1000), "foo-", "bar~"};
+
+        try {
+            InvokerHelper.invokeMethod(bean, "manyParamDemo", array);
         } catch (InvokerInvocationException e) {
             System.out.println("Caught: " + e.getCause());
             e.getCause().printStackTrace();

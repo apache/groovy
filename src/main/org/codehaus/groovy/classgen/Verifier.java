@@ -394,16 +394,90 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List methods = new ArrayList(node.getMethods());
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            Parameter[] parameters = method.getParameters();
-            int size = parameters.length;
-            for (int i = 0; i < size; i++) {
-                Parameter parameter = parameters[i];
-                Expression exp = parameter.getDefaultValue();
-                if (exp != null) {
-                    addDefaultParameterMethod(node, method, parameters, i);
+            if (method.hasDefaultValue()) {
+                Parameter[] parameters = method.getParameters();
+                int counter = 0;
+                ArrayList paramValues = new ArrayList();
+                int size = parameters.length;
+                for (int i = size - 1; i >= 0; i--) {
+                    Parameter parameter = parameters[i];
+                    if (parameter != null && parameter.hasDefaultValue()) {
+                        paramValues.add(new Integer(i));
+                        paramValues.add(parameter.getDefaultValue());
+                        counter++;
+                    }
+                }
+
+                for (int j = 1; j <= counter; j++) {
+                    Parameter[] newParams =  new Parameter[parameters.length - j];
+                    ArgumentListExpression arguments = new ArgumentListExpression();
+                    int index = 0;
+                    int k = 1;
+                    for (int i = 0; i < parameters.length; i++) {
+                        if (k > counter - j && parameters[i] != null && parameters[i].hasDefaultValue()) {
+                            arguments.addExpression(parameters[i].getDefaultValue());
+                            k++;
+                        }
+                        else if (parameters[i] != null && parameters[i].hasDefaultValue()) {
+                            newParams[index++] = parameters[i];
+                            arguments.addExpression(new VariableExpression(parameters[i].getName()));
+                            k++;
+                        }
+                        else {
+                            newParams[index++] = parameters[i];
+                            arguments.addExpression(new VariableExpression(parameters[i].getName()));
+                        }
+                    }
+
+                    MethodCallExpression expression = new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+                    Statement code = null;
+                    if (method.isVoidMethod()) {
+                        code = new ExpressionStatement(expression);
+                    }
+                    else {
+                        code = new ReturnStatement(expression);
+                    }
+                    node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
                 }
             }
         }
+    }
+
+    /**
+     * Adds a new method which defaults the values for all the parameters starting 
+     * from and including the given index
+     * 
+     * @param node the class to add the method
+     * @param method the given method to add a helper of
+     * @param parameters the parameters of the method to add a helper for
+     * @param index the index of the first default value expression parameter to use
+     */
+    protected void addDefaultParameterMethod(ClassNode node, MethodNode method, Parameter[] parameters, int depth, ArrayList values) {
+        // lets create a method using this expression
+        Parameter[] newParams = new Parameter[parameters.length - depth];
+        int index = 0;
+        ArgumentListExpression arguments = new ArgumentListExpression();
+        for (int i = 0; i < parameters.length; i++) {
+            if (parameters[i] != null && parameters[i].hasDefaultValue()) {
+                newParams[index++] = parameters[i];
+                arguments.addExpression(new VariableExpression(parameters[i].getName()));
+            }
+            else {
+                arguments.addExpression(parameters[i].getDefaultValue());
+            }
+        }
+
+        MethodCallExpression expression =
+            new MethodCallExpression(VariableExpression.THIS_EXPRESSION, method.getName(), arguments);
+        Statement code = null;
+        if (method.isVoidMethod()) {
+            code = new ExpressionStatement(expression);
+        }
+        else {
+            code = new ReturnStatement(expression);
+        }
+
+        node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, code);
     }
 
     /**
