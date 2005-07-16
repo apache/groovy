@@ -549,14 +549,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         VariableExpression leftExpression = new VariableExpression(name, type);
         configureAST(leftExpression, paramNode);
 
-        Expression rightExpression = null;
+        Parameter parameter = null;
         if (node != null) {
             assertNodeType(ASSIGN, node);
-
-            rightExpression = expression(node.getFirstChild());
+            Expression rightExpression = expression(node.getFirstChild());
+            parameter = new Parameter(type, name, rightExpression);
         }
+        else
+            parameter = new Parameter(type, name);
 
-        Parameter parameter = new Parameter(type, name, rightExpression);
         // TODO
         //configureAST(parameter,paramNode);
         //parameter.addAnnotations(annotations);

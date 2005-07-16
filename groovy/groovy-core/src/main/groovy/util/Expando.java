@@ -45,6 +45,7 @@
  */
 package groovy.util;
 
+import groovy.lang.ParameterArray;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
@@ -63,6 +64,7 @@ import java.util.Iterator;
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling
+ * @author Pilho Kim
  * @version $Revision$
  */
 public class Expando extends GroovyObjectSupport {
@@ -85,18 +87,18 @@ public class Expando extends GroovyObjectSupport {
         }
         return expandoProperties;
     }
-	
-	public List getProperties() {
-		// run through all our current properties and create MetaProperty objects
-		List ret = new ArrayList();
-		Iterator itr = getExpandoProperties().entrySet().iterator();
-		while(itr.hasNext()) {
-			Entry entry = (Entry) itr.next();
-			ret.add(new MetaExpandoProperty(entry));
-		}
+
+    public List getProperties() {
+        // run through all our current properties and create MetaProperty objects
+        List ret = new ArrayList();
+        Iterator itr = getExpandoProperties().entrySet().iterator();
+        while(itr.hasNext()) {
+            Entry entry = (Entry) itr.next();
+            ret.add(new MetaExpandoProperty(entry));
+        }
 		
-		return ret;
-	}
+        return ret;
+    }
 
     public Object getProperty(String property) {
         try {
@@ -121,12 +123,12 @@ public class Expando extends GroovyObjectSupport {
             return super.invokeMethod(name, args);
         }
         catch (GroovyRuntimeException e) {
-        	// br should get a "native" property match first. getProperty includes such fall-back logic
+            // br should get a "native" property match first. getProperty includes such fall-back logic
             Object value = this.getProperty(name);
             if (value instanceof Closure) {
                 Closure closure = (Closure) value;
                 closure.setDelegate(this);
-                return closure.call(args);
+                return closure.call(new ParameterArray(args));
             }
             else {
                 throw e;
@@ -134,7 +136,7 @@ public class Expando extends GroovyObjectSupport {
         }
         
     }
-
+    
     /**
      * This allows toString to be overridden by a closure <i>field</i> method attached
      * to the expando object.

@@ -61,6 +61,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private int modifiers;
     private String returnType;
     private Parameter[] parameters;
+    private boolean hasDefaultValue = false;
     private Statement code;
     private boolean dynamicReturnType;
     private VariableScope variableScope;
@@ -70,6 +71,15 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.modifiers = modifiers;
         this.parameters = parameters;
         this.code = code;
+
+        if (parameters != null && parameters.length > 0) {
+            for (int i = 0; i < parameters.length; i++) {
+                if (parameters[i].hasDefaultValue()) {
+                    this.hasDefaultValue = true;
+                    break;
+                }
+            }
+        }
 
         if (returnType == null || returnType.length() == 0) {
             this.returnType = "java.lang.Object";
@@ -197,6 +207,10 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
+    }
+
+    public boolean hasDefaultValue() {
+        return this.hasDefaultValue;
     }
 
     public String toString() {

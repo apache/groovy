@@ -43,31 +43,36 @@
  OF THE POSSIBILITY OF SUCH DAMAGE.
 
  */
-package groovy.util;
-
-import groovy.lang.Closure;
-import groovy.lang.ParameterArray;
-
-import java.util.Comparator;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
+package groovy.lang;
 
 /**
- * A Comparator which uses a closure to compare 2 values being equal
- * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * Distinguish a parameter array from Object[].
+ *
+ * @author Pilho Kim
  * @version $Revision$
  */
-public class ClosureComparator implements Comparator {
+public class ParameterArray {
 
-    Closure closure;
+    private Object parameters;
 
-    public ClosureComparator(Closure closure) {
-        this.closure = closure;
+    public ParameterArray(Object data) {
+        parameters = packArray(data);
     }
 
-    public int compare(Object object1, Object object2) {
-        Object value = closure.call(new ParameterArray(new Object[] {object1, object2}));
-        return InvokerHelper.asInt(value);
+    private Object packArray(Object object) {
+        if (object instanceof Object[])
+            return (Object[]) object;
+        else
+            return object;
+    }
+
+    public Object get() {
+        return parameters;
+    }
+
+    public String toString() {
+        if (parameters == null)
+            return "<null parameter>";
+        return parameters.toString();
     }
 }
