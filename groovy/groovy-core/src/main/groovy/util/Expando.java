@@ -62,6 +62,7 @@ import java.util.Iterator;
  * Represents a dynamically expandable bean.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Hein Meling
  * @version $Revision$
  */
 public class Expando extends GroovyObjectSupport {
@@ -133,11 +134,63 @@ public class Expando extends GroovyObjectSupport {
         }
         
     }
-    
-    public String toString() {
-        return expandoProperties.toString();
+
+    /**
+     * This allows toString to be overridden by a closure <i>field</i> method attached
+     * to the expando object.
+     * 
+     * @see java.lang.Object#toString()
+     */
+     public String toString() {
+        Object method = getExpandoProperties().get("toString");
+        if (method != null && method instanceof Closure) {
+            // invoke overridden toString closure method
+            Closure closure = (Closure) method;
+            closure.setDelegate(this);
+            return closure.call().toString();
+        } else {
+            return expandoProperties.toString();
+        }
+     }
+
+    /**
+     * This allows equals to be overridden by a closure <i>field</i> method attached
+     * to the expando object.
+     *
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    public boolean equals(Object obj) {
+        Object method = getExpandoProperties().get("equals");
+        if (method != null && method instanceof Closure) {
+            // invoke overridden equals closure method
+            Closure closure = (Closure) method;
+            closure.setDelegate(this);
+            Boolean ret = (Boolean) closure.call(obj);
+            return ret.booleanValue();
+        } else {
+            return super.equals(obj);
+        }
     }
-    
+
+    /**
+     * This allows hashCode to be overridden by a closure <i>field</i> method attached
+     * to the expando object.
+     *
+     * @see java.lang.Object#hashCode()
+     */
+    public int hashCode() {
+        Object method = getExpandoProperties().get("hashCode");
+        if (method != null && method instanceof Closure) {
+            // invoke overridden hashCode closure method
+            Closure closure = (Closure) method;
+            closure.setDelegate(this);
+            Integer ret = (Integer) closure.call();
+            return ret.intValue();
+        } else {
+            return super.hashCode();
+        }
+    }
+
     /**
      * Factory method to create a new Map used to store the expando properties map
      * @return a newly created Map implementation
