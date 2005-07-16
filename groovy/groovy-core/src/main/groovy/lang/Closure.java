@@ -249,6 +249,22 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         return call(noParameters);
     }
     
+    private Object[] getArguments(Object arguments) {
+        Object[] args;
+        if (arguments instanceof ParameterArray) {
+            Object paramObj  = ((ParameterArray) arguments).get();
+            if (paramObj instanceof Object[])
+                args = (Object[]) paramObj;
+            else
+                args = new Object[] { paramObj };
+        }
+        else {
+            args = new Object[]{arguments};
+        }
+        return args;
+    }
+    
+    
     /**
      * Invokes the closure, returning any value if applicable.
      *
@@ -259,34 +275,13 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         final Object params[];
 
         if (this.curriedParams.length != 0) {
-            final Object args[];
-
-            if (arguments instanceof ParameterArray) {
-                Object paramObj  = ((ParameterArray) arguments).get();
-                if (paramObj instanceof Object[])
-                    args = (Object[]) paramObj;
-                else
-                    args = new Object[] { paramObj };
-            }
-            else {
-                args = new Object[]{arguments};
-            }
-
+            final Object[] args = getArguments(arguments);
             params = new Object[this.curriedParams.length + args.length];
 
             System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
             System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
         } else {
-            if (arguments instanceof ParameterArray) {
-                Object paramObj  = ((ParameterArray) arguments).get();
-                if (paramObj instanceof Object[])
-                    params = (Object[]) paramObj;
-                else
-                    params = new Object[] { paramObj };
-            }
-            else {
-                params = new Object[]{arguments};
-            }
+            params = getArguments(arguments);
         }
 
         final int lastParam = this.numberOfParameters - 1;
@@ -333,37 +328,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         final Object params[];
 
         if (this.curriedParams.length > 0) {
-            final Object args[];
-
-            if (arguments instanceof ParameterArray) {
-                Object paramObj  = ((ParameterArray) arguments).get();
-                if (paramObj instanceof Object[])
-                    args = (Object[]) paramObj;
-                else
-                    args = new Object[] { paramObj };
-            }
-            else {
-                args = new Object[]{arguments};
-            }
-
+            final Object[] args = getArguments(arguments);
             params = new Object[this.curriedParams.length + args.length];
 
             System.arraycopy(this.curriedParams, 0, params, 0, this.curriedParams.length);
             System.arraycopy(args, 0, params, this.curriedParams.length, args.length);
         }
         else {
-            Object[] tmpParams = null;
-            if (arguments instanceof ParameterArray) {
-                Object paramObj  = ((ParameterArray) arguments).get();
-                if (paramObj instanceof Object[])
-                    tmpParams = (Object[]) paramObj;
-                else
-                    tmpParams = new Object[] { paramObj };
-            }
-            else {
-                tmpParams = new Object[]{arguments};
-            }
-            params = tmpParams;
+            params = getArguments(arguments);
         }
 
         final int lastParam = this.numberOfParameters - 1;
