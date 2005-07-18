@@ -93,7 +93,7 @@ import org.objectweb.asm.ClassWriter;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
  * @author Jochen Theodorou
@@ -131,7 +131,7 @@ public class MetaClass {
     private boolean initialised;
 	// we only need one of these that can be reused over and over.
 	private MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-	
+
     public MetaClass(MetaClassRegistry registry, final Class theClass) throws IntrospectionException {
         this.registry = registry;
         this.theClass = theClass;
@@ -161,18 +161,18 @@ public class MetaClass {
         }
 
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
-        
+
         // build up the metaproperties based on the public fields, property descriptors,
         // and the getters and setters
         setupProperties(descriptors);
-        
+
         /* old code
         for (int i = 0; i < descriptors.length; i++) {
             PropertyDescriptor descriptor = descriptors[i];
             propertyDescriptors.put(descriptor.getName(), descriptor);
         }
         */
-        
+
         EventSetDescriptor[] eventDescriptors = info.getEventSetDescriptors();
         for (int i = 0; i < eventDescriptors.length; i++) {
             EventSetDescriptor descriptor = eventDescriptors[i];
@@ -192,7 +192,7 @@ public class MetaClass {
     /**
      * Allows reflection to be enabled in situations where bytecode generation
      * of method invocations causes issues.
-     * 
+     *
      * @param useReflection
      */
     public static void setUseReflection(boolean useReflection) {
@@ -217,7 +217,7 @@ public class MetaClass {
             addNewStaticMethodsFrom(interfaces[i]);
         }
 
-        // lets add Object methods after interfaces, as all interfaces derive from Object. 
+        // lets add Object methods after interfaces, as all interfaces derive from Object.
         // this ensures List and Collection methods come before Object etc
         if (theClass != Object.class) {
             addMethods(Object.class, false);
@@ -263,7 +263,7 @@ public class MetaClass {
     /**
      * Allows static method definitions to be added to a meta class as if it
      * was an instance method
-     * 
+     *
      * @param method
      */
     protected void addNewInstanceMethod(Method method) {
@@ -298,7 +298,7 @@ public class MetaClass {
 
     /**
      * Invokes the given method on the object.
-     *  
+     *
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         if (object == null) {
@@ -458,14 +458,14 @@ public class MetaClass {
         }
         /*
         List methods = getStaticMethods(methodName);
-        
+
         if (!methods.isEmpty()) {
             MetaMethod method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
             if (method != null) {
                 return doMethodInvoke(theClass, method, arguments);
             }
         }
-        
+
         if (theClass != Class.class) {
             try {
                 return registry.getMetaClass(Class.class).invokeMethod(object, methodName, arguments);
@@ -489,6 +489,9 @@ public class MetaClass {
         if (method == null && theClass != Class.class) {
             MetaClass classMetaClass = registry.getMetaClass(Class.class);
             method = classMetaClass.pickMethod(object, methodName, arguments);
+        }
+        if (method == null) {
+            method = (MetaMethod) chooseMethod(methodName, methods, convertToTypeArray(arguments), true);
         }
         return method;
     }
@@ -551,11 +554,11 @@ public class MetaClass {
         for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             String key = entry.getKey().toString();
-            
+
             // do we have this property?
             if(propertyMap.get(key) == null)
                 continue;
-            
+
             Object value = entry.getValue();
             try {
                 setProperty(bean, key, value);
@@ -601,7 +604,7 @@ public class MetaClass {
                     }
                 }
             }
-        } 
+        }
         else {
             Object[] arguments = { property };
             Object answer = doMethodInvoke(object, genericGetMethod, arguments);
@@ -661,7 +664,7 @@ public class MetaClass {
                     // fall through
                 }
             }
-            
+
             MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
             if (addListenerMethod != null) {
                 /* @todo one day we could try return the previously registered Closure listener for easy removal */
@@ -683,9 +686,9 @@ public class MetaClass {
         // simply return the values of the metaproperty map as a List
         return new ArrayList(propertyMap.values());
     }
-    
+
     /**
-     * This will build up the property map (Map of MetaProperty objects, keyed on 
+     * This will build up the property map (Map of MetaProperty objects, keyed on
      * property name).
      */
     protected void setupProperties(PropertyDescriptor[] propertyDescriptors) {
@@ -694,7 +697,7 @@ public class MetaClass {
         MetaMethod getter = null;
         MetaMethod setter = null;
         Class klass;
-        
+
         // first get the public fields and create MetaFieldProperty objects
         klass = theClass;
         while(klass != null) {
@@ -708,64 +711,64 @@ public class MetaClass {
                 // we're only interested in publics
                 if((fields[i].getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0)
                     continue;
-                
+
                 // see if we already got this
                 if(propertyMap.get(fields[i].getName()) != null)
                     continue;
-                
-                //System.out.println("adding field " + fields[i].getName() + 
+
+                //System.out.println("adding field " + fields[i].getName() +
                 //  " for class " + klass.getName());
                 // stick it in there!
                 propertyMap.put(fields[i].getName(), new MetaFieldProperty(fields[i]));
             }
-            
+
             // now get the super class
             klass = klass.getSuperclass();
         }
-        
+
 		// if this an Array, then add the special read-only "length" property
 		if(theClass.isArray()) {
 			propertyMap.put("length", arrayLengthProperty);
 		}
-		
-        // now iterate over the map of property descriptors and generate 
+
+        // now iterate over the map of property descriptors and generate
         // MetaBeanProperty objects
         for(int i=0; i<propertyDescriptors.length; i++) {
             PropertyDescriptor pd = propertyDescriptors[i];
             // skip if the field already exists in the map
             if(propertyMap.get(pd.getName()) != null)
                 continue;
-            
-            // skip if the property type is unknown (this seems to be the case if the 
+
+            // skip if the property type is unknown (this seems to be the case if the
             // property descriptor is based on a setX() method that has two parameters,
             // which is not a valid property)
             if(pd.getPropertyType() == null)
                 continue;
-            
+
             // get the getter method
             method = pd.getReadMethod();
             if(method != null)
                 getter = findMethod(method);
             else
                 getter = null;
-            
+
             // get the setter method
             method = pd.getWriteMethod();
             if(method != null)
                 setter = findMethod(method);
             else
                 setter = null;
-            
+
             // now create the MetaProperty object
             //System.out.println("creating a bean property for class " +
             //  theClass.getName() + ": " + pd.getName());
-                
+
             mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
-            
+
             // put it in the list
             propertyMap.put(pd.getName(), mp);
         }
-        
+
         // now look for any stray getters that may be used to define a property
         klass = theClass;
         while(klass != null) {
@@ -779,19 +782,19 @@ public class MetaClass {
                 // filter out the privates
                 if(Modifier.isPublic(methods[i].getModifiers()) == false)
                     continue;
-                
+
                 method = methods[i];
-                
+
                 String methodName = method.getName();
-                
+
                 // is this a getter?
-                if(methodName.startsWith("get") && 
+                if(methodName.startsWith("get") &&
                     methodName.length() > 3 &&
                     method.getParameterTypes().length == 0) {
-                    
+
                     // get the name of the property
                     String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
-                    
+
                     // is this property already accounted for?
                     mp = (MetaProperty) propertyMap.get(propName);
                     if(mp != null) {
@@ -804,21 +807,21 @@ public class MetaClass {
                     else {
                         // we need to create a new property object
                         // type of the property is what the get method returns
-                        MetaBeanProperty mbp = new MetaBeanProperty(propName, 
+                        MetaBeanProperty mbp = new MetaBeanProperty(propName,
                             method.getReturnType(),
                             findMethod(method), null);
-                            
+
                         // add it to the map
                         propertyMap.put(propName, mbp);
                     }
                 }
-                else if(methodName.startsWith("set") && 
+                else if(methodName.startsWith("set") &&
                     methodName.length() > 3 &&
                     method.getParameterTypes().length == 1) {
-                    
+
                     // get the name of the property
                     String propName = methodName.substring(3,4).toLowerCase() + methodName.substring(4);
-                    
+
                     // did we already find the getter of this?
                     mp = (MetaProperty) propertyMap.get(propName);
                     if(mp != null) {
@@ -829,22 +832,22 @@ public class MetaClass {
                     }
                     else {
                         // this is a new property to add
-                        MetaBeanProperty mbp = new MetaBeanProperty(propName, 
+                        MetaBeanProperty mbp = new MetaBeanProperty(propName,
                                                                     method.getParameterTypes()[0],
                                                                     null,
                                                                     findMethod(method));
-                            
+
                         // add it to the map
                         propertyMap.put(propName, mbp);
                     }
                 }
             }
-            
+
             // now get the super class
             klass = klass.getSuperclass();
         }
     }
-    
+
     /**
      * Sets the property value on an object
      */
@@ -880,8 +883,8 @@ public class MetaClass {
                             return;
                         }
                     }
-                    
-                    // if value is an array  
+
+                    // if value is an array
                     Class parameterType = mp.getType();
                     if (parameterType.isArray()) {
                         Object objArray = asPrimitiveArray(list, parameterType);
@@ -890,7 +893,7 @@ public class MetaClass {
                     }
                 }
 
-                // if value is an multidimensional array  
+                // if value is an multidimensional array
                 // jes currently this logic only supports metabeansproperties and
                 // not metafieldproperties. It shouldn't be too hard to support
                 // the latter...
@@ -898,11 +901,11 @@ public class MetaClass {
                     MetaBeanProperty mbp = (MetaBeanProperty) mp;
                     List list = Arrays.asList((Object[])newValue);
                     MetaMethod setter = mbp.getSetter();
-                    
+
                     Class parameterType = setter.getParameterTypes()[0];
                     Class arrayType = parameterType.getComponentType();
                     Object objArray = Array.newInstance(arrayType, list.size());
-                    
+
                     for (int i = 0; i < list.size(); i++) {
                         List list2 =Arrays.asList((Object[]) list.get(i));
                         Object objArray2 = asPrimitiveArray(list2, arrayType);
@@ -914,11 +917,11 @@ public class MetaClass {
                     });
                     return;
                 }
-                
+
                 throw new MissingPropertyException(property, theClass, e);
             }
         }
-        
+
         try {
             MetaMethod addListenerMethod = (MetaMethod) listeners.get(property);
             if (addListenerMethod != null && newValue instanceof Closure) {
@@ -943,7 +946,7 @@ public class MetaClass {
                         }
                     }
                 }
-            } 
+            }
             else {
                 Object[] arguments = { property, newValue };
                 doMethodInvoke(object, genericSetMethod, arguments);
@@ -971,10 +974,10 @@ public class MetaClass {
                             public Object run() throws NoSuchFieldException {
                                 return clazz.getDeclaredField(prop);
                             }
-                        });  
+                        });
                         //field.setAccessible(true);
                         field.set(object, newValue);
-                    } 
+                    }
                     catch (PrivilegedActionException pae) {
                         if (pae.getException() instanceof NoSuchFieldException) {
                             throw (NoSuchFieldException) pae.getException();
@@ -988,12 +991,12 @@ public class MetaClass {
                     throw new MissingPropertyException(property, theClass, e2);
                 }
             }
-            
+
         }
         catch (GroovyRuntimeException e) {
             throw new MissingPropertyException(property, theClass, e);
         }
-        
+
     }
 
 
@@ -1008,7 +1011,7 @@ public class MetaClass {
                     public Object run() throws NoSuchFieldException {
                         return clazz.getDeclaredField(attribute);
                     }
-                });  
+                });
                 field.setAccessible(true);
                 return field.get(object);
             } catch (PrivilegedActionException pae) {
@@ -1017,7 +1020,7 @@ public class MetaClass {
                 } else {
                     throw new RuntimeException(pae.getException());
                 }
-            }                        
+            }
         }
         catch (NoSuchFieldException e) {
             throw new MissingFieldException(attribute, theClass);
@@ -1038,7 +1041,7 @@ public class MetaClass {
                     public Object run() throws NoSuchFieldException {
                         return clazz.getDeclaredField(attribute);
                     }
-                });  
+                });
                 field.setAccessible(true);
                 field.set(object, newValue);
             } catch (PrivilegedActionException pae) {
@@ -1047,7 +1050,7 @@ public class MetaClass {
                 } else {
                     throw new RuntimeException(pae.getException());
                 }
-            }                        
+            }
         }
         catch (NoSuchFieldException e) {
             throw new MissingFieldException(attribute, theClass);
@@ -1108,7 +1111,7 @@ public class MetaClass {
         }
         return objArray;
     }
-    
+
     public ClassNode getClassNode() {
         if (classNode == null && GroovyObject.class.isAssignableFrom(theClass)) {
             // lets try load it from the classpath
@@ -1141,8 +1144,8 @@ public class MetaClass {
                             }
                         }
                     };
-                    
-                    
+
+
                     CompilationUnit unit = new CompilationUnit( getClass().getClassLoader() );
                     unit.setClassgenCallback( search );
                     unit.addSource( url );
@@ -1183,7 +1186,7 @@ public class MetaClass {
             return new Object[] { arguments };
         }
     }
-	
+
     /**
      * @param listenerType
      *            the interface of the listener to proxy
@@ -1204,7 +1207,7 @@ public class MetaClass {
     /**
      * Adds all the methods declared in the given class to the metaclass
      * ignoring any matching methods already defined by a derived class
-     * 
+     *
      * @param theClass
      */
     protected void addMethods(final Class theClass, boolean forceOverwrite) {
@@ -1289,7 +1292,7 @@ public class MetaClass {
         }
         return false;
     }
-    
+
     /**
      * remove a method of the same matching prototype was found in the list
      */
@@ -1314,12 +1317,12 @@ public class MetaClass {
         }
         return;
     }
-    
+
 
     /**
      * Adds all of the newly defined methods from the given class to this
      * metaclass
-     * 
+     *
      * @param theClass
      */
     protected void addNewStaticMethodsFrom(Class theClass) {
@@ -1714,7 +1717,7 @@ public class MetaClass {
     /**
      * Chooses the correct method to use from a list of methods which match by
      * name.
-     * 
+     *
      * @param methods
      *            the possible methods to choose from
      * @param arguments
@@ -1803,7 +1806,7 @@ public class MetaClass {
         if (!iface.isInterface()) return false;
         return iface.isAssignableFrom(clazz);
     }
-    
+
     private boolean isSuperclass(Class claszz, Class superclass) {
         while (claszz!=null) {
             if (claszz==superclass) return true;
@@ -1811,7 +1814,7 @@ public class MetaClass {
         }
         return false;
     }
-    
+
     private Class[] wrap(Class[] classes) {
         Class[] wrappedArguments = new Class[classes.length];
         for (int i = 0; i < wrappedArguments.length; i++) {
@@ -1833,10 +1836,10 @@ public class MetaClass {
                 c = String.class;
             }
             wrappedArguments[i]=c;
-        } 
+        }
         return wrappedArguments;
     }
-    
+
     private boolean parametersAreCompatible(Class[] arguments, Class[] parameters) {
         if (arguments.length!=parameters.length) return false;
         for (int i=0; i<arguments.length; i++) {
@@ -1844,17 +1847,17 @@ public class MetaClass {
         }
         return true;
     }
-    
+
     private int calculateParameterDistance(Class[] arguments, Class[] parameters) {
         int dist=0;
         for (int i=0; i<arguments.length; i++) {
             if (parameters[i]==arguments[i]) continue;
-            
+
             if (parameters[i].isInterface()) {
                 dist+=2;
                 continue;
             }
-            
+
             if (arguments[i]!=null) {
                 if (arguments[i].isPrimitive() || parameters[i].isPrimitive()) {
                     // type is not equal, increase distance by one to reflect
@@ -1862,10 +1865,10 @@ public class MetaClass {
                     dist++;
                     continue;
                 }
-            
+
                 // add one to dist to be sure interfaces are prefered
                 dist++;
-                Class clazz = arguments[i];                
+                Class clazz = arguments[i];
                 while (clazz!=null && clazz!=parameters[i]) {
                     clazz = clazz.getSuperclass();
                     dist+=2;
@@ -1876,7 +1879,7 @@ public class MetaClass {
                 // specific type
                 // remove one to dist to be sure Object is prefered
                 dist--;
-                Class clazz = parameters[i];                
+                Class clazz = parameters[i];
                 while (clazz!=Object.class) {
                     clazz = clazz.getSuperclass();
                     dist+=2;
@@ -1885,12 +1888,12 @@ public class MetaClass {
         }
         return dist;
     }
-    
-    
+
+
     protected Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {
-        
+
         Class[] wrappedArguments = wrap(arguments);
-        
+
         int matchesDistance = -1;
         LinkedList matches = new LinkedList();
         for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
@@ -1908,15 +1911,15 @@ public class MetaClass {
             } else if (dist==matchesDistance) {
                 matches.add(method);
             }
-            
+
         }
         if (matches.size()==1) {
             return matches.getFirst();
-        }        
+        }
         if (matches.size()==0) {
             return null;
         }
-        
+
         //more than one matching method found --> ambigous!
         String msg = "Ambiguous method overloading for method ";
         msg+= theClass.getName()+"#"+name;
@@ -1928,10 +1931,10 @@ public class MetaClass {
             msg+= "\n\t"+InvokerHelper.toString(types);
         }
         throw new GroovyRuntimeException(msg);
-        
-        
-        
-        
+
+
+
+
         /*
         LinkedList directMatches = new LinkedList();
         // test for a method with equal classes (natives are wrapped
@@ -1951,9 +1954,9 @@ public class MetaClass {
                 Class[] paramTypes = getParameterTypes(method);
                 if (Arrays.equals(arguments, paramTypes)) directMatches.add(method);
             }
-            if (directMatches.size()==1) return directMatches.getFirst();            
+            if (directMatches.size()==1) return directMatches.getFirst();
         }
-        
+
         // filter out cases where we don't have a useable superclass or interface
         List superclassMatches = new ArrayList(matchingMethods);
         for (Iterator iter = superclassMatches.iterator(); iter.hasNext(); ) {
@@ -1972,7 +1975,7 @@ public class MetaClass {
             //if not all methods are filtered out use the filtered methods
             matchingMethods = superclassMatches;
         }
-        
+
         Object answer = null;
         int size = arguments.length;
         Class[] mostSpecificTypes = null;
@@ -2012,7 +2015,7 @@ public class MetaClass {
      * Checks that one of the parameter types is a superset of the other and
      * that the two lists of types don't conflict. e.g. foo(String, Object) and
      * foo(Object, String) would conflict if called with foo("a", "b").
-     * 
+     *
      * Note that this method is only called with 2 possible signatures. i.e.
      * possible invalid combinations will already have been filtered out. So if
      * there were methods foo(String, Object) and foo(Object, String) then one
@@ -2070,7 +2073,7 @@ public class MetaClass {
                 if (closestClass == null || isAssignableFrom(closestClass, theType)) {
                     closestClass = theType;
                     answer = method;
-                }                
+                }
             }
         }
         return answer;
@@ -2230,7 +2233,7 @@ public class MetaClass {
             }
         }
         if (type==String.class) {
-            return  mostSpecificType == String.class || 
+            return  mostSpecificType == String.class ||
                     GString.class.isAssignableFrom(mostSpecificType);
         }
 
@@ -2273,8 +2276,8 @@ public class MetaClass {
 
     /**
      * Coerces any GString instances into Strings
-     * 
-     * @return true if some coercion was done. 
+     *
+     * @return true if some coercion was done.
      */
     protected static boolean coerceGStrings(Object[] arguments) {
         boolean coerced = false;
@@ -2339,7 +2342,7 @@ public class MetaClass {
     protected synchronized void onMethodChange() {
         reflector = null;
     }
-    
+
     protected synchronized void checkInitialised() {
         if (!initialised) {
             initialised = true;
@@ -2359,7 +2362,7 @@ public class MetaClass {
                 }
             });
         }
-        
+
         MetaMethod answer = new MetaMethod(method);
         if (isValidReflectorMethod(answer)) {
             allMethods.add(answer);
@@ -2369,12 +2372,12 @@ public class MetaClass {
             //log.warning("Creating reflection based dispatcher for: " + method);
             answer = new ReflectionMetaMethod(method);
         }
-        
+
         if (useReflection) {
             //log.warning("Creating reflection based dispatcher for: " + method);
             return new ReflectionMetaMethod(method);
         }
- 
+
         return answer;
     }
 
@@ -2405,7 +2408,7 @@ public class MetaClass {
                         public Object run() throws NoSuchMethodException {
                             return klazz.getDeclaredMethod(mName, parms);
                         }
-                    });  
+                    });
                     if (!Modifier.isPublic(clazz.getModifiers())) continue;
                     if (!Modifier.isPublic(m.getModifiers())) continue;
                     declaringClass = clazz;
@@ -2415,16 +2418,16 @@ public class MetaClass {
                     } else {
                         throw new RuntimeException(pae.getException());
                     }
-                }                        
+                }
             } catch (SecurityException e) {
                 continue;
             } catch (NoSuchMethodException e) {
                 continue;
-            }            
+            }
         }
         if (!Modifier.isPublic(declaringClass.getModifiers())) return false;
         method.setDeclaringClass(declaringClass);
-        
+
         return true;
     }
 
@@ -2463,7 +2466,7 @@ public class MetaClass {
         catch (AccessControlException ace) {
             //Don't ignore this exception type
             throw ace;
-        } 
+        }
         catch (Exception e) {
             // lets ignore, lets generate it && load it
         }
@@ -2477,7 +2480,7 @@ public class MetaClass {
         try {
             Class type = loadReflectorClass(name, bytecode);
             return (Reflector) type.newInstance();
-        } 
+        }
         catch (Exception e) {
             throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
         }
