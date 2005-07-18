@@ -4,13 +4,13 @@ h1. Lexical Structure
 
 This chapter specifies the lexical structure of the Groovy programming language. 
 
-Programs are written in Unicode (¤3.1), but lexical translations are provided (¤3.2) so that Unicode escapes (¤3.3) can be used to include any Unicode character using only ASCII characters. 
-Line terminators are defined (¤3.4) to support the different conventions of existing host systems while maintaining consistent line numbers. 
+Programs are written in Unicode ($3.1), but lexical translations are provided ($3.2) so that Unicode escapes ($3.3) can be used to include any Unicode character using only ASCII characters. 
+Line terminators are defined ($3.4) to support the different conventions of existing host systems while maintaining consistent line numbers. 
 
-The Unicode characters resulting from the lexical translations are reduced to a sequence of input elements (¤3.5), which are white space (¤3.6), comments (¤3.7), and tokens. 
-The tokens are the identifiers (¤3.8), keywords (¤3.9), literals (¤3.10), separators (¤3.11), and operators (¤3.12) of the syntactic grammar. 
+The Unicode characters resulting from the lexical translations are reduced to a sequence of input elements ($3.5), which are white space ($3.6), comments ($3.7), and tokens. 
+The tokens are the identifiers ($3.8), keywords ($3.9), literals ($3.10), separators ($3.11), and operators ($3.12) of the syntactic grammar. 
 
-{anchor:3.2}
+{anchor:3.1}
 h2. 3.1 Unicode
 
 Programs are written using the Unicode character set.
@@ -21,8 +21,28 @@ bq. http://www.unicode.org
 The Java platform tracks the Unicode specification as it evolves. 
 The precise version of Unicode used by a given release is specified in the documentation of the class {{Character}}.
 
-Versions of the Groovy programming language up to and including 1.0 final used Unicode version 3.0. 
+Versions of the Groovy programming language up to and including 1.0 final use Unicode version 3.0. 
 Upgrades to newer versions of the Unicode Standard occurred in J2SE 5.0 (to Unicode 4.0). 
 
 The Unicode standard was originally designed as a fixed-width 16-bit character encoding. 
 It has since been changed to allow for characters whose representation requires more than 16 bits. 
+The range of legal code points is now U+0000 to U+10FFFF, using the hexadecimal U+n _notation_. 
+Characters whose code points are greater than U+FFFF are called supplementary characters.
+To represent the complete range of characters using only 16-bit units, the Unicode standard defines an encoding called UTF-16.
+In this encoding, supplementary characters are representedas pairs of 16-bit code units, the first from the high-surrogates range, (U+D800 to U+DBFF), the second from the low-surrogates range (U+DC00 to U+DFFF). 
+For characters in the range U+0000 to U+FFFF, the values of codepoints and UTF-16 code units are the same. 
+
+The Groovy programming language represents text in sequences of 16-bit code units, using the UTF-16 encoding.
+A few APIs, primarily in the {{Character}} class, use 32-bit integers to represent code points as individual entities.
+The Java platform provides methods to convert between the two representations.
+
+This book uses the terms _code_ _point_ and _UTF-16_ _code_ _unit_ where the representation is relevant, and the generic term _character_ where the representation is irrelevant to the discussion.
+
+Except for comments ($3.7), identifiers, and the contents of character and string literals ($3.10.4)($3.10.5), all input elements ($3.5) in a program are formed only from ASCII characters (or Unicode escapes ($3.3) which result in ASCII characters). ASCII (ANSI X3.4) is the American Standard Code for Information Interchange. The first 128 characters of the Unicode character encoding are the ASCII characters. 
+
+{anchor:3.2}
+h2. 3.2 Lexical Translations
+
+A raw Unicode character stream is translated into a sequence of tokens, using the following three lexical translation steps, which are applied in turn:
+
+1. A translation of Unicode escapes ($3.3) in the raw stream of Unicode characters to the corresponding Unicode character. A Unicode escape of the form {{\\\uxxxx}}, where {{xxxx}} is a hexadecimal value, represents the UTF-16 code unit whose encoding is {{xxxx}}. This translation step allows any program to be expressed using only ASCII characters.

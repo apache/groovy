@@ -25,9 +25,9 @@ The following regexes are replaced with the regex immediately following
 
 <h3 class="heading-$2">$3</h3>
 
-1.1 \(§([^\)]+)\)
+1.1 \(\$([^\)]+)\)
 
-({link:&#167;$1|AltChapter03Lexical.html#$1})
+({link:&#167;$1|AltChapter03LexicalStructure.html#$1})
 
 1.1 (?m)^\s*(bq\.)\s+(.*?)$
 
