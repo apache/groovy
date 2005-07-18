@@ -331,7 +331,13 @@ public class GroovyMain {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             PrintWriter writer = new PrintWriter(System.out);
 
-            processReader(s, reader, writer);
+            try {
+                processReader(s, reader, writer);
+            } finally {
+                reader.close();
+                writer.close();
+            }
+
         } else {
             Iterator i = args.iterator();
             while (i.hasNext()) {
