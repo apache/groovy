@@ -402,11 +402,11 @@ public class Groovy extends Task {
             try {
                 Script script = groovy.parse(txt);
                 Project project = getProject();
-                script.setProperty("ant",new AntBuilder(project));
-                script.setProperty("project",project);
-                script.setProperty("properties",project.getProperties());
-                script.setProperty("target",getOwningTarget());
-                script.setProperty("task",this);
+                script.setProperty("ant", new AntBuilder(project));
+                script.setProperty("project", project);
+                script.setProperty("properties", new AntProjectPropertiesDelegate(project));
+                script.setProperty("target", getOwningTarget());
+                script.setProperty("task", this);
 
                 // treat the case Ant is run through Maven, and
                 if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {

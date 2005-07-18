@@ -108,5 +108,17 @@ class AntTest extends GroovyTestCase {
         assertEquals expectedSpoof, SpoofTaskContainer.getSpoof().toString()
     }
 
-    
+    /** Checks that we can access dynamically (through Ant's property task) defined properties in Groovy scriptlets */
+    void testDynamicProperties() {
+        def antBuilder = new AntBuilder()
+
+        antBuilder.property(name: "testProp1", value: "TEST 1")
+        antBuilder.taskdef(name:"groovy", classname:"org.codehaus.groovy.ant.Groovy")
+        antBuilder.groovy("""
+            ant.property(name: "testProp2", value: "TEST 2")
+
+            assert properties.testProp1 == project.properties.testProp1
+            assert properties.testProp2 == project.properties.testProp2
+        """)
+    }
 }
