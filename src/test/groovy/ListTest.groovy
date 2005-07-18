@@ -148,7 +148,13 @@ class ListTest extends GroovyTestCase {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "w"]
         assert l1 - l2 == ["wrer", 3, "wrewer", 4, 5] 
-    }  
+    }
+
+    // todo: GROOVY-790
+    void disabled_testMinusEmptyCollection(){
+        def list = [1,1]
+        assert list - [] == list
+    }
      
     void testIntersect() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
