@@ -7,6 +7,7 @@ package groovy;
 
 public class MultiDimArraysTest extends GroovyTestCase {
 
+    // todo: enable as soon as multi dims are supported
     void notSupported_testCallTwoDimStringArray(){
         def someArrayOfStringArrays =  new SomeClass().anArrayOfStringArrays()
         assert 1 == someArrayOfStringArrays.size()
@@ -21,12 +22,11 @@ public class MultiDimArraysTest extends GroovyTestCase {
         }
     }
 
-    // todo: make this pass
-    void Failing_testCallTwoDimStringArrayWorkaroundWithNull(){
+    void testCallTwoDimStringArrayWorkaroundWithNull(){
         def someArrayOfStringArrays =  new SomeClass().anArrayOfStringArraysWorkaround()
         assert 1 == someArrayOfStringArrays.size()
         assert "whatever" == someArrayOfStringArrays[0][0]
-        someArrayOfStringArrays.each(){ assert it}                // throws NPE !!
+        someArrayOfStringArrays.each(){ assert it}
     }
 
     void testInsideGroovyMultiDimReplacement(){
