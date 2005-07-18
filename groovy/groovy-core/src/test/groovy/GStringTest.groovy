@@ -173,4 +173,14 @@ class GStringTest extends GroovyTestCase {
         b += ": ${a}"
         assert b == "--- :<< [[---]] >>: ---"
     }
+
+    // Test case for bug GROOVY-599
+    void testGStringInStaticMethod() {
+        int value = 2
+        String str = "1${value}3"
+        int result = Integer.parseInt(str)
+        assert result == 123
+        result = Integer.parseInt("1${value}3")
+        assert result == 123
+    }
  }
