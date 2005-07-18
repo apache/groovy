@@ -168,23 +168,50 @@ public class GroovyMain {
     private static synchronized Options buildOptions() {
         Options options = new Options();
 
-        options.addOption(OptionBuilder.hasArg(false).withDescription("usage information").withLongOpt("help").create('h'));
-
-        options.addOption(OptionBuilder.hasArg(false).withDescription("debug mode will print out full stack traces").withLongOpt("debug").create('d'));
-
-        options.addOption(OptionBuilder.hasArg(false).withDescription("display the Groovy and JVM versions").withLongOpt("version").create('v'));
-
-        options.addOption(OptionBuilder.withArgName("charset").hasArg().withDescription("specify the encoding of the files").withLongOpt("encoding").create('c'));
-
-        options.addOption(OptionBuilder.withArgName("script").hasArg().withDescription("specify a command line script").create('e'));
-
-        options.addOption(OptionBuilder.withArgName("extension").hasOptionalArg().withDescription("modify files in place").create('i'));
-
-        options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line").create('n'));
-
-        options.addOption(OptionBuilder.hasArg(false).withDescription("process files line by line and print result").create('p'));
-
-        options.addOption(OptionBuilder.withArgName("port").hasOptionalArg().withDescription("listen on a port and process inbound lines").create('l'));
+        options.addOption(
+            OptionBuilder.hasArg(false)
+            .withDescription("usage information")
+            .withLongOpt("help")
+            .create('h'));
+        options.addOption(
+            OptionBuilder.hasArg(false)
+            .withDescription("debug mode will print out full stack traces")
+            .withLongOpt("debug")
+            .create('d'));
+        options.addOption(
+            OptionBuilder.hasArg(false)
+            .withDescription("display the Groovy and JVM versions")
+            .withLongOpt("version")
+            .create('v'));
+        options.addOption(
+            OptionBuilder.withArgName("charset")
+            .hasArg()
+            .withDescription("specify the encoding of the files")
+            .withLongOpt("encoding")
+            .create('c'));
+        options.addOption(
+            OptionBuilder.withArgName("script")
+            .hasArg()
+            .withDescription("specify a command line script")
+            .create('e'));
+        options.addOption(
+            OptionBuilder.withArgName("extension")
+            .hasOptionalArg()
+            .withDescription("modify files in place, create backup if extension is given (e.g. \'.bak\')")
+            .create('i'));
+        options.addOption(
+            OptionBuilder.hasArg(false)
+            .withDescription("process files line by line")
+            .create('n'));
+        options.addOption(
+            OptionBuilder.hasArg(false)
+            .withDescription("process files line by line and print result")
+            .create('p'));
+        options.addOption(
+            OptionBuilder.withArgName("port")
+            .hasOptionalArg()
+            .withDescription("listen on a port and process inbound lines")
+            .create('l'));
         return options;
     }
 
@@ -374,8 +401,8 @@ public class GroovyMain {
                 backup.deleteOnExit();
             } else {
                 backup = new File(file.getPath() + backupExtension);
-                backup.delete();
             }
+            backup.delete();
             if (!file.renameTo(backup))
                 throw new IOException("unable to rename " + file + " to " + backup);
 
