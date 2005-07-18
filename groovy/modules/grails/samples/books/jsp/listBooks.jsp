@@ -6,15 +6,15 @@
 
 <html>
    <head>
-      <title>Books list</title>
+      <title>Book list</title>
    </head>
 
    <body>
-      <h1>Books list</h1>
+      <h1>Book list</h1>
       <form method="POST">
          <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
 	 <input type="hidden" name="_eventId" value="addBook">
-	 <input type="submit" value="Add book ...">
+	 <input type="submit" value="Add book ..." id="addbook">
       </form>
       <table>
          <thead>
@@ -34,7 +34,7 @@
                         <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
                         <input type="hidden" name="_eventId" value="detail">
                         <input type="hidden" name="id" value="<c:out value="${book.id}"/>"">
-                        <input type="submit" value="Details">
+                        <input type="submit" value="Details" id="detail<c:out value="${book.id}"/>">
                      </form>
                   </td>
                </tr>

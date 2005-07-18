@@ -58,12 +58,13 @@ class BooksPageFlow {
    Closure addBook = {
           requestContext ->
 	  def sequence = requestContext.flowScope[bookSequenceName]
-	  sequence = sequence++
-	  requestContext.flowScope[bookSequenceName] = sequence
+	  int id  = sequence.intValue()
+	  id = id + 1
+	  requestContext.flowScope[bookSequenceName] = new Integer(id)
 	  def bookCommand = requestContext.requestScope[bookDetailName]
 	  def title = bookCommand.title
 	  def author = bookCommand.author
-	  Book book = new Book(id:sequence.intValue(), title:title, author:author)
+	  Book book = new Book(id:id, title:title, author:author)
 	  requestContext.flowScope["books"].add(book)
 	  return "success"
       }

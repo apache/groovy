@@ -6,7 +6,7 @@
 
 <html>
    <head>
-      <title>Books detail</title>
+      <title>Book detail</title>
    </head>
 
    <body>
@@ -21,25 +21,25 @@
             <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
             <input type="hidden" name="_eventId" value="save">
             <spring:bind path="bookDetail.id">
-               <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>"/>
+               <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookId"/>
             </spring:bind>
             <label>title</label>
             <spring:bind path="bookDetail.title">
-               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>">
+               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookAuthor">
             </spring:bind>
             <br>
             <label>author</label>
             <spring:bind path="bookDetail.author">
-               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>">
+               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookTitle">
             </spring:bind>
             <br>
-            <input type="submit" value="Save">
+            <input type="submit" value="Save" id="save">
          </fieldset>
       </form>
       <form method="POST">
          <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
          <input type="hidden" name="_eventId" value="close">
-         <input type="submit" value="Close">
+         <input type="submit" value="Close" id="close">
       </form>
    </body>
 </html>
