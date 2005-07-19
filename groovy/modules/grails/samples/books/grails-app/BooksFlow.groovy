@@ -98,6 +98,7 @@ class BooksPageFlow {
       }
       addBookView(view:"bookDetail") {
          save("addBookBind")
+         close("listBooks")
       }
       addBookBind(action:bookDetailFormAction, method:"bindAndValidate") {
          success("addBook")
