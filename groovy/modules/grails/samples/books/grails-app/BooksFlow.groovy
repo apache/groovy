@@ -30,7 +30,7 @@ class BooksPageFlow {
    Closure findBook = {
          requestContext ->
 	 def bookCommand = requestContext.requestScope[bookDetailName]
-	 for (book in getBooks.call(requestContext)) {
+	 for (book in getBooks(requestContext)) {
             if (book.id == bookCommand.id) {
                println("Found book id:" + book.id)
 	       bookCommand.title = book.title
@@ -44,7 +44,7 @@ class BooksPageFlow {
    Closure saveBook = {
           requestContext ->
           def bookCommand = requestContext.requestScope[bookDetailName]
-          for (book in getBooks.call(requestContext)) {
+          for (book in getBooks(requestContext)) {
              if (book.id = bookCommand.id) {
                 println("Saving book id:" + book.id)
                 book.title = bookCommand.title
