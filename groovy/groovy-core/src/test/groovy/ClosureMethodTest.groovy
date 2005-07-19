@@ -147,7 +147,7 @@ class ClosureMethodTest extends GroovyTestCase {
         value = [1, 2, 3].inject(0) { c, item -> c + item }
         assert value == 6
 
-        value = ([1, 2, 3, 4] as Object()).inject(0) { c, item -> c + item }
+        value = ([1, 2, 3, 4] as Object[]).inject(0) { c, item -> c + item }
         assert value == 10
     }
 
