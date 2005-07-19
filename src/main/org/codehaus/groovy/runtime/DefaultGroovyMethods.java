@@ -180,8 +180,8 @@ public class DefaultGroovyMethods {
          */
         /*
         List props = allProperties(self);
-for(Iterator itr = props.iterator(); itr.hasNext(); ) {
-PropertyValue pv = (PropertyValue) itr.next();
+            for(Iterator itr = props.iterator(); itr.hasNext(); ) {
+            PropertyValue pv = (PropertyValue) itr.next();
 
             // the original skipped this, so I will too
             if(pv.getName().equals("metaClass")) continue;
@@ -196,7 +196,7 @@ PropertyValue pv = (PropertyValue) itr.next();
             catch (Exception e) {
                 buffer.append(e);
             }
-}
+        }
         */
 
         buffer.append(">");
@@ -1833,6 +1833,90 @@ PropertyValue pv = (PropertyValue) itr.next();
      */
     public static SortedSet asSynchronized(SortedSet self) {
         return Collections.synchronizedSortedSet(self);
+    }
+
+    /**
+     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     *
+     * This is the same method to <code>toSpreadList(List self)</code>.
+     *
+     * For examples, if there is defined a function like as <pre>
+     *     def fn(a, b, c, d) { return a + b + c + d }
+     * </pre>, then the following three have the same meaing. <pre>
+     *     println fn(1, [2, 3].spread(), 4])
+     *     println fn(1, *[2, 3], 4])
+     *     println fn(1, 2, 3, 4)
+     * </pre><br>
+     * 
+     * @param self a list to be converted into a SpreadList
+     * @return a newly created SpreadList if this list is not null and its size is positive.
+     */
+    public static SpreadList spread(List self) {
+        return toSpreadList(self);
+    }
+
+    /**
+     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     *
+     * This is the same method to <code>toSpreadList(Object[] self)</code>.
+     *
+     * For examples, if there is defined a function like as <pre>
+     *     def fn(a, b, c, d) { return a + b + c + d }
+     * </pre>, then the following three have the same meaing. <pre>
+     *     println fn(([1, 2, 3] as Object[]).spread(), 4)
+     *     println fn(*[1, 2, 3], 4)
+     *     println fn(1, 2, 3, 4)
+     * </pre><br>
+     * 
+     * @param self an array of Object to be converted into a SpreadList
+     * @return a newly created SpreadList if this array is not null and its size is positive.
+     */
+    public static SpreadList spread(List self) {
+        return toSpreadList(self);
+    }
+
+    /**
+     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     *
+     * For examples, if there is defined a function like as <pre>
+     *     def fn(a, b, c, d) { return a + b + c + d }
+     * </pre>, then the following three have the same meaing. <pre>
+     *     println fn(1, [2, 3].toSpreadList(), 4])
+     *     println fn(1, *[2, 3], 4])
+     *     println fn(1, 2, 3, 4)
+     * </pre><br>
+     * 
+     * @param self a list to be converted into a SpreadList
+     * @return a newly created SpreadList if this list is not null and its size is positive.
+     */
+    public static SpreadList toSpreadList(List self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because it is null.");
+        else
+            return toSpreadList(self.toArray());
+    }
+
+    /**
+     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     *
+     * For examples, if there is defined a function like as <pre>
+     *     def fn(a, b, c, d) { return a + b + c + d }
+     * </pre>, then the following three have the same meaing. <pre>
+     *     println fn(([1, 2, 3] as Object[]).toSpreadList(), 4)
+     *     println fn(*[1, 2, 3], 4)
+     *     println fn(1, 2, 3, 4)
+     * </pre><br>
+     * 
+     * @param self an array of Object to be converted into a SpreadList
+     * @return a newly created SpreadList if this array is not null and its size is positive.
+     */
+    public static SpreadList toSpreadList(Object[] self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because it is null.");
+        else if (self.length == 0)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because its length is 0.");
+        else
+           return new SpreadList(self);
     }
 
     /**

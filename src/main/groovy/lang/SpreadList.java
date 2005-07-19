@@ -51,10 +51,18 @@ import java.util.List;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
- * Represents a list of Integer objects from a specified int up to but not including
- * a given and to.
+ * Spreads a list as individual objects to support the spread operator (*) for lists.
+ * For examples, <pre>
+ *     def fn(a, b, c, d) { return a + b + c + d }
+ *     println fn(1, 2, 3, 4)
+ * 
+ *     def x = [10, 100]
+ *     def y = [1, *x, 1000, *[10000, 100000]]
+ *     assert y == [1, 10, 100, 1000, 10000, 100000]
+ * </pre><br>
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Pilho Kim
  * @version $Revision$
  */
 public class SpreadList extends AbstractList {
@@ -62,18 +70,39 @@ public class SpreadList extends AbstractList {
     private Object[] contents;
     private int hashCode;
 
+    /**
+     * Generator.
+     *
+     * @param contents an array of objects to be converted to a SpreadList
+     */
     public SpreadList(Object[] contents) {
         this.contents = contents;
     }
 
+    /**
+     * Returns the object in <code>this</code> of the indicated position.
+     *
+     * @param index the indicated position in <code>this</code>
+     */
     public Object get(int index) {
         return contents[index];
     }
 
+    /**
+     * Returns the size of <code>this</code>.
+     *
+     * @param index the indicated position in <code>this</code>
+     */
     public int size() {
         return contents.length;
     }
 
+    /**
+     * Compares <code>this</code> with another object.
+     *
+     * @param that another object to be compared with <code>this</code>
+     * @return Returns <code>true</code> if this equals to <code>that</code>, <code>false</code> otherwise
+     */
     public boolean equals(Object that) {
         if (that instanceof SpreadList) {
             return equals((SpreadList) that);
@@ -81,6 +110,12 @@ public class SpreadList extends AbstractList {
         return false;
     }
 
+    /**
+     * Compares <code>this</code> with another spreadlist.
+     *
+     * @param that another spreadlist to be compared with <code>this</code>
+     * @return Returns <code>true</code> if this equals to <code>that</code>, <code>false</code> otherwise
+     */
     public boolean equals(SpreadList that) {
         if (contents.length == that.contents.length) {
             for (int i = 0; i < contents.length; i++) {
@@ -94,6 +129,11 @@ public class SpreadList extends AbstractList {
     }
 
 
+    /**
+     * Returns the hash code of <code>this</code>.
+     *
+     * @return Returns the hash code of <code>this</code>
+     */
     public int hashCode() {
         if (hashCode == 0) {
             for (int i = 0; i < contents.length; i++ ) {
@@ -108,10 +148,26 @@ public class SpreadList extends AbstractList {
         return hashCode;
     }
 
+    /**
+     * Returns a sublist of <code>this</code> from <code>fromIndex</code> to <code>toIndex</code>.
+     *
+     * @param fromIndex the first index in <code>this</code> to be taken
+     * @param toIndex the last index in <code>this</code> to be taken
+     * @return Returns the sublist of <code>thin</code> in the given scope
+     */
     public List subList(int fromIndex, int toIndex) {
         int size = toIndex - fromIndex;
         Object[] newContent = new Object[size];
         System.arraycopy(contents, fromIndex, newContent, 0, size);
         return new SpreadList(newContent);
+    }
+
+    /**
+     * Returns the string expression of <code>this</code>.
+     *
+     * @return Returns the string expression of <code>this</code>
+     */
+    public String toString() {
+        return "*" + super.toString();
     }
 }
