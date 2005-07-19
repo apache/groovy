@@ -61,6 +61,7 @@ Run this test with this command:
 					<clickButton htmlId="close" description="button: close"/>
 					<verifyTitle text="Book list" description="title=Book list"/>
 					<clickButton htmlId="addbook" description="button: addbook"/>
+					<verifyTitle text="Book detail" description="title=Book detail"/>
 					<setInputField name="title" value="Expert One-to-One J2EE Development without EJB" description="set title"/>
 					<setInputField name="author" value="Rod Johnson" description="set author"/>
 					<clickButton htmlId="save"/>
@@ -72,6 +73,10 @@ Run this test with this command:
 						description="book.title=Expert One-to-One J2EE Development without EJB"/>
 					<verifyInputField name="author" value="Rod Johnson" description="book.author=Rod Johnson"/>
 					<clickButton htmlId="save"/>
+					<verifyTitle text="Book detail" description="title=Book detail"/>
+					<clickButton htmlId="close" description="button: close"/>
+					<verifyTitle text="Book list" description="title=Book list"/>
+					<clickButton htmlId="addbook" description="button: addbook"/>
 					<verifyTitle text="Book detail" description="title=Book detail"/>
 					<clickButton htmlId="close" description="button: close"/>
 					<verifyTitle text="Book list" description="title=Book list"/>
