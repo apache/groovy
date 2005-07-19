@@ -780,6 +780,26 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Iterates through the given array of objects, passing in the initial value to
+     * the closure along with the current iterated item then passing into the
+     * next iteration the value of the previous closure.
+     *
+     * @param self    an Object[]
+     * @param value   a value
+     * @param closure a closure
+     * @return the last value of the last iteration
+     */
+    public static Object inject(Object[] self, Object value, Closure closure) {
+        Object[] params = new Object[2];
+        for (int i = 0; i < self.length; i++) {
+            params[0] = value;
+            params[1] = self[i];
+            value = closure.call(new ParameterArray(params));
+        }
+        return value;
+    }
+
+    /**
      * Concatenates all of the items of the collection together with the given String as a separator
      *
      * @param self      a Collection of objects
