@@ -1871,7 +1871,7 @@ public class DefaultGroovyMethods {
      * @param self an array of Object to be converted into a SpreadList
      * @return a newly created SpreadList if this array is not null and its size is positive.
      */
-    public static SpreadList spread(List self) {
+    public static SpreadList spread(Object[] self) {
         return toSpreadList(self);
     }
 
