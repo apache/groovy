@@ -1044,6 +1044,10 @@ public class DefaultGroovyMethods {
         return text.subSequence(from, to + 1);
     }
     
+    public static CharSequence getAt(CharSequence text, IntRange range) {
+        return getAt(text, (Range) range);
+    }
+    
     public static String getAt(String text, IntRange range) {
         return getAt(text,(Range)range);
     }
