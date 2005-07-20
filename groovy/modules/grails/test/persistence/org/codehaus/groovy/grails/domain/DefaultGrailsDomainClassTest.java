@@ -27,11 +27,40 @@ import junit.framework.TestCase;
  * @since 06-Jul-2005
  */
 public class DefaultGrailsDomainClassTest extends TestCase {
+	GroovyClassLoader cl = new GroovyClassLoader();
+	private Class relClass;
+	private Class manyToManyClass;
+	private Class oneToManyClass;
+	private Class oneToOneClass;
+	
+	
 
 	
+	protected void setUp() throws Exception {
+		Thread.currentThread().setContextClassLoader(cl);
+		
+		relClass = cl.loadClass( "org.codehaus.groovy.grails.domain.RelationshipsTest" );
+		
+		Class[] loadedClasses = cl.getLoadedClasses();
+		
+		for (int i = 0; i < loadedClasses.length; i++) {
+			if(loadedClasses[i].getName().equals("org.codehaus.groovy.grails.domain.ManyToManyTest") ) {
+				manyToManyClass = loadedClasses[i];
+			}
+			else if(loadedClasses[i].getName().equals("org.codehaus.groovy.grails.domain.OneToManyTest2") ) {
+				oneToManyClass = loadedClasses[i];
+			}
+			else if(loadedClasses[i].getName().equals("org.codehaus.groovy.grails.domain.OneToOneTest") ) {
+				oneToOneClass = loadedClasses[i];
+			}			
+		}
+		
+		super.setUp();
+	}
+
 	public void testDefaultGrailsDomainClass()
 		throws Exception {
-		GroovyClassLoader cl = new GroovyClassLoader();
+	
 		Class clazz = cl.parseClass("class UserTest { @Property int id; @Property int version; @Property List transients = [ \"age\" ]; @Property List optional  = [ \"lastName\" ]; @Property String firstName; @Property String lastName; @Property java.util.Date age; }");
 				
 		
@@ -71,27 +100,60 @@ public class DefaultGrailsDomainClassTest extends TestCase {
 		}
 	}
 
-	public void testOneToManyRelationship()
+	public void testOneToManyRelationships()
+		throws Exception {		
+						
+										
+		GrailsDomainClass c1dc = new DefaultGrailsDomainClass(relClass);
+		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(oneToManyClass);
+		
+		// test relationship property
+		assertTrue( c1dc.getPropertyByName( "ones" ).isOneToMany() );
+		assertFalse( c1dc.getPropertyByName( "ones" ).isManyToMany() );
+		assertFalse( c1dc.getPropertyByName( "ones" ).isManyToOne() );
+		assertFalse( c1dc.getPropertyByName( "ones" ).isOneToOne() );		
+		
+		assertTrue( c2dc.getPropertyByName( "other" ).isManyToOne() );	
+		assertFalse( c2dc.getPropertyByName( "other" ).isManyToMany() );
+		assertFalse( c2dc.getPropertyByName( "other" ).isOneToOne() );
+		assertFalse( c2dc.getPropertyByName( "other" ).isOneToMany() );				
+	}
+	
+	public void testManyToManyRelationships()
 		throws Exception {
 		
-		GroovyClassLoader cl = new GroovyClassLoader();
+
 		
-		Thread.currentThread().setContextClassLoader(cl);
-				
-		Class c1 = cl.loadClass( "org.codehaus.groovy.grails.domain.OneToManyTest1" );
-		Class c2 = cl.loadClass( "org.codehaus.groovy.grails.domain.OneToManyTest2" );
-				
-		c1.newInstance();
+		GrailsDomainClass c1dc = new DefaultGrailsDomainClass(relClass);
+		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(manyToManyClass);
 		
-		//c2.newInstance();
-		//Class c1 = cl.parseClass(new File("test/persistence/org/codehaus/groovy/grails/domain/OneToManyTest1.groovy"));
-						
-		//GrailsDomainClass c1dc = new DefaultGrailsDomainClass(c1);
-		//GrailsDomainClass c2dc = new DefaultGrailsDomainClass(c2);
+		// test relationships
+		assertTrue( c1dc.getPropertyByName( "manys" ).isManyToMany() );		
+		assertFalse( c1dc.getPropertyByName( "manys" ).isOneToMany() );
+		assertFalse( c1dc.getPropertyByName( "manys" ).isManyToOne() );
+		assertFalse( c1dc.getPropertyByName( "manys" ).isOneToOne() );			
 		
-		//assertTrue( c1dc.getPropertyByName( "accounts" ).isOneToMany() );
-		//assertTrue( c2dc.getPropertyByName( "holder" ).isManyToOne() );
+		assertTrue( c2dc.getPropertyByName( "manys" ).isManyToMany() );
+		assertFalse( c2dc.getPropertyByName( "manys" ).isManyToOne() );
+		assertFalse( c2dc.getPropertyByName( "manys" ).isOneToOne() );
+		assertFalse( c2dc.getPropertyByName( "manys" ).isOneToMany() );		
+	}
+	
+	public void testOneToOneRelationships() 
+		throws Exception {
+		GrailsDomainClass c1dc = new DefaultGrailsDomainClass(relClass);
+		GrailsDomainClass c2dc = new DefaultGrailsDomainClass(oneToOneClass);		
 		
+		// test relationships
+		assertTrue( c1dc.getPropertyByName( "one" ).isOneToOne() );	
+		assertFalse( c1dc.getPropertyByName( "one" ).isManyToMany() );
+		assertFalse( c1dc.getPropertyByName( "one" ).isManyToOne() );
+		assertFalse( c1dc.getPropertyByName( "one" ).isOneToMany() );
+		
+		assertTrue( c2dc.getPropertyByName( "other" ).isOneToOne() );
+		assertFalse( c2dc.getPropertyByName( "other" ).isManyToMany() );
+		assertFalse( c2dc.getPropertyByName( "other" ).isManyToOne() );
+		assertFalse( c2dc.getPropertyByName( "other" ).isOneToMany() );		
 	}
 
 }

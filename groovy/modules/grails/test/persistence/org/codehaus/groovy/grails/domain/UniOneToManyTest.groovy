@@ -1,9 +1,7 @@
 package org.codehaus.groovy.grails.domain;
 
-class OneToManyTest2 {
+class UniOneToManyTest {
 
    @Property int id;
    @Property int version;
-   @Property RelationshipsTest other; // many-to-one relationship
-
 }
