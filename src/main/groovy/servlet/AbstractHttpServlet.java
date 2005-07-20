@@ -110,10 +110,11 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
         String pattern = servletContext.getInitParameter("groovy.servlet.resource.pattern");
         String replace = servletContext.getInitParameter("groovy.servlet.resource.replace");
         if (pattern != null && replace != null){
-            name = name.replaceAll(pattern, replace);
-            log("replaced resource name to \""+name+"\"");
-        } else {
-            log("init parms null: groovy.servlet.resource.pattern, groovy.servlet.resource.replace");
+            String newName = name.replaceAll(pattern, replace);
+            if ( ! name.equals(newName)){
+                log("replaced resource \""+name+"\" to \""+newName+"\"");
+                name = newName;
+            }
         }
         try {
             URL url = servletContext.getResource("/" + name);
