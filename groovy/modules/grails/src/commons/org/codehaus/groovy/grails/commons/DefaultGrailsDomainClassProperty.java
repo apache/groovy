@@ -19,24 +19,35 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.ClassUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * @author Graeme Rocher
  * @since 05-Jul-2005
  */
 public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProperty {
 
+	private static final Log LOG = LogFactory.getLog( DefaultGrailsDomainClassProperty.class );
 	
-	private GrailsDomainClass owner;
+	private GrailsDomainClass domainClass;
 	private PropertyDescriptor descriptor;
 	private boolean persistant;
 	private boolean optional;
 	private boolean identity;
+	private boolean oneToMany;
 	private String name;
 	private Class type;
+	private boolean manyToMany;
+	private boolean manyToOne;
+	private boolean oneToOne;
+	
+
 	
 		
-	public DefaultGrailsDomainClassProperty(DefaultGrailsDomainClass owner, PropertyDescriptor descriptor)  {
-		this.owner = owner;
+	public DefaultGrailsDomainClassProperty(DefaultGrailsDomainClass domainClass, PropertyDescriptor descriptor)  {
+		this.domainClass = domainClass;
 		this.descriptor = descriptor;
 		// required by default
 		this.optional = false;
@@ -49,11 +60,11 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 		List optionalProps = null;
 		List transientProps = null;
 
-		optionalProps = (List)owner.getPropertyValue( OPTIONAL, List.class );
-		transientProps= (List)owner.getPropertyValue( TRANSIENT, List.class );
-		
+		optionalProps = (List)domainClass.getPropertyValue( OPTIONAL, List.class );
+		transientProps= (List)domainClass.getPropertyValue( TRANSIENT, List.class );		
+				
 		// Undocumented feature alert! Steve insisted on this :-)
-		List evanescent = (List)owner.getPropertyValue( EVANESCENT, List.class );
+		List evanescent = (List)domainClass.getPropertyValue( EVANESCENT, List.class );
 		if(evanescent != null) {
 			if(transientProps == null) 
 				transientProps = new ArrayList();
@@ -94,7 +105,10 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 				}
 			}
 		}
+
 	}
+	
+
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClassProperty#getName()
 	 */
@@ -133,15 +147,13 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClassProperty#isOneToMany()
 	 */
 	public boolean isOneToMany() {
-		// TODO: Implement one to many logic
-		return false;
+		return this.oneToMany;
 	}
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClassProperty#isManyToOne()
 	 */
 	public boolean isManyToOne() {
-		// TODO: Many to one logic
-		return false;
+		return this.manyToOne;
 	}
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClassProperty#getFieldName()
@@ -153,8 +165,66 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	 * @see org.codehaus.groovy.grails.domain.GrailsDomainClassProperty#isOneToOne()
 	 */
 	public boolean isOneToOne() {
-		// TODO: One to One logic
-		return false;
+		return this.oneToOne;
+	}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getDomainClass()
+	 */
+	public GrailsDomainClass getDomainClass() {
+		return this.domainClass;
+	}
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#isManyToMany()
+	 */
+	public boolean isManyToMany() {
+		return this.manyToMany;
+	}
+
+	/**
+	 * @param manyToMany The manyToMany to set.
+	 */
+	protected void setManyToMany(boolean manyToMany) {
+		this.manyToMany = manyToMany;
+	}
+
+	/**
+	 * @param oneToMany The oneToMany to set.
+	 */
+	protected void setOneToMany(boolean oneToMany) {
+		this.oneToMany = oneToMany;
+	}
+
+
+	/**
+	 * @param manyToOne The manyToOne to set.
+	 */
+	protected void setManyToOne(boolean manyToOne) {
+		this.manyToOne = manyToOne;
+	}
+
+
+	/**
+	 * @param oneToOne The oneToOne to set.
+	 */
+	protected void setOneToOne(boolean oneToOne) {
+		this.oneToOne = oneToOne;
+	}
+
+
+	/**
+	 * @param persistant The persistant to set.
+	 */
+	protected void setPersistant(boolean persistant) {
+		this.persistant = persistant;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getTypePropertyName()
+	 */
+	public String getTypePropertyName() {	
+		String shortTypeName = ClassUtils.getShortClassName( this.type );
+		return shortTypeName.substring(0,1).toLowerCase() + shortTypeName.substring(1);
 	}
 
 

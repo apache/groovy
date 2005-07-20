@@ -69,6 +69,14 @@ public interface GrailsDomainClass extends GrailsClass {
 	public String getTableName();
 	
 	/**
+	 * <p>Returns the default property name of the GrailsClass. For example the property name for 
+	 * a class called "User" would be "user"</p>
+	 * 
+	 * @return
+	 */
+	public String getPropertyName();
+	
+	/**
 	 * Returns true if the given property is a one to many relationship
 	 * @param propertyName The name of the property
 	 * @return A boolean value
@@ -81,4 +89,13 @@ public interface GrailsDomainClass extends GrailsClass {
 	 * @return A boolean value
 	 */
 	public boolean isManyToOne(String propertyName);
+	
+	/**
+	 * Returns the type of the related class of the given property
+	 * 
+	 * @param propertyName The name of the property 
+	 * @return The type of the class or null if no relationship exists for the specified property
+	 */
+	public Class getRelatedClassType(String propertyName);
+	
 }

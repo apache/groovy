@@ -27,8 +27,10 @@ public interface GrailsDomainClassProperty {
 	String OPTIONAL = "optional";
 	String TRANSIENT = "transients";
 	String EVANESCENT = "evanescent";
+	String RELATIONSHIPS = "relationships";
 	Object META_CLASS = "metaClass";
-	String CLASS = "class";	
+	String CLASS = "class";
+	//String MAPPED_BY = "mappedBy";	
 	
 	/**
 	 * Returns the name of the property
@@ -40,6 +42,19 @@ public interface GrailsDomainClassProperty {
 	 * @return
 	 */
 	public Class getType();
+	
+	/**
+	 * Returns the class type as a property name representation
+	 * 
+	 * @return The property name representation
+	 */
+	public String getTypePropertyName();
+	
+	/**
+	 * Returns the parent domain class of the property instance
+	 * @return The parent domain class
+	 */
+	public GrailsDomainClass getDomainClass();
 	/**
 	 * Returns true if the domain class property is a persistant property
 	 * @return 
@@ -67,6 +82,13 @@ public interface GrailsDomainClassProperty {
 	 * @return
 	 */
 	public boolean isManyToOne();
+	
+	/**
+	 * Returns true if the property is a many-to-many relationship
+	 * @return
+	 */	
+	public boolean isManyToMany();
+	
 	/**
 	 * Returns the domain field name for this property
 	 */
