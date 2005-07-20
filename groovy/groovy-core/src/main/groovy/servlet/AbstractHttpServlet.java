@@ -107,6 +107,14 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * Interface method for ResourceContainer. This is used by the GroovyScriptEngine.
      */
     public URLConnection getResourceConnection(String name) throws ResourceException {
+        String pattern = servletContext.getInitParameter("groovy.servlet.resource.pattern");
+        String replace = servletContext.getInitParameter("groovy.servlet.resource.replace");
+        if (pattern != null && replace != null){
+            name = name.replaceAll(pattern, replace);
+            log("replaced resource name to \""+name+"\"");
+        } else {
+            log("init parms null: groovy.servlet.resource.pattern, groovy.servlet.resource.replace");
+        }
         try {
             URL url = servletContext.getResource("/" + name);
             if (url == null) {
