@@ -14,14 +14,30 @@
  */ 
 package org.codehaus.groovy.grails.commons;
 
+
+import java.beans.PropertyDescriptor;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+
 import groovy.lang.Closure;
 
 /**
  * @author Graeme Rocher
  * @since 08-Jul-2005
+ * 
+ * Class containing utility methods for dealing with Grails class artifacts
+ * 
  */
 public class GrailsClassUtils {
 
+	private static Map beanWrapperInstances = new HashMap();
+	
 	/**
 	 * Returns true of the specified Groovy class is a controller
 	 * @param clazz
@@ -66,4 +82,116 @@ public class GrailsClassUtils {
 		}
 	}
 
+	/**
+	 * 
+	 * Returns true if the specified property in the specified class is of the specified type
+	 * 
+	 * @param clazz The class which contains the property
+	 * @param propertyName The property name
+	 * @param type The type to check
+	 * 
+	 * @return A boolean value 
+	 */
+	public static boolean isPropertyOfType( Class clazz, String propertyName, Class type ) {
+		try {			
+			
+			Class propType = getProperyType( clazz, propertyName );
+			if(propType != null && propType.equals( type ))
+				return true;
+			else
+				return false;
+		}
+		catch(Exception e) {
+			return false;
+		}
+	}
+	
+	
+	/**
+	 * Returns the value of the specified property and type from an instance of the specified Grails class
+	 *  
+	 * @param clazz The name of the class which contains the property
+	 * @param propertyName The property name
+	 * @param propertyType The property type
+	 * 
+	 * @return The value of the property or null if none exists
+	 */
+	public static Object getPropertyValue(Class clazz, String propertyName, Class propertyType) {
+		// validate
+		if(clazz == null || StringUtils.isBlank(propertyName))
+			return null;
+		
+		try {
+			BeanWrapper wrapper = (BeanWrapper)beanWrapperInstances.get( clazz.getName() );
+			if(wrapper == null) {
+				wrapper = new BeanWrapperImpl(clazz.newInstance());
+				beanWrapperInstances.put( clazz.getName(), wrapper );
+			}
+			return  wrapper.getPropertyValue( propertyName );					
+			
+		} catch (Exception e) {
+			// if there are any errors in instantiating just return null
+			return null;
+		}		
+	}
+	
+	/**
+	 * Returns the type of the given property contained within the specified class
+	 * 
+	 * @param clazz The class which contains the property
+	 * @param propertyName The name of the property
+	 * 
+	 * @return The property type or null if none exists
+	 */
+	public static Class getProperyType(Class clazz, String propertyName) {
+		if(clazz == null || StringUtils.isBlank(propertyName))
+			return null;
+		
+		try {
+			BeanWrapper wrapper = (BeanWrapper)beanWrapperInstances.get( clazz.getName() );
+			if(wrapper == null) {
+				wrapper = new BeanWrapperImpl(clazz.newInstance());
+				beanWrapperInstances.put( clazz.getName(), wrapper );
+			}
+			return wrapper.getPropertyType(propertyName);			
+			
+		} catch (Exception e) {
+			// if there are any errors in instantiating just return null for the moment
+			return null;
+		}						
+	}
+
+	/**
+	 * Retrieves all the properties of the given class for the given type
+	 * 
+	 * @param clazz The class to retrieve the properties from
+	 * @param propertyType The type of the properties you wish to retrieve
+	 * 
+	 * @return An array of PropertyDescriptor instances
+	 */
+	public static PropertyDescriptor[] getPropertiesOfType(Class clazz, Class propertyType) {
+		if(clazz == null || propertyType == null)
+			return new PropertyDescriptor[0];
+		
+		Set properties = new HashSet();
+		try {
+			BeanWrapper wrapper = (BeanWrapper)beanWrapperInstances.get( clazz.getName() );
+			if(wrapper == null) {
+				wrapper = new BeanWrapperImpl(clazz.newInstance());
+				beanWrapperInstances.put( clazz.getName(), wrapper );
+			}
+			PropertyDescriptor[] descriptors = wrapper.getPropertyDescriptors();
+			
+			for (int i = 0; i < descriptors.length; i++) {
+				if(descriptors[i].getPropertyType().equals( propertyType )  ) {
+					properties.add(descriptors[i]);
+				}
+			}
+			
+		} catch (Exception e) {
+			// if there are any errors in instantiating just return null for the moment
+			return new PropertyDescriptor[0];
+		}				
+		return (PropertyDescriptor[])properties.toArray( new PropertyDescriptor[ properties.size() ] );
+	}
 }
