@@ -15,7 +15,8 @@ public class UberTestCase4 extends TestCase {
          * Groovy text package tests.
          */
         suite.addTestSuite(groovy.text.TemplateTest.class);
-        
+        suite.addTestSuite(groovy.text.SimpleTemplateTest.class);  //todo: one test inside is commented
+
         /*
          * Groovlet and simple template servlet tests.
          */
