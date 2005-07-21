@@ -58,10 +58,25 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class SimpleTemplateEngine extends TemplateEngine {
 
+    private final boolean verbose;
+
+    public SimpleTemplateEngine() {
+        this(false);
+    }
+
+    public SimpleTemplateEngine(boolean verbose) {
+        this.verbose = verbose;
+    }
+
     public Template createTemplate(Reader reader) throws CompilationFailedException, IOException {
         SimpleTemplate template = new SimpleTemplate();
         GroovyShell shell = new GroovyShell();
         String script = template.parse(reader);
+        if (verbose) {
+            System.out.println("--before-parsing--");
+            System.out.print(script);
+            System.out.println("\n--");
+        }
         template.script = shell.parse(script);
         return template;
     }

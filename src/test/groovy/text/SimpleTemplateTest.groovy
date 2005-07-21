@@ -23,9 +23,9 @@ class SimpleTemplateTest extends GroovyTestCase {
         assertEquals('01', simpleCall('<%for(i in 0..1){print(i)}%>'))
     }
 
-    void todo_testWithMarkupBuilder(){
+    void testWithMarkupBuilder(){
     def text = '''<%
-        builder = new groovy.xml.MarkupBuilder(out)
+        builder = new groovy.xml.MarkupBuilder(out);
         [1,2,3].each{ count ->
             out.print(1)
         }
@@ -38,7 +38,7 @@ class SimpleTemplateTest extends GroovyTestCase {
         bindingCall([:], input)
     }
     String bindingCall(binding, input){
-        def eng = new SimpleTemplateEngine().createTemplate(input)
+        def eng = new SimpleTemplateEngine(true).createTemplate(input)
         return eng.make(binding).toString()
     }
 }
