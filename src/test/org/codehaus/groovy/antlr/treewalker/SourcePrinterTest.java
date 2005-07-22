@@ -17,18 +17,19 @@
  **/
 package org.codehaus.groovy.antlr.treewalker;
 
-import antlr.collections.AST;
 import groovy.util.GroovyTestCase;
-import java.io.StringReader;
-import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
 
-import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.StringReader;
+
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
-import org.codehaus.groovy.antlr.UnicodeEscapingReader;
 import org.codehaus.groovy.antlr.SourceBuffer;
-import org.codehaus.groovy.antlr.GroovySourceAST;
+import org.codehaus.groovy.antlr.UnicodeEscapingReader;
+import org.codehaus.groovy.antlr.parser.GroovyLexer;
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
+
+import antlr.collections.AST;
 
 /**
  * Testcases for the antlr AST visitor that prints groovy source code.

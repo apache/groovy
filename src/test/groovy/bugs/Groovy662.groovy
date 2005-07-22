@@ -1,4 +1,4 @@
-//package groovy.bugs
+package groovy.bugs
 
 //  The order of the classes is crucial, the first must be the GroovyTestCase.  Its name doesn't
 //  matter it just has to be first.
