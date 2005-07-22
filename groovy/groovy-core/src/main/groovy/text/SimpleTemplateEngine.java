@@ -73,9 +73,9 @@ public class SimpleTemplateEngine extends TemplateEngine {
         GroovyShell shell = new GroovyShell();
         String script = template.parse(reader);
         if (verbose) {
-            System.out.println("--before-parsing--");
+            System.out.println("\n-- script source --");
             System.out.print(script);
-            System.out.println("\n--");
+            System.out.println("\n-- script end --\n");
         }
         template.script = shell.parse(script);
         return template;
@@ -183,7 +183,6 @@ public class SimpleTemplateEngine extends TemplateEngine {
             }
             endScript(sw);
             String result = sw.toString();
-            //System.err.println("source text:\n" + result);
             return result;
         }
 
@@ -241,9 +240,12 @@ public class SimpleTemplateEngine extends TemplateEngine {
                         break;
                     }
                 }
-                if (c != '\n' && c != '\r') {
-                    sw.write(c);
-                }
+                /* Don't eat EOL chars in sections - as they are valid instruction separators.
+                 * See http://jira.codehaus.org/browse/GROOVY-980
+                 */
+                // if (c != '\n' && c != '\r') {
+                sw.write(c);
+                //}
             }
             sw.write(";\nout.print(\"");
         }
