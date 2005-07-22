@@ -111,6 +111,13 @@ class ClosureTest extends GroovyTestCase {
         }
         assert agents.size() == numAgents
     }
+
+    void testWithIndex() {
+        def str = ''
+        def sum = 0
+        ['a','b','c','d'].eachWithIndex { item, index -> str += item; sum += index }
+        assert str == 'abcd' && sum == 6
+    }
 }
 
 public class TinyAgent {
