@@ -1,4 +1,5 @@
-//package groovy.bugs ;
+package groovy.bugs;
+
 import java.util.HashMap ;
 /**
  * Class to support the GROOVY-662 test.  There is a difference between improper uses of

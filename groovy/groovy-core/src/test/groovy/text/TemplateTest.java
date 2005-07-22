@@ -37,12 +37,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import junit.framework.TestCase;
 
 import org.codehaus.groovy.control.CompilationFailedException;
-import org.xml.sax.SAXException;
 
 /**
  * @author sam
@@ -68,27 +65,6 @@ public class TemplateTest extends TestCase {
         Template template2 = new GStringTemplateEngine().createTemplate("<%= sam %><% out << sam %>");
         assertEquals("pullarapullara", template2.make(binding).toString());
 
-    }
-
-    public void testBindingForXmlTemplateEngine() throws CompilationFailedException, ClassNotFoundException, SAXException,
-            ParserConfigurationException, IOException {
-        Map binding = new HashMap();
-        binding.put("Christian", "Stein");
-
-        XmlTemplateEngine xmlTemplateEngine = new XmlTemplateEngine();
-        String xmlScript = "<!-- Just a comment. -->\n" //
-                + "<xml xmlns:gsp=\"http://groovy.codehaus.org/2005/gsp\">" //
-                + "  ${Christian}" //
-                + "  <gsp:expression>Christian</gsp:expression>" //
-                + "  <gsp:scriptlet>println Christian</gsp:scriptlet>" //
-                + "</xml>";
-        String xmlResult = "<xml>\n" //
-                + "  Stein\n" //
-                + xmlTemplateEngine.getIndention() + "Stein\n" //
-                + "Stein" + System.getProperty("line.separator") //
-                + "</xml>\n";
-        Template template3 = xmlTemplateEngine.createTemplate(xmlScript);
-        assertEquals(xmlResult, template3.make(binding).toString());
     }
 
 }
