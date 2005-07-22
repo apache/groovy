@@ -170,7 +170,7 @@ public class LexerFrame extends JFrame implements ActionListener{
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch(Exception ignore){
         }
-        new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class).show();
+        new LexerFrame(GroovyLexer.class, GroovyTokenTypes.class).setVisible(true);
     }
 }
 
