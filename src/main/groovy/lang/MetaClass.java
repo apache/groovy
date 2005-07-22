@@ -61,19 +61,26 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
-import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.ClosureListener;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
@@ -2458,32 +2465,33 @@ public class MetaClass {
     protected Reflector loadReflector(List methods) {
         ReflectorGenerator generator = new ReflectorGenerator(methods);
         String name = getReflectorName();
-        // lets see if its already loaded
+        /* 
+         * Lets see if its already loaded.
+         */
         try {
             Class type = loadReflectorClass(name);
             return (Reflector) type.newInstance();
         }
-        catch (AccessControlException ace) {
-            //Don't ignore this exception type
-            throw ace;
+        catch (ClassNotFoundException cnfe) {
+            /*
+             * Lets generate it && load it.
+             */                        
+            try {
+                ClassWriter cw = new ClassWriter(true);
+                generator.generate(cw, name);
+                byte[] bytecode = cw.toByteArray();
+                Class type = loadReflectorClass(name, bytecode);
+                return (Reflector) type.newInstance();
+            }
+            catch (Exception e) {
+                throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
+            }
         }
-        catch (Exception e) {
-            // lets ignore, lets generate it && load it
-        }
-        finally {
-
-        ClassWriter cw = new ClassWriter(true);
-        generator.generate(cw, name);
-
-        byte[] bytecode = cw.toByteArray();
-
-        try {
-            Class type = loadReflectorClass(name, bytecode);
-            return (Reflector) type.newInstance();
-        }
-        catch (Exception e) {
-            throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + e, e);
-        }
+        catch (Throwable t) {
+            /*
+             * All other exception and error types are reported at once.
+             */
+            throw new GroovyRuntimeException("Could not load the reflector for class: " + name + ". Reason: " + t, t);
         }
     }
 
