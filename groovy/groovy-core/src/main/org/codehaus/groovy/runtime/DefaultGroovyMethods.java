@@ -438,7 +438,7 @@ public class DefaultGroovyMethods {
     public static void eachWithIndex(Object self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(new Object[]{iter.next(), new Integer(counter++)});
+            closure.call(new ParameterArray(new Object[]{iter.next(), new Integer(counter++)}));
         }
     }
 
