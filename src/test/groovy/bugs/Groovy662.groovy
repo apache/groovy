@@ -31,7 +31,7 @@ assert useMethod ( object ) == expected
 assert usePropertyCorrectly ( object ) == expected
 """
   public void testJavaClass ( ) {
-    def object = new Groovy662_JavaClass ( ) 
+    def object = new groovy.bugs.Groovy662_JavaClass ( ) 
     doAssertions ( object )
     assertTrue ( usePropertyIncorrectly ( object ) == null )
   }
@@ -41,7 +41,7 @@ assert usePropertyCorrectly ( object ) == expected
     assertTrue ( usePropertyIncorrectly ( object ) == expected )
   }
   public void testJavaClassAsScript ( ) { assertScript ( theTestScriptDefinitions + """
-def object = new Groovy662_JavaClass ( )
+def object = new groovy.bugs.Groovy662_JavaClass ( )
 """ + theTestScriptAssertions + """
 assert usePropertyIncorrectly ( object ) == null
 """) }
