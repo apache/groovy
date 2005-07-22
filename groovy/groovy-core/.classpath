@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main"/>
-	<classpathentry kind="src" path="src/test"/>
+	<classpathentry excluding="**/.cvsignore" kind="src" path="src/test"/>
 	<classpathentry kind="lib" path="target/test-classes"/>
 	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-1.6.2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/ant/jars/ant-junit-1.6.2.jar"/>
