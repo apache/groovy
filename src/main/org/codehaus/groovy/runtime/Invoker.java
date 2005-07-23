@@ -515,7 +515,14 @@ public class Invoker {
      * into tuples
      */
     public String toString(Object arguments) {
-        return format(arguments, false);
+        if (arguments instanceof Object[])
+            return toArrayString((Object[]) arguments);
+        else if (arguments instanceof Map)
+            return toMapString((Map) arguments);
+        else if (arguments instanceof Collection)
+            return format(arguments, true);
+        else
+            return format(arguments, false);
     }
 
     /**
@@ -532,6 +539,81 @@ public class Invoker {
             }
             argBuf.append(arguments[i] != null ? arguments[i].getClass().getName() : "null");
         }
+        return argBuf.toString();
+    }
+
+    /**
+     * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
+     */
+    public String toMapString(Map arg) {
+        if (arg == null) {
+            return "null";
+        }
+        if (arg.isEmpty()) {
+            return "[:]";
+        }
+        String sbdry = "[";
+        String ebdry = "]";
+        StringBuffer buffer = new StringBuffer(sbdry);
+        boolean first = true;
+        for (Iterator iter = arg.entrySet().iterator(); iter.hasNext();) {
+            if (first)
+                first = false;
+            else
+                buffer.append(", ");
+            Map.Entry entry = (Map.Entry) iter.next();
+            buffer.append(format(entry.getKey(), true));
+            buffer.append(":");
+            buffer.append(format(entry.getValue(), true));
+        }
+        buffer.append(ebdry);
+        return buffer.toString();
+    }
+
+    /**
+     * A helper method to return the string representation of a list with bracket boundaries "[" and "]".
+     */
+    public String toListString(Collection arg) {
+        if (arg == null) {
+            return "null";
+        }
+        if (arg.isEmpty()) {
+            return "[]";
+        }
+        String sbdry = "[";
+        String ebdry = "]";
+        StringBuffer buffer = new StringBuffer(sbdry);
+        boolean first = true;
+        for (Iterator iter = arg.iterator(); iter.hasNext();) {
+            if (first)
+                first = false;
+            else
+                buffer.append(", ");
+            Object elem = iter.next();
+            buffer.append(format(elem, true));
+        }
+        buffer.append(ebdry);
+        return buffer.toString();
+    }
+
+    /**
+     * A helper method to return the string representation of an arrray of objects
+     * with brace boundaries "{" and "}".
+     */
+    public String toArrayString(Object[] arguments) {
+        if (arguments == null) {
+            return "null";
+        }
+        String sbdry = "{";
+        String ebdry = "}";
+        StringBuffer argBuf = new StringBuffer(sbdry);
+        for (int i = 0; i < arguments.length; i++) {
+            if (i > 0) {
+                argBuf.append(", ");
+            }
+            argBuf.append(format(arguments[i], true));
+        }
+        argBuf.append(ebdry);
         return argBuf.toString();
     }
 
@@ -608,7 +690,13 @@ public class Invoker {
         }
         else if (arguments instanceof String) {
             if (verbose) {
-                return "\"" + arguments + "\"";
+                String arg = ((String)arguments).replaceAll("\\n", "\\\\n");    // line feed
+                arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
+                arg = arg.replaceAll("\\t", "\\\\t");      // tab
+                arg = arg.replaceAll("\\f", "\\\\f");      // form feed
+                arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation amrk
+                arg = arg.replaceAll("\\\\", "\\\\");      // back slash
+                return "\"" + arg + "\"";
             }
             else {
                 return (String) arguments;

@@ -66,10 +66,8 @@ public class SpreadMap extends HashMap {
         mapData = new HashMap(values.length / 2);
         int i = 0;
         while (i < values.length) {
-           /// System.out.println(" ...  i = " + i);
            mapData.put(values[i++], values[i++]);
         }
-           /// System.out.println("    >>>  i = " + i);
     }
 
     public SpreadMap(Map map) {
@@ -139,5 +137,26 @@ public class SpreadMap extends HashMap {
             }
         }
         return hashCode;
+    }
+
+    /**
+     * Returns the string expression of <code>this</code>.
+     *
+     * @return the string expression of <code>this</code>
+     */
+    public String toString() {
+        if (mapData.isEmpty()) {
+            return "*:[:]";
+        }
+        StringBuffer buff = new StringBuffer("*:[");
+        Iterator iter = mapData.keySet().iterator();
+        for (; iter.hasNext(); ) {
+            Object key = iter.next();
+            buff.append(key + ":" + mapData.get(key));
+            if (iter.hasNext())
+                buff.append(", ");
+        }
+        buff.append("]");
+        return buff.toString();
     }
 }
