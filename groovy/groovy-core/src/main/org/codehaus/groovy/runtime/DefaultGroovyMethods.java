@@ -1044,12 +1044,26 @@ public class DefaultGroovyMethods {
         return text.subSequence(from, to + 1);
     }
     
+    /**
+     * Support the range subscript operator for CharSequence or StringBuffer with IntRange
+     *
+     * @param text  a CharSequence
+     * @param range an IntRange
+     * @return the subsequence CharSequence
+     */
     public static CharSequence getAt(CharSequence text, IntRange range) {
         return getAt(text, (Range) range);
     }
-    
+
+    /**
+     * Support the range subscript operator for String with IntRange
+     *
+     * @param text  a String
+     * @param range an IntRange
+     * @return the resulting String
+     */
     public static String getAt(String text, IntRange range) {
-        return getAt(text,(Range)range);
+        return getAt(text, (Range) range);
     }
 
     /**
@@ -1861,18 +1875,22 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     *
+     * <p>
      * This is the same method to <code>toSpreadList(List self)</code>.
-     *
-     * For examples, if there is defined a function like as <pre>
+     * <p>
+     * For examples, if there is defined a function like as
+     * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre>, then the following three have the same meaing. <pre>
-     *     println fn(1, [2, 3].spread(), 4])
-     *     println fn(1, *[2, 3], 4])
+     * </pre></blockquote>, then all of the following three have the same meaning.
+     * <blockquote><pre>
+     *     println fn(1, [2, 3].spread(), 4)
+     *     println fn(1, *[2, 3], 4)
      *     println fn(1, 2, 3, 4)
+     * </pre></blockquote>
+     * <p>
      * </pre><br>
      * 
-     * @param self a list to be converted into a SpreadList
+     * @param self a list to be converted into a spreadlist
      * @return a newly created SpreadList if this list is not null and its size is positive.
      */
     public static SpreadList spread(List self) {
@@ -1881,18 +1899,20 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     *
+     * <p>
      * This is the same method to <code>toSpreadList(Object[] self)</code>.
-     *
-     * For examples, if there is defined a function like as <pre>
+     * <p>
+     * For examples, if there is defined a function like as
+     * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre>, then the following three have the same meaing. <pre>
+     * </pre></blockquote>, then all of the following three have the same meaning.
+     * <blockquote><pre>
      *     println fn(([1, 2, 3] as Object[]).spread(), 4)
      *     println fn(*[1, 2, 3], 4)
      *     println fn(1, 2, 3, 4)
-     * </pre><br>
-     * 
-     * @param self an array of Object to be converted into a SpreadList
+     * </pre></blockquote>
+     * <p>
+     * @param self an array of objects to be converted into a spreadlist
      * @return a newly created SpreadList if this array is not null and its size is positive.
      */
     public static SpreadList spread(Object[] self) {
@@ -1901,16 +1921,18 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     *
-     * For examples, if there is defined a function like as <pre>
+     * <p>
+     * For examples, if there is defined a function like as
+     * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre>, then the following three have the same meaing. <pre>
-     *     println fn(1, [2, 3].toSpreadList(), 4])
-     *     println fn(1, *[2, 3], 4])
+     * </pre></blockquote>, then all of the following three have the same meaning.
+     * <blockquote><pre>
+     *     println fn(1, [2, 3].toSpreadList(), 4)
+     *     println fn(1, *[2, 3], 4)
      *     println fn(1, 2, 3, 4)
-     * </pre><br>
-     * 
-     * @param self a list to be converted into a SpreadList
+     * </pre></blockquote>
+     * <p>
+     * @param self a list to be converted into a spreadlist
      * @return a newly created SpreadList if this list is not null and its size is positive.
      */
     public static SpreadList toSpreadList(List self) {
@@ -1922,16 +1944,18 @@ public class DefaultGroovyMethods {
 
     /**
      * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
-     *
-     * For examples, if there is defined a function like as <pre>
+     * <p>
+     * For examples, if there is defined a function like as 
+     * <blockquote><pre>
      *     def fn(a, b, c, d) { return a + b + c + d }
-     * </pre>, then the following three have the same meaing. <pre>
+     * </pre></blockquote>, then all of the following three have the same meaning. 
+     * <blockquote><pre>
      *     println fn(([1, 2, 3] as Object[]).toSpreadList(), 4)
      *     println fn(*[1, 2, 3], 4)
      *     println fn(1, 2, 3, 4)
-     * </pre><br>
-     * 
-     * @param self an array of Object to be converted into a SpreadList
+     * </pre></blockquote>
+     * <p>
+     * @param self an array of objects to be converted into a spreadlist
      * @return a newly created SpreadList if this array is not null and its size is positive.
      */
     public static SpreadList toSpreadList(Object[] self) {
@@ -1941,6 +1965,42 @@ public class DefaultGroovyMethods {
             throw new GroovyRuntimeException("Fail to convert Object[] to SpreadList, because its length is 0.");
         else
            return new SpreadList(self);
+    }
+
+    public static SpreadMap spread(Map self) {
+        return toSpreadMap(self);
+    }
+
+    /**
+     * Returns the converted <code>SpreadList</code> of the given <code>self</code>.
+     * <p>
+     * For examples, if there is defined a function like as
+     * <blockquote><pre>
+     *     def fn(a, b, c, d) { return a + b + c + d }
+     * </pre></blockquote>, then all of the following three have the same meaning.
+     * <blockquote><pre>
+     *     println fn(a:1, [b:2, c:3].toSpreadMap(), d:4)
+     *     println fn(a:1, *:[b:2, c:3], d:4)
+     *     println fn(a:1, b:2, c:3, d:4)
+     * </pre></blockquote>
+     * <p>
+     * @param self a list to be converted into a spreadlist
+     * @return a newly created SpreadList if this list is not null and its size is positive.
+     */
+    public static SpreadMap toSpreadMap(Map self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Map to SpreadMap, because it is null.");
+        else
+            return new SpreadMap(self);
+    }
+
+    public static SpreadMap toSpreadMap(Object[] self) {
+        if (self == null)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it is null.");
+        else if (self.length % 2 != 0)
+            throw new GroovyRuntimeException("Fail to convert Object[] to SpreadMap, because it's size is not even.");
+        else
+            return new SpreadMap(self);
     }
 
     /**
@@ -3054,7 +3114,73 @@ public class DefaultGroovyMethods {
         return answer.toString();
     }
 
+    /**
+     * Returns the string representation of the given map with bracket boundaries.
+     *
+     * @param self a Map
+     * @return the string representation
+     */
+    public static String toString(Map self) {
+        return toMapString(self);
+    }
+
+    /**
+     * Returns the string representation of the given map with bracket boundaries.
+     *
+     * @param self a Map
+     * @return the string representation
+     */
+    public static String toMapString(Map self) {
+        return (self == null) ? "null" : InvokerHelper.toMapString(self);
+    }
+
+    /**
+     * Returns the string representation of the given collection with the bracket boundaries.
+     *
+     * @param self a Collection
+     * @return the string representation
+     */
+    public static String toString(Collection self) {
+        return toListString(self);
+    }
+
+    /**
+     * Returns the string representation of the given collection with the bracket boundaries.
+     *
+     * @param self a Collection
+     * @return the string representation
+     */
+    public static String toListString(Collection self) {
+        return (self == null) ? "null" : InvokerHelper.toListString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array with the brace boundaries.
+     *
+     * @param self an Object[]
+     * @return the string representation
+     */
+    public static String toString(Object[] self) {
+        return toArrayString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array with the brace boundaries.
+     *
+     * @param self an Object[]
+     * @return the string representation
+     */
+    public static String toArrayString(Object[] self) {
+        return (self == null) ? "null" : InvokerHelper.toArrayString(self);
+    }
+
     protected static String toString(Object value) {
+        if (value instanceof Map)
+            return toMapString((Map)value);
+        else if (value instanceof Collection)
+            return toListString((Collection)value);
+        else if (value instanceof Object[])
+            return toArrayString((Object[])value);
         return (value == null) ? "null" : value.toString();
     }
 
@@ -5433,6 +5559,7 @@ public class DefaultGroovyMethods {
             }
         }
     }
+
     protected static class RangeInfo{
         protected int from, to;
         protected boolean reverse;

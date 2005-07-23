@@ -152,11 +152,30 @@ public class InvokerHelper {
     }
 
     public static String toString(Object arguments) {
-        return getInstance().toString(arguments);
+        if (arguments instanceof Object[])
+            return getInstance().toArrayString((Object[])arguments);
+        else if (arguments instanceof Collection)
+            return getInstance().toListString((Collection)arguments);
+        else if (arguments instanceof Map)
+            return getInstance().toMapString((Map)arguments);
+        else
+            return getInstance().toString(arguments);
     }
 
     public static String toTypeString(Object[] arguments) {
         return getInstance().toTypeString(arguments);
+    }
+
+    public static String toMapString(Map arg) {
+        return getInstance().toMapString(arg);
+    }
+
+    public static String toListString(Collection arg) {
+        return getInstance().toListString(arg);
+    }
+
+    public static String toArrayString(Object[] arguments) {
+        return getInstance().toArrayString(arguments);
     }
 
     public static String inspect(Object self) {
@@ -562,6 +581,15 @@ public class InvokerHelper {
     public static void write(Writer out, Object object) throws IOException {
         if (object instanceof String) {
             out.write((String) object);
+        }
+        else if (object instanceof Object[]) {
+            out.write(toArrayString((Object[]) object));
+        }
+        else if (object instanceof Map) {
+            out.write(toMapString((Map) object));
+        }
+        else if (object instanceof Collection) {
+            out.write(toListString((Collection) object));
         }
         else if (object instanceof Writable) {
             Writable writable = (Writable) object;
