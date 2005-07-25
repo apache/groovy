@@ -21,7 +21,7 @@ class BooksTest extends WebTest {
             steps(){
                 invoke(url:'books')
                 def index = 0
-                bookTitles.each { title -> index++  // starts at 1
+                bookTitles.each { title -> index++                  // starts at 1
                     ant.group(description:"Test Book No. $index"){
                         verifyTitle(text:'Books list')
                         selectForm(index: index)
@@ -51,7 +51,7 @@ class BooksTest extends WebTest {
                 clickButton(label:'Save')
 
                 verifyTitle(text:'Books list')
-                ant.selectForm(index: '5')
+                selectForm(index: '5')
                 clickButton(label:'Details')
 
                 verifyXPath(

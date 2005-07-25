@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 package org.codehaus.groovy.grails.web.servlet;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
@@ -26,31 +26,31 @@ import org.springmodules.beans.factory.drivers.xml.XmlWebApplicationContextDrive
 
 /**
  * <p>Servlet that handles incoming requests for Grails.
- * 
+ * <p/>
  * <p>This servlet loads the Spring configuration based on the Grails application
- * in the parent application context. 
- * 
+ * in the parent application context.
+ *
  * @author Steven Devijver
  * @since Jul 2, 2005
  */
 public class GrailsDispatcherServlet extends DispatcherServlet {
 
-	private static final String GRAILS_APPLICATION_ID = "grailsApplication";
-		
-	public GrailsDispatcherServlet() {
-		super();
-	}
+    private static final String GRAILS_APPLICATION_ID = "grailsApplication";
 
-	protected WebApplicationContext createWebApplicationContext(
-			WebApplicationContext parent) throws BeansException {
-		GrailsApplication application = (GrailsApplication)parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
-		SpringConfig springConfig = new SpringConfig(application);
-		if (getContextConfigLocation() != null) {
-			return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), StringUtils.tokenizeToStringArray(
-				getContextConfigLocation(), ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS));
-		} else {
-			return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), null);
-		}
-	}
-	
+    public GrailsDispatcherServlet() {
+        super();
+    }
+
+    protected WebApplicationContext createWebApplicationContext(
+            WebApplicationContext parent) throws BeansException {
+        GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
+        SpringConfig springConfig = new SpringConfig(application);
+        if (getContextConfigLocation() != null) {
+            return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), StringUtils.tokenizeToStringArray(
+                    getContextConfigLocation(), ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS));
+        } else {
+            return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), null);
+        }
+    }
+
 }

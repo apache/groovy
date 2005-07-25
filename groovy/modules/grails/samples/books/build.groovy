@@ -52,9 +52,9 @@ def server (String command, boolean doPrint) {
 }
 
 def withServer (Closure yield) {
-    // stopping a running server at this point is not reliable
+    server(props.serverStopCommand, false)
     Thread.start { server(props.serverStartCommand, true) }
-    sleep 5 // grant the server some time to init
+    sleep 6     // wait for server startup
     yield()
     server(props.serverStopCommand, true)
 }
