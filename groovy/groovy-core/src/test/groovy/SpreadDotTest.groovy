@@ -1,15 +1,18 @@
-// SpreadDotTest.groovy
-//
-//   Test for the spread dot operator "*."
-//   For an example,
-//            list*.property
-//        equals to
-//            list.collect { it?.property }
-
-/**
- *  @author  Pilho Kim   phkim@cluecom.co.kr
+/*
+ * SpreadDotTest.groovy
+ *
+ * @author  Pilho Kim
  */
 
+
+/**
+ * Test for the spread dot operator "*.".
+ *
+ * For an example,
+ *          list*.property
+ * means
+ *          list.collect { it?.property }
+ */
 public class SpreadDotTest extends GroovyTestCase {
     public void testSpreadDot() {
         def m1 = ["a":1, "b":2]

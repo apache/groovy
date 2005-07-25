@@ -46,12 +46,12 @@ class OptionalReturnTest extends GroovyTestCase {
         assert value == null
     }
 
-//  now is  a compile time error
-//    void testVoidMethod() {
-//        def value = voidMethod()
-//
-//        assert value == null
-//    }
+    //  now this is not a compile time error in jsr-03
+    void testVoidMethod() {
+        def value = voidMethod()
+
+        assert value == null
+    }
 
     void testNonAssignmentLastExpressions() {
         def value = lastIsAssert()
