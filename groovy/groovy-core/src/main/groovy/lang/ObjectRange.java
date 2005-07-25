@@ -51,6 +51,8 @@ import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import java.util.AbstractList;
 import java.util.Iterator;
 import java.util.List;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * Represents an inclusive list of objects from a value to a value using
@@ -197,12 +199,29 @@ public class ObjectRange extends AbstractList implements Range {
 
     public int size() {
         if (size == -1) {
-            // lets lazily calculate the size
-            size = 0;
-            Object value = from;
-            while (to.compareTo(value) >= 0) {
-                value = increment(value);
-                size++;
+            if (from instanceof Integer && to instanceof Integer) {
+                // lets fast calculate the size
+                size = 0;
+                int fromNum = ((Integer) from).intValue();
+                int toNum = ((Integer) to).intValue();
+                size = toNum - fromNum + 1;
+            }
+            else if (from instanceof BigDecimal || to instanceof BigDecimal) {
+                // lets fast calculate the size
+                size = 0;
+                BigDecimal fromNum = new BigDecimal("" + from);
+                BigDecimal toNum = new BigDecimal("" + to);
+                BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
+                size = sizeNum.intValue();
+            }
+            else {
+                // lets lazily calculate the size
+                size = 0;
+                Object value = from;
+                while (to.compareTo(value) >= 0) {
+                    value = increment(value);
+                    size++;
+                }
             }
         }
         return size;
@@ -237,11 +256,20 @@ public class ObjectRange extends AbstractList implements Range {
     }
 
     public boolean contains(Comparable value) {
-        int result = from.compareTo(value);
-        if (result == 0) {
-            return true;
+        if (from instanceof BigDecimal || to instanceof BigDecimal) {
+            int result = (new BigDecimal("" + from)).compareTo(new BigDecimal("" + value));
+            if (result == 0) {
+                return true;
+            }
+            return result < 0 && (new BigDecimal("" + to)).compareTo(new BigDecimal("" + value)) >= 0;
         }
-        return result < 0 && to.compareTo(value) >= 0;
+        else {
+            int result = from.compareTo(value);
+            if (result == 0) {
+                return true;
+            }
+            return result < 0 && to.compareTo(value) >= 0;
+        }
     }
 
     public void step(int step, Closure closure) {
