@@ -54,12 +54,14 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 		return this.delegate.encodeURL(url);
 	}
 
+    /** @deprecated */
 	public String encodeUrl(String url) {
 		return this.delegate.encodeUrl(url);
 	}
 
-	public String encodeRedirectUrl(String url) {
-		return this.encodeRedirectUrl(url);
+    /** @deprecated */
+    public String encodeRedirectUrl(String url) {
+		return this.delegate.encodeRedirectUrl(url);
 	}
 
 	public void sendError(int error, String message) throws IOException {
@@ -71,7 +73,7 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 	}
 
 	public void sendRedirect(String url) throws IOException {
-		this.sendRedirect(url);
+		this.delegate.sendRedirect(url);
 	}
 
 	public void setDateHeader(String headerName, long value) {
@@ -102,6 +104,7 @@ public class GrailsHttpServletResponse implements HttpServletResponse {
 		this.delegate.setStatus(status);
 	}
 
+    /** @deprecated */
 	public void setStatus(int status, String message) {
 		this.delegate.setStatus(status, message);
 	}
