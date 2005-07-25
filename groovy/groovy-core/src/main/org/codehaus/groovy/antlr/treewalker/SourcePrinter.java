@@ -35,7 +35,7 @@ public class SourcePrinter extends VisitorAdapter {
     private int tabLevel;
     private int lastLinePrinted;
     private boolean newLines;
-    private PrintStream out;
+    protected PrintStream out;
     private String className;
 
     /**
@@ -413,7 +413,7 @@ public class SourcePrinter extends VisitorAdapter {
             //out.print("</" + t.getType() + ">");
         }
     }
-    private void printUpdatingTabLevel(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
+    protected void printUpdatingTabLevel(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
         if (visit == OPENING_VISIT && opening != null) {
             print(t,visit,opening);
             tabLevel++;
@@ -427,7 +427,7 @@ public class SourcePrinter extends VisitorAdapter {
         }
     }
 
-    private void print(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
+    protected void print(GroovySourceAST t,int visit,String opening, String subsequent, String closing) {
         if (visit == OPENING_VISIT && opening != null) {
             print(t,visit,opening);
         }
@@ -438,7 +438,7 @@ public class SourcePrinter extends VisitorAdapter {
             print(t,visit,closing);
         }
     }
-    private void print(GroovySourceAST t,int visit,String value) {
+    protected void print(GroovySourceAST t,int visit,String value) {
         if(visit == OPENING_VISIT) {
             printNewlineAndIndent(t, visit);
         }
@@ -448,7 +448,7 @@ public class SourcePrinter extends VisitorAdapter {
         out.print(value);
     }
 
-    private void printNewlineAndIndent(GroovySourceAST t, int visit) {
+    protected void printNewlineAndIndent(GroovySourceAST t, int visit) {
         int currentLine = t.getLine();
         if (lastLinePrinted == 0) { lastLinePrinted = currentLine; }
         if (lastLinePrinted != currentLine) {
