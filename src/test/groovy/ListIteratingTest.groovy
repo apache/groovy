@@ -47,12 +47,13 @@ class ListIteratingTest extends GroovyTestCase {
         assert(s.size() == 4)
         
         assert(s[2] == 3)
-        /** @todo parser
+        // @todo parser (Why @todo here?)
+        //   s[1,2] or s[1..2] should be used instead of s[1:2],
+        //   since [1:2] is a map literal syntax.
         result = 0
-        for ( i in s[1:2] ) {
+        for ( i in s[1,2] ) {    // or s[1..2]
             result += i
         }
         assert(result == 2+3)
-        */
     }
 }

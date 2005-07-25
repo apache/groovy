@@ -21,7 +21,8 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
     }
     void testMethodParameterWithSameNameAsPropertyUsingClosure() {
         //@todo fails in 1.0b6   
-        //assert "wensleydale" == vendor3("wensleydale")
+        println vendor3("wensleydale")
+        // assert "wensleydale" == vendor3("wensleydale")
     }
     
     private String vendor1(cheese) {
@@ -35,6 +36,13 @@ class MethodParameterAccessWithinClosureTest extends GroovyTestCase {
     private String vendor3(cheese) {
         // problem is that cheese here refers to def 'cheese'
         // and not the method parameter 'cheese'
-        shop.find() {it == cheese}      
+        println "shop = $shop"
+        println "cheese = $cheese"
+        def a  = shop.find() {println (it == cheese)}
+        println ([1, 2, 3].find() {it == 2})
+        println (["wensleydale"].find() {it == "wensleydale"})
+        println (shop.find() {it == "wensleydale"})
+        println (shop.find() {it == cheese})
+        println "a = $a"
     }
 } 

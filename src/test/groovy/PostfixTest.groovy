@@ -21,12 +21,10 @@ class PostfixTest extends GroovyTestCase {
         assert x == 3.2
     }
 
-    /*
      void testStringPostfix() {
         def x = "bbc"
         x++
         
         assert x == "bbd"
     }
-    */
 }

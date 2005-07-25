@@ -13,9 +13,11 @@ class ImportTest extends GroovyTestCase {
     void testImportByName() {
         def x = [:]
         assert x instanceof Map
-        /** @todo 
-        assert x.class != null 
-        */
+        /**
+         * For maps, map.getClass() should be used instead of map.class,
+         * when map has no member, named as "class"
+         */
+        assert x.getClass() != null
         assert x.getClass().name.startsWith("java.util.")
         
         def y = [1, 2, 3]

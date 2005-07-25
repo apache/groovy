@@ -8,15 +8,13 @@ class ClosureDefaultParameterTest extends GroovyTestCase {
 
         def block = {a = 123, b = 456 -> println "value of a = $a and b = $b" }
 
-        block = {Integer a = 123, String b = "abc" -> println "value of a = $a and b = $b" }
+        block = { Integer a = 123, String b = "abc" ->
+                  println "value of a = $a and b = $b"; return "$a $b".toString() }
 
-
-        // TODO AST bugs...
-
-        //block.call(456, "def")
-        //block.call()
-        //block(456)
-        //block(456, "def")
+        assert block.call(456, "def") == "456 def"
+        assert block.call() == "123 abc"
+        assert block(456) == "456 abc"
+        assert block(456, "def") == "456 def"
     }
 
 }
