@@ -46,6 +46,8 @@
 package groovy.lang;
 
 import java.util.List;
+import java.util.Iterator;
+import java.math.BigDecimal;
 
 import junit.framework.TestCase;
 
@@ -62,6 +64,9 @@ public class RangeTest extends TestCase {
         assertEquals("Size of " + r, 2, r.size());
         r = createRange(0, 0);
         assertEquals("Size of " + r, 1, r.size());
+
+        r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
+        assertEquals("Size of " + r, 8, r.size());
     }
 
     public void testProperties() {
@@ -75,6 +80,12 @@ public class RangeTest extends TestCase {
         for (int i = 0; i < 10; i++) {
             Integer value = (Integer) r.get(i);
             assertEquals("Item at index: " + i, i + 10, value.intValue());
+        }
+
+        r = createRange(new BigDecimal("3.2"), new BigDecimal("9.9"));
+        for (int i = 0; i < r.size(); i++) {
+            BigDecimal value = (BigDecimal) r.get(i);
+            assertEquals("Item at index: " + i, new BigDecimal("3.2").add(new BigDecimal("" + i)), value);
         }
     }
 
@@ -96,6 +107,23 @@ public class RangeTest extends TestCase {
             // worked
         }
 
+        r = createRange(new BigDecimal("-4.3"), new BigDecimal("1.4"));
+
+        try {
+            r.get(-1);
+            fail("Should have thrown IndexOut");
+        }
+        catch (IndexOutOfBoundsException e) {
+            // worked
+        }
+        try {
+            r.get(7);
+            fail("Should have thrown IndexOut");
+        }
+        catch (IndexOutOfBoundsException e) {
+            // worked
+        }
+
     }
 
     public void testContains() {
@@ -108,6 +136,11 @@ public class RangeTest extends TestCase {
         assertFalse("contains 21", r.contains(new Integer(21)));
         assertFalse("contains 100", r.contains(new Integer(100)));
         assertFalse("contains -1", r.contains(new Integer(-1)));
+
+        r = createRange(new BigDecimal("2.1"), new BigDecimal("10.0"));
+
+        assertTrue("contains 9.1", r.contains(new BigDecimal("9.1")));
+        assertFalse("contains 8.0", r.contains(new BigDecimal("8.0")));
     }
 
     public void testSubList() {
@@ -120,6 +153,18 @@ public class RangeTest extends TestCase {
         assertEquals("from", 12, sr.getFrom());
         assertEquals("to", 13, sr.getTo());
         assertEquals("size", 2, sr.size());
+
+        r = createRange(new BigDecimal("0.5"), new BigDecimal("8.5"));
+        assertEquals("size", 9, r.size());
+        s = r.subList(2, 5);
+        sr = (Range) s;
+
+        assertEquals("from", new BigDecimal("2.5"), sr.getFrom());
+        assertEquals("to", new BigDecimal("4.5"), sr.getTo());
+        assertTrue("contains 4.5", sr.contains(new BigDecimal("4.5")));
+        assertFalse("contains 5.5", sr.contains(new BigDecimal("5.5")));
+        assertEquals("size", 3, sr.size());
+
     }
 
     public void testHashCodeAndEquals() {
@@ -135,10 +180,30 @@ public class RangeTest extends TestCase {
     }
 
     public void testIterator() {
+        Range r = createRange(5, 11);
+
+        int i = 5;
+        for (Iterator it = r.iterator(); it.hasNext(); ) {
+            assertEquals("equals to " + i, new Integer(i), (Integer) (it.next()));
+            i++;
+        }
+
+        r = createRange(new BigDecimal("5.0"), new BigDecimal("11.0"));
+        BigDecimal one = new BigDecimal("1.0");
+
+        BigDecimal val = new BigDecimal("5.0");
+        for (Iterator it = r.iterator(); it.hasNext(); ) {
+            assertEquals("equals to " + val, val, (BigDecimal) (it.next()));
+            val = val.add(one);
+        }
     }
 
     protected Range createRange(int from, int to) {
         return new ObjectRange(new Integer(from), new Integer(to));
+    }
+    
+    protected Range createRange(BigDecimal from, BigDecimal to) {
+        return new ObjectRange(from, to);
     }
     
     protected void assertEquals(String msg, int expected, Object value) {
