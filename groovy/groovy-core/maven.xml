@@ -300,7 +300,29 @@
     </java>
   </goal>
 
-  <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath"
+  <goal name="groovy:tck-test-generation" prereqs="setclasspath"
+        description="Generates the Groovy TCK tests">
+    <ant dir="src/tck" inheritRefs="true">
+      <reference refid="test.classpath" torefid="passed.classpath"/>
+    </ant>
+    <mkdir dir="${basedir}/target/test-classes"/>
+    <copy todir="${basedir}/target/test-classes">
+      <!-- TCK classes and sources -->
+      <fileset dir="${basedir}/src/tck/build/test/classes">
+        <include name="**/*.class"/>
+      </fileset>
+      <fileset dir="${basedir}/src/tck/gentest">
+        <include name="**/*.java"/>
+      </fileset>
+
+      <!-- helper classes for TCK tests -->
+      <fileset dir="${basedir}/src/tck/build/classes">
+        <include name="**/*Helper.class"/>
+      </fileset>
+    </copy>
+  </goal>
+
+  <goal name="groovy:compile-tests" prereqs="groovy:compile, setclasspath, groovy:tck-test-generation"
     description="Compiles the Groovy unit test cases">
     <!-- lets copy and touch all the groovy files to ensure they all recompile -->
     <mkdir dir="${basedir}/target/test-classes"/>
@@ -336,7 +358,7 @@
     </groovyc>
     -->
 
-      <!-- re compile java, so that UberTests are now built -->
+      <!-- Re compile java, so that UberTests are now built -->
       <javac srcdir="${basedir}/src/test"
              destdir="${basedir}/target/test-classes"
              classpathref="test.classpath">
@@ -418,7 +440,7 @@
   <goal name="groovy:test"
         description="Test the application with any Java or Groovy unit tests"
         prereqs="test:compile">
-      
+
     <j:if test="${unitTestSourcesPresent == 'true' and context.getVariable('maven.test.skip') != 'true'}">
       
       <taskdef
