@@ -24,7 +24,11 @@
   <property name="generated.test.src.dir" value="gentest"/>
   
   <property name="test.classes.dir" value="${build.dir}/test/classes"/>
-  <property name="test.reports.dir" value="../../target/test-reports"/>
+
+  <!-- TODO: here you specify where the classes to test reside -->
+  <property name="items.under.test.dir" value="../../target/install/lib"/>
+  
+  <property name="test.reports.dir" value="reports"/>
   
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <!--                  targets                          -->
@@ -69,14 +73,14 @@
   <target name="run" depends="compile" description="compile and run">
     <java classname="org.codehaus.groovy.tck.GenerateTestCases" 
           fork="yes" 
-          classpathref="compile.classpath"/>
+          classpathref="project.classpath"/>
   </target>
 
-  <target name="test"
+  <target name="plain-test"
           depends="test-compile" 
           description="run all test cases">
-    <junit haltonfailure="true" fork="yes">
-      <classpath refid="tck.classpath"/>
+    <junit haltonfailure="true" fork="no">
+      <classpath refid="project.classpath"/>
       <formatter type="plain" usefile="false"/>
       <formatter type="xml" usefile="true"/>
       <batchtest todir="${test.reports.dir}">
@@ -87,12 +91,12 @@
     </junit>
   </target>
         
-  <target name="pretty-test" 
+  <target name="test" 
           depends="test-compile" 
           description="HTML output of test cases">
     <mkdir dir="${test.reports.dir}"/>
-    <junit haltonfailure="false" fork="yes">
-      <classpath refid="tck.classpath"/>
+    <junit haltonfailure="false" fork="no">
+      <classpath refid="project.classpath"/>
       <formatter type="xml" usefile="true"/>
 
       <batchtest todir="${test.reports.dir}">
@@ -124,7 +128,7 @@
     <!-- lets fork a JVM to avoid classpath hell -->
     <java classname="org.codehaus.groovy.ant.Groovyc" fork="yes" failonerror="true">
       <sysproperty key="groovy.jsr.check" value="${groovy.jsr.check}"/>
-      <classpath refid="compile.classpath"/>
+      <classpath refid="project.classpath"/>
       <arg value="${build.classes.dir}"/>
       <arg value="${src.dir}"/>
 
@@ -135,21 +139,19 @@
     <groovyc destdir="${build.classes.dir}"
              srcdir="${src.dir}"
              listfiles="true">
-        <classpath refid="tck.classpath"/>
+        <classpath refid="project.classpath"/>
     </groovyc>
     -->
-
-
     <javac srcdir="${src.dir}"
            destdir="${build.classes.dir}"
-           classpathref="compile.classpath"
+           classpathref="project.classpath"
            debug="${build.debug}"
            deprecation="on"/>
   </target>
 
     <target name="generate" depends="dist" description="generate test cases">
       <mkdir dir="${generated.test.src.dir}" />
-      <taskdef name="gentests" classname="org.codehaus.groovy.tck.GenerateTestCases" classpathref="compile.classpath"/>
+      <taskdef name="gentests" classname="org.codehaus.groovy.tck.GenerateTestCases" classpathref="project.classpath"/>
 
       <gentests destdir="${generated.test.src.dir}"
                 srcdir="${testcase.src.dir}"
@@ -160,36 +162,51 @@
     <mkdir dir="${test.classes.dir}" />
     <javac srcdir="${generated.test.src.dir}"
            destdir="${test.classes.dir}" 
-           classpathref="compile.classpath" 
+           classpathref="project.classpath" 
            debug="${build.debug}" 
            deprecation="on">
     </javac>
   </target>
 
-  <target name="init">
-    <tstamp />
+  <target name="independent-test-compile" depends="generate" description="compile tests">
+    <mkdir dir="${test.classes.dir}" />
+    <javac srcdir="${generated.test.src.dir}"
+           destdir="${test.classes.dir}" 
+           classpathref="project.classpath" 
+           debug="${build.debug}" 
+           deprecation="on">
+    </javac>
+  </target>
+
+  <target name="init" depends="init.sub.build,init.independent.build">
+    <tstamp/>
+  </target>
+
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
   <!--                     Datatypes                     -->
   <!-- -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- -->
-  <path id="compile.classpath">
-    <path refid="passed.classpath"/>
-    <!-- todo:tck - test.classpath should contain groovy and other jars -->
 
-    <pathelement location="${build.classes.dir}"/>
-  </path>
+  <!-- this target is performed we are within a maven build -->
+  <target name="init.sub.build" if="maven.compile.source">
+
+    <path id="project.classpath">
+      <pathelement location="${test.classes.dir}"/>
+      <path refid="passed.classpath"/>
+      <pathelement location="${build.classes.dir}"/>
+    </path>
   
-  <!-- intentionally doesn't include the compile classpath -->
-  <path id="tck.classpath">
-    <pathelement location="${test.classes.dir}"/>
+  </target>
 
-    <!-- TODO limit exposure to TCK helper classes -->
-    <pathelement location="${build.classes.dir}"/>
+  <!-- this target is performed when ant is called from command line -->
+  <target name="init.independent.build" unless="maven.compile.source">
 
-  </path>
-
-  <!--<taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="compile.classpath"/>-->
-
-
+    <path id="project.classpath">
+      <pathelement location="${test.classes.dir}"/>
+      <pathelement location="${build.classes.dir}"/>
+      <fileset dir="${items.under.test.dir}">
+        <include name="**/*.jar" />
+      </fileset>
+    </path>
 
   </target>
        
