@@ -39,7 +39,18 @@ class TestGenerator{
 
         // test for the source 'as is'
         printCommonTestMethodStart(result, "${methodName}Pass",srcText)
-        result.println('        helper.evaluate(srcBuffer.toString(),"' + "${methodName}Pass" + '");')
+        result.println('        Object result = helper.evaluate(srcBuffer.toString(),"' + "${methodName}Pass" + '");')
+        result.println('        if (result instanceof TestResult) {')
+        result.println('            TestResult testResult = (TestResult)result;')
+        result.println('            if (testResult.errorCount() > 0) {')
+        result.println('                TestFailure firstTestFailure = (TestFailure)testResult.errors().nextElement();')
+        result.println('                throw firstTestFailure.thrownException();')
+        result.println('            }')
+        result.println('            if (testResult.failureCount() > 0) {')
+        result.println('                AssertionFailedError firstFailure = (AssertionFailedError)(testResult.failures().nextElement());')
+        result.println('                throw firstFailure;')
+        result.println('            }')
+        result.println('        }')
         result.println("    }")
 
         // test for each of the '@pass' alternatives
@@ -47,7 +58,19 @@ class TestGenerator{
 
         passAlternatives.eachWithIndex{anAlternative,i ->
             printCommonTestMethodStart(result, "${methodName}Pass${i+1}",anAlternative[0]);
-            result.println('        helper.evaluate(srcBuffer.toString(),"' + "${methodName}Pass${i+1}" + '");')
+            result.println('        Object result = helper.evaluate(srcBuffer.toString(),"' + "${methodName}Pass${i+1}" + '");')
+            result.println('        if (result instanceof TestResult) {')
+            result.println('            TestResult testResult = (TestResult)result;')
+            result.println('            if (testResult.errorCount() > 0) {')
+            result.println('                TestFailure firstTestFailure = (TestFailure)testResult.errors().nextElement();')
+            result.println('                throw firstTestFailure.thrownException();')
+            result.println('            }')
+            result.println('            if (testResult.failureCount() > 0) {')
+            result.println('                AssertionFailedError firstFailure = (AssertionFailedError)(testResult.failures().nextElement());')
+            result.println('                throw firstFailure;')
+            result.println('            }')
+            result.println('        }')
+
             result.println("    }")
         }
 
@@ -121,7 +144,7 @@ class TestGenerator{
     void printCommonTestMethodStart(result, fullMethodName,someSrcText) {
         def buffer = new java.io.StringReader(someSrcText)
 
-        result.println("    public void ${fullMethodName}() throws Exception {")
+        result.println("    public void ${fullMethodName}() throws Throwable {")
         result.println("        StringBuffer srcBuffer = new StringBuffer();")
 
         // append each line to the buffer

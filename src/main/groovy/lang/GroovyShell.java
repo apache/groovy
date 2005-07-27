@@ -203,9 +203,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptFile the file of the script to run
      * @param list       the command line arguments to pass in
      */
-    public void run(File scriptFile, List list) throws CompilationFailedException, IOException {
+    public Object run(File scriptFile, List list) throws CompilationFailedException, IOException {
         String[] args = new String[list.size()];
-        run(scriptFile, (String[]) list.toArray(args));
+        return run(scriptFile, (String[]) list.toArray(args));
     }
 
     /**
@@ -215,10 +215,10 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      * @param list       the command line arguments to pass in
      */
-    public void run(String scriptText, String fileName, List list) throws CompilationFailedException {
+    public Object run(String scriptText, String fileName, List list) throws CompilationFailedException {
         String[] args = new String[list.size()];
         list.toArray(args);
-        run(scriptText, fileName, args);
+        return run(scriptText, fileName, args);
     }
 
     /**
@@ -227,7 +227,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptFile the file name of the script to run
      * @param args       the command line arguments to pass in
      */
-    public void run(final File scriptFile, String[] args) throws CompilationFailedException, IOException {
+    public Object run(final File scriptFile, String[] args) throws CompilationFailedException, IOException {
         String scriptName = scriptFile.getName();
         int p = scriptName.lastIndexOf(".");
         if (p++ >= 0) {
@@ -277,7 +277,7 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         }
 
-        runMainOrTestOrRunnable(scriptClass, args);
+        return runMainOrTestOrRunnable(scriptClass, args);
 
         // Set the context classloader back to what it was.
         //AccessController.doPrivileged(new DoSetContext(currentClassLoader));
@@ -295,9 +295,9 @@ public class GroovyShell extends GroovyObjectSupport {
      * instanciate theClass with the no-args constructor and run
      * }
      */
-    private void runMainOrTestOrRunnable(Class scriptClass, String[] args) {
+    private Object runMainOrTestOrRunnable(Class scriptClass, String[] args) {
         if (scriptClass == null) {
-            return;
+            return null;
         }
         try {
             // let's find a main method
@@ -306,7 +306,7 @@ public class GroovyShell extends GroovyObjectSupport {
             // As no main() method was found, let's see if it's a unit test
             // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
             if (isUnitTestCase(scriptClass)) {
-                runTest(scriptClass);
+                return runTest(scriptClass);
             }
             // no main() method, not a unit test,
             // if it implements Runnable, try to instanciate it
@@ -349,10 +349,10 @@ public class GroovyShell extends GroovyObjectSupport {
                         "- be a class extending GroovyTestCase, \n" +
                         "- or implement the Runnable interface.");
             }
-            return;
+            return null;
         }
         // if that main method exist, invoke it
-        InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
+        return InvokerHelper.invokeMethod(scriptClass, "main", new Object[]{args});
     }
 
     /**
@@ -363,9 +363,10 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private void runTest(Class scriptClass) {
+    private Object runTest(Class scriptClass) {
         try {
-            InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{scriptClass});
+            Object testSuite = InvokerHelper.invokeConstructor("junit.framework.TestSuite",new Object[]{scriptClass});
+            return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
         } catch (Exception e) {
             throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
         }
@@ -405,8 +406,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      * @param args       the command line arguments to pass in
      */
-    public void run(String scriptText, String fileName, String[] args) throws CompilationFailedException {
-        run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
+    public Object run(String scriptText, String fileName, String[] args) throws CompilationFailedException {
+        return run(new ByteArrayInputStream(scriptText.getBytes()), fileName, args);
     }
 
     /**
@@ -423,8 +424,7 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         });
         Class scriptClass = parseClass(gcs);
-        runMainOrTestOrRunnable(scriptClass, args);
-        return null;
+        return runMainOrTestOrRunnable(scriptClass, args);
     }
 
     public Object getVariable(String name) {
@@ -441,7 +441,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param codeSource
      * @return
      * @throws CompilationFailedException
-     * @throws IOException
+     * @throws CompilationFailedException
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
@@ -542,7 +542,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * given to the script.
      *
      * @param codeSource
-     * @return
+     * @return ready to run script
      */
     public Script parse(final GroovyCodeSource codeSource) throws CompilationFailedException {
         return InvokerHelper.createScript(parseClass(codeSource), context);
