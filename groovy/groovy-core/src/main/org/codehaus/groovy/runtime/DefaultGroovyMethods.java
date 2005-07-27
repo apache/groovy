@@ -1810,6 +1810,8 @@ public class DefaultGroovyMethods {
             left = range.getFromInt();
             right = range.getToInt();
         } else if (splice instanceof EmptyRange) {
+            RangeInfo info = subListBorders(self.size(), (EmptyRange) splice);
+            left = info.from;
             emptyRange = true;
         } else {
             throw new IllegalArgumentException("You must specify a list of 2 indexes to create a sub-list");
