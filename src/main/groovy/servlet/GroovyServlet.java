@@ -157,9 +157,12 @@ public class GroovyServlet extends AbstractHttpServlet {
              */
             if (e == null) {
                 error.append(" Script processing failed.");
+                error.append(runtimeException.getMessage());
+                error.append(runtimeException.getStackTrace()[0].toString());
                 servletContext.log(error.toString());
                 System.err.println(error.toString());
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                runtimeException.printStackTrace(System.err);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, error.toString());
                 return;
             }
             /*
@@ -175,9 +178,12 @@ public class GroovyServlet extends AbstractHttpServlet {
             /*
              * Other internal error. Perhaps syntax?! 
              */
-            servletContext.log("An error occurred processing the request", e);
-            servletContext.log(error.toString());
-            System.err.println(error.toString());
+            servletContext.log("An error occurred processing the request", runtimeException);
+            error.append(e.getMessage());
+            error.append(e.getStackTrace()[0].toString());
+            servletContext.log(e.toString());
+            System.err.println(e.toString());
+            runtimeException.printStackTrace(System.err);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.toString());
         } finally {
             /*
