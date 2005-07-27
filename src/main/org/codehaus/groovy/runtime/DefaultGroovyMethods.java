@@ -98,7 +98,7 @@ public class DefaultGroovyMethods {
      */
     public static Object identity(Object self, Closure closure) {
         closure.setDelegate(self);
-        return closure.call(self);
+        return closure.callSpecial(self);
     }
 
     /**
@@ -207,7 +207,7 @@ public class DefaultGroovyMethods {
         List props = allProperties(self);
         for (Iterator itr = props.iterator(); itr.hasNext();) {
             PropertyValue pv = (PropertyValue) itr.next();
-            closure.call(pv.getName());
+            closure.callSpecial(pv.getName());
         }
     }
 
@@ -215,7 +215,7 @@ public class DefaultGroovyMethods {
         List props = allProperties(self);
         for (Iterator itr = props.iterator(); itr.hasNext();) {
             PropertyValue pv = (PropertyValue) itr.next();
-            closure.call(pv);
+            closure.callSpecial(pv);
         }
     }
 
@@ -312,6 +312,117 @@ public class DefaultGroovyMethods {
       throw new RuntimeException ("printf requires JDK1.5 or later.") ;
     }
   }
+
+    /**
+     * Returns a formatted string using the specified format string and
+     * arguments.
+     *
+     * <p>
+     * For examples, <pre>
+     *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
+     *     printf ( "Hello, %s!\n" , [ "Groovy" ])
+     *     printf ( "%d + %d = %d\n" , [ 1 , 2 , 1+2 ] as Integer[] )
+     *     printf ( "%d + %d = %d\n" , [ 3 , 3 , 3+3 ])
+     * 
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as Integer[] ) }
+     *     ( 1..5 ).each { printf ( "-- %d\n" , [ it ] as int[] ) }
+     *     ( 0x41..0x45 ).each { printf ( "-- %c\n" , [ it ] as char[] ) }
+     *     ( 07..011 ).each { printf ( "-- %d\n" , [ it ] as byte[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as short[] ) }
+     *     ( 7..11 ).each { printf ( "-- %d\n" , [ it ] as long[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2f\n" , [ it ] as float[] ) }
+     *     ( 7..11 ).each { printf ( "-- %5.2g\n" , [ it ] as double[] ) }
+     * </pre>
+     * <p>
+     * 
+     * @param  format
+     *         A format string
+     *
+     * @param  arg
+     *         Argument which is referenced by the format specifiers in the format
+     *         string.  The type of <code>arg</code> should be one of Object[], List,
+     *         int[], short[], byte[], char[], boolean[], long[], float[], or double[].
+     *
+     * @return  A formatted string
+     * @since  JDK 1.5
+     *
+     * @author Pilho Kim
+     * @version 2005.07.25.02.31
+     */
+    public static void printf(final Object self, final String format, Object arg) {
+        if (arg instanceof Object[]) {
+            printf(self, format, (Object[]) arg);
+            return;
+        }
+        else if (arg instanceof List) {
+            printf(self, format, ((List) arg).toArray());
+            return;
+        }
+
+        Object[] ans = null;
+        String elemType = arg.getClass().getName();
+        if (elemType.equals("[I")) {
+            int[] ia = (int[]) arg;
+            ans = new Integer[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Integer(ia[i]);
+            }
+        }
+        else if (elemType.equals("[C")) {
+            char[] ia = (char[]) arg;
+            ans = new Character[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Character(ia[i]);
+            }
+        }
+        else if (elemType.equals("[Z")) {
+            boolean[] ia = (boolean[]) arg;
+            ans = new Boolean[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Boolean(ia[i]);
+            }
+        }
+        else if (elemType.equals("[B")) {
+            byte[] ia = (byte[]) arg;
+            ans = new Byte[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Byte(ia[i]);
+            }
+        }
+        else if (elemType.equals("[S")) {
+            short[] ia = (short[]) arg;
+            ans = new Short[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Short(ia[i]);
+            }
+        }
+        else if (elemType.equals("[F")) {
+            float[] ia = (float[]) arg;
+            ans = new Float[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Float(ia[i]);
+            }
+        }
+        else if (elemType.equals("[J")) {
+            long[] ia = (long[]) arg;
+            ans = new Long[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Long(ia[i]);
+            }
+        }
+        else if (elemType.equals("[D")) {
+            double[] ia = (double[]) arg;
+            ans = new Double[ia.length];
+            for (int i = 0; i < ia.length; i++) {
+                ans[i] = new Double(ia[i]);
+            }
+        }
+        else {
+            throw new RuntimeException("printf(String," + arg + ")");
+        }
+        printf(self, format, (Object[]) ans);
+    }
+
 
     /**
      * @return a String that matches what would be typed into a terminal to
@@ -438,7 +549,7 @@ public class DefaultGroovyMethods {
     public static void eachWithIndex(Object self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(new ParameterArray(new Object[]{iter.next(), new Integer(counter++)}));
+            closure.callSpecial(new ParameterArray(new Object[]{iter.next(), new Integer(counter++)}));
         }
     }
 
@@ -721,7 +832,7 @@ public class DefaultGroovyMethods {
         List answer = new ArrayList(self.size());
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 answer.add(value);
             }
         }
@@ -752,9 +863,9 @@ public class DefaultGroovyMethods {
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getParameterTypes().length == 2) {
-            return closure.call(new ParameterArray(new Object[]{entry.getKey(), entry.getValue()}));
+            return closure.callSpecial(new ParameterArray(new Object[]{entry.getKey(), entry.getValue()}));
         }
-        return closure.call(entry);
+        return closure.callSpecial(entry);
     }
 
 
@@ -774,7 +885,7 @@ public class DefaultGroovyMethods {
             Object item = iter.next();
             params[0] = value;
             params[1] = item;
-            value = closure.call(new ParameterArray(params));
+            value = closure.callSpecial(new ParameterArray(params));
         }
         return value;
     }
@@ -794,7 +905,7 @@ public class DefaultGroovyMethods {
         for (int i = 0; i < self.length; i++) {
             params[0] = value;
             params[1] = self[i];
-            value = closure.call(new ParameterArray(params));
+            value = closure.callSpecial(new ParameterArray(params));
         }
         return value;
     }
@@ -932,7 +1043,7 @@ public class DefaultGroovyMethods {
             Object answer_value = null;
             for (Iterator iter = self.iterator(); iter.hasNext();) {
                 Object item = iter.next();
-                Object value = closure.call(item);
+                Object value = closure.callSpecial(item);
                 if (answer == null || InvokerHelper.compareLessThan(value, answer_value)) {
                     answer = item;
                     answer_value = value;
@@ -958,7 +1069,7 @@ public class DefaultGroovyMethods {
             Object answer_value = null;
             for (Iterator iter = self.iterator(); iter.hasNext();) {
                 Object item = iter.next();
-                Object value = closure.call(item);
+                Object value = closure.callSpecial(item);
                 if (answer == null || InvokerHelper.compareLessThan(answer_value, value)) {
                     answer = item;
                     answer_value = value;
@@ -1120,7 +1231,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Turns a String into a regular expression pattern
+     * Turns a String into a regular expression pattern.
      *
      * @param self a String to convert into a regular expression
      * @return the regular expression pattern
@@ -1131,6 +1242,24 @@ public class DefaultGroovyMethods {
 
     /**
      * Replaces all occurrencies of a captured group by the result of a closure on that text.
+     *
+     * <p> For examples,
+     * <pre>
+     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
+     *
+     *     Here,
+     *          it[0] is the global string of the matched group
+     *          it[1] is the first string in the matched group
+     *          it[2] is the second string in the matched group
+     * 
+     * 
+     *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
+     *
+     *     Here,
+     *          x is the global string of the matched group
+     *          y is the first string in the matched group
+     *          z is the second string in the matched group
+     * </pre>
      *
      * @param self a String
      * @param regex the capturing regex
@@ -1143,8 +1272,13 @@ public class DefaultGroovyMethods {
             matcher.reset();
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
+                int count = matcher.groupCount();
+                ArrayList groups = new ArrayList();
+                for (int i = 0; i <= count; i++) {
+                    groups.add(matcher.group(i));
+                }
                 String foundText = self.substring(matcher.start(0), matcher.end(0));
-                matcher.appendReplacement(sb, String.valueOf(closure.call( foundText )));
+                matcher.appendReplacement(sb, String.valueOf(closure.callSpecial(new ParameterArray(groups.toArray()))));
             }
             matcher.appendTail(sb);
             return sb.toString();
@@ -3583,7 +3717,7 @@ public class DefaultGroovyMethods {
      */
     public static void times(Number self, Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
-            closure.call(new Integer(i));
+            closure.callSpecial(new Integer(i));
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -3613,7 +3747,7 @@ public class DefaultGroovyMethods {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
-                closure.call(new Long(i));
+                closure.callSpecial(new Long(i));
             }
         }
         else
@@ -3621,22 +3755,13 @@ public class DefaultGroovyMethods {
     }
 
     public static void upto(Long self, Number to, Closure closure) {
-        long self1 = self.longValue();
-        long to1 = to.longValue();
-        if (self1 <= to1) {
-            for (long i = self1; i <= to1; i++) {
-                closure.call(new Long(i));
-            }
-        }
-        else
-            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(float self, Number to, Closure closure) {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
-                closure.call(new Float(i));
+                closure.callSpecial(new Float(i));
             }
         }
         else
@@ -3648,7 +3773,7 @@ public class DefaultGroovyMethods {
         float to1 = to.floatValue();
         if (self1 <= to1) {
             for (float i = self1; i <= to1; i++) {
-                closure.call(new Float(i));
+                closure.callSpecial(new Float(i));
             }
         }
         else
@@ -3660,7 +3785,7 @@ public class DefaultGroovyMethods {
         double to1 = to.doubleValue();
         if (self1 <= to1) {
             for (double i = self1; i <= to1; i++) {
-                closure.call(new Double(i));
+                closure.callSpecial(new Double(i));
             }
         }
         else
@@ -3669,12 +3794,12 @@ public class DefaultGroovyMethods {
 
     public static void upto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            final BigDecimal one = new BigDecimal(1.0);
+            final BigDecimal one = new BigDecimal("1.0");
             BigDecimal self1 = new BigDecimal(self);
             BigDecimal to1 = (BigDecimal) to;
             if (self1.compareTo(to1) <= 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3685,7 +3810,7 @@ public class DefaultGroovyMethods {
             BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3705,12 +3830,12 @@ public class DefaultGroovyMethods {
     }
 
     public static void upto(BigDecimal self, Number to, Closure closure) {
-        final BigDecimal one = new BigDecimal(1.0);
+        final BigDecimal one = new BigDecimal("1.0");
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3720,17 +3845,17 @@ public class DefaultGroovyMethods {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
         }
         else {
-            BigDecimal to1 = new BigDecimal(to.doubleValue());
+            BigDecimal to1 = new BigDecimal("" + to);
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3750,7 +3875,7 @@ public class DefaultGroovyMethods {
         int to1 = to.intValue();
         if (self1 >= to1) {
             for (int i = self1; i >= to1; i--) {
-                closure.call(new Integer(i));
+                closure.callSpecial(new Integer(i));
             }
         }
         else
@@ -3761,7 +3886,7 @@ public class DefaultGroovyMethods {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
-                closure.call(new Long(i));
+                closure.callSpecial(new Long(i));
             }
         }
         else
@@ -3773,7 +3898,7 @@ public class DefaultGroovyMethods {
         long to1 = to.longValue();
         if (self1 >= to1) {
             for (long i = self1; i >= to1; i--) {
-                closure.call(new Long(i));
+                closure.callSpecial(new Long(i));
             }
         }
         else
@@ -3784,7 +3909,7 @@ public class DefaultGroovyMethods {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
-               closure.call(new Float(i));
+               closure.callSpecial(new Float(i));
             }
         }
         else
@@ -3796,7 +3921,7 @@ public class DefaultGroovyMethods {
         float to1 = to.floatValue();
         if (self1 >= to1) {
             for (float i = self1; i >= to1; i--) {
-               closure.call(new Float(i));
+               closure.callSpecial(new Float(i));
             }
         }
         else
@@ -3807,7 +3932,7 @@ public class DefaultGroovyMethods {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
-                closure.call(new Double(i));
+                closure.callSpecial(new Double(i));
             }
         }
         else
@@ -3819,7 +3944,7 @@ public class DefaultGroovyMethods {
         double to1 = to.doubleValue();
         if (self1 >= to1) {
             for (double i = self1; i >= to1; i--) {
-                closure.call(new Double(i));
+                closure.callSpecial(new Double(i));
             }
         }
         else
@@ -3828,11 +3953,11 @@ public class DefaultGroovyMethods {
 
     public static void downto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            final BigDecimal one = new BigDecimal(1.0);
+            final BigDecimal one = new BigDecimal("1.0");
             BigDecimal to1 = (BigDecimal) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = new BigDecimal(self); i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3843,7 +3968,7 @@ public class DefaultGroovyMethods {
             BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3854,7 +3979,7 @@ public class DefaultGroovyMethods {
             BigInteger to1 = new BigInteger("" + to);
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3863,12 +3988,12 @@ public class DefaultGroovyMethods {
     }
 
     public static void downto(BigDecimal self, Number to, Closure closure) {
-        final BigDecimal one = new BigDecimal(1.0);
+        final BigDecimal one = new BigDecimal("1.0");
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3878,17 +4003,17 @@ public class DefaultGroovyMethods {
             BigDecimal to1 = new BigDecimal((BigInteger) to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to +")");
         }
         else {
-            BigDecimal to1 = new BigDecimal(to.doubleValue());
+            BigDecimal to1 = new BigDecimal("" + to);
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3906,18 +4031,18 @@ public class DefaultGroovyMethods {
      */
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
-            final BigDecimal zero = new BigDecimal(0.0);
+            final BigDecimal zero = new BigDecimal("0.0");
             BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal("" + self);
             BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal("" + to);
             BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal("" + stepNumber);
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3930,12 +4055,12 @@ public class DefaultGroovyMethods {
             BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger("" + stepNumber);
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigInteger i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else if (stepNumber1.compareTo(zero) < 0 && to1.compareTo(self1) < 0) {
                 for (BigInteger i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
-                    closure.call(i);
+                    closure.callSpecial(i);
                 }
             }
             else
@@ -3947,12 +4072,12 @@ public class DefaultGroovyMethods {
             int stepNumber1 = stepNumber.intValue();
             if (stepNumber1 > 0 && to1 > self1) {
                 for (int i = self1; i < to1; i += stepNumber1) {
-                    closure.call(new Integer(i));
+                    closure.callSpecial(new Integer(i));
                 }
             }
             else if (stepNumber1 < 0 && to1 < self1) {
                 for (int i = self1; i > to1; i += stepNumber1) {
-                    closure.call(new Integer(i));
+                    closure.callSpecial(new Integer(i));
                 }
             }
             else
@@ -4160,7 +4285,7 @@ public class DefaultGroovyMethods {
                 try {
                     Object obj = ois.readObject();
                     // we allow null objects in the object stream
-                    closure.call(new ParameterArray(obj));
+                    closure.callSpecial(new ParameterArray(obj));
                 } catch (EOFException e) {
                     break;
                 }
@@ -4215,7 +4340,7 @@ public class DefaultGroovyMethods {
                 if (line == null) {
                     break;
                 } else {
-                    closure.call(line);
+                    closure.callSpecial(line);
                 }
             }
             br.close();
@@ -4270,7 +4395,7 @@ public class DefaultGroovyMethods {
                     List vals = Arrays.asList(line.split(sep));
                     args.clear();
                     args.add(vals);
-                    closure.call(args);
+                    closure.callSpecial(new ParameterArray(args.toArray()));
                 }
             }
             br.close();
@@ -4540,7 +4665,7 @@ public class DefaultGroovyMethods {
         checkDir(self);
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
-            closure.call(files[i]);
+            closure.callSpecial(files[i]);
         }
     }
 
@@ -4558,10 +4683,10 @@ public class DefaultGroovyMethods {
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
-                closure.call(files[i]);
+                closure.callSpecial(files[i]);
                 eachFileRecurse(files[i], closure);
             } else {
-                closure.call(files[i]);
+                closure.callSpecial(files[i]);
             }
         }
     }
@@ -4580,7 +4705,7 @@ public class DefaultGroovyMethods {
         File[] files = self.listFiles();
         for (int i = 0; i < files.length; i++) {
             if (files[i].isDirectory()) {
-                closure.call(files[i]);
+                closure.callSpecial(files[i]);
             }
         }
     }
@@ -4602,7 +4727,7 @@ public class DefaultGroovyMethods {
         MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (int i = 0; i < files.length; i++) {
             if (InvokerHelper.asBool(metaClass.invokeMethod(filter, "isCase", files[i].getName()))) {
-                closure.call(files[i]);
+                closure.callSpecial(files[i]);
             }
         }
     }
@@ -4861,7 +4986,7 @@ public class DefaultGroovyMethods {
      */
     public static void withWriter(Writer writer, Closure closure) throws IOException {
         try {
-            closure.call(writer);
+            closure.callSpecial(writer);
 
             // lets try close the writer & throw the exception if it fails
             // but not try to reclose it in the finally block
@@ -4890,7 +5015,7 @@ public class DefaultGroovyMethods {
      */
     public static void withReader(Reader writer, Closure closure) throws IOException {
         try {
-            closure.call(writer);
+            closure.callSpecial(writer);
 
             // lets try close the writer & throw the exception if it fails
             // but not try to reclose it in the finally block
@@ -4919,7 +5044,7 @@ public class DefaultGroovyMethods {
      */
     public static void withStream(InputStream stream, Closure closure) throws IOException {
         try {
-            closure.call(stream);
+            closure.callSpecial(stream);
 
             // lets try close the stream & throw the exception if it fails
             // but not try to reclose it in the finally block
@@ -5030,7 +5155,7 @@ public class DefaultGroovyMethods {
      */
     public static void withStream(OutputStream stream, Closure closure) throws IOException {
         try {
-            closure.call(stream);
+            closure.callSpecial(stream);
 
             // lets try close the stream & throw the exception if it fails
             // but not try to reclose it in the finally block
@@ -5084,7 +5209,7 @@ public class DefaultGroovyMethods {
                 if (b == -1) {
                     break;
                 } else {
-                    closure.call(new Byte((byte) b));
+                    closure.callSpecial(new Byte((byte) b));
                 }
             }
             is.close();
@@ -5125,7 +5250,7 @@ public class DefaultGroovyMethods {
             char[] chars = new char[1];
             while ((c = reader.read()) != -1) {
                 chars[0] = (char) c;
-                writer.write((String) closure.call(new String(chars)));
+                writer.write((String) closure.callSpecial(new String(chars)));
             }
         } catch (IOException e) {
         }
@@ -5143,7 +5268,7 @@ public class DefaultGroovyMethods {
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         while ((line = br.readLine()) != null) {
-            Object o = closure.call(line);
+            Object o = closure.callSpecial(line);
             if (o != null) {
                 bw.write(o.toString());
                 bw.newLine();
@@ -5165,7 +5290,7 @@ public class DefaultGroovyMethods {
         BufferedWriter bw = new BufferedWriter(writer);
         String line;
         while ((line = br.readLine()) != null) {
-            if (InvokerHelper.asBool(closure.call(line))) {
+            if (InvokerHelper.asBool(closure.callSpecial(line))) {
                 bw.write(line);
                 bw.newLine();
             }
@@ -5212,7 +5337,7 @@ public class DefaultGroovyMethods {
                 BufferedWriter bw = new BufferedWriter(out);
                 String line;
                 while ((line = br.readLine()) != null) {
-                    if (InvokerHelper.asBool(closure.call(line))) {
+                    if (InvokerHelper.asBool(closure.callSpecial(line))) {
                         bw.write(line);
                         bw.newLine();
                     }
@@ -5290,7 +5415,7 @@ public class DefaultGroovyMethods {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            closure.call(new ParameterArray(new Object[]{input, output}));
+            closure.callSpecial(new ParameterArray(new Object[]{input, output}));
         } finally {
             try {
                 input.close();
@@ -5342,7 +5467,7 @@ public class DefaultGroovyMethods {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    closure.call(socket);
+                    closure.callSpecial(socket);
                 } finally {
                     try {
                         socket.close();
@@ -5470,37 +5595,46 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * process each regex matched substring of a string object. The object
-     * passed to the closure is a matcher with rich information of the last
-     * successful match
+     * Process each regex group matched substring of the given string. The object
+     * passed to the closure is an array of strings, matched per a successful match.
      *
-     * @param str     the target string
+     * @param self    the source string
      * @param regex   a Regex string
      * @param closure a closure
      * @author bing ran
+     * @author Pilho Kim
      */
-    public static void eachMatch(String str, String regex, Closure closure) {
+    public static void eachMatch(String self, String regex, Closure closure) {
         Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(str);
+        Matcher m = p.matcher(self);
         while (m.find()) {
             int count = m.groupCount();
             ArrayList groups = new ArrayList();
             for (int i = 0; i <= count; i++) {
                 groups.add(m.group(i));
             }
-            closure.call(groups);
+            closure.callSpecial(new ParameterArray(groups.toArray()));
         }
     }
 
-    public static void each(Matcher matcher, Closure closure) {
-        Matcher m = matcher;
+    /**
+     * Process each matched substring of the given group matcher. The object
+     * passed to the closure is an array of strings, matched per a successful match.
+     *
+     * @param self    the source matcher
+     * @param closure a closure
+     * @author bing ran
+     * @author Pilho Kim
+     */
+    public static void each(Matcher self, Closure closure) {
+        Matcher m = self;
         while (m.find()) {
             int count = m.groupCount();
             ArrayList groups = new ArrayList();
             for (int i = 0; i <= count; i++) {
                 groups.add(m.group(i));
             }
-            closure.call(groups);
+            closure.callSpecial(new ParameterArray(groups.toArray()));
         }
     }
 
@@ -5516,7 +5650,7 @@ public class DefaultGroovyMethods {
         int i = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
-            if (InvokerHelper.asBool(closure.call(value))) {
+            if (InvokerHelper.asBool(closure.callSpecial(value))) {
                 break;
             }
         }
@@ -5560,7 +5694,7 @@ public class DefaultGroovyMethods {
         }
     }
 
-    protected static class RangeInfo{
+    protected static class RangeInfo {
         protected int from, to;
         protected boolean reverse;
 
