@@ -8,6 +8,10 @@ package gls.ch03.s01;
  */
 
 class Unicode1 extends GroovyTestCase {
+    /**
+      * This doc comment checks that Unicode is allowed in javadoc.
+      * e.g. \u05D0\u2136\u05d3\u05d7
+      */
     public void testComments() {
         // Unicode is allowed in comments
         // This is a comment \u0410\u0406\u0414\u0419
@@ -15,9 +19,11 @@ class Unicode1 extends GroovyTestCase {
 
         /**/ // Tiny comment
         /***/ // Also valid
+    }
 
-        // Need to test string literals and identifiers
-        println "All is well"
+    public void testStringLiterals() {
+        assert 1 == "\u0040".length()
+        assert "A" == "\u0041"
     }
 }
 

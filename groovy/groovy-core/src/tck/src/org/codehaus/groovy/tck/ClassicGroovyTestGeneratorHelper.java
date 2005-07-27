@@ -5,8 +5,8 @@ import java.io.StringReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-
-// JSR parser
+import junit.framework.TestResult;
+// Jsr parser
 // @todo - refactor pulling generic parser interface up
 import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
@@ -21,11 +21,10 @@ import antlr.RecognitionException;
 public class ClassicGroovyTestGeneratorHelper implements TestGeneratorHelper {
 
     /** evaluate the source text against the classic AST with the JSR parser implementation*/
-    public void evaluate(String theSrcText, String testName) throws Exception {
+    public Object evaluate(String theSrcText, String testName) throws Exception {
         parse(theSrcText, testName); // fail early with a direct message if possible')
         GroovyShell groovy = new GroovyShell(new CompilerConfiguration());
-        groovy.run(theSrcText, "main", new ArrayList());
-        //@todo - work out how to ensure test failures throw exceptions
+        return groovy.run(theSrcText, "main", new ArrayList());
     }
 
     /** run the JSR parser implementation over the supplied source text*/
