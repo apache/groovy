@@ -3229,6 +3229,20 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Executes the command specified by the <code>String</code> array that is the parameter.
+     * The first item in the array is the command the others are the parameters. For more
+     * control over the process mechanism in JDK 1.5 you can use
+     * <code>java.lang.ProcessBuilder</code>.
+     *
+     * @param commandArray an array of <code>String<code> containing the command name and
+     * parameters as separate items in the array.
+     * @return the Process which has just started for this command line string
+     */
+    public static Process execute ( final String[] commandArray ) throws IOException {
+      return Runtime.getRuntime ( ).exec ( commandArray ) ;
+    }
+
+    /**
      * Repeat a String a certain number of times
      *
      * @param self   a String to be repeated
