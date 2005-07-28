@@ -31,7 +31,8 @@ public class UberTestCase2 extends TestCase {
         suite.addTestSuite(groovy.bugs.Groovy779_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy831_Bug.class);
         suite.addTestSuite(groovy.bugs.Groovy872.class);
-        suite.addTestSuite(groovy.bugs.IanMaceysBug.class);
+        suite.addTestSuite(groovy.bugs.Groovy872.class);
+        suite.addTestSuite ( groovy.bugs.Groovy977.class ) ;
         suite.addTestSuite(groovy.bugs.InterfaceImplBug.class);
         suite.addTestSuite(groovy.bugs.MarkupInScriptBug.class);
         suite.addTestSuite(groovy.bugs.MethodClosureWithArrayBug.class);
