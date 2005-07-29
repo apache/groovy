@@ -278,7 +278,7 @@ public class DefaultGroovyMethods {
     }
 
   /**
-   *  Printf to a console.  Only works with JDK1.5 or alter.
+   *  Printf to a console.  Only works with JDK1.5 or later.
    *
    *  @author Russel Winder
    *  @version 2005.02.01.15.53
@@ -3236,10 +3236,29 @@ public class DefaultGroovyMethods {
      *
      * @param commandArray an array of <code>String<code> containing the command name and
      * parameters as separate items in the array.
-     * @return the Process which has just started for this command line string
+     * @return the Process which has just started for this command line string.
      */
     public static Process execute ( final String[] commandArray ) throws IOException {
       return Runtime.getRuntime ( ).exec ( commandArray ) ;
+    }
+
+    /**
+     * Executes the command specified by the <code>String</code> list that is the parameter.
+     * The first item in the array is the command the others are the parameters. All entries
+     * must be <code>String</code>s.  For more control over the process mechanism in JDK 1.5 you
+     * can use <code>java.lang.ProcessBuilder</code>.
+     *
+     * @param commandList a list of <code>String<code> containing the command name and
+     * parameters as separate items in the list.
+     * @return the Process which has just started for this command line string.
+     */
+    public static Process execute ( final List commandList ) throws IOException {
+      final String[] commandArray = new String[commandList.size ( )] ;
+      Iterator it = commandList.iterator ( ) ;
+      for ( int i = 0 ; it.hasNext ( ) ; ++i ) {
+        commandArray[i] = it.next ( ).toString ( ) ;
+      }
+      return execute ( commandArray ) ;
     }
 
     /**
