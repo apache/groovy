@@ -85,6 +85,15 @@ public class UberTestCase extends TestCase {
 
         suite.addTestSuite(EscapedUnicodeTest.class);
         suite.addTestSuite(ExceptionInClosureTest.class);
+
+        String osName = System.getProperty ( "os.name" ) ;
+        if ( osName.equals ( "Linux" ) || osName.equals ( "SunOS" ) ) {
+          suite.addTestSuite ( ExecuteTest_LinuxSolaris.class ) ;
+        }
+        else {
+          System.err.println ( "XXXXXX  No execute testsfor this OS.  XXXXXX" ) ;
+        }
+
         suite.addTestSuite(ExpandoPropertyTest.class);
         suite.addTestSuite(FilterLineTest.class);
 
