@@ -1,11 +1,23 @@
 <web-app xmlns="http://java.sun.com/xml/ns/j2ee"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
-    version="2.4">
+    xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_3.xsd"
+    version="2.3">
 
   <servlet>
     <servlet-name>Groovlet</servlet-name>
     <servlet-class>groovy.servlet.GroovyServlet</servlet-class>
+    <init-param>
+      <param-name>verbose</param-name>
+      <param-value>true</param-value>
+    </init-param>
+    <init-param>
+      <param-name>resource.name.regex</param-name>
+      <param-value>none</param-value>
+    </init-param>
+    <init-param>
+      <param-name>resource.name.replacement</param-name>
+      <param-value>none</param-value>
+    </init-param>
   </servlet>
     
   <servlet>
@@ -17,7 +29,7 @@
     <servlet-name>Template|GString</servlet-name>
     <servlet-class>groovy.servlet.TemplateServlet</servlet-class>
     <init-param>
-      <param-name>templateEngine</param-name>
+      <param-name>template.engine</param-name>
       <param-value>groovy.text.GStringTemplateEngine</param-value>
     </init-param>
   </servlet>
@@ -26,7 +38,7 @@
     <servlet-name>Template|XML</servlet-name>
     <servlet-class>groovy.servlet.TemplateServlet</servlet-class>
     <init-param>
-      <param-name>templateEngine</param-name>
+      <param-name>template.engine</param-name>
       <param-value>groovy.text.XmlTemplateEngine</param-value>
     </init-param>
   </servlet>
