@@ -44,25 +44,28 @@ class BooksPageFlow {
     // todo: this is same logic as findBook (?)
     Closure saveBook = { requestContext ->
         def bookCommand = requestContext.requestScope[BOOK_DETAIL_KEY]
-        for (book in getBooks(requestContext)) {
-            if (book.id = bookCommand.id) {
-                println('Saving book id:' + book.id)
-                book.title = bookCommand.title
-                book.author = bookCommand.author
-                break
-            }
+    	def book = getBooks(requestContext).find{it.id == bookCommand.id}
+        if (book) {
+            println('Saving book id:' + book.id)
+            book.title = bookCommand.title
+            book.author = bookCommand.author
         }
         return SUCCESS_TOKEN
     }
 
-    Closure addBook = { requestContext ->
+	Closure getSequence = { requestContext ->
         def sequence = requestContext.flowScope[BOOK_SEQUENCE_NO_KEY]
         sequence++
         requestContext.flowScope[BOOK_SEQUENCE_NO_KEY] = sequence
+		return sequence
+	}
+
+    Closure addBook = { requestContext ->
+    	def sequence = getSequence(requestContext)
         def bookCommand = requestContext.requestScope[BOOK_DETAIL_KEY]
         def title = bookCommand.title
         def author = bookCommand.author
-        Book book = new Book(id:id, title:title, author:author)
+        Book book = new Book(id:sequence, title:title, author:author)
         requestContext.flowScope[BOOK_COLLECTION_KEY].add(book)
         return SUCCESS_TOKEN
     }
