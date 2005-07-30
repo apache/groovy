@@ -22,6 +22,16 @@ abstract class WebTest {
         style(webtestHome, props)
     }
 
+    void webtest(String name, Closure yield){
+        ant.testSpec(name:name){
+            config(configMap)
+            steps(){
+                yield.delegate = ant
+                yield()
+            }
+        }
+    }
+
     // try to get from build.properties, environment variable, grailsHome/downloads/webtest
     String locateWebTestHome(props) {
         def webtestHome = props.webtestHome
@@ -68,5 +78,11 @@ abstract class WebTest {
         ant.copy(todir: props.webtest_resultpath){
             fileset(dir: webtestHome+'/resources/')
         }
+        // on windows, start the standard browser on the report file
+        if(! props.'os.name'?.contains('Windows')) return
+        def reportHtml = "$props.webtest_resultpath/$props.webtest_resultfile" - '.xml' + '.html'
+        def filename = new java.io.File(reportHtml).canonicalPath
+        println "opening: $filename"
+        "cmd /c $filename".execute()
     }
 }
