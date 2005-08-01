@@ -60,7 +60,7 @@ public class StateTests extends TestCase {
 		state.setViewName("test");
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -70,7 +70,7 @@ public class StateTests extends TestCase {
 		State state = new State("test");
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -81,7 +81,7 @@ public class StateTests extends TestCase {
 		state.setActionClass(Object.class);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -92,7 +92,7 @@ public class StateTests extends TestCase {
 		state.setActionClass(Action.class);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -119,7 +119,7 @@ public class StateTests extends TestCase {
 		state.setAttributeMapperClass(Object.class);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -130,7 +130,7 @@ public class StateTests extends TestCase {
 		state.setAttributeMapperClass(FlowAttributeMapper.class);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -178,7 +178,7 @@ public class StateTests extends TestCase {
 		attributes.put("action", new Object());
 		try {
 			new State("myAction", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -190,7 +190,7 @@ public class StateTests extends TestCase {
 		attributes.put("properties", new ArrayList());
 		try {
 			new State("myAction", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -202,7 +202,7 @@ public class StateTests extends TestCase {
 		State state = new State("myAction", attributes);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -229,6 +229,7 @@ public class StateTests extends TestCase {
 		attributes.put("view", new Object());
 		try {
 			new State("myViewState", attributes);
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -240,7 +241,7 @@ public class StateTests extends TestCase {
 		attributes.put("model", new ArrayList());
 		try {
 			new State("myViewState", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -271,7 +272,8 @@ public class StateTests extends TestCase {
 		State state = new State("myDecisionState", attributes);
 		try {
 			state.validate();
-		} catch (IllegalStateException e) {
+            fail("validate should have thrown IllegalStateException");
+        } catch (IllegalStateException e) {
 			// expected
 		}
 	}
@@ -283,7 +285,7 @@ public class StateTests extends TestCase {
 		State state = new State("myDecisionState", attributes);
 		try {
 			state.validate();
-			fail();
+            fail("validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			// expected
 		}
@@ -294,6 +296,7 @@ public class StateTests extends TestCase {
 		attributes.put("decision", new Object());
 		try {
 			new State("myDecisionState", attributes);
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -305,6 +308,7 @@ public class StateTests extends TestCase {
 		attributes.put("trueState", new Object());
 		try {
 			new State("myDecisionState", attributes);
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -316,6 +320,7 @@ public class StateTests extends TestCase {
 		attributes.put("falseState", new Object());
 		try {
 			new State("myDecisionState", attributes);
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			// expected
 		}
@@ -379,7 +384,7 @@ public class StateTests extends TestCase {
 		attributes.put("subflow", new Object());
 		try {
 			new State("mySubflowState", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			//expected
 		}
@@ -391,7 +396,7 @@ public class StateTests extends TestCase {
 		attributes.put("input", new Object());
 		try {
 			new State("mySubflowState", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			//expected
 		}
@@ -403,7 +408,7 @@ public class StateTests extends TestCase {
 		attributes.put("output", new Object());
 		try {
 			new State("mySubflowState", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			//expected
 		}
@@ -415,7 +420,7 @@ public class StateTests extends TestCase {
 		attributes.put("mapper", new Object());
 		try {
 			new State("mySubflowState", attributes);
-			fail();
+            fail("State ctor should have thrown IllegalArgumentException");
 		} catch (IllegalArgumentException e) {
 			//expected
 		}
@@ -428,7 +433,7 @@ public class StateTests extends TestCase {
 		State state = new State("mySubflowState", attributes);
 		try {
 			state.validate();
-			fail();
+            fail("State validate should have thrown IllegalStateException");
 		} catch (IllegalStateException e) {
 			//expected
 		}

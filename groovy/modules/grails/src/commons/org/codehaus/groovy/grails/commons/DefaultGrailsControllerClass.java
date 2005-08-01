@@ -36,13 +36,13 @@ import org.apache.commons.lang.WordUtils;
 public class DefaultGrailsControllerClass extends AbstractInjectableGrailsClass
 		implements GrailsControllerClass {
 
-	private static final String SLASH = "/";
-	private static final String VIEW = "View";
-	private static final String TYPED_VIEWS = "TypedViews";
-	private static final String DEFAULT_CLOSURE_PROPERTY = "defaultClosure";
-	public static final String CONTROLLER = "Controller";
-	
-	
+    public static final String CONTROLLER = "Controller";
+
+    private static final String SLASH = "/";
+    private static final String VIEW = "View";
+    private static final String TYPED_VIEWS = "TypedViews";
+    private static final String DEFAULT_CLOSURE_PROPERTY = "defaultClosure";
+
 	private Map viewNames = null;
 	private Map uri2closureMap = null;
 	private String[] uris = null;

@@ -41,16 +41,24 @@ public class GrailsDispatcherServlet extends DispatcherServlet {
         super();
     }
 
-    protected WebApplicationContext createWebApplicationContext(
-            WebApplicationContext parent) throws BeansException {
+    protected WebApplicationContext createWebApplicationContext(WebApplicationContext parent) throws BeansException {
+        // use config file locations if available
+        String[] locations = null;
+        if (null != getContextConfigLocation()) {
+            locations = StringUtils.tokenizeToStringArray(
+                    getContextConfigLocation(),
+                    ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS);
+        }
+        // construct the SpringConfig for the container managed application
         GrailsApplication application = (GrailsApplication) parent.getBean(GRAILS_APPLICATION_ID, GrailsApplication.class);
         SpringConfig springConfig = new SpringConfig(application);
-        if (getContextConfigLocation() != null) {
-            return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), StringUtils.tokenizeToStringArray(
-                    getContextConfigLocation(), ConfigurableWebApplicationContext.CONFIG_LOCATION_DELIMITERS));
-        } else {
-            return new XmlWebApplicationContextDriver().getWebApplicationContext(springConfig.getBeanReferences(), parent, getServletContext(), getNamespace(), null);
-        }
+        // return a context that obeys grails' settings
+        return new XmlWebApplicationContextDriver().getWebApplicationContext(
+                springConfig.getBeanReferences(),
+                parent,
+                getServletContext(),
+                getNamespace(),
+                locations);
     }
 
 }

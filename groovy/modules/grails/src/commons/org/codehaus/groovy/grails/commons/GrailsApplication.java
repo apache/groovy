@@ -36,7 +36,7 @@ public interface GrailsApplication {
 	/**
 	 * <p>Returns the controller with the given full name or null if no controller was found with that name.
 	 * 
-	 * @param name the controller full name
+	 * @param fullname the controller full name
 	 * @return the controller or null if no controller was found.
 	 */
 	public GrailsControllerClass getController(String fullname);
