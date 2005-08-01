@@ -21,33 +21,8 @@
     <delete file="TemplatePage.html"/>
 
     <ant dir="spec" target="clean"/> 
-    <ant dir="tck" target="clean"/> 
     <ant dir="ideas/parsers/antlr" target="clean"/>
   </target>
-
-  <target name="compile">
-    <echo>
---------------------
-copies the parser...
---------------------
-    </echo>
-
-    <!-- place parser in tck -->
-    <copy todir="tck/testlib">
-      <fileset dir="../groovy-core/target/install/embeddable"/>
-    </copy>
-  </target>
-
-
-  <target name="test" depends="compile">
-    <echo>
---------------------------------------
-execute the tck over the new parser...
---------------------------------------
-    </echo>
-    <ant dir="tck" target="pretty-test" inheritAll="false"/>
-  </target>
-
 
   <target name="doc">
     <echo>
@@ -60,15 +35,12 @@ render specification...
     <copy file="spec/SearchAndReplaceRegex" todir="."/>
     <copy file="spec/TemplatePage.html" todir="."/>
     <ant dir="spec" target="render" inheritAll="false"/>
-  </target>
 
-  <target name="dist" depends="test,doc" description="create distributables"/>
-
-  <target name="publish" depends="dist" description="publish distributables">
-    <copy todir="${publish.dir}/spec">
-      <fileset dir="${spec.wiki.dir}"/>
-    </copy>
-
+    <echo>
+-----------------------
+render grammar...
+-----------------------
+    </echo>
     <!-- bring grammar over from groovy-core -->
     <copy todir="ideas/parsers/antlr/src">
       <fileset dir="../groovy-core/src/main">
@@ -77,15 +49,20 @@ render specification...
     </copy>
 
     <ant dir="ideas/parsers/antlr" target="docs" inheritAll="false"/>
+
+
+  </target>
+
+  <target name="publish" depends="doc" description="publish distributables">
+    <copy todir="${publish.dir}/spec">
+      <fileset dir="${spec.wiki.dir}"/>
+    </copy>
+
     <copy todir="${publish.dir}/spec">
       <fileset dir="ideas/parsers/antlr/doc/">
         <include name="GroovyRecognizer.html"/>
         <include name="GroovyLexer.html"/>
       </fileset>
-    </copy>
-
-    <copy todir="${publish.dir}/tck">
-      <fileset dir="tck/reports"/>
     </copy>
   </target>
 
