@@ -38,21 +38,23 @@
 	</target>
 	
 	<target name="test" depends="build-test">
-		<junit>
+        <delete dir="${grails.test.reports}"/>
+        <mkdir dir="${grails.test.reports}"/>
+        <junit>
 			<classpath refid="classpath"/>
 			<classpath location="${grails.build}"/>
 			<classpath location="${grails.test.build}"/>
 			<classpath location="${grails.test.src.web}"/>
 			<classpath location="${grails.test.src.commons}"/>
 			
-			<formatter type="plain" usefile="no"/>
-			<formatter type="xml"/>
-			<batchtest todir="${grails.test.reports}" fork="yes">
+			<formatter type="brief" />
+			<batchtest todir="${grails.test.reports}" fork="yes" failureproperty="grails.test.failure">
 				<fileset dir="${grails.test.build}" includes="**/*Tests.class" excludes="**/Abstract*"/>
 			</batchtest>
 			
 		</junit>
-	</target>
+        <fail if="grails.test.failure">The tests failed. Have a look at ${grails.test.reports}</fail>
+    </target>
 	
 	<target name="jar" depends="build-test">
 		<delete file="${grails.dist}/${grails.dist.jar}"/>
@@ -65,7 +67,7 @@
 		
 		<javadoc sourcepath="${grails.src.commons},${grails.src.web}" destdir="${grails.javadoc}" windowtitle="Grails ${grails.version}" source="1.3" access="package" author="true" version="true" use="true" defaultexcludes="true">
 			<doctitle><![CDATA[<h1>Grails</h1>]]></doctitle>
-			<bottom><![CDATA[<i>Copyright (c) 2005 The Grails project]]></bottom>
+			<bottom><![CDATA[<i>Copyright (c) 2005 The Grails project</i>]]></bottom>
 			<classpath refid="classpath"/>
 			<packageset dir="${grails.src.commons}">
 				<include name="org/codehaus/groovy/grails/**"/>
