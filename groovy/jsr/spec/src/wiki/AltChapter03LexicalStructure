@@ -21,24 +21,32 @@ bq. http://www.unicode.org
 The Java platform tracks the Unicode specification as it evolves. 
 The precise version of Unicode used by a given release is specified in the documentation of the class {{Character}}.
 
-Versions of the Groovy programming language up to and including 1.0 final use Unicode version 3.0. 
+Versions of the Groovy programming language up to and including 1.0 final use Unicode version 3.0 because J2SE 1.4 does. 
 Upgrades to newer versions of the Unicode Standard occurred in J2SE 5.0 (to Unicode 4.0). 
 
+*J2SE 5.0+*
 The Unicode standard was originally designed as a fixed-width 16-bit character encoding. 
 It has since been changed to allow for characters whose representation requires more than 16 bits. 
-The range of legal code points is now U+0000 to U+10FFFF, using the hexadecimal U+n _notation_. 
+The range of legal code points since J2SE 5.0 is now U+0000 to U+10FFFF, using the hexadecimal U+n _notation_. 
 Characters whose code points are greater than U+FFFF are called supplementary characters.
 To represent the complete range of characters using only 16-bit units, the Unicode standard defines an encoding called UTF-16.
-In this encoding, supplementary characters are representedas pairs of 16-bit code units, the first from the high-surrogates range, (U+D800 to U+DBFF), the second from the low-surrogates range (U+DC00 to U+DFFF). 
+In this encoding, supplementary characters are represented as pairs of 16-bit code units, the first from the high-surrogates range, (U+D800 to U+DBFF), the second from the low-surrogates range (U+DC00 to U+DFFF). 
 For characters in the range U+0000 to U+FFFF, the values of codepoints and UTF-16 code units are the same. 
 
+*Either J2SE 1.4*
+The Groovy programming language represents text in sequences of 8-bit characters, using the UTF-8 encoding.
+
+*Or J2SE 5.0+*
 The Groovy programming language represents text in sequences of 16-bit code units, using the UTF-16 encoding.
 A few APIs, primarily in the {{Character}} class, use 32-bit integers to represent code points as individual entities.
 The Java platform provides methods to convert between the two representations.
 
 This book uses the terms _code_ _point_ and _UTF-16_ _code_ _unit_ where the representation is relevant, and the generic term _character_ where the representation is irrelevant to the discussion.
 
-Except for comments ($3.7), identifiers, and the contents of character and string literals ($3.10.4)($3.10.5), all input elements ($3.5) in a program are formed only from ASCII characters (or Unicode escapes ($3.3) which result in ASCII characters). ASCII (ANSI X3.4) is the American Standard Code for Information Interchange. The first 128 characters of the Unicode character encoding are the ASCII characters. 
+*All Platforms*
+Except for comments ($3.7), identifiers, and the contents of string literals ($3.10.5), all input elements ($3.5) in a program are formed only from ASCII characters (or Unicode escapes ($3.3) which result in ASCII characters). ASCII (ANSI X3.4) is the American Standard Code for Information Interchange. The first 128 characters of the Unicode character encoding are the ASCII characters. 
+
+Note: Groovy has no character literals, see ($3.10.4)
 
 {anchor:3.2}
 h2. 3.2 Lexical Translations
@@ -46,3 +54,44 @@ h2. 3.2 Lexical Translations
 A raw Unicode character stream is translated into a sequence of tokens, using the following three lexical translation steps, which are applied in turn:
 
 1. A translation of Unicode escapes ($3.3) in the raw stream of Unicode characters to the corresponding Unicode character. A Unicode escape of the form {{\\\uxxxx}}, where {{xxxx}} is a hexadecimal value, represents the UTF-16 code unit whose encoding is {{xxxx}}. This translation step allows any program to be expressed using only ASCII characters.
+1. A translation of the Unicode stream resulting from step 1 into a stream of input characters and line terminators ($3.4).
+1. A translation of the stream of input characters and line terminators resulting from step 2 into a sequence of input elements ($3.5) which, after white space ($3.6) and comments ($3.7) are discarded, comprise the tokens ($3.5) that are the terminal symbols of the syntactic grammar ($2.3).
+
+The longest possible translation is used at each step, even if the result does not ultimately make a correct program while another lexical translation would. Thus the input characters {{a\-\-b}} are tokenized ($3.5) as {{a}}, {{--}}, {{b}}, which is not part of any grammatically correct program, even though the tokenization {{a}}, {{-}}, {{-}}, {{b}} could be part of a grammatically correct program. 
+
+{anchor:3.3}
+h2. 3.3 Unicode Escapes
+
+Implementations first recognize _Unicode_ _escapes_ in their input, translating the ASCII characters {{\u}} followed by four hexadecimal digits to the UTF-8 or UTF-16 code unit ($3.1) with the indicated hexadecimal value, and passing all other characters unchanged. 
+
+*J2SE 5.0+*
+Representing supplementary characters requires two consecutive Unicode escapes. 
+
+*All Platforms*
+This translation step results in a sequence of Unicode input characters:
+{code}
+UnicodeInputCharacter:
+  UnicodeEscape
+  RawInputCharacter
+
+UnicodeEscape:
+  '\\\' UnicodeMarker HexDigit HexDigit HexDigit HexDigit
+
+UnicodeMarker:
+  'u'
+  UnicodeMarker 'u'
+  
+RawInputCharacter:
+  any Unicode character
+
+HexDigit: one of
+  '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 
+  'a' 'b' 'c' 'd' 'e' 'f' 
+  'A' 'B' 'C' 'D' 'E' 'F'
+{code}
+
+The {{\\\}}, {{u}}, and hexadecimal digits here are all ASCII characters.
+
+In addition to the processing implied by the grammar, for each raw input character that is a backslash {{\\\}}, input processing must consider how many other \ characters contiguously precede it, separating it from a non-{{\\\}} character or the start of the input stream. If this number is even, then the {{\\\}} is eligible to begin a Unicode escape; if the number is odd, then the {{\\\}} is not eligible to begin a Unicode escape. For example, the raw input {{"\\\\\\u0061=\\\u0061"}} results in the eleven characters {{" \\\ \\\ u 0 0 6 1 = a "}} ({{\\\u0061}} is the Unicode encoding of the character "a").
+
+If an eligible {{\\\}} is not followed by {{u}}, then it is treated as a _RawInputCharacter_ and remains part of the escaped Unicode stream. If an eligible {{\\\}} is followed by {{u}}, or more than one {{u}}, and the last {{u}} is not followed by four hexadecimal digits, then a compile-time error occurs.
