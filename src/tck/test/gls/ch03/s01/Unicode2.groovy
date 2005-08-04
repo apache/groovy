@@ -5,6 +5,8 @@ package gls.ch03.s01;
  *
  * TODO: Find a better way to test these things
  * Note that this is a little hard to test since the input file is ASCII.
+ *
+ * @author Jeremy Rayner
  */
 
 class Unicode2 extends GroovyTestCase {

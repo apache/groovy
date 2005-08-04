@@ -18,7 +18,9 @@ public class UberTestCaseTCK extends TestCase {
 
 	suite.addTestSuite(gls.ch03.s02.Longest1Test.class);
 	suite.addTestSuite(gls.ch03.s02.LexicalTranslation1Test.class);
-
+        
+        suite.addTestSuite(gls.ch03.s03.UnicodeEscapes1Test.class);
+        // todo suite.addTestSuite(gls.ch03.s03.UnicodeEscapes2Test.class); 
         return suite;
     }
 }
