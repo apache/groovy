@@ -33,10 +33,6 @@ To represent the complete range of characters using only 16-bit units, the Unico
 In this encoding, supplementary characters are represented as pairs of 16-bit code units, the first from the high-surrogates range, (U+D800 to U+DBFF), the second from the low-surrogates range (U+DC00 to U+DFFF). 
 For characters in the range U+0000 to U+FFFF, the values of codepoints and UTF-16 code units are the same. 
 
-*Either J2SE 1.4*
-The Groovy programming language represents text in sequences of 8-bit characters, using the UTF-8 encoding.
-
-*Or J2SE 5.0+*
 The Groovy programming language represents text in sequences of 16-bit code units, using the UTF-16 encoding.
 A few APIs, primarily in the {{Character}} class, use 32-bit integers to represent code points as individual entities.
 The Java platform provides methods to convert between the two representations.
@@ -92,6 +88,30 @@ HexDigit: one of
 
 The {{\\\}}, {{u}}, and hexadecimal digits here are all ASCII characters.
 
-In addition to the processing implied by the grammar, for each raw input character that is a backslash {{\\\}}, input processing must consider how many other \ characters contiguously precede it, separating it from a non-{{\\\}} character or the start of the input stream. If this number is even, then the {{\\\}} is eligible to begin a Unicode escape; if the number is odd, then the {{\\\}} is not eligible to begin a Unicode escape. For example, the raw input {{"\\\\\\u0061=\\\u0061"}} results in the eleven characters {{" \\\ \\\ u 0 0 6 1 = a "}} ({{\\\u0061}} is the Unicode encoding of the character "a").
+In addition to the processing implied by the grammar, for each raw input character that is a backslash {{\\\}}, input processing must consider how many other \ characters contiguously precede it, separating it from a non-{{\\\}} character or the start of the input stream.
+If this number is even, then the {{\\\}} is eligible to begin a Unicode escape; 
+if the number is odd, then the {{\\\}} is not eligible to begin a Unicode escape. 
+For example, the raw input {{"\\\\\\u0061=\\\u0061"}} results in the eleven characters {{" \\\ \\\ u 0 0 6 1 = a "}} ({{\\\u0061}} is the Unicode encoding of the character "a").
 
-If an eligible {{\\\}} is not followed by {{u}}, then it is treated as a _RawInputCharacter_ and remains part of the escaped Unicode stream. If an eligible {{\\\}} is followed by {{u}}, or more than one {{u}}, and the last {{u}} is not followed by four hexadecimal digits, then a compile-time error occurs.
+If an eligible {{\\\}} is not followed by {{u}}, then it is treated as a _RawInputCharacter_ and remains part of the escaped Unicode stream. 
+If an eligible {{\\\}} is followed by {{u}}, or more than one {{u}}, and the last {{u}} is not followed by four hexadecimal digits, then a compile-time error occurs.
+
+The character produced by a Unicode escape does not participate in further
+Unicode escapes. 
+For example, the raw input {{\\\u005cu005a}} results in the six characters {{\\\ u 0 0 5 a}}, because {{005c}} is the Unicode value for {{\\\}}. 
+It does not result in the character {{Z}}, which is Unicode character {{005a}}, because the {{\\\}} that resulted from the {{\\\u005c}} is not interpreted as the start of a further Unicode escape.
+
+The Groovy programming language specifies a standard way of transforming a program written in Unicode into ASCII that changes a program into a form that can be processed by ASCII-based tools.
+The transformation involves converting any Unicode escapes in the source text of the program to ASCII by adding an extra {{u}} - for example, {{\\\uxxxx}} becomes {{\\\uuxxxx}} - while simultaneously converting non-ASCII characters in the source text to Unicode escapes containing a single {{u}} each.
+
+This transformed version is equally acceptable to a compiler for the Groovy programming language ("Groovy compiler") and represents the exact same program.
+The exact Unicode source can later be restored from this ASCII form by converting each escape sequence where multiple {{u}}'s are present to a sequence of Unicode characters with one fewer {{u}}, while simultaneously converting each escape sequence with a single u to the corresponding single Unicode character.
+
+Implementations should use the {{\\\uxxxx}} notation as an output format to display Unicode characters when a suitable font is not available.
+
+{anchor:3.4}
+h2. 3.4 Line Terminators
+
+Implementations next divide the sequence of Unicode input characters into lines by recognizing _line_ _terminators_. 
+This definition of lines determines the line numbers produced by a Java compiler or other system component. 
+It also specifies the termination of the {{//}} form of a comment ($3.7).

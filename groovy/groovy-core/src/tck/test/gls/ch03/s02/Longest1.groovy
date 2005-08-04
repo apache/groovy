@@ -9,6 +9,8 @@ package gls.ch03.s02
  * it, other tests (e.g. to test functionality of operators or identifier
  * names) would expose it quickly. Nevertheless, we test some combinations
  * here for consistency.
+ *
+ * @author Alan Green
  */
 class Longest1 extends GroovyTestCase {
 
