@@ -35,13 +35,16 @@
 package groovy.lang;
 
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @author Kim Pilho
+ * @author Pilho Kim
  * @version $Revision$
  */
 public class MetaBeanProperty extends MetaProperty {
@@ -56,6 +59,9 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     /**
+     * Get the property of the given object.
+     *
+     * @param object which to be got
      * @return the property of the given object
      * @throws Exception if the property could not be evaluated
      */
@@ -68,7 +74,7 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     /**
-     * Sets the property on the given object to the new value
+     * Set the property on the given object to the new value.
      *
      * @param object   on which to set the property
      * @param newValue the new value of the property
@@ -84,80 +90,17 @@ public class MetaBeanProperty extends MetaProperty {
             if (getType() == String.class && !(newValue instanceof String)) {
                 newValue = newValue.toString();
             }
-
-            // Set property for primitive types
-            if (newValue instanceof java.math.BigDecimal) {
-                if (getType() == Double.class) {
-                    newValue = new Double(((java.math.BigDecimal) newValue).doubleValue());
-                }
-                else if (getType() == Float.class) {
-                    newValue = new Float(((java.math.BigDecimal) newValue).floatValue());
-                }
-                else if (getType() == Long.class) {
-                    newValue = new Long(((java.math.BigDecimal) newValue).longValue());
-                }
-                else if (getType() == Integer.class) {
-                    newValue = new Integer(((java.math.BigDecimal) newValue).intValue());
-                }
-                else if (getType() == Short.class) {
-                    newValue = new Short((short) ((java.math.BigDecimal) newValue).intValue());
-                }
-                else if (getType() == Byte.class) {
-                    newValue = new Byte((byte) ((java.math.BigDecimal) newValue).intValue());
-                }
-                else if (getType() == Character.class) {
-                    newValue = new Character((char) ((java.math.BigDecimal) newValue).intValue());
-                }
-            }
-            else if (newValue instanceof java.math.BigInteger) {
-                if (getType() == Long.class) {
-                    newValue = new Long(((java.math.BigInteger) newValue).longValue());
-                }
-                else if (getType() == Integer.class) {
-                    newValue = new Integer(((java.math.BigInteger) newValue).intValue());
-                }
-                else if (getType() == Short.class) {
-                    newValue = new Short((short) ((java.math.BigInteger) newValue).intValue());
-                }
-                else if (getType() == Byte.class) {
-                    newValue = new Byte((byte) ((java.math.BigInteger) newValue).intValue());
-                }
-                else if (getType() == Character.class) {
-                    newValue = new Character((char) ((java.math.BigInteger) newValue).intValue());
-                }
-            }
-            else if (newValue instanceof java.lang.Long) {
-                if (getType() == Integer.class) {
-                    newValue = new Integer(((Long) newValue).intValue());
-                }
-                else if (getType() == Short.class) {
-                    newValue = new Short(((Long) newValue).shortValue());
-                }
-                else if (getType() == Byte.class) {
-                    newValue = new Byte(((Long) newValue).byteValue());
-                }
-                else if (getType() == Character.class) {
-                    newValue = new Character((char) ((Long) newValue).intValue());
-                }
-            }
-            else if (newValue instanceof java.lang.Integer) {
-                if (getType() == Short.class) {
-                    newValue = new Short(((Integer) newValue).shortValue());
-                }
-                else if (getType() == Byte.class) {
-                    newValue = new Byte(((Integer) newValue).byteValue());
-                }
-                else if (getType() == Character.class) {
-                    newValue = new Character((char) ((Integer) newValue).intValue());
-                }
+            else {
+                // Set property for primitive types
+                newValue = coercePrimitiveValue(newValue, getType());
             }
 
-            setter.invoke(object, new Object[]{newValue});
+            setter.invoke(object, new Object[] { newValue });
         }
         catch (IllegalArgumentException e) {    // exception for executing as scripts
             try {
                 newValue = InvokerHelper.asType(newValue, getType());
-                setter.invoke(object, new Object[]{newValue});
+                setter.invoke(object, new Object[] { newValue });
             }
             catch (Exception ex) {
                 throw new TypeMismatchException("The property '" + toName(object.getClass()) + "." + name
@@ -186,6 +129,188 @@ public class MetaBeanProperty extends MetaProperty {
         }
     }
 
+    /**
+     * Coerce the object <code>src</code> to the target class.
+     */
+    protected static Object coercePrimitiveValue(Object src, Class target) {
+        Object newValue = src;
+
+        if (newValue instanceof BigDecimal) {
+            if (target == java.math.BigInteger.class) {
+                newValue = ((BigDecimal) newValue).unscaledValue();
+            }
+            else if (target == Double.class) {
+                newValue = new Double(((BigDecimal) newValue).doubleValue());
+            }
+            else if (target == Float.class) {
+                newValue = new Float(((BigDecimal) newValue).floatValue());
+            }
+            else if (target == Long.class) {
+                newValue = new Long(((BigDecimal) newValue).longValue());
+            }
+            else if (target == Integer.class) {
+                newValue = new Integer(((BigDecimal) newValue).intValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short((short) ((BigDecimal) newValue).intValue());
+            }
+            else if (target == Byte.class) {
+                newValue = new Byte((byte) ((BigDecimal) newValue).intValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((BigDecimal) newValue).intValue());
+            }
+        }
+        else if (newValue instanceof BigInteger) {
+            if (target == BigDecimal.class) {
+                newValue = new BigDecimal((BigInteger) newValue);
+            }
+            else if (target == Double.class) {
+                newValue = new Double(((java.math.BigInteger) newValue).doubleValue());
+            }
+            else if (target == Float.class) {
+                newValue = new Float(((java.math.BigInteger) newValue).floatValue());
+            }
+            else if (target == Long.class) {
+                newValue = new Long(((java.math.BigInteger) newValue).longValue());
+            }
+            else if (target == Integer.class) {
+                newValue = new Integer(((java.math.BigInteger) newValue).intValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short((short) ((java.math.BigInteger) newValue).intValue());
+            }
+            else if (target == Byte.class) {
+                newValue = new Byte((byte) ((java.math.BigInteger) newValue).intValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((java.math.BigInteger) newValue).intValue());
+            }
+        }
+        else if (newValue instanceof java.lang.Long) {
+            if (target == Integer.class) {
+                newValue = new Integer(((Long) newValue).intValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short(((Long) newValue).shortValue());
+            }
+            else if (target == Byte.class) {
+                newValue = new Byte(((Long) newValue).byteValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((Long) newValue).intValue());
+            }
+            else if (target == BigInteger.class) {
+                newValue = new BigInteger("" + newValue);
+            }
+            else if (target == BigDecimal.class) {
+                newValue = new BigDecimal("" + newValue);
+            }
+        }
+        else if (newValue instanceof java.lang.Integer) {
+            if (target == Double.class) {
+                newValue = new Double(((Integer) newValue).intValue());
+            }
+            else if (target == Float.class) {
+                newValue = new Float(((Integer) newValue).floatValue());
+            }
+            else if (target == Long.class) {
+                newValue = new Long(((Integer) newValue).intValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short(((Integer) newValue).shortValue());
+            }
+            else if (target == Byte.class) {
+                newValue = new Byte(((Integer) newValue).byteValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((Integer) newValue).intValue());
+            }
+            else if (target == BigDecimal.class) {
+                newValue = new BigDecimal("" + newValue);
+            }
+            else if (target == BigInteger.class) {
+                newValue = new BigInteger("" + newValue);
+            }
+        }
+        else if (newValue instanceof java.lang.Short) {
+            if (target == Double.class) {
+                newValue = new Double(((Short) newValue).shortValue());
+            }
+            else if (target == Float.class) {
+                newValue = new Float(((Short) newValue).shortValue());
+            }
+            else if (target == Long.class) {
+                newValue = new Long(((Short) newValue).shortValue());
+            }
+            else if (target == Integer.class) {
+                newValue = new Integer(((Short) newValue).shortValue());
+            }
+            else if (target == Byte.class) {
+                newValue = new Byte((byte) ((Short) newValue).shortValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((Short) newValue).shortValue());
+            }
+            else if (target == BigDecimal.class) {
+                newValue = new BigDecimal("" + newValue);
+            }
+            else if (target == BigInteger.class) {
+                newValue = new BigInteger("" + newValue);
+            }
+        }
+        else if (newValue instanceof java.lang.Byte) {
+            if (target == Double.class) {
+                newValue = new Double(((Byte) newValue).byteValue());
+            }
+            else if (target == Float.class) {
+                newValue = new Float(((Byte) newValue).byteValue());
+            }
+            else if (target == Long.class) {
+                newValue = new Long(((Byte) newValue).byteValue());
+            }
+            else if (target == Integer.class) {
+                newValue = new Integer(((Byte) newValue).byteValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short(((Byte) newValue).byteValue());
+            }
+            else if (target == Character.class) {
+                newValue = new Character((char) ((Byte) newValue).byteValue());
+            }
+            else if (target == BigDecimal.class) {
+                newValue = new BigDecimal("" + newValue);
+            }
+            else if (target == BigInteger.class) {
+                newValue = new BigInteger("" + newValue);
+            }
+        }
+        else if (newValue instanceof java.lang.Character) {
+            if (target == Double.class) {
+                newValue = new Double(((int) ((Character) newValue).charValue() & 0xFFFF));
+            }
+            else if (target == Long.class) {
+                newValue = new Long((long) ((Character) newValue).charValue());
+            }
+            else if (target == Integer.class) {
+                newValue = new Integer((int) ((Character) newValue).charValue());
+            }
+            else if (target == Short.class) {
+                newValue = new Short((short) ((Character) newValue).charValue());
+            }
+            else if (target == BigDecimal.class) {
+                newValue = new BigDecimal("" + ((int) ((Character) newValue).charValue() & 0xFFFF));
+            }
+            else if (target == BigInteger.class) {
+                newValue = new BigInteger("" + ((int) ((Character) newValue).charValue() & 0xFFFF));
+            }
+            else if (target == String.class) {
+                newValue = new String("" + newValue);
+            }
+        }
+        return newValue;
+    }
+
     private String toName(Class c) {
         String s = c.toString();
         if (s.startsWith("class ") && s.length() > 6) {
@@ -196,23 +321,30 @@ public class MetaBeanProperty extends MetaProperty {
         }
     }
 
+
+    /**
+     * Get the getter method.
+     */
     public MetaMethod getGetter() {
         return getter;
     }
 
+    /**
+     * Get the setter method.
+     */
     public MetaMethod getSetter() {
         return setter;
     }
 
     /**
-     * this is for MetaClass to patch up the object later when looking for get*() methods
+     * This is for MetaClass to patch up the object later when looking for get*() methods.
      */
     void setGetter(MetaMethod getter) {
         this.getter = getter;
     }
 
     /**
-     * this is for MetaClass to patch up the object later when looking for set*() methods
+     * This is for MetaClass to patch up the object later when looking for set*() methods.
      */
     void setSetter(MetaMethod setter) {
         this.setter = setter;
