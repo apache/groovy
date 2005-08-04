@@ -1691,13 +1691,21 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression constructorCallExpression(AST node) {
+        AST constructorCallNode = node;
+        String name = resolvedName(constructorCallNode);
+
         if (isType(CTOR_CALL, node) || isType(LITERAL_new, node)) {
             node = node.getFirstChild();
         }
-        AST constructorCallNode = node;
 
-        String name = resolvedName(node);
         AST elist = node.getNextSibling();
+
+        if (elist == null && isType(ELIST, node)) {
+            elist = node;
+            if ("(".equals(name.toString())) {
+                name = classNode.getName();
+            }
+        }
 
         if (isType(ARRAY_DECLARATOR, elist)) {
             AST expressionNode = elist.getFirstChild();
@@ -1706,7 +1714,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
             Expression size = expression(expressionNode);
             ArrayExpression arrayExpression = new ArrayExpression(name, size);
-            configureAST(arrayExpression, node);
+            configureAST(arrayExpression, constructorCallNode);
             return arrayExpression;
         }
         Expression arguments = arguments(elist);
