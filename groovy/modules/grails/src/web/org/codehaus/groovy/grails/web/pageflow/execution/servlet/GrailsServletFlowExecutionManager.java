@@ -64,6 +64,11 @@ public class GrailsServletFlowExecutionManager extends
 	public GrailsServletFlowExecutionManager(FlowLocator flowLocator) {
 		super(flowLocator);
 	}
+
+	protected Event createEvent(HttpServletRequest request,
+			HttpServletResponse response) {
+		return super.createEvent(request, response);
+	}
 	
 	protected String getFlowExecutionId(Event event) {
 		if (event instanceof ServletEvent) {			
@@ -71,6 +76,7 @@ public class GrailsServletFlowExecutionManager extends
 			if (StringUtils.isBlank(flowExecutionId)) {
 				String resetValue = (String)event.getParameter(RESET_PARAMETER);
 				if (StringUtils.isNotBlank(resetValue) && TRUE.equals(resetValue)) {
+					((ServletEvent)event).getRequest().setAttribute(RESET_PARAMETER, TRUE);
 					return null;
 				}
 				Cookie[] cookies = ((ServletEvent)event).getRequest().getCookies();
@@ -128,11 +134,16 @@ public class GrailsServletFlowExecutionManager extends
 			}
 		});
 		
-		if (created[0]) {
-			Cookie flowExecutionIdCookie = new Cookie(FLOW_EXECUTION_ID_COOKIE_NAME, (String)viewDescriptor.getAttribute(FLOW_EXECUTION_ID_ATTRIBUTE));
+		Cookie flowExecutionIdCookie = null;
+		if (request.getAttribute(RESET_PARAMETER) != null && request.getAttribute(RESET_PARAMETER).equals(TRUE)) {
+			flowExecutionIdCookie = new Cookie(FLOW_EXECUTION_ID_COOKIE_NAME, "");
+		} else if (created[0]) {
+			flowExecutionIdCookie = new Cookie(FLOW_EXECUTION_ID_COOKIE_NAME, (String)viewDescriptor.getAttribute(FLOW_EXECUTION_ID_ATTRIBUTE));
+		}
+		if (flowExecutionIdCookie != null) {
 			response.addCookie(flowExecutionIdCookie);
 		}
-		
+
 		return viewDescriptor;
 	}
 }
