@@ -109,6 +109,11 @@
       <name>1.0-JSR-02</name>
       <tag>GROOVY_1_0_JSR_02</tag>
     </version>
+    <version>
+      <id>jsr03</id>
+      <name>1.0-JSR-03</name>
+      <tag>GROOVY_1_0_JSR_03</tag>
+    </version>
   </versions>
 
   <mailingLists>
