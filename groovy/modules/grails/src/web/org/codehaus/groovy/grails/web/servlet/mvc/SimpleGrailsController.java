@@ -17,6 +17,7 @@ package org.codehaus.groovy.grails.web.servlet.mvc;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
+import groovy.lang.ParameterArray;
 
 import java.util.Map;
 
@@ -112,9 +113,9 @@ public class SimpleGrailsController implements Controller, ApplicationContextAwa
 		Object returnValue = null;
 		if (closure.getParameterTypes().length == 1) {
 			// closure may have zero or one parameter, we cannot be sure.
-			returnValue = closure.call(new Object[] { new GrailsHttpServletRequest(request) });
+			returnValue = closure.call(new ParameterArray(new Object[] { new GrailsHttpServletRequest(request) }));
 		} else if (closure.getParameterTypes().length == 2) {
-			returnValue = closure.call(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) });
+			returnValue = closure.call(new ParameterArray(new Object[] { new  GrailsHttpServletRequest(request), new GrailsHttpServletResponse(response) }));
 		} else {
 			throw new IncompatibleParameterCountException("Closure on property [" + closurePropertyName + "] in [" + controllerClass.getFullName() + "] has an incompatible parameter count [" + closure.getParameterTypes().length + "]! Supported values are 0 and 2.");
 		}
