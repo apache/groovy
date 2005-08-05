@@ -6,6 +6,7 @@
 		<property environment="env"/>
 		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
 		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<mkdir dir="src"/>
 		<mkdir dir="jsp"/>
 		<mkdir dir="grails-app"/>
 		<mkdir dir="lib"/>
@@ -13,6 +14,7 @@
 		<mkdir dir="html"/>
 		<mkdir dir="war"/>
 		<mkdir dir="war/WEB-INF"/>
+		<mkdir dir="war/WEB-INF/classes"/>
 		<copy todir="war/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="applicationContext.xml"/>
@@ -29,6 +31,44 @@
 	<target name="clean">
 		<delete file="grails-app.war"/>
 		<delete dir="tmp"/>
+	</target>
+	
+	<target name="build">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<path id="classpath">
+			<fileset dir="lib"/>
+			<fileset dir="${grails.home}/lib"/>
+			<fileset dir="${grails.home}/dist"/>
+		</path>
+		<delete>
+			<fileset dir="war/WEB-INF/classes"/>
+		</delete>
+		<javac srcdir="src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+	</target>
+	
+	<target name="test" depends="build">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<delete dir="tmp/reports"/>
+		<mkdir dir="tmp/reports"/>
+		<path id="test_classpath">
+			<fileset dir="lib"/>
+			<fileset dir="${grails.home}/lib"/>
+			<fileset dir="${grails.home}/dist"/>
+			<path location="war/WEB-INF/classes"/>
+		</path>
+		<junit>
+			<classpath refid="test_classpath"/>
+			
+			<formatter type="plain" usefile="no"/>
+			<formatter type="xml"/>
+			<batchtest todir="tmp/reports" fork="yes">
+				<fileset dir="war/WEB-INF/classes" includes="**/*Tests.class" excludes="**/Abstract*"/>
+			</batchtest>			
+		</junit>
 	</target>
 	
 	<target name="war">
@@ -83,6 +123,9 @@
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
+		</copy>
+		<copy todir="tmp/war/WEB-INF/classes">
+			<fileset dir="war/WEB-INF/classes"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
 			<fileset dir="jsp" includes="**"/>
