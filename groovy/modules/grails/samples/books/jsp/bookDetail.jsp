@@ -18,7 +18,6 @@
       </spring:hasBindErrors>
       <form method="POST">
          <fieldset>
-            <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
             <input type="hidden" name="_eventId" value="save">
             <spring:bind path="bookDetail.id">
                <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookId"/>
@@ -37,7 +36,6 @@
          </fieldset>
       </form>
       <form method="POST">
-         <input type="hidden" name="_flowExecutionId" value="<c:out value="${flowExecutionId}"/>">
          <input type="hidden" name="_eventId" value="close">
          <input type="submit" value="Close" id="close">
       </form>

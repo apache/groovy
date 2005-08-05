@@ -15,8 +15,6 @@
 <h1>Book list</h1>
 
 <form method="POST">
-    <input type="hidden" name="_flowExecutionId"
-           value="<c:out value="${flowExecutionId}"/>">
     <input type="hidden" name="_eventId" value="addBook">
     <input type="submit" value="Add book ..." id="addbook">
 </form>
@@ -35,8 +33,6 @@
                 <td><c:out value="${book.author}"/></td>
                 <td>
                     <form method="POST">
-                        <input type="hidden" name="_flowExecutionId"
-                               value="<c:out value="${flowExecutionId}"/>">
                         <input type="hidden" name="_eventId"
                                value="detail">
                         <input type="hidden" name="id"
