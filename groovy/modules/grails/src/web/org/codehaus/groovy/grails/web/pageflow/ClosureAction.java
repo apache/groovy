@@ -48,7 +48,7 @@ public class ClosureAction implements Action {
 	}
 
 	public Event execute(RequestContext requestContext) throws Exception {
-		Object result = this.closure.call(new Object[] { requestContext });
+		Object result = this.closure.call(requestContext);
 		
 		if (result == null) {
 			throw new InvalidClosureReturnValueException("Null value returned by action closure of state [" + stateId + "] in page flow [" + flowId + "]!");
