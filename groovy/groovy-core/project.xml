@@ -502,12 +502,18 @@
     <dependency>
       <groupId>jmock</groupId>
       <artifactId>jmock</artifactId>
+      <version>1.0.1</version>
+      <!--
       <version>SNAPSHOT</version>
+      -->
     </dependency>
     <dependency>
       <groupId>jmock</groupId>
       <artifactId>jmock-cglib</artifactId>
+      <version>1.0.1</version>
+      <!--
       <version>SNAPSHOT</version>
+      -->
     </dependency>
     <dependency>
         <groupId>cglib</groupId>
