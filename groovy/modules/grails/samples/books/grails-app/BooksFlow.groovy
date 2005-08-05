@@ -25,9 +25,15 @@ class BooksPageFlow {
         return SUCCESS_TOKEN
     }
 
+// Calling this closure from findBook doesn't work, don't know why
+// groovy.lang.MissingMethodException: No signature of method BooksPageFlow$_closure3.getBooks() is applicable for argument types: [...]
     Closure getBooks = { requestContext ->
-       return requestContext.flowScope[BOOK_COLLECTION_KEY]
+       return getBooks(requestContext)
     }
+
+	def getBooks(requestContext) {
+		return requestContext.flowScope[BOOK_COLLECTION_KEY]
+	}
 
     Closure findBook = { requestContext ->
         def bookCommand = requestContext.requestScope[BOOK_DETAIL_KEY]
@@ -53,7 +59,16 @@ class BooksPageFlow {
         return SUCCESS_TOKEN
     }
 
-	Closure getSequence = { requestContext ->
+// Calling this closure from addBook doesn't work, don't know why.
+// groovy.lang.MissingMethodException: No signature of method BooksPageFlow$_closure6.getSequence() is applicable for argument types: [...]
+//	Closure getSequence = { requestContext ->
+//        def sequence = requestContext.flowScope[BOOK_SEQUENCE_NO_KEY]
+//        sequence++
+//        requestContext.flowScope[BOOK_SEQUENCE_NO_KEY] = sequence
+//		return sequence
+//	}
+
+	def getSequence(requestContext) {
         def sequence = requestContext.flowScope[BOOK_SEQUENCE_NO_KEY]
         sequence++
         requestContext.flowScope[BOOK_SEQUENCE_NO_KEY] = sequence
