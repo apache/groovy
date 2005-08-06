@@ -42,7 +42,15 @@ def deploy () {
     ant.copy(file:'grails-app.war', todir: targetDir)
 }
 
-def server (String command, boolean doPrint) {
+def withServer (Closure yield) {
+    if (props.serverDir =~ /\b5./) {
+        withTomcat5(yield)
+        return
+    }
+    withUnknownServer(yield)
+}
+
+def unknownServer (String command, boolean doPrint) {
     def filename = 'server-out.txt'
     ant.exec(dir: props.serverDir, executable: props.executable, output: filename,
         searchpath: true ){
@@ -50,11 +58,25 @@ def server (String command, boolean doPrint) {
     }
     if (doPrint) println new java.io.File(filename).text
 }
-
-def withServer (Closure yield) {
-    server(props.serverStopCommand, false)
-    Thread.start { server(props.serverStartCommand, true) }
-    sleep 6     // wait for server startup
+def withUnknownServer (Closure yield) {
+    unknownServer(props.serverStopCommand, false)
+    Thread.start { unknownServer(props.serverStartCommand, true) }
+    sleep 10     // wait for server startup
     yield()
-    server(props.serverStopCommand, true)
+    unknownServer(props.serverStopCommand, true)
+}
+
+def tomcat (String command) {
+    ant.ant(antfile:grailsHome + '/tomcat.xml', target:command){
+        property(name:'build', value:'./')
+        property(name:'username', value:props.serverAdminUsername)
+        property(name:'password', value:props.serverAdminPassword)
+    }
+}
+def withTomcat5 (Closure yield) {
+    ant.echo(message:'*** tomcat is assumed to be running')
+    try { tomcat('undeploy') } catch (Exception mayNotYetBeThere){}
+    tomcat('deploy')
+    ant.echo(message:'tomcat deployment done')
+    yield()
 }

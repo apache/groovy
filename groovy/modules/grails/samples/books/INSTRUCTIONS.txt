@@ -47,13 +47,13 @@ Please post a message on the Grails mailing list if you experience any problems 
 
 Steven
 
-ALTERNATIVE (experimental)
-=========================
+ALTERNATIVE
+===========
 
 With a Groovy installation in place, you can build, run, and test the grails book sample by running
  groovy build.groovy
 To make this happen, you need
-- a webserver installation like tomcat
+- a webserver installation like tomcat (recommended: tomcat 5)
 - a download of Canoo WebTest from http://webtest.canoo.com/webtest/build.zip
   to a directory that is referred to as WEBTEST_HOME
 Getting the classpath for testing right, requires a bit of work.
@@ -62,8 +62,12 @@ Getting the classpath for testing right, requires a bit of work.
 - copy all jar files from WEBTEST_HOME/lib and its subdirs to
   ${user.home}/.groovy/lib (i.e. 'flat')
 - adapt the settings in build.properties to your personal needs
+  when using with tomcat 5 make sure to copy 
+  TOMCAT_HOME/server/catalina_ant.jar to ${user.home}/.groovy/lib
 
 [todo: provide an installer script]
 
-after running 'groovy build.groovy' successfully you find the test reports
+After running 'groovy build.groovy' successfully you find the test reports
 in tmp/webtest/results/WebTestResults.html
+When running on windows, this file will be automatically opened for you
+in your default browser.

@@ -1,0 +1,39 @@
+<project name="My Application" default="compile" basedir=".">
+
+  <!-- Configure the directory into which the web application is built -->
+  <property name="build"    value="PATH_TO_DIR_THAT_CONTAINS_WAR"/>     <!-- OVERRIDE FROM OUTSIDE -->
+
+  <!-- Configure the context path for this application -->
+  <property name="path"     value="/grails-app"/>
+
+  <!-- Configure properties to access the Manager application -->
+  <property name="url"      value="http://localhost:8080/manager"/>
+  <property name="username" value="NO_USER_NAME"/>                      <!-- OVERRIDE FROM OUTSIDE -->
+  <property name="password" value="NO_PASSWORD"/>                       <!-- OVERRIDE FROM OUTSIDE -->
+
+  <!-- Configure the custom Ant tasks for the Manager application -->
+  <taskdef name="deploy"    classname="org.apache.catalina.ant.DeployTask"/>
+  <taskdef name="list"      classname="org.apache.catalina.ant.ListTask"/>
+  <taskdef name="reload"    classname="org.apache.catalina.ant.ReloadTask"/>
+  <taskdef name="resources" classname="org.apache.catalina.ant.ResourcesTask"/>
+  <taskdef name="roles"     classname="org.apache.catalina.ant.RolesTask"/>
+  <taskdef name="start"     classname="org.apache.catalina.ant.StartTask"/>
+  <taskdef name="stop"      classname="org.apache.catalina.ant.StopTask"/>
+  <taskdef name="undeploy"  classname="org.apache.catalina.ant.UndeployTask"/>
+
+  <target name="deploy" description="Install web application"  >
+    <deploy url="${url}" username="${username}" password="${password}"
+            path="${path}" war="${build}${path}.war"/>
+  </target>
+
+  <target name="reload" description="Reload web application">
+      <reload  url="${url}" username="${username}" password="${password}"
+            path="${path}"/>
+  </target>
+
+  <target name="undeploy" description="Remove web application">
+    <undeploy url="${url}" username="${username}" password="${password}"
+            path="${path}"/>
+  </target>
+
+</project>
