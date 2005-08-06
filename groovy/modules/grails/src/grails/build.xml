@@ -120,6 +120,13 @@
 				<include name="jstl-${servlet.version}.jar"/>
 				<include name="commons-lang-2.0.jar"/>
 				<include name="ognl-2.7.jar"/>
+				<include name="hsqldb.jar"/>
+				<include name="commons-collections-3.0.jar"/>
+				<include name="commons-pool-1.2.jar"/>
+				<include name="commons-dbcp-1.2.1.jar"/>
+			</fileset>
+			<fileset dir="${grails.home}/lib/hibernate">
+				<include name="*.jar"/>
 			</fileset>
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
