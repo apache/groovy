@@ -1,6 +1,7 @@
 // General buildfile for the project in that's root this file is located.
 // Obeys the environment variable 'GRAILS_HOME'.
 // Adapt build.properties to you personal needs.
+// Start with argument 'test' to only run the tests without build/deploy/restart
 
 ant = new AntBuilder()
 ant.property(file:          'build.properties')
@@ -8,12 +9,19 @@ ant.property(environment:   'env')
 props = ant.antProject.properties
 
 grailsHome = initGrailsHome()
+
+if (args.toList().contains('test')){
+    startTests()
+    return
+}
+
 warApplication()
 deploy()
 
 withServer {
-    new BooksTest(ant: ant, grailsHome: grailsHome).runTests()
+    startTests()
 }
+
 
 // method implementations ---------------------------------
 
@@ -24,6 +32,10 @@ String initGrailsHome () {
     }
     println "grailsHome is <$grailsHome>"
     return grailsHome
+}
+
+def startTests(){
+    new BooksTest(ant: ant, grailsHome: grailsHome).runTests()
 }
 
 // call the general 'war' target and 'init' only if needed
