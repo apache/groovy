@@ -92,6 +92,8 @@ class BooksPageFlow {
         listBooks(view:'listBooks', model:[books:getBooks]) {
             detail('bookDetailBind')
             addBook('addBookViewBind')
+            endNoView('endNoView')
+            endView('endView')
         }
         bookDetailBind(action:bookDetailFormAction) {
             success('bookDetailFind')
@@ -116,13 +118,15 @@ class BooksPageFlow {
             save('addBookBind')
             close('listBooks')
         }
-        addBookBind(action:bookDetailFormAction, method:'bindAndValidate') {
+        addBookBind(action:bookDetailFormAction) {
             success('addBook')
             error('addBookView')
         }
         addBook(action:addBook) {
             success('listBooks')
         }
+        endNoView()
+        endView(view:'end',end:true)
     }
 }
 
