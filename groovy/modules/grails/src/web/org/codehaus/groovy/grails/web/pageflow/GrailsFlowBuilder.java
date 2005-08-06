@@ -138,6 +138,12 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 				throw new UnsupportedOperationException("Decision states are not yet supported!");
 			} else if (state.isSubflowState()) {
 				throw new UnsupportedOperationException("Subflow states are not yet supported!");
+			} else if (state.isEndState()) {
+				if (state.getViewName() != null) {
+					addEndState(state.getId(), new ModelViewDescriptorCreator(state.getViewName(), state.getViewModel()), new HashMap());
+				} else {
+					addEndState(state.getId());
+				}
 			} else {
 				throw new UnsupportedOperationException();
 			}

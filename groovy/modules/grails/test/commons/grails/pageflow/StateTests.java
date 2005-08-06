@@ -52,6 +52,11 @@ public class StateTests extends TestCase {
 		State state = new State("test");
 		state.setViewName("test");
 		state.validate();
+		assertEquals(true, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testFailTwoDiscriminatorFields() {
@@ -65,17 +70,7 @@ public class StateTests extends TestCase {
 			// expected
 		}
 	}
-	
-	public void testFailNoDiscriminatorFields() {
-		State state = new State("test");
-		try {
-			state.validate();
-            fail("validate should have thrown IllegalStateException");
-		} catch (IllegalStateException e) {
-			// expected
-		}
-	}
-	
+		
 	public void testFailWrongActionClass() {
 		State state = new State("test");
 		state.setActionClass(Object.class);
@@ -102,6 +97,11 @@ public class StateTests extends TestCase {
 		State state = new State("test");
 		state.setActionClass(FormAction.class);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(true, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testSuccessGoodActionClass2() {
@@ -112,6 +112,11 @@ public class StateTests extends TestCase {
 			}
 		}.getClass());
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(true, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testFailWrongAttributeMapperClass() {
@@ -147,6 +152,11 @@ public class StateTests extends TestCase {
 			}
 		}.getClass());
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 	
 	public void testSuccessActionAttributes1() {
@@ -155,6 +165,11 @@ public class StateTests extends TestCase {
 		attributes.put("properties", new HashMap());
 		State state = new State("myAction", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(true, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testSuccessActionAttributes2() {
@@ -163,6 +178,11 @@ public class StateTests extends TestCase {
 		attributes.put("properties", null);
 		State state = new State("myAction", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(true, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testSuccessActionAttributes3() {
@@ -171,6 +191,11 @@ public class StateTests extends TestCase {
 		attributes.put("properties", null);
 		State state = new State("myAction", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(true, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}	
 	
 	public void testFailActionAttributes1() {
@@ -195,18 +220,20 @@ public class StateTests extends TestCase {
 			// expected
 		}
 	}
-	
-	public void testFailProperties() {
-		Map attributes = new HashMap();
-		attributes.put("properties", new HashMap());
-		State state = new State("myAction", attributes);
-		try {
-			state.validate();
-            fail("validate should have thrown IllegalStateException");
-		} catch (IllegalStateException e) {
-			// expected
-		}
-	}
+
+// Ideally this test should fail but then we would have to validate for every state
+//	if properties that are not supported are not set.
+//	public void testFailProperties() {
+//		Map attributes = new HashMap();
+//		attributes.put("properties", new HashMap());
+//		State state = new State("myAction", attributes);
+//		try {
+//			state.validate();
+//            fail("validate should have thrown IllegalStateException");
+//		} catch (IllegalStateException e) {
+//			// expected
+//		}
+//	}
 	
 	public void testSuccessViewAttributes1() {
 		Map attributes = new HashMap();
@@ -214,6 +241,11 @@ public class StateTests extends TestCase {
 		attributes.put("model", new HashMap());
 		State state = new  State("myViewState", attributes);
 		state.validate();
+		assertEquals(true, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testSuccessViewAttributes2() {
@@ -222,6 +254,11 @@ public class StateTests extends TestCase {
 		attributes.put("model", null);
 		State state = new State("myViewState", attributes);
 		state.validate();
+		assertEquals(true, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testFailViewAttributes1() {
@@ -254,6 +291,11 @@ public class StateTests extends TestCase {
 		attributes.put("falseState", "someOtherState");
 		State state = new State("myDecisionState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(true, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 
 	public void testSuccessDecisionAttributes2() {
@@ -263,6 +305,11 @@ public class StateTests extends TestCase {
 		attributes.put("falseState", "someOtherState");
 		State state = new State("myDecisionState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(true, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(false, state.isSubflowState());
 	}
 	
 	public void testFailDecisionAttributes1() {
@@ -331,6 +378,11 @@ public class StateTests extends TestCase {
 		attributes.put("subflow", "someFlow");
 		State state = new State("mySubflowState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 	
 	public void testSuccessSubflowAttributes2() {
@@ -339,6 +391,11 @@ public class StateTests extends TestCase {
 		attributes.put("input", new Closure(new Object()) {});
 		State state = new State("mySubflowState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 
 	public void testSuccessSubflowAttributes3() {
@@ -347,6 +404,11 @@ public class StateTests extends TestCase {
 		attributes.put("output", new Closure(new Object()) {});
 		State state = new State("mySubflowState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 
 	public void testSuccessSubflowAttributes4() {
@@ -362,6 +424,11 @@ public class StateTests extends TestCase {
 		attributes.put("properties", new HashMap());
 		State state = new State("mySubflowState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 
 	public void testSuccessSubflowAttributes5() {
@@ -377,6 +444,11 @@ public class StateTests extends TestCase {
 		attributes.put("properties", null);
 		State state = new State("mySubflowState", attributes);
 		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(false, state.isEndState());
+		assertEquals(true, state.isSubflowState());
 	}
 
 	public void testFailSubflowAttributes1() {
@@ -439,4 +511,27 @@ public class StateTests extends TestCase {
 		}
 	}
 
+	public void testSuccessEndState1() {
+		Map attributes = new HashMap();
+		State state = new State("myEndState", attributes);
+		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(true, state.isEndState());
+		assertEquals(false, state.isSubflowState());
+	}
+	
+	public void testSuccessEndState2() {
+		Map attributes = new HashMap();
+		attributes.put("view", "someView");
+		attributes.put("end", Boolean.TRUE);
+		State state = new State("myEndState", attributes);
+		state.validate();
+		assertEquals(false, state.isViewState());
+		assertEquals(false, state.isActionState());
+		assertEquals(false, state.isDecisionState());
+		assertEquals(true, state.isEndState());
+		assertEquals(false, state.isSubflowState());
+	}
 }

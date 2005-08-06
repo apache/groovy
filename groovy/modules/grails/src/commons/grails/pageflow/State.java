@@ -39,7 +39,7 @@ import org.springframework.webflow.RequestContext;
  * or a decision state.
  * 
  * <p>One and only one of the following fields must be set, otherwise
- * an exception will be thrown:
+ * the state will be regarded as an end state:
  * 
  * <ul>
  * <li>{@link #action}
@@ -74,6 +74,7 @@ public class State {
 	private static final String TRUE_STATE = "trueState";
 	private static final String FALSE_STATE = "falseState";
 	private static final String METHOD = "method";
+	private static final String END = "end";
 	
 	/**
 	 * <p>Class that implements org.springframework.webflow.Action
@@ -165,7 +166,7 @@ public class State {
 	 * <p>The closure can have one parameter, a {@link org.springframework.webflow.RequestContext}
 	 * instance which is the request context of the parent flow.
 	 * 
-	 * <p>The return should be null or an instance of {@link Map}.
+	 * <p>The return value should be null or an instance of {@link Map}.
 	 * 
 	 * <p>{@link #attributeMapperClass} and {@link #attributeMapper} should
 	 * be null if this field is set. 
@@ -260,6 +261,8 @@ public class State {
 	 * <p>Transitions for this state.
 	 */
 	private List transitions = null;
+	
+	private boolean endState = false;
 	
 	public State(String id) {
 		super();
@@ -398,6 +401,14 @@ public class State {
 					actionMethod = (String)entry.getValue();
 				} else {
 					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] for attribute [" + METHOD + "] on state [" + id + "]!");
+				}
+			} else if (END.equals(entry.getKey())) {
+				if (entry.getValue() == null) {
+					throw new IllegalArgumentException("Value for property [" + END + "] on state [" + id + "] must not be null!");
+				} else if (entry.getValue() instanceof Boolean) {
+					endState = ((Boolean)entry.getValue()).booleanValue();
+				} else {
+					throw new IllegalArgumentException("Unsupported type [" + entry.getValue().getClass().getName() + "] for attribute [" + END + "] on state [" + id + "]!");
 				}
 			} else {
 				throw new IllegalArgumentException("Unknow property [" + entry.getValue() + "] on state [" + id + "]!");
@@ -569,22 +580,25 @@ public class State {
 				oneNotNull = fields[i] != null; 
 			}
 		}
-		if (!oneNotNull) {
-			throw new IllegalStateException("Could not determine state type, no descriminator field was specified!");
-		}
+//		if (!oneNotNull) {
+//			throw new IllegalStateException("Could not determine state type, no descriminator field was specified!");
+//		}
 		
-		if (isDecisionState()) {
+		if (isSubflowState()) {
 			if ((subFlowInput != null || subFlowOutput != null) && (attributeMapper != null || attributeMapperClass != null)) {
-				throw new IllegalStateException("attribute mapper and attribute mapper class must be null is either subflow input or subflow output are set!");
+				throw new IllegalStateException("attribute mapper and attribute mapper class must be null if either subflow input or subflow output are set!");
 			} else if (attributeMapper != null && (subFlowInput != null || subFlowOutput != null || attributeMapperClass != null)) {
 				throw new IllegalStateException("subflow input and subflow output and attribute mapper class must be null if attribute mapper is set!");
 			} else if (attributeMapperClass != null && (subFlowInput != null || subFlowOutput != null || attributeMapper != null)) {
 				throw new IllegalStateException("subflow input and subflow output and attribute mapper class must be null if attribute mapper class is set!");
-//			} else if (StringUtils.isBlank(decisionTrueStateId)) {
-//				throw new IllegalStateException("Decision true state id must be set!");
-//			} else if (StringUtils.isBlank(decisionFalseStateId)) {
-//				throw new IllegalStateException("Decision false state id must be set!");
-//			}
+			}
+		}
+
+		if (isDecisionState()) {
+			if (StringUtils.isBlank(decisionTrueStateId)) {
+				throw new IllegalStateException("Decision true state id must be set!");
+			} else if (StringUtils.isBlank(decisionFalseStateId)) {
+				throw new IllegalStateException("Decision false state id must be set!");
 			}
 		}
 		
@@ -621,7 +635,7 @@ public class State {
 	 * @return true if this state in a view state.
 	 */
 	public boolean isViewState() {
-		return (viewName != null || viewClosure != null);
+		return ((viewName != null || viewClosure != null) && !endState);
 	}
 	
 	/**
@@ -636,10 +650,19 @@ public class State {
 	/**
 	 * <p>Is this state a subflow state.
 	 * 
-	 * @return true is this state is a subflow state.
+	 * @return true if this state is a subflow state.
 	 */
 	public boolean isSubflowState() {
 		return (subFlowId != null);
+	}
+	
+	/**
+	 * <p>Is this state an end state.
+	 * 
+	 * @return true if this state is an end state.
+	 */
+	public boolean isEndState() {
+		return ((endState && isViewState()) || (!isActionState() && !isViewState() && !isDecisionState() && !isSubflowState()));
 	}
 	
 	public String toString() {

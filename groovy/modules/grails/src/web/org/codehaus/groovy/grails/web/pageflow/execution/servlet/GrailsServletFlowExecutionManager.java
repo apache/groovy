@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.groovy.grails.web.pageflow.exceptions.NoViewDefinedException;
 import org.springframework.webflow.Event;
 import org.springframework.webflow.Flow;
 import org.springframework.webflow.FlowExecutionContext;
@@ -42,6 +43,12 @@ import org.springframework.webflow.execution.servlet.ServletFlowExecutionManager
  * 
  * <p>Users must use the regular Spring Web Flow mechanism of passing the flow execution id as a parameter if
  * more than one page flow is configured for a given URI.
+ * 
+ * <p>The <code>_reset</code> parameter may be set to <code>true</code> to reset the flow execution id cookie value.
+ * This may be useful during development when the application server may be restarted often. The flow execution associated
+ * with the id stored in the cookie may be lost after a restart. Normally the browser needs to be closed to remove the cookie
+ * value. The <code>_reset</code> parameter does this for you. Remove the parameter from the URL to continue working
+ * with flow (not removing it will reset the cookie value on each request).
  * 
  * @author Steven Devijver
  * @since Jul 19, 2005
@@ -101,7 +108,10 @@ public class GrailsServletFlowExecutionManager extends
 	public ViewDescriptor handle(HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
 		final boolean[] created = new boolean[1];
+		final boolean[] sessionEnded = new boolean[1];
+		final State[] stateEntered = new State[1];
 		created[0] = false;
+		sessionEnded[0] = false;
 		ViewDescriptor viewDescriptor = super.handle(request, response, new FlowExecutionListener() {
 			public void created(FlowExecutionContext context) {
 				created[0] = true;
@@ -111,8 +121,10 @@ public class GrailsServletFlowExecutionManager extends
 			public void resumed(RequestContext context) {
 			}
 			public void sessionEnded(RequestContext context, FlowSession endedSession) {
+				sessionEnded[0] = true;
 			}
 			public void stateEntered(RequestContext context, State previousState, State state) {
+				stateEntered[0] = state;
 			}
 			public void eventSignaled(RequestContext context) {
 			}
@@ -134,8 +146,12 @@ public class GrailsServletFlowExecutionManager extends
 			}
 		});
 		
+		if (viewDescriptor == null) {
+			throw new NoViewDefinedException("No view defined for state [" + stateEntered[0].getId() + "]!");
+		}
+		
 		Cookie flowExecutionIdCookie = null;
-		if (request.getAttribute(RESET_PARAMETER) != null && request.getAttribute(RESET_PARAMETER).equals(TRUE)) {
+		if (sessionEnded[0] || (request.getAttribute(RESET_PARAMETER) != null && request.getAttribute(RESET_PARAMETER).equals(TRUE))) {
 			flowExecutionIdCookie = new Cookie(FLOW_EXECUTION_ID_COOKIE_NAME, "");
 		} else if (created[0]) {
 			flowExecutionIdCookie = new Cookie(FLOW_EXECUTION_ID_COOKIE_NAME, (String)viewDescriptor.getAttribute(FLOW_EXECUTION_ID_ATTRIBUTE));

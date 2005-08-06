@@ -17,6 +17,7 @@ package grails.pageflow;
 
 import groovy.util.BuilderSupport;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
@@ -49,8 +50,10 @@ public class PageFlowBuilder extends BuilderSupport {
 	}
 
 	protected Object createNode(Object name) {
-		if (FLOW.equals(name)) {
+		if (FLOW.equals(name) && getCurrent() == null) {
 			return new Flow();
+		} else if (getCurrent() instanceof Flow) {
+			return new State((String)name, new HashMap());
 		} else {
 			throw new IllegalArgumentException("call to [" + name + "] without attributes is not supported!");
 		}
@@ -61,7 +64,7 @@ public class PageFlowBuilder extends BuilderSupport {
 			throw new IllegalArgumentException("call to [" + name + "] with value [" + value + "] is not supported!");
 		} else if (getCurrent() instanceof Flow) {
 			throw new IllegalArgumentException("State [" + name + "] requires one of these attributes: [action, view, decision, subflow]!");
-		} else if (getCurrent() instanceof State) {
+		} else if (getCurrent() instanceof State && !((State)getCurrent()).isEndState()) {
 			if (value == null) {
 				throw new IllegalArgumentException("Target state id is required as value for transition [" + name + "], state [" + ((State)getCurrent()).getId() + "]!");
 			} else if (!(value instanceof String)) {
@@ -69,6 +72,8 @@ public class PageFlowBuilder extends BuilderSupport {
 			} else {
 				return new Transition((State)getCurrent(), name.toString(), value.toString());
 			}
+		} else if (getCurrent() instanceof State && ((State)getCurrent()).isEndState()) {
+			throw new IllegalArgumentException("No transitions allowed for end state [" + ((State)getCurrent()).getId() + "]!");
 		} else {
 			throw new IllegalArgumentException("[" + name +"] not allowed as child!");
 		}
