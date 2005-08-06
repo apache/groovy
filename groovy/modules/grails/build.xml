@@ -6,6 +6,9 @@
 		<fileset dir="${grails.lib}">
 			<include name="*.jar"/>
 		</fileset>
+		<fileset dir="${grails.lib.hibernate}">
+			<include name="*.jar"/>
+		</fileset>
 	</path>
 	
 	<target name="clean">
@@ -24,6 +27,7 @@
 		<javac debug="on" deprecation="on" destdir="${grails.build}" source="1.3" target="1.3">
 			<src path="${grails.src.commons}"/>
 			<src path="${grails.src.web}"/>
+			<src path="${grails.src.persistence}"/>
 			<classpath refid="classpath"/>
 		</javac>
 	</target>
@@ -81,7 +85,7 @@
 		</javadoc>
 	</target>
 	
-	<target name="dist" depends="javadoc">
+	<target name="dist">
 		<antcall target="clean"/>
 		<delete file="../grails-${grails.version}.tar.gz"/>
 		<tar compression="gzip" destfile="../grails-${grails.version}.tar.gz" basedir="." excludes="**/CVS/**/*"/>
