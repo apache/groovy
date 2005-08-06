@@ -7,21 +7,34 @@ class BooksPageFlow {
     final String BOOK_DETAIL_KEY        = 'bookDetail'
     final String BOOK_SEQUENCE_NO_KEY   = 'bookSequence'
     final String BOOK_COLLECTION_KEY    = 'books'
+    final String AUTHOR_SEQUENCE_NO_KEY = 'authorSequence'
+    final String AUTHOR_COLLECTION_KEY = 'authors'
     final String SUCCESS_TOKEN          = 'success'
+	final Author DAN_BROWN = new Author(id:1, name:'Dan Brown')
 
     Map bookDetailFormAction = [
         class:  BookDetailCommand.class,
-        name:   BOOK_DETAIL_KEY
+        name:   BOOK_DETAIL_KEY,
+        validator: { target, errors -> }
     ]
+
+    Map bookDetailFormActionScope = [
+        class:  BookDetailCommand.class,
+        name:   BOOK_DETAIL_KEY,
+        scope: 'flow'
+    ]
+
 
     Closure loadBooks = { requestContext ->
         requestContext.flowScope[BOOK_COLLECTION_KEY] = [
-            new Book(id:1, title:'The Da Vinci Code',   author:'Dan Brown'),
-            new Book(id:2, title:'Deception Point',     author:'Dan Brown'),
-            new Book(id:3, title:'Digital Fortress',    author:'Dan Brown'),
-            new Book(id:4, title:'Angels And Demons',   author:'Dan Brown')
+            new Book(id:1, title:'The Da Vinci Code',   author:DAN_BROWN),
+            new Book(id:2, title:'Deception Point',     author:DAN_BROWN),
+            new Book(id:3, title:'Digital Fortress',    author:DAN_BROWN),
+            new Book(id:4, title:'Angels And Demons',   author:DAN_BROWN)
         ]
         requestContext.flowScope[BOOK_SEQUENCE_NO_KEY] = 4
+        requestContext.flowScope[AUTHOR_COLLECTION_KEY] = [ DAN_BROWN ]
+        requestContext.flowScope[AUTHOR_SEQUENCE_NO_KEY] = 1
         return SUCCESS_TOKEN
     }
 
@@ -104,6 +117,7 @@ class BooksPageFlow {
         bookDetailView(view:'bookDetail') {
             close('listBooks')
             save('saveBookDetailBind')
+            select('selectAuthorBind')
         }
         saveBookDetailBind(action:bookDetailFormAction) {
             success('saveBookDetail')
@@ -117,6 +131,7 @@ class BooksPageFlow {
         addBookView(view:'bookDetail') {
             save('addBookBind')
             close('listBooks')
+            select('selectAuthorBind')
         }
         addBookBind(action:bookDetailFormAction) {
             success('addBook')
@@ -124,6 +139,38 @@ class BooksPageFlow {
         }
         addBook(action:addBook) {
             success('listBooks')
+        }
+        selectAuthorBind(action:bookDetailFormActionScope) {
+        	success('selectAuthor')
+        }
+        selectAuthor(
+        	subflow:'authors',
+        	input:{ ctx -> 
+        		[ 
+        			authors:ctx.flowScope[AUTHOR_COLLECTION_KEY],
+        			authorSequence:ctx.flowScope[AUTHOR_SEQUENCE_NO_KEY] 
+        		] 
+        	},
+        	output:{ ctx -> 
+        		[
+        			selectedAuthor:ctx.requestScope['selectedAuthor'],
+        			AUTHOR_SEQUENCE_NO_KEY:ctx.flowScope['authorSequence'],
+        			AUTHOR_COLLECTION_KEY:ctx.flowScope['authors']
+        		] 
+        }) {
+        	end('bindSelectedAuthor')
+        }
+        bindSelectedAuthor(
+        	action:{ ctx -> 
+        		ctx.flowScope[BOOK_DETAIL_KEY].author = ctx.flowScope['selectedAuthor']
+        		ctx.requestScope[BOOK_DETAIL_KEY] = ctx.flowScope[BOOK_DETAIL_KEY]
+        		return SUCCESS_TOKEN 
+        }) {
+        	success('returnToDetailView')
+        }
+        returnToDetailView(action:{ ctx -> if (ctx.requestScope[BOOK_DETAIL_KEY].id > 0) { return 'edit' } else { return 'add' } }) {
+        	edit('bookDetailView')
+        	add('addBookView')
         }
         endNoView()
         endView(view:'end',end:true)
@@ -133,11 +180,91 @@ class BooksPageFlow {
 class Book {
     @Property int id
     @Property String title
-    @Property String author
+    @Property Author author
 }
 
 class BookDetailCommand {
     @Property int id = 0
     @Property String title
-    @Property String author
+    @Property Author author = new Author()
+}
+
+class Author {
+	@Property int id = 0;
+	@Property String name;
+}
+
+class AuthorDetailCommand {
+	@Property int id = 0
+	@Property String name
+}
+
+class AuthorsPageFlow {
+
+    final String AUTHOR_COLLECTION_KEY = 'authors'
+    final String SUCCESS_TOKEN          = 'success'
+	final String AUTHOR_DETAIL_KEY = 'authorDetail'
+	final String SELECTED_AUTHOR = 'selectedAuthor'
+
+	Map authorDetailFormAction = [
+		class:AuthorDetailCommand,
+		name:AUTHOR_DETAIL_KEY
+	]
+
+	def getAuthors(requestContext) {
+		return requestContext.flowScope[AUTHOR_COLLECTION_KEY]
+	}
+
+	Closure getAuthors = { requestContext ->
+		return getAuthors(requestContext)
+	}
+
+	def getSequence(requestContext) {
+		def sequence = requestContext.flowScope['authorSequence']
+		sequence++
+		requestContext.flowScope['authorSequence'] = sequence
+		return sequence
+	}
+
+	Closure selectAuthor = { requestContext ->
+		def authorDetail = requestContext.requestScope[AUTHOR_DETAIL_KEY]
+		requestContext.requestScope[SELECTED_AUTHOR] = getAuthors(requestContext).find { it.id == authorDetail.id }
+		return SUCCESS_TOKEN
+	}
+
+	Closure saveAuthor = { requestContext ->
+		def sequence = getSequence(requestContext)
+		def authorDetail = requestContext.requestScope[AUTHOR_DETAIL_KEY]
+		getAuthors(requestContext).add(new Author(id:sequence,name:authorDetail.name))
+		return SUCCESS_TOKEN;
+	}
+
+	@Property boolean accessible = false
+	@Property Flow flow = new PageFlowBuilder().flow {
+		listAuthors(view:'listAuthors',model:[authors:getAuthors]) {
+			select('selectAuthorBind')
+			add('addAuthorBind')
+		}
+		selectAuthorBind(action:authorDetailFormAction) {
+			success('selectAuthor')
+		}
+		selectAuthor(action:selectAuthor) {
+			success('end')
+		}
+		addAuthorBind(action:authorDetailFormAction) {
+			success('addAuthorView')
+		}
+		addAuthorView(view:'authorDetail') {
+			close('listAuthors')
+			save('saveNewAuthorBind')			
+		}
+		saveNewAuthorBind(action:authorDetailFormAction) {
+			success('saveNewAuthor')
+			error('addAuthorView')
+		}
+		saveNewAuthor(action:saveAuthor) {
+			success('listAuthors')
+		}
+		end()
+	}
 }

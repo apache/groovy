@@ -6,31 +6,26 @@
 
 <html>
    <head>
-      <title>Book detail</title>
+      <title>Author detail</title>
    </head>
 
    <body>
-      <h1>Book detail</h1>
-      <spring:hasBindErrors name="bookDetail">
+      <h1>Author detail</h1>
+      <spring:hasBindErrors name="authorDetail">
          <c:forEach items="${errors.allErrors}" var="error">
             <span><c:out value="${error}"/></span>
          </c:forEach>
       </spring:hasBindErrors>
       <form method="POST">
          <fieldset>
-            <spring:bind path="bookDetail.id">
-               <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookId"/>
+            <spring:bind path="authorDetail.id">
+               <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="authorId"/>
             </spring:bind>
-            <label>title</label>
-            <spring:bind path="bookDetail.title">
-               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookAuthor">
+            <label>name</label>
+            <spring:bind path="authorDetail.name">
+               <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="authorName">
             </spring:bind>
             <br>
-            <label>author</label>
-            <spring:bind path="bookDetail.author.name">
-               <span id="bookTitle"><c:out value="${status.value}"/></span>
-               <input type="submit" name="_eventId_select" value="..." id="select">
-            </spring:bind>
             <br>
             <input type="submit" name="_eventId_save" value="Save" id="save">
          </fieldset>

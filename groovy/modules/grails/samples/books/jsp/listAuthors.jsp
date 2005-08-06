@@ -8,18 +8,14 @@
 
 <html>
 <head>
-    <title>Book list</title>
+    <title>Author list</title>
 </head>
 
 <body>
-<h1>Book list</h1>
+<h1>Author list</h1>
 
 <form method="POST">
-    <input type="submit" name="_eventId_addBook" value="Add book ..." id="addbook">
-    <input type="submit" name="_eventId_endNoView" value="End (expect exception)">
-    <input type="submit" name="_eventId_endView" value="End">
-</form>
-
+<input type="submit" name="_eventId_add" value="Add author ...">
 </form>
 <table>
     <thead>
@@ -30,18 +26,17 @@
         </tr>
     </thead>
     <tbody>
-        <c:forEach items="${books}" var="book">
+        <c:forEach items="${authors}" var="author">
             <tr>
-                <td><c:out value="${book.title}"/></td>
-                <td><c:out value="${book.author.name}"/></td>
+                <td><c:out value="${author.name}"/></td>
                 <td>
                     <form method="POST">
                         <input type="hidden" name="id"
-                               value="<c:out value="${book.id}"/>">
+                               value="<c:out value="${author.id}"/>">
                         <input type="submit"
-                        	   name="_eventId_detail"
-                               value="Details"
-                               id="detail<c:out value="${book.id}"/>">
+                        	   name="_eventId_select"
+                               value="Select"
+                               id="detail<c:out value="${author.id}"/>">
                     </form>
                 </td>
             </tr>
