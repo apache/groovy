@@ -46,14 +46,14 @@ public class GrailsDomainConfiguration extends Configuration {
 	/**
 	 * Adds a domain class to the configuration
 	 * @param domainClass
-	 * @return
+	 * @return this
 	 */
 	public GrailsDomainConfiguration addDomainClass( GrailsDomainClass domainClass ) {
 		this.domainClasses.add(domainClass);
 		return this;		
 	}
 	/**
-	 * @param domain The domain to set.
+	 * @param application The application to set.
 	 */
 	public void setGrailsApplication(GrailsApplication application) {
 		this.grailsApplication = application;
