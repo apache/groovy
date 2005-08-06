@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.springframework.core.io.Resource;
 
 /**
@@ -37,7 +38,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GrailsControllerClass[] controllerClasses = null;
 	private GrailsPageFlowClass[] pageFlows = null;
 	private GrailsDomainClass[] domainClasses = null;
-
+	private GrailsDataSource dataSource = null;
+	
 	private Map controllerMap = null;
 	private Map domainMap = null;
 	private Map pageFlowMap = null;
@@ -83,6 +85,15 @@ public class DefaultGrailsApplication implements GrailsApplication {
 				if (grailsPageFlowClass.getAvailable()) {
 					this.pageFlowMap.put(grailsPageFlowClass.getFullName(), grailsPageFlowClass);
 				}
+			} else if (GrailsClassUtils.isDataSource(classes[i])) {
+				GrailsDataSource tmpDataSource = new DefaultGrailsDataSource(classes[i]);
+				if (tmpDataSource.getAvailable()) {
+					if (dataSource == null) {
+						dataSource = tmpDataSource;
+					} else {
+						throw new MoreThanOneActiveDataSourceException("More than one active data source is configured!");
+					}
+				}
 			}
 		}
 		
@@ -119,16 +130,17 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	public GroovyClassLoader getClassLoader() {
 		return this.cl;
 	}
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.domain.GrailsDomain#getGrailsDomainClasses()
-	 */
+
 	public GrailsDomainClass[] getGrailsDomainClasses() {
 		return this.domainClasses;
 	}
-	/* (non-Javadoc)
-	 * @see org.codehaus.groovy.grails.domain.GrailsDomain#getGrailsDomainClass(java.lang.String)
-	 */
+
 	public GrailsDomainClass getGrailsDomainClass(String name) {
 			return (GrailsDomainClass)this.domainMap.get(name);
-	}	
+	}
+	
+
+	public GrailsDataSource getGrailsDataSource() {
+		return this.dataSource;
+	}
 }

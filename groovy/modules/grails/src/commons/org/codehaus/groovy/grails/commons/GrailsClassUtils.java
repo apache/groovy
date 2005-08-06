@@ -58,6 +58,16 @@ public class GrailsClassUtils {
 	}	
 	
 	/**
+	 * <p>Returns true if the specified class is a data source.
+	 * 
+	 * @param clazz
+	 * @return
+	 */
+	public static boolean isDataSource(Class clazz) {
+		return clazz.getName().endsWith(DefaultGrailsDataSource.DATA_SOURCE) && !Closure.class.isAssignableFrom(clazz);
+	}
+	
+	/**
 	 * <p>Returns true if the specified class is a domain class. In Grails a domain class
 	 * is any class that has "id" and "version" properties</p>
 	 * 

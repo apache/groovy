@@ -20,19 +20,28 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.dbcp.BasicDataSource;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
+import org.codehaus.groovy.grails.commons.GrailsDataSource;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
+import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
+import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
+import org.hibernate.dialect.HSQLDialect;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.util.Assert;
-import org.springframework.webflow.config.FlowFactoryBean;
-import org.springframework.webflow.mvc.FlowController;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
+import org.springframework.webflow.config.FlowFactoryBean;
+import org.springframework.webflow.mvc.FlowController;
+import org.springmodules.beans.factory.config.MapToPropertiesFactoryBean;
 import org.springmodules.beans.factory.drivers.Bean;
+import org.springmodules.db.hsqldb.ServerBean;
 
 /**
  * <p>Creates beans and bean references for a Grails application.
@@ -141,7 +150,68 @@ public class SpringConfig {
 		if (simpleUrlHandlerMapping != null) {
 			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
+
+		boolean dependsOnHsqldbServer = false;
+		if (application.getGrailsDataSource() != null) {
+			GrailsDataSource grailsDataSource = application.getGrailsDataSource();
+			Bean dataSource = null;
+			if (grailsDataSource.isPooled()) {
+				dataSource = SpringConfigUtils.createSingletonBean(BasicDataSource.class);
+				dataSource.setDestroyMethod("close");
+			} else {
+				dataSource = SpringConfigUtils.createSingletonBean(DriverManagerDataSource.class);
+			}
+			dataSource.setProperty("driverClassName", SpringConfigUtils.createLiteralValue(grailsDataSource.getDriverClassName()));
+			dataSource.setProperty("url", SpringConfigUtils.createLiteralValue(grailsDataSource.getUrl()));
+			dataSource.setProperty("username", SpringConfigUtils.createLiteralValue(grailsDataSource.getUsername()));
+			dataSource.setProperty("password", SpringConfigUtils.createLiteralValue(grailsDataSource.getPassword()));	
+			beanReferences.add(SpringConfigUtils.createBeanReference("dataSource", dataSource));
+		} else {
+			Bean dataSource = SpringConfigUtils.createSingletonBean(BasicDataSource.class);
+			dataSource.setDestroyMethod("close");
+			dataSource.setProperty("driverClassName", SpringConfigUtils.createLiteralValue("org.hsqldb.jdbcDriver"));
+			dataSource.setProperty("url", SpringConfigUtils.createLiteralValue("jdbc:hsqldb:hsql://localhost:9101/"));
+			dataSource.setProperty("username", SpringConfigUtils.createLiteralValue("sa"));
+			dataSource.setProperty("password", SpringConfigUtils.createLiteralValue(""));
+			beanReferences.add(SpringConfigUtils.createBeanReference("dataSource", dataSource));
 			
+			Bean hsqldbServer = SpringConfigUtils.createSingletonBean(ServerBean.class);
+			hsqldbServer.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
+			Map hsqldbProperties = new HashMap();
+			hsqldbProperties.put("server.port", "9101");
+			hsqldbProperties.put("server.database.0", "mem:temp");
+			hsqldbServer.setProperty("serverProperties", SpringConfigUtils.createProperties(hsqldbProperties));
+			beanReferences.add(SpringConfigUtils.createBeanReference("hsqldbServer", hsqldbServer));
+			dependsOnHsqldbServer = true;
+		}
+		
+		Map vendorNameDialectMappings = new HashMap();
+		vendorNameDialectMappings.put("HSQL Database Engine", HSQLDialect.class.getName());
+			
+		Bean dialectDetector = SpringConfigUtils.createSingletonBean(HibernateDialectDetectorFactoryBean.class);
+		dialectDetector.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
+		dialectDetector.setProperty("vendorNameDialectMappings", SpringConfigUtils.createProperties(vendorNameDialectMappings));
+		if (dependsOnHsqldbServer) {
+			Collection dependsOn = new ArrayList();
+			dependsOn.add(SpringConfigUtils.createBeanReference("hsqldbServer"));
+			dialectDetector.setDependsOn(dependsOn);
+		}
+		
+		Map hibernatePropertiesMap = new HashMap();
+		hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.dialect"), dialectDetector);
+		hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue("create-drop"));
+		Bean hibernateProperties = SpringConfigUtils.createSingletonBean(MapToPropertiesFactoryBean.class);
+		hibernateProperties.setProperty("map", SpringConfigUtils.createMap(hibernatePropertiesMap));
+		
+		Bean grailsHibernateConfiguration = SpringConfigUtils.createSingletonBean(GrailsDomainConfiguration.class);
+		grailsHibernateConfiguration.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
+		
+		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalsSessionFactoryBean.class);
+		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
+		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
+		localSessionFactoryBean.setProperty("configuration", grailsHibernateConfiguration);
+		beanReferences.add(SpringConfigUtils.createBeanReference("sessionFactory", localSessionFactoryBean));
+		
 		return beanReferences;
 	}
 }

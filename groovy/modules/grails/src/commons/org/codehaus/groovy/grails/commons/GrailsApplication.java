@@ -78,6 +78,13 @@ public interface GrailsApplication {
 	 * @return The retrieved domain class
 	 */
 	public GrailsDomainClass getGrailsDomainClass(String name);	
+
+	/**
+	 * <p>Returns the active data source for this Grails application or null if not available.
+	 * 
+	 * @retrun the active data source or null if not available.
+	 */
+	public GrailsDataSource getGrailsDataSource();
 	
 	/**
 	 * <p>Returns the class loader instance for the Grails application</p>

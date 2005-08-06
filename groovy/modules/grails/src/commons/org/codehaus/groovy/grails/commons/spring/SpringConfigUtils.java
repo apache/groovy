@@ -23,6 +23,7 @@ import java.util.Map;
 import org.springmodules.beans.factory.drivers.Bean;
 import org.springmodules.beans.factory.drivers.BeanReference;
 import org.springmodules.beans.factory.drivers.Instance;
+import org.springmodules.beans.factory.drivers.LiteralMap;
 import org.springmodules.beans.factory.drivers.LiteralProperties;
 import org.springmodules.beans.factory.drivers.LiteralValue;
 
@@ -200,6 +201,14 @@ public class SpringConfigUtils {
 		return new LiteralProperties() {
 			public Map getProperties() {
 				return tmpProps;
+			}
+		};
+	}
+	
+	public static LiteralMap createMap(final Map map) {
+		return new LiteralMap() {
+			public Map getMap() {
+				return map;
 			}
 		};
 	}
