@@ -18,7 +18,6 @@
       </spring:hasBindErrors>
       <form method="POST">
          <fieldset>
-            <input type="hidden" name="_eventId" value="save">
             <spring:bind path="bookDetail.id">
                <input type="hidden" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookId"/>
             </spring:bind>
@@ -32,12 +31,11 @@
                <input type="text" name="<c:out value="${status.expression}"/>" value="<c:out value="${status.value}"/>" id="bookTitle">
             </spring:bind>
             <br>
-            <input type="submit" value="Save" id="save">
+            <input type="submit" name="_eventId_save" value="Save" id="save">
          </fieldset>
       </form>
       <form method="POST">
-         <input type="hidden" name="_eventId" value="close">
-         <input type="submit" value="Close" id="close">
+         <input type="submit" value="Close" name="_eventId_close" id="close">
       </form>
    </body>
 </html>

@@ -15,8 +15,11 @@
 <h1>Book list</h1>
 
 <form method="POST">
-    <input type="hidden" name="_eventId" value="addBook">
-    <input type="submit" value="Add book ..." id="addbook">
+    <input type="submit" name="_eventId_addBook" value="Add book ..." id="addbook">
+    <input type="submit" name="_eventId_endNoView" value="End (expect exception)">
+    <input type="submit" name="_eventId_endView" value="End">
+</form>
+
 </form>
 <table>
     <thead>
@@ -33,11 +36,10 @@
                 <td><c:out value="${book.author}"/></td>
                 <td>
                     <form method="POST">
-                        <input type="hidden" name="_eventId"
-                               value="detail">
                         <input type="hidden" name="id"
                                value="<c:out value="${book.id}"/>">
                         <input type="submit"
+                        	   name="_eventId_detail"
                                value="Details"
                                id="detail<c:out value="${book.id}"/>">
                     </form>
