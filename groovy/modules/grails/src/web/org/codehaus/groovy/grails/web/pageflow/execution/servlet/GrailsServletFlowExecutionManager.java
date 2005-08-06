@@ -121,7 +121,7 @@ public class GrailsServletFlowExecutionManager extends
 			public void resumed(RequestContext context) {
 			}
 			public void sessionEnded(RequestContext context, FlowSession endedSession) {
-				sessionEnded[0] = true;
+				sessionEnded[0] = endedSession.getParent() == null;
 			}
 			public void stateEntered(RequestContext context, State previousState, State state) {
 				stateEntered[0] = state;
