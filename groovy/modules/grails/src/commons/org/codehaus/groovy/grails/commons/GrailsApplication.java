@@ -92,4 +92,19 @@ public interface GrailsApplication {
 	 * @return The GroovyClassLoader instance
 	 */
 	public GroovyClassLoader getClassLoader();
+	
+	/**
+	 * <p>Returns all service classes for the Grails application.
+	 * 
+	 * @return service class for Grails application
+	 */
+	public GrailsServiceClass[] getGrailsServiceClasses();
+	
+	/**
+	 * <p>Returns the service with the specified full name.
+	 * 
+	 * @param name the full name of the service class
+	 * @return the service class
+	 */
+	public GrailsServiceClass getGrailsServiceClass(String name);
 }

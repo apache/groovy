@@ -15,6 +15,8 @@
 package org.codehaus.groovy.grails.commons;
 
 
+import groovy.lang.Closure;
+
 import java.beans.PropertyDescriptor;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,8 +26,6 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
-
-import groovy.lang.Closure;
 
 /**
  * @author Graeme Rocher
@@ -65,6 +65,16 @@ public class GrailsClassUtils {
 	 */
 	public static boolean isDataSource(Class clazz) {
 		return clazz.getName().endsWith(DefaultGrailsDataSource.DATA_SOURCE) && !Closure.class.isAssignableFrom(clazz);
+	}
+	
+	/**
+	 * <p>Returns true if the specified class is a service.
+	 * 
+	 * @param clazz
+	 * @return
+	 */
+	public static boolean isService(Class clazz) {
+		return clazz.getName().endsWith(DefaultGrailsServiceClass.SERVICE) && !Closure.class.isAssignableFrom(clazz);
 	}
 	
 	/**

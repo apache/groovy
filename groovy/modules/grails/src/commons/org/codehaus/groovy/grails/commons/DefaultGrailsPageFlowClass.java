@@ -47,8 +47,8 @@ public class DefaultGrailsPageFlowClass extends AbstractInjectableGrailsClass
 		if (getPropertyValue(FLOW, Flow.class) == null) {
 			throw new RequiredPropertyMissingException("On class [" + clazz.getName() + "] required property [" + FLOW + "] of type [" + Flow.class.getName() + "] is not present!");
 		}
-		if (getPropertyValue(ACCESSIBLE, boolean.class) != null) {
-			this.accessible = getPropertyValue(ACCESSIBLE, boolean.class).equals(Boolean.TRUE) ? true : false;
+		if (getPropertyValue(ACCESSIBLE, Boolean.class) != null) {
+			this.accessible = ((Boolean)getPropertyValue(ACCESSIBLE, Boolean.class)).booleanValue();
 		}
 		
 		this.uri = (StringUtils.isNotBlank(getPackageName()) ? SLASH + getPackageName().replace('.', '/') : "") + SLASH + getFlowId();

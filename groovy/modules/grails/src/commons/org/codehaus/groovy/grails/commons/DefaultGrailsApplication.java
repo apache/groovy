@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.commons;
 import groovy.lang.GroovyClassLoader;
 
 import java.io.IOException;
-import java.lang.String;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,12 +39,12 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private GrailsPageFlowClass[] pageFlows = null;
 	private GrailsDomainClass[] domainClasses = null;
 	private GrailsDataSource dataSource = null;
+	private GrailsServiceClass[] services = null;
 	
 	private Map controllerMap = null;
 	private Map domainMap = null;
 	private Map pageFlowMap = null;
-	
-		
+	private Map serviceMap = null;
 	
 	
 	
@@ -74,7 +74,11 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		this.controllerMap = new HashMap();
 		this.pageFlowMap = new HashMap();
+		this.serviceMap = new HashMap();
 		for (int i = 0; i < classes.length; i++) {
+			if (Modifier.isAbstract(classes[i].getModifiers())) {
+				continue;
+			}
 			if (GrailsClassUtils.isControllerClass(classes[i])  /* && not ends with FromController */) {
 				GrailsControllerClass grailsControllerClass = new DefaultGrailsControllerClass(classes[i]);
 				if (grailsControllerClass.getAvailable()) {
@@ -94,12 +98,16 @@ public class DefaultGrailsApplication implements GrailsApplication {
 						throw new MoreThanOneActiveDataSourceException("More than one active data source is configured!");
 					}
 				}
+			} else if (GrailsClassUtils.isService(classes[i])) {
+				GrailsServiceClass grailsServiceClass = new DefaultGrailsServiceClass(classes[i]);
+				serviceMap.put(grailsServiceClass.getFullName(), grailsServiceClass);
 			}
 		}
 		
 		this.controllerClasses = ((GrailsControllerClass[])controllerMap.values().toArray(new GrailsControllerClass[controllerMap.size()]));
 		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
 		this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
+		this.services = ((GrailsServiceClass[])this.serviceMap.values().toArray(new GrailsServiceClass[serviceMap.size()]));
 	}
 
 	public GrailsControllerClass[] getControllers() {
@@ -142,5 +150,13 @@ public class DefaultGrailsApplication implements GrailsApplication {
 
 	public GrailsDataSource getGrailsDataSource() {
 		return this.dataSource;
+	}
+	
+	public GrailsServiceClass[] getGrailsServiceClasses() {
+		return this.services;
+	}
+	
+	public GrailsServiceClass getGrailsServiceClass(String name) {
+		return (GrailsServiceClass)this.serviceMap.get(name);
 	}
 }

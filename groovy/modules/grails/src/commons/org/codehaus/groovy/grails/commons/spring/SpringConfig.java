@@ -21,10 +21,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.GrailsDataSource;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
+import org.codehaus.groovy.grails.commons.GrailsServiceClass;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
@@ -34,6 +36,8 @@ import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.hibernate.dialect.HSQLDialect;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.orm.hibernate3.HibernateTransactionManager;
+import org.springframework.transaction.interceptor.TransactionProxyFactoryBean;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
@@ -211,6 +215,42 @@ public class SpringConfig {
 		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
 		localSessionFactoryBean.setProperty("configuration", grailsHibernateConfiguration);
 		beanReferences.add(SpringConfigUtils.createBeanReference("sessionFactory", localSessionFactoryBean));
+		
+		Bean transactionManager = SpringConfigUtils.createSingletonBean(HibernateTransactionManager.class);
+		transactionManager.setProperty("sessionFactory", SpringConfigUtils.createBeanReference("sessionFactory"));
+		beanReferences.add(SpringConfigUtils.createBeanReference("transactionManager", transactionManager));
+		
+		GrailsServiceClass[] serviceClasses = application.getGrailsServiceClasses();
+		for (int i = 0; i <serviceClasses.length; i++) {
+			GrailsServiceClass grailsServiceClass = serviceClasses[i];
+			Bean serviceClass = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+			serviceClass.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+			serviceClass.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getGrailsServiceClass"));
+			serviceClass.setProperty("arguments", SpringConfigUtils.createLiteralValue(grailsServiceClass.getFullName()));
+			beanReferences.add(SpringConfigUtils.createBeanReference(grailsServiceClass.getFullName() + "Class", serviceClass));
+			
+			Bean serviceInstance = SpringConfigUtils.createSingletonBean();
+			serviceInstance.setFactoryBean(SpringConfigUtils.createBeanReference(grailsServiceClass.getFullName() + "Class"));
+			serviceInstance.setFactoryMethod("getInstance");
+			if (grailsServiceClass.byName()) {
+				serviceInstance.setAutowire("byName");
+			} else if (grailsServiceClass.byType()) {
+				serviceInstance.setAutowire("byType");
+			}
+			
+			if (grailsServiceClass.isTransactional()) {
+				Map transactionAttributes = new HashMap();
+				transactionAttributes.put("*", "PROPAGATION_REQUIRED");
+				Bean transactionalProxy = SpringConfigUtils.createSingletonBean(TransactionProxyFactoryBean.class);
+				transactionalProxy.setProperty("target", serviceInstance);
+				transactionalProxy.setProperty("transactionAttributes", SpringConfigUtils.createProperties(transactionAttributes));
+				transactionalProxy.setProperty("transactionManager", SpringConfigUtils.createBeanReference("transactionManager"));
+				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", transactionalProxy));
+			} else {
+				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", serviceInstance));
+			}
+		}
+		
 		
 		return beanReferences;
 	}
