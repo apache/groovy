@@ -24,6 +24,7 @@ import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
+import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.util.Assert;
@@ -82,8 +83,11 @@ public class SpringConfig {
 			Bean flowFactoryBean = SpringConfigUtils.createSingletonBean(FlowFactoryBean.class);
 			flowFactoryBean.setProperty("flowBuilder", flowBuilder);
 			
+			Bean flowExecutionManager = SpringConfigUtils.createSingletonBean(GrailsServletFlowExecutionManager.class);
+			flowExecutionManager.setProperty("flow", flowFactoryBean);
+			
 			Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
-			flowController.setProperty("flow", flowFactoryBean);
+			flowController.setProperty("flowExecutionManager", flowExecutionManager);
 			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
 			
 			urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
