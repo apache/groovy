@@ -133,12 +133,10 @@
 		</copy>
 		<copy todir="tmp/war/WEB-INF/classes">
 			<fileset dir="war/WEB-INF/classes"/>
+			<fileset dir="grails-app" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/jsp">
 			<fileset dir="jsp" includes="**"/>
-		</copy>
-		<copy todir="tmp/war/WEB-INF/grails-app">
-			<fileset dir="grails-app" includes="**"/>
 		</copy>
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
