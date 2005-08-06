@@ -38,4 +38,12 @@ public interface GrailsPageFlowClass extends InjectableGrailsClass {
 	 * @return the URI of this page flow.
 	 */
 	public String getUri();
+	
+	/**
+	 * <p>Page flow is accessible through URI. If set to false the page flow
+	 * is accessible as a sub flow or through the _flowId parameter.
+	 * 
+	 * @return the page flow is accessible through an URI.
+	 */
+	public boolean getAccessible();
 }

@@ -35,9 +35,11 @@ public class DefaultGrailsPageFlowClass extends AbstractInjectableGrailsClass
 
 	public static final String PAGE_FLOW = "PageFlow";
 	public static final String FLOW = "flow";
+	private static final String ACCESSIBLE = "accessible";
 	private static final String SLASH = "/";
 	
 	private String uri = null;
+	private boolean accessible = true;
 	
 	public DefaultGrailsPageFlowClass(Class clazz) {
 		super(clazz, PAGE_FLOW);
@@ -45,15 +47,22 @@ public class DefaultGrailsPageFlowClass extends AbstractInjectableGrailsClass
 		if (getPropertyValue(FLOW, Flow.class) == null) {
 			throw new RequiredPropertyMissingException("On class [" + clazz.getName() + "] required property [" + FLOW + "] of type [" + Flow.class.getName() + "] is not present!");
 		}
+		if (getPropertyValue(ACCESSIBLE, boolean.class) != null) {
+			this.accessible = getPropertyValue(ACCESSIBLE, boolean.class).equals(Boolean.TRUE) ? true : false;
+		}
 		
-		this.uri = (StringUtils.isNotBlank(getPackageName()) ? SLASH + getPackageName().replace('.', '/') : "") + SLASH + WordUtils.uncapitalize(getName());
+		this.uri = (StringUtils.isNotBlank(getPackageName()) ? SLASH + getPackageName().replace('.', '/') : "") + SLASH + getFlowId();
 	}
 
 	public String getFlowId() {
-		return getName() + PAGE_FLOW;
+		return WordUtils.uncapitalize(getName());
 	}
 
 	public String getUri() {
 		return this.uri;
+	}
+	
+	public boolean getAccessible() {
+		return this.accessible;
 	}
 }
