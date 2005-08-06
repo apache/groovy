@@ -18,15 +18,18 @@ package org.codehaus.groovy.grails.web.pageflow;
 import grails.pageflow.Flow;
 import grails.pageflow.State;
 import grails.pageflow.Transition;
+import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.web.pageflow.action.GrailsFormAction;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -51,6 +54,7 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 	private static final String FLOW = "flow";
 	private static final String METHOD = "method";
 	private static final String BIND_AND_VALIDATE = "bindAndValidate";
+	private static final String VALIDATOR = "validator";
 	
 	private ApplicationContext applicationContext = null;
 	private GrailsPageFlowClass pageFlowClass = null;
@@ -106,7 +110,15 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 					action = new AnnotatedAction(new ClosureAction(this.pageFlowClass.getFlowId(), state.getId(), state.getActionClosure()));
 				} else if (state.getActionFormDetails() != null) {
 					GrailsFormAction formAction = new GrailsFormAction();
-					new BeanWrapperImpl(formAction).setPropertyValues(state.getActionFormDetails());
+					BeanWrapper beanWrapper = new BeanWrapperImpl(formAction);
+					for (Iterator iter2 = state.getActionFormDetails().entrySet().iterator(); iter2.hasNext();) {
+						Map.Entry entry = (Map.Entry)iter2.next();
+						if (VALIDATOR.equals(entry.getKey()) && entry.getValue() instanceof Closure) {
+							beanWrapper.setPropertyValue((String)entry.getKey(), new ClosureValidator(((Closure)entry.getValue())));
+						} else {
+							beanWrapper.setPropertyValue((String)entry.getKey(), entry.getValue());
+						}
+					}
 					formAction.afterPropertiesSet();
 					action = new AnnotatedAction(formAction);
 					if (state.getActionMethod() != null) {
