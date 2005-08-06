@@ -82,20 +82,19 @@ public class SpringConfig {
 			
 			Bean flowFactoryBean = SpringConfigUtils.createSingletonBean(FlowFactoryBean.class);
 			flowFactoryBean.setProperty("flowBuilder", flowBuilder);
+			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFlowId(), flowFactoryBean));
+
+			if (pageFlow.getAccessible()) {
+				Bean flowExecutionManager = SpringConfigUtils.createSingletonBean(GrailsServletFlowExecutionManager.class);
+				flowExecutionManager.setProperty("flow", SpringConfigUtils.createBeanReference(pageFlow.getFlowId()));
+				
+				Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
+				flowController.setProperty("flowExecutionManager", flowExecutionManager);
+				beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
+				
+				urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
+			}
 			
-			Bean flowExecutionManager = SpringConfigUtils.createSingletonBean(GrailsServletFlowExecutionManager.class);
-			flowExecutionManager.setProperty("flow", flowFactoryBean);
-			
-			Bean flowController = SpringConfigUtils.createSingletonBean(FlowController.class);
-			flowController.setProperty("flowExecutionManager", flowExecutionManager);
-			beanReferences.add(SpringConfigUtils.createBeanReference(pageFlow.getFullName() + "Controller", flowController));
-			
-			urlMappings.put(pageFlow.getUri(), pageFlow.getFullName() + "Controller");
-			
-//			urlMappings.append(pageFlow.getUri());
-//			urlMappings.append("=");
-//			urlMappings.append(pageFlow.getFullName());
-//			urlMappings.append("Controller\n");
 		}
 		
 		Bean simpleGrailsController = SpringConfigUtils.createSingletonBean(SimpleGrailsController.class);
@@ -105,13 +104,11 @@ public class SpringConfig {
 		Bean internalResourceViewResolver = SpringConfigUtils.createSingletonBean(InternalResourceViewResolver.class);
 		internalResourceViewResolver.setProperty("prefix", SpringConfigUtils.createLiteralValue("/WEB-INF/jsp/"));
 		internalResourceViewResolver.setProperty("suffix", SpringConfigUtils.createLiteralValue(".jsp"));
-//		internalResourceViewResolver.setProperty("viewClass", SpringConfigUtils.createLiteralValue(GrailsView.class.getName()));
 		beanReferences.add(SpringConfigUtils.createBeanReference("jspViewResolver", internalResourceViewResolver));
 		
 		Bean simpleUrlHandlerMapping = null;
 		if (application.getControllers().length > 0 || application.getPageFlows().length > 0) {
 			simpleUrlHandlerMapping = SpringConfigUtils.createSingletonBean(SimpleUrlHandlerMapping.class);
-	//		simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createLiteralValue("/*=simpleGrailsController"));
 			beanReferences.add(SpringConfigUtils.createBeanReference("handlerMapping", simpleUrlHandlerMapping));
 		}
 		
@@ -138,14 +135,10 @@ public class SpringConfig {
 			beanReferences.add(SpringConfigUtils.createBeanReference(simpleController.getFullName(), controller));
 			for (int x = 0; x < simpleController.getURIs().length; x++) {
 				urlMappings.put(simpleController.getURIs()[x], "simpleGrailsController");
-//				urlMappings.append(simpleController.getURIs()[x]);
-//				urlMappings.append("=simpleGrailsController\n");
 			}
 		}
 
 		if (simpleUrlHandlerMapping != null) {
-//			System.out.println(urlMappings.toString());
-//			urlMappings.setLength(urlMappings.length() - "\n".length());
 			simpleUrlHandlerMapping.setProperty("mappings", SpringConfigUtils.createProperties(urlMappings));
 		}
 			
