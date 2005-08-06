@@ -23,12 +23,10 @@ import groovy.lang.GroovyObject;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.web.pageflow.action.GrailsFormAction;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
@@ -36,6 +34,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.util.Assert;
 import org.springframework.webflow.Action;
 import org.springframework.webflow.AnnotatedAction;
+import org.springframework.webflow.FlowAttributeMapper;
 import org.springframework.webflow.TransitionCriteria;
 import org.springframework.webflow.TransitionCriteriaFactory;
 import org.springframework.webflow.config.AbstractFlowBuilder;
@@ -100,22 +99,14 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 						throw new UnsupportedOperationException("None " + Action.class.getName() + " action classes are not yet supported!");
 					}
 					if (state.getActionProperties() != null) {
-						BeanWrapper beanWrapper = new BeanWrapperImpl(tmpAction);
-						for (Iterator iter2 = state.getActionProperties().entrySet().iterator(); iter2.hasNext();) {
-							Map.Entry entry = (Map.Entry)iter2.next();
-							beanWrapper.setPropertyValue((String)entry.getKey(), entry.getValue());
-						}
+						new BeanWrapperImpl(tmpAction).setPropertyValues(state.getActionProperties());
 					}
 					action = new AnnotatedAction(tmpAction);
 				} else if (state.getActionClosure() != null) {
 					action = new AnnotatedAction(new ClosureAction(this.pageFlowClass.getFlowId(), state.getId(), state.getActionClosure()));
 				} else if (state.getActionFormDetails() != null) {
 					GrailsFormAction formAction = new GrailsFormAction();
-					BeanWrapper beanWrapper = new BeanWrapperImpl(formAction);
-					for (Iterator iter2 = state.getActionFormDetails().entrySet().iterator(); iter2.hasNext();) {
-						Map.Entry entry = (Map.Entry)iter2.next();
-						beanWrapper.setPropertyValue((String)entry.getKey(), entry.getValue());
-					}
+					new BeanWrapperImpl(formAction).setPropertyValues(state.getActionFormDetails());
 					formAction.afterPropertiesSet();
 					action = new AnnotatedAction(formAction);
 					if (state.getActionMethod() != null) {
@@ -137,7 +128,31 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 			} else if (state.isDecisionState()) {
 				throw new UnsupportedOperationException("Decision states are not yet supported!");
 			} else if (state.isSubflowState()) {
-				throw new UnsupportedOperationException("Subflow states are not yet supported!");
+				if (state.getSubFlowInput() != null || state.getSubFlowOutput() != null) {
+					addSubFlowState(
+							state.getId(), 
+							getFlowServiceLocator().getFlow(state.getSubFlowId()), 
+							new ClosureFlowAttributeMapper(this.pageFlowClass.getFlowId(), state.getId(), state.getSubFlowInput(), state.getSubFlowOutput()),
+							getTransitions(state.getTransitions()));
+				} else if (state.getAttributeMapper() != null) {
+					addSubFlowState(
+							state.getId(),
+							getFlowServiceLocator().getFlow(state.getSubFlowId()),
+							state.getAttributeMapper(),
+							getTransitions(state.getTransitions()));
+				} else if (state.getAttributeMapperClass() != null) {
+					FlowAttributeMapper flowAttributeMapper = (FlowAttributeMapper)BeanUtils.instantiateClass(state.getAttributeMapperClass());
+					if (state.getAttributeMapperProperties() != null) {
+						new BeanWrapperImpl(flowAttributeMapper).setPropertyValues(state.getAttributeMapperProperties());
+					}
+					addSubFlowState(
+							state.getId(),
+							getFlowServiceLocator().getFlow(state.getSubFlowId()),
+							flowAttributeMapper,
+							getTransitions(state.getTransitions()));
+				} else {
+					addSubFlowState(state.getId(), getFlowServiceLocator().getFlow(state.getSubFlowId()), getTransitions(state.getTransitions()));
+				}
 			} else if (state.isEndState()) {
 				if (state.getViewName() != null) {
 					addEndState(state.getId(), new ModelViewDescriptorCreator(state.getViewName(), state.getViewModel()), new HashMap());
