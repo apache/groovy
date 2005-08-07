@@ -236,7 +236,7 @@ public class SpringConfig {
 			
 			Bean serviceInstance = SpringConfigUtils.createSingletonBean();
 			serviceInstance.setFactoryBean(SpringConfigUtils.createBeanReference(grailsServiceClass.getFullName() + "Class"));
-			serviceInstance.setFactoryMethod("getInstance");
+			serviceInstance.setFactoryMethod("newInstance");
 			if (grailsServiceClass.byName()) {
 				serviceInstance.setAutowire("byName");
 			} else if (grailsServiceClass.byType()) {
