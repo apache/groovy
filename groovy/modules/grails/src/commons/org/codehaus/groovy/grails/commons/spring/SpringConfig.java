@@ -210,10 +210,15 @@ public class SpringConfig {
 		Bean grailsHibernateConfiguration = SpringConfigUtils.createSingletonBean(GrailsDomainConfiguration.class);
 		grailsHibernateConfiguration.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
 		
+		Bean grailsClassLoader = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+		grailsClassLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+		grailsClassLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
+		
 		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalsSessionFactoryBean.class);
 		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
 		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
 		localSessionFactoryBean.setProperty("configuration", grailsHibernateConfiguration);
+		localSessionFactoryBean.setProperty("classLoader", grailsClassLoader);
 		beanReferences.add(SpringConfigUtils.createBeanReference("sessionFactory", localSessionFactoryBean));
 		
 		Bean transactionManager = SpringConfigUtils.createSingletonBean(HibernateTransactionManager.class);

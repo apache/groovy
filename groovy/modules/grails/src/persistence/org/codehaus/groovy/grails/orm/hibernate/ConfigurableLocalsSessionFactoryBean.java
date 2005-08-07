@@ -14,6 +14,9 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate;
 
+import java.io.IOException;
+
+import org.hibernate.HibernateException;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 
@@ -25,7 +28,8 @@ public class ConfigurableLocalsSessionFactoryBean extends
 		LocalSessionFactoryBean {
 
 	private Configuration configuration;
-		
+	private ClassLoader classLoader = null;
+
 	/**
 	 * 
 	 */
@@ -53,5 +57,21 @@ public class ConfigurableLocalsSessionFactoryBean extends
 	public void setConfiguration(Configuration configuration) {
 		this.configuration = configuration;
 	}
+
+	public void setClassLoader(ClassLoader classLoader) {
+		this.classLoader = classLoader;
+	}
 	
+	public void afterPropertiesSet() throws IllegalArgumentException,
+			HibernateException, IOException {
+		ClassLoader originalClassLoader = null;
+		if (this.classLoader != null) {
+			originalClassLoader = Thread.currentThread().getContextClassLoader();
+			Thread.currentThread().setContextClassLoader(this.classLoader);
+		}
+		super.afterPropertiesSet();
+		if (originalClassLoader != null) {
+			Thread.currentThread().setContextClassLoader(originalClassLoader);
+		}
+	}
 }
