@@ -4,18 +4,30 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
 
+	<context-param>
+		<param-name>log4jConfigLocation</param-name>
+		<param-value>/WEB-INF/log4j.properties</param-value>
+	</context-param>
+
+	<servlet>
+		<servlet-name>log4j</servlet-name>
+		<servlet-class>org.springframework.web.util.Log4jConfigServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+
     <!-- Context loader servlet for those older servlet engines. -->
     <servlet>
         <servlet-name>context</servlet-name>
         <servlet-class>org.springframework.web.context.ContextLoaderServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>2</load-on-startup>
     </servlet>
 
     <!-- Grails dispatcher servlet -->
     <servlet>
         <servlet-name>grails</servlet-name>
         <servlet-class>org.codehaus.groovy.grails.web.servlet.GrailsDispatcherServlet</servlet-class>
-        <load-on-startup>2</load-on-startup>
+        <load-on-startup>3</load-on-startup>
     </servlet>
 
     <!-- Map all requests to the Grails dispatcher servlet -->
