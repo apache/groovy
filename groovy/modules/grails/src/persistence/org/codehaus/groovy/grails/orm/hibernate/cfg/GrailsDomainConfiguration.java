@@ -18,6 +18,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.hibernate.MappingException;
@@ -34,7 +35,10 @@ public class GrailsDomainConfiguration extends Configuration {
 
 	private GrailsApplication grailsApplication;
 	private Set domainClasses;
-
+	private boolean configLocked = false;
+	
+	private static Logger log = Logger.getLogger(GrailsDomainConfiguration.class);
+	
 	/**
 	 * 
 	 */
@@ -69,16 +73,22 @@ public class GrailsDomainConfiguration extends Configuration {
 	 */
 	protected void secondPassCompile() throws MappingException {
 		// set the class loader to load Groovy classes
-		Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
+//		Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
 		// do Grails class configuration
+		if (configLocked) {
+			return;
+		}
+		
 		for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
 			GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
-			
+			log.debug("Configuring domain class [" + domainClass.getFullName() + "] in Hibernate.");
+
 			GrailsDomainBinder.bindClass(domainClass, super.createMappings());
 		}
 		
 		// call super
 		super.secondPassCompile();
+		configLocked = true;
 	}
 	
 }
