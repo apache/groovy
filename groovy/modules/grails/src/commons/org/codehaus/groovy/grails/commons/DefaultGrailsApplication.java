@@ -22,6 +22,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.grails.exceptions.MoreThanOneActiveDataSourceException;
 import org.springframework.core.io.Resource;
@@ -47,14 +48,16 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private Map serviceMap = null;
 	
 	
-	
+	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
 	public DefaultGrailsApplication(Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
 		
+		log.debug("Loading Grails application.");
 		this.cl = new GroovyClassLoader();
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
+				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
 				cl.parseClass(resources[i].getFile());
 			} catch (CompilationFailedException e) {
 				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
@@ -64,11 +67,20 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		Class[] classes = cl.getLoadedClasses();
 		// first load the domain classes
 		this.domainMap = new HashMap();
+		log.debug("Going to inspect domain classes.");
 		for (int i = 0; i < classes.length; i++) {
+			log.debug("Inspecting [" + classes[i].getName() + "]");
+			if (Modifier.isAbstract(classes[i].getModifiers())) {
+				log.debug("[" + classes[i].getName() + "] is abstract.");
+				continue;
+			}
 			// check that it is a domain class
-			if(GrailsClassUtils.isDomainClass(classes[i])) {				
+			if(GrailsClassUtils.isDomainClass(classes[i])) {
+				log.debug("[" + classes[i].getName() + "] is a domain class.");
 				GrailsDomainClass grailsDomainClass = new DefaultGrailsDomainClass(classes[i]);				
 				this.domainMap.put(grailsDomainClass.getName().substring(0, 1).toLowerCase() + grailsDomainClass.getName().substring(1), grailsDomainClass);						
+			} else {
+				log.debug("[" + classes[i].getName() + "] is not a domain class.");
 			}
 		}		
 		
