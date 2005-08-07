@@ -141,6 +141,11 @@
 		<copy todir="tmp/war/WEB-INF/spring">
 			<fileset dir="spring" includes="**"/>
 		</copy>
+		<copy todir="tmp/war/WEB-INF">
+			<fileset dir="${grails.home}/src/war/WEB-INF">
+				<include name="log4j.properties"/>
+			</fileset>
+		</copy>
 		<jar destfile="grails-app.war" basedir="tmp/war" />
 	</target>
 
