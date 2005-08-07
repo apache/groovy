@@ -25,15 +25,19 @@ import org.apache.commons.lang.WordUtils;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsControllerClass;
 import org.codehaus.groovy.grails.commons.GrailsDataSource;
+import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.commons.GrailsServiceClass;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
 import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
+import org.codehaus.groovy.grails.orm.hibernate.metaclass.HibernatePersistentMethods;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
+import org.codehaus.groovy.grails.support.ClassEditor;
 import org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder;
 import org.codehaus.groovy.grails.web.pageflow.execution.servlet.GrailsServletFlowExecutionManager;
 import org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController;
 import org.hibernate.dialect.HSQLDialect;
+import org.springframework.beans.factory.config.CustomEditorConfigurer;
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.hibernate3.HibernateTransactionManager;
@@ -224,6 +228,29 @@ public class SpringConfig {
 		Bean transactionManager = SpringConfigUtils.createSingletonBean(HibernateTransactionManager.class);
 		transactionManager.setProperty("sessionFactory", SpringConfigUtils.createBeanReference("sessionFactory"));
 		beanReferences.add(SpringConfigUtils.createBeanReference("transactionManager", transactionManager));
+
+		Bean classLoader = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
+		classLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
+		classLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
+		
+		Bean classEditor = SpringConfigUtils.createSingletonBean(ClassEditor.class);
+		classEditor.setProperty("classLoader", classLoader);
+		
+		Bean propertyEditors = SpringConfigUtils.createSingletonBean(CustomEditorConfigurer.class);
+		Map customEditors = new HashMap();
+		customEditors.put(SpringConfigUtils.createLiteralValue("java.lang.Class"), classEditor);
+		propertyEditors.setProperty("customEditors", SpringConfigUtils.createMap(customEditors));
+		beanReferences.add(SpringConfigUtils.createBeanReference("customEditors", propertyEditors));
+		
+		GrailsDomainClass[] grailsDomainClasses = application.getGrailsDomainClasses();
+		for (int i = 0; i < grailsDomainClasses.length; i++) {
+			GrailsDomainClass grailsDomainClass = grailsDomainClasses[i];
+			Collection constructorArguments = new ArrayList();
+			constructorArguments.add(SpringConfigUtils.createLiteralValue(grailsDomainClass.getClazz().getName()));
+			constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
+			Bean hibernatePersistentMethods = SpringConfigUtils.createSingletonBean(HibernatePersistentMethods.class, constructorArguments);
+			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentMethods", hibernatePersistentMethods));
+		}
 		
 		GrailsServiceClass[] serviceClasses = application.getGrailsServiceClasses();
 		for (int i = 0; i <serviceClasses.length; i++) {
