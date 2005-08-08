@@ -15,14 +15,10 @@
  */ 
 package org.codehaus.groovy.grails.metaclass;
 
-import groovy.lang.MetaClass;
-
 import java.beans.IntrospectionException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * InvokerHelper.getInstance().getMetaRegistry().setMetaClass(Foo.class,myFooMetaClass)
@@ -30,51 +26,49 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author Steven Devijver
  * @since Aug 7, 2005
  */
-public abstract class AbstractPersistentMethods extends MetaClass {
+public abstract class AbstractPersistentMethods {
 
 	private Collection dynamicMethodInvocations = null;
 	private Collection staticMethodInvocations = null;
+	private Class clazz = null;
 	
 	public AbstractPersistentMethods(Class theClass)
 			throws IntrospectionException {
-		super(InvokerHelper.getInstance().getMetaRegistry(), theClass);
+		super();
+		new DelegatingMetaClass(theClass, this);
 		this.dynamicMethodInvocations = new ArrayList();
 		this.staticMethodInvocations = new ArrayList();
-		registry.setMetaClass(theClass, this);
-		registerMethodInvocations();
 	}
 
-	protected abstract void registerMethodInvocations();
-	
 	public void addDynamicMethodInvocation(DynamicMethodInvocation methodInvocation) {
 		this.dynamicMethodInvocations.add(methodInvocation);
 	}
 	
-	public void setStaticMethodInvocation(StaticMethodInvocation methodInvocation) {
+	public void addStaticMethodInvocation(StaticMethodInvocation methodInvocation) {
 		this.staticMethodInvocations.add(methodInvocation);
 	}
 	
 	public Object invokeMethod(Object object, String methodName,
-			Object[] arguments) {
-		if (arguments != null && arguments.length == 0) {
-			for (Iterator iter = this.dynamicMethodInvocations.iterator(); iter.hasNext();) {
-				DynamicMethodInvocation methodInvocation = (DynamicMethodInvocation)iter.next();
-				if (methodInvocation.getMethodName().equals(methodName)) {
-					return methodInvocation.invoke(object);
-				}
+		Object[] arguments, InvocationCallback callback) {
+		for (Iterator iter = this.dynamicMethodInvocations.iterator(); iter.hasNext();) {
+			DynamicMethodInvocation methodInvocation = (DynamicMethodInvocation)iter.next();
+			if (methodInvocation.getMethodName().equals(methodName)) {
+				callback.markInvoked();
+				return methodInvocation.invoke(object, arguments);
 			}
 		}
-		return super.invokeMethod(object, methodName, arguments);
+		return null;
 	}
 	
 	public Object invokeStaticMethod(Object object, String methodName,
-			Object[] arguments) {
+			Object[] arguments, InvocationCallback callBack) {
 		for (Iterator iter = this.staticMethodInvocations.iterator(); iter.hasNext();) {
 			StaticMethodInvocation methodInvocation = (StaticMethodInvocation)iter.next();
 			if (methodInvocation.isMethodMatch(methodName)) {
-				return methodInvocation.invoke(methodName, arguments);
+				callBack.markInvoked();
+				return methodInvocation.invoke(this.clazz, methodName, arguments);
 			}
 		}
-		return super.invokeStaticMethod(object, methodName, arguments);
+		return null;
 	}
 }

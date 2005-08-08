@@ -18,7 +18,10 @@ package org.codehaus.groovy.grails.commons;
 import groovy.lang.GroovyClassLoader;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -46,6 +49,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	private Map pageFlowMap = null;
 	private Map serviceMap = null;
 	
+	private Class[] allClasses = null;
 	
 	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
@@ -55,16 +59,27 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		log.debug("Loading Grails application.");
 
 		this.cl = new GroovyClassLoader();
+		Collection serviceResources = new ArrayList();
+		Collection testResources = new ArrayList();
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
 				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
-				cl.parseClass(resources[i].getFile());
+				if (resources[i].getFile().getAbsolutePath().endsWith("Service.groovy")) {
+					serviceResources.add(resources[i]);
+				} else if (resources[i].getFile().getAbsolutePath().endsWith("Tests.groovy")) {
+					testResources.add(resources[i]);
+				} else {
+					cl.parseClass(resources[i].getFile());
+				}
 			} catch (CompilationFailedException e) {
 				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
 			}
 		}
+		loadResources(serviceResources, cl);
+		loadResources(testResources, cl);
 		// get all the classes that were loaded
 		Class[] classes = cl.getLoadedClasses();
+		this.allClasses = classes;
 		// first load the domain classes
 		this.domainMap = new HashMap();
 		log.debug("Going to inspect domain classes.");
@@ -194,5 +209,20 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	
 	public GrailsServiceClass getGrailsServiceClass(String name) {
 		return (GrailsServiceClass)this.serviceMap.get(name);
+	}
+	
+	public Class[] getAllClasses() {
+		return this.allClasses;
+	}
+	
+	private void loadResources(Collection resources, GroovyClassLoader cl) throws IOException {
+		for (Iterator iter = resources.iterator(); iter.hasNext();) {
+			Resource resource = (Resource)iter.next();
+			try {
+				cl.parseClass(resource.getFile());
+			} catch (CompilationFailedException e) {
+				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resource.getFilename() + "]: " + e.getMessage(), e);
+			}
+		}
 	}
 }

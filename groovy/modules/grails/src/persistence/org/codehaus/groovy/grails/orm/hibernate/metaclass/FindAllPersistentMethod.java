@@ -15,24 +15,26 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
+import java.util.regex.Pattern;
+
 import org.hibernate.SessionFactory;
 
 /**
  * 
  * 
  * @author Steven Devijver
- * @since Aug 7, 2005
+ * @since Aug 8, 2005
  */
-public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
+public class FindAllPersistentMethod extends AbstractStaticPersistentMethod {
 
-	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
-		super(sessionFactory, classLoader);
-		setMethodName("save");
+	public FindAllPersistentMethod(SessionFactory sessionFactory,
+			ClassLoader classLoader, Pattern pattern) {
+		super(sessionFactory, classLoader, pattern);
 	}
 
-	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		getHibernateTemplate().save(target);
-		return null;
+	protected Object doInvokeInternal(Class clazz, String methodName,
+			Object[] arguments) {
+		return getHibernateTemplate().loadAll(clazz);
 	}
 
 }

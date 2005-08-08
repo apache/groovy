@@ -32,10 +32,11 @@ public interface DynamicMethodInvocation {
 	public String getMethodName();
 	
 	/**
-	 * <p>Invokes the actual method. The target object is supplied.
+	 * <p>Invokes the actual method. The target object and arguments are supplied.
 	 * 
 	 * @param target the target on which the method is invoked.
+	 * @param argumetns the arguments passed in the method call
 	 * @param the return value of the dynamic method invocation.
 	 */
-	public Object invoke(Object target);
+	public Object invoke(Object target, Object[] arguments);
 }

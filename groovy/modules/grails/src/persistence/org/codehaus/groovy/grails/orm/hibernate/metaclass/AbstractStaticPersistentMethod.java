@@ -15,7 +15,9 @@
  */ 
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
-import org.codehaus.groovy.grails.metaclass.AbstractDynamicMethodInvocation;
+import java.util.regex.Pattern;
+
+import org.codehaus.groovy.grails.metaclass.AbstractStaticMethodInvocation;
 import org.hibernate.SessionFactory;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.util.Assert;
@@ -24,16 +26,17 @@ import org.springframework.util.Assert;
  * 
  * 
  * @author Steven Devijver
- * @since Aug 7, 2005
+ * @since Aug 8, 2005
  */
-public abstract class AbstractDynamicPersistentMethod extends
-		AbstractDynamicMethodInvocation {
+public abstract class AbstractStaticPersistentMethod extends
+		AbstractStaticMethodInvocation {
 
 	private SessionFactory sessionFactory = null;
 	private ClassLoader classLoader = null;
 	
-	public AbstractDynamicPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
+	public AbstractStaticPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader, Pattern pattern) {
 		super();
+		setPattern(pattern);
 		this.sessionFactory = sessionFactory;
 		this.classLoader = classLoader;
 	}
@@ -43,14 +46,13 @@ public abstract class AbstractDynamicPersistentMethod extends
 		return new HibernateTemplate(this.sessionFactory);
 	}
 	
-	public Object invoke(Object target, Object[] arguments) {
+	public Object invoke(Class clazz, String methodName, Object[] arguments) {
 		ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
 		Thread.currentThread().setContextClassLoader(this.classLoader);
-		Object returnValue = doInvokeInternal(target, arguments);
+		Object returnValue = doInvokeInternal(clazz, methodName, arguments);
 		Thread.currentThread().setContextClassLoader(originalClassLoader);
 		return returnValue;
 	}
-	
-	protected abstract Object doInvokeInternal(Object target, Object[] arguments);
 
+	protected abstract Object doInvokeInternal(Class clazz, String methodName, Object[] arguments);
 }

@@ -38,5 +38,5 @@ public abstract class AbstractDynamicMethodInvocation implements
 		return this.methodName;
 	}
 
-	public abstract Object invoke(Object target);
+	public abstract Object invoke(Object target, Object[] arguments);
 }

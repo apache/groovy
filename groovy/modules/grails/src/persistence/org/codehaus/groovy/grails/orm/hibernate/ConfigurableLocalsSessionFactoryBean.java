@@ -18,7 +18,7 @@ package org.codehaus.groovy.grails.orm.hibernate;
 import java.io.IOException;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
-import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.DefaultGrailsDomainConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
@@ -58,12 +58,8 @@ public class ConfigurableLocalsSessionFactoryBean extends
 	 * Overrides default behaviour to allow for a configurable configuration class 
 	 */
 	protected Configuration newConfiguration() {
-		Configuration config = super.newConfiguration();
-		
-		if(config instanceof GrailsDomainConfiguration) {
-			((GrailsDomainConfiguration)config).setGrailsApplication(this.grailsApplication);
-		}
-		
+		DefaultGrailsDomainConfiguration config = new DefaultGrailsDomainConfiguration();
+		config.setGrailsApplication(grailsApplication);
 		return config;
 	}
 

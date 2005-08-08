@@ -9,6 +9,7 @@
 		<mkdir dir="src"/>
 		<mkdir dir="jsp"/>
 		<mkdir dir="grails-app"/>
+		<mkdir dir="grails-test"/>
 		<mkdir dir="lib"/>
 		<mkdir dir="spring"/>
 		<mkdir dir="html"/>
@@ -69,6 +70,32 @@
 				<fileset dir="war/WEB-INF/classes" includes="**/*Tests.class" excludes="**/Abstract*"/>
 			</batchtest>			
 		</junit>
+	</target>
+
+	<target name="test-app">
+		<property environment="env"/>
+		<fail unless="env.GRAILS_HOME" message="GRAILS_HOME is not set."/>
+		<property name="grails.home" location="${env.GRAILS_HOME}"/>
+		<delete dir="tmp/tests/classpath"/>
+		<mkdir dir="tmp/tests/classpath/spring"/>
+		<copy todir="tmp/tests/classpath">
+			<fileset dir="${grails.home}/src/war/WEB-INF">
+				<include name="log4j.properties"/>
+			</fileset>
+		</copy>
+		<copy todir="tmp/tests/classpath/spring">
+			<fileset dir="spring" includes="**"/>
+		</copy>
+		<path id="test.classpath">
+			<pathelement location="${basedir}/tmp/tests/classpath"/>
+			<pathelement location="${grails.home}/src/war/WEB-INF"/>
+			<pathelement location="${basedir}/grails-app"/>
+			<pathelement location="${basedir}/grails-test"/>
+			<fileset dir="${grails.home}/lib"/>
+			<fileset dir="${grails.home}/dist"/>
+			<fileset dir="lib"/>
+		</path>
+		<java classpathref="test.classpath" classname="grails.util.RunTests"/>
 	</target>
 	
 	<target name="war">

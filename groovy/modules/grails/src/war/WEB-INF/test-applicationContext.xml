@@ -6,7 +6,7 @@
 	<bean id="grailsApplication" class="org.codehaus.groovy.grails.commons.GrailsApplicationFactoryBean">
 		<description>Grails application factory bean</description>
 		<property name="groovyFiles">
-			<value>classpath:**/*.groovy</value>
+			<value>file:grails-app/**/*.groovy</value>
 		</property>
 	</bean>
 	

@@ -29,7 +29,6 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsPageFlowClass;
 import org.codehaus.groovy.grails.commons.GrailsServiceClass;
 import org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean;
-import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
 import org.codehaus.groovy.grails.orm.hibernate.metaclass.HibernatePersistentMethods;
 import org.codehaus.groovy.grails.orm.hibernate.support.HibernateDialectDetectorFactoryBean;
 import org.codehaus.groovy.grails.support.ClassEditor;
@@ -210,10 +209,7 @@ public class SpringConfig {
 		hibernatePropertiesMap.put(SpringConfigUtils.createLiteralValue("hibernate.hbm2ddl.auto"), SpringConfigUtils.createLiteralValue("create-drop"));
 		Bean hibernateProperties = SpringConfigUtils.createSingletonBean(MapToPropertiesFactoryBean.class);
 		hibernateProperties.setProperty("map", SpringConfigUtils.createMap(hibernatePropertiesMap));
-		
-		Bean grailsHibernateConfiguration = SpringConfigUtils.createSingletonBean(GrailsDomainConfiguration.class);
-		grailsHibernateConfiguration.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
-		
+				
 		Bean grailsClassLoader = SpringConfigUtils.createSingletonBean(MethodInvokingFactoryBean.class);
 		grailsClassLoader.setProperty("targetObject", SpringConfigUtils.createBeanReference("grailsApplication"));
 		grailsClassLoader.setProperty("targetMethod", SpringConfigUtils.createLiteralValue("getClassLoader"));
@@ -221,7 +217,7 @@ public class SpringConfig {
 		Bean localSessionFactoryBean = SpringConfigUtils.createSingletonBean(ConfigurableLocalsSessionFactoryBean.class);
 		localSessionFactoryBean.setProperty("dataSource", SpringConfigUtils.createBeanReference("dataSource"));
 		localSessionFactoryBean.setProperty("hibernateProperties", hibernateProperties);
-		localSessionFactoryBean.setProperty("configuration", grailsHibernateConfiguration);
+		localSessionFactoryBean.setProperty("grailsApplication", SpringConfigUtils.createBeanReference("grailsApplication"));
 		localSessionFactoryBean.setProperty("classLoader", grailsClassLoader);
 		beanReferences.add(SpringConfigUtils.createBeanReference("sessionFactory", localSessionFactoryBean));
 		
@@ -248,6 +244,7 @@ public class SpringConfig {
 			Collection constructorArguments = new ArrayList();
 			constructorArguments.add(SpringConfigUtils.createLiteralValue(grailsDomainClass.getClazz().getName()));
 			constructorArguments.add(SpringConfigUtils.createBeanReference("sessionFactory"));
+			constructorArguments.add(classLoader);
 			Bean hibernatePersistentMethods = SpringConfigUtils.createSingletonBean(HibernatePersistentMethods.class, constructorArguments);
 			beanReferences.add(SpringConfigUtils.createBeanReference(grailsDomainClass.getFullName() + "PersistentMethods", hibernatePersistentMethods));
 		}

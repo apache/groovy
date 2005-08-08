@@ -25,11 +25,11 @@ import org.hibernate.SessionFactory;
  */
 public class DeletePersistentMethod extends AbstractDynamicPersistentMethod {
 
-	public DeletePersistentMethod(SessionFactory sessionFactory) {
-		super(sessionFactory);
+	public DeletePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
+		super(sessionFactory, classLoader);
 	}
 
-	public Object invoke(Object target) {
+	protected Object doInvokeInternal(Object target, Object[] arguments) {
 		getHibernateTemplate().delete(target);
 		return null;
 	}

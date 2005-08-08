@@ -13,26 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */ 
-package org.codehaus.groovy.grails.orm.hibernate.metaclass;
-
-import org.hibernate.SessionFactory;
+package org.codehaus.groovy.grails.metaclass;
 
 /**
  * 
  * 
  * @author Steven Devijver
- * @since Aug 7, 2005
+ * @since Aug 8, 2005
  */
-public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
+public class InvocationCallback {
 
-	public SavePersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
-		super(sessionFactory, classLoader);
-		setMethodName("save");
+	private boolean invoked = false;
+	
+	public InvocationCallback() {
+		super();
 	}
 
-	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		getHibernateTemplate().save(target);
-		return null;
+	public void markInvoked() {
+		this.invoked = true;
 	}
-
+	
+	public boolean isInvoked() {
+		return this.invoked;
+	}
 }

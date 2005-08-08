@@ -33,12 +33,13 @@ public interface StaticMethodInvocation {
 	public boolean isMethodMatch(String methodName);
 	
 	/**
-	 * <p>Invokes the actual method. The method name and arguments are provided.
+	 * <p>Invokes the actual method. The class, method name and arguments are provided.
 	 * If no arguments are passed the argument array is empty.
 	 * 
+	 * @param clazz the class the static method is called on
 	 * @param methodName the static method name
 	 * @param arguments the arguments supplied
 	 * @return the return value of the static method invocation
 	 */
-	public Object invoke(String methodName, Object[] arguments);
+	public Object invoke(Class clazz, String methodName, Object[] arguments);
 }

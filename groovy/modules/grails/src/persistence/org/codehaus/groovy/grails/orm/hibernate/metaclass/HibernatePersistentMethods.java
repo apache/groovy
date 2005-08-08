@@ -16,6 +16,7 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import java.beans.IntrospectionException;
+import java.util.regex.Pattern;
 
 import org.codehaus.groovy.grails.metaclass.AbstractPersistentMethods;
 import org.hibernate.SessionFactory;
@@ -28,17 +29,13 @@ import org.hibernate.SessionFactory;
  */
 public class HibernatePersistentMethods extends AbstractPersistentMethods {
 
-	private SessionFactory sessionFactory = null;
-	
-	public HibernatePersistentMethods(Class theClass, SessionFactory sessionFactory)
+	public HibernatePersistentMethods(Class theClass, SessionFactory sessionFactory, ClassLoader classLoader)
 			throws IntrospectionException {
 		super(theClass);
-		this.sessionFactory = sessionFactory;
+		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader));
+		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
+		
+		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
 	}
 	
-	protected void registerMethodInvocations() {
-		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory));
-		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory));
-	}
-
 }
