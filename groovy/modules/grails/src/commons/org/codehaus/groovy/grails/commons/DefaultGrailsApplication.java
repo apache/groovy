@@ -16,7 +16,6 @@
 package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
-
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -54,6 +53,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		super();
 		
 		log.debug("Loading Grails application.");
+
 		this.cl = new GroovyClassLoader();
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
@@ -78,7 +78,8 @@ public class DefaultGrailsApplication implements GrailsApplication {
 			if(GrailsClassUtils.isDomainClass(classes[i])) {
 				log.debug("[" + classes[i].getName() + "] is a domain class.");
 				GrailsDomainClass grailsDomainClass = new DefaultGrailsDomainClass(classes[i]);				
-				this.domainMap.put(grailsDomainClass.getName().substring(0, 1).toLowerCase() + grailsDomainClass.getName().substring(1), grailsDomainClass);						
+				this.domainMap.put(grailsDomainClass.getFullName(), grailsDomainClass);		
+						
 			} else {
 				log.debug("[" + classes[i].getName() + "] is not a domain class.");
 			}
@@ -120,6 +121,29 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		this.pageFlows = ((GrailsPageFlowClass[])pageFlowMap.values().toArray(new GrailsPageFlowClass[pageFlowMap.size()]));
 		this.domainClasses = ((GrailsDomainClass[])this.domainMap.values().toArray(new GrailsDomainClass[domainMap.size()]));
 		this.services = ((GrailsServiceClass[])this.serviceMap.values().toArray(new GrailsServiceClass[serviceMap.size()]));
+		
+		configureDomainClassRelationships();
+	}
+
+	/**
+	 * Sets up the relationships between the domain classes, this has to be done after
+	 * the intial creation to avoid looping
+	 *
+	 */
+	private void configureDomainClassRelationships() {
+
+		for (int i = 0; i < this.domainClasses.length; i++) {
+			GrailsDomainClassProperty[] props = this.domainClasses[i].getPersistantProperties();
+			
+			for (int j = 0; j < props.length; j++) {
+				if(props[j].isAssociation()) {
+					GrailsDomainClass referencedGrailsDomainClass = (GrailsDomainClass)this.domainMap.get( props[j].getReferencedPropertyType().getName() );
+					((DefaultGrailsDomainClassProperty)props[j]).setReferencedDomainClass(referencedGrailsDomainClass);
+				}
+			}
+		}
+		
+		
 	}
 
 	public GrailsControllerClass[] getControllers() {
