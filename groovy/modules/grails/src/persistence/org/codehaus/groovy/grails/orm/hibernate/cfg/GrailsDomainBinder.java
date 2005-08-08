@@ -16,14 +16,24 @@ package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
 
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
+import org.hibernate.FetchMode;
 import org.hibernate.MappingException;
-import org.hibernate.cfg.HbmBinder;
 import org.hibernate.cfg.Mappings;
+import org.hibernate.cfg.SecondPass;
+import org.hibernate.id.PersistentIdentifierGenerator;
+import org.hibernate.mapping.Collection;
 import org.hibernate.mapping.Column;
+import org.hibernate.mapping.DependantValue;
+import org.hibernate.mapping.KeyValue;
 import org.hibernate.mapping.ManyToOne;
 import org.hibernate.mapping.OneToMany;
 import org.hibernate.mapping.OneToOne;
@@ -34,20 +44,195 @@ import org.hibernate.mapping.SimpleValue;
 import org.hibernate.mapping.Table;
 import org.hibernate.mapping.ToOne;
 import org.hibernate.mapping.Value;
+import org.hibernate.type.ForeignKeyDirection;
 import org.hibernate.util.StringHelper;
 
 
 
 /**
  * Handles the binding Grails domain classes and properties to the Hibernate runtime meta model.
+ * Based on the HbmBinder code in Hibernate core and influenced by AnnotationsBinder.
  * 
  * @author Graeme Rocher
  * @since 06-Jul-2005
  */
 public final class GrailsDomainBinder {
 	
-	private static final Log LOG = LogFactory.getLog( HbmBinder.class );
+	private static final String FOREIGN_KEY_SUFFIX = "_ID";
+	private static final Log LOG = LogFactory.getLog( GrailsDomainBinder.class );
+	
+	/**
+	 * A Collection type, for the moment only Set is supported
+	 * 
+	 * @author Graeme
+	 *
+	 */
+	abstract static class CollectionType {
+		
+		private Class clazz;
 
+		public abstract Collection create(GrailsDomainClassProperty property, PersistentClass owner,
+				Mappings mappings) throws MappingException;
+
+		CollectionType(Class clazz) {
+			this.clazz = clazz;
+		}
+
+		public String toString() {
+			return clazz.getName();
+		}
+		
+		private static CollectionType SET = new CollectionType(Set.class) {
+
+			public Collection create(GrailsDomainClassProperty property, PersistentClass owner, Mappings mappings) throws MappingException {
+				org.hibernate.mapping.Set coll = new org.hibernate.mapping.Set(owner);
+				coll.setCollectionTable(owner.getTable());
+				bindCollection( property, coll, owner, mappings );
+				return coll;
+			}
+
+			
+		};
+		
+		private static final Map INSTANCES = new HashMap();
+		
+		static {
+			INSTANCES.put( SET.toString(), SET );			
+		}
+		public static CollectionType collectionTypeForClass(Class clazz) {
+			return (CollectionType)INSTANCES.get( clazz.getName() );
+		}
+	}
+
+	
+	/**
+	 * Second pass class for grails relationships. This is required as all
+	 * persistent classes need to be loaded in the first pass and then relationships
+	 * established in the second pass compile
+	 * 
+	 * @author Graeme
+	 *
+	 */
+	static class GrailsCollectionSecondPass extends SecondPass {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5540526942092611348L;
+		private GrailsDomainClassProperty property;
+		private Mappings mappings;
+		private Collection collection;
+
+		public GrailsCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Collection coll) {			
+			super(mappings, coll);
+			this.property = property;
+			this.mappings = mappings;
+			this.collection = coll;
+		}
+
+		public void secondPass(Map persistentClasses, Map inheritedMetas) throws MappingException {
+			bindCollectionSecondPass( this.property, mappings, persistentClasses, collection,inheritedMetas );			
+		}
+
+	}
+
+	private static void bindCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Map persistentClasses, Collection collection, Map inheritedMetas) {
+
+		// Configure one-to-many
+		if(collection.isOneToMany()) {
+			OneToMany oneToMany = (OneToMany)collection.getElement();
+			String associatedClassName = oneToMany.getReferencedEntityName();
+			
+			PersistentClass persistentClass = (PersistentClass)persistentClasses.get(associatedClassName);
+			// if there is no persistent class for the association throw
+			// exception
+			if(persistentClass == null) {
+				throw new MappingException( "Association references unmapped class: " + oneToMany.getReferencedEntityName() );
+			}
+			
+			oneToMany.setAssociatedClass( persistentClass );
+			collection.setCollectionTable( persistentClass.getTable() );
+			
+			LOG.info( "Mapping collection: "
+					+ collection.getRole()
+					+ " -> "
+					+ collection.getCollectionTable().getName() );
+			
+		}
+		
+		// setup the primary key references
+		KeyValue keyValue;
+		
+		String propertyRef = collection.getReferencedPropertyName();
+		// this is to support mapping by a property
+		if(propertyRef == null) {
+			keyValue = collection.getOwner().getIdentifier();
+		}
+		else {
+			keyValue = (KeyValue)collection.getOwner().getProperty( propertyRef ).getValue();
+		}
+		
+		DependantValue key = new DependantValue(collection.getCollectionTable(), keyValue);
+		
+		bindSimpleValue( property,key,mappings );
+		
+		collection.setKey( key );
+		// make required and non-updateable
+		key.setNullable(false);
+		key.setUpdateable(false);
+		
+		// if we have a many-to-many
+		if(property.isManyToMany()) {
+			ManyToOne element = new ManyToOne( collection.getCollectionTable() );
+			collection.setElement(element);
+			bindManyToOne(property,element, mappings);
+		}
+		
+	}		
+	
+	/**
+	 * First pass to bind collection to Hibernate metamodel, sets up second pass
+	 * 
+	 * @param property The GrailsDomainClassProperty instance
+	 * @param collection The collection
+	 * @param owner The owning persistent class
+	 * @param mappings The Hibernate mappings instance
+	 */
+	private static void bindCollection(GrailsDomainClassProperty property, Collection collection, PersistentClass owner, Mappings mappings) {
+		
+		// set role
+		collection.setRole( StringHelper.qualify( property.getDomainClass().getName() , property.getName() ) );
+		
+		// TODO: add code to configure optimistic locking
+		
+		// TODO: configure fetch strategy
+		collection.setFetchMode( FetchMode.DEFAULT );
+		
+		// if its a one-to-many mapping
+		if(property.isOneToMany()) {
+			
+			OneToMany oneToMany = new OneToMany( collection.getOwner() );
+			collection.setElement( oneToMany );
+			
+			bindOneToMany( property, oneToMany, mappings );			
+		}
+		else {
+			String tableName = property.getReferencedDomainClass().getName();
+			
+			Table table = mappings.addTable(
+								mappings.getSchemaName(),
+								mappings.getCatalogName(),
+								tableName,
+								null,
+								false
+							);
+			collection.setCollectionTable(table);
+		}
+		
+		// setup second pass
+		mappings.addSecondPass( new GrailsCollectionSecondPass(property, mappings, collection) );
+		
+	}
 	/**
 	 * Binds a Grails domain class to the Hibernate runtime meta model
 	 * @param domainClass The domain class to bind
@@ -152,7 +337,6 @@ public final class GrailsDomainBinder {
 	protected static void createClassProperties(GrailsDomainClass domainClass, PersistentClass persistentClass, Mappings mappings) {
 		
 		GrailsDomainClassProperty[] persistantProperties = domainClass.getPersistantProperties();
-		String entityName = persistentClass.getEntityName();
 		Table table = persistentClass.getTable();
 		
 		for(int i = 0; i < persistantProperties.length;i++) {
@@ -161,19 +345,29 @@ public final class GrailsDomainBinder {
 			
 			Value value = null;
 			
+			// see if its a collection type
+			CollectionType collectionType = CollectionType.collectionTypeForClass( currentGrailsProp.getType() );
+			if(collectionType != null) {
+				// create collection
+				Collection collection = collectionType.create( 
+						currentGrailsProp,
+						persistentClass,
+						mappings
+				);
+				mappings.addCollection(collection);
+				value = collection;
+			}
 			// work out what type of relationship it is and bind value
-			if ( currentGrailsProp.isManyToOne() ) {
+			else if ( currentGrailsProp.isManyToOne() ) {
 				value = new ManyToOne( table );
 				bindManyToOne( currentGrailsProp, (ManyToOne) value, mappings );
 			}
-			else if ( currentGrailsProp.isOneToOne() ) {
-				value = new OneToOne( table, persistentClass );
-				bindOneToOne( currentGrailsProp, (OneToOne)value, mappings );
-			}
-			else if ( currentGrailsProp.isOneToMany() ) {
-				value = new OneToMany( persistentClass );
-				bindOneToMany( currentGrailsProp, (OneToMany)value,  mappings );
-			}			
+			else if ( currentGrailsProp.isOneToOne() ) {				
+				//value = new OneToOne( table, persistentClass );
+				//bindOneToOne( currentGrailsProp, (OneToOne)value, mappings );
+				value = new ManyToOne( table );
+				bindManyToOne( currentGrailsProp, (ManyToOne) value, mappings );
+			}	
 			else {
 				value = new SimpleValue( table );
 				bindSimpleValue( persistantProperties[i], (SimpleValue) value, mappings );
@@ -206,22 +400,42 @@ public final class GrailsDomainBinder {
 				
 				//mappings.addUniquePropertyReference( toOne.getReferencedEntityName(), propertyRef );
 			}
-		}		
+		}
+		else if( value instanceof Collection ) {
+			Collection collection = (Collection)value;
+			String propertyRef = collection.getReferencedPropertyName();
+		}
 		
 		value.createForeignKey();
 		Property prop = new Property();
 		prop.setValue( value );
+		
 		bindProperty( grailsProperty, prop, mappings );
 		return prop;
 	}
 
 	/**
-	 * @param currentGrailsProp
-	 * @param one
+	 * @param property
+	 * @param oneToOne
 	 * @param mappings
 	 */
-	private static void bindOneToOne(GrailsDomainClassProperty currentGrailsProp, OneToOne one, Mappings mappings) {
-		// TODO Auto-generated method stub
+	private static void bindOneToOne(GrailsDomainClassProperty property, OneToOne oneToOne, Mappings mappings) {
+		
+		// bind value
+		bindSimpleValue(property, oneToOne, mappings );
+		// set foreign key type
+		oneToOne.setForeignKeyType( ForeignKeyDirection.FOREIGN_KEY_TO_PARENT );
+		
+		oneToOne.setForeignKeyName( property.getFieldName() + FOREIGN_KEY_SUFFIX );
+		
+		// TODO configure fetch settings
+		oneToOne.setFetchMode( FetchMode.DEFAULT );
+		// TODO configure lazy loading
+		oneToOne.setLazy(true);
+				
+		oneToOne.setPropertyName( property.getName() );
+		oneToOne.setReferencedEntityName( property.getType().getName() );
+		
 		
 	}
 
@@ -231,18 +445,27 @@ public final class GrailsDomainBinder {
 	 * @param mappings
 	 */
 	private static void bindOneToMany(GrailsDomainClassProperty currentGrailsProp, OneToMany one, Mappings mappings) {
-		// TODO Auto-generated method stub
-		
+
+		one.setReferencedEntityName( currentGrailsProp.getReferencedPropertyType().getName() );
 	}
 
 	/**
 	 * Binds a many-to-one relationship to the 
-	 * @param currentGrailsProp
-	 * @param one
+	 * @param property
+	 * @param manyToOne
 	 * @param mappings
 	 */
-	private static void bindManyToOne(GrailsDomainClassProperty currentGrailsProp, ManyToOne one, Mappings mappings) {
-		// TODO Auto-generated method stub
+	private static void bindManyToOne(GrailsDomainClassProperty property, ManyToOne manyToOne, Mappings mappings) {
+		
+		// TODO configure fetching
+		manyToOne.setFetchMode(FetchMode.DEFAULT);
+		// TODO configure lazy loading
+		manyToOne.setLazy(true);
+		
+		// bind column
+		bindSimpleValue(property,manyToOne,mappings);
+		// set referenced entity
+		manyToOne.setReferencedEntityName( property.getReferencedPropertyType().getName() );
 		
 	}
 
@@ -270,7 +493,7 @@ public final class GrailsDomainBinder {
 
 	/**
 	 * @param identifier
-	 * @param root
+	 * @param entity
 	 * @param mappings
 	 */
 	private static void bindSimpleId(GrailsDomainClassProperty identifier, RootClass entity, Mappings mappings) {
@@ -279,6 +502,18 @@ public final class GrailsDomainBinder {
 		SimpleValue id = new SimpleValue(entity.getTable());
 		// set identifier on entity
 		entity.setIdentifier( id );
+		// configure generator strategy
+		id.setIdentifierGeneratorStrategy( "native" );
+		
+		Properties params = new Properties();
+
+		if ( mappings.getSchemaName() != null ) {
+			params.setProperty( PersistentIdentifierGenerator.SCHEMA, mappings.getSchemaName() );
+		}
+		if ( mappings.getCatalogName() != null ) {
+			params.setProperty( PersistentIdentifierGenerator.CATALOG, mappings.getCatalogName() );
+		}
+		id.setIdentifierGeneratorProperties(params);
 		
 		// bind value
 		bindSimpleValue(identifier, id, mappings );
@@ -297,28 +532,32 @@ public final class GrailsDomainBinder {
 	}
 
 	/**
-	 * @param identifier
+	 * @param grailsProperty
 	 * @param prop
 	 * @param mappings
 	 */
 	private static void bindProperty(GrailsDomainClassProperty grailsProperty, Property prop, Mappings mappings) {
 		// set the property name
 		prop.setName( grailsProperty.getName() );
+		
 		prop.setInsertable(true);
 		prop.setUpdateable(true);
 		prop.setPropertyAccessorName( mappings.getDefaultAccess() );
 		prop.setOptional( grailsProperty.isOptional() );
+		// set to cascade all for the moment
+		prop.setCascade("all");
 		// lazy to true
 		prop.setLazy(true);
 		
 	}
 
 	/**
-	 * @param grailsProp
-	 * @param id
-	 * @param b
-	 * @param name
-	 * @param mappings
+	 * Binds a simple value to the Hibernate metamodel. A simple value is 
+	 * any type within the Hibernate type system
+	 * 
+	 * @param grailsProp The grails domain class property
+	 * @param simpleValue The simple value to bind
+	 * @param mappings The Hibernate mappings instance
 	 */
 	private static void bindSimpleValue(GrailsDomainClassProperty grailsProp, SimpleValue simpleValue,Mappings mappings) {
 		// set type
@@ -328,17 +567,28 @@ public final class GrailsDomainBinder {
 		column.setValue(simpleValue);
 		bindColumn(grailsProp, column);
 		
-		simpleValue.addColumn(column);
-		simpleValue.getTable().addColumn(column);
+		Table table = simpleValue.getTable();
+		
+		if(table != null) table.addColumn(column);
+		
+		simpleValue.addColumn(column);		
 	}
 
 	/**
-	 * @param grailsProp
-	 * @param column
+	 * Binds a Column instance to the Hibernate meta model
+	 * @param grailsProp The Grails domain class property
+	 * @param column The column to bind
 	 */
 	private static void bindColumn(GrailsDomainClassProperty grailsProp, Column column) {
-		column.setNullable(grailsProp.isOptional());
-		column.setName(grailsProp.getFieldName());
+		
+		if(grailsProp.isAssociation()) {
+			column.setName( grailsProp.getFieldName() + FOREIGN_KEY_SUFFIX );
+			column.setNullable(true);
+			
+		} else {
+			column.setNullable(grailsProp.isOptional());
+			column.setName(grailsProp.getFieldName());
+		}
 	}
 
 
