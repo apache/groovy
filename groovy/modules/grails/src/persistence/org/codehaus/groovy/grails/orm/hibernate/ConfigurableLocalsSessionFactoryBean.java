@@ -1,3 +1,4 @@
+
 /* Copyright 2004-2005 the original author or authors.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,6 +17,8 @@ package org.codehaus.groovy.grails.orm.hibernate;
 
 import java.io.IOException;
 
+import org.codehaus.groovy.grails.commons.GrailsApplication;
+import org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration;
 import org.hibernate.HibernateException;
 import org.hibernate.cfg.Configuration;
 import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
@@ -27,8 +30,8 @@ import org.springframework.orm.hibernate3.LocalSessionFactoryBean;
 public class ConfigurableLocalsSessionFactoryBean extends
 		LocalSessionFactoryBean {
 
-	private Configuration configuration;
 	private ClassLoader classLoader = null;
+	private GrailsApplication grailsApplication;	
 
 	/**
 	 * 
@@ -38,25 +41,32 @@ public class ConfigurableLocalsSessionFactoryBean extends
 	}
 	
 	/**
+	 * @return Returns the grailsApplication.
+	 */
+	public GrailsApplication getGrailsApplication() {
+		return grailsApplication;
+	}
+
+	/**
+	 * @param grailsApplication The grailsApplication to set.
+	 */
+	public void setGrailsApplication(GrailsApplication grailsApplication) {
+		this.grailsApplication = grailsApplication;
+	}
+	
+	/**
 	 * Overrides default behaviour to allow for a configurable configuration class 
 	 */
 	protected Configuration newConfiguration() {
-		return this.configuration;
+		Configuration config = super.newConfiguration();
+		
+		if(config instanceof GrailsDomainConfiguration) {
+			((GrailsDomainConfiguration)config).setGrailsApplication(this.grailsApplication);
+		}
+		
+		return config;
 	}
 
-	/**
-	 * @return Returns the configuration.
-	 */
-	public Configuration getConfiguration() {
-		return configuration;
-	}
-
-	/**
-	 * @param configurationClass The configuration to set.
-	 */
-	public void setConfiguration(Configuration configuration) {
-		this.configuration = configuration;
-	}
 
 	public void setClassLoader(ClassLoader classLoader) {
 		this.classLoader = classLoader;
@@ -75,3 +85,4 @@ public class ConfigurableLocalsSessionFactoryBean extends
 		}
 	}
 }
+
