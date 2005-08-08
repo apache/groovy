@@ -59,10 +59,12 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		for(int i = 0; i < propertyDescriptors.length; i++) {
 			
 			PropertyDescriptor descriptor = propertyDescriptors[i];
-				// ignore properties: GroovyObject metaClass property, transient and optional
+				// ignore certain properties
 				if(!descriptor.getName().equals( GrailsDomainClassProperty.META_CLASS ) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.CLASS ) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.TRANSIENT) &&
+				   !descriptor.getName().equals( GrailsDomainClassProperty.RELATIONSHIPS) &&
+				   !descriptor.getName().equals( GrailsDomainClassProperty.EVANESCENT) &&
 				   !descriptor.getName().equals( GrailsDomainClassProperty.OPTIONAL)  ) {
 					
 					
@@ -89,6 +91,8 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		// set properties from map values
 		this.properties = (GrailsDomainClassProperty[])this.propertyMap.values().toArray( new GrailsDomainClassProperty[this.propertyMap.size()] );
 		
+		// establish relationships
+		establishRelationships();
 		// set persistant properties
 		Collection tempList = new ArrayList();
 		for(Iterator i = this.propertyMap.values().iterator();i.hasNext();) {
@@ -97,10 +101,7 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 				tempList.add(currentProp);
 			}
 		}
-		this.persistantProperties = (GrailsDomainClassProperty[])tempList.toArray( new GrailsDomainClassProperty[tempList.size()]);
-		
-		// establish relationships
-		establishRelationships();
+		this.persistantProperties = (GrailsDomainClassProperty[])tempList.toArray( new GrailsDomainClassProperty[tempList.size()]);		
 	}
 	
 	/**
@@ -140,9 +141,12 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		Class relatedClassType = getRelatedClassType( property.getName() );
 		
 		if(relatedClassType != null) {
+			// set the referenced type in the property
+			property.setReferencedPropertyType(relatedClassType);
 			// if the related type is a domain class
 			// then figure out what kind of relationship it is
 			if(GrailsClassUtils.isDomainClass( relatedClassType )) {
+				
 				
 				// check the relationship defined in the referenced type
 				// if it is also a Set/domain class etc.
@@ -206,15 +210,18 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		
 		if(relatedClassPropertyType == null) {
 			// uni-directional one-to-many
-			property.setOneToMany(true);
+			property.setOneToMany(true);			
+			property.setBidirectional(false);
 		}		
 		else if( relatedClassPropertyType.equals( Set.class ) ){
 			// many-to-many
 			property.setManyToMany(true);
+			property.setBidirectional(true);
 		}
 		else if( GrailsClassUtils.isDomainClass( relatedClassPropertyType ) ) {
 			// bi-directional one-to-many
 			property.setOneToMany( true );
+			property.setBidirectional( true );
 		}
 	}
 
@@ -272,14 +279,17 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 		// uni-directional one-to-one
 		if(relatedClassPropertyType == null) {
 			property.setOneToOne(true);
+			property.setBidirectional(false);
 		}
 		// bi-directional many-to-one
 		else if(relatedClassPropertyType.equals( Set.class )) {
 			property.setManyToOne(true);
+			property.setBidirectional(true);
 		}
 		// bi-directional one-to-one
 		else if( GrailsClassUtils.isDomainClass( relatedClassPropertyType ) ) {
 			property.setOneToOne(true);
+			property.setBidirectional(true);
 		}
 	}
 
@@ -370,6 +380,13 @@ public class DefaultGrailsDomainClass extends AbstractGrailsClass  implements Gr
 	public String getPropertyName() {
 		String shortTypeName = ClassUtils.getShortClassName( getName() );
 		return shortTypeName.substring(0,0).toLowerCase() + shortTypeName.substring(1);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClass#isBidirectional()
+	 */
+	public boolean isBidirectional(String propertyName) {
+		return getPropertyByName(propertyName).isBidirectional();
 	}
 	
 }

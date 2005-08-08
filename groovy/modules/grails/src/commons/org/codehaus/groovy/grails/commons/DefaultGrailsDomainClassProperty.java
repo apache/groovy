@@ -18,10 +18,9 @@ import java.beans.PropertyDescriptor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Graeme Rocher
@@ -29,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
  */
 public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProperty {
 
-	private static final Log LOG = LogFactory.getLog( DefaultGrailsDomainClassProperty.class );
 	
 	private GrailsDomainClass domainClass;
 	private PropertyDescriptor descriptor;
@@ -42,6 +40,11 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	private boolean manyToMany;
 	private boolean manyToOne;
 	private boolean oneToOne;
+
+	private boolean bidirectional;
+
+	private Class referencedPropertyType;
+	private GrailsDomainClass referencedDomainClass;
 	
 
 	
@@ -218,6 +221,15 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 		this.persistant = persistant;
 	}
 
+	
+	/**
+	 * Sets whether the relationship is bidirectional or not
+	 * @param bidirectional
+	 */
+	protected void setBidirectional(boolean bidirectional) {
+		this.bidirectional = bidirectional;
+	}
+
 
 	/* (non-Javadoc)
 	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getTypePropertyName()
@@ -225,6 +237,64 @@ public class DefaultGrailsDomainClassProperty implements GrailsDomainClassProper
 	public String getTypePropertyName() {	
 		String shortTypeName = ClassUtils.getShortClassName( this.type );
 		return shortTypeName.substring(0,1).toLowerCase() + shortTypeName.substring(1);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#getReferencedPropertyType()
+	 */
+	public Class getReferencedPropertyType() {
+		if(this.type.equals( Set.class ) && this.referencedPropertyType != null) {
+			return this.referencedPropertyType;
+		}
+		else {
+			return getType();
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#isBidirectional()
+	 */
+	public boolean isBidirectional() {
+		return this.bidirectional;
+	}
+
+	/**
+	 * Sets the referenced property type of this property
+	 * @param referencedPropertyType
+	 */
+	protected void setReferencedPropertyType(Class referencedPropertyType) {
+		this.referencedPropertyType = referencedPropertyType;
+	}
+
+	
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#isAssociation()
+	 */
+
+	public GrailsDomainClass getReferencedDomainClass() {
+		return this.referencedDomainClass;
+	}
+
+
+	protected void setReferencedDomainClass(GrailsDomainClass referencedDomainClass) {
+		if(referencedDomainClass != null) {
+			this.referencedDomainClass = referencedDomainClass;
+			this.referencedPropertyType = referencedDomainClass.getClazz();
+		}
+	}
+
+
+	/* (non-Javadoc)
+	 * @see org.codehaus.groovy.grails.commons.GrailsDomainClassProperty#isAssociation()
+	 */
+	public boolean isAssociation() {
+		if(	isOneToMany() ||
+			isOneToOne() ||
+			isManyToOne() ||
+			isManyToMany() )
+			return true;
+		else
+			return false;
 	}
 
 

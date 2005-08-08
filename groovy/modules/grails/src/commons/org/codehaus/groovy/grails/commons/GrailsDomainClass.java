@@ -91,6 +91,14 @@ public interface GrailsDomainClass extends GrailsClass {
 	public boolean isManyToOne(String propertyName);
 	
 	/**
+	 * Returns true if the given property is a bi-directional relationship
+	 * 
+	 * @param propertyName The name of the property
+	 * @return A boolean value
+	 */
+	public boolean isBidirectional(String propertyName);
+	
+	/**
 	 * Returns the type of the related class of the given property
 	 * 
 	 * @param propertyName The name of the property 

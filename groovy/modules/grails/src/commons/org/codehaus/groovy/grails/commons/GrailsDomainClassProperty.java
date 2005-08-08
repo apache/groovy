@@ -44,6 +44,15 @@ public interface GrailsDomainClassProperty {
 	public Class getType();
 	
 	/**
+	 * <p>Returns the referenced property type. This differs from getType() in that in
+	 * the case of a Collection it will return the type of the elements contained within the Collection,
+	 * otherwise it will delegate to getType();</p>
+	 * 
+	 * @return The referenced type
+	 */
+	public Class getReferencedPropertyType();
+	
+	/**
 	 * Returns the class type as a property name representation
 	 * 
 	 * @return The property name representation
@@ -90,6 +99,11 @@ public interface GrailsDomainClassProperty {
 	public boolean isManyToMany();
 	
 	/**
+	 * Returns true if the property is a bi-directional relationship
+	 * @return A boolean value
+	 */
+	public boolean isBidirectional();
+	/**
 	 * Returns the domain field name for this property
 	 */
 	public String getFieldName();
@@ -98,4 +112,17 @@ public interface GrailsDomainClassProperty {
 	 * @return
 	 */
 	public boolean isOneToOne();
+	/**
+	 * Returns the GrailsDomainClass of a relationship property or null 
+	 * if the property is not a relationship property
+	 * 
+	 * @return The GrailsDomainClass
+	 */
+	public GrailsDomainClass getReferencedDomainClass();
+	
+	/**
+	 * Returns true if this property is a relationship property
+	 * @return
+	 */
+	public boolean isAssociation();
 }
