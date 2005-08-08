@@ -26,12 +26,20 @@
 	</bean>
 	
 	
-	<bean id="grailsHibernateConfiguration" class="org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainConfiguration">
+	<bean id="grailsHibernateConfiguration" class="org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainAnnotationConfiguration">
 		<property name="grailsApplication" ref="grailsApplication"></property>
 	</bean>
 	
 	<bean id="sessionFactory" class="org.codehaus.groovy.grails.orm.hibernate.ConfigurableLocalsSessionFactoryBean">
-		<property name="configuration" ref="grailsHibernateConfiguration" /> 
+		<property name="grailsApplication">
+			<ref bean="grailsApplication" />
+		</property>
+		<property name="configLocation">
+		    <value>hibernate.cfg.xml</value>
+		</property>	
+		<property name="configurationClass">
+			<value>org.codehaus.groovy.grails.orm.hibernate.cfg.GrailsDomainAnnotationConfiguration</value>
+		</property> 
 		<property name="hibernateProperties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
