@@ -24,8 +24,6 @@ import javax.sql.DataSource;
 
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.codehaus.groovy.grails.domain.HibernateOne2One;
-import org.codehaus.groovy.grails.domain.HibernateOne2One2;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -120,20 +118,6 @@ public class GrailsHibernateConfigurationTests extends
 		assertEquals("Joe",obj.getProperty("firstName"));
 	}
 	
-	/**
-	 * This is to test out mixing java annotated class and grails domain classes
-	 *
-	 */
-	public void testHibernateAnnotatedJavaClasses() {
-		HibernateOne2One one2one = new HibernateOne2One();		
-		HibernateOne2One2 one2one2 = new HibernateOne2One2();		
-		one2one.setOther(one2one2);
-		
-		HibernateTemplate template = new HibernateTemplate(this.sessionFactory);
-		
-		template.save(one2one);
-		
-	}
 	
 	public void testHibernateOneToOne() {
 
