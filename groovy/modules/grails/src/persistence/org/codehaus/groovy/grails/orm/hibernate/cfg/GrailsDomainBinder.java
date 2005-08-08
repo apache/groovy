@@ -28,7 +28,7 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.hibernate.FetchMode;
 import org.hibernate.MappingException;
 import org.hibernate.cfg.Mappings;
-import org.hibernate.cfg.SecondPass;
+//import org.hibernate.cfg.SecondPass;
 import org.hibernate.id.PersistentIdentifierGenerator;
 import org.hibernate.mapping.Collection;
 import org.hibernate.mapping.Column;
@@ -113,11 +113,8 @@ public final class GrailsDomainBinder {
 	 * @author Graeme
 	 *
 	 */
-	static class GrailsCollectionSecondPass extends SecondPass {
+	/*static class GrailsCollectionSecondPass extends SecondPass {
 
-		/**
-		 * 
-		 */
 		private static final long serialVersionUID = -5540526942092611348L;
 		private GrailsDomainClassProperty property;
 		private Mappings mappings;
@@ -134,7 +131,7 @@ public final class GrailsDomainBinder {
 			bindCollectionSecondPass( this.property, mappings, persistentClasses, collection,inheritedMetas );			
 		}
 
-	}
+	}*/
 
 	private static void bindCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Map persistentClasses, Collection collection, Map inheritedMetas) {
 
@@ -230,7 +227,7 @@ public final class GrailsDomainBinder {
 		}
 		
 		// setup second pass
-		mappings.addSecondPass( new GrailsCollectionSecondPass(property, mappings, collection) );
+		//mappings.addSecondPass( new GrailsCollectionSecondPass(property, mappings, collection) );
 		
 	}
 	/**
@@ -296,6 +293,8 @@ public final class GrailsDomainBinder {
 
 
 	/**
+	 * Binds a persistent classes to the table representation and binds the class properties
+	 * 
 	 * @param domainClass
 	 * @param root
 	 * @param mappings
