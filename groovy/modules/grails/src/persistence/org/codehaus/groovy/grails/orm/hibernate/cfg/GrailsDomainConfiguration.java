@@ -11,84 +11,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 package org.codehaus.groovy.grails.orm.hibernate.cfg;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
-import org.apache.log4j.Logger;
 import org.codehaus.groovy.grails.commons.GrailsApplication;
 import org.codehaus.groovy.grails.commons.GrailsDomainClass;
-import org.hibernate.MappingException;
-import org.hibernate.cfg.Configuration;
 
 /**
- * Creates runtime configuration mappings for the Grails domain classes
- * based on the work done in the Hibernate Annotations project
- * 
  * @author Graeme Rocher
- * @since 06-Jul-2005
+ * @since 04-Aug-2005
  */
-public class GrailsDomainConfiguration extends Configuration {
 
-	private GrailsApplication grailsApplication;
-	private Set domainClasses;
-	private boolean configLocked = false;
-	
-	private static Logger log = Logger.getLogger(GrailsDomainConfiguration.class);
-	
-	/**
-	 * 
-	 */
-	public GrailsDomainConfiguration() {
-		super();		
-		this.domainClasses = new HashSet();
-	}
-
+public interface GrailsDomainConfiguration {
 	/**
 	 * Adds a domain class to the configuration
 	 * @param domainClass
 	 * @return this
 	 */
-	public GrailsDomainConfiguration addDomainClass( GrailsDomainClass domainClass ) {
-		this.domainClasses.add(domainClass);
-		return this;		
-	}
-	/**
-	 * @param application The application to set.
-	 */
-	public void setGrailsApplication(GrailsApplication application) {
-		this.grailsApplication = application;
-		
-		GrailsDomainClass[] existingDomainClasses = this.grailsApplication.getGrailsDomainClasses();
-		for(int i = 0; i < existingDomainClasses.length;i++) {
-			addDomainClass(existingDomainClasses[i]);
-		}		
-	}
-	
-	/**
-	 * 
-	 */
-	protected void secondPassCompile() throws MappingException {
-		// set the class loader to load Groovy classes
-//		Thread.currentThread().setContextClassLoader( this.grailsApplication.getClassLoader() );
-		// do Grails class configuration
-		if (configLocked) {
-			return;
-		}
-		
-		for(Iterator i = this.domainClasses.iterator();i.hasNext();) {
-			GrailsDomainClass domainClass = (GrailsDomainClass)i.next();
-			log.debug("Configuring domain class [" + domainClass.getFullName() + "] in Hibernate.");
+	public abstract GrailsDomainConfiguration addDomainClass(
+			GrailsDomainClass domainClass);
 
-			GrailsDomainBinder.bindClass(domainClass, super.createMappings());
-		}
-		
-		// call super
-		super.secondPassCompile();
-		configLocked = true;
-	}
-	
+	/**
+	 * Sets the grails application instance
+	 * @param domain The domain to set.
+	 */
+	public abstract void setGrailsApplication(GrailsApplication application);
+
 }
