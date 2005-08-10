@@ -65,9 +65,11 @@ Representing supplementary characters requires two consecutive Unicode escapes.
 
 *All Platforms*
 This translation step results in a sequence of Unicode input characters:
+
 {code}
 UnicodeInputCharacter:
   UnicodeEscape
+
   RawInputCharacter
 
 UnicodeEscape:
@@ -79,6 +81,7 @@ UnicodeMarker:
   
 RawInputCharacter:
   any Unicode character
+
 
 HexDigit: one of
   '0' '1' '2' '3' '4' '5' '6' '7' '8' '9' 
@@ -113,5 +116,187 @@ Implementations should use the {{\\\uxxxx}} notation as an output format to disp
 h2. 3.4 Line Terminators
 
 Implementations next divide the sequence of Unicode input characters into lines by recognizing _line_ _terminators_. 
-This definition of lines determines the line numbers produced by a Java compiler or other system component. 
+This definition of lines determines the line numbers produced by a Groovy compiler or other system component. 
 It also specifies the termination of the {{//}} form of a comment ($3.7).
+
+{code}
+LineTerminator:
+  the ASCII LF character, also known as "newline"
+  the ASCII CR character, also known as "return"
+  the ASCII CR character followed by the ASCII LF character
+
+
+InputCharacter:
+  UnicodeInputCharacter but not CR or LF
+{code}
+
+
+Lines are terminated by the ASCII characters CR, or LF, or CR LF. The two
+characters CR immediately followed by LF are counted as one line terminator, not
+two.
+The result is a sequence of line terminators and input characters, which are the terminal symbols for the third step in the tokenization process.
+
+{anchor:3.5}
+h2. 3.5 Input Elements and Tokens
+
+The input characters and line terminators that result from escape processing ($3.3) and then input line recognition ($3.4) are reduced to a sequence of _input_ _elements_.
+Those input elements that are not white space ($3.6) or comments ($3.7) are
+tokens. The tokens are the terminal symbols of the syntactic grammar ($2.3).
+
+
+This process is specified by the following productions:
+{code}
+Input:
+  InputElements(opt) Sub(opt)
+
+InputElements:
+  InputElement
+  InputElements InputElement
+
+InputElement:
+  WhiteSpace
+  Comment
+  Token
+
+Token:
+  Identifier
+  Keyword
+  Literal
+  Separator
+  Operator
+
+Sub:
+  the ASCII SUB character, also known as "control-Z"
+{code}
+
+White space ($3.6) and comments ($3.7) can serve to separate tokens that, if adjacent, might be tokenized in another manner. For example, the ASCII characters - and = in the input can form the operator token -= ($3.12) only if there is no intervening white space or comment.
+
+As a special concession for compatibility with certain operating systems, the ASCII SUB character ({{\\\u001a}}, or control-Z) is ignored if it is the last character in the escaped input stream.
+
+Consider two tokens {{x}} and {{y}} in the resulting input stream. If {{x}} precedes {{y}}, then we say that {{x}} is _to_ _the_ _left_ _of_ {{y}} and that {{y}} is _to_ _the_ _right_ _of_ {{x}}.
+
+For example, in this simple piece of code:
+{code}
+class Empty {
+}
+{code}
+we say that the {{\}}} token is to the right of the {{\{}} token, even though it appears, in this two-dimensional representation on paper, downward and to the left of the {{\{}} token.
+This convention about the use of the words left and right allows us to speak, for example, of the right-hand operand of a binary operator or of the left-hand side of an assignment.
+
+{anchor:3.6}
+h2. 3.6 White Space
+
+_White_ _Space_ is defined as the ASCII space, horizontal tab, and form feed characters, as well as line terminators ($3.4).
+
+{code}
+WhiteSpace:
+  the ASCII SP character, also known as "space"
+  the ASCII HT character, also known as "horizontal tab"
+  the ASCII FF character, also known as "form feed"
+  LineTerminator
+{code}
+
+{anchor:3.7}
+h2. 3.7 Comments
+
+There are three kinds of _comments_:
+{table}
+                 |
+{{/\* text \*/}} | A _traditional_ _comment_: all the text from the ASCII
+                 | characters {{/\*}} to the ASCII characters {{\*/}} is ignored
+                 | (as in C and C++).
+                 |
+{{// text}}      | An _end_-_of_-_line_ _comment_: all the text from the ASCII
+                 | characters {{//}} to the end of the line is ignored (as in
+                 | C++).
+                 |
+{{# text}}       | A _shell_ _comment_: all the text from the ASCII
+                 | character {{#}} to the end of the line is ignored (as in
+                 | Unix shell scripts).
+{table}
+
+These comments are formally specified by the following productions:
+{code}
+Comment:
+  TraditionalComment
+  EndOfLineComment
+  ShellComment
+  
+TraditionalComment:
+  '/' '*' CommentTail
+
+EndOfLineComment:
+  '/' '/' CharactersInLine(opt)
+
+ShellComment:
+  '#' CharactersInLine(opt)
+
+CommentTail:
+  '*' CommentTailStar
+  NotStar CommentTail
+
+CommentTailStar:
+  '/'
+  '*' CommentTailStar
+  NotStarNotSlash CommentTail
+
+NotStar:
+  InputCharacter but not '*'
+  LineTerminator
+
+NotStarNotSlash:
+  InputCharacter but not '*' or '/'
+  LineTerminator
+
+CharactersInLine:
+  InputCharacter
+  CharactersInLine InputCharacter
+{code}
+
+These productions imply all of the following properties:
+- Comments do not nest
+- {{#}}, {{/\*}} and {{\*/}} have no special meaning in comments that begin with {{//}}.
+- {{#}} and {{//}} have no special meaning in comments that begin with {{/\*}} or {{/\*\*}}.
+- {{//}}, {{/\*}} and {{\*/}} have no special meaning in comments that begin with {{#}}.
+
+As a result, the text:
+{code}
+/* a comment which... /* # // /** ends here: */
+{code}
+is a single complete comment.
+
+The lexical grammar implies that comments do not occur within string literals ($3.10.5) or regex literals ($3.10.todo).
+
+{anchor:3.8}
+h2. 3.8 Identifiers
+
+An _identifier_ is an unlimited-length sequence of _Java_ _letters_ and _Java_ _digits_, the first of which must be a Java letter. An identifier cannot have the same spelling (Unicode character sequence) as a keyword ($3.9), boolean literal ($3.10.3), or the null literal ($3.10.7).  todo - other literals????
+{code}
+Identifier:
+  IdentifierChars but not a Keyword or BooleanLiteral or NullLiteral
+
+IdentifierChars:
+  JavaLetter
+  IdentifierChars JavaLetterOrDigit
+
+JavaLetter:
+  any Unicode character that is a Java letter (see below)
+
+JavaLetterOrDigit:
+  any Unicode character that is a Java letter-or-digit (see below)
+{code}
+
+Letters and digits may be drawn from the entire Unicode character set, which supports most writing scripts in use in the world today, including the large sets for Chinese, Japanese, and Korean. This allows programmers to use identifiers in their programs that are written in their native languages.
+
+A "Java letter" is a character for which the method {{Character}} {{.isJavaIdentifierStart(int)}} returns {{true}}. A "Java letter-or-digit" is a character for which the method {{Character}} {{.isJavaIdentifierPart(int)}} returns {{true}}.
+
+The Java letters include uppercase and lowercase ASCII Latin letters {{A}}-{{Z}} ({{\\\u0041}}-{{\\\u005a}}), and {{a}}-{{z}} ({{\\\u0061}}-{{\\\u007a}}), and, for historical reasons, the ASCII underscore ({{_}}, or {{\\\u005f}}) and dollar sign ({{$}}, or {{\\\u0024}}). The {{$}} character should be used only in mechanically generated source code or, rarely, to access preexisting names on legacy systems.
+
+The "Java digits" include the ASCII digits {{0}}-{{9}} ({{\\\u0030}}-{{\\\u0039}}).
+
+Two identifiers are the same only if they are identical, that is, have the same Unicode character for each letter or digit.
+
+Identifiers that have the same external appearance may yet be different. For example, the identifiers consisting of the single letters LATIN CAPITAL LETTER A ({{A}}, {{\\\u0041}}), LATIN SMALL LETTER A ({{a}}, {{\\\u0061}}), GREEK CAPITAL LETTER ALPHA ({{&#913;}}, {{\\\u0391}}), CYRILLIC SMALL LETTER A ({{&#1072;}}, {{\\\u0430}}) and MATHEMATICAL BOLD ITALIC SMALL A ({{a}}, {{\\\ud835\\\udc82}}) are all different.
+
+Unicode composite characters are different from the decomposed characters. For example, a LATIN CAPITAL LETTER A ACUTE ({{&#193;}}, \u00c1) could be considered to be the same as a LATIN CAPITAL LETTER A (A, \u0041) immediately followed by a NON-SPACING ACUTE ({{&#769;}}, \u0301) when sorting, but these are different in identifiers. See _The_ _Unicode_ _Standard_, Volume 1, pages 412ff for details about decomposition, and see pages 626-627 of that work for details about sorting.
+
