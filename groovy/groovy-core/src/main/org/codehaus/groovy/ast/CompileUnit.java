@@ -137,6 +137,7 @@ public class CompileUnit {
     	}
     	
     	Class answer = null;
+        NoClassDefFoundError noClassErr = null;
     	ClassLoader lastLoader  = getClassLoader();
     	try {
     		answer = lastLoader.loadClass(type);
@@ -146,7 +147,8 @@ public class CompileUnit {
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }
     	} catch (NoClassDefFoundError e) {
-           // fall through   
+            noClassErr = e;
+            // fall through
         }
     	
         try {
@@ -162,6 +164,7 @@ public class CompileUnit {
                 throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + cause, cause);
             }
         } catch (NoClassDefFoundError e) {
+            noClassErr = e;
             // fall through   
         }
         
@@ -180,6 +183,7 @@ public class CompileUnit {
             }        
         }
         catch (NoClassDefFoundError e) {
+            noClassErr = e;
             // fall through   
          }
         
@@ -195,11 +199,15 @@ public class CompileUnit {
             }
         }
         catch (NoClassDefFoundError e) {
+            noClassErr = e;
             // fall through   
-         }
+        }
 
         if ( answer == null ) {
         	cachedClasses.put(type,NO_CLASS);
+            if (noClassErr != null) {
+                throw new ClassGeneratorException("Error when compiling class: " + type + ". Reason: " + noClassErr, noClassErr);
+            }
         	throw new ClassNotFoundException(type);
         } else if (answer==GroovyClassLoader.PARSING.class){
             //no chaching
