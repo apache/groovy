@@ -66,7 +66,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Node {
+public class Node implements java.io.Serializable {
 
     private Node parent;
     private Object name;
