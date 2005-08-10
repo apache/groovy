@@ -3790,6 +3790,15 @@ public class DefaultGroovyMethods {
     }
 
     public static void upto(Long self, Number to, Closure closure) {
+        long self1 = self.longValue();
+        long to1 = to.longValue();
+        if (self1 <= to1) {
+            for (long i = self1; i <= to1; i++) {
+                closure.callSpecial(new Long(i));
+            }
+        }
+        else
+            throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to +")");
     }
 
     public static void upto(float self, Number to, Closure closure) {
