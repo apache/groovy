@@ -5,7 +5,7 @@
 	<bean id="grailsApplication" class="org.codehaus.groovy.grails.commons.GrailsApplicationFactoryBean">
 		<description>Grails application factory bean</description>
 		<property name="groovyFiles">
-			<value>org/codehaus/groovy/grails/web/pageflow/*.groovy</value>
+			<value>file:test/web/org/codehaus/groovy/grails/web/pageflow/*.groovy</value>
 		</property>
 	</bean>
 	<bean id="TestPageFlowClass" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
@@ -20,9 +20,9 @@
 		</property>
 	</bean>
 	<bean id="TestPageFlow" factory-bean="TestPageFlowClass" factory-method="newInstance"/>
-	<bean id="testPageFlowController" class="org.springframework.web.flow.mvc.FlowController">
+	<bean id="testPageFlowController" class="org.springframework.webflow.mvc.FlowController">
 		<property name="flow">
-			<bean class="org.springframework.web.flow.config.FlowFactoryBean">
+			<bean class="org.springframework.webflow.config.FlowFactoryBean">
 				<property name="flowBuilder">
 					<bean class="org.codehaus.groovy.grails.web.pageflow.GrailsFlowBuilder">
 						<property name="pageFlowClass">

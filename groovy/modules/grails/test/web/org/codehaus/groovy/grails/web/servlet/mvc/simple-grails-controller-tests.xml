@@ -5,7 +5,7 @@
 	<bean id="grailsApplication" class="org.codehaus.groovy.grails.commons.GrailsApplicationFactoryBean">
 		<description>Grails application factory bean</description>
 		<property name="groovyFiles">
-			<value>org/codehaus/groovy/grails/web/servlet/mvc/*.groovy</value>
+			<value>file:test/web/org/codehaus/groovy/grails/web/servlet/mvc/*.groovy</value>
 		</property>
 	</bean>
 	<bean id="controller" class="org.codehaus.groovy.grails.web.servlet.mvc.SimpleGrailsController">

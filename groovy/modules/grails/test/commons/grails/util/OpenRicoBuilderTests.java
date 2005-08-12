@@ -61,7 +61,7 @@ public class OpenRicoBuilderTests extends TestCase {
 		GroovyObject go = (GroovyObject)clazz.newInstance();
 		Closure closure = (Closure)go.getProperty("test");
 		StringWriter sw = new StringWriter();
-		closure.call(new Object[] { getResponse(sw) });
+		closure.call(getResponse(sw));
 		System.out.println(sw.getBuffer().toString());
 	}
 
