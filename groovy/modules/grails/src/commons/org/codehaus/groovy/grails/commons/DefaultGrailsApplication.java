@@ -58,25 +58,15 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		log.debug("Loading Grails application.");
 
-		this.cl = new GroovyClassLoader();
-		Collection serviceResources = new ArrayList();
-		Collection testResources = new ArrayList();
+		this.cl = new GroovyClassLoader(getClass().getClassLoader());
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
 				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
-				if (resources[i].getFile().getAbsolutePath().endsWith("Service.groovy")) {
-					serviceResources.add(resources[i]);
-				} else if (resources[i].getFile().getAbsolutePath().endsWith("Tests.groovy")) {
-					testResources.add(resources[i]);
-				} else {
-					cl.parseClass(resources[i].getFile());
-				}
+				cl.parseClass(resources[i].getFile());
 			} catch (CompilationFailedException e) {
 				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
 			}
 		}
-		loadResources(serviceResources, cl);
-		loadResources(testResources, cl);
 		// get all the classes that were loaded
 		Class[] classes = cl.getLoadedClasses();
 		this.allClasses = classes;
@@ -215,14 +205,4 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		return this.allClasses;
 	}
 	
-	private void loadResources(Collection resources, GroovyClassLoader cl) throws IOException {
-		for (Iterator iter = resources.iterator(); iter.hasNext();) {
-			Resource resource = (Resource)iter.next();
-			try {
-				cl.parseClass(resource.getFile());
-			} catch (CompilationFailedException e) {
-				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resource.getFilename() + "]: " + e.getMessage(), e);
-			}
-		}
-	}
 }
