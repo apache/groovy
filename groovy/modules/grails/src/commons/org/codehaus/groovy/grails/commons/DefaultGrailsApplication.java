@@ -58,7 +58,7 @@ public class DefaultGrailsApplication implements GrailsApplication {
 		
 		log.debug("Loading Grails application.");
 
-		this.cl = new GroovyClassLoader(getClass().getClassLoader());
+		this.cl = new GroovyClassLoader();
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
 				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
