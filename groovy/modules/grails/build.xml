@@ -9,6 +9,7 @@
 		<fileset dir="${grails.lib.hibernate}">
 			<include name="*.jar"/>
 		</fileset>
+		<pathelement location="${grails.src.war}/WEB-INF"/>
 	</path>
 	
 	<target name="clean">
