@@ -1,5 +1,6 @@
 package groovy.lang;
 import java.io.File;
+import java.net.URL;
 
 import junit.framework.TestCase;
 
@@ -31,6 +32,12 @@ public class ClassNotFoundExceptionTests extends TestCase {
 		super(arg0);
 	}
 
+	public void testLoadFileFromClassLoader() throws Exception {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		URL url = cl.getResource("groovy/lang/Order.groovy");
+		assertNotNull(url);
+	}
+	
 	public void testClassNotFoundException() throws Exception {
 		GroovyClassLoader gcl = new GroovyClassLoader();
 		gcl.parseClass(new File("test/commons/groovy/lang/OrderService.groovy"));
