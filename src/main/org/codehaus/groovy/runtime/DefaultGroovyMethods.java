@@ -1402,7 +1402,6 @@ public class DefaultGroovyMethods {
      * @return the group at the given index
      */
     public static String getAt(Matcher matcher, int idx) {
-        matcher.reset();
         idx = normaliseIndex(idx, matcher.groupCount());
 
         // are we using groups?
@@ -1413,6 +1412,7 @@ public class DefaultGroovyMethods {
         } else {
             // not using groups, so return the nth
             // occurrence of the pattern
+            matcher.reset();
             for (int i = 0; i <= idx; i++) {
                 matcher.find();
             }
