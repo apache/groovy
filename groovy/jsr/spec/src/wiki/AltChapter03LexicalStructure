@@ -299,3 +299,39 @@ Two identifiers are the same only if they are identical, that is, have the same 
 Identifiers that have the same external appearance may yet be different. For example, the identifiers consisting of the single letters LATIN CAPITAL LETTER A ({{A}}, {{\\\u0041}}), LATIN SMALL LETTER A ({{a}}, {{\\\u0061}}), GREEK CAPITAL LETTER ALPHA ({{&#x0391;}}, {{\\\u0391}}), CYRILLIC SMALL LETTER A ({{&#x0430;}}, {{\\\u0430}}) and MATHEMATICAL BOLD ITALIC SMALL A ({{a}}, {{\\\ud835\\\udc82}}) are all different.
 
 Unicode composite characters are different from the decomposed characters. For example, a LATIN CAPITAL LETTER A ACUTE ({{&#x00c1;}}, {{\\\u00c1}}) could be considered to be the same as a LATIN CAPITAL LETTER A ({{A}}, {{\\\u0041}}) immediately followed by a NON-SPACING ACUTE ({{&#x0301;}}, {{\\\u0301}}) when sorting, but these are different in identifiers. See _The_ _Unicode_ _Standard_, Volume 1, pages 412ff for details about decomposition, and see pages 626-627 of that work for details about sorting.
+
+Examples of identifiers are:
+{code}
+String   i3   &#x03B1;&#x03c6;&#x03b5;&#x03C8;   MAX_VALUE   isLetterOrDigit
+{code}
+
+
+{anchor:3.9}
+h2. 3.9 Keywords
+
+The following character sequences, formed from ASCII letters, are reserved for
+use as _keywords_ and cannot be used as identifiers ($3.8):
+
+{table}
+Keywords:    | one of       |                |                | 
+{{abstract}} | {{continue}} | {{for       }} | {{new       }} | {{switch      }}
+{{assert  }} | {{default }} | {{if        }} | {{package   }} | {{synchronized}}
+{{boolean }} | {{do      }} | {{goto      }} | {{private   }} | {{this        }}
+{{break   }} | {{double  }} | {{implements}} | {{protected }} | {{throw       }}
+{{byte    }} | {{else    }} | {{import    }} | {{public    }} | {{throws      }}
+{{case    }} | {{enum    }} | {{instanceof}} | {{return    }} | {{transient   }}
+{{catch   }} | {{extends }} | {{int       }} | {{short     }} | {{try         }}
+{{char    }} | {{final   }} | {{interface }} | {{static    }} | {{void        }}
+{{class   }} | {{finally }} | {{long      }} | {{strictfp  }} | {{volatile    }}
+{{const   }} | {{float   }} | {{native    }} | {{super     }} | {{while       }}
+             |              |                |                |
+{{any     }} | {{def     }} | {{threadsafe}} |                | 
+{{as      }} | {{in      }} | {{with}}       |                |
+{table}
+
+*todo*: RI missing keywords as literals - abstract, const, do, final, goto, strictfp
+
+The keywords {{any}}, {{const}}, {{goto}}, {{threadsafe}} and {{with}} are reserved, 
+even though they are not currently used. This may allow a Java compiler to produce better error messages if these keywords incorrectly appear in programs.
+
+While {{true}} and {{false}} might appear to be keywords, they are technically Boolean literals ($3.10.3). Similarly, while {{null}} might appear to be a keyword, it is technically the null literal ($3.10.7).
