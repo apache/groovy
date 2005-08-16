@@ -1395,29 +1395,122 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for a regex Matcher
+     * Support the subscript operator, e.g. matcher[index], for a regex Matcher.
+     *
+     * For an example using no group match, <code><pre>
+     *    def p = /ab[d|f]/ 
+     *    def m = "abcabdabeabf" =~ p 
+     *    for (i in 0..<m.count) { 
+     *        println( "m.groupCount() = " + m.groupCount())
+     *        println( "  " + i + ": " + m[i] )   // m[i] is a String
+     *    }
+     * </pre></code>
+     *
+     * For an example using group matches, <code><pre>
+     *    def p = /(?:ab([c|d|e|f]))/ `
+     *    def m = "abcabdabeabf" =~ p 
+     *    for (i in 0..<m.count) { 
+     *        println( "m.groupCount() = " + m.groupCount())
+     *        println( "  " + i + ": " + m[i] )   // m[i] is a List
+     *    }
+     * </pre></code>
+     *
+     * For another example using group matches, <code><pre>
+     *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
+     *    m.count.times { 
+     *        println( "m.groupCount() = " + m.groupCount())
+     *        println( "  " + it + ": " + m[it] )   // m[it] is a List
+     *    }
+     * </pre></code>
      *
      * @param matcher a Matcher
      * @param idx     an index
-     * @return the group at the given index
+     * @return object a matched String if no groups matched, list of matched groups otherwise.
      */
-    public static String getAt(Matcher matcher, int idx) {
-        idx = normaliseIndex(idx, matcher.groupCount());
-
-        // are we using groups?
-        if (matcher.groupCount() > 0) {
-            // yes, so return the specified group
-            matcher.find();
-            return matcher.group(idx);
-        } else {
-            // not using groups, so return the nth
-            // occurrence of the pattern
+    public static Object getAt(Matcher matcher, int idx) {
+        try {
+            int count = getCount(matcher);
+            if (idx < -count || idx >= count) {
+                throw new IndexOutOfBoundsException("index is out of range " + (-count) + ".." + (count - 1) + " (index = " + idx + ")");
+            }
+            idx = normaliseIndex(idx, count);
             matcher.reset();
             for (int i = 0; i <= idx; i++) {
                 matcher.find();
             }
-            return matcher.group();
+
+            if (hasGroup(matcher)) {
+                // are we using groups?
+                // yes, so return the specified group as list
+                ArrayList list = new ArrayList(matcher.groupCount());
+                for (int i = 0; i <= matcher.groupCount(); i++) {
+                    list.add(matcher.group(i));
+                }
+                return list;
+            } else {
+                // not using groups, so return the nth
+                // occurrence of the pattern
+                return matcher.group();
+            }
         }
+        catch (IllegalStateException ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Set the position of the given Matcher to the given index.
+     *
+     * @param matcher a Matcher
+     * @param idx the index number
+     */
+    public static void setIndex(Matcher matcher, int idx) {
+        int count = getCount(matcher);
+        if (idx < -count || idx >= count) {
+            throw new IndexOutOfBoundsException("index is out of range " + (-count) + ".." + (count - 1) + " (index = " + idx + ")");
+        }
+        if (idx == 0) {
+            matcher.reset();
+        }
+        else if (idx > 0) {
+            matcher.reset();
+            for (int i = 0; i < idx; i++) {
+                matcher.find();
+            }
+        }
+        else if (idx < 0) {
+            matcher.reset();
+            idx += getCount(matcher);
+            for (int i = 0; i < idx; i++) {
+                matcher.find();
+            }
+        }
+    }
+
+    /**
+     * Find the number of Strings matched to the given Matcher.
+     *
+     * @param matcher a Matcher
+     * @return int  the number of Strings matched to the given matcher.
+     */
+    public static int getCount(Matcher matcher) {
+        int counter = 0;
+        matcher.reset();
+        while (matcher.find()) {
+            counter++;
+        }
+        matcher.reset();
+        return counter;
+    }
+
+    /**
+     * Check whether a Matcher contains a group or not.
+     *
+     * @param matcher a Matcher
+     * @return boolean  <code>true</code> if matcher contains at least one group.
+     */
+    public static boolean hasGroup(Matcher matcher) {
+        return matcher.groupCount() > 0;
     }
 
     /**

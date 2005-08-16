@@ -203,6 +203,7 @@ public class UberTestCase extends TestCase {
         suite.addTestSuite(PropertyWithoutDotTest.class);
         suite.addTestSuite(RangeTest.class);
         suite.addTestSuite(ReadLineTest.class);
+        suite.addTestSuite(RegExpGroupMatchTest.class);
         suite.addTestSuite(RegularExpressionsTest.class);
         suite.addTestSuite(ReturnTest.class);
         suite.addTestSuite(RodsBooleanBug.class);
