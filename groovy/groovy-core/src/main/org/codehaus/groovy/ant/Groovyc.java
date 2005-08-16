@@ -45,11 +45,16 @@
  */
 package org.codehaus.groovy.ant;
 
+import groovy.lang.GroovyClassLoader;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
+import java.util.Iterator;
+import java.util.List;
 
+import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
@@ -71,6 +76,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * <li>sourcedir
  * <li>destdir
  * <li>classpath
+ * <li>stacktrace
  * </ul>
  * Of these arguments, the <b>sourcedir</b> and <b>destdir</b> are required.
  * <p>
@@ -81,6 +87,7 @@ import org.codehaus.groovy.tools.ErrorReporter;
  * Based heavily on the Javac implementation in Ant
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Hein Meling
  * @version $Revision$ 
  */
 public class Groovyc extends MatchingTask {
@@ -186,6 +193,15 @@ public class Groovyc extends MatchingTask {
      */
     public void setVerbose(boolean verbose) {
         configuration.setVerbose( verbose );
+    }
+
+    /**
+     * Enable compiler to report stack trace information if a problem occurs
+     * during compilation.
+     * @param stacktrace
+     */
+    public void setStacktrace(boolean stacktrace) {
+        configuration.setDebug(stacktrace);
     }
 
     /**
@@ -432,8 +448,10 @@ public class Groovyc extends MatchingTask {
                     String filename = compileList[i].getAbsolutePath();
 
                     // TODO this logging does not seem to appear in the maven build??
+                    // COMMENT Hein: This is not ant's problem;
+                    // fix it in maven instead if you really need this from maven!
                     log(filename);
-                    System.out.println("compiling: " + filename);
+//                    System.out.println("compiling: " + filename);
                 }
             }
 
@@ -448,9 +466,9 @@ public class Groovyc extends MatchingTask {
                     configuration.setSourceEncoding(encoding);
                 }
 
-                CompilationUnit unit = new CompilationUnit( configuration );
-                unit.addSources( compileList );
-                unit.compile( );
+                CompilationUnit unit = new CompilationUnit(configuration, null, buildClassLoaderFor());
+                unit.addSources(compileList);
+                unit.compile();
             }
             catch (Exception e) {
 
@@ -468,4 +486,32 @@ public class Groovyc extends MatchingTask {
             }
         }
     }
+
+    private GroovyClassLoader buildClassLoaderFor() {
+        ClassLoader parent = this.getClass().getClassLoader();
+        if (parent instanceof AntClassLoader) {
+            AntClassLoader antLoader = (AntClassLoader) parent;
+            String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
+            List classpath = configuration.getClasspath();
+            /*
+             * Iterate over the classpath provided to groovyc, and add any missing path
+             * entries to the AntClassLoader.  This is a workaround, since for some reason
+             * 'directory' classpath entries were not added to the AntClassLoader' classpath. 
+             */
+            for (Iterator iter = classpath.iterator(); iter.hasNext();) {
+                String cpEntry = (String) iter.next();
+                boolean found = false;
+                for (int i = 0; i < pathElm.length; i++) {
+                    if (cpEntry.equals(pathElm[i])) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    antLoader.addPathElement(cpEntry);
+            }
+        }
+        return new GroovyClassLoader(parent, configuration);
+    }
+
 }
