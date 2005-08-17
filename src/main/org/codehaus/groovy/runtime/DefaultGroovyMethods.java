@@ -505,14 +505,24 @@ public class DefaultGroovyMethods {
     //-------------------------------------------------------------------------
 
     /**
-     * Remove all duplicates from the Collection.
+     * Remove all duplicates from a given Collection.
      * Works on the receiver object and returns it.
-     * From any duplicate, the first that is returned by the Collections iterator
-     * is retained, all other instances are removed.
-     * The Collection's original sequence is retained.
+     * For each duplicate, only the first member which is returned
+     * by the given Collection's iterator is retained, but all other ones are removed.
+     * The given Collection's original order is retained.
+     * If there exists numbers in the Collection, then they are compared
+     * as numbers, that is, 2, 2.0, 3L, (short)4 are comparable.
+     *
+     * <code><pre>
+     *     def x = [2, 2.0, 3L, 1.0, (short)4, 1]
+     *     def y = x.unique()
+     *     assert( y == x && x == [2, 3L, 1.0, (short)4] )
+     * </pre></code>
+     *
      * @param self
      * @return self without duplicates
      */
+   /*
     public static Collection unique(Collection self){
         if (self instanceof Set) return self;
         if (self.size() == new HashSet(self).size()) return self;
@@ -525,6 +535,97 @@ public class DefaultGroovyMethods {
                 seen.add(o);
             }
         }
+        return self;
+    }
+   */
+    public static Collection unique(Collection self) {
+        if (self instanceof Set)
+            return self;
+        List answer = new ArrayList();
+        NumberComparator comparator = new NumberComparator();
+        for (Iterator it = self.iterator(); it.hasNext();) {
+            Object o =  it.next();
+            boolean duplicated = false;
+            for (Iterator it2 = answer.iterator(); it2.hasNext();) {
+                Object o2 =  it2.next();
+                if (comparator.compare(o, o2) == 0) {
+                    duplicated = true;
+                    break;
+                }
+            }
+            if (!duplicated)
+                answer.add(o);
+        }
+        self.clear();
+        self.addAll(answer);
+        return self;
+    }
+
+    /**
+     * Remove all duplicates from a given Collection.
+     * Works on the receiver object and returns it.
+     * The order of members in the Collection are compared by the given Comparator.
+     * For eachy duplicate, the first member which is returned
+     * by the given Collection's iterator is retained, but all other ones are removed.
+     * The given Collection's original order is retained.
+     *
+     * <code><pre>
+     *     class Person {
+     *         @Property fname, lname
+     *         public String toString() {
+     *             return fname + " " + lname
+     *         }
+     *     }
+     *
+     *     class PersonComparator implements Comparator {
+     *         public int compare(Object o1, Object o2) {
+     *             Person p1 = (Person) o1
+     *             Person p2 = (Person) o2
+     *             if (p1.lname != p2.lname)
+     *                 return p1.lname.compareTo(p2.lname)
+     *             else
+     *                 return p1.fname.compareTo(p2.fname)
+     *         }
+     *
+     *         public boolean equals(Object obj) {
+     *             return this.equals(obj)
+     *         }
+     *     }
+     *
+     *     Person a = new Person(fname:"John", lname:"Taylor")
+     *     Person b = new Person(fname:"Clark", lname:"Taylor")
+     *     Person c = new Person(fname:"Tom", lname:"Cruz")
+     *     Person d = new Person(fname:"Clark", lname:"Taylor")
+     *
+     *     def list = [a, b, c, d]
+     *     List list2 = list.unique(new PersonComparator())
+     *     assert( list2 == list && list == [a, b, c] )
+     *     
+     * </pre></code>
+     *
+     * @param self        a Collection
+     * @param comparator  a Comparator.
+     * @return self       without duplicates
+     */
+    public static Collection unique(Collection self, Comparator comparator) {
+        if (self instanceof Set)
+            return self;
+        List answer = new ArrayList();
+        for (Iterator it = self.iterator(); it.hasNext();) {
+            Object o =  it.next();
+            boolean duplicated = false;
+            for (Iterator it2 = answer.iterator(); it2.hasNext();) {
+                Object o2 =  it2.next();
+                if (comparator.compare(o, o2) == 0) {
+                    duplicated = true;
+                    break;
+                }
+            }
+            if (!duplicated)
+                answer.add(o);
+        }
+        self.clear();
+        self.addAll(answer);
         return self;
     }
 
@@ -1023,7 +1124,6 @@ public class DefaultGroovyMethods {
             Object value = iter.next();
             if (answer == null || comparator.compare(value, answer) < 0) {
                 answer = value;
-
             }
         }
         return answer;
@@ -1145,7 +1245,7 @@ public class DefaultGroovyMethods {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
 
-        // if this is a backwards range, reverse the arguments to substring
+        // If this is a backwards range, reverse the arguments to substring.
         if (from > to) {
             int tmp = from;
             from = to;
@@ -1188,7 +1288,7 @@ public class DefaultGroovyMethods {
         int from = normaliseIndex(InvokerHelper.asInt(range.getFrom()), text.length());
         int to = normaliseIndex(InvokerHelper.asInt(range.getTo()), text.length());
 
-        // if this is a backwards range, reverse the arguments to substring
+        // If this is a backwards range, reverse the arguments to substring.
         boolean reverse = range.isReverse();
         if (from > to) {
             int tmp = to;
@@ -1407,7 +1507,7 @@ public class DefaultGroovyMethods {
      * </pre></code>
      *
      * For an example using group matches, <code><pre>
-     *    def p = /(?:ab([c|d|e|f]))/ `
+     *    def p = /(?:ab([c|d|e|f]))/ 
      *    def m = "abcabdabeabf" =~ p 
      *    for (i in 0..<m.count) { 
      *        println( "m.groupCount() = " + m.groupCount())
@@ -2233,14 +2333,14 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Sorts the given collection into a sorted list
+     * Sorts the given collection into a sorted list.
      *
      * @param self the collection to be sorted
      * @return the sorted collection as a List
      */
     public static List sort(Collection self) {
         List answer = asList(self);
-        Collections.sort(answer);
+        Collections.sort(answer, new NumberComparator());
         return answer;
     }
 
@@ -2422,7 +2522,8 @@ public class DefaultGroovyMethods {
 
         ArrayList result = new ArrayList();
         //creates the collection to look for values.
-        Collection pickFrom = nlgnSort ? (Collection) new TreeSet(left) : left;
+        Collection pickFrom = (Collection) new TreeSet(new NumberComparator());
+        ((TreeSet) pickFrom).addAll(left);
 
         for (Iterator iter = right.iterator(); iter.hasNext();) {
             final Object o = iter.next();
@@ -2430,6 +2531,96 @@ public class DefaultGroovyMethods {
                 result.add(o);
         }
         return result;
+    }
+
+    /**
+     * Returns <code>true</code> if the intersection of two collenctions is empty.
+     *
+     * @param left       a Collection
+     * @param right      a Collection
+     * @return boolean   <code>true</code> if the intersection of two collenctions is empty, <code>false</code> otherwise.
+     */
+    public static boolean disjoint(Collection left, Collection right) {
+
+        if (left.size() == 0 || right.size() == 0)
+            return true;
+
+        boolean nlgnSort = sameType(new Collection[]{left, right});
+
+        Collection pickFrom = (Collection) new TreeSet(new NumberComparator());
+        ((TreeSet) pickFrom).addAll(right);
+
+        for (Iterator iter = left.iterator(); iter.hasNext();) {
+            final Object o = iter.next();
+            if (pickFrom.contains(o))
+                return false;
+        }
+        return true;
+    }
+
+    // Default comparator for numbers of different types.
+    private static class NumberComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+             if (o1 instanceof Number && o2 instanceof Number) {
+                 BigDecimal x1 = new BigDecimal("" + o1);
+                 BigDecimal x2 = new BigDecimal("" + o2);
+                 return x1.compareTo(x2);
+            }
+            else if (o1.getClass() == o2.getClass() && o1 instanceof Comparable) {
+                return ((Comparable) o1).compareTo((Comparable) o2);
+            }
+            else {
+                 int x1 = o1.hashCode();
+                 int x2 = o2.hashCode();
+                 return (x1 - x2);
+            }
+        }
+
+        public boolean equals(Object obj) {
+             return this.equals(obj);
+        }
+    }
+
+    /**
+     * Compare two Lists.
+     * If numbers exits in the Lists, then they are compared as numbers,
+     * for example 2 == 2L.
+     *
+     * @param  left      a List
+     * @param  right     a List
+     * @return boolean   <code>true</code> if two Lists equals, <code>false</code> otherwise.
+     */
+    public static boolean equals(List left, List right) {
+        if (left == null && right == null)
+             return true;
+        else if (left == null && right != null)
+             return false;
+        else if (left != null && right == null)
+             return false;
+        else if (left.size() != right.size())
+             return false;
+        NumberComparator numberComparator = new NumberComparator(); 
+        Iterator it1 = left.iterator(), it2 = right.iterator();
+        for (; it1.hasNext() && it2.hasNext(); ) {
+            Object o1 = it1.next();
+            Object o2 = it2.next();
+            if (Number.class.isInstance(o1) && Number.class.isInstance(o2)) {
+                if (numberComparator.compare(o1, o2) != 0)
+                    return false;
+            }
+            else {
+                if (o1 == null) {
+                    if (o1 != null)
+                        return false;
+                }
+                else if (!o1.equals(o2))
+                    return false;
+            }
+        }
+
+        if (it1.hasNext() || it2.hasNext())
+            return false;
+        return true;
     }
 
     /**
@@ -2450,11 +2641,45 @@ public class DefaultGroovyMethods {
         //since AbstractCollection only does a remove on the first
         //element it encounter.
 
+        Comparator numberComparator = new NumberComparator();
+
         if (nlgnSort && (self.get(0) instanceof Comparable)) {
             //n*log(n) version
-            Set answer = new TreeSet(self);
-            answer.removeAll(removeMe);
-            return new ArrayList(answer);
+            Set answer = null;
+            if (Number.class.isInstance(self.get(0))) {
+                BigDecimal zero = new BigDecimal("0.0");
+                answer = new TreeSet(numberComparator);
+                answer.addAll(self);
+                for (Iterator it = self.iterator(); it.hasNext(); ) {
+                    Object o = it.next();
+                    if (Number.class.isInstance(o)) {
+                        for (Iterator it2 = removeMe.iterator(); it2.hasNext(); ) {
+                            Object o2 = it2.next();
+                            if (Number.class.isInstance(o2)) {
+                                if (numberComparator.compare(o, o2) == 0)
+                                    answer.remove(o);
+                            }
+                        }
+                    }
+                    else {
+                        if (removeMe.contains(o))
+                            answer.remove(o);
+                    }
+                }
+            }
+            else {
+                answer = new TreeSet(numberComparator);
+                answer.addAll(self);
+                answer.removeAll(removeMe);
+            }
+
+            List ansList = new ArrayList();
+            for (Iterator it = self.iterator(); it.hasNext(); ) {
+                Object o = it.next();
+                if (answer.contains(o))
+                    ansList.add(o);
+            }
+            return ansList;
         } else {
             //n*n version
             List tmpAnswer = new LinkedList(self);
@@ -2462,27 +2687,16 @@ public class DefaultGroovyMethods {
                 Object element = iter.next();
                 //boolean removeElement = false;
                 for (Iterator iterator = removeMe.iterator(); iterator.hasNext();) {
-                    if (element.equals(iterator.next())) {
+                    Object elt = iterator.next();
+                    if (elt != null && numberComparator.compare(element, elt) == 0) {
                         iter.remove();
                     }
                 }
             }
+
             //remove duplicates
             //can't use treeset since the base classes are different
-            List answer = new LinkedList();
-            Object[] array = tmpAnswer.toArray(new Object[tmpAnswer.size()]);
-
-            for (int i = 0; i < array.length; i++) {
-                if (array[i] != null) {
-                    for (int j = i + 1; j < array.length; j++) {
-                        if (array[i].equals(array[j])) {
-                            array[j] = null;
-                        }
-                    }
-                    answer.add(array[i]);
-                }
-            }
-            return new ArrayList(answer);
+            return new ArrayList(tmpAnswer);
         }
     }
 
@@ -3523,7 +3737,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Add two Numbers
+     * Add two numbers and return the result.
      *
      * @param left  a Number
      * @param right another Number to add

@@ -447,6 +447,9 @@ public class Invoker {
             if (left instanceof Comparable) {
                 return compareTo(left, right) == 0;
             }
+            else if (left instanceof List && right instanceof List) {
+                return DefaultGroovyMethods.equals((List) left, (List) right);
+            }
             else {
                 return left.equals(right);
             }
@@ -499,6 +502,7 @@ public class Invoker {
             Comparable comparable = (Comparable) left;
             return comparable.compareTo(right);
         }
+
         if (left.getClass().isArray()) {
             Collection leftList = asCollection(left);
             if (right.getClass().isArray()) {

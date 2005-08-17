@@ -95,6 +95,10 @@ class ListTest extends GroovyTestCase {
         
         l = [1, 2, 7]
         assert l.max() == 7
+
+        // todo: GROOVY-1006        
+        l = [1, 3.2, 4L, (short)7]
+        assert l.max() == (short)7
     }
     
     void testMin() {
@@ -106,6 +110,10 @@ class ListTest extends GroovyTestCase {
         
         l = [1, 2, 7]
         assert l.min() == 1
+
+        // todo: GROOVY-1006        
+        l = [(long)1, 3.2, 4L, (short)7]
+        assert l.min() == (long)1
     }
     
     void testPlus() {
@@ -113,6 +121,11 @@ class ListTest extends GroovyTestCase {
         def l2 = [6, 4, 5, 1, 7, [4,5]]
         def l3 = l1 + l2
         assert l3 == [6, 4, 5, 1, 7, 2, 6, 4, 5, 1, 7, [4,5]]
+
+        l1 = [1, 5.2, 9]
+        l2 = [3, 4L]
+        l3 = [1, 5.2, 9, 3, 4L]
+        assert l1 + l2 == l3
     }
     
     void testPlusOneElement() {
@@ -137,22 +150,28 @@ class ListTest extends GroovyTestCase {
         def l = [4,7,8]
         assert l * 3 == [4, 7, 8, 4, 7, 8, 4, 7, 8]
     }
-    
+
+    // todo: GROOVY-1006
     void testMinus() {
-        def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5]
-        def l2 = [1, 2, 4]
-        assert l1 - l2 == [3, 5] 
+        def l1 = [1, 1, 2, 2, 3, 3, 3, 4, 5, 3, 5]
+        def l2 = [1, 2.0, 4L]
+        assert l1 - l2 == [3, 3, 3, 5, 3, 5] 
     }
 
+    // todo: GROOVY-1006
     void testMinusDifferentTypes() {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "w"]
-        assert l1 - l2 == ["wrer", 3, "wrewer", 4, 5] 
+        assert l1 - l2 == ["wrer", 3, 3, "wrewer", 4, 5] 
     }
 
-    // todo: GROOVY-790
     void disabled_testMinusEmptyCollection(){
+        // todo: GROOVY-790
         def list = [1,1]
+        assert list - [] == list
+
+        // todo: GROOVY-1006    
+        list = [1,2,2,3,1]
         assert list - [] == list
     }
      
@@ -160,6 +179,31 @@ class ListTest extends GroovyTestCase {
         def l1 = [1, 1, "wrer", 2, 3, 3, "wrewer", 4, 5, "w", "w"]
         def l2 = [1, 2, "f", "w"]
         assert l1.intersect(l2) == [1, 2, "w"] 
+
+        // todo: GROOVY-1006    
+        l1 = [1, 1.0, "wrer", 2, 3, 3L, "wrewer", 4, 5, "w", "w"]
+        l2 = [(double)1, 2L, "f", "w"]
+        assert l1.intersect(l2) == [1, 2, "w"] 
+    }
+      
+    // todo: GROOVY-1006
+    void testListEqual() {
+        assert [1, 2.0, 3L, (short)4] == [1, 2, 3, 4]
+    }
+      
+    // todo: GROOVY-1006
+    void testSortNumbersMixedType() {
+        assert [1, (short)3, 4L, 2.9, (float)5.2].sort() == [1, 2.9, (short)3, 4L, (float)5.2] 
+    }
+      
+    // todo: GROOVY-1006
+    void testUnique() {
+        def a = [1, 4L, 1.0]
+        def b = a.unique()
+        assert (b == a && a == [1, 4])
+        a =[1, "foo", (short)3, 4L, 1.0, (float)3.0]
+        b = a.unique()
+        assert (b == a && a == [1, "foo", (short)3, 4L])
     }
       
     void testFlatten() {
