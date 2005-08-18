@@ -185,6 +185,38 @@ class GroovyMethodsTest extends GroovyTestCase {
         println "Exit value of command line is ${value}"
     }
     
+    void DISABLE_testExecuteCommandLineUnderWorkingDirectory() {
+        def cmd = "ls -l"
+        if (System.getProperty('os.name', '').contains('Win')) {
+            cmd = "dir"
+        }
+
+        def envp = java.util.Array.newInstance(String, 0)
+        def workDir = new File(".")
+
+        println "executing command: ${cmd} under the directory ${workDir}"
+
+        def process = cmd.execute(envp, workDir)
+
+        // lets have an easier way to do this!
+        def count = 0
+
+        println "Read the following lines under the directory ${workDir} ..."
+
+        /** @todo we should simplify the following line!!! */
+        new InputStreamReader(process.in).eachLine { line ->
+            println line
+            ++count
+        }
+        println ""
+
+        process.waitFor()
+        def value = process.exitValue()
+        println "Exit value of command line is ${value}"
+
+        assert count > 1
+    }
+    
     void testDisplaySystemProperties() {
         println "System properties are..."
         def properties = System.properties

@@ -69,6 +69,7 @@ import java.util.regex.Pattern;
  * @author John Wilson
  * @author Hein Meling
  * @author Dierk Koenig
+ * @author Pilho Kim
  * @version $Revision$
  */
 public class DefaultGroovyMethods {
@@ -3545,8 +3546,29 @@ public class DefaultGroovyMethods {
      * parameters as separate items in the array.
      * @return the Process which has just started for this command line string.
      */
-    public static Process execute ( final String[] commandArray ) throws IOException {
-      return Runtime.getRuntime ( ).exec ( commandArray ) ;
+    public static Process execute(final String[] commandArray) throws IOException {
+        return Runtime.getRuntime().exec(commandArray) ;
+    }
+
+    /**
+     * Executes the command specified by the <code>self</code> with environments <code>envp</code>
+     * under the working directory <code>dir</code>.
+     * For more control over the process mechanism in JDK 1.5 you can use <code>java.lang.ProcessBuilder</code>.
+     *
+     * @param   self      a command line String to be executed.
+     * @param   envp      an array of Strings, each element of which
+     *                    has environment variable settings in the format
+     *                    <i>name</i>=<i>value</i>, or
+     *                    <tt>null</tt> if the subprocess should inherit
+     *                    the environment of the current process.
+     * @param   dir       the working directory of the subprocess, or
+     *                    <tt>null</tt> if the subprocess should inherit
+     *                    the working directory of the current process.
+     * @return   the Process which has just started for this command line string.
+     *
+     */
+    public static Process execute(String self,  final String[] envp, File dir) throws IOException {
+        return Runtime.getRuntime().exec(self, envp, dir) ;
     }
 
     /**
@@ -3559,13 +3581,39 @@ public class DefaultGroovyMethods {
      * parameters as separate items in the list.
      * @return the Process which has just started for this command line string.
      */
-    public static Process execute ( final List commandList ) throws IOException {
-      final String[] commandArray = new String[commandList.size ( )] ;
-      Iterator it = commandList.iterator ( ) ;
-      for ( int i = 0 ; it.hasNext ( ) ; ++i ) {
-        commandArray[i] = it.next ( ).toString ( ) ;
+    public static Process execute(final List commandList) throws IOException {
+      final String[] commandArray = new String[commandList.size()] ;
+      Iterator it = commandList.iterator();
+      for (int i = 0; it.hasNext(); ++i) {
+          commandArray[i] = it.next().toString();
       }
-      return execute ( commandArray ) ;
+      return execute(commandArray) ;
+    }
+
+    /**
+     * Executes the command specified by the <code>self</code> with environments <code>envp</code>
+     * under the working directory <code>dir</code>.
+     * For more control over the process mechanism in JDK 1.5 you can use <code>java.lang.ProcessBuilder</code>.
+     *
+     * @param   self      a command line String to be executed.
+     * @param   envp      a List of Strings, each member of which
+     *                    has environment variable settings in the format
+     *                    <i>name</i>=<i>value</i>, or
+     *                    <tt>null</tt> if the subprocess should inherit
+     *                    the environment of the current process.
+     * @param   dir       the working directory of the subprocess, or
+     *                    <tt>null</tt> if the subprocess should inherit
+     *                    the working directory of the current process.
+     * @return   the Process which has just started for this command line string.
+     *
+     */
+    public static Process execute(String self, final List envp, File dir) throws IOException {
+      final String[] commandArray = new String[envp.size()] ;
+      Iterator it = envp.iterator();
+      for (int i = 0; it.hasNext(); ++i) {
+          commandArray[i] = it.next().toString();
+      }
+      return execute(self, commandArray, dir);
     }
 
     /**
