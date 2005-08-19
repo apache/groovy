@@ -768,8 +768,11 @@ public class Invoker {
              */
         }
         else {
-            return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
-        }
+            if (object instanceof Class)
+                return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
+            else
+                return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
+	}
     }
 
     /**
@@ -788,8 +791,11 @@ public class Invoker {
             */
         }
         else {
-            metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
-        }
+            if (object instanceof Class)
+                metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
+            else
+                metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
+	}
     }
 
     /**
