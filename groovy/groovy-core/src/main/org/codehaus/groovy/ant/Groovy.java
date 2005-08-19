@@ -48,6 +48,7 @@ package org.codehaus.groovy.ant;
 
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import groovy.lang.Binding;
 import groovy.util.AntBuilder;
 
 import java.io.BufferedOutputStream;
@@ -58,6 +59,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -70,7 +73,10 @@ import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.tools.ErrorReporter;
 
 /**
  * Executes a series of Groovy statements.
@@ -148,6 +154,23 @@ public class Groovy extends Task {
      * Groovy Version needed for this collection of statements.
      **/
     private String version = null;
+
+    /**
+     * Compiler configuration.
+     *
+     * Used to specify the debug output to print stacktraces in case something fails.
+     * TODO: Could probably be reused to specify the encoding of the files to load or other properties.
+     */
+    private CompilerConfiguration configuration = new CompilerConfiguration();
+
+    /**
+     * Enable compiler to report stack trace information if a problem occurs
+     * during compilation.
+     * @param stacktrace
+     */
+    public void setStacktrace(boolean stacktrace) {
+        configuration.setDebug(stacktrace);
+    }
 
 
     /**
@@ -322,7 +345,7 @@ public class Groovy extends Task {
                         command = getText(new BufferedReader(new FileReader(srcFile)));
                     }
 
-                    
+
                     if (command != null) {
                         execGroovy(command,out);
                     } else {
@@ -394,56 +417,51 @@ public class Groovy extends Task {
             return;
         }
 
-            log("Groovy: " + txt, Project.MSG_VERBOSE);
+        log("Groovy: " + txt, Project.MSG_VERBOSE);
 
-            //log(getClasspath().toString(),Project.MSG_VERBOSE);
-            GroovyShell groovy = new GroovyShell(GroovyShell.class.getClassLoader());
+        //log(getClasspath().toString(),Project.MSG_VERBOSE);
+        GroovyShell groovy = new GroovyShell(GroovyShell.class.getClassLoader(), new Binding(), configuration);
 
-            try {
-                Script script = groovy.parse(txt);
-                Project project = getProject();
-                script.setProperty("ant", new AntBuilder(project));
-                script.setProperty("project", project);
-                script.setProperty("properties", new AntProjectPropertiesDelegate(project));
-                script.setProperty("target", getOwningTarget());
-                script.setProperty("task", this);
+        try {
+            Script script = groovy.parse(txt);
+            Project project = getProject();
+            script.setProperty("ant", new AntBuilder(project));
+            script.setProperty("project", project);
+            script.setProperty("properties", new AntProjectPropertiesDelegate(project));
+            script.setProperty("target", getOwningTarget());
+            script.setProperty("task", this);
 
-                // treat the case Ant is run through Maven, and
-                if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
-                    try {
-                        Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
-                        Field contextField = propsHandler.getClass().getDeclaredField("context");
-                        contextField.setAccessible(true);
-                        Object context = contextField.get(propsHandler);
-                        Object mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
-                        script.setProperty("pom", mavenPom);
-                    } catch (Exception e) {
-                        throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
-                    }
+            // treat the case Ant is run through Maven, and
+            if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
+                try {
+                    Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
+                    Field contextField = propsHandler.getClass().getDeclaredField("context");
+                    contextField.setAccessible(true);
+                    Object context = contextField.get(propsHandler);
+                    Object mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+                    script.setProperty("pom", mavenPom);
+                } catch (Exception e) {
+                    throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
                 }
-
-                script.run();
-            } catch (CompilationFailedException e) {
-                throw new BuildException("Script Failed: "+ e.getMessage(), getLocation());
             }
 
-            if (print) {
-                StringBuffer line = new StringBuffer();
-                line.append( " foo bar");
-                out.println(line);
-            }
-
-
+            script.run();
+        } catch (CompilationFailedException e) {
+            StringWriter writer = new StringWriter();
+            new ErrorReporter( e, false ).write( new PrintWriter(writer) );
+            String message = writer.toString();
+            throw new BuildException("Script Failed: "+ message, getLocation());
+        }
     }
 
     /**
      * print any results in the statement.
      */
     protected void printResults(PrintStream out) {
-            log("printResults()", Project.MSG_VERBOSE);
-            StringBuffer line = new StringBuffer();
-            out.println(line);
-            line = new StringBuffer();
+        log("printResults()", Project.MSG_VERBOSE);
+        StringBuffer line = new StringBuffer();
+        out.println(line);
+        line = new StringBuffer();
         out.println();
     }
 }
