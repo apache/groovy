@@ -730,7 +730,7 @@ public class Invoker {
             return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
         }
     }
-
+    
     /**
      * Sets the property on the given object
      */
@@ -747,7 +747,10 @@ public class Invoker {
             map.put(property, newValue);
         }
         else {
-            metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
+            if (object instanceof Class)
+                metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
+            else
+                metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
         }
     }
 
@@ -792,7 +795,7 @@ public class Invoker {
         }
         else {
             if (object instanceof Class)
-                metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
+                metaRegistry.getMetaClass((Class) object).setAttribute((Class) object, attribute, newValue);
             else
                 metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
 	}

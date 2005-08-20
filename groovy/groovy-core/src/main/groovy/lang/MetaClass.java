@@ -634,10 +634,12 @@ public class MetaClass {
         // this case is for protected fields. I wish there was a better way...
         Exception lastException = null;
         try {
-            MetaMethod method = findGetter(object, "get" + capitalize(property));
-            if (method != null) {
-                return doMethodInvoke(object, method, EMPTY_ARRAY);
-            }
+            if (property.length() > 0 && !Character.isUpperCase(property.charAt(0))) {
+                MetaMethod method = findGetter(object, "get" + capitalize(property));
+               if (method != null) {
+                   return doMethodInvoke(object, method, EMPTY_ARRAY);
+               }
+           }
         }
         catch (GroovyRuntimeException e) {
             lastException = e;
