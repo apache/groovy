@@ -57,8 +57,7 @@ import java.util.Vector;
  * @author James Birchfield
  */
 public class CachingGroovyEngine extends GroovyEngine {
-    private static final String[] EMPTY_ARGS = {
-    };
+    private static final Object[] EMPTY_ARGS = new Object[]{new String[]{}};
 
     private Map evalScripts;
     private Map execScripts;
@@ -105,6 +104,8 @@ public class CachingGroovyEngine extends GroovyEngine {
             }
             InvokerHelper.invokeMethod(scriptClass, "main", EMPTY_ARGS);
         } catch (Exception e) {
+            System.err.println("BSF trace");
+            e.printStackTrace(System.err);
             throw new BSFException(BSFException.REASON_EXECUTION_ERROR, "exception from Groovy: " + e, e);
         }
     }
