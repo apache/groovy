@@ -46,10 +46,7 @@
 package groovy.util;
 
 import groovy.lang.Closure;
-import groovy.lang.ParameterArray;
-
 import java.util.Comparator;
-
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
@@ -67,7 +64,7 @@ public class ClosureComparator implements Comparator {
     }
 
     public int compare(Object object1, Object object2) {
-        Object value = closure.call(new ParameterArray(new Object[] {object1, object2}));
+        Object value = closure.call(new Object[] {object1, object2});
         return InvokerHelper.asInt(value);
     }
 }

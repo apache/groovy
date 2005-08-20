@@ -82,6 +82,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.runtime.ClosureListener;
+import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -311,9 +312,67 @@ public class MetaClass {
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
-
+        
         MetaMethod method = retrieveMethod(object, methodName, arguments);
-
+        
+        boolean isClosure = object instanceof Closure;
+        if (isClosure) {
+            Closure closure = (Closure) object;
+            Object delegate = closure.getDelegate();
+            Object owner = closure.getOwner();
+            
+            if ("call".equals(methodName) || "doCall".equals(methodName)) {
+                if (object.getClass()==MethodClosure.class) {
+                    MethodClosure mc = (MethodClosure) object;
+                    methodName = mc.getMethod();
+                    MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
+                    return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+                } else if (object.getClass()==CurriedClosure.class) {
+                    CurriedClosure cc = (CurriedClosure) object;
+                    // change the arguments for an uncurried call
+                    arguments = cc.getUncurriedArguments(arguments);
+                    MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
+                    return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+                } 
+            } else if ("curry".equals(methodName)) {
+                return closure.curry(arguments);
+            }
+            
+            if (method==null && owner!=closure) {
+                MetaClass ownerMetaClass = registry.getMetaClass(owner.getClass());
+                method = ownerMetaClass.retrieveMethod(owner,methodName,arguments);
+                if (method!=null) return ownerMetaClass.invokeMethod(owner,methodName,arguments);
+            }
+            if (method==null && delegate!=closure && delegate!=null) {
+                MetaClass delegateMetaClass = registry.getMetaClass(delegate.getClass());
+                method = delegateMetaClass.retrieveMethod(delegate,methodName,arguments);
+                if (method!=null) return delegateMetaClass.invokeMethod(delegate,methodName,arguments);
+            }
+            if (method==null) {
+                // still no methods found, test if delegate or owner are GroovyObjects
+                // and invoke the method on them if so.
+                MissingMethodException last = null;
+                if (delegate!=closure && (delegate instanceof GroovyObject)) {
+                    try {
+                        GroovyObject go = (GroovyObject) delegate;
+                        return go.invokeMethod(methodName,arguments);
+                    } catch (MissingMethodException mme) {
+                        last = mme;
+                    }
+                }
+                if (owner!=closure && (owner instanceof GroovyObject)) {
+                    try {
+                        GroovyObject go = (GroovyObject) owner;
+                        return go.invokeMethod(methodName,arguments);
+                    } catch (MissingMethodException mme) {
+                        if (last==null) last = mme;
+                    }                    
+                }
+                if (last!=null) throw last;
+            }
+            
+        }
+        
         if (method != null) {
             return doMethodInvoke(object, method, arguments);
         } else {
@@ -323,15 +382,12 @@ public class MetaClass {
                 if (value instanceof Closure && object!=this) {
                     Closure closure = (Closure) value;
                     closure.setDelegate(this);
-                    return closure.call(new ParameterArray(arguments));
+                    MetaClass delegateMetaClass = registry.getMetaClass(closure.getClass());
+                    return delegateMetaClass.invokeMethod(closure,"doCall",arguments);
                 }
-                else {
-                    throw new MissingMethodException(methodName, theClass, arguments);
-                }
-            }
-            catch (Exception e) {
-                throw new MissingMethodException(methodName, theClass, arguments);
-            }
+            } catch (MissingPropertyException mpe) {}
+            
+            throw new MissingMethodException(methodName, theClass, arguments);
         }
     }
 
@@ -1013,9 +1069,10 @@ public class MetaClass {
      * Looks up the given attribute (field) on the given object
      */
     public Object getAttribute(Object object, final String attribute) {
+        PrivilegedActionException firstException = null;
         try {
-            final Class clazz = theClass;
             try {
+                final Class clazz = theClass;
                 Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                     public Object run() throws NoSuchFieldException {
                         return clazz.getDeclaredField(attribute);
@@ -1024,11 +1081,28 @@ public class MetaClass {
                 field.setAccessible(true);
                 return field.get(object);
             } catch (PrivilegedActionException pae) {
-                if (pae.getException() instanceof NoSuchFieldException) {
-                    throw (NoSuchFieldException) pae.getException();
-                } else {
-                    throw new RuntimeException(pae.getException());
+                firstException = pae;
+            }
+
+            if (object instanceof Class) {
+                try {
+                    final Class clazz = (Class) object;
+                    Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                        public Object run() throws NoSuchFieldException {
+                            return clazz.getDeclaredField(attribute);
+                        }
+                    });
+                    field.setAccessible(true);
+                    return field.get(object);
+                } catch (PrivilegedActionException pae) {
+                    firstException = pae;
                 }
+            }
+            
+            if (firstException.getException() instanceof NoSuchFieldException) {
+                throw (NoSuchFieldException) firstException.getException();
+            } else {
+                throw new RuntimeException(firstException.getException());
             }
         }
         catch (NoSuchFieldException e) {
@@ -1440,6 +1514,24 @@ public class MetaClass {
             return null;
         }
     }
+    
+    private boolean isVargsMethod(Class[] paramTypes, Object[] arguments) {
+        if (paramTypes.length==0) return false;
+        if (!paramTypes[paramTypes.length-1].isArray()) return false;
+        // -1 because the varg part is optional
+        if (paramTypes.length-1==arguments.length) return true;
+        if (paramTypes.length-1>arguments.length) return false;
+        if (arguments.length>paramTypes.length) return true;
+        
+        // only case left is arguments.length==paramTypes.length
+        Object last = arguments[arguments.length-1];
+        if (last==null) return true;
+        Class clazz = last.getClass();
+        if (clazz.equals(paramTypes[paramTypes.length-1])) return false;
+        
+        return true;
+    }
+    
 
     protected Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
         //System.out.println("Evaluating method: " + method);
@@ -1447,12 +1539,20 @@ public class MetaClass {
         // InvokerHelper.toString(argumentArray));
         //System.out.println(this.theClass);
 
+        Class[] paramTypes = method.getParameterTypes();
         try {
             if (argumentArray == null) {
                 argumentArray = EMPTY_ARRAY;
-            }
-            else if (method.getParameterTypes().length == 1 && argumentArray.length == 0) {
+            } else if (paramTypes.length == 1 && argumentArray.length == 0) {
                 argumentArray = ARRAY_WITH_NULL;
+            } else if (isVargsMethod(paramTypes,argumentArray)) { 
+                // vargs
+                Object[] newArg = new Object[paramTypes.length];
+                System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
+                Object[] vargs = new Object[argumentArray.length-newArg.length+1];
+                System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
+                newArg[newArg.length-1] = vargs;
+                argumentArray = newArg;
             }
             return method.invoke(object, argumentArray);
         }
@@ -1793,22 +1893,35 @@ public class MetaClass {
             return true;
         }
         int size = arguments.length;
-        boolean validMethod = false;
-        if (paramTypes.length == size) {
+        
+        if (   (size>=paramTypes.length || size==paramTypes.length-1) 
+            && paramTypes.length>0 
+            && paramTypes[paramTypes.length-1].isArray()) 
+        {
+            // first check normal number of parameters
+            for (int i = 0; i < paramTypes.length-1; i++) {
+                if (isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) continue;
+                return false;
+            }
+            // check varged 
+            Class clazz = paramTypes[paramTypes.length-1].getComponentType();
+            for (int i=paramTypes.length; i<size; i++) {
+                if (isCompatibleClass(clazz, arguments[i], includeCoerce)) continue;
+                return false;
+            }
+            return true;
+        } else if (paramTypes.length == size) {
             // lets check the parameter types match
-            validMethod = true;
             for (int i = 0; i < size; i++) {
-                if (!isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) {
-                    validMethod = false;
-                }
+                if (isCompatibleClass(paramTypes[i], arguments[i], includeCoerce)) continue;
+                return false;
             }
+            return true;
+        } else if (paramTypes.length == 1 && size == 0) {
+            return true;
         }
-        else {
-            if (paramTypes.length == 1 && size == 0) {
-                return true;
-            }
-        }
-        return validMethod;
+        return false;
+        
     }
 
     private boolean implementsInterface (Class clazz, Class iface) {
@@ -1878,7 +1991,12 @@ public class MetaClass {
                 // add one to dist to be sure interfaces are prefered
                 dist++;
                 Class clazz = arguments[i];
-                while (clazz!=null && clazz!=parameters[i]) {
+                while (clazz!=null) {
+                    if (clazz==parameters[i]) break;
+                    if (clazz==GString.class && parameters[i]==String.class) {
+                        dist+=2;
+                        break;
+                    }
                     clazz = clazz.getSuperclass();
                     dist+=2;
                 }

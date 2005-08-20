@@ -129,7 +129,7 @@ public class Invoker {
         if (object == null) {
             throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
         }
-
+        
         // if the object is a Class, call a static method from that class
         if (object instanceof Class) {
             Class theClass = (Class) object;
@@ -146,33 +146,22 @@ public class Invoker {
             }
             // it's an object implementing GroovyObject
             else {
-                // if it's a closure, use the closure's invokeMethod()
-                if (object instanceof Closure) {
-                    Closure closure = (Closure) object;
-                    return closure.invokeMethod(methodName, asArray(arguments));
-                }
-                // it's some kind of wacky object that overrides invokeMethod() to do some groovy stuff
-                // (like a proxy, a builder, some custom funny object which controls the invokation mechanism)
-                else {
-                    GroovyObject groovy = (GroovyObject) object;
-                    try {
-                        // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-                        if (groovy instanceof GroovyInterceptable) {
-                            return groovy.invokeMethod(methodName, asArray(arguments));
-                        }
-                        // else if there's a statically typed method or a GDK method
-                        else {
-                            return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
-                        }
+                GroovyObject groovy = (GroovyObject) object;
+                try {
+                    // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+                    if (groovy instanceof GroovyInterceptable) {
+                        return groovy.invokeMethod(methodName, asArray(arguments));
                     }
-                    catch (MissingMethodException e) {
-                        if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
-                            // in case there's nothing else, invoke the object's own invokeMethod()
-                            return groovy.invokeMethod(methodName, asArray(arguments));
-                        }
-                        else {
-                            throw e;
-                        }
+                    //else if there's a statically typed method or a GDK method
+                    else {
+                        return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
+                    }
+                } catch (MissingMethodException e) {
+                    if (e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+                        // in case there's nothing else, invoke the object's own invokeMethod()
+                        return groovy.invokeMethod(methodName, asArray(arguments));
+                    } else {
+                        throw e;
                     }
                 }
             }

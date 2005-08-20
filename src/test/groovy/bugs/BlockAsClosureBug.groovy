@@ -16,14 +16,14 @@ class BlockAsClosureBug extends GroovyTestCase {
     }
     
     void testStaticBug() {
-        main(null)		
+        staticMethod(null)		
     }
     
     void testNonVoidMethod() {
         foo()		
     }
     
-    static void main(args) {
+    static void staticMethod(args) {
         def c = 0
         
         block: {

@@ -45,7 +45,6 @@
  */
 package groovy.util;
 
-import groovy.lang.ParameterArray;
 import groovy.lang.Closure;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.GroovyRuntimeException;
@@ -128,7 +127,7 @@ public class Expando extends GroovyObjectSupport {
             if (value instanceof Closure) {
                 Closure closure = (Closure) value;
                 closure.setDelegate(this);
-                return closure.call(new ParameterArray(args));
+                return closure.call((Object[]) args);
             }
             else {
                 throw e;

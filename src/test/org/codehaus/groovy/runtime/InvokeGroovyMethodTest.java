@@ -80,13 +80,6 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
                 buffer.append(arguments.toString());
                 return null;
             }
-
-            public MetaClass getMetaClass() {
-                return null;
-            }
-
-            public void setMetaClass(MetaClass metaClass) {
-            }
         });
 
         assertEquals("buffer", "abcdef", buffer.toString());

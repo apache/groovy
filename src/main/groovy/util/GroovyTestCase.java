@@ -46,6 +46,7 @@
 package groovy.util;
 
 import groovy.lang.Closure;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 
 import java.util.logging.Logger;
@@ -258,18 +259,26 @@ public class GroovyTestCase extends TestCase {
      * @param code the closure that should fail
      */
     protected void shouldFail(Class clazz, Closure code) {
-        boolean failed = false;
+        Throwable th = null;
         try {
             code.call();
+        } catch (GroovyRuntimeException gre) {
+            th = gre;
+            while (th.getCause()!=null && th.getCause()!=gre){
+                th=th.getCause();
+                if (th!=gre && (th instanceof GroovyRuntimeException)) {
+                    gre = (GroovyRuntimeException) th;
+                }
+            }            
+        } catch (Exception e) {
+            th = e;
         }
-        catch (Exception e) {
-            if (clazz.isInstance(e)) {
-                failed = true;
-            }
-            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + e, failed);
-            return;
-        }
-        assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), failed);
+
+        if (th==null) {
+            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName(), false);
+        } else if (! clazz.isInstance(th)) {
+            assertTrue("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th, false);
+        } 
     }
 
 

@@ -45,7 +45,6 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 import groovy.lang.Closure;
-import groovy.lang.ParameterArray;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -121,9 +120,9 @@ public class BaseMarkupBuilder extends Builder {
 			this.prefix = "";
 			
 			if (tagMap.containsKey(name)) {
-				return ((Closure)tagMap.get(name)).call(new ParameterArray(new Object[]{this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out}));
+				return ((Closure)tagMap.get(name)).call(new Object[]{this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});
 			} else {
-				return defaultTagClosure.call(new ParameterArray(new Object[]{name, this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out}));		
+				return defaultTagClosure.call(new Object[]{name, this, this.pendingNamespaces, this.namespaces, this.namespaceSpecificTags, prefix, attrs, body, this.out});		
 			}
 		}
 		
