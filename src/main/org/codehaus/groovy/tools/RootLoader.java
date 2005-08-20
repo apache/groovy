@@ -48,9 +48,10 @@ public class RootLoader extends ClassLoader {
         return url;
     }
     
-    public Enumeration getResources(String name) throws IOException {
-        final Enumeration enum1 = inner.getResources(name);
-        final Enumeration enum2 = super.getResources(name);
+    
+    protected Enumeration findResources(String name) throws IOException {
+        final Enumeration enum1 = inner.findResources(name);
+        final Enumeration enum2 = super.findResources(name);
         return new Enumeration(){
             public boolean hasMoreElements() {
                 return enum1.hasMoreElements() || enum2.hasMoreElements();
