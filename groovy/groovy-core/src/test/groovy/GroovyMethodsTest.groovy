@@ -244,16 +244,17 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testObjectSleep(){
         long start = System.currentTimeMillis()
-        sleep 1
+        sleep 1000
         long slept = System.currentTimeMillis() - start
-        assertTrue("should have slept >= 1s but was ${slept}ms", slept >= 1000)
+        long epsilon = 100
+        assertTrue("should have slept >= 1s but was ${slept}ms", slept >= 1000 - epsilon)
     }
 
     void testObjectSleepInterrupted(){
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep 1
+        sleep 1000
         long slept = System.currentTimeMillis() - start
         long epsilon = 100
         assertTrue("should have slept >= 1s but was ${slept}ms", slept >= 1000-epsilon)
@@ -263,7 +264,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def interruptor = new groovy.TestInterruptor(Thread.currentThread())
         new Thread(interruptor).start()
         long start = System.currentTimeMillis()
-        sleep(1){ log += it.toString() }
+        sleep(1000){ log += it.toString() }
         long slept = System.currentTimeMillis() - start
         assert slept < 1000, "should have been interrupted but slept ${slept}ms > 2s"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
