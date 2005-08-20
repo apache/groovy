@@ -39,4 +39,16 @@ class MarkupTest extends TestXmlSupport {
 
         b.a(href:"http://groovy.codehaus.org", "groovy")
     }
+
+    void testMarkupWithColonsAndNamespaces() {
+        def mkp = new groovy.xml.MarkupBuilder()
+
+        mkp."ns1:customer-description"{
+            this."last-name"("Laforge")
+            this."first-name"{
+                first("Guillaume")
+                this."initial-letters"("A.J.")
+            }
+        }
+    }
 }

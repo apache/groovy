@@ -71,7 +71,6 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
     }
 
     public void visitMethodCallExpression(MethodCallExpression call) {
-        assertValidIdentifier(call.getMethod(), "method name", call);
         super.visitMethodCallExpression(call);
     }
 
