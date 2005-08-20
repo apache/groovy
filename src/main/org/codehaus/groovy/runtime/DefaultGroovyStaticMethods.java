@@ -85,13 +85,12 @@ public class DefaultGroovyStaticMethods {
     }
 
     /**
-     * Sleep for so many seconds, even if interrupted.
+     * Sleep for so many milliseconds, even if interrupted.
      * @param object receiver
-     * @param seconds the number of seconds to sleep
+     * @param milliseconds the number of milliseconds to sleep
      */
-    public static void sleep(Object object, long seconds){
-        long millis = seconds * 1000;
-        sleepImpl(object, millis);
+    public static void sleep(Object object, long milliseconds){
+        sleepImpl(object, milliseconds);
     }
 
     protected static void sleepImpl(Object object, long millis) {
@@ -106,14 +105,14 @@ public class DefaultGroovyStaticMethods {
     }
 
     /**
-     * Sleep for so many seconds
+     * Sleep for so many milliseconds
      * @param object receiver
-     * @param seconds the number of seconds to sleep
+     * @param milliseconds the number of milliseconds to sleep
      * @param onInterrupt interrupt handler, InterruptedException is passed to the Closure
      */
-    public static void sleep(Object object, long seconds, Closure onInterrupt){
+    public static void sleep(Object object, long milliseconds, Closure onInterrupt){
         try {
-            Thread.sleep(seconds * 1000);
+            Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
             onInterrupt.call(e);
         }
