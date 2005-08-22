@@ -52,22 +52,28 @@ import java.util.Enumeration;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
- * RootLoader does have it's own classpath. when searching for a 
- * class or resource, this classpath will be used for a search.
- * Parent Classloaders are ignored first. If a class or ressource 
- * can't be find in the classpath of the RooLoader, then parent is
+ * RootLoader does have it's own classpath. When searching for a 
+ * class or resource this classpath will be used. Parent 
+ * Classloaders are ignored first. If a class or resource 
+ * can't be found in the classpath of the RooLoader, then parent is
  * checked.
  * 
  * <b>Note:</b> this is very against the normal behavior of 
  * classloaders. Normal is to frist check parent and then look in
  * the ressources you gave this classloader.
  * 
+ * It's possible to add urls to the classpath at runtime through
+ * @see #addURL(URL)
+ * 
  * <b>Why using RootLoader?</b>
  * If you have to load classes with multiple classloaders and a
  * classloader does know a class which depends on a class only 
  * a child of this loader does know, then you won't be able to 
  * load the class. To load the class the child is not allowed 
- * to redirect it's search for the class to the parent first. 
+ * to redirect it's search for the class to the parent first.
+ * That way the child can laod the class. If the child does not
+ * have all classes to do this, this fails of course.
+ *  
  * For example:
  *  
  *  <pre>
@@ -94,7 +100,16 @@ import java.util.Enumeration;
 public class RootLoader extends ClassLoader {
 
     private ClassLoader parent; 
-    private URLClassLoader inner;
+    private InnerLoader inner;
+    
+    private static class InnerLoader extends URLClassLoader {
+        public InnerLoader(URL[] urls) {
+            super(urls,null);
+        }        
+        public void addPathEntry(URL url) {
+            addURL(url);
+        }
+    }
     
     /**
      * constructs a new Rooloader without classpath
@@ -110,7 +125,7 @@ public class RootLoader extends ClassLoader {
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
         this(parent);
-        inner = new URLClassLoader(urls,null);
+        inner = new InnerLoader(urls);
     }
     
     /**
@@ -119,7 +134,7 @@ public class RootLoader extends ClassLoader {
      */
     public RootLoader(LoaderConfiguration lc) {
         this(RootLoader.class.getClassLoader());
-        inner = new URLClassLoader(lc.getClassPathUrls(),null);
+        inner = new InnerLoader(lc.getClassPathUrls());
     }
 
     /**
@@ -163,5 +178,18 @@ public class RootLoader extends ClassLoader {
             }
         };
     }
+ 
+    /**
+     * adds an url to the classpath of this classloader
+     */
+    public void addURL(URL url) {
+        inner.addPathEntry(url);
+    }
     
+    /**
+     * returns all classpath entries of this classloader
+     */
+    public URL[] getURLs() {
+        return inner.getURLs();
+    }
 }
