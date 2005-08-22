@@ -186,12 +186,12 @@ class BitwiseOperationsTest extends GroovyTestCase {
         def c14 = {-> return x | y     // last | is a bitOr
         }
 
-        assert c1() == 5
+        assert c1(null) == 5
         assert c2() == 1
         assert c3() == 6
-        assert c11() == 5
+        assert c11(null) == 5
         assert c12() == 7
-        assert c13() == 5
+        assert c13(null) == 5
         assert c14() == 7
 
         x = 0x03
