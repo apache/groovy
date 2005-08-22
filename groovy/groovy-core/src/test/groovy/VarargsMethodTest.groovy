@@ -25,9 +25,10 @@ class VarargsMethodTest extends GroovyTestCase {
          println("args = " + args)
          // todo: GROOVY-1023
          //     If this method is invoked with no parameter,
-         //     then args is null.
-         if (args == null)
-             return 0
+         //     then args is not null, but an array of length 0.
+         /* if (args == null)
+               return 0
+         */
          return args.size()  
      }  
   

@@ -116,6 +116,7 @@ public class MetaClass {
     public static Class[] EMPTY_TYPE_ARRAY = {
     };
     protected static final Object[] ARRAY_WITH_NULL = { null };
+    protected static final Object[] ARRAY_WITH_EMPTY_ARRAY = { EMPTY_ARRAY };
 
     private static boolean useReflection = false;
 
@@ -1544,7 +1545,10 @@ public class MetaClass {
             if (argumentArray == null) {
                 argumentArray = EMPTY_ARRAY;
             } else if (paramTypes.length == 1 && argumentArray.length == 0) {
-                argumentArray = ARRAY_WITH_NULL;
+                if (isVargsMethod(paramTypes,argumentArray))
+                    argumentArray = ARRAY_WITH_EMPTY_ARRAY;
+                else
+                    argumentArray = ARRAY_WITH_NULL;
             } else if (isVargsMethod(paramTypes,argumentArray)) { 
                 // vargs
                 Object[] newArg = new Object[paramTypes.length];
