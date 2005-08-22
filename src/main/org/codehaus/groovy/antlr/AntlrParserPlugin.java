@@ -1539,6 +1539,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (Types.ofType(type, Types.ASSIGNMENT_OPERATOR)) {
             if (leftExpression instanceof VariableExpression || leftExpression instanceof PropertyExpression
                                                              || leftExpression instanceof FieldExpression
+                                                             || leftExpression instanceof AttributeExpression
                                                              || leftExpression instanceof DeclarationExpression) {
                 // Do nothing.
             }

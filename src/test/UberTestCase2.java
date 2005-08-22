@@ -13,6 +13,7 @@ public class UberTestCase2 extends TestCase {
         
         suite.addTestSuite(groovy.bugs.ArrayMethodCallBug.class);
         suite.addTestSuite(groovy.bugs.AsBoolBug.class);
+        suite.addTestSuite(groovy.bugs.AttributeSetExpressionBug.class);
         suite.addTestSuite(groovy.bugs.ClassGeneratorFixesTest.class);
         suite.addTestSuite(groovy.bugs.ClassInScriptBug.class);
         suite.addTestSuite(groovy.bugs.ClosuresInScriptBug.class);
