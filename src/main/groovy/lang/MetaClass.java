@@ -2605,13 +2605,13 @@ public class MetaClass {
                 generator.generate(cw, name);
                 byte[] bytecode = cw.toByteArray();
                 Class type = loadReflectorClass(name, bytecode);
-                if  (Reflector.class!=type.getSuperclass()) {
+                if  (Reflector.class.getClassLoader()!=type.getSuperclass().getClassLoader()) {
                     throw new Error(
+                      name+" does have Reflector.class as superclass, "+
                       "Reflector.class is loaded through the loader "+
                       Reflector.class.getClassLoader()+
-                      ", but the generated Reflector's superclass "+
-                      " is loaded through "+
-                      type.getClassLoader()+
+                      " and "+name+"'s superclass is loaded through "+
+                      type.getSuperclass().getClassLoader()+
                       ". This should never happen, check your classloader configuration."
                     );  
                 }
