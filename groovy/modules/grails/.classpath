@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/commons"/>
+	<classpathentry output="samples/calculator/build" kind="src" path="samples/calculator/src"/>
 	<classpathentry kind="src" path="src/web"/>
 	<classpathentry kind="src" path="src/persistence"/>
 	<classpathentry output="target/test-classes" kind="src" path="test/commons"/>
@@ -15,14 +16,10 @@
 	<classpathentry kind="lib" path="lib/spring-mock.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang-2.0.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate/ejb-3.0-edr2.jar"/>
-	<classpathentry sourcepath="D:/Downloads/Development/Hibernate/hibernate-3.0.5/hibernate-3.0/src" kind="lib" path="lib/hibernate/hibernate3.jar">
-		<attributes>
-			<attribute value="http://www.hibernate.org/hib_docs/api/" name="javadoc_location"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="lib" path="lib/hibernate/hibernate3.jar"/>
 	<classpathentry kind="lib" path="lib/commons-dbcp-1.2.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-pool-1.2.jar"/>
-	<classpathentry sourcepath="D:/Downloads/Development/HSQLDB/hsqldb/src" kind="lib" path="lib/hsqldb.jar"/>
+	<classpathentry kind="lib" path="lib/hsqldb.jar"/>
 	<classpathentry kind="lib" path="lib/commons-collections-3.0.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate/antlr-2.7.5H3.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate/asm.jar"/>
@@ -33,11 +30,11 @@
 	<classpathentry kind="lib" path="lib/hibernate/jta.jar"/>
 	<classpathentry kind="lib" path="lib/hibernate/xml-apis.jar"/>
 	<classpathentry kind="lib" path="lib/dom4j-1.6.jar"/>
-	<classpathentry sourcepath="/Users/stevendevijver/download/spring-projects/spring-webflow" kind="lib" path="lib/spring-webflow.jar"/>
+	<classpathentry kind="lib" path="lib/spring-webflow.jar"/>
 	<classpathentry kind="lib" path="lib/spring-binding.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.8.jar"/>
 	<classpathentry kind="lib" path="lib/ognl-2.7.jar"/>
-	<classpathentry sourcepath="D:/Downloads/Development/Hibernate/hibernate-annotations-3.0beta2/hibernate-annotations-3.0beta2/src/java" kind="lib" path="lib/hibernate/hibernate-annotations.jar"/>
-	<classpathentry kind="lib" path="lib/groovy-all-1.0-jsr-03.jar"/>
+	<classpathentry kind="lib" path="lib/hibernate/hibernate-annotations.jar"/>
+	<classpathentry kind="lib" path="lib/groovy-all-1.0-jsr-04-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>
