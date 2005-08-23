@@ -1555,7 +1555,11 @@ public class MetaClass {
                 System.arraycopy(argumentArray,0,newArg,0,newArg.length-1);
                 Object[] vargs = new Object[argumentArray.length-newArg.length+1];
                 System.arraycopy(argumentArray,newArg.length-1,vargs,0,vargs.length);
-                newArg[newArg.length-1] = vargs;
+                if (vargs.length == 1 && vargs[0] == null)
+                    newArg[newArg.length-1] = null;
+                else {
+                    newArg[newArg.length-1] = vargs;
+                }
                 argumentArray = newArg;
             }
             return method.invoke(object, argumentArray);
@@ -2605,13 +2609,25 @@ public class MetaClass {
                 generator.generate(cw, name);
                 byte[] bytecode = cw.toByteArray();
                 Class type = loadReflectorClass(name, bytecode);
+                if  (Reflector.class.getClassLoader()!=type.getSuperclass().getClassLoader()) {
+                    throw new Error(
+                      name+" does have Reflector.class as superclass, "+
+                      "Reflector.class is loaded through the loader "+
+                      Reflector.class.getClassLoader()+
+                      " and "+name+"'s superclass is loaded through "+
+                      type.getSuperclass().getClassLoader()+
+                      ". This should never happen, check your classloader configuration."
+                    );  
+                }
                 return (Reflector) type.newInstance();
             }
             catch (Exception e) {
+                e.printStackTrace();
                 throw new GroovyRuntimeException("Could not generate and load the reflector for class: " + name + ". Reason: " + e, e);
             }
-        }
-        catch (Throwable t) {
+        } catch (Error e) {
+            throw e;
+        } catch (Throwable t) {
             /*
              * All other exception and error types are reported at once.
              */
