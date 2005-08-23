@@ -38,8 +38,6 @@ import org.springframework.util.Assert;
 import org.springframework.webflow.Action;
 import org.springframework.webflow.AnnotatedAction;
 import org.springframework.webflow.FlowAttributeMapper;
-import org.springframework.webflow.TransitionCriteria;
-import org.springframework.webflow.TransitionCriteriaFactory;
 import org.springframework.webflow.config.AbstractFlowBuilder;
 import org.springframework.webflow.config.FlowBuilderException;
 
@@ -141,13 +139,13 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 				throw new UnsupportedOperationException("Decision states are not yet supported!");
 			} else if (state.isSubflowState()) {
 				if (state.getSubFlowInput() != null || state.getSubFlowOutput() != null) {
-					addSubFlowState(
+					addSubflowState(
 							state.getId(), 
 							getFlowServiceLocator().getFlow(state.getSubFlowId()), 
 							new ClosureFlowAttributeMapper(this.pageFlowClass.getFlowId(), state.getId(), state.getSubFlowInput(), state.getSubFlowOutput()),
 							getTransitions(state.getTransitions()));
 				} else if (state.getAttributeMapper() != null) {
-					addSubFlowState(
+					addSubflowState(
 							state.getId(),
 							getFlowServiceLocator().getFlow(state.getSubFlowId()),
 							state.getAttributeMapper(),
@@ -157,13 +155,13 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 					if (state.getAttributeMapperProperties() != null) {
 						new BeanWrapperImpl(flowAttributeMapper).setPropertyValues(state.getAttributeMapperProperties());
 					}
-					addSubFlowState(
+					addSubflowState(
 							state.getId(),
 							getFlowServiceLocator().getFlow(state.getSubFlowId()),
 							flowAttributeMapper,
 							getTransitions(state.getTransitions()));
 				} else {
-					addSubFlowState(state.getId(), getFlowServiceLocator().getFlow(state.getSubFlowId()), getTransitions(state.getTransitions()));
+					addSubflowState(state.getId(), getFlowServiceLocator().getFlow(state.getSubFlowId()), getTransitions(state.getTransitions()));
 				}
 			} else if (state.isEndState()) {
 				if (state.getViewName() != null) {
@@ -185,8 +183,7 @@ public class GrailsFlowBuilder extends AbstractFlowBuilder implements Applicatio
 		int i = 0;
 		for (Iterator iter2 = transitions.iterator(); iter2.hasNext(); i++) {
 			Transition transition = (Transition)iter2.next();
-			TransitionCriteria transitionCriteria = TransitionCriteriaFactory.eventId(transition.getName());
-			transitionArray[i] = new org.springframework.webflow.Transition(transitionCriteria, transition.getTargetStateId());
+			transitionArray[i] = on(transition.getName(), transition.getTargetStateId());
 		}
 		return transitionArray;
 	}
