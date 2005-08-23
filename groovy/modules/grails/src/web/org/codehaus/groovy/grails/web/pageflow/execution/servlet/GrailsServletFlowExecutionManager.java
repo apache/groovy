@@ -31,7 +31,7 @@ import org.springframework.webflow.FlowSession;
 import org.springframework.webflow.RequestContext;
 import org.springframework.webflow.State;
 import org.springframework.webflow.ViewDescriptor;
-import org.springframework.webflow.config.FlowLocator;
+import org.springframework.webflow.access.FlowLocator;
 import org.springframework.webflow.execution.EnterStateVetoException;
 import org.springframework.webflow.execution.FlowExecutionListener;
 import org.springframework.webflow.execution.servlet.ServletEvent;
