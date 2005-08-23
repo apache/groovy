@@ -85,6 +85,12 @@ public class GroovyClassLoader extends SecureClassLoader {
     private Map cache = new HashMap();
     private Collection loadedClasses = null;
 
+    private GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
+        public File loadGroovyFile(String filename) {
+            return getSourceFile(filename);
+        }
+    };
+
     public void removeFromCache(Class aClass) {
         cache.remove(aClass);
     }
@@ -120,11 +126,18 @@ public class GroovyClassLoader extends SecureClassLoader {
         this.loadedClasses = new ArrayList();
     }
 
+    public void setResourceLoader(GroovyResourceLoader resourceLoader) {
+        if (resourceLoader == null) {
+            throw new IllegalArgumentException("Resource loader must not be null!");
+        }
+        this.resourceLoader = resourceLoader;
+    }
+
     /**
      * Loads the given class node returning the implementation Class
      *
      * @param classNode
-     * @return
+     * @return a class
      */
     public Class defineClass(ClassNode classNode, String file) {
         return defineClass(classNode, file, "/groovy/defineClass");
@@ -134,7 +147,7 @@ public class GroovyClassLoader extends SecureClassLoader {
      * Loads the given class node returning the implementation Class
      *
      * @param classNode
-     * @return
+     * @return a class
      */
     public Class defineClass(ClassNode classNode, String file, String newCodeBase) {
         CodeSource codeSource = null;
@@ -600,7 +613,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         try {
             File source = (File) AccessController.doPrivileged(new PrivilegedAction() {
                 public Object run() {
-                    return getSourceFile(name);
+                    return resourceLoader.loadGroovyFile(name);
                 }
             });
             if (source != null) {
