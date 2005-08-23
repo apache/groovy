@@ -16,12 +16,14 @@
 package org.codehaus.groovy.grails.commons;
 
 import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyResourceLoader;
+
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -53,16 +55,46 @@ public class DefaultGrailsApplication implements GrailsApplication {
 	
 	private static Logger log = Logger.getLogger(DefaultGrailsApplication.class);
 	
-	public DefaultGrailsApplication(Resource[] resources) throws IOException, ClassNotFoundException {
+	public DefaultGrailsApplication(final Resource[] resources) throws IOException, ClassNotFoundException {
 		super();
 		
 		log.debug("Loading Grails application.");
 
+		final Collection loadedResources = new ArrayList();
+		
+		GroovyResourceLoader resourceLoader = new GroovyResourceLoader() {
+			public File loadGroovyFile(String resource) {
+				String filename = resource.replace('.', '/') + ".groovy";
+				Resource foundResource = null;
+				for (int i = 0; resources != null && i < resources.length; i++) {
+					if (resources[i].getFilename().endsWith(filename)) {
+						if (foundResource == null) {
+							foundResource = resources[i];
+						} else {
+							throw new IllegalArgumentException("Resources [" + resources[i].getFilename() + "] and [" + foundResource.getFilename() + "] end with [" + filename + "]. Cannot load because of duplicate match!");
+						}
+					}
+				}
+				try {
+					if (foundResource != null) {
+						loadedResources.add(foundResource);
+						return foundResource.getFile();
+					} else {
+						return null;
+					}
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		};
 		this.cl = new GroovyClassLoader();
+		this.cl.setResourceLoader(resourceLoader);
 		for (int i = 0; resources != null && i < resources.length; i++) {
 			try {
 				log.debug("Loading groovy file :[" + resources[i].getFile().getAbsolutePath() + "]");
-				cl.parseClass(resources[i].getFile());
+				if (!loadedResources.contains(resources[i])) {
+					cl.parseClass(resources[i].getFile());
+				}
 			} catch (CompilationFailedException e) {
 				throw new org.codehaus.groovy.grails.exceptions.CompilationFailedException("Compilation error in file [" + resources[i].getFilename() + "]: " + e.getMessage(), e);
 			}
