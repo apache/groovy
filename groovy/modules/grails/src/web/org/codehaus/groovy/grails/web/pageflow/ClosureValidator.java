@@ -43,7 +43,7 @@ public class ClosureValidator implements Validator {
 	}
 
 	public void validate(Object target, Errors errors) {
-		this.closure.call(new ParameterArray(new Object[] { target, errors }));
+		this.closure.call(new Object[] { target, errors });
 	}
 
 }
