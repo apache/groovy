@@ -32,18 +32,21 @@ public class ClassNotFoundExceptionTests extends TestCase {
 		super(arg0);
 	}
 
-	public void testLoadFileFromClassLoader() throws Exception {
-		ClassLoader cl = Thread.currentThread().getContextClassLoader();
-		URL url = cl.getResource("groovy/lang/Order.groovy");
-		assertNotNull(url);
-	}
-	
 	public void testClassNotFoundException() throws Exception {
 		GroovyClassLoader gcl = new GroovyClassLoader();
+		gcl.setResourceLoader(new GroovyResourceLoader() {
+			public File loadGroovyFile(String filename) {
+				if ("Order".equals(filename)) {
+					return new File("test/commons/groovy/lang/Order.groovy");
+				} else {
+					return null;
+				}
+			}
+		});
 		gcl.parseClass(new File("test/commons/groovy/lang/OrderService.groovy"));
 	}
 	
 	public void testClassNotFoundExceptionGrailsApplication() throws Exception {
-		DefaultGrailsApplication app = new DefaultGrailsApplication(new PathMatchingResourcePatternResolver().getResources("file:test/commons/groovy/lang/OrderService.groovy"));
+		DefaultGrailsApplication app = new DefaultGrailsApplication(new PathMatchingResourcePatternResolver().getResources("file:test/commons/groovy/lang/*.groovy"));
 	}
 }
