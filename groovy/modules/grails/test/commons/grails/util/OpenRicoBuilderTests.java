@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import junit.framework.TestCase;
 
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 /**
@@ -78,14 +79,14 @@ public class OpenRicoBuilderTests extends TestCase {
 		try {
 			parse("ajax{ test(id:\"test\") { } }");
 			fail();
-		} catch (IllegalArgumentException e) {
+		} catch (InvokerInvocationException e) {
 			// expected
 		}
 
 		try {
 			parse("element{ test(id:\"test\") { } }");
 			fail();
-		} catch (IllegalArgumentException e) {
+		} catch (InvokerInvocationException e) {
 			// expected
 		}
 
