@@ -38,6 +38,8 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -50,8 +52,7 @@ public class MetaFieldProperty extends MetaProperty {
     private Field field;
 
     public MetaFieldProperty(Field field) {
-		super(field.getName(), field.getType());
-		
+        super(field.getName(), field.getType());
         this.field = field;
     }
 
@@ -60,7 +61,15 @@ public class MetaFieldProperty extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) throws Exception {
-        return field.get(object);
+        final Field field1 = field;
+        final Object object1 = object;
+        Object value = (Object) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+             public Object run() throws IllegalAccessException {   
+                 field1.setAccessible(true);
+                 return field1.get(object1);
+             }
+        });
+        return value;
     }
 
     /**
@@ -71,22 +80,40 @@ public class MetaFieldProperty extends MetaProperty {
      * @throws Exception if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
+        final Field field1 = field;
+        final Object object1 = object;
+        final Object newValue1 = newValue;
         try {
-            field.set(object, newValue);
+            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws IllegalAccessException, TypeMismatchException, GroovyRuntimeException {   
+                    try {
+                        field1.set(object1, newValue1);
+                        return newValue1;
+                    }
+                    catch (IllegalArgumentException e) {
+                        try {
+                            Object newValue2 = InvokerHelper.asType(newValue1, field1.getType());
+                            field1.set(object1, newValue2);
+                            return newValue2;
+                        }
+                        catch (Exception ex) {
+                            throw new TypeMismatchException( "'" + toName(object1.getClass()) + "." + field1.getName()
+                                                                 + "' can not refer to the value '"
+                                                                 + newValue1 + "' (type " + toName(newValue1.getClass())
+                                                                 + "), because it is of the type " + toName(field1.getType()) );
+                        }
+                    }
+                    catch (Exception ex) {
+                        throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex);
+                    }
+                }
+            });
         }
-        catch (IllegalArgumentException e) {
-            try {
-                field.set(object, InvokerHelper.asType(newValue, field.getType()));
-            }
-            catch (Exception ex) {
-                throw new TypeMismatchException( "'" + toName(object.getClass()) + "." + field.getName()
-                                                  + "' can not refer to the value '"
-                                                  + newValue + "' (type " + toName(newValue.getClass())
-                                                  + "), because it is of the type " + toName(field.getType()) );
-            }
+        catch (TypeMismatchException ex) {
+            throw ex;
         }
-        catch (Exception e) {
-            throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", e);
+        catch (Exception ex) {
+            throw new GroovyRuntimeException("Cannot set the property '" + name + "'.", ex);
         }
     }
 

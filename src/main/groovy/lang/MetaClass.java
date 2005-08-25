@@ -642,7 +642,7 @@ public class MetaClass {
     public Object getProperty(final Object object, final String property) {
         // look for the property in our map
         MetaProperty mp = (MetaProperty) propertyMap.get(property);
-        if(mp != null) {
+        if (mp != null) {
             try {
                 //System.out.println("we found a metaproperty for " + theClass.getName() +
                 //  "." + property);
@@ -693,7 +693,7 @@ public class MetaClass {
         try {
             if ( !(object instanceof Class) ) {
                 MetaMethod method = findGetter(object, "get" + capitalize(property));
-               if (method != null) {
+                if (method != null) {
                    return doMethodInvoke(object, method, EMPTY_ARRAY);
                }
            }
@@ -774,9 +774,10 @@ public class MetaClass {
                 }
             });
             for(int i = 0; i < fields.length; i++) {
-                // we're only interested in publics
-                if((fields[i].getModifiers() & java.lang.reflect.Modifier.PUBLIC) == 0)
-                    continue;
+                // todo: GROOVY-996
+                // we're only interested in publics and protected
+                if ((fields[i].getModifiers() & (java.lang.reflect.Modifier.PUBLIC | java.lang.reflect.Modifier.PROTECTED)) == 0)
+                     continue;
 
                 // see if we already got this
                 if(propertyMap.get(fields[i].getName()) != null)
@@ -792,10 +793,10 @@ public class MetaClass {
             klass = klass.getSuperclass();
         }
 
-		// if this an Array, then add the special read-only "length" property
-		if(theClass.isArray()) {
-			propertyMap.put("length", arrayLengthProperty);
-		}
+	// if this an Array, then add the special read-only "length" property
+        if (theClass.isArray()) {
+            propertyMap.put("length", arrayLengthProperty);
+        }
 
         // now iterate over the map of property descriptors and generate
         // MetaBeanProperty objects
@@ -1074,13 +1075,16 @@ public class MetaClass {
         try {
             try {
                 final Class clazz = theClass;
-                Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws NoSuchFieldException {
-                        return clazz.getDeclaredField(attribute);
+                final String attribute1 = attribute;
+                final Object object1 = object;
+                Object value = (Object) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws NoSuchFieldException, IllegalAccessException {
+                        Field field = clazz.getDeclaredField(attribute);
+                        field.setAccessible(true);
+                        return field.get(object1);
                     }
                 });
-                field.setAccessible(true);
-                return field.get(object);
+                return value;
             } catch (PrivilegedActionException pae) {
                 firstException = pae;
             }
@@ -1088,13 +1092,16 @@ public class MetaClass {
             if (object instanceof Class) {
                 try {
                     final Class clazz = (Class) object;
-                    Field field = (Field) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                        public Object run() throws NoSuchFieldException {
-                            return clazz.getDeclaredField(attribute);
+                    final String attribute1 = attribute;
+                    final Object object1 = object;
+                    Object value = (Object) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                        public Object run() throws NoSuchFieldException, IllegalAccessException {
+                            Field field = clazz.getDeclaredField(attribute);
+                            field.setAccessible(true);
+                            return field.get(object1);
                         }
                     });
-                    field.setAccessible(true);
-                    return field.get(object);
+                    return value;
                 } catch (PrivilegedActionException pae) {
                     firstException = pae;
                 }
