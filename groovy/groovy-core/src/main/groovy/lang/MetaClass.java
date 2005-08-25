@@ -691,7 +691,7 @@ public class MetaClass {
         // this case is for protected fields. I wish there was a better way...
         Exception lastException = null;
         try {
-            if (property.length() > 0 && !Character.isUpperCase(property.charAt(0))) {
+            if ( !(object instanceof Class) ) {
                 MetaMethod method = findGetter(object, "get" + capitalize(property));
                if (method != null) {
                    return doMethodInvoke(object, method, EMPTY_ARRAY);
