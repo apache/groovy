@@ -15,9 +15,9 @@ class PropertyTest2 extends GroovyTestCase {
 		foo.eachPropertyName { prop ->
 			//println "looking for ${prop} in ${props}"
 
-			// we should not see private or protected properties
+			// todo: GROOVY-996
+                                    // We should see protected properties, but not  private ones.
 			assert prop != "invisible"
-			assert prop != "prot"
 
 			// remove this one from the list
 			props = props - [prop]
@@ -36,9 +36,9 @@ class PropertyTest2 extends GroovyTestCase {
 		foo.eachProperty { prop ->
 			//println "looking for ${prop.name} in ${props}"
 			
-			// we should not see private or protected properties
+			// todo: GROOVY-996
+                                    // We should see protected properties, but not  private ones.
 			assert prop.name != "invisible"
-			assert prop.name != "prot"
 			
 			def value = props[prop.name]
 			if(value != null)
