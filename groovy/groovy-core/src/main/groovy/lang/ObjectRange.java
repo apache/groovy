@@ -97,6 +97,24 @@ public class ObjectRange extends AbstractList implements Range {
             this.from = normaliseType(from);
             this.to = normaliseType(to);
         }
+        if (from instanceof String || to instanceof String) {
+            // this test depends deeply on the String.next implementation
+            // 009.next is 00:, not 010 
+            String start = from.toString();
+            String end = to.toString();
+            if (start.length()>end.length()){
+                throw new IllegalArgumentException("Incompatible Strings for Range: starting String is longer than ending string");
+            }
+            int length = Math.min(start.length(),end.length());
+            int i = 0;
+            for (i=0; i<length; i++) {
+                if (start.charAt(i) != end.charAt(i)) break;
+            }
+            if (i<length-1) {
+                throw new IllegalArgumentException("Incompatible Strings for Range: String#next() will not reach the expected value");
+            }
+            
+        }
     }
 
     public int hashCode() {
