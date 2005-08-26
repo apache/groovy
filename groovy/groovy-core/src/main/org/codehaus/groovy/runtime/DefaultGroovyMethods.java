@@ -354,9 +354,13 @@ public class DefaultGroovyMethods {
       if (arg instanceof Object[]) {
           printf(self, format, (Object[]) arg);
           return;
-      }
-      else if (arg instanceof List) {
+      } else if (arg instanceof List) {
           printf(self, format, ((List) arg).toArray());
+          return;
+      } else if (!arg.getClass().isArray()) {
+          Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
+          o[0]=arg;
+          printf(self, format, o);
           return;
       }
 
