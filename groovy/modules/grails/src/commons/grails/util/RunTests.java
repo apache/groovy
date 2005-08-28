@@ -24,6 +24,7 @@ import junit.textui.TestRunner;
 import org.apache.log4j.Logger;
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication;
 import org.codehaus.groovy.grails.commons.spring.SpringConfig;
+import org.codehaus.groovy.grails.support.GrailsTestSuite;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
@@ -55,9 +56,7 @@ public class RunTests {
 			Class clazz = allClasses[i];
 			if (TestCase.class.isAssignableFrom(clazz) && !Modifier.isAbstract(clazz.getModifiers())) {
 				log.debug("Adding test [" + clazz.getName() + "]");
-				TestCase testCaseInstance = (TestCase)BeanUtils.instantiateClass(clazz);
-				appCtx.getBeanFactory().autowireBeanProperties(testCaseInstance, AutowireCapableBeanFactory.AUTOWIRE_BY_TYPE, false);
-				s.addTest(testCaseInstance);
+				s.addTest(new GrailsTestSuite(appCtx.getBeanFactory(), clazz));
 			} else {
 				log.debug("[" + clazz.getName() + "] is not a test case.");
 			}
