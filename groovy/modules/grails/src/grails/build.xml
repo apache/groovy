@@ -82,6 +82,7 @@
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="log4j.properties"/>
 			</fileset>
+			<fileset dir="grails-app"/>
 		</copy>
 		<copy todir="tmp/tests/classpath/spring">
 			<fileset dir="spring" includes="**"/>
@@ -95,7 +96,10 @@
 			<fileset dir="${grails.home}/dist"/>
 			<fileset dir="lib"/>
 		</path>
-		<java classpathref="test.classpath" classname="grails.util.RunTests"/>
+		<java classpathref="test.classpath" classname="grails.util.RunTests" fork="true">
+<!--			<jvmarg value="-Xdebug"/>
+			<jvmarg value="-Xrunjdwp:transport=dt_socket,address=50010,suspend=y,server=y"/> -->
+		</java>
 	</target>
 	
 	<target name="war">
