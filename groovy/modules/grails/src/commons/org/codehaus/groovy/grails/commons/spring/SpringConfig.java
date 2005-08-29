@@ -267,11 +267,13 @@ public class SpringConfig {
 				serviceInstance.setAutowire("byType");
 			}
 			
+			
 			if (grailsServiceClass.isTransactional()) {
 				Map transactionAttributes = new HashMap();
 				transactionAttributes.put("*", "PROPAGATION_REQUIRED");
 				Bean transactionalProxy = SpringConfigUtils.createSingletonBean(TransactionProxyFactoryBean.class);
 				transactionalProxy.setProperty("target", serviceInstance);
+				transactionalProxy.setProperty("proxyTargetClass", SpringConfigUtils.createLiteralValue("true"));
 				transactionalProxy.setProperty("transactionAttributes", SpringConfigUtils.createProperties(transactionAttributes));
 				transactionalProxy.setProperty("transactionManager", SpringConfigUtils.createBeanReference("transactionManager"));
 				beanReferences.add(SpringConfigUtils.createBeanReference(WordUtils.uncapitalize(grailsServiceClass.getName()) + "Service", transactionalProxy));
