@@ -675,7 +675,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("gridLayout", GridLayout.class);
         registerBeanFactory("overlayLayout", OverlayLayout.class);
         registerBeanFactory("springLayout", SpringLayout.class);
-        registerBeanFactory("gridBagConstarints", GridBagConstraints.class);
+        registerBeanFactory("gridBagConstraints", GridBagConstraints.class);
         registerBeanFactory("gbc", GridBagConstraints.class); // shortcut name
 
         // box layout
