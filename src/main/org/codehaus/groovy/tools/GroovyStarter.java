@@ -45,14 +45,7 @@
  */
 package org.codehaus.groovy.tools;
 
-import org.codehaus.classworlds.ClassRealm;
-import org.codehaus.classworlds.ClassWorld;
 import java.lang.reflect .*;
-
-import groovy.ui.GroovyMain;
-import groovy.ui.InteractiveShell;
-import java.net.URL;
-import java.io.File;
 import java.io.FileInputStream;
 
 
@@ -69,45 +62,59 @@ public class GroovyStarter {
     
     
     public static void rootLoader(String args[]) {
-        String conf = System.getProperty("groovy.launcher.conf","conf/launcher.conf");
+        String conf = System.getProperty("groovy.launcher.conf",null);
         LoaderConfiguration lc = new LoaderConfiguration();
         
-        String tools = System.getProperty("tools.jar");
-        if (tools!=null) lc.addFile(new File(tools));
-
+        // evaluate parameters
+        boolean hadMain=false, hadConf=false, hadCP=false;
         int argsOffset = 0;
-        while (args.length-argsOffset>0) {
-            if (args[argsOffset].equals("-classpath") || args[argsOffset].equals("-cp")) {
+        while (args.length-argsOffset>0 && !(hadMain && hadConf && hadCP)) {
+            if (args[argsOffset].equals("--classpath")) {
+                if (hadCP) break;
                 if (args.length==argsOffset+1) {
-                    System.err.println ("classpath parameter needs argument");
-                    System.exit(1);
+                    exit("classpath parameter needs argument");
                 }
                 lc.addClassPath(args[argsOffset+1]);
                 argsOffset+=2;
-            } else if (args[argsOffset].equals("-main")) {
+            } else if (args[argsOffset].equals("--main")) {
+                if (hadMain) break;
                 if (args.length==argsOffset+1) {
-                    System.err.println ("main parameter needs argument");
-                    System.exit(1);
+                    exit("main parameter needs argument");
                 }
                 lc.setMainClass(args[argsOffset+1]);
+                argsOffset+=2;
+            } else if (args[argsOffset].equals("--conf")) {
+                if (hadConf) break;
+                if (args.length==argsOffset+1) {
+                    exit("conf parameter needs argument");
+                }
+                conf=args[argsOffset+1];
                 argsOffset+=2;
             } else {
                 break;
             }            
         }
-
-        String[] newArgs = new String[args.length-argsOffset];
-        for (int i=0; i<args.length; i++) {
-            newArgs[i] = args[i+argsOffset];
-        }        
         
-        try {
-            lc.configure(new FileInputStream(conf));
-        } catch (Exception e) {
-            System.err.println("exception while configuring main class loader:");
-            exit(e);
+        // we need to know the class we want to start
+        if (lc.getMainClass()==null && conf==null) {
+            exit("no configuration file or main class specified");
         }
         
+        // copy arguments for main class 
+        String[] newArgs = new String[args.length-argsOffset];
+        for (int i=0; i<newArgs.length; i++) {
+            newArgs[i] = args[i+argsOffset];
+        }        
+        // load configuration file
+        if (conf!=null) {
+            try {
+                lc.configure(new FileInputStream(conf));
+            } catch (Exception e) {
+                System.err.println("exception while configuring main class loader:");
+                exit(e);
+            }
+        }
+        // create loader and execute main class
         ClassLoader loader = new RootLoader(lc);
         Method m=null;
         try {
@@ -128,7 +135,7 @@ public class GroovyStarter {
             exit(e3);
         } catch (InvocationTargetException e3) {
             exit(e3);
-        }
+        } 
     }
     
     private static void exit(Exception e) {
@@ -136,14 +143,27 @@ public class GroovyStarter {
         System.exit(1);
     }
     
+    private static void exit(String msg) {
+        System.err.println(msg);
+        System.exit(1);
+    }
+ 
     // after migration from classworlds to the rootloader rename
     // the rootLoader method to main and remove this method as 
     // well as the classworlds method
-    public static void main(String args[],ClassWorld classWorld ) {
+   /* public static void main(String args[],ClassWorld classWorld ) {
         classworlds(args,classWorld);
+    }*/
+    
+    public static void main(String args[]) {
+        try {
+            rootLoader(args);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 
-    public static void classworlds(String oldArgs[],ClassWorld classWorld ) {
+    /*public static void classworlds(String oldArgs[],ClassWorld classWorld ) {
         try {
             // Creates a realm with *just* the system classloader
             ClassRealm system = classWorld.newRealm("system");
@@ -197,6 +217,6 @@ public class GroovyStarter {
             System.exit(1);
         }
         
-    }
+    }*/
     
 }

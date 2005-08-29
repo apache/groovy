@@ -102,12 +102,19 @@ public class RootLoader extends ClassLoader {
     private ClassLoader parent; 
     private InnerLoader inner;
     
-    private static class InnerLoader extends URLClassLoader {
+    private class InnerLoader extends URLClassLoader {
         public InnerLoader(URL[] urls) {
             super(urls,null);
         }        
         public void addPathEntry(URL url) {
             addURL(url);
+        }
+        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            try {
+                return super.loadClass(name, resolve);
+            } catch (ClassNotFoundException cnfe) {
+                return RootLoader.this.loadClassByName(name,true,resolve);
+            }
         }
     }
     
@@ -124,7 +131,7 @@ public class RootLoader extends ClassLoader {
      * array of URLs as classpath
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
-        this(parent);
+        this(parent);        
         inner = new InnerLoader(urls);
     }
     
@@ -134,6 +141,7 @@ public class RootLoader extends ClassLoader {
      */
     public RootLoader(LoaderConfiguration lc) {
         this(RootLoader.class.getClassLoader());
+        Thread.currentThread().setContextClassLoader(this);
         inner = new InnerLoader(lc.getClassPathUrls());
     }
 
@@ -141,13 +149,23 @@ public class RootLoader extends ClassLoader {
      * loads a class using the name of the class
      */
     protected synchronized Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
-        // only check the parent if the searched class can't be found
-        try {
-            return inner.loadClass(name);
-        } catch (ClassNotFoundException cnfe) {
-            // fall through
+        return loadClassByName(name,false,resolve);
+    }
+    
+    /**
+     * method to avoid endless loops
+     */
+    private Class loadClassByName(String name, boolean ignoreInner, boolean resolve) throws ClassNotFoundException {
+        // if the searched class can't be found in inner, then try the 
+        // old behavior which searches in parent first
+        if (!ignoreInner) {
+            try {
+                return inner.loadClass(name);
+            } catch (ClassNotFoundException cnfe) {
+                // fall through
+            }
         }
-        return super.loadClass(name,resolve);
+        return super.loadClass(name,true);
     }
     
     /**
