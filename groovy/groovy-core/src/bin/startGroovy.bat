@@ -59,8 +59,8 @@ if "%GROOVY_HOME%" == "" set GROOVY_HOME=%DIRNAME%..
 
 @rem classpath handling
 set CP=
-if "x%1" == "x-cp" set CP=%~2
-if "x%1" == "x-classpath" set CP=%~2
+if "x%~1" == "x-cp" set CP=%~2
+if "x%~1" == "x-classpath" set CP=%~2
 if "x" == "x%CP%" goto init
 shift 
 shift
