@@ -35,6 +35,10 @@ public abstract class AbstractStaticMethodInvocation implements StaticMethodInvo
 		this.pattern = pattern;
 	}
 	
+	protected Pattern getPattern() {
+		return pattern;
+	}
+
 	public boolean isMethodMatch(String methodName) {
 		return this.pattern.matcher(methodName.subSequence(0, methodName.length())).matches();
 	}
