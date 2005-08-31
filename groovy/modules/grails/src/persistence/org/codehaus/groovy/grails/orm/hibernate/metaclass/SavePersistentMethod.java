@@ -31,7 +31,7 @@ public class SavePersistentMethod extends AbstractDynamicPersistentMethod {
 	}
 
 	protected Object doInvokeInternal(Object target, Object[] arguments) {
-		getHibernateTemplate().save(target);
+		getHibernateTemplate().saveOrUpdate(target);
 		return null;
 	}
 
