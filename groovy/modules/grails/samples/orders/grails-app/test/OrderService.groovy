@@ -5,7 +5,10 @@ class OrderService {
 		
 	def findAllOrders() {
 		println(getClass().getClassLoader().loadClass("test.OrderEntry"))
-		return OrderEntry.findAll()
+		//return OrderEntry.findAll()
+		//return [ new OrderEntry() ]
+		OrderEntry.testMethod()
+		return [ OrderEntry.class ]
 	}
 	
 	def addOrder(orderEntry) {

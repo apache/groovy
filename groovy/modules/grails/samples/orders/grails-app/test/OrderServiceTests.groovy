@@ -1,10 +1,10 @@
 package test
 
 class OrderServiceTests extends GroovyTestCase {
-   @Property OrderService orderService
+   @Property OrderService orderService = new OrderService()
 
    void testLoadAllOrders() {
 		assert orderService != null
-		assert orderService.findAllOrders().size() == 0
+		assert orderService.findAllOrders().size() == 1
    }
 }
