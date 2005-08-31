@@ -145,11 +145,12 @@
 				<include name="spring-webflow.jar"/>
 				<include name="spring-binding.jar"/>
 				<include name="spring.jar"/>
-				<include name="groovy-all-1.0-jsr-03-SNAPSHOT.jar"/>
+				<include name="groovy-all-1.0-jsr-04-SNAPSHOT.jar"/>
 				<include name="springmodules-sandbox.jar"/>
 				<include name="standard-${servlet.version}.jar"/>
 				<include name="jstl-${servlet.version}.jar"/>
 				<include name="commons-lang-2.0.jar"/>
+				<include name="log4j-1.2.8.jar"/>				
 				<include name="ognl-2.7.jar"/>
 				<include name="hsqldb.jar"/>
 				<include name="commons-collections-3.0.jar"/>
