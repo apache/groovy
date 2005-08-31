@@ -46,7 +46,7 @@
 		<delete>
 			<fileset dir="war/WEB-INF/classes"/>
 		</delete>
-		<javac srcdir="src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+		<javac srcdir="${grails.home}/src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
 	</target>
 	
 	<target name="test" depends="build">
