@@ -16,6 +16,8 @@
 		<mkdir dir="war"/>
 		<mkdir dir="war/WEB-INF"/>
 		<mkdir dir="war/WEB-INF/classes"/>
+		<mkdir dir="${grails.home}/dist"/>
+		
 		<copy todir="war/WEB-INF">
 			<fileset dir="${grails.home}/src/war/WEB-INF">
 				<include name="applicationContext.xml"/>
@@ -46,7 +48,7 @@
 		<delete>
 			<fileset dir="war/WEB-INF/classes"/>
 		</delete>
-		<javac srcdir="${grails.home}/src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
+		<javac srcdir="src" destdir="war/WEB-INF/classes" classpathref="classpath" debug="on" deprecation="on" optimize="off"/>
 	</target>
 	
 	<target name="test" depends="build">
