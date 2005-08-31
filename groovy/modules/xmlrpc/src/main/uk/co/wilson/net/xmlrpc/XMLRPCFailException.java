@@ -48,7 +48,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 public class XMLRPCFailException extends SAXException {
-	private final String faultString;
+    private static final long serialVersionUID = 1L;
+    
+    private final String faultString;
 	private final int faultCode;
 	
 	public XMLRPCFailException(final String faultString, final int faultCode) {

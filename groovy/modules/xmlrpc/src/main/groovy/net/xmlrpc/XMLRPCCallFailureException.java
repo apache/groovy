@@ -47,7 +47,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 public class XMLRPCCallFailureException extends GroovyRuntimeException {
-	private final Object faultString;
+    private static final long serialVersionUID = 1L;
+    
+    private final Object faultString;
 	private final Object faultCode;
 	
 	public XMLRPCCallFailureException(final Object faultString, final Object faultCode) {

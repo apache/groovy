@@ -129,8 +129,10 @@ public abstract class MinMLHTTPServer extends MinMLSocketServer {
      private final InputStream in;
   }
 
-  protected abstract class HTTPWorker extends Worker {
-    protected final void process(final Socket socket) throws Exception {
+  protected abstract class HTTPWorker extends ServerSocketWorker {
+    protected final void process(final Object resource) throws Exception {
+    final Socket socket = (Socket)resource;
+    
       try {
         socket.setSoTimeout(MinMLHTTPServer.this.socketReadTimeout);
 
