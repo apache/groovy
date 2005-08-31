@@ -27,6 +27,7 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass;
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 import org.hibernate.FetchMode;
 import org.hibernate.MappingException;
+import org.hibernate.cfg.GrailsSecondPass;
 import org.hibernate.cfg.Mappings;
 //import org.hibernate.cfg.SecondPass;
 import org.hibernate.id.PersistentIdentifierGenerator;
@@ -113,7 +114,7 @@ public final class GrailsDomainBinder {
 	 * @author Graeme
 	 *
 	 */
-	/*static class GrailsCollectionSecondPass extends SecondPass {
+	static class GrailsCollectionSecondPass extends GrailsSecondPass {
 
 		private static final long serialVersionUID = -5540526942092611348L;
 		private GrailsDomainClassProperty property;
@@ -131,7 +132,7 @@ public final class GrailsDomainBinder {
 			bindCollectionSecondPass( this.property, mappings, persistentClasses, collection,inheritedMetas );			
 		}
 
-	}*/
+	}
 
 	private static void bindCollectionSecondPass(GrailsDomainClassProperty property, Mappings mappings, Map persistentClasses, Collection collection, Map inheritedMetas) {
 
@@ -227,7 +228,7 @@ public final class GrailsDomainBinder {
 		}
 		
 		// setup second pass
-		//mappings.addSecondPass( new GrailsCollectionSecondPass(property, mappings, collection) );
+		mappings.addSecondPass( new GrailsCollectionSecondPass(property, mappings, collection) );
 		
 	}
 	/**
@@ -401,8 +402,8 @@ public final class GrailsDomainBinder {
 			}
 		}
 		else if( value instanceof Collection ) {
-			Collection collection = (Collection)value;
-			String propertyRef = collection.getReferencedPropertyName();
+			//Collection collection = (Collection)value;
+			//String propertyRef = collection.getReferencedPropertyName();
 		}
 		
 		value.createForeignKey();
