@@ -32,10 +32,18 @@ public class HibernatePersistentMethods extends AbstractPersistentMethods {
 	public HibernatePersistentMethods(Class theClass, SessionFactory sessionFactory, ClassLoader classLoader)
 			throws IntrospectionException {
 		super(theClass);
+		// dynamic methods
 		addDynamicMethodInvocation(new SavePersistentMethod(sessionFactory, classLoader));
 		addDynamicMethodInvocation(new DeletePersistentMethod(sessionFactory, classLoader));
+		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));
 		
+		// static methods
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
+		addStaticMethodInvocation(new FindByPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new ListOrderByPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new GetPersistentMethod(sessionFactory, classLoader));
 	}
 	
 }
