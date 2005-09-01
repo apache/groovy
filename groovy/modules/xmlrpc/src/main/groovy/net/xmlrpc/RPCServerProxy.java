@@ -53,8 +53,8 @@ public class RPCServerProxy extends GroovyObjectSupport {
   	};
   }
 
-  protected String createCall(final String name, final Object[] params, final int numberOfparams) {
-  final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
+  protected String createCall(final String name, final Object[] params, final int numberOfparams, final String header) {
+  final StringBuffer buffer = new StringBuffer(header).append("<methodCall>\n\t<methodName>");
   
     try {
       XMLRPCMessageProcessor.encodeString(buffer, name).append("</methodName>\n\t<params>\n");

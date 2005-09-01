@@ -48,32 +48,6 @@ public class RPCServer extends GroovyObjectSupport {
   protected Closure preCallMethod = null;
   protected Closure postCallMethod = null;
   protected Closure faultMethod = null;
-  
-  protected static final byte[] startResponse = ("<methodResponse>\n" +
-  												 "\t<params>\n" +
-  												 "\t\t<param>\n").getBytes();
-  protected static final byte[] endResponse = ("\n" +
-  											   "\t\t</param>\n" +
-  											   "\t</params>\n" +
-  											   "</methodResponse>").getBytes();
-  protected static final byte[] startError = ("<methodResponse>\n" +
-  											  "\t<fault>\n" +
-  											  "\t\t<value>\n" +
-  											  "\t\t\t<struct>\n" +
-  											  "\t\t\t\t<member>\n" +
-  											  "\t\t\t\t\t<name>faultCode</name>\n" +
-  											  "\t\t\t\t\t<value><int>").getBytes();
-  protected static final byte[] middleError = ("</int></value>\n" +
-  											  "\t\t\t\t</member>\n" +
-  											  "\t\t\t\t<member>\n" +
-  											  "\t\t\t\t\t<name>faultString</name>\n" +
-  											  "\t\t\t\t\t<value><string>").getBytes();
-  protected static final byte[] endError = ("</string></value>\n" +
-  											"\t\t\t\t</member>\n" +
-  											"\t\t\t</struct>\n" +
-  											"\t\t</value>\n" +
-  											"\t</fault>\n" +
-  											"</methodResponse>\n").getBytes();
 
   public Object getProperty(final String property) {
   	return new GroovyObjectSupport() {

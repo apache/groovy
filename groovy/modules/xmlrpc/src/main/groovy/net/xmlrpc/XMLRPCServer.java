@@ -60,6 +60,31 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
 	static final byte[] contentTypeXML = "Content-Type: text/xml\r\n".getBytes();
 	static final byte[] contentLength = "Content-Length: ".getBytes();
   static final byte[] xmlDeclaration = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n".getBytes();
+  static final byte[] startResponse = ("<methodResponse>\n" +
+                           "\t<params>\n" +
+                           "\t\t<param>\n").getBytes();
+  static final byte[] endResponse = ("\n" +
+                           "\t\t</param>\n" +
+                           "\t</params>\n" +
+                           "</methodResponse>").getBytes();
+  static final byte[] startError = ("<methodResponse>\n" +
+                          "\t<fault>\n" +
+                          "\t\t<value>\n" +
+                          "\t\t\t<struct>\n" +
+                          "\t\t\t\t<member>\n" +
+                          "\t\t\t\t\t<name>faultCode</name>\n" +
+                          "\t\t\t\t\t<value><int>").getBytes();
+  static final byte[] middleError = ("</int></value>\n" +
+                          "\t\t\t\t</member>\n" +
+                          "\t\t\t\t<member>\n" +
+                          "\t\t\t\t\t<name>faultString</name>\n" +
+                          "\t\t\t\t\t<value><string>").getBytes();
+  static final byte[] endError = ("</string></value>\n" +
+                        "\t\t\t\t</member>\n" +
+                        "\t\t\t</struct>\n" +
+                        "\t\t</value>\n" +
+                        "\t</fault>\n" +
+                        "</methodResponse>\n").getBytes();
   
 	final int minWorkers;
 	final int maxWorkers;

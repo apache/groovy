@@ -41,6 +41,33 @@ import uk.co.wilson.smackx.packet.JabberRPC;
  */
 
 public class JabberRPCServer extends RPCServer {
+  
+  static final String startResponse = ("<methodResponse>\n" +
+                           "\t<params>\n" +
+                           "\t\t<param>\n");
+  static final String endResponse = ("\n" +
+                           "\t\t</param>\n" +
+                           "\t</params>\n" +
+                           "</methodResponse>");
+  static final String startError = ("<methodResponse>\n" +
+                          "\t<fault>\n" +
+                          "\t\t<value>\n" +
+                          "\t\t\t<struct>\n" +
+                          "\t\t\t\t<member>\n" +
+                          "\t\t\t\t\t<name>faultCode</name>\n" +
+                          "\t\t\t\t\t<value><int>");
+  static final String middleError = ("</int></value>\n" +
+                          "\t\t\t\t</member>\n" +
+                          "\t\t\t\t<member>\n" +
+                          "\t\t\t\t\t<name>faultString</name>\n" +
+                          "\t\t\t\t\t<value><string>");
+  static final String endError = ("</string></value>\n" +
+                        "\t\t\t\t</member>\n" +
+                        "\t\t\t</struct>\n" +
+                        "\t\t</value>\n" +
+                        "\t</fault>\n" +
+                        "</methodResponse>\n");
+  
   public JabberRPCServer(final int minWorkers,
                          final int maxWorkers,
                          final int workerIdleLife)
@@ -61,8 +88,8 @@ public class JabberRPCServer extends RPCServer {
     this.server = new MinMLJabberPacketServer(connection.createPacketCollector(new PacketFilter() {
                                                     public boolean accept(final Packet packet) {
                                                       return packet instanceof JabberRPC &&
-                                                             ((JabberRPC)packet).getType() == IQ.Type.SET;
-                                                  }
+                                                      ((JabberRPC)packet).getType() == IQ.Type.SET;
+                                                 }
                                               }),
                                               this.minWorkers, 
                                               this.maxWorkers, 
@@ -150,11 +177,12 @@ public class JabberRPCServer extends RPCServer {
           }
           
           private void sendResponse(final JabberRPC request, final String response) {
-          final Packet responsePacket =  new JabberRPC(response.toString());
+          final IQ responsePacket =  new JabberRPC(response.toString());
           
             responsePacket.setFrom(request.getTo());
             responsePacket.setTo(request.getFrom());
             responsePacket.setPacketID(request.getPacketID());
+            responsePacket.setType(IQ.Type.RESULT);
             
             JabberRPCServer.this.connection.sendPacket(responsePacket);
           }

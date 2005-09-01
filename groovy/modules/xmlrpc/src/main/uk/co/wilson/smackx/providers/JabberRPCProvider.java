@@ -34,6 +34,7 @@ public class JabberRPCProvider implements IQProvider {
   public IQ parseIQ(final XmlPullParser parser) throws Exception {
   final StringBuffer buffer = new StringBuffer();
 
+    // skip the <query> tag by calling parser.next()
     while (true) {
       switch (parser.next()) {
         case XmlPullParser.TEXT:

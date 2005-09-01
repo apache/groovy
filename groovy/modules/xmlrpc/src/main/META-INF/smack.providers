@@ -2,9 +2,9 @@
 <!-- Providers file for Smack extensions -->
 <smackProviders>    
     <!-- Jabber-RPC -->
-    <extensionProvider>
+    <iqProvider>
         <elementName>query</elementName>
         <namespace>jabber:iq:rpc</namespace>
         <className>uk.co.wilson.smackx.providers.JabberRPCProvider</className>
-    </extensionProvider>
+    </iqProvider>
 </smackProviders>

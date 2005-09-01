@@ -21,6 +21,7 @@ import groovy.lang.Closure;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jivesoftware.smack.PacketCollector;
@@ -28,6 +29,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
 import org.xml.sax.SAXException;
 
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
@@ -40,8 +42,23 @@ import uk.co.wilson.smackx.packet.JabberRPC;
  */
 
 public class JabberRPCServerProxy extends RPCServerProxy {
-  public JabberRPCServerProxy(final XMPPConnection connection) {
+  public JabberRPCServerProxy(final XMPPConnection connection, final String to) {
     this.connection = connection;
+    
+    final Iterator iter = connection.getRoster().getPresences(to);
+    
+    int pri = Integer.MIN_VALUE;
+    String posTo = to;
+    while(iter.hasNext()) {
+    final Presence presence = (Presence)iter.next();
+    
+      if (presence.getPriority() > pri) {
+        posTo = presence.getFrom();
+        pri = presence.getPriority();
+      }
+    }
+
+    this.to = posTo;
   }
   
   /* (non-Javadoc)
@@ -58,7 +75,7 @@ public class JabberRPCServerProxy extends RPCServerProxy {
       }
     
     try {
-    final JabberRPC request = new JabberRPC(createCall(name, params, numberOfparams));
+    final JabberRPC request = new JabberRPC(createCall(name, params, numberOfparams, ""));
     final PacketCollector responseCollector = this.connection.createPacketCollector(new PacketFilter() {
                                                                                         public boolean accept(final Packet packet) {
                                                                                           return packet instanceof JabberRPC &&
@@ -67,11 +84,16 @@ public class JabberRPCServerProxy extends RPCServerProxy {
                                                                                         }
                                                                                       });
     
-      connection.sendPacket(request); // TODO: what about from and to attributes?
+      request.setType(IQ.Type.SET);
+      request.setTo(this.to);
+      request.setFrom(this.connection.getUser());
+      this.connection.sendPacket(request);
       
-      final JabberRPC response = (JabberRPC)responseCollector.nextResult(10000);  // TODO: allow the timeout to be specified
+      final JabberRPC response = (JabberRPC)responseCollector.nextResult(20000);  // TODO: allow the timeout to be specified
       
       responseCollector.cancel();
+      
+      if (response == null) throw new XMLRPCCallFailureException("call timed out", new Integer(0));
       
       final XMLRPCMessageProcessor responseParser = new XMLRPCMessageProcessor();
       
@@ -106,4 +128,5 @@ public class JabberRPCServerProxy extends RPCServerProxy {
   }
   
   private final XMPPConnection connection;
+  private final String to;
 }

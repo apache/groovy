@@ -26,7 +26,7 @@ import org.jivesoftware.smack.packet.IQ;
 
 public class JabberRPC extends IQ {
   public JabberRPC(final String xml) {
-    this.xml = xml;
+    this.xml = "<query xmlns='jabber:iq:rpc'>\n" + xml + "\n</query>";
   }
   
   public String getChildElementXML() {
