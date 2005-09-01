@@ -81,11 +81,8 @@ public class XMLRPCServerProxy extends RPCServerProxy {
       }
 		
 		try {
-			
-//			System.out.println(buffer.toString());
-			
-			final byte [] request = createCall(name, params, numberOfparams).getBytes("ISO-8859-1");
-			final URLConnection connection = this.serverURL.openConnection();
+		final byte [] request = createCall(name, params, numberOfparams).getBytes("ISO-8859-1");
+		final URLConnection connection = this.serverURL.openConnection();
 			
 			connection.setDoInput(true);
 			connection.setDoOutput(true);
