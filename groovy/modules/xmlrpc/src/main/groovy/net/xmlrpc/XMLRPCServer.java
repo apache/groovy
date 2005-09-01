@@ -144,7 +144,7 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
                 
                 if (closure == null) {
                   if (XMLRPCServer.this.defaultMethod == null) {
-                    throw new GroovyRuntimeException("XML-RPC method " + methodName + " is not supported on this server");
+                    throw new GroovyRuntimeException("Method " + methodName + " is not supported on this server");
                   }
                   
                   result = XMLRPCServer.this.defaultMethod.call(new Object[] {methodName, params.toArray()});

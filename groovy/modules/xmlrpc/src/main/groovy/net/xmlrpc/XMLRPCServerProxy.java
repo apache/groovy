@@ -46,7 +46,6 @@
 package groovy.net.xmlrpc;
 
 import groovy.lang.Closure;
-import groovy.lang.GroovyObjectSupport;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -61,7 +60,7 @@ import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 /**
  * @author John Wilson (tug@wilson.co.uk)
  */
-public class XMLRPCServerProxy extends GroovyObjectSupport {
+public class XMLRPCServerProxy extends RPCServerProxy {
 	private URL serverURL;
 	
 	public XMLRPCServerProxy(final String serverURL) throws MalformedURLException {
@@ -69,67 +68,23 @@ public class XMLRPCServerProxy extends GroovyObjectSupport {
 	}
 	
 	/* (non-Javadoc)
-	 * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
-	 */
-	public Object getProperty(final String property) {
-		return new GroovyObjectSupport() {
-			/**
-			 * 
-			 * Allow serverProxy.a.b.c(...)
-			 * This invokes a remote method with the name "a.b.c"
-			 * This technique is shamelessly stolen from the Python XML-RPC implementation
-			 * Thanks and credit to Fredrik Lundh
-			 * 
-			 */
-					
-			private final StringBuffer propertyPrefix = new StringBuffer(property + ".");
-		
-			public Object getProperty(final String property) {
-				this.propertyPrefix.append(property).append('.');
-				
-				return this;
-			}
-			
-			public Object invokeMethod(final String name, final Object args) {
-				return XMLRPCServerProxy.this.invokeMethod(this.propertyPrefix + name, args);
-			}
-		};
-	}
-	
-	/* (non-Javadoc)
 	 * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
 	 */
 	public Object invokeMethod(final String name, final Object args) {	
 		if ("invokeMethod".equals(name)) return super.invokeMethod(name, args);
+    
+    final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
+    int numberOfparams = params.length;
+    
+      if (numberOfparams != 0 && params[numberOfparams - 1] instanceof Closure) {
+        numberOfparams--; // the closure is not to be passed to the remote method
+      }
 		
 		try {
-		final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
-		int numberOfparams = params.length;
-		
-			if (numberOfparams != 0 && params[numberOfparams - 1] instanceof Closure) {
-				numberOfparams--;	// the closure is not to be passed to the remote method
-			}
-			
-			final StringBuffer buffer = new StringBuffer("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<methodCall>\n\t<methodName>");
-		
-			
-			try {
-				XMLRPCMessageProcessor.encodeString(buffer, name).append("</methodName>\n\t<params>\n");
-				
-				for (int i = 0; i != numberOfparams; i++) {
-				final Object param = params[i];
-					XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
-				}
-			}
-			catch (final XMLRPCFailException e) {
-				throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
-			}
-			
-			buffer.append("\t</params>\n</methodCall>\n");
 			
 //			System.out.println(buffer.toString());
 			
-			byte [] request = buffer.toString().getBytes("ISO-8859-1");
+			final byte [] request = createCall(name, params, numberOfparams).getBytes("ISO-8859-1");
 			final URLConnection connection = this.serverURL.openConnection();
 			
 			connection.setDoInput(true);
