@@ -46,7 +46,7 @@ public class ListPersistentMethod extends AbstractStaticPersistentMethod {
 	protected Object doInvokeInternal(final Class clazz, String methodName,
 			Object[] arguments) {
 		// if there are no arguments list all
-		if(arguments.length == 0) {
+		if(arguments == null || arguments.length == 0) {
 			return super.getHibernateTemplate().loadAll(clazz);
 		}
 		// otherwise retrieve the max argument
