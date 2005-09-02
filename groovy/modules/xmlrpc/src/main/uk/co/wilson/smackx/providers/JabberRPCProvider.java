@@ -19,9 +19,9 @@ package uk.co.wilson.smackx.providers;
 
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.provider.IQProvider;
+import org.jivesoftware.smack.util.StringUtils;
 import org.xmlpull.v1.XmlPullParser;
 
-import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 import uk.co.wilson.smackx.packet.JabberRPC;
 
 /**
@@ -39,7 +39,7 @@ public class JabberRPCProvider implements IQProvider {
       switch (parser.next()) {
         case XmlPullParser.TEXT:
           // We need to escape characters like & and <
-          buffer.append(XMLRPCMessageProcessor.encodeString(new StringBuffer(), parser.getText()));
+          buffer.append(StringUtils.escapeForXML(parser.getText()));
           break;
   
         case XmlPullParser.START_TAG:
@@ -48,6 +48,7 @@ public class JabberRPCProvider implements IQProvider {
   
         case XmlPullParser.END_TAG:
           if ("query".equals(parser.getName())) {
+            // don't save the </query> end tag
             return new JabberRPC(buffer.toString().trim());
           } else {
             buffer.append("</" + parser.getName() + '>');
