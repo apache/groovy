@@ -50,9 +50,14 @@ public abstract class MinMLThreadPool {
     }
 
     private synchronized void startWork() {
-      if (++this.workingWorkerCount == this.liveWorkerCount && this.liveWorkerCount < this.maxWorkers)
-        new Thread(getNewWorker()).start();
+      if (++this.workingWorkerCount == this.liveWorkerCount && this.liveWorkerCount < this.maxWorkers) {
+      final Thread workerThread = new Thread(getNewWorker());
       
+        workerThread.setDaemon(false);
+        workerThread.setName("Thread Pool worker thread");
+        workerThread.start();
+      }
+
       if (debug) System.out.println("Thread starting work: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
     }
 
@@ -94,7 +99,7 @@ public abstract class MinMLThreadPool {
 
               try {
                 try {
-                    MinMLThreadPool.this.startWork();
+                  MinMLThreadPool.this.startWork();
 
                   Thread.yield(); // let a blocked worker thread do an accept()
 

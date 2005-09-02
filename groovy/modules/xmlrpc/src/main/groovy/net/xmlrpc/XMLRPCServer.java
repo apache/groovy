@@ -243,10 +243,15 @@ public byte[] getBase64() { return this.base64;} // bodge to allow testing
       
       this.server = server;
       
-      new Thread() {
+      
+      final Thread startingThread = new Thread() {
         public void run() {
           server.start();
         }
-      }.start();
+      };
+      
+      startingThread.setDaemon(false);
+      startingThread.setName("XML-RPC Server main thread");
+      startingThread.start();
     }
 }

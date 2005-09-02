@@ -190,11 +190,15 @@ public class JabberRPCServer extends RPCServer {
       }
     };
     
-    new Thread() {
+    final Thread startingThread = new Thread() {
       public void run() {
         server.start();
       }
-    }.start();
+    };
+    
+    startingThread.setDaemon(false);
+    startingThread.setName("Jabber-RPC Server main thread");
+    startingThread.start();
   }
   
   private XMPPConnection connection;
