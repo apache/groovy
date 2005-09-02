@@ -45,15 +45,16 @@
  */
 package groovy.util;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import groovy.xml.QName;
+
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents an arbitrary tree node which can be used for structured  metadata which can be any arbitrary XML-like tree.
@@ -98,7 +99,7 @@ public class Node implements java.io.Serializable {
                 parentList = (List) parentValue;
             }
             else {
-                parentList = new ArrayList();
+                parentList = new NodeList();
                 parentList.add(parentValue);
                 parent.setValue(parentList);
             }
@@ -142,6 +143,7 @@ public class Node implements java.io.Serializable {
         return "";
     }
 
+    
     public Iterator iterator() {
         return children().iterator();
     }
@@ -183,6 +185,9 @@ public class Node implements java.io.Serializable {
         return parent;
     }
 
+    /**
+     * Provides lookup of elements by non-namespaced name
+     */
     public Object get(String key) {
         if (key.charAt(0) == '@') {
             String attributeName = key.substring(1);
@@ -190,7 +195,7 @@ public class Node implements java.io.Serializable {
         }
         else {
             // iterate through list looking for node with name 'key'
-            List answer = new ArrayList();
+            List answer = new NodeList();
             for (Iterator iter = children().iterator(); iter.hasNext();) {
                 Object child = iter.next();
                 if (child instanceof Node) {
@@ -204,6 +209,24 @@ public class Node implements java.io.Serializable {
             return answer;
         }
     }
+    
+    /**
+     * Provides lookup of elements by QName
+     */
+    public NodeList getAt(QName name) {
+        NodeList answer = new NodeList();
+        for (Iterator iter = children().iterator(); iter.hasNext();) {
+            Object child = iter.next();
+            if (child instanceof Node) {
+                Node childNode = (Node) child;
+                Object childNodeName = childNode.name();
+                if (childNodeName != null && childNodeName.equals(name)) {
+                    answer.add(childNode);
+                }
+            }
+        }
+        return answer;
+    }
 
 //    public Object get(int idx) {
 //        return children().get(idx);
@@ -216,14 +239,14 @@ public class Node implements java.io.Serializable {
      * using a depth first traversal
      */
     public List depthFirst() {
-        List answer = new ArrayList();
+        List answer = new NodeList();
         answer.add(this);
         answer.addAll(depthFirstRest());
         return answer;
     }
     
     private  List depthFirstRest() {
-        List answer = new ArrayList();
+        List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
@@ -241,14 +264,14 @@ public class Node implements java.io.Serializable {
      * using a bredth first traversal
      */
     public List breadthFirst() {
-        List answer = new ArrayList();
+        List answer = new NodeList();
         answer.add(this);
         answer.addAll(breadthFirstRest());
         return answer;
     }
     
     private  List breadthFirstRest() {
-        List answer = new ArrayList();
+        List answer = new NodeList();
         for (Iterator iter = InvokerHelper.asIterator(value); iter.hasNext(); ) {
             Object child = iter.next();
             if (child instanceof Node) {
@@ -256,7 +279,7 @@ public class Node implements java.io.Serializable {
                 answer.add(childNode);
             }
         }
-        List copy = new ArrayList(answer);
+        List copy = new NodeList(answer);
         for (Iterator iter = copy.iterator(); iter.hasNext(); ) {
             Node childNode = (Node) iter.next();
             List children = childNode.breadthFirstRest();

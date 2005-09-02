@@ -45,36 +45,55 @@
  */
 package groovy.xml;
 
+import java.util.Map;
+
 import groovy.util.BuilderSupport;
 
 
 /**
- * A helper class for creating namespaces for GroovyMarkup
+ * A helper class for creating namespaced GroovyMarkup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class NamespaceBuilder {
+public class NamespaceBuilderSupport extends BuilderSupport {
 
-    private BuilderSupport builder;
+    private Object builder;
+    private String uri;
+    private String prefix;
 
-    public static NamespaceBuilderSupport newInstance(BuilderSupport builder, String uri) {
-        return new NamespaceBuilder(builder).namespace(uri);
-    }
-    
-    public static NamespaceBuilderSupport newInstance(BuilderSupport builder, String uri, String prefix) {
-        return new NamespaceBuilder(builder).namespace(uri, prefix);
+    public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
+        this(builder, uri, "");
     }
 
-    public NamespaceBuilder(BuilderSupport builder) {
+    public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix) {
+        super(builder);
         this.builder = builder;
+        this.uri = uri;
+        this.prefix = prefix;
     }
 
-    public NamespaceBuilderSupport namespace(String uri) {
-        return namespace(uri, "");
+    protected void setParent(Object parent, Object child) {
     }
 
-    public NamespaceBuilderSupport namespace(String uri, String prefix) {
-        return new NamespaceBuilderSupport(builder, uri, prefix);
+    protected Object getName(String methodName) {
+        QName qname = new QName(uri, methodName, prefix);
+        return qname;
+    }
+
+    protected Object createNode(Object name) {
+        return name;
+    }
+
+    protected Object createNode(Object name, Object value) {
+        return name;
+    }
+
+    protected Object createNode(Object name, Map attributes) {
+        return name;
+    }
+
+    protected Object createNode(Object name, Map attributes, Object value) {
+        return name;
     }
 }
