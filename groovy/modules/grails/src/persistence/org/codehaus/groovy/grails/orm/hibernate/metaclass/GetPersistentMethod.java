@@ -31,6 +31,7 @@ import org.hibernate.SessionFactory;
 public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 
 	private static final String METHOD_PATTERN = "^get$";
+	private static final String METHOD_SIGNATURE = "get";
 
 	public GetPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
 		super(sessionFactory, classLoader, Pattern.compile(METHOD_PATTERN));
@@ -40,13 +41,13 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 			Object[] arguments) {
 		// if no arguments passed throw exception
 		if(arguments.length == 0)
-			throw new MissingMethodException(METHOD_PATTERN, clazz,arguments);
+			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		// if its not a map throw exception
 		Object arg = arguments[0];
-		if(!(arg instanceof Integer))
-			throw new MissingMethodException(METHOD_PATTERN, clazz,arguments);
+		if(!(arg instanceof Long))
+			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		
-		return super.getHibernateTemplate().get( clazz, (Integer)arg );
+		return super.getHibernateTemplate().get( clazz, (Long)arg );
 	}
 
 }
