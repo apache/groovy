@@ -27,7 +27,7 @@ import org.springframework.orm.hibernate3.HibernateCallback;
  */
 public class ListOrderByPersistentMethod extends AbstractStaticPersistentMethod {
 
-	private static final String METHOD_PATTERN = "(listOrderBy)(\\+)";
+	private static final String METHOD_PATTERN = "(listOrderBy)(\\w+)";
 
 	public ListOrderByPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
 		super(sessionFactory, classLoader, Pattern.compile( METHOD_PATTERN ));
@@ -40,9 +40,11 @@ public class ListOrderByPersistentMethod extends AbstractStaticPersistentMethod 
 			Object[] arguments) {
 
 		Matcher match = getPattern().matcher( methodName );
+		// find match
+		match.find();
 		
 		String nameInSignature = match.group(2);
-		final String propertyName = nameInSignature.substring(0,0).toLowerCase() +
+		final String propertyName = nameInSignature.substring(0,1).toLowerCase() +
 										nameInSignature.substring(1);
 		
 		int temp = -1;
