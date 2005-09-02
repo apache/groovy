@@ -36,6 +36,7 @@ public abstract class AbstractPersistentMethods {
 			throws IntrospectionException {
 		super();
 		new DelegatingMetaClass(theClass, this);
+		this.clazz = theClass;
 		this.dynamicMethodInvocations = new ArrayList();
 		this.staticMethodInvocations = new ArrayList();
 	}
