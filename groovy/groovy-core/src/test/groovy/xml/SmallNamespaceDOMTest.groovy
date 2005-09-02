@@ -4,7 +4,7 @@ class SmallNamespaceDOMTest extends TestXmlSupport {
     
     void testTree() {
         def builder = DOMBuilder.newInstance()
-        def xsd = new Namespace(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
+        def xsd = NamespaceBuilder.newInstance(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
         
         def root = xsd.schema() {
           element(name:'purchaseOrder', type:'PurchaseOrderType')

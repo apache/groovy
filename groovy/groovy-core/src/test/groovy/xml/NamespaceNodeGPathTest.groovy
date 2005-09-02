@@ -1,0 +1,47 @@
+package groovy.xml
+
+/**
+ * Test the use of GPath navigation with namespaces
+ */
+class NamespaceNodeGPathTest extends TestXmlSupport {
+    
+    void testTree() {
+		Node root = new XmlParser().parseText("""
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:annotation>
+     <xsd:documentation>Purchase order schema for Example.com.</xsd:documentation>
+  </xsd:annotation>
+</xsd:schema>
+""")
+
+    		Namespace xsd = new Namespace('http://www.w3.org/2001/XMLSchema', 'xsd')
+
+	    def children = root.children()
+	    println "has children $children"
+	        		
+    		def name = root.name()
+    		println "name is of type ${name.getClass()} with value $name"
+
+		root.children().each { println "has a child with name ${it.name()} and content $it" }
+		    		
+    		def foo = xsd.annotation
+    		println "qname is $foo"
+    		println "qname url is $foo.namespaceURI"
+    		println "qname prefix is $foo.prefix"
+    		println "qname localPart is $foo.localPart"
+    		
+    		def a = root[xsd.annotation]
+    		println "Found results $a"
+    		
+	    assert a.size() == 1 : " size is $a.size()"
+    		
+    		def e = root[xsd.annotation][xsd.documentation]
+    		//def e = a[xsd.documentation]
+
+	    assert e.size() == 1: " size is $e.size()"
+		
+    		String text = e.text()
+    		println "Found element: $e with text: $text"
+    		assert text == "Purchase order schema for Example.com."
+    }
+}

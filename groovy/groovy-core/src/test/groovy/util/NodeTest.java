@@ -49,6 +49,7 @@ package groovy.util;
 
 import groovy.util.GroovyTestCase;
 import groovy.util.Node;
+import groovy.xml.QName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -143,6 +144,40 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("Node2", node2, list.get(1));
 
         dump(attribute);
+    }
+    
+    public void testNavigationUsingQNames() throws Exception {
+        QName name1 = new QName("http://something", "foo", "f");
+        
+        Node node = new Node(null, null, new ArrayList());
+        Node child = new Node(null, new QName("http://something", "foo", "f"), new HashMap(), new ArrayList());
+        child.attributes().put("cheese", "Edam");
+        Node grandChild = new Node(null, new QName("http://something", "bar", "f"), new HashMap(), new ArrayList());
+        grandChild.attributes().put("drink", "Beer");
+        grandChild.children().add("I am a youngling");
+        child.children().add(grandChild);
+        
+        node.children().add(child);
+
+        // lets look up by QName
+        Object value = node.getAt(name1);
+        assertTrue("Should return a list: " + value, value instanceof NodeList);
+        NodeList list = (NodeList) value;
+        assertEquals("Size", 1, list.size());
+        
+        Node answer = (Node) list.get(0);
+        assertNotNull("Node is null!", answer);
+        
+        System.out.println("Found node: " + answer);
+        
+        // now lets navigate the list
+        NodeList gc = list.getAt(new QName("http://something", "bar"));
+        assertEquals("grand children size", 1, gc.size());
+        
+        System.out.println("Found grandChild: " + gc);
+        
+        String text= gc.text();
+        assertEquals("text of grandchild", "I am a youngling", text);
     }
 
     protected void dump(Node node) {
