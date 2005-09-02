@@ -8,7 +8,7 @@ class NamespaceNodeGPathTest extends TestXmlSupport {
     void testTree() {
 		Node root = new XmlParser().parseText("""
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <xsd:annotation>
+  <xsd:annotation xsd:cheese="Edam">
      <xsd:documentation>Purchase order schema for Example.com.</xsd:documentation>
   </xsd:annotation>
 </xsd:schema>
@@ -34,7 +34,12 @@ class NamespaceNodeGPathTest extends TestXmlSupport {
     		println "Found results $a"
     		
 	    assert a.size() == 1 : " size is $a.size()"
-    		
+
+   		def aNode = a[0]
+   		def cheese = aNode.attributes()[xsd.cheese]
+		assert cheese == "Edam"   		
+   		println "Found namespaced attribute $cheese"
+   		    		
     		def e = root[xsd.annotation][xsd.documentation]
     		//def e = a[xsd.documentation]
 
