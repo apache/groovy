@@ -166,7 +166,7 @@ if $cygwin; then
     GROOVY_CONF=`cygpath --path --windows "$GROOVY_CONF"`
     CP=`cygpath --path --windows "$CP"`
     TOOLS_JAR=`cygpath --path --windows "$TOOLS_JAR"`
-
+    STARTER_CLASSPATH=`cygpath --path --windows "$STARTER_CLASSPATH"`
 fi
 
 STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
