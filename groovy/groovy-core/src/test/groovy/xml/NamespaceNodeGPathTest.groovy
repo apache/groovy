@@ -39,6 +39,10 @@ class NamespaceNodeGPathTest extends TestXmlSupport {
    		def cheese = aNode.attributes()[xsd.cheese]
 		assert cheese == "Edam"   		
    		println "Found namespaced attribute $cheese"
+
+   		cheese = aNode.attribute(xsd.cheese)
+		assert cheese == "Edam"   		
+   		println "Found namespaced attribute $cheese"
    		    		
     		def e = root[xsd.annotation][xsd.documentation]
     		//def e = a[xsd.documentation]
