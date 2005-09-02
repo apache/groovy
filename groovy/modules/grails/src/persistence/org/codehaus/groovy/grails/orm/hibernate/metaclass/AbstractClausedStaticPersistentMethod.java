@@ -44,18 +44,21 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 	protected Object doInvokeInternal(final Class clazz, String methodName,
 			Object[] arguments) {
 		Matcher match = super.getPattern().matcher( methodName );
+		// find match
+		match.find();
+		
 		String[] clauses;
 		
 		// get the sequence clauses
 		String clauseSequence = match.group(2);
 		// if it contains logical ands split on Ands
-		if(clauseSequence.matches( "[\\w+]["+this.clause+"][\\w+]" )) {
+		if(clauseSequence.matches( "(\\w+)("+this.clause+")(\\w+)" )) {
 			// TODO: Bit error prone this, as properties could start 
 			// with "and" which would cause a problem. discuss? 
 			clauses = clauseSequence.split(this.clause);
 			// convert first characters to lower case
 			for (int i = 0; i < clauses.length; i++) {
-				clauses[i] = clauses[i].substring(0,0).toLowerCase()
+				clauses[i] = clauses[i].substring(0,1).toLowerCase()
 				 + clauses[i].substring(1);
 			}
 		}
@@ -63,7 +66,7 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 		else {
 			clauses = new String[1];
 			// convert first char to lower case
-			clauses[0] = clauseSequence.substring(0,0).toLowerCase()
+			clauses[0] = clauseSequence.substring(0,1).toLowerCase()
 						 + clauseSequence.substring(1);
 		}
 		
