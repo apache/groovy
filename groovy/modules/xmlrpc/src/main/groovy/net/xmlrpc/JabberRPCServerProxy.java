@@ -49,15 +49,16 @@ public class JabberRPCServerProxy extends RPCServerProxy {
     
     int pri = Integer.MIN_VALUE;
     String posTo = to;
-    while(iter.hasNext()) {
-    final Presence presence = (Presence)iter.next();
-    
-      if (presence.getPriority() > pri) {
-        posTo = presence.getFrom();
-        pri = presence.getPriority();
+    if (iter != null) {
+      while(iter.hasNext()) {
+      final Presence presence = (Presence)iter.next();
+      
+        if (presence.getPriority() > pri) {
+          posTo = presence.getFrom();
+          pri = presence.getPriority();
+        }
       }
     }
-
     this.to = posTo;
   }
   
