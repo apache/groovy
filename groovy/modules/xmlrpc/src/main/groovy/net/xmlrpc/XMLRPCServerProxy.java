@@ -61,6 +61,7 @@ import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
  * @author John Wilson (tug@wilson.co.uk)
  */
 public class XMLRPCServerProxy extends RPCServerProxy {
+  static final String xmlDeclaration = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n";
 	private URL serverURL;
 	
 	public XMLRPCServerProxy(final String serverURL) throws MalformedURLException {
@@ -74,14 +75,14 @@ public class XMLRPCServerProxy extends RPCServerProxy {
 		if ("invokeMethod".equals(name)) return super.invokeMethod(name, args);
     
     final Object[] params = (args instanceof List) ? ((List)args).toArray() : (Object[])args;
-    int numberOfparams = params.length;
+    int numberOfParams = params.length;
     
-      if (numberOfparams != 0 && params[numberOfparams - 1] instanceof Closure) {
-        numberOfparams--; // the closure is not to be passed to the remote method
+      if (numberOfParams != 0 && params[numberOfParams - 1] instanceof Closure) {
+        numberOfParams--; // the closure is not to be passed to the remote method
       }
 		
 		try {
-		final byte [] request = createCall(name, params, numberOfparams, "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n").getBytes("ISO-8859-1");
+    final byte [] request = XMLRPCMessageProcessor.emitCall(new StringBuffer(xmlDeclaration), name, params, numberOfParams).toString().getBytes("ISO-8859-1");
 		final URLConnection connection = this.serverURL.openConnection();
 			
 			connection.setDoInput(true);
@@ -110,11 +111,11 @@ public class XMLRPCServerProxy extends RPCServerProxy {
 			
 			if (response == null) throw new XMLRPCCallFailureException("Empty response from server", new Integer(0));
 			
-			if (numberOfparams == params.length) {
+			if (numberOfParams == params.length) {
 				return response.get(0);
 			} else {	
 				// pass the result of the call to the closure
-				final Closure closure = (Closure)params[numberOfparams];
+				final Closure closure = (Closure)params[numberOfParams];
 				
 				closure.setDelegate(this);
 				return closure.call(new Object[] {response.get(0)});
@@ -122,6 +123,8 @@ public class XMLRPCServerProxy extends RPCServerProxy {
 			
 		} catch (final IOException e) {
 			throw new XMLRPCCallFailureException(e.getMessage(), new Integer(0));
-		}
+		} catch (final XMLRPCFailException e) {
+      throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
+    }
 	}
 }

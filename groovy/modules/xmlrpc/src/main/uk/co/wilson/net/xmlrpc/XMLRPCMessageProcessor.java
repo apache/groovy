@@ -34,6 +34,7 @@ package uk.co.wilson.net.xmlrpc;
  */
 
 import groovy.lang.GString;
+import groovy.net.xmlrpc.XMLRPCCallFailureException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +60,32 @@ import uk.co.wilson.xml.MinML;
 
 
 public class XMLRPCMessageProcessor extends MinML {
+  
+  private static final String startResponse = ("<methodResponse>\n" +
+                                               "\t<params>\n" +
+                                               "\t\t<param>\n");
+  private static final String endResponse = ("\n" +
+                                             "\t\t</param>\n" +
+                                             "\t</params>\n" +
+                                             "</methodResponse>");
+  private static final String startError = ("<methodResponse>\n" +
+                                            "\t<fault>\n" +
+                                            "\t\t<value>\n" +
+                                            "\t\t\t<struct>\n" +
+                                            "\t\t\t\t<member>\n" +
+                                            "\t\t\t\t\t<name>faultCode</name>\n" +
+                                            "\t\t\t\t\t<value><int>");
+  private static final String middleError = ("</int></value>\n" +
+                                             "\t\t\t\t</member>\n" +
+                                             "\t\t\t\t<member>\n" +
+                                             "\t\t\t\t\t<name>faultString</name>\n" +
+                                             "\t\t\t\t\t<value><string>");
+  private static final String endError = ("</string></value>\n" +
+                                          "\t\t\t\t</member>\n" +
+                                          "\t\t\t</struct>\n" +
+                                          "\t\t</value>\n" +
+                                          "\t</fault>\n" +
+                                          "</methodResponse>\n");
 	private static final byte[] translateTable = (
 			//
 			"\u0042\u0042\u0042\u0042\u0042\u0042\u0042\u0042"
@@ -186,8 +213,36 @@ public class XMLRPCMessageProcessor extends MinML {
 					}
 				});
 	}
-	
-	public static StringBuffer emit(final StringBuffer buffer, final Object param) throws XMLRPCFailException {
+  
+  public static StringBuffer emitCall(final StringBuffer buffer, final String methodName, final Object[] params, final int numberOfparams) throws XMLRPCFailException {
+    encodeString(buffer.append("<methodCall>\n\t<methodName>"), methodName).append("</methodName>\n\t<params>\n");
+
+    for (int i = 0; i != numberOfparams; i++) {
+      emit(buffer.append("\t\t<param>"), params[i]).append("</param>\n");
+    }
+
+    return buffer.append("\t</params>\n</methodCall>\n");
+  }
+  
+  public static StringBuffer emitResult(final StringBuffer buffer, final Object result) throws XMLRPCFailException {
+    buffer.append(startResponse);
+    emit(buffer, result);
+    buffer.append(endResponse);
+    
+    return buffer;
+  }
+  
+  public static StringBuffer emitError(final StringBuffer buffer, final int codeValue, final String message) throws XMLRPCFailException {
+    buffer.append(startError);
+    emit(buffer, String.valueOf(codeValue));
+    buffer.append(middleError);
+    emit(buffer, message);
+    buffer.append(endError);
+    
+    return buffer;
+  }
+  
+	private static StringBuffer emit(final StringBuffer buffer, final Object param) throws XMLRPCFailException {
 		if (param == null) {
 			throw new XMLRPCFailException("an XML-RPC data value cannot be null", 0);
 		}

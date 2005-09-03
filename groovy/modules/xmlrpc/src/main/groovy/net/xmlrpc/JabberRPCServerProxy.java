@@ -76,7 +76,7 @@ public class JabberRPCServerProxy extends RPCServerProxy {
       }
     
     try {
-    final JabberRPC request = new JabberRPC(createCall(name, params, numberOfparams, ""));
+    final JabberRPC request = new JabberRPC(XMLRPCMessageProcessor.emitCall(new StringBuffer(), name, params, numberOfparams).toString());
     final PacketCollector responseCollector = this.connection.createPacketCollector(new PacketFilter() {
                                                                                         public boolean accept(final Packet packet) {
                                                                                           return packet instanceof JabberRPC &&
@@ -125,6 +125,8 @@ public class JabberRPCServerProxy extends RPCServerProxy {
       
     } catch (final IOException e) {
       throw new XMLRPCCallFailureException(e.getMessage(), new Integer(0));
+    } catch (final XMLRPCFailException e) {
+      throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
     }
   }
   

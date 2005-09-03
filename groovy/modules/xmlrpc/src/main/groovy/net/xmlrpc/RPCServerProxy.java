@@ -52,22 +52,4 @@ public class RPCServerProxy extends GroovyObjectSupport {
   		}
   	};
   }
-
-  protected String createCall(final String name, final Object[] params, final int numberOfparams, final String header) {
-  final StringBuffer buffer = new StringBuffer(header).append("<methodCall>\n\t<methodName>");
-  
-    try {
-      XMLRPCMessageProcessor.encodeString(buffer, name).append("</methodName>\n\t<params>\n");
-      
-      for (int i = 0; i != numberOfparams; i++) {
-        final Object param = params[i];
-        XMLRPCMessageProcessor.emit(buffer.append("\t\t<param>"), param).append("</param>\n");
-      }
-    }
-    catch (final XMLRPCFailException e) {
-      throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
-    }
-    
-    return buffer.append("\t</params>\n</methodCall>\n").toString();
-    }
 }

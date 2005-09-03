@@ -41,14 +41,6 @@ import uk.co.wilson.smackx.packet.JabberRPC;
  */
 
 public class JabberRPCServer extends RPCServer {
-  
-  static final String startResponse = ("<methodResponse>\n" +
-                           "\t<params>\n" +
-                           "\t\t<param>\n");
-  static final String endResponse = ("\n" +
-                           "\t\t</param>\n" +
-                           "\t</params>\n" +
-                           "</methodResponse>");
   static final String startError = ("<methodResponse>\n" +
                           "\t<fault>\n" +
                           "\t\t<value>\n" +
@@ -131,9 +123,7 @@ public class JabberRPCServer extends RPCServer {
                 JabberRPCServer.this.postCallMethod.call(new Object[] {methodName, result});
               }
               
-              buffer.append(startResponse);
-              XMLRPCMessageProcessor.emit(buffer, result);
-              buffer.append(endResponse);
+              XMLRPCMessageProcessor.emitResult(buffer, result);
               
               sendResponse(request, buffer.toString());
               
