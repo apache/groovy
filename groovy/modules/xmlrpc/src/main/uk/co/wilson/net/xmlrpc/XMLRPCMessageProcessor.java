@@ -277,14 +277,27 @@ public class XMLRPCMessageProcessor extends MinML {
 				}
 				
 				buffer.append("</struct></value>");
-			} else if (param instanceof GString) {	 // GString can be subclassed so the initial elements.get() can fail
-				((Emitter)elements.get(GString.class)).emit(buffer, param);
-			} else if (param instanceof BigDecimal) {	 // BigDecimal can be subclassed so the initial elements.get() can fail
-				((Emitter)elements.get(BigDecimal.class)).emit(buffer, param);
-			} else if (param instanceof Date) {	 // Date can be subclassed so the initial elements.get() can fail
-				((Emitter)elements.get(Date.class)).emit(buffer, param);
 			} else {
-				throw new XMLRPCFailException(param.getClass() + " is not a supported XML-RPC data type", 0);
+        //
+        // Work up the chain of classes to see if this is
+        //  a subclass of a class we can handle
+        //
+			  Class superClass = param.getClass();
+        
+        while (true) {
+        final Emitter superEmitter = (Emitter)elements.get(superClass);
+        
+          if (superEmitter != null) {
+            superEmitter.emit(buffer, param);
+            break;
+          } else {
+            if (superClass == Object.class) {
+              throw new XMLRPCFailException(param.getClass() + " is not a supported XML-RPC data type", 0);
+            } else  {
+              superClass = superClass.getSuperclass();
+            }
+          }
+        }
 			}
 		} else {
 			emitter.emit(buffer, param);
