@@ -35,18 +35,16 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE
 */
 
-import uk.co.wilson.net.MinMLSocketServer;
-
-import java.net.ServerSocket;
-import java.net.Socket;
-
-import java.io.InputStream;
 import java.io.BufferedInputStream;
-import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.StringTokenizer;
+
+import uk.co.wilson.net.MinMLSocketServer;
 
 public abstract class MinMLHTTPServer extends MinMLSocketServer {
   public MinMLHTTPServer(final ServerSocket serverSocket,

@@ -17,8 +17,6 @@
 
 package groovy.net.xmlrpc;
 
-import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
-import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 import groovy.lang.GroovyObjectSupport;
 
 /**

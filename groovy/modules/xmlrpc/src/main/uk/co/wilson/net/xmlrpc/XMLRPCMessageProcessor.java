@@ -34,7 +34,6 @@ package uk.co.wilson.net.xmlrpc;
  */
 
 import groovy.lang.GString;
-import groovy.net.xmlrpc.XMLRPCCallFailureException;
 
 import java.io.IOException;
 import java.io.InputStream;
