@@ -52,6 +52,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jivesoftware.smack.PacketCollector;
+import org.jivesoftware.smack.Roster;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
@@ -68,23 +69,8 @@ import uk.co.wilson.smackx.packet.JabberRPC;
 
 public class JabberRPCServerProxy extends RPCServerProxy {
   public JabberRPCServerProxy(final XMPPConnection connection, final String to) {
-    this.connection = connection;
-    
-    final Iterator iter = connection.getRoster().getPresences(to);
-    
-    int pri = Integer.MIN_VALUE;
-    String posTo = to;
-    if (iter != null) {
-      while(iter.hasNext()) {
-      final Presence presence = (Presence)iter.next();
-      
-        if (presence.getPriority() > pri) {
-          posTo = presence.getFrom();
-          pri = presence.getPriority();
-        }
-      }
-    }
-    this.to = posTo;
+    this.connection = connection;    
+    this.to = getId(connection.getRoster(), to);
   }
   
   /* (non-Javadoc)
@@ -144,6 +130,25 @@ public class JabberRPCServerProxy extends RPCServerProxy {
     } catch (final XMLRPCFailException e) {
       throw new XMLRPCCallFailureException(e.getFaultString(), e.getCause());
     }
+  }
+  
+  private String getId(final Roster roster, final String to) {
+  final Iterator iter = roster.getPresences(to);
+  int pri = Integer.MIN_VALUE;
+  String posTo = to;
+    
+    if (iter != null) {
+      while(iter.hasNext()) {
+      final Presence presence = (Presence)iter.next();
+      
+        if (presence.getPriority() > pri) {
+          posTo = presence.getFrom();
+          pri = presence.getPriority();
+        }
+      }
+    }
+    
+    return posTo;
   }
   
   private final XMPPConnection connection;
