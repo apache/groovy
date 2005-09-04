@@ -1,14 +1,14 @@
 package test
 
+import org.springframework.util.ClassLoaderUtils
+
 class OrderService {
-	@Property transactional = true
+	@Property transactional = false
 		
 	def findAllOrders() {
 		println(getClass().getClassLoader().loadClass("test.OrderEntry"))
-		//return OrderEntry.findAll()
-		//return [ new OrderEntry() ]
-		OrderEntry.testMethod()
-		return [ OrderEntry.class ]
+		println(ClassLoaderUtils.showClassLoaderHierarchy(this, "Spring managed service"))	
+		return test.OrderEntry.findAll()
 	}
 	
 	def addOrder(orderEntry) {
