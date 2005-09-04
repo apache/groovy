@@ -1,6 +1,6 @@
 /*
 
- Copyright 2004 (C) John Wilson. All Rights Reserved.
+ Copyright 2004, 2005 (C) John Wilson. All Rights Reserved.
 
  Redistribution and use of this software and associated documentation
  ("Software"), with or without modification, are permitted provided
