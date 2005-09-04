@@ -20,7 +20,6 @@ package groovy.net.xmlrpc;
 import groovy.lang.Closure;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,7 +29,6 @@ import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
-import org.xml.sax.SAXException;
 
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
@@ -97,17 +95,8 @@ public class JabberRPCServerProxy extends RPCServerProxy {
       if (response == null) throw new XMLRPCCallFailureException("call timed out", new Integer(0));
       
       final XMLRPCMessageProcessor responseParser = new XMLRPCMessageProcessor();
-      
-      try {
-        responseParser.parse(new StringReader(response.getChildElementXML()));
-      }
-      catch (final XMLRPCFailException e) {
-//        e.printStackTrace();
-        throw new XMLRPCCallFailureException(e.getFaultString(), new Integer(e.getFaultCode()));
-      } catch (final SAXException e) {
-//        e.printStackTrace();
-        throw new XMLRPCCallFailureException(e.getLocalizedMessage(), new Integer(0));
-      }
+
+      responseParser.parseMessage(response.getChildElementXML());
       
       final List result = responseParser.getParams();
       

@@ -38,6 +38,7 @@ import groovy.lang.GString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.text.DateFormat;
@@ -359,8 +360,18 @@ public class XMLRPCMessageProcessor extends MinML {
 	private final DateFormat dateTime = new SimpleDateFormat("yyyyMMdd'T'HH:mm:ss");
 	private final DateFormat dateTime1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 	private final Boolean bools[] = {new Boolean(false), new Boolean(true)};
-	
-	public void parseMessage(final InputStream in) throws IOException, XMLRPCFailException { 
+  
+  public void parseMessage(final String message) throws IOException, XMLRPCFailException { 
+    try {
+      parse(new StringReader(message));
+    } catch (final XMLRPCFailException e) {
+      throw e;
+    } catch (final SAXException e) {
+      throw new XMLRPCFailException("XML error in response from remote system: " + e.getMessage(), 0);
+    }
+  }
+  
+  public void parseMessage(final InputStream in) throws IOException, XMLRPCFailException { 
 		try {
 			parse(new InputStreamReader(in, "ISO-8859-1"));
 		} catch (final XMLRPCFailException e) {

@@ -21,7 +21,6 @@ import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
@@ -96,7 +95,7 @@ public class JabberRPCServer extends RPCServer {
             try {
             final XMLRPCMessageProcessor requestParser = new XMLRPCMessageProcessor();
               
-              requestParser.parse(new StringReader(request.getChildElementXML()));
+              requestParser.parseMessage(request.getChildElementXML());
             
               final String methodName = requestParser.getMethodname();
               final List params = requestParser.getParams();
