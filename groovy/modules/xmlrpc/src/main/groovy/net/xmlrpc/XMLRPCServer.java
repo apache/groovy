@@ -61,7 +61,6 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import uk.co.wilson.net.http.MinMLHTTPServer;
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
-import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 
 /**
 * @author John Wilson (tug@wilson.co.uk)

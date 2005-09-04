@@ -16,8 +16,6 @@
  */
 package uk.co.wilson.net.xmlrpc;
 
-import groovy.lang.GString;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,9 +36,8 @@ import java.util.Stack;
 import org.xml.sax.AttributeList;
 import org.xml.sax.SAXException;
 
+import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
 import uk.co.wilson.xml.MinML;
-
-
 
 public class XMLRPCMessageProcessor extends MinML {
   
@@ -103,11 +100,11 @@ public class XMLRPCMessageProcessor extends MinML {
 			//        x     y     z
 			+ "\u0031\u0032\u0033").getBytes();
 	
-	private interface Emitter {
+	protected interface Emitter {
 		void emit(StringBuffer buffer, Object value) throws XMLRPCFailException;
 	}
 	
-	private final static Map elements = new HashMap();
+	protected final static Map elements = new HashMap();
 	static {
 		final char[] tTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
 		
@@ -136,7 +133,6 @@ public class XMLRPCMessageProcessor extends MinML {
 						encodeString(buffer.append("<value><string>"), string.toString()).append("</string></value>");
 					}
 				});
-		elements.put(GString.class, elements.get(String.class));
 		
 		elements.put(Boolean.class,
 				new Emitter() {

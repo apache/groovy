@@ -55,7 +55,6 @@ import java.net.URLConnection;
 import java.util.List;
 
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
-import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 
 /**
  * @author John Wilson (tug@wilson.co.uk)

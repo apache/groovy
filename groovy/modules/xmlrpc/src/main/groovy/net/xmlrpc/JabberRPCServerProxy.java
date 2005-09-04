@@ -59,7 +59,6 @@ import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.packet.Presence;
 
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
-import uk.co.wilson.net.xmlrpc.XMLRPCMessageProcessor;
 import uk.co.wilson.smackx.packet.JabberRPC;
 
 /**
