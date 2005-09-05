@@ -432,10 +432,10 @@ public class SwingBuilder extends BuilderSupport {
 
                 for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
                     Map.Entry entry = (Map.Entry) iter.next();
-                    String actionName = (String) entry.getKey();
+                    String actionName = (String) entry.getKey();    // todo dk: misleading naming. this can be any property name
 
                     // typically standard Action names start with upper case, so lets upper case it            
-                    actionName = capitalize(actionName);
+                    actionName = capitalize(actionName);            // todo dk: in general, this shouldn't be capitalized
                     Object value = entry.getValue();
 
                     action.putValue(actionName, value);
@@ -490,7 +490,7 @@ public class SwingBuilder extends BuilderSupport {
         registerBeanFactory("action", DefaultAction.class);
         passThroughNodes.put("action", javax.swing.Action.class);
         registerBeanFactory("buttonGroup", ButtonGroup.class);
-        registerFactory("map", new Factory() {
+        registerFactory("map", new Factory() {      // todo dk: is that still needed?
             public Object newInstance(Map properties)
                 throws InstantiationException, InstantiationException, IllegalAccessException {
                 return properties;
@@ -515,7 +515,7 @@ public class SwingBuilder extends BuilderSupport {
             }
         });
         registerBeanFactory("fileChooser", JFileChooser.class);
-        registerFactory("frame", new Factory() {
+        registerFactory("frame", new Factory() {        // todo dk: frame registered twice ???
             public Object newInstance(Map properties)
                 throws InstantiationException, InstantiationException, IllegalAccessException {
                 return createFrame(properties);
