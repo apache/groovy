@@ -142,8 +142,8 @@ public class DefaultGroovyMethods {
         buffer.append(Integer.toHexString(self.hashCode()));
         boolean groovyObject = self instanceof GroovyObject;
 
-        /*jes this may be rewritten to use the new allProperties() stuff
-         * but the original pulls out private variables, whereas allProperties()
+        /*jes this may be rewritten to use the new getProperties() stuff
+         * but the original pulls out private variables, whereas getProperties()
          * does not. What's the real use of dump() here?
          */
         while (klass != null) {
@@ -174,25 +174,25 @@ public class DefaultGroovyMethods {
             klass = klass.getSuperclass();
         }
 
-        /* here is a different implementation that uses allProperties(). I have left
+        /* here is a different implementation that uses getProperties(). I have left
          * it commented out because it returns a slightly different list of properties;
          * ie it does not return privates. I don't know what dump() really should be doing,
          * although IMO showing private fields is a no-no
          */
         /*
-        List props = allProperties(self);
-            for(Iterator itr = props.iterator(); itr.hasNext(); ) {
-            PropertyValue pv = (PropertyValue) itr.next();
+        List props = getProperties(self);
+            for(Iterator itr = props.keySet().iterator(); itr.hasNext(); ) {
+            String propName = itr.next().toString();
 
             // the original skipped this, so I will too
             if(pv.getName().equals("metaClass")) continue;
             if(pv.getName().equals("class")) continue;
 
             buffer.append(" ");
-            buffer.append(pv.getName());
+            buffer.append(propName);
             buffer.append("=");
             try {
-                buffer.append(InvokerHelper.toString(pv.getValue()));
+                buffer.append(InvokerHelper.toString(props.get(propName)));
             }
             catch (Exception e) {
                 buffer.append(e);
@@ -204,41 +204,45 @@ public class DefaultGroovyMethods {
         return buffer.toString();
     }
 
-    public static void eachPropertyName(Object self, Closure closure) {
-        List props = allProperties(self);
-        for (Iterator itr = props.iterator(); itr.hasNext();) {
-            PropertyValue pv = (PropertyValue) itr.next();
-            closure.call(pv.getName());
-        }
-    }
-
-    public static void eachProperty(Object self, Closure closure) {
-        List props = allProperties(self);
-        for (Iterator itr = props.iterator(); itr.hasNext();) {
-            PropertyValue pv = (PropertyValue) itr.next();
-            closure.call(pv);
-        }
-    }
-
-    public static List allProperties(Object self) {
-        List props = new ArrayList();
+    /**
+     * Retrieves the list of {@link MetaProperty} objects for 'self' and wraps it
+     * in a list of {@link PropertyValue} objects that additionally provide
+     * the value for each property of 'self'.
+     * @param self the receiver object
+     * @return list of {@link PropertyValue} objects
+     * @see groovy.util.Expando#getMetaPropertyValues()
+     */
+    public static List getMetaPropertyValues(Object self) {
         MetaClass metaClass = InvokerHelper.getMetaClass(self);
-
-        List mps;
-
-        if (self instanceof groovy.util.Expando) {
-            mps = ((groovy.util.Expando) self).getProperties();
-        } else {
-            // get the MetaProperty list from the MetaClass
-            mps = metaClass.getProperties();
-        }
-
+        List mps = metaClass.getProperties();        
+        List props = new ArrayList(mps.size());
         for (Iterator itr = mps.iterator(); itr.hasNext();) {
             MetaProperty mp = (MetaProperty) itr.next();
             PropertyValue pv = new PropertyValue(self, mp);
             props.add(pv);
         }
+        return props;
+    }
 
+    /**
+     * Convenience method that calls {@link this.getMetaPropertyValues}(self)
+     * and provides the data in form of simple key/value pairs, i.e. without
+     * type() information.
+     * @param self the receiver object
+     * @return meta properties as Map of key/value pairs
+     */
+    public static Map getProperties(Object self) {
+        List metaProps = getMetaPropertyValues(self);
+        Map props = new HashMap(metaProps.size());
+
+        for (Iterator itr = metaProps.iterator(); itr.hasNext();) {
+            PropertyValue pv = (PropertyValue) itr.next();
+            try {
+                props.put(pv.getName(), pv.getValue());
+            } catch (Exception e) {
+                log.throwing(self.getClass().getName(), "getProperty("+pv.getName()+")", e );
+            }
+        }
         return props;
     }
 

@@ -135,8 +135,8 @@ public class Inspector {
      * Get info about Properties (Java and Groovy alike).
      * @return  Array of StringArrays that can be indexed with the MEMBER_xxx_IDX constants
      */
-    public Object[] getProperties(){
-        List props = DefaultGroovyMethods.allProperties(objectUnderInspection);
+    public Object[] getPropertyInfo(){
+        List props = DefaultGroovyMethods.getMetaPropertyValues(objectUnderInspection);
         Object[] result = new Object[props.size()];
         int i=0;
         for (Iterator iter = props.iterator(); iter.hasNext(); i++) {

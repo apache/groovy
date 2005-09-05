@@ -189,15 +189,14 @@ groovy.codehaus.org
 \methodDetail{  cltn }{ $*$}{ num                                   }{ repeat items in collection a number of times}
 \methodDetail{       }{  }{                                       }{ }
 % no count() or getAt(range) for matchers!
-\methodDetail{  obj. }{ allProperties}{()                         }{ obtain List of properties on {\em obj\/}}
+\methodDetail{  obj. }{ getProperties}{()                         }{ obtain Map of properties on {\em obj\/}}
+\methodDetail{  obj. }{ getMetaPropertyValues}{()                 }{ obtain List of meta properties on {\em obj\/}}
 \methodDetail{ cltn. }{ count}{(obj) *                            }{ counts number of occurances of {\em obj\/} in collection}
 \methodSummary{  map. }{ get}{(key, defaultValue) *                }{ try to get {\em key \/} from map, otherwise put {\em defaultValue\/} in map and return }
 \methodSummary{ cltn. }{ size}{() *                                }{ returns size of an array or string }
 \methodDetail{       }{   }{                                      }{ }
 \methodDetail{ cltn. }{ collect}{() \{closure\} *                 }{ new collection of {\em closure \/} transformed items }
 \methodDetail{  obj. }{ each}{() \{closure\} *                    }{ iterate through object applying {\em closure\/} }
-\methodDetail{  obj. }{ eachProperty}{() \{closure\}             }{ apply {\em closure\/} to each property of {\em obj\/}}
-\methodSummary{  obj. }{ eachPropertyName}{() \{closure\}         }{ apply {\em closure\/} to each property name of {\em obj\/}}
 \methodDetail{  obj. }{ eachWithIndex}{() \{closure\}             }{ iterate through object with a counter applying {\em closure\/} }
 \methodDetail{  obj. }{ find}{() \{closure\} *                    }{ find first item picked by {\em closure \/} condition }
 \methodDetail{  obj. }{ findAll}{() \{closure\} *                 }{ returns all items picked by {\em closure\/} condition }

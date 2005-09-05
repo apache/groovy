@@ -1,8 +1,12 @@
 /** 
- * Tests the use of new def methods in Groovy: eachProperty(), eachPropertyName(), and
- * allProperties()
- * 
+ * was: Tests the use of new def methods in Groovy: eachProperty(), eachPropertyName(), and
+ * allProperties().
+ * New Method: getMetaPropertyValues
+ * Method name has changed: getProperties
+ * Remove: eachProperty(), eachPropertyName() use properties.each {key,value -> } instead
+ *
  * @author john stump
+ * @author dierk koenig
  * @version $Revision$
  */
 class PropertyTest2 extends GroovyTestCase {
@@ -12,15 +16,15 @@ class PropertyTest2 extends GroovyTestCase {
 		
 		// these are the properties that should be there
 		def props = ['name', 'count', 'location', 'blah']
-		foo.eachPropertyName { prop ->
+		foo.properties.each { name, value ->
 			//println "looking for ${prop} in ${props}"
 
 			// todo: GROOVY-996
                                     // We should see protected properties, but not  private ones.
-			assert prop != "invisible"
+			assert name != "invisible"
 
 			// remove this one from the list
-			props = props - [prop]
+			props = props - [name]
 		}
 
 		// make sure there are none left over
@@ -28,41 +32,37 @@ class PropertyTest2 extends GroovyTestCase {
 		assert props.count() == 0
     }
 
+    void testMetaPropertyValuesFromObject() {
+        def foo = new Foo()
+		def metaProps = foo.metaPropertyValues
+		assert metaProps[0] instanceof PropertyValue
+		assertNotNull metaProps[0].name
+		assertNotNull metaProps[0].value
+		assertNotNull metaProps[0].type
+    }
+
 	void testEachProperty() {
         def foo = new Foo()
 
 		// these are the properties and their values that should be there
 		def props = ['name':'James', 'count':1, 'location':'London', 'blah':9]
-		foo.eachProperty { prop ->
+		foo.properties.each { name, value ->
 			//println "looking for ${prop.name} in ${props}"
 			
 			// todo: GROOVY-996
                                     // We should see protected properties, but not  private ones.
-			assert prop.name != "invisible"
+			assert name != "invisible"
 			
-			def value = props[prop.name]
-			if(value != null)
-				assert prop.value == value
+			def pvalue = props[name]
+			if(pvalue != null)
+				assert pvalue == value
 			
 			// remove this one from the map
-			props.remove(prop.name)
+			props.remove(name)
 		}
 		
 		// make sure there are none left over
 		//println "count left in props map is ${props.size()}"
-		assert props.size() == 0
-	}
-	
-	void testAllProperties() {
-        def foo = new Foo()
-		
-		// these are the properties that should be there
-		def props = ['name', 'count', 'location', 'blah']
-		
-		foo.allProperties().each { props -= [it.name] }
-		
-		// there should be none left
-		//println props
 		assert props.size() == 0
 	}
 	
@@ -77,7 +77,7 @@ class PropertyTest2 extends GroovyTestCase {
 		
 		// these are the properties that should be there
 		def props = ['name', 'count', 'location', 'blah']
-		foo.allProperties().each { props -= [it.name] }
+		foo.properties.each { name, value -> props -= [name] }
 		
 		// there should be none left
 		//println props
