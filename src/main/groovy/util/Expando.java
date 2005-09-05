@@ -80,17 +80,17 @@ public class Expando extends GroovyObjectSupport {
     /**
      * @return the dynamically expanded properties
      */
-    public Map getExpandoProperties() {
+    public Map getProperties() {
         if (expandoProperties == null) {
             expandoProperties = createMap();
         }
         return expandoProperties;
     }
 
-    public List getProperties() {
+    public List getMetaPropertyValues() {
         // run through all our current properties and create MetaProperty objects
         List ret = new ArrayList();
-        Iterator itr = getExpandoProperties().entrySet().iterator();
+        Iterator itr = getProperties().entrySet().iterator();
         while(itr.hasNext()) {
             Entry entry = (Entry) itr.next();
             ret.add(new MetaExpandoProperty(entry));
@@ -104,7 +104,7 @@ public class Expando extends GroovyObjectSupport {
             return super.getProperty(property);
         }
         catch (GroovyRuntimeException e) {
-            return getExpandoProperties().get(property);
+            return getProperties().get(property);
         }
     }
 
@@ -113,7 +113,7 @@ public class Expando extends GroovyObjectSupport {
             super.setProperty(property, newValue);
         }
         catch (GroovyRuntimeException e) {
-            getExpandoProperties().put(property, newValue);
+            getProperties().put(property, newValue);
         }
     }
 
@@ -143,7 +143,7 @@ public class Expando extends GroovyObjectSupport {
      * @see java.lang.Object#toString()
      */
      public String toString() {
-        Object method = getExpandoProperties().get("toString");
+        Object method = getProperties().get("toString");
         if (method != null && method instanceof Closure) {
             // invoke overridden toString closure method
             Closure closure = (Closure) method;
@@ -161,7 +161,7 @@ public class Expando extends GroovyObjectSupport {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
-        Object method = getExpandoProperties().get("equals");
+        Object method = getProperties().get("equals");
         if (method != null && method instanceof Closure) {
             // invoke overridden equals closure method
             Closure closure = (Closure) method;
@@ -180,7 +180,7 @@ public class Expando extends GroovyObjectSupport {
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
-        Object method = getExpandoProperties().get("hashCode");
+        Object method = getProperties().get("hashCode");
         if (method != null && method instanceof Closure) {
             // invoke overridden hashCode closure method
             Closure closure = (Closure) method;

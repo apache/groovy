@@ -61,9 +61,9 @@ public class InspectorTest extends TestCase implements Serializable {
     public void testMetaMethods() {
         Inspector insp = new Inspector(new Object());
         Object[] metaMethods = insp.getMetaMethods();
-        assertEquals(32, metaMethods.length);
+        assertEquals(31, metaMethods.length);
         String[] names = { "sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod",
-                           "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "eachPropertyName", "eachProperty", "allProperties",
+                           "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues",  "getProperties",
                            "use", "use", "printf", "printf", "eachWithIndex", "every", "any", "grep", "collect", "collect", "findAll", "findIndexOf"
                          };
         assertNameEquals(names, metaMethods);
@@ -91,7 +91,7 @@ public class InspectorTest extends TestCase implements Serializable {
     }
     public void testProperties() {
         Inspector insp = new Inspector(this);
-        Object[] fields = insp.getProperties();
+        Object[] fields = insp.getPropertyInfo();
         assertEquals(4, fields.length);
         String[] names = { "SOME_CONST","someField","class","name"};
         assertNameEquals(names, fields);

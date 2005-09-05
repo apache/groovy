@@ -9,7 +9,7 @@ class ExpandoPropertyTest extends GroovyTestCase {
         assert foo.cheese == "Cheddar"
         assert foo.name == "Gromit"
         
-        assert foo.expandoProperties.size() == 2
+        assert foo.properties.size() == 2
     }
     
     void testExpandoMethods() {
