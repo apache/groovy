@@ -468,13 +468,13 @@ public class AsmClassGenerator extends ClassGenerator {
         // class: " + classNode.getName());
 
         Object fieldValue = null;
+        Class type = null;
         Expression expression = fieldNode.getInitialValueExpression();
         if (expression instanceof ConstantExpression) {
             ConstantExpression constantExp = (ConstantExpression) expression;
             Object value = constantExp.getValue();
-            if (isPrimitiveFieldType(fieldNode.getType())) {
+            if (isPrimitiveFieldType(fieldNode.getType()) || "java.lang.String".equals(fieldNode.getType()) || "java.lang.Integer".equals(fieldNode.getType())) {
                 // lets convert any primitive types
-                Class type = null;
                 try {
                     type = loadClass(fieldNode.getType());
                     fieldValue = /*ScriptBytecodeAdapter.*/asType(value, type);
@@ -484,12 +484,53 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             }
         }
-        cw.visitField(
-            fieldNode.getModifiers(),
-            fieldNode.getName(),
-            BytecodeHelper.getTypeDescription(fieldNode.getType()),
-            null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
-            null);
+
+        if (!classNode.isInterface()) {
+            cw.visitField(
+                fieldNode.getModifiers(),
+                fieldNode.getName(),
+                BytecodeHelper.getTypeDescription(fieldNode.getType()),
+                null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+                null);
+        }
+        else if (fieldValue != null && fieldNode.isStatic()) {
+            if ("java.lang.String".equals(fieldNode.getType())) {
+                cw.visitField(
+                    fieldNode.getModifiers(),
+                    fieldNode.getName(),
+                    BytecodeHelper.getTypeDescription(fieldNode.getType()),
+                    null, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+                    fieldValue);
+            }
+        }
+    }
+
+    /**
+     * Check whether the given type means a reflect of a primitive type Loads or not.
+     *
+     * @return <code>true</code> if the given type is one of Integer, Short, Long, Float, and Double.
+     */
+    protected boolean isReflectNumberType(String type) {
+        if (type != null && type.length() > 0) {
+            if (type.startsWith("java.lang.")) {
+                if ("java.lang.Integer".equals(type)) {
+                    return true;
+                }
+                else if ("java.lang.Long".equals(type)) {
+                    return true;
+                }
+                else if ("java.lang.Short".equals(type)) {
+                    return true;
+                }
+                else if ("java.lang.Float".equals(type)) {
+                    return true;
+                }
+                else if ("java.lang.Double".equals(type)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -3229,6 +3270,7 @@ public class AsmClassGenerator extends ClassGenerator {
             cw.visitEnd();
         }
     }
+
     /** load class object on stack */
     public void visitClassExpression(ClassExpression expression) {
         String type = expression.getText();
