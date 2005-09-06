@@ -14,7 +14,6 @@
 	<classpathentry kind="var" path="MAVEN_REPO/asm/jars/asm-util-2.0.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/axion/jars/axion-1.0-M3-dev.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/bsf/jars/bsf-2.3.0-rc1.jar"/>
-	<classpathentry kind="var" path="MAVEN_REPO/classworlds/jars/classworlds-1.1-alpha-2-SNAPSHOT-NO-SYSTEM-EXIT.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-cli/jars/commons-cli-1.0.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-collections/jars/commons-collections-3.0-dev2.jar"/>
 	<classpathentry kind="var" path="MAVEN_REPO/commons-logging/jars/commons-logging-1.0.3.jar"/>
