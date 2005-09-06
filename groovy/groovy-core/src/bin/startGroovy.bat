@@ -87,8 +87,13 @@ set CMD_LINE_ARGS=%$
 :execute
 @rem Setup the command line
 set STARTER_CLASSPATH=%GROOVY_HOME%\lib\groovy-starter.jar;%CLASSPATH%
-if "x" == "x%CP%" set CP=%STARTER_CLASSPATH%;.
-if not "x" == "x%CP%" set CP=%STARTER_CLASSPATH%;%CP%;.
+
+if "x" == "x%CP%" goto empty_cp
+:non_empty_cp
+set CP=%STARTER_CLASSPATH%;%CP%;.
+:empty_cp
+set CP=%STARTER_CLASSPATH%;.
+
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
 set STARTER_CONF=%GROOVY_HOME%\conf\groovy-starter.conf
 
