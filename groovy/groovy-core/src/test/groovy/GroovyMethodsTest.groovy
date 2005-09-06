@@ -16,6 +16,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert answer[0] == 4
         assert answer[1] == 8
         assert answer[2] == 12
+        
+        assert [1:'a', 2:'b', 3:'c'].collect{k,v -> k + v} == ['1a','2b','3c']
+        
+        assert [1:'a', 2:'b', 3:'c'].collect{it.getKey() + "*" + it.getValue()} == ['1*a','2*b','3*c']
+        
     }
 
     void testJoin() {

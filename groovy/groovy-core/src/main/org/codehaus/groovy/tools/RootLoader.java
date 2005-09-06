@@ -55,7 +55,7 @@ import java.util.Enumeration;
  * RootLoader does have it's own classpath. When searching for a 
  * class or resource this classpath will be used. Parent 
  * Classloaders are ignored first. If a class or resource 
- * can't be found in the classpath of the RooLoader, then parent is
+ * can't be found in the classpath of the RootLoader, then parent is
  * checked.
  * 
  * <b>Note:</b> this is very against the normal behavior of 
@@ -71,7 +71,7 @@ import java.util.Enumeration;
  * a child of this loader does know, then you won't be able to 
  * load the class. To load the class the child is not allowed 
  * to redirect it's search for the class to the parent first.
- * That way the child can laod the class. If the child does not
+ * That way the child can load the class. If the child does not
  * have all classes to do this, this fails of course.
  *  
  * For example:
@@ -87,7 +87,7 @@ import java.util.Enumeration;
  *  
  *  childLoader.find("C")
  *  --> parentLoader does know C.class, try to load it
- *  --> to load the class c it has to load B.class
+ *  --> to load C.class it has to load B.class
  *  --> parentLoader is unable to find B.class in a.jar or c.jar
  *  --> NoClassDefFoundException!
  *  
@@ -119,7 +119,7 @@ public class RootLoader extends ClassLoader {
     }
     
     /**
-     * constructs a new Rooloader without classpath
+     * constructs a new RootLoader without classpath
      * @param parent the parent Loader
      */   
     private RootLoader(ClassLoader parent) {
@@ -127,11 +127,11 @@ public class RootLoader extends ClassLoader {
     }
     
     /**
-     * constructs a new Rooloader with a parent loader and an
+     * constructs a new RootLoader with a parent loader and an
      * array of URLs as classpath
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
-        this(parent);        
+        this(parent);
         inner = new InnerLoader(urls);
     }
     
@@ -185,7 +185,7 @@ public class RootLoader extends ClassLoader {
     protected Enumeration findResources(String name) throws IOException {
         final Enumeration enum1 = inner.findResources(name);
         final Enumeration enum2 = super.findResources(name);
-        return new Enumeration(){
+        return new Enumeration() {
             public boolean hasMoreElements() {
                 return enum1.hasMoreElements() || enum2.hasMoreElements();
             }

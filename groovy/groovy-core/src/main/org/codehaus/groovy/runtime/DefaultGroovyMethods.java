@@ -839,12 +839,18 @@ public class DefaultGroovyMethods {
      * as a transformer, returning a list of transformed values.
      *
      * @param self    a Map
-     * @param closure the closure used for mapping
+     * @param closure the closure used for mapping, which can be with one(Map.Entry) or two(key, value) parameters
      * @return a List of the mapped values
      */
     public static Collection collect(Map self, Collection collection, Closure closure) {
+        boolean isTwoParams = (closure.getParameterTypes().length == 2);
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            collection.add(closure.call(iter.next()));
+            if (isTwoParams) {
+                Map.Entry entry = (Map.Entry) iter.next();
+                collection.add(closure.call(new Object[]{entry.getKey(), entry.getValue()}));
+            } else {
+                collection.add(closure.call(iter.next()));
+            }
         }
         return collection;
     }
