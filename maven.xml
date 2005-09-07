@@ -566,6 +566,15 @@
         <include name="*"/>
       </fileset>
     </copy>
+    
+    <!-- fix crlf-->
+    <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
+       eol="unix" excludes="*.bat" 
+    />
+    <fixcrlf srcdir="${groovy.install.staging.dest}/bin"
+       eol="crlf" includes="*.bat"
+    />
+    
     <chmod perm="ugo+x">
       <fileset dir="${groovy.install.staging.dest}/bin">
         <include name="*"/>
