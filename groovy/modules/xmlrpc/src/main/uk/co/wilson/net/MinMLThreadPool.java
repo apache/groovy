@@ -50,7 +50,8 @@ public abstract class MinMLThreadPool {
     }
 
     private synchronized void startWork() {
-      if (++this.workingWorkerCount == this.liveWorkerCount && this.liveWorkerCount < this.maxWorkers) {
+      if (debug) System.out.println("Thread starting work: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
+     if (++this.workingWorkerCount == this.liveWorkerCount && this.liveWorkerCount < this.maxWorkers) {
       final Thread workerThread = new Thread(getNewWorker());
       
         workerThread.setDaemon(false);
@@ -58,7 +59,7 @@ public abstract class MinMLThreadPool {
         workerThread.start();
       }
 
-      if (debug) System.out.println("Thread starting work: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
+      if (debug) System.out.println("Thread started work: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
     }
 
     private synchronized void endWork() {
@@ -82,10 +83,17 @@ public abstract class MinMLThreadPool {
     }
 
     private synchronized void workerDies() {
-      if (--this.liveWorkerCount == this.minWorkers)
+      if (--this.liveWorkerCount == this.minWorkers) {
         setTimeout(0);
+      }
       
       if (debug) System.out.println("Thread dying: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
+      
+      if (this.liveWorkerCount < this.minWorkers) { 
+        new Thread(getNewWorker()).start();
+        
+        if (debug) System.out.println("Creating replacement thread: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);        
+      }
     }
 
     protected abstract class Worker implements Runnable {
