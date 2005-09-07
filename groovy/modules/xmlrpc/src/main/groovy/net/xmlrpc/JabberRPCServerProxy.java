@@ -70,7 +70,7 @@ import uk.co.wilson.smackx.packet.JabberRPC;
 public class JabberRPCServerProxy extends RPCServerProxy {
   public JabberRPCServerProxy(final XMPPConnection connection, final String to) {
     this.connection = connection;    
-    this.to = getId(connection.getRoster(), to);
+    this.to = to;
   }
   
   /* (non-Javadoc)
@@ -97,7 +97,7 @@ public class JabberRPCServerProxy extends RPCServerProxy {
                                                                                       });
     
       request.setType(IQ.Type.SET);
-      request.setTo(this.to);
+      request.setTo(getId(connection.getRoster(), this.to));
       request.setFrom(this.connection.getUser());
       this.connection.sendPacket(request);
       
