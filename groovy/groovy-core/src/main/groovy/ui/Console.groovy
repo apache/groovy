@@ -102,7 +102,7 @@ class Console extends ConsoleSupport implements CaretListener {
                     menuItem() { action(aboutAction) }
                 }
             }
-            splitPane(orientation:JSplitPane.VERTICAL_SPLIT, resizeWeight:0.50F) {
+            splitPane(id:'splitPane', resizeWeight:0.50F) {
                 scrollPane {
                     textArea = textArea(
                         margin: new Insets(3,3,3,3), font: new Font('Monospaced',Font.PLAIN,12)
@@ -114,6 +114,7 @@ class Console extends ConsoleSupport implements CaretListener {
                 }
             }
         }   // end of SwingBuilder use
+        swing.splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT)
 
         // add listeners
         frame.windowClosing = this.&exit
