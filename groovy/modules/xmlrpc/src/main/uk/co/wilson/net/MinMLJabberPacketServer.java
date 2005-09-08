@@ -40,6 +40,7 @@ public abstract class MinMLJabberPacketServer  extends MinMLThreadPool {
      * @see uk.co.wilson.net.MinMLThreadPool#shutDown()
      */
     public void shutDown() throws IOException {
+      this.serverActive = false;
         this.packetCollector.cancel();
     }
 

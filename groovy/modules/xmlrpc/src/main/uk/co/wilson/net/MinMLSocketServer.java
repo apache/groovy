@@ -34,6 +34,7 @@ public abstract class MinMLSocketServer extends MinMLThreadPool {
   }
 
   public synchronized void shutDown() throws IOException {
+    this.serverActive = false;
     this.serverSocket.close();
   }
 

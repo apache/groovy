@@ -89,7 +89,7 @@ public abstract class MinMLThreadPool {
       
       if (debug) System.out.println("Thread dying: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);
       
-      if (this.liveWorkerCount < this.minWorkers) { 
+      if (this.serverActive && this.liveWorkerCount < this.minWorkers) { 
         new Thread(getNewWorker()).start();
         
         if (debug) System.out.println("Creating replacement thread: liveWorkerCount = " + this.liveWorkerCount + " workingWorkerCount = " + this.workingWorkerCount);        
@@ -163,6 +163,7 @@ public abstract class MinMLThreadPool {
     protected final int minWorkers;
     protected final int maxWorkers;
     protected final int workerIdleLife;
+    protected boolean serverActive = true;
     private int liveWorkerCount = 0;
     private int workingWorkerCount = 0;
 
