@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
@@ -101,6 +102,22 @@ public class JabberRPCServer extends RPCServer {
   }
   public void startServer(final XMPPConnection connection) throws IOException {
     this.connection = connection;
+    
+    this.connection.addConnectionListener(new ConnectionListener() {
+                                                public void connectionClosed() {
+                                                  try {
+                                                    JabberRPCServer.this.server.shutDown();
+                                                  } catch (final IOException e) {
+                                                 }
+                                                }
+                                                
+                                                public void connectionClosedOnError(final Exception e) {
+                                                  try {
+                                                    JabberRPCServer.this.server.shutDown();
+                                                  } catch (final IOException e1) {
+                                                  }
+                                                }
+                                              });
     
     this.connection.sendPacket(new Presence(Presence.Type.AVAILABLE, "Jabber.RPC Server", 5, Presence.Mode.AVAILABLE));
     
