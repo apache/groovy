@@ -71,6 +71,8 @@ public class JabberRPCServerProxy extends RPCServerProxy {
   public JabberRPCServerProxy(final XMPPConnection connection, final String to) {
     this.connection = connection;    
     this.to = to;
+    
+    this.connection.sendPacket(new Presence(Presence.Type.AVAILABLE, "Jabber.RPC Client", 1, Presence.Mode.AVAILABLE));
   }
   
   /* (non-Javadoc)
@@ -133,20 +135,37 @@ public class JabberRPCServerProxy extends RPCServerProxy {
   }
   
   private String getId(final Roster roster, final String to) {
-  final Iterator iter = roster.getPresences(to);
-  int pri = Integer.MIN_VALUE;
-  String posTo = to;
+    int pri;
+    int retries = 20;
+    String posTo = to;
     
-    if (iter != null) {
-      while(iter.hasNext()) {
-      final Presence presence = (Presence)iter.next();
+    do {
+    final Iterator iter = roster.getPresences(to);
+    
+      pri = Integer.MIN_VALUE;
       
-        if (presence.getPriority() > pri) {
-          posTo = presence.getFrom();
-          pri = presence.getPriority();
+      if (iter != null) {
+        while(iter.hasNext()) {
+        final Presence presence = (Presence)iter.next();
+        
+          if (presence.getPriority() > pri) {
+            posTo = presence.getFrom();
+            pri = presence.getPriority();
+          }
         }
       }
-    }
+      
+      if (pri >= 0) break;
+      
+      if (retries-- > 0) {
+        try {
+          Thread.sleep(1000);
+        } catch (final InterruptedException e) {
+        }
+      } else {
+        throw new JabberRPCException("User " + posTo + " not available");
+      }
+    } while (true);
     
     return posTo;
   }

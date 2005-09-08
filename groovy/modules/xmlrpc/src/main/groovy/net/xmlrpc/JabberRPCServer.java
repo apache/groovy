@@ -56,6 +56,7 @@ import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.filter.PacketFilter;
 import org.jivesoftware.smack.packet.IQ;
 import org.jivesoftware.smack.packet.Packet;
+import org.jivesoftware.smack.packet.Presence;
 
 import uk.co.wilson.net.MinMLJabberPacketServer;
 import uk.co.wilson.net.xmlrpc.XMLRPCFailException;
@@ -100,6 +101,8 @@ public class JabberRPCServer extends RPCServer {
   }
   public void startServer(final XMPPConnection connection) throws IOException {
     this.connection = connection;
+    
+    this.connection.sendPacket(new Presence(Presence.Type.AVAILABLE, "Jabber.RPC Server", 5, Presence.Mode.AVAILABLE));
     
     if (this.server != null) stopServer();
     
