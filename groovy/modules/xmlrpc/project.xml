@@ -5,7 +5,7 @@
   <groupId>groovy</groupId>
   <artifactId>groovy-xmlrpc</artifactId>
   <name>groovy-xmlrpc</name>
-  <currentVersion>0.2</currentVersion>
+  <currentVersion>0.3</currentVersion>
   <organization>
     <name>The Codehaus</name>
     <url>http://codehaus.org</url>
