@@ -1,8 +1,18 @@
-<project default="default" xmlns:j="jelly:core" xmlns:u="jelly:util" xmlns:maven="jelly:maven">
+<project default="jar" xmlns:j="jelly:core" xmlns:u="jelly:util" xmlns:maven="jelly:maven" xmlns:ant="jelly:ant">
 
-  <goal name="default" prereqs="clean, groovy:make-install"/>
-  
-  <goal name="generate">
-  </goal>
- 
+    <!-- Needed goal for the multiproject release of Groovy -->
+    <goal name="default"/>
+
+    <!-- Needed goal for the multiproject release of Groovy -->
+    <goal name="generate"/>
+
+    <!-- Expand the classpath with the Smack jars until they are added to ibiblio -->
+    <preGoal name="java:compile">
+        <ant:path id="smack.classpath">
+            <ant:pathelement path="${project.home}lib/smack.jar"/>
+            <ant:pathelement path="${project.home}lib/smackx.jar"/>
+        </ant:path>
+        <maven:addPath id="maven.dependency.classpath" refid="smack.classpath"/>
+    </preGoal>
+
 </project>
