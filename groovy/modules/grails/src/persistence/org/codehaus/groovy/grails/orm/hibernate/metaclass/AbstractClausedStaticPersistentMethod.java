@@ -102,7 +102,7 @@ public abstract class AbstractClausedStaticPersistentMethod extends
 			else if(queryParameter.endsWith( GREATER_THAN_OR_EQUAL )) {
 				return new GrailsMethodExpression( calcPropertyName(queryParameter, GREATER_THAN_OR_EQUAL),GREATER_THAN_OR_EQUAL, 1,isNegation(queryParameter, GREATER_THAN_OR_EQUAL) ) {
 					Criterion createCriterion() {
-						return Expression.gt( this.propertyName, arguments[0] );
+						return Expression.ge( this.propertyName, arguments[0] );
 					}
 					
 				};
