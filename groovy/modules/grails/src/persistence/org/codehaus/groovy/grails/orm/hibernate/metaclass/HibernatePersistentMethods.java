@@ -38,8 +38,10 @@ public class HibernatePersistentMethods extends AbstractPersistentMethods {
 		addDynamicMethodInvocation(new RefreshPersistentMethod(sessionFactory, classLoader));
 		
 		// static methods
+		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory,classLoader));
 		addStaticMethodInvocation(new FindAllPersistentMethod(sessionFactory, classLoader, Pattern.compile("^findAll$")));
 		addStaticMethodInvocation(new FindByPersistentMethod(sessionFactory, classLoader));
+		addStaticMethodInvocation(new FindPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListOrderByPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new ListPersistentMethod(sessionFactory, classLoader));
 		addStaticMethodInvocation(new FindWherePersistentMethod(sessionFactory, classLoader));
