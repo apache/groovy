@@ -16,9 +16,16 @@ package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import groovy.lang.MissingMethodException;
 
+import java.sql.SQLException;
 import java.util.regex.Pattern;
 
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Example;
+import org.springframework.orm.hibernate3.HibernateCallback;
 /**
  * The "get" static persistent method for Grails domain classes. This method
  * takes an id and returns the instance 
@@ -37,17 +44,50 @@ public class GetPersistentMethod extends AbstractStaticPersistentMethod {
 		super(sessionFactory, classLoader, Pattern.compile(METHOD_PATTERN));
 	}
 
-	protected Object doInvokeInternal(Class clazz, String methodName,
+	protected Object doInvokeInternal(final Class clazz, String methodName,
 			Object[] arguments) {
 		// if no arguments passed throw exception
 		if(arguments.length == 0)
 			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 		// if its not a map throw exception
-		Object arg = arguments[0];
-		if(!(arg instanceof Long))
-			throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
+		final Object arg = arguments[0];
+		// if its a long retrieve by id
+		if(arg instanceof Long) {
+			return super.getHibernateTemplate().get( clazz, (Long)arg );
+		}
+		// if its an instance of this class, retrieve by example
+		else if(clazz.isInstance( arg.getClass() )) {
+			
+			return super.getHibernateTemplate().execute( new HibernateCallback() {
+
+				public Object doInHibernate(Session session) throws HibernateException, SQLException {
+					
+					Example example = Example.create(arg)
+							.ignoreCase();
+					
+					Criteria crit = session.createCriteria(clazz);
+					return crit
+						.add(example)
+						.uniqueResult();
+				}
+				
+			});
+			
+		}
+		// if its a string then its a query
+		else if(arg instanceof String){
+			final String queryString = (String)arg;
+			return super.getHibernateTemplate().execute( new HibernateCallback() {
+
+				public Object doInHibernate(Session session) throws HibernateException, SQLException {
+					Query query = session.createQuery(queryString);
+					return query.uniqueResult();					
+				}			
+			});
+			
+		}
 		
-		return super.getHibernateTemplate().get( clazz, (Long)arg );
+		throw new MissingMethodException(METHOD_SIGNATURE, clazz,arguments);
 	}
 
 }
