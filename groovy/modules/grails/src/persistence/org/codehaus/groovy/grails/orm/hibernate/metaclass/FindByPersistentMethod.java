@@ -15,14 +15,14 @@
 package org.codehaus.groovy.grails.orm.hibernate.metaclass;
 
 import java.sql.SQLException;
-import java.util.Map;
+import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.criterion.Expression;
 import org.springframework.orm.hibernate3.HibernateCallback;
 
 /**
@@ -39,24 +39,28 @@ import org.springframework.orm.hibernate3.HibernateCallback;
  */
 public class FindByPersistentMethod extends AbstractClausedStaticPersistentMethod {
 	
+	private static final String OPERATOR_OR = "Or";
+	private static final String OPERATOR_AND = "And";
+	
 	private static final String METHOD_PATTERN = "(findBy)(\\w+)";
-	private static final String CLAUSE = "And";
+	private static final String[] OPERATORS = new String[]{ OPERATOR_AND };
 
 	public FindByPersistentMethod(SessionFactory sessionFactory, ClassLoader classLoader) {
- 		super(sessionFactory, classLoader, Pattern.compile( METHOD_PATTERN ),CLAUSE);
+ 		super(sessionFactory, classLoader, Pattern.compile( METHOD_PATTERN ),OPERATORS);
 	}
 
-	protected Object doInvokeInternalWithQueryMap(final Class clazz, String methodName, Object[] arguments, final Map queryMap) {
+	protected Object doInvokeInternalWithExpressions(final Class clazz, String methodName, Object[] arguments, final List expressions) {
 		return super.getHibernateTemplate().executeFind( new HibernateCallback() {
 
 			public Object doInHibernate(Session session) throws HibernateException, SQLException {
-				
 				Criteria crit = session.createCriteria(clazz);
-				return crit
-					.add( Expression.allEq( queryMap ) )
-					.list();
+				for (Iterator i = expressions.iterator(); i.hasNext();) {
+					GrailsMethodExpression current = (GrailsMethodExpression) i.next();
+					crit.add( current.getCriterion() );
+					
+				}
+				return crit.list();
 			}
-			
 		});
 	}
 	
