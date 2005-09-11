@@ -64,6 +64,7 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj.setProperty( "id", new Long(1) );
 		obj.setProperty( "firstName", "fred" );
 		obj.setProperty( "lastName", "flintstone" );
+		obj.setProperty( "age", new Integer(45));
 		
 		obj.invokeMethod("save", null);
 		
@@ -71,8 +72,15 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		obj2.setProperty( "id", new Long(2) );
 		obj2.setProperty( "firstName", "wilma" );
 		obj2.setProperty( "lastName", "flintstone" );
-		
+		obj2.setProperty( "age", new Integer(42));
 		obj2.invokeMethod("save", null);	
+		
+		GroovyObject obj3 = domainClass.newInstance();
+		obj3.setProperty( "id", new Long(3) );
+		obj3.setProperty( "firstName", "dino" );
+		obj3.setProperty( "lastName", "dinosaur" );
+		obj3.setProperty( "age", new Integer(12));
+		obj3.invokeMethod("save", null);			
 		
 		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findByFirstName", new Object[] { "fred" });
 		assertNotNull(returnValue);
@@ -86,7 +94,38 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		assertTrue(returnValue instanceof List);
 		
 		returnList = (List)returnValue;
-		assertEquals(1, returnList.size());		
+		assertEquals(1, returnList.size());
+		
+		/*returnValue = obj.getMetaClass().invokeStaticMethod(obj, "findByFirstNameOrLastName", new Object[] { "fred", "flintstone" });
+		assertNotNull(returnValue);
+		assertTrue(returnValue instanceof List);
+		
+		returnList = (List)returnValue;
+		assertEquals(2, returnList.size());*/			
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByFirstNameNotEqual", new Object[] { "fred" });
+		assertEquals(2, returnList.size());
+		obj = (GroovyObject)returnList.get(0);
+		obj2 = (GroovyObject)returnList.get(1);
+		assertFalse("fred".equals( obj.getProperty("firstName")));
+		assertFalse("fred".equals( obj2.getProperty("firstName")));
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeLessThan", new Object[] { new Integer(20) });
+		assertEquals(1, returnList.size());
+		obj = (GroovyObject)returnList.get(0);
+		assertEquals("dino", obj.getProperty("firstName"));
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeGreaterThan", new Object[] { new Integer(20) });
+		assertEquals(2, returnList.size());
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeGreaterThanAndLastName", new Object[] { new Integer(20), "flintstone" });
+		assertEquals(2, returnList.size());
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByLastNameLike", new Object[] { "flint%" });
+		assertEquals(2, returnList.size());
+		
+		returnList = (List)obj.getMetaClass().invokeStaticMethod(obj, "findByAgeBetween", new Object[] { new Integer(10), new Integer(43) });
+		assertEquals(2, returnList.size());		
 		
 		Map queryMap = new HashMap();
 		queryMap.put("firstName", "wilma");
@@ -116,11 +155,15 @@ public class PersistentMethodTests extends AbstractDependencyInjectionSpringCont
 		
 		obj2.invokeMethod("save", null);	
 		
-		// get wilma
+		// get wilma by id
 		Object returnValue = obj.getMetaClass().invokeStaticMethod(obj, "get", new Object[] { new Long(2) });
 		assertNotNull(returnValue);
 		assertEquals(returnValue.getClass(),domainClass.getClazz());
 		GroovyObject groovyReturn = (GroovyObject)returnValue;
+		
+		// get wilma with a HQL query
+		String query = "from org.codehaus.groovy.grails.orm.hibernate.PersistentMethodTestClass as p where p.firstName='wilma'";
+		returnValue = obj.getMetaClass().invokeStaticMethod(obj, "get", new Object[] { query });
 		
 		assertEquals("wilma", groovyReturn.getProperty("firstName"));
 	}
