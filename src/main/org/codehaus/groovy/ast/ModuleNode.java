@@ -45,7 +45,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.Script;
 import groovy.lang.Binding;
 
 import java.io.File;
@@ -222,14 +221,16 @@ public class ModuleNode extends ASTNode implements Opcodes {
         }
         name += extractClassFromFileDescription();
 
-        String baseClass = null;
-        if (unit != null) {
-            baseClass = unit.getConfig().getScriptBaseClass();
+        String baseClassName = null;
+        if (unit != null) baseClassName = unit.getConfig().getScriptBaseClass();
+        Type baseClass = null;
+        if (baseClassName!=null) {
+            baseClass = Type.makeType(baseClassName);
         }
         if (baseClass == null) {
-            baseClass = Script.class.getName();
+            baseClass = Type.SCRIPT_TYPE;
         }
-        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
+        ClassNode classNode = new ClassNode(Type.makeType(name), ACC_PUBLIC, baseClass);
         classNode.setScript(true);
 
         // return new Foo(new ShellContext(args)).run()
@@ -237,19 +238,19 @@ public class ModuleNode extends ASTNode implements Opcodes {
             new MethodNode(
                 "main",
                 ACC_PUBLIC | ACC_STATIC,
-                "void",
-                new Parameter[] { new Parameter("java.lang.String[]", "args")},
+                Type.VOID_TYPE,
+                new Parameter[] { new Parameter(Type.STRING_TYPE.makeArray(), "args")},
                 new ExpressionStatement(
                     new MethodCallExpression(
-                        new ClassExpression(InvokerHelper.class.getName()),
+                        new ClassExpression(Type.makeType(InvokerHelper.class)),
                         "runScript",
                         new ArgumentListExpression(
                             new Expression[] {
-                                new ClassExpression(classNode.getName()),
+                                new ClassExpression(classNode.getType()),
                                 new VariableExpression("args")})))));
 
         classNode.addMethod(
-            new MethodNode("run", ACC_PUBLIC, Object.class.getName(), Parameter.EMPTY_ARRAY, statementBlock));
+            new MethodNode("run", ACC_PUBLIC, Type.OBJECT_TYPE, Parameter.EMPTY_ARRAY, statementBlock));
 
         classNode.addConstructor(ACC_PUBLIC, Parameter.EMPTY_ARRAY, new BlockStatement());
         Statement stmt = new ExpressionStatement(
@@ -262,7 +263,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
         classNode.addConstructor(
             ACC_PUBLIC,
-            new Parameter[] { new Parameter(Binding.class.getName(), "context")},
+            new Parameter[] { new Parameter(Type.makeType(Binding.class), "context")},
 			stmt);
 
         for (Iterator iter = methods.iterator(); iter.hasNext();) {

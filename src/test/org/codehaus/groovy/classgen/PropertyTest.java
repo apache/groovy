@@ -50,6 +50,7 @@ import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * 
@@ -59,22 +60,22 @@ import org.codehaus.groovy.ast.PropertyNode;
 public class PropertyTest extends TestSupport {
 
     public void testFields() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
-        classNode.addField("x", ACC_PUBLIC, "java.lang.Object", null);
-        classNode.addField("y", ACC_PUBLIC, "java.lang.Integer", null);
-        classNode.addField("z", ACC_PRIVATE, "java.lang.String", null);
+        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
+        classNode.addField("x", ACC_PUBLIC, Type.OBJECT_TYPE, null);
+        classNode.addField("y", ACC_PUBLIC, Type.Integer_TYPE, null);
+        classNode.addField("z", ACC_PRIVATE, Type.STRING_TYPE, null);
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
 
-        assertField(fooClass, "x", Modifier.PUBLIC, "java.lang.Object");
-        assertField(fooClass, "y", Modifier.PUBLIC, "java.lang.Integer");
-        assertField(fooClass, "z", Modifier.PRIVATE, "java.lang.String");
+        assertField(fooClass, "x", Modifier.PUBLIC, Type.OBJECT_TYPE);
+        assertField(fooClass, "y", Modifier.PUBLIC, Type.Integer_TYPE);
+        assertField(fooClass, "z", Modifier.PRIVATE, Type.STRING_TYPE);
     }
 
     public void testProperties() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, "java.lang.Object");
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
+        ClassNode classNode =new ClassNode(Type.makeType("Foo"), ACC_PUBLIC+ACC_SUPER, Type.OBJECT_TYPE);
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, Type.STRING_TYPE, Type.makeType("Foo"), null, null, null));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -82,15 +83,15 @@ public class PropertyTest extends TestSupport {
         Object bean = fooClass.newInstance();
         assertTrue("Managed to create bean", bean != null);
 
-        assertField(fooClass, "bar", 0, "java.lang.String");
+        assertField(fooClass, "bar", 0, Type.STRING_TYPE);
 
         assertGetProperty(bean, "bar", null);
         assertSetProperty(bean, "bar", "newValue");
     }
 
     public void testInheritedProperties() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, "org.codehaus.groovy.runtime.DummyBean");
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
+        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC+ACC_SUPER, Type.makeType("org.codehaus.groovy.runtime.DummyBean"));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, Type.STRING_TYPE, Type.makeType("Foo"), null, null, null));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);
@@ -98,7 +99,7 @@ public class PropertyTest extends TestSupport {
         Object bean = fooClass.newInstance();
         assertTrue("Managed to create bean", bean != null);
 
-        assertField(fooClass, "bar", 0, "java.lang.String");
+        assertField(fooClass, "bar", 0, Type.STRING_TYPE);
 
         assertGetProperty(bean, "name", "James");
         assertSetProperty(bean, "name", "Bob");

@@ -90,7 +90,7 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
     }
 
     public void visitVariableExpression(VariableExpression expression) {
-        assertValidIdentifier(expression.getVariable(), "variable name", expression);
+        assertValidIdentifier(expression.getName(), "variable name", expression);
         super.visitVariableExpression(expression);
     }
 

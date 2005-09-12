@@ -109,7 +109,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     
     public void visitVariableExpression(VariableExpression expression) {
         // check for undeclared variables?
-        String variable = expression.getVariable();
+        String variable = expression.getName();
         /*
         if (!parameterSet.contains(variable)) {
             referencedVariables.add(variable);
@@ -160,7 +160,7 @@ public class VariableScopeCodeVisitor extends CodeVisitorSupport {
     }
 
     protected void declareVariable(VariableExpression varExp) {
-        String variable = varExp.getVariable();
+        String variable = varExp.getName();
         declareVariable(variable);
     }
 

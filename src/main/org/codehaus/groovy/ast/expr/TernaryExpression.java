@@ -46,8 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
-
+import org.codehaus.groovy.ast.Type;
 /**
  * Represents a ternary expression (booleanExpression) ? expression : expression
  * 
@@ -79,12 +78,6 @@ public class TernaryExpression extends Expression {
             transformer.transform(falseExpression));
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        trueExpression.resolve(resolver);
-        falseExpression.resolve(resolver);
-        setTypeClass(trueExpression.getTypeClass());
-    }
-
     public String toString() {
         return super.toString() +"[" + booleanExpression + " ? " + trueExpression + " : " + falseExpression + "]";
     }
@@ -109,11 +102,8 @@ public class TernaryExpression extends Expression {
             + " : "
             + falseExpression.getText();
     }
-    public Class getTypeClass() {
-        return trueExpression.getTypeClass(); // assuming trueexp and falseexp are of the same type.
-    }
 
-    public String getType() {
+    public Type getType() {
         return trueExpression.getType();
     }
 }

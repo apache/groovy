@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.syntax.Token;
 
 /**
@@ -77,11 +77,6 @@ public class PostfixExpression extends Expression {
         return new PostfixExpression(transformer.transform(expression), operation);
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        expression.resolve(resolver);
-        setTypeClass(expression.getTypeClass());
-    }
-
     public void setExpression(Expression expression) {
         this.expression = expression;
     }
@@ -98,11 +93,7 @@ public class PostfixExpression extends Expression {
         return "(" + expression.getText() + operation.getText() + ")";
     }
 
-    public Class getTypeClass() {
-        return expression.getTypeClass();
-    }
-
-    public String getType() {
+    public Type getType() {
         return expression.getType();
     }
 

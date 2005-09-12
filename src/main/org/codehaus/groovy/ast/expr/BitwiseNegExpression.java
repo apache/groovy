@@ -34,7 +34,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * @author phk
@@ -59,24 +59,12 @@ public class BitwiseNegExpression extends Expression {
         return new BitwiseNegExpression(transformer.transform(expression));
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        expression.resolve(resolver);
-        setTypeClass(expression.getTypeClass());
-    }
-
     public String getText() {
 		return expression.getText();
 	}
 
-    public String getType() {
+    public Type getType() {
         return expression.getType();
     }
 
-    public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public Class getTypeClass() {
-        return expression.getTypeClass();
-    }
 }

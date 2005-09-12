@@ -19,6 +19,7 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Types;
 
@@ -101,12 +102,11 @@ public class ASTHelper {
     public void setController(SourceUnit controller) {
         this.controller = controller;
     }
-
+    
     /**
      * Returns a fully qualified name for any given potential type
      * name.  Returns null if no qualified name could be determined.
      */
-
     protected String resolveName(String name, boolean safe) {
         //
         // Use our cache of resolutions, if possible
@@ -124,7 +124,9 @@ public class ASTHelper {
             resolutions.put(name,name);
             return name;
         } catch (ClassNotFoundException cnfe){
-            if (cnfe.getCause() instanceof CompilationFailedException) {
+            if (cnfe.getCause() instanceof MultipleCompilationErrorsException) {
+                MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) cnfe.getCause();
+                controller.getErrorCollector().addCollectorContents(mcee.getErrorCollector());
                 resolutions.put(name,name);
                 return name;
             }

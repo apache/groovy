@@ -1222,7 +1222,7 @@ public class MetaClass {
 
                    CompilationUnit.ClassgenCallback search = new CompilationUnit.ClassgenCallback() {
                        public void call( ClassVisitor writer, ClassNode node ) {
-                           if( node.getName().equals(theClass.getName()) ) {
+                           if( node.getType().getName().equals(theClass.getName()) ) {
                                MetaClass.this.classNode = node;
                            }
                        }
@@ -2065,84 +2065,6 @@ public class MetaClass {
            msg+= "\n\t"+InvokerHelper.toString(types);
        }
        throw new GroovyRuntimeException(msg);
-
-
-
-
-       /*
-       LinkedList directMatches = new LinkedList();
-       // test for a method with equal classes (natives are wrapped
-       for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-           Object method = iter.next();
-           Class[] paramTypes = wrap(getParameterTypes(method));
-           if (Arrays.equals(wrappedArguments, paramTypes)) directMatches.add(method);
-       }
-       if (directMatches.size()==1) return directMatches.getFirst();
-       if (directMatches.size()>0) {
-           matchingMethods = directMatches;
-           // we have more then one possible match for wrapped natives
-           // so next test without using wrapping
-           directMatches = new LinkedList();
-           for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-               Object method = iter.next();
-               Class[] paramTypes = getParameterTypes(method);
-               if (Arrays.equals(arguments, paramTypes)) directMatches.add(method);
-           }
-           if (directMatches.size()==1) return directMatches.getFirst();
-       }
-
-       // filter out cases where we don't have a useable superclass or interface
-       List superclassMatches = new ArrayList(matchingMethods);
-       for (Iterator iter = superclassMatches.iterator(); iter.hasNext(); ) {
-           Object method = iter.next();
-           Class[] paramTypes = wrap(getParameterTypes(method));
-           for (int i=0; i<paramTypes.length; i++) {
-               boolean iMatch = implementsInterface(wrappedArguments[i],paramTypes[i]);
-               boolean cMatch = isSuperclass(wrappedArguments[i],paramTypes[i]);
-               if (!iMatch && !cMatch) {
-                   iter.remove();
-                   break; //return from the inner for
-               }
-           }
-       }
-       if (superclassMatches.size()>0) {
-           //if not all methods are filtered out use the filtered methods
-           matchingMethods = superclassMatches;
-       }
-
-       Object answer = null;
-       int size = arguments.length;
-       Class[] mostSpecificTypes = null;
-       for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
-           Object method = iter.next();
-           Class[] paramTypes = getParameterTypes(method);
-           if (answer == null) {
-               answer = method;
-               mostSpecificTypes = paramTypes;
-           }
-           else {
-               boolean useThisMethod = false;
-               for (int i = 0; i < size; i++) {
-                   Class mostSpecificType = mostSpecificTypes[i];
-                   Class type = paramTypes[i];
-
-                   if (!isAssignableFrom(mostSpecificType, type)) {
-                       useThisMethod = true;
-                       break;
-                   }
-               }
-               if (useThisMethod) {
-
-                   if (size > 1) {
-                       checkForInvalidOverloading(name, mostSpecificTypes, paramTypes);
-                   }
-
-                   answer = method;
-                   mostSpecificTypes = paramTypes;
-               }
-           }
-       }
-       return answer;*/
    }
 
    /**

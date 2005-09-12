@@ -48,7 +48,7 @@ package org.codehaus.groovy.ast.expr;
 import groovy.lang.Closure;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a method pointer on an object such as
@@ -91,13 +91,6 @@ public class MethodPointerExpression extends Expression {
 	        return new MethodPointerExpression(transformer.transform(expression), methodName);
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-	if (expression != null) {
-            expression.resolve(resolver);
-            setTypeClass(expression.getTypeClass());
-	}
-    }
-
     public String getText() {
 	if (expression == null)
 		return "&" + methodName;
@@ -105,8 +98,8 @@ public class MethodPointerExpression extends Expression {
 		return expression.getText() + ".&" + methodName;
     }
 
-    public String getType() {
-        return "groovy.lang.Closure";
+    public Type getType() {
+        return Type.CLOSURE_TYPE;
     }
 
     public boolean isDynamic() {

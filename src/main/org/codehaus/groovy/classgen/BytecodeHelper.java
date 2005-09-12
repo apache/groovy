@@ -55,6 +55,7 @@ import java.math.BigInteger;
 
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.Type;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -89,20 +90,24 @@ public class BytecodeHelper implements Opcodes {
             cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
         }
     }
+    
+    public void quickBoxIfNecessary(Type t) {
+        quickBoxIfNecessary(t.getTypeClass());
+    }
 
     /**
      * box the primitive value on the stack
      * @param cls
      */
     public void quickBoxIfNecessary(Class cls) {
-        String type = cls.getName();
+        Type type = Type.makeType(cls);
         String descr = getTypeDescription(type);
-        if (cls == boolean.class) {
+        if (type == Type.boolean_TYPE) {
             boxBoolean();
         }
-        else if (cls.isPrimitive() && cls != void.class) {
+        else if (type.isPrimitiveType() && type != Type.VOID_TYPE) {
             // use a special integer pool in the invokerhelper
-            if (cls == Integer.TYPE) {
+            if (type == Type.int_TYPE) {
                 cv.visitMethodInsn(
                         INVOKESTATIC,
                         getClassInternalName(ScriptBytecodeAdapter.class.getName()),
@@ -112,11 +117,11 @@ public class BytecodeHelper implements Opcodes {
                 return;
             }
 
-            String wrapperName = getObjectTypeForPrimitive(type);
-            String internName = getClassInternalName(wrapperName);
+            Type wrapper = type.getWrapper();
+            String internName = getClassInternalName(wrapper);
             cv.visitTypeInsn(NEW, internName);
             cv.visitInsn(DUP);
-            if (type.equals("double") || type.equals("long")) {
+            if (type==Type.double_TYPE || type==Type.long_TYPE) {
                 cv.visitInsn(DUP2_X2);
                 cv.visitInsn(POP2);
             } else {
@@ -130,30 +135,33 @@ public class BytecodeHelper implements Opcodes {
 //            push(opr);
         }
     }
+    public void quickUnboxIfNecessary(Type t){
+        quickUnboxIfNecessary(t.getTypeClass());
+    }
 
     /**
      * unbox the ref on the stack
      * @param cls
      */
     public void quickUnboxIfNecessary(Class cls) {
-        String type = cls.getName();
+        Type type = Type.makeType(cls);
 
-        if (cls.isPrimitive() && cls != void.class) { // todo care when BigDecimal or BigIneteger on stack
-            String wrapperName = getObjectTypeForPrimitive(type);
-            String internName = getClassInternalName(wrapperName);
-            if (cls == boolean.class) {
+        if (type.isPrimitiveType() && type != Type.VOID_TYPE) { // todo care when BigDecimal or BigIneteger on stack
+            Type wrapper = type.getWrapper();
+            String internName = getClassInternalName(wrapper);
+            if (type == Type.boolean_TYPE) {
                 cv.visitTypeInsn(CHECKCAST, internName);
-                cv.visitMethodInsn(INVOKEVIRTUAL, internName, type + "Value", "()" + getTypeDescription(type));
+                cv.visitMethodInsn(INVOKEVIRTUAL, internName, type.getName() + "Value", "()" + getTypeDescription(type));
             } else { // numbers
                 cv.visitTypeInsn(CHECKCAST, "java/lang/Number");
-                cv.visitMethodInsn(INVOKEVIRTUAL, /*internName*/"java/lang/Number", type + "Value", "()" + getTypeDescription(type));
+                cv.visitMethodInsn(INVOKEVIRTUAL, /*internName*/"java/lang/Number", type.getName() + "Value", "()" + getTypeDescription(type));
             }
         }
 
     }
 
-    public void box(String type) {
-        if (isPrimitiveType(type) && !type.equals("void")) {
+    public void box(Type type) {
+        if (type.isPrimitiveType() && type!=Type.VOID_TYPE) {
             String returnString = "(" + getTypeDescription(type) + ")Ljava/lang/Object;";
             cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), "box", returnString);
             // todo optimize this
@@ -177,23 +185,15 @@ public class BytecodeHelper implements Opcodes {
     /**
      * Generates the bytecode to unbox the current value on the stack
      */
-    public void unbox(String type) {
-        if (isPrimitiveType(type) && !type.equals("void")) {
+    public void unbox(Type type) {
+        if (type.isPrimitiveType() && type!=Type.VOID_TYPE) {
             String returnString = "(Ljava/lang/Object;)" + getTypeDescription(type);
-            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), type + "Unbox", returnString);
+            cv.visitMethodInsn(INVOKESTATIC, getClassInternalName(ScriptBytecodeAdapter.class.getName()), type.getName() + "Unbox", returnString);
         }
     }
-
-    public static boolean isPrimitiveType(String type) {
-        return type != null
-            && (type.equals("boolean")
-                || type.equals("byte")
-                || type.equals("char")
-                || type.equals("short")
-                || type.equals("int")
-                || type.equals("long")
-                || type.equals("float")
-                || type.equals("double"));
+    
+    public static String getTypeDescription(Type t) {
+        return getTypeDescription(t.getName());
     }
 
     /**
@@ -249,6 +249,10 @@ public class BytecodeHelper implements Opcodes {
         return prefix + "L" + name.replace('.', '/') + ";";
     }
 
+    public static String getClassInternalName(Type t) {
+        return getClassInternalName(t.getName());
+    }
+    
     /**
      * @return the ASM internal name of the type
      */
@@ -263,22 +267,10 @@ public class BytecodeHelper implements Opcodes {
         return answer;
     }
 
-    /**
-     * @return the regular class name of the type
-     */
-    public static String getClassRegularName(String name) {
-        if (name == null) {
-            return "java.lang.Object";
-        }
-        if (name.startsWith("L")) {
-            name = name.substring(1);
-            if (name.endsWith(";"))
-                name = name.substring(0, name.length() - 1);
-        }
-        String answer = name.replace('/', '.');
-        return answer;
+    public static String getMethodDescriptor(Type returnType, Parameter[] paramTypeNames) {
+        return getMethodDescriptor(returnType.getName(), paramTypeNames);
     }
-
+    
     /**
      * @return the ASM method type descriptor
      */
@@ -286,7 +278,7 @@ public class BytecodeHelper implements Opcodes {
         // lets avoid class loading
         StringBuffer buffer = new StringBuffer("(");
         for (int i = 0; i < paramTypeNames.length; i++) {
-            buffer.append(getTypeDescription(paramTypeNames[i].getType()));
+            buffer.append(getTypeDescription(paramTypeNames[i].getType().getName()));
         }
         buffer.append(")");
         buffer.append(getTypeDescription(returnTypeName));
@@ -374,43 +366,41 @@ public class BytecodeHelper implements Opcodes {
         }
     }
 
-    public void doCast(String type) {
-        if (!type.equals("java.lang.Object")) {
-            if (isPrimitiveType(type) && !type.equals("void")) {
+    public void doCast(Type type) {
+        if (type!=Type.OBJECT_TYPE) {
+            if (type.isPrimitiveType() && type!=Type.VOID_TYPE) {
                 unbox(type);
             }
             else {
                 cv.visitTypeInsn(
                     CHECKCAST,
-                    type.endsWith("[]") ? getTypeDescription(type) : getClassInternalName(type));
+                    type.isArray() ? getTypeDescription(type) : getClassInternalName(type));
             }
         }
     }
 
-    public void doCast(Class type) {
-        String name = type.getName();
-        if (type.isArray()) {
-            name = type.getComponentType().getName() + "[]";
-        }
-        doCast(name);
+    public void doCast(Class c) {
+        Type type = Type.makeType(c);
+        doCast(type);
     }
 
-    public void load(String type, int idx) {
-        if (type.equals("double")) {
+    public void load(Type type, int idx) {
+        if (type==Type.double_TYPE) {
             cv.visitVarInsn(DLOAD, idx);
         }
-        else if (type.equals("float")) {
+        else if (type==Type.float_TYPE) {
             cv.visitVarInsn(FLOAD, idx);
         }
-        else if (type.equals("long")) {
+        else if (type==Type.long_TYPE) {
             cv.visitVarInsn(LLOAD, idx);
         }
         else if (
-            type.equals("boolean")
-                || type.equals("char")
-                || type.equals("byte")
-                || type.equals("int")
-                || type.equals("short")) {
+            type==Type.boolean_TYPE
+                || type==Type.char_TYPE
+                || type==Type.byte_TYPE
+                || type==Type.int_TYPE
+                || type==Type.short_TYPE)
+        {    
             cv.visitVarInsn(ILOAD, idx);
         }
         else {
@@ -419,30 +409,7 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public void load(Variable v) {
-    	load(v.getTypeName(), v.getIndex());
-    }
-
-    public void store(String type, int idx) {
-        if (type.equals("double")) {
-            cv.visitVarInsn(DSTORE, idx);
-        }
-        else if (type.equals("float")) {
-            cv.visitVarInsn(FSTORE, idx);
-        }
-        else if (type.equals("long")) {
-            cv.visitVarInsn(LSTORE, idx);
-        }
-        else if (
-            type.equals("boolean")
-                || type.equals("char")
-                || type.equals("byte")
-                || type.equals("int")
-                || type.equals("short")) {
-            cv.visitVarInsn(ISTORE, idx);
-        }
-        else {
-            cv.visitVarInsn(ASTORE, idx);
-        }
+    	load(v.getType(), v.getIndex());
     }
 
     public void store(Variable v, boolean markStart) {
@@ -481,37 +448,6 @@ public class BytecodeHelper implements Opcodes {
 
     public void store(Variable v) {
         store(v, false);
-    }
-
-
-    public static String getObjectTypeForPrimitive(String type) {
-        if (type.equals("boolean")) {
-            return Boolean.class.getName();
-        }
-        else if (type.equals("byte")) {
-            return Byte.class.getName();
-        }
-        else if (type.equals("char")) {
-            return Character.class.getName();
-        }
-        else if (type.equals("short")) {
-            return Short.class.getName();
-        }
-        else if (type.equals("int")) {
-            return Integer.class.getName();
-        }
-        else if (type.equals("long")) {
-            return Long.class.getName();
-        }
-        else if (type.equals("float")) {
-            return Float.class.getName();
-        }
-        else if (type.equals("double")) {
-            return Double.class.getName();
-        }
-        else {
-            return type;
-        }
     }
 
     /**
@@ -635,14 +571,16 @@ public class BytecodeHelper implements Opcodes {
     }
 
     public void putField(FieldNode fld, String ownerName) {
-    	cv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType()));
+    	cv.visitFieldInsn(PUTFIELD, ownerName, fld.getName(), getTypeDescription(fld.getType().getName()));
     }
 
     public void loadThis() {
         cv.visitVarInsn(ALOAD, 0);
     }
 
-    public static Class boxOnPrimitive(Class cls) {
+    public static Type boxOnPrimitive(Type type) {
+        if (type==null) return null;
+        Class cls = type.getClass();
         Class ans = cls;
         if (ans == null)
             return null;
@@ -715,13 +653,13 @@ public class BytecodeHelper implements Opcodes {
                 }
                 typeName += "L" + boxElem.getName() + ";";
                 try {
-                    return Class.forName(typeName);
+                    return Type.makeType(Class.forName(typeName));
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException(e); // should never have come here
                 }
             }
         }
-        return ans;
+        return Type.makeType(ans);
     }
 
     /**

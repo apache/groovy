@@ -46,7 +46,7 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents a spread expression *x in the list expression [1, *x, 2].
@@ -73,24 +73,11 @@ public class SpreadExpression extends Expression {
         return new SpreadExpression(transformer.transform(expression));
     }
 
-    protected void resolveType(AsmClassGenerator resolver) {
-        expression.resolve(resolver);
-        setTypeClass(expression.getTypeClass());
-    }
-
     public String getText() {
 		return "*" + expression.getText();
 	}
 
-    public String getType() {
+    public Type getType() {
         return expression.getType();
-    }
-
-    public boolean isDynamic() {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public Class getTypeClass() {
-        return expression.getTypeClass();
     }
 }

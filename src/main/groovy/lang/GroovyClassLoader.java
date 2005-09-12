@@ -538,7 +538,7 @@ public class GroovyClassLoader extends SecureClassLoader {
         protected Class onClassNode(ClassWriter classWriter, ClassNode classNode) {
             byte[] code = classWriter.toByteArray();
 
-            Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
+            Class theClass = cl.defineClass(classNode.getType().getName(), code, 0, code.length, unit.getAST().getCodeSource());
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {

@@ -102,16 +102,16 @@ public class TupleListTest extends TestSupport {
     }
     
     protected void assertIterate(String methodName, Expression listExpression) throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, "java.lang.Object");
+        ClassNode classNode = new ClassNode(Type.makeType("Foo"), ACC_PUBLIC, Type.OBJECT_TYPE);
         classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null));
-        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, "java.lang.String", "Foo", null, null, null));
+        classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, Type.STRING_TYPE, Type.makeType("Foo"), null, null, null));
 
         Statement loopStatement = createPrintlnStatement(new VariableExpression("i"));
 
         BlockStatement block = new BlockStatement();
         block.addStatement(new ExpressionStatement(new BinaryExpression(new VariableExpression("list"), Token.newSymbol("=", 0, 0), listExpression)));
         block.addStatement(new ForStatement("i", Type.DYNAMIC_TYPE, new VariableExpression("list"), loopStatement));
-        classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, "void", Parameter.EMPTY_ARRAY, block));
+        classNode.addMethod(new MethodNode(methodName, ACC_PUBLIC, Type.VOID_TYPE, Parameter.EMPTY_ARRAY, block));
 
         Class fooClass = loadClass(classNode);
         assertTrue("Loaded a new class", fooClass != null);

@@ -34,7 +34,6 @@
 package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MissingClassException;
 import org.codehaus.groovy.ast.*;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -81,16 +80,9 @@ public class DummyClassGenerator extends ClassGenerator {
     public void visitClass(ClassNode classNode) {
         try {
             this.classNode = classNode;
-            this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getName());
+            this.internalClassName = BytecodeHelper.getClassInternalName(classNode.getType());
 
             //System.out.println("Generating class: " + classNode.getName());
-
-            // lets check that the classes are all valid
-            classNode.setSuperClass(checkValidType(classNode.getSuperClass(), classNode, "Must be a valid base class"));
-            String[] interfaces = classNode.getInterfaces();
-            for (int i = 0; i < interfaces.length; i++ ) {
-                interfaces[i] = checkValidType(interfaces[i], classNode, "Must be a valid interface name");
-            }
 
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
@@ -107,8 +99,8 @@ public class DummyClassGenerator extends ClassGenerator {
 
             for (Iterator iter = innerClasses.iterator(); iter.hasNext();) {
                 ClassNode innerClass = (ClassNode) iter.next();
-                String innerClassName = innerClass.getName();
-                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassName);
+                Type innerClassType = innerClass.getType();
+                String innerClassInternalName = BytecodeHelper.getClassInternalName(innerClassType);
                 String outerClassName = internalClassName; // default for inner classes
                 MethodNode enclosingMethod = innerClass.getEnclosingMethod();
                 if (enclosingMethod != null) {
@@ -118,7 +110,7 @@ public class DummyClassGenerator extends ClassGenerator {
                 cw.visitInnerClass(
                     innerClassInternalName,
                     outerClassName,
-                    innerClassName,
+                    innerClassType.getName(),
                     innerClass.getModifiers());
             }
             cw.visitEnd();
@@ -146,7 +138,6 @@ public class DummyClassGenerator extends ClassGenerator {
     public void visitMethod(MethodNode node) {
 
         visitParameters(node, node.getParameters());
-        node.setReturnType(checkValidType(node.getReturnType(), node, "Must be a valid return type"));
 
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), node.getParameters());
         cv = cw.visitMethod(node.getModifiers(), node.getName(), methodType, null, null);
@@ -162,9 +153,6 @@ public class DummyClassGenerator extends ClassGenerator {
 
     public void visitField(FieldNode fieldNode) {
 
-        // lets check that the classes are all valid
-        fieldNode.setType(checkValidType(fieldNode.getType(), fieldNode, "Must be a valid field class for field: " + fieldNode.getName()));
-
         cw.visitField(
             fieldNode.getModifiers(),
             fieldNode.getName(),
@@ -179,36 +167,6 @@ public class DummyClassGenerator extends ClassGenerator {
     public void visitProperty(PropertyNode statement) {
     }
 
-
-    protected String checkValidType(String type, ASTNode node, String message) {
-        if (type!= null && type.length() == 0)
-            return "java.lang.Object";
-        if (type.endsWith("[]")) {
-            String postfix = "[]";
-            String prefix = type.substring(0, type.length() - 2);
-            return checkValidType(prefix, node, message) + postfix;
-        }
-        int idx = type.indexOf('$');
-        if (idx > 0) {
-            String postfix = type.substring(idx);
-            String prefix = type.substring(0, idx);
-            return checkValidType(prefix, node, message) + postfix;
-        }
-        if (BytecodeHelper.isPrimitiveType(type) || "void".equals(type)) {
-            return type;
-        }
-        String original = type;
-        type = resolveClassName(type);
-        if (type != null) {
-            return type;
-        }
-
-        throw new MissingClassException(original, node, message + " for class: " + classNode.getName());
-    }
-    protected String resolveClassName(String type) {
-        return classNode.resolveClassName(type);
-    }
-
     protected static boolean isPrimitiveFieldType(String type) {
         return type.equals("java.lang.String")
             || type.equals("java.lang.Integer")
@@ -216,79 +174,7 @@ public class DummyClassGenerator extends ClassGenerator {
             || type.equals("java.lang.Long")
             || type.equals("java.lang.Float");
     }
-    protected Class loadClass(String name) {
-        if (name.equals(this.classNode.getName())) {
-            return Object.class;
-        }
-
-        if (name == null) {
-            return null;
-        }
-        else if (name.length() == 0) {
-            return Object.class;
-        }
-
-        else if ("void".equals(name)) {
-            return void.class;
-        }
-        else if ("boolean".equals(name)) {
-            return boolean.class;
-        }
-        else if ("byte".equals(name)) {
-            return byte.class;
-        }
-        else if ("short".equals(name)) {
-            return short.class;
-        }
-        else if ("char".equals(name)) {
-            return char.class;
-        }
-        else if ("int".equals(name)) {
-            return int.class;
-        }
-        else if ("long".equals(name)) {
-            return long.class;
-        }
-        else if ("float".equals(name)) {
-            return float.class;
-        }
-        else if ("double".equals(name)) {
-            return double.class;
-        }
-
-        name = BytecodeHelper.formatNameForClassLoading(name);
-
-    	try {
-    		Class cls = (Class)classCache.get(name);
-    		if (cls != null)
-    			return cls;
-
-    		CompileUnit compileUnit = getCompileUnit();
-            if (compileUnit != null) {
-            	cls = compileUnit.loadClass(name);
-                classCache.put(name, cls);
-            	return cls;
-            }
-            else {
-                throw new ClassGeneratorException("Could not load class: " + name);
-            }
-        }
-        catch (ClassNotFoundException e) {
-            throw new ClassGeneratorException("Error when compiling class: " + classNode.getName() + ". Reason: could not load class: " + name + " reason: " + e, e);
-        }
-    }
-
-    Map classCache = new HashMap();
-    {
-        classCache.put("int", Integer.TYPE);
-        classCache.put("byte", Byte.TYPE);
-        classCache.put("short", Short.TYPE);
-        classCache.put("char", Character.TYPE);
-        classCache.put("boolean", Boolean.TYPE);
-        classCache.put("long", Long.TYPE);
-        classCache.put("double", Double.TYPE);
-        classCache.put("float", Float.TYPE);
-    }
+    
     protected CompileUnit getCompileUnit() {
         CompileUnit answer = classNode.getCompileUnit();
         if (answer == null) {
@@ -304,9 +190,6 @@ public class DummyClassGenerator extends ClassGenerator {
     }
 
     protected void visitParameter(ASTNode node, Parameter parameter) {
-        if (! parameter.isDynamicType()) {
-            parameter.setType(checkValidType(parameter.getType(), node, "Must be a valid parameter class"));
-        }
     }
 
 }

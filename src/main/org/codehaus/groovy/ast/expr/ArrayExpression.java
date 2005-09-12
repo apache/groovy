@@ -50,7 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
-import org.codehaus.groovy.classgen.AsmClassGenerator;
+import org.codehaus.groovy.ast.Type;
 
 /**
  * Represents an array object construction either using a fixed size
@@ -63,14 +63,14 @@ public class ArrayExpression extends Expression {
     private List expressions;
     private Expression sizeExpression;
 
-    private String elementType;
+    private Type elementType;
     /**
      * Creates an array using an initializer expression
      */
-    public ArrayExpression(String type, List expressions) {
-        if (!type.endsWith("[]")) type += "[]";
-        setSuperType(type);
-        this.elementType = type;
+    public ArrayExpression(Type elementType, List expressions) {
+        //expect to get the elementType
+        super.setType(elementType.makeArray());
+        this.elementType = elementType;
         this.expressions = expressions;
 
         for (Iterator iter = expressions.iterator(); iter.hasNext();) {
@@ -81,23 +81,13 @@ public class ArrayExpression extends Expression {
         }
     }
 
-    private void setSuperType(String type) {
-        if (type == null) System.out.println("setSuperType: null");
-        if (type.endsWith("[]")) {
-        }
-        else {
-            type += "[]";
-        }
-        super.setType(type); //  array type. todo probably need to wait until ClassGen time to avoid resolve "this" type
-    }
-
     /**
      * Creates an empty array of a certain size
      */
-    public ArrayExpression(String type, Expression sizeExpression) {
-        if (!type.endsWith("[]")) type += "[]";
-        setSuperType(type);
-        this.elementType = type;        
+    public ArrayExpression(Type elementType, Expression sizeExpression) {
+        // expect to get the elementType
+        super.setType(elementType.makeArray());
+        this.elementType = elementType;        
         this.sizeExpression = sizeExpression;
         this.expressions = Collections.EMPTY_LIST;
     }
@@ -119,7 +109,7 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        return new ArrayExpression(type, transformExpressions(expressions, transformer));
+        return new ArrayExpression(elementType, transformExpressions(expressions, transformer));
     }
 
     public Expression getExpression(int i) {
@@ -127,7 +117,7 @@ public class ArrayExpression extends Expression {
         return (Expression) object;
     }
 
-    public String getElementType() {
+    public Type getElementType() {
         return elementType;
     }
     
@@ -154,9 +144,5 @@ public class ArrayExpression extends Expression {
 
     public String toString() {
         return super.toString() + expressions;
-    }
-
-    protected void resolveType(AsmClassGenerator resolver) {
-        //
     }
 }
