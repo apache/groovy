@@ -33,7 +33,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 
 public class XmlSlurper extends DefaultHandler {
-    private final XMLReader reader;
+  private final XMLReader reader;
 	private List result = null;
 	private List body = null;
 	private final StringBuffer charBuffer = new StringBuffer();
@@ -194,11 +194,22 @@ public class XmlSlurper extends DefaultHandler {
 		
 		this.body = (List)this.body.remove(0);
 		
-		if (namespaceURI.length() == 0) {
-			this.body.add(new XmlList(qName, attributes, children, namespaceURI));
+		final XmlList xmlList;
+		if (namespaceURI.length() == 0){
+			xmlList = new XmlList(qName, attributes, children, namespaceURI);
 		} else {
-			this.body.add(new XmlList(localName, attributes, children, namespaceURI));
+			xmlList = new XmlList(localName, attributes, children, namespaceURI);
 		}
+		this.body.add(xmlList);
+
+		//update all chilidren's parent node.
+		for(final Iterator it=children.iterator();it.hasNext();) {
+	  final Object child = it.next();
+    
+			if(child instanceof XmlList){
+				((XmlList)child).setElementsParent (xmlList);
+			}
+    }
 	}
 	
 	/* (non-Javadoc)
@@ -237,6 +248,7 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 	final Map attributes;
 	final Object[] children;
 	final String namespaceURI;
+	XmlList parent = null;
 	
     public XmlList(final String name, final Map attributes, final List body, final String namespaceURI) {
         super();
@@ -247,6 +259,10 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
         this.namespaceURI = namespaceURI;
     }
     
+    public void setElementsParent(final XmlList parent){
+        this.parent = parent;
+    }
+
     public Object getProperty(final String elementName) {
 	    	if (elementName.startsWith("@")) {
 	    		return this.attributes.get(elementName.substring(1));
@@ -327,6 +343,8 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
 			return this.name;
 		} else if ("children".equals(name)) {
 			return this.children;
+		} else if ("parent".equals(name)) {
+			return this.parent;
 		} else if ("contents".equals(name)) {
 			return new Buildable() {
 				public void build(GroovyObject builder) {
