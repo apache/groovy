@@ -207,7 +207,7 @@ public class XmlSlurper extends DefaultHandler {
 	  final Object child = it.next();
     
 			if(child instanceof XmlList){
-				((XmlList)child).setElementsParent (xmlList);
+				((XmlList)child).parent = xmlList;
 			}
     }
 	}
@@ -257,10 +257,6 @@ class XmlList extends GroovyObjectSupport implements Writable, Buildable {
         this.attributes = attributes;
         this.children = body.toArray();
         this.namespaceURI = namespaceURI;
-    }
-    
-    public void setElementsParent(final XmlList parent){
-        this.parent = parent;
     }
 
     public Object getProperty(final String elementName) {
